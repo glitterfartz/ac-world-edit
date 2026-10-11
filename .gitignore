@@ -9,3 +9,7 @@ Tests/bin/
 Tests/obj/
 artifacts/
 build-diagnostic.log
+Foundation/bin/
+Foundation/obj/
+Experiments/bin/
+Experiments/obj/
