@@ -32,6 +32,12 @@ public partial class TerrainViewer : Node3D
     ACWorldEdit.Experiments.ViewportBenchmark? benchmark;
     Node3D? benchmarkProxies;
     bool foundationShell;
+    CreatureOverlay creatures = null!;
+    ushort? currentMapId;
+    bool creatureSmoke;
+    double creatureSmokeTime;
+    int creatureSmokeStage;
+    double creatureSelectedAt;
     int smokeStage;
     double smokeTime;
     TileKey smokeOriginal;
@@ -62,7 +68,10 @@ public partial class TerrainViewer : Node3D
                 TonemapMode = Godot.Environment.ToneMapper.Filmic
             }
         });
+        creatures = new CreatureOverlay(); AddChild(creatures);
+        creatures.FocusRequested += FocusCreature;
         BuildUi(); smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
+        creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
         if (OS.GetCmdlineUserArgs().Contains("--terrain-benchmark")) benchmark = new();
         await LoadArchives();
     }
@@ -110,6 +119,7 @@ public partial class TerrainViewer : Node3D
         telemetry = new Label { Text = "Waiting for terrain" }; bottom.AddChild(telemetry);
         minimap = new TerrainMinimap { Position = new Vector2(370, 20), CustomMinimumSize = new Vector2(180, 180), MouseFilter = Control.MouseFilterEnum.Stop }; ui.AddChild(minimap);
         minimap.Jump += key => { tileX.Value = key.X; tileY.Value = key.Y; Teleport(key); };
+        ui.AddChild(creatures.BuildPanel());
     }
     async Task LoadArchives()
     {
@@ -137,6 +147,7 @@ public partial class TerrainViewer : Node3D
         try
         {
             world = await Task.Run(() => new WorldMap(name, assets.Read($"World/Maps/{name}/{name}.wdt")));
+            currentMapId = checked((ushort)mapList[maps.Selected].Id);
             var requested = new TileKey((int)tileX.Value, (int)tileY.Value);
             if (!world.Tiles.Contains(requested)) requested = world.Tiles.OrderBy(k => Math.Abs(k.X - requested.X) + Math.Abs(k.Y - requested.Y)).First();
             tileX.Value = requested.X; tileY.Value = requested.Y; Teleport(requested);
@@ -152,6 +163,7 @@ public partial class TerrainViewer : Node3D
         foreach (var n in loaded.Values) renderer.Release(n); loaded.Clear();
         if (buildingNode != null) renderer.Release(buildingNode);
         buildingNode = null; building = null; buildIndex = 0; failed.Clear(); wanted.Clear(); world = null;
+        currentMapId = null; creatures.SetRegion(null);
     }
     void Teleport(TileKey key)
     {
@@ -167,6 +179,13 @@ public partial class TerrainViewer : Node3D
         if (loaded.TryGetValue(key, out var node)) RaiseAboveTerrain(node);
     }
     TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
+    void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
+    {
+        var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z));
+        var position = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
+        camera.Position = position + new Vector3(0, 8, 15); camera.LookAt(position + Vector3.Up);
+        yaw = camera.Rotation.Y; pitch = camera.Rotation.X; UpdateWanted();
+    }
     void UpdateWanted()
     {
         if (world == null) return; var center = CameraTile(); wanted.Clear();
@@ -174,6 +193,8 @@ public partial class TerrainViewer : Node3D
         { var key = new TileKey(center.X + x, center.Y + y); if (world.Tiles.Contains(key)) wanted.Add(key); }
         foreach (var key in loaded.Keys.Where(k => !wanted.Contains(k)).ToArray()) { renderer.Release(loaded[key]); loaded.Remove(key); }
         if (building != null && !wanted.Contains(building.Tile.Key)) { if (buildingNode != null) renderer.Release(buildingNode); building = null; buildingNode = null; }
+        if (currentMapId.HasValue && wanted.Count > 0)
+            creatures.SetRegion(new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y)));
     }
     PreparedTile Prepare(AssetStore assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
@@ -258,6 +279,8 @@ public partial class TerrainViewer : Node3D
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {renderer.TextureCount} textures    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.World = world; minimap.Loaded = loaded.Keys.ToHashSet(); minimap.Current = current; minimap.CameraPosition = camera.Position; minimap.QueueRedraw();
         if (smoke) Smoke(delta);
+        creatures.Update(camera);
+        if (creatureSmoke) CreatureSmoke(delta);
         benchmark?.Sample(delta, uploadMs, world != null && !busy && loaded.Count == wanted.Count && loaded.Count > 0 && pending == null && building == null,
             loaded.Count, wanted.Count, () =>
             {
@@ -285,6 +308,8 @@ public partial class TerrainViewer : Node3D
         if (foundationShell) return;
         if (input is InputEventMouseButton mouse)
         {
+            if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)
+            { creatures.Pick(camera, mouse.Position); return; }
             if (mouse.ButtonIndex == MouseButton.Right) { capture = mouse.Pressed; Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible; }
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelUp) speed = Math.Min(1500, speed * 1.25f);
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelDown) speed = Math.Max(5, speed / 1.25f);
@@ -317,6 +342,49 @@ public partial class TerrainViewer : Node3D
         else if (smokeStage == 2)
         {
             GD.Print($"TERRAIN_SMOKE_PASSED returned={CameraTile()} tiles={loaded.Count} textures={renderer.TextureCount}"); GetTree().Quit(); smokeStage = 3;
+        }
+    }
+    void CreatureSmoke(double delta)
+    {
+        creatureSmokeTime += delta;
+        if (creatureSmokeTime > 60)
+        { GD.PushError("CREATURE_SMOKE_TIMEOUT " + creatures.QueryStatus); GetTree().Quit(1); return; }
+        if (busy || world == null || creatures.IsLoading || creatures.Records.Count == 0) return;
+        if (creatures.Records.Any(s => s.Pose.Map != currentMapId))
+        { GD.PushError("CREATURE_SMOKE_STALE_MAP"); GetTree().Quit(1); return; }
+        if (creatureSmokeStage == 0)
+        {
+            if (loaded.Count != wanted.Count || pending != null || building != null) return;
+            var centerTile = CameraTile();
+            var spawn = creatures.Records.Where(s => ACWorldEdit.Foundation.WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y))
+                .OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
+            var position = creatures.PositionOf(spawn.Guid);
+            camera.Position = position + new Vector3(0, 8, 15); camera.LookAt(position + Vector3.Up);
+            if (!creatures.Pick(camera, camera.UnprojectPosition(position + Vector3.Up)) || creatures.SelectedGuid != spawn.Guid || creatures.SelectedListGuid != spawn.Guid)
+            { GD.PushError("CREATURE_SMOKE_PICK_FAILED"); GetTree().Quit(1); return; }
+            creatures.Select(spawn.Guid);
+            GD.Print($"CREATURE_SMOKE_SELECTED count={creatures.Records.Count} guid={spawn.Guid} map={spawn.Pose.Map}");
+            creatureSelectedAt = creatureSmokeTime; creatureSmokeStage = 1;
+        }
+        else if (creatureSmokeStage == 1)
+        {
+            if (creatureSmokeTime - creatureSelectedAt < 1) return;
+            if (DisplayServer.GetName() != "headless")
+            {
+                System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/creature-preview.png"));
+            }
+            creatures.Refresh(); creatures.Update(camera); // Start a query, then replace its map immediately.
+            int nextMap = mapList.FindIndex(m => m.Directory == "Kalimdor");
+            if (nextMap < 0) { GetTree().Quit(1); return; }
+            maps.Select(nextMap); tileX.Value = 32; tileY.Value = 32;
+            creatureSmokeStage = 2; _ = OpenMap();
+        }
+        else
+        {
+            if (currentMapId != 1 || creatures.Records.Any(s => s.Pose.Map != 1))
+            { GD.PushError("CREATURE_SMOKE_MAP_SWITCH_FAILED"); GetTree().Quit(1); return; }
+            GD.Print($"CREATURE_SMOKE_PASSED map-switch/cancel count={creatures.Records.Count}"); GetTree().Quit();
         }
     }
     public override void _Notification(int what)

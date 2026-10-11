@@ -1,4 +1,4 @@
-# ACWorldEdit terrain viewer
+# ACWorldEdit world viewer
 
 A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs in `wow-data`.
 
@@ -7,6 +7,22 @@ A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs in `wow-data`.
 Open `project.godot` in the **.NET** edition of Godot, build the C# project, and press **F5**. It automatically opens Azeroth tile **34,49**, near Elwynn.
 
 Or run `./Launch-Viewer.ps1` from PowerShell. The launcher builds the project and locates Godot from the existing shortcut. Supply `-GodotPath` to use another installation. Requires .NET SDK 8 and Godot .NET 4.7.1; SharpZipLib 1.4.2 handles MPQ bzip2 compression.
+
+The simple roadmap is in [PLAN.md](PLAN.md); current results and limits are in [PROGRESS.md](PROGRESS.md).
+
+## Existing creatures
+
+The right panel reads `WorldDatabaseInfo` from the external file
+`X:\AzerothCore\azerothcore-wotlk\build\bin\Debug\configs\worldserver.conf`.
+Set `ACWORLD_SERVER_CONFIG` before launching or change the path in the panel and click **Refresh creatures**.
+Credentials stay outside the project. Queries run in read-only transactions; nothing is written to the world database.
+
+- Nearby creatures refresh when the camera changes tile region or map.
+- Click a capsule marker or choose a list entry to select it and inspect its GUID, template, coordinates, heading and masks.
+- Filter the loaded list by name, GUID or template ID. **Fly to selected creature** brings the camera to its position.
+- Queries show at most 2,000 creatures; reduce the nearby tile radius if the limit is reached.
+
+Markers preview database positions rather than full creature models. All spawn/phase masks are shown without simulation or phase filtering. Picking uses a screen-space target and does not test terrain occlusion. Movement and SQL export are later milestones.
 
 ## Explore
 
@@ -27,7 +43,7 @@ ADT meshes preserve the staggered 145-vertex chunk grid, four triangles per squa
 
 MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds at most eight chunks per frame under a soft 1.5 ms deadline, leaving headroom for the proposed 2 ms upload target; one indivisible upload can exceed it. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
 
-This first stage renders terrain. M2/WMO objects, liquids, client skies, terrain collision, editing, and modern split ADT/CASC assets are not implemented. WMO-only indoor maps report that they have no terrain.
+The viewer renders terrain and creature proxies. M2/WMO objects, liquids, client skies, terrain collision, editing, and modern split ADT/CASC assets are not implemented. WMO-only indoor maps report that they have no terrain.
 
 ## Verification
 
@@ -35,12 +51,13 @@ Run `./Launch-Viewer.ps1 -CheckAssets` for archive, map, terrain, texture, and a
 
 The smoke test loads nearby tiles, moves to a different neighborhood, checks unloading, and returns to verify revisiting. Running Godot with `-- --terrain-smoke` in graphical mode also saves `artifacts/terrain-preview.png`.
 
+Run Godot with `-- --creature-smoke` for a live read-only database check of selection and cancellation/map switching. It requires the configured world database and the default Azeroth/Kalimdor terrain. Graphical mode saves `artifacts/creature-preview.png`.
+
 Format and engine references: [StormLib](https://github.com/ladislav-zezula/StormLib), [Warcraft ADT implementation](https://github.com/wowemulation-dev/warcraft-rs), and [Godot ArrayMesh](https://docs.godotengine.org/en/4.7/classes/class_arraymesh.html).
 
 ## Phase 0 experiments
 
-See [progress](research/progress/phase-0.md) and [foundation contracts](docs/architecture/phase-0-contracts.md).
-These proofs do not implement the Phase 1 placement editor.
+These optional historical experiments are separate from the active three-milestone plan.
 
 - `dotnet run --project Experiments/FoundationChecks.csproj -p:NuGetAudit=false`: coordinates,
   durable draft commands/recovery and review-only SQL fixture checks. Outputs stay under `artifacts/`.
