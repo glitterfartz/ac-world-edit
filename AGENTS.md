@@ -6,13 +6,19 @@ documents as prerequisites. Current user instructions take precedence.
 
 ## Scope
 
-Use the existing standalone Godot C# viewer. Current work displays and selects existing outdoor
-creatures using read-only database queries and labeled proxies. Movement and SQL export are later
-milestones. Defer GameObjects, new spawns, WMO interiors, script/quest editing and shell comparisons.
+Use the existing standalone Godot C# viewer. Current work previews native creatures and animation
+clips, ADT objects/buildings and WMO-only interiors. Selected creatures move in durable local drafts.
+Prioritize client visual fidelity and practical rendering performance. Keep unsupported effects
+explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObjects,
+new spawns, script/quest editing and shell comparisons unless the user requests them.
 
 ## Engineering and data
 
 - Keep records and server coordinates independent of Godot nodes. Reuse the coordinate boundary.
+- ADT/WDT placement facing differs from creature headings. Keep the conversion explicit and check
+  projected WMO geometry against MODF bounds. Do not change creature heading mapping to fix objects.
+- Share native mesh/material/texture resources, batch repeated models, decode on workers and bound
+  main-thread uploads. Validate actual animation data and graphical output; record measured limits.
 - Use asynchronous parameterized queries, bounded results, cancellation and stale-result checks.
   Create Godot resources on the main thread. Unloading proxies never changes source data.
 - Read credentials only from external user configuration; never copy them into repo, logs or UI.
@@ -34,5 +40,6 @@ regularly; stage explicit paths, inspect diffs and validate first. Record prior 
 next checkpoint; don't create recursive commit-only updates.
 
 Build/check what changed. For creature overlays, verify real read-only queries, viewport/list
-selection, region/map changes, cancellation/stale results and terrain streaming. Headless or
-synthetic checks do not prove in-game visual parity. Documentation changes need link/diff checks.
+selection, region/map changes, cancellation/stale results, draft/gizmo history and terrain streaming.
+For native models, run model corpus checks and a graphical visual smoke including interiors. Headless or
+synthetic checks do not prove in-game visual parity. Documentation changes need link/diff checks

@@ -6,7 +6,7 @@ namespace ACWorldEdit.Assets;
 public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices,
     string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false);
 public sealed record ModelDoodad(string Path, Vector3 Position, Quaternion Rotation, float Scale);
-public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings)
+public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null)
 {
     public long EstimatedBytes => Surfaces.Sum(s => (long)s.Positions.Length * 80 + s.Indices.Length * 4L);
 }
@@ -49,6 +49,7 @@ public sealed class DbcTable
     }
     int Field(uint id, int field) { if (field < 0 || field >= fields || !rows.TryGetValue(id, out int p)) throw new InvalidDataException("Missing DBC record/field."); return p + field * 4; }
     public bool Contains(uint id) => rows.ContainsKey(id);
+    public IEnumerable<uint> Ids => rows.Keys;
     public uint U(uint id, int field) => data.U(Field(id, field));
     public float F(uint id, int field) => data.F(Field(id, field));
     public string Str(uint id, int field) => data.Str(checked(strings + (int)U(id, field)));
@@ -58,11 +59,14 @@ public sealed record CreatureAppearance(string Path, string[] Textures, float Sc
 public sealed class CreatureCatalog
 {
     readonly DbcTable displays, models, extras;
+    public IReadOnlyDictionary<ushort,string> AnimationNames { get; }
     public CreatureCatalog(AssetStore store)
     {
         displays = new(store.Read("DBFilesClient/CreatureDisplayInfo.dbc"));
         models = new(store.Read("DBFilesClient/CreatureModelData.dbc"));
         extras = new(store.Read("DBFilesClient/CreatureDisplayInfoExtra.dbc"));
+        var animations = new DbcTable(store.Read("DBFilesClient/AnimationData.dbc"));
+        AnimationNames = animations.Ids.Where(id => id<=ushort.MaxValue).ToDictionary(id => (ushort)id,id => animations.Str(id,1));
     }
     public CreatureAppearance Resolve(uint id)
     {

@@ -4,7 +4,7 @@ namespace ACWorldEdit.Assets;
 
 public static class M2Model
 {
-    public static ModelData Read(AssetStore store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default)
+    public static ModelData Read(AssetStore store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0)
     {
         path = BinaryAsset.ModelPath(path); var b = new BinaryAsset(store.Read(path)); b.Range(0, 304);
         if (Encoding.ASCII.GetString(b.Bytes, 0, 4) != "MD20" || b.U(4) != 264) throw new NotSupportedException("Expected Wrath MD20 version 264.");
@@ -12,7 +12,9 @@ public static class M2Model
         var textures = b.Array(80, 16); var materials = b.Array(112, 4); var textureLookup = b.Array(128, 2);
         var globals = b.Array(20, 4); List<string> warnings = [];
         int idle = -1;
-        for (int i = 0; i < sequences.Count; i++) if (b.H(sequences.Offset + i * 64) == 0) { idle = i; break; }
+        var available = Enumerable.Range(0,sequences.Count).Select(i => b.H(sequences.Offset+i*64)).Distinct().Order().ToArray();
+        for (int i = 0; i < sequences.Count; i++) if (b.H(sequences.Offset + i * 64) == animationId) { idle = i; break; }
+        if (idle < 0 && bones.Count > 0) warnings.Add($"Native animation {animationId} unavailable; showing reference pose.");
         uint duration = 0; byte[]? external = null;
         if (idle >= 0)
         {
@@ -98,6 +100,6 @@ public static class M2Model
             surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(),Unlit:(b.H(materials.Offset+material*4)&1)!=0));
             if (skin.H(p+14) > 1) warnings.Add("Multitexture M2 batch currently uses its base texture.");
         }
-        return new(surfaces.ToArray(), skeleton, duration, [], warnings.Distinct().ToArray());
+        return new(surfaces.ToArray(), skeleton, duration, [], warnings.Distinct().ToArray(),available);
     }
 }

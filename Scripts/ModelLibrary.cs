@@ -2,12 +2,14 @@ using Godot;
 using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
-public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0);
+public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0);
 public partial class ModelInstance : Node3D
 {
     internal ModelKey Key = null!;
     internal Transform3D[]? Transforms;
     internal bool Built;
+    public Aabb Bounds { get; internal set; }
+    public ushort[] AvailableAnimations { get; internal set; } = [];
     public bool ModelReady => Built;
     public void SetPlacement(int index, Transform3D transform)
     {
@@ -22,12 +24,20 @@ public sealed class ModelLibrary
     sealed class Entry(ModelData data, IdlePalette palette, Dictionary<string, BlpTexture> textures)
     {
         public ModelData Data = data; public IdlePalette Palette = palette;
+        public readonly (System.Numerics.Vector3 Min,System.Numerics.Vector3 Max) Bounds = FindBounds(data);
         public Dictionary<string, BlpTexture> Decoded = textures;
         public readonly List<ArrayMesh> Meshes = [];
         public ImageTexture? Idle;
         public int Surface; public long LastUsed;
         public long Bytes => Data.EstimatedBytes + Palette.Pixels.Length + Decoded.Values.Sum(t => (long)t.Rgba.Length);
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
+        static (System.Numerics.Vector3,System.Numerics.Vector3) FindBounds(ModelData data)
+        {
+            var min = new System.Numerics.Vector3(float.MaxValue); var max = new System.Numerics.Vector3(float.MinValue); bool any = false;
+            foreach (var positions in data.Surfaces.Select(s => s.Positions).Distinct()) foreach (var point in positions)
+            { min = System.Numerics.Vector3.Min(min,point); max = System.Numerics.Vector3.Max(max,point); any = true; }
+            return any ? (min,max) : (System.Numerics.Vector3.Zero,System.Numerics.Vector3.Zero);
+        }
     }
     sealed class TextureEntry(ImageTexture texture) { public ImageTexture Texture = texture; public int References; }
     readonly Dictionary<ModelKey, Entry> cache = [];
@@ -118,7 +128,7 @@ public sealed class ModelLibrary
                 pending = Task.Run(() =>
                 {
                     token.ThrowIfCancellationRequested(); var data = key.Path.EndsWith(".wmo",StringComparison.OrdinalIgnoreCase)
-                        ? WmoModel.Read(source,key.Path,key.DoodadSet,token) : M2Model.Read(source,key.Path,[key.Texture1,key.Texture2,key.Texture3],key.Baked.Length == 0 ? null : key.Baked,token);
+                        ? WmoModel.Read(source,key.Path,key.DoodadSet,token) : M2Model.Read(source,key.Path,[key.Texture1,key.Texture2,key.Texture3],key.Baked.Length == 0 ? null : key.Baked,token,key.Animation);
                     Dictionary<string,BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
                     foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
                     { token.ThrowIfCancellationRequested(); try { decoded[path] = BlpTexture.Decode(source.Read(path),0); } catch (Exception e) { GD.PushWarning($"Model texture unavailable: {path}: {e.Message}"); } }
@@ -138,6 +148,9 @@ public sealed class ModelLibrary
     }
     void BuildInstance(ModelInstance node, Entry entry)
     {
+        var min = entry.Bounds.Min; var max = entry.Bounds.Max;
+        node.Bounds = new(new(min.X,min.Y,min.Z),new(max.X-min.X,max.Y-min.Y,max.Z-min.Z));
+        node.AvailableAnimations = entry.Data.AnimationIds ?? [];
         foreach (var mesh in entry.Meshes)
         {
             if (node.Transforms != null)

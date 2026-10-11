@@ -16,6 +16,16 @@ public partial class CreatureOverlay : Node3D
     string sourceKey = "";
     string draftMessage = "Local draft only; source database is unchanged.";
     TranslationGizmo gizmo = null!;
+    OptionButton animation = null!;
+    ushort previewAnimation;
+    uint? animationListGuid;
+    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value,out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation==previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
+    public bool ChooseAnimationForSmoke(ushort id)
+    {
+        for (int i=0;i<animation.ItemCount;i++) if (animation.GetItemId(i)==id)
+        { animation.Select(i); animation.EmitSignal(OptionButton.SignalName.ItemSelected,i); return true; }
+        return false;
+    }
     public bool IsDragging => gizmo.Dragging;
     public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     readonly Dictionary<uint, (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)> markers = [];
@@ -66,6 +76,9 @@ public partial class CreatureOverlay : Node3D
         var focus = new Button { Text = "Fly to selected creature" }; focus.Pressed += () =>
         { if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker)) FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) }); };
         box.AddChild(focus);
+        box.AddChild(new Label { Text = "Preview animation (selected creature)" });
+        animation = new OptionButton { FitToLongestItem = false,Disabled = true }; animation.AddItem("Stand / idle",0); box.AddChild(animation);
+        animation.ItemSelected += index => { previewAnimation = (ushort)animation.GetItemId((int)index); modelUpdate = 0; };
         var history = new HBoxContainer(); box.AddChild(history);
         var undo = new Button { Text = "Undo move",SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; history.AddChild(undo); undo.Pressed += () => History(false);
         var redo = new Button { Text = "Redo move",SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; history.AddChild(redo); redo.Pressed += () => History(true);
@@ -97,6 +110,8 @@ public partial class CreatureOverlay : Node3D
         if (gizmo != null) { gizmo.Finish(false); gizmo.Visible = false; }
         foreach (var batch in modelBatches.Values) { batch.Node.Visible = false; batch.Node.QueueFree(); }
         modelBatches.Clear(); appearances.Clear(); modelUpdate = 0;
+        animationListGuid = null;
+        if (animation != null) animation.Disabled = true;
         foreach (var marker in markers.Values) { marker.Node.Visible = false; marker.Node.QueueFree(); }
         markers.Clear(); records = []; nextMarker = 0;
         if (!preserveSelection) selectedGuid = null;
@@ -150,9 +165,24 @@ public partial class CreatureOverlay : Node3D
         if (Models?.Catalog != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
         { UpdateModels(camera); modelUpdate = System.Diagnostics.Stopwatch.GetTimestamp(); }
         foreach (var batch in modelBatches.Values)
-            if (batch.Node.ModelReady) foreach (uint guid in batch.Guids) if (markers.TryGetValue(guid,out var marker)) marker.Body.Visible = false;
+            if (batch.Node.ModelReady)
+            {
+                foreach (uint guid in batch.Guids) if (markers.TryGetValue(guid,out var marker)) marker.Body.Visible = false;
+                if (selectedGuid.HasValue && batch.Guids.Contains(selectedGuid.Value) && animationListGuid!=selectedGuid)
+                {
+                    animation.Clear(); int selectedIndex = 0;
+                    foreach (ushort id in batch.Node.AvailableAnimations)
+                    { animation.AddItem($"{Models?.Catalog?.AnimationNames.GetValueOrDefault(id) ?? "Animation"} ({id})",id); if (id==previewAnimation) selectedIndex = animation.ItemCount-1; }
+                    if (animation.ItemCount == 0) animation.AddItem("Static model",0);
+                    animation.Select(selectedIndex); animation.Disabled = batch.Node.AvailableAnimations.Length<=1; animationListGuid = selectedGuid;
+                }
+            }
         foreach (var marker in markers.Values)
+        {
+            bool nearby = selectedGuid == marker.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 350 * 350;
+            marker.Node.Visible = nearby;
             marker.Label.Visible = selectedGuid == marker.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 120 * 120;
+        }
         gizmo.Update(camera,draft != null && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value,out var selectedMarker) ? selectedMarker.Node.GlobalPosition : null);
     }
     void UpdateModels(Camera3D camera)
@@ -169,7 +199,7 @@ public partial class CreatureOverlay : Node3D
                 appearances[marker.Spawn.DisplayId] = appearance;
             }
             if (appearance == null) continue;
-            var key = new ModelKey(appearance.Path,appearance.Textures[0],appearance.Textures[1],appearance.Textures[2],appearance.BakedTexture ?? "");
+            var key = new ModelKey(appearance.Path,appearance.Textures[0],appearance.Textures[1],appearance.Textures[2],appearance.BakedTexture ?? "",Animation:selectedGuid==marker.Spawn.Guid ? previewAnimation : (ushort)0);
             if (!groups.TryGetValue(key,out var list)) groups[key] = list = []; list.Add(marker.Spawn.Guid);
         }
         foreach (var batch in modelBatches.ToArray())
@@ -209,6 +239,7 @@ public partial class CreatureOverlay : Node3D
     {
         if (!markers.TryGetValue(guid, out var marker)) return;
         if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var previous)) previous.Body.MaterialOverride = normal;
+        if (selectedGuid != guid) { previewAnimation = 0; animationListGuid = null; modelUpdate = 0; animation.Disabled = true; }
         selectedGuid = guid; marker.Body.MaterialOverride = selected;
         var spawn = marker.Spawn; var pose = PoseOf(spawn);
         details.Text = FormattableString.Invariant($"{spawn.Name}\nGUID {spawn.Guid} · template {spawn.TemplateId} · display {spawn.DisplayId} · map {pose.Map}\nX {pose.X:F3}  Y {pose.Y:F3}  Z {pose.Z:F3}\nHeading {pose.Heading:F4} rad\nSpawn mask {spawn.SpawnMask} · phase mask {spawn.PhaseMask}\n{(draft?.Conflict(sourceKey,guid,spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
@@ -225,6 +256,7 @@ public partial class CreatureOverlay : Node3D
     {
         if (!selectedGuid.HasValue || draft == null) return false;
         uint guid = selectedGuid.Value; var original = markers[guid].Node.Position;
+        if (!Pick(camera,camera.UnprojectPosition(original+Vector3.Up)) || selectedGuid!=guid) return false;
         gizmo.Update(camera,original);
         var handle = original+Vector3.Right*gizmo.Scale.X*0.7f;
         if (!BeginDrag(camera,camera.UnprojectPosition(handle))) return false;
@@ -267,8 +299,20 @@ public partial class CreatureOverlay : Node3D
     {
         Vector3 origin = camera.ProjectRayOrigin(screen), direction = camera.ProjectRayNormal(screen);
         uint? nearest = null; float distance = float.MaxValue;
+        var modelGuids = new HashSet<uint>();
+        foreach (var batch in modelBatches.Values)
+        {
+            if (!batch.Node.ModelReady) continue;
+            for (int i=0;i<batch.Guids.Length;i++)
+            {
+                uint guid = batch.Guids[i]; modelGuids.Add(guid); var inverse = batch.Node.Transforms![i].AffineInverse();
+                float? hit = BoxHit(batch.Node.Bounds,inverse*origin,inverse.Basis*direction);
+                if (hit.HasValue && hit.Value < distance && hit.Value < camera.Far) { nearest = guid; distance = hit.Value; }
+            }
+        }
         foreach (var marker in markers.Values)
         {
+            if (modelGuids.Contains(marker.Spawn.Guid) || !marker.Node.Visible) continue;
             Vector3 center = marker.Node.GlobalPosition + Vector3.Up;
             if (camera.IsPositionBehind(center)) continue;
             var offset = center - origin; float along = offset.Dot(direction);
@@ -278,6 +322,17 @@ public partial class CreatureOverlay : Node3D
             nearest = marker.Spawn.Guid; distance = along;
         }
         if (!nearest.HasValue) return false; Select(nearest.Value); return true;
+    }
+    static float? BoxHit(Aabb box,Vector3 origin,Vector3 direction)
+    {
+        float near = 0,far = float.MaxValue;
+        for (int axis=0;axis<3;axis++)
+        {
+            if (Math.Abs(direction[axis])<0.000001f) { if (origin[axis]<box.Position[axis] || origin[axis]>box.End[axis]) return null; continue; }
+            float a = (box.Position[axis]-origin[axis])/direction[axis], b = (box.End[axis]-origin[axis])/direction[axis];
+            near = Math.Max(near,Math.Min(a,b)); far = Math.Min(far,Math.Max(a,b)); if (far<near) return null;
+        }
+        return near;
     }
     public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
     public override void _ExitTree() { cancellation.Cancel(); cancellation.Dispose(); draft?.Dispose(); }

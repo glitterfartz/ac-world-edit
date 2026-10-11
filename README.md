@@ -18,18 +18,33 @@ Set `ACWORLD_SERVER_CONFIG` before launching or change the path in the panel and
 Credentials stay outside the project. Queries run in read-only transactions; nothing is written to the world database.
 
 - Nearby creatures refresh when the camera changes tile region or map.
-- Click a capsule marker or choose a list entry to select it and inspect its GUID, template, coordinates, heading and masks.
+- Click a creature model or choose a list entry to select it and inspect its GUID, template, display, coordinates, heading and masks.
 - Filter the loaded list by name, GUID or template ID. **Fly to selected creature** brings the camera to its position.
 - Queries show at most 2,000 creatures; reduce the nearby tile radius if the limit is reached.
 
-Markers preview database positions rather than full creature models. All spawn/phase masks are shown without simulation or phase filtering. Picking uses a screen-space target and does not test terrain occlusion. Movement and SQL export are later milestones.
+Creatures within 350 yards load native M2/SKIN models and display textures, with native Stand/idle
+animation on the GPU. Selecting a creature exposes **Preview animation**, populated from that
+model's available clips and client animation names. Previewing Walk or another clip changes no
+spawn behavior. A labeled capsule remains when an appearance cannot be resolved.
+
+Selection exposes a colored movement gizmo: red is view X, green is height, blue is view Z.
+Drag an axis to move; release saves a local draft. **Esc** cancels the drag. **Undo move** and
+**Redo move** persist history. Drafts reopen from Godot's `user://drafts/creature-positions.json`
+under the application data directory. A source position conflict prevents applying a stale draft.
+Horizontal moves preserve height; there is no terrain snapping, yaw editing or SQL export yet.
+Queries still locate spawns by their source positions. A draft moved far outside its source region
+reappears when that source region is queried again; a cross-region draft index is follow-up work.
+
+All spawn/phase masks are displayed without simulation or filtering. Model picking uses bounding
+boxes, while fallback markers use a screen-space target; terrain occlusion is not tested.
 
 ## Explore
 
 - Hold **right mouse** to look and fly; **WASD** moves relative to the camera.
 - **Q/E** descends/ascends; **Shift** accelerates; the **wheel** adjusts speed.
 - **Esc** releases the mouse. Losing window focus also releases it.
-- Choose a world and tile X/Y, then click **Open terrain**. An unavailable tile selects the closest terrain tile.
+- Choose a world and tile X/Y, then click **Open world**. An unavailable tile selects the closest terrain tile.
+- WMO-only worlds open their global building directly; tile controls are disabled. Fly to explore interiors.
 - Click land in the minimap to jump. Mint tiles are loaded; white marks the camera.
 - Nearby tile radius defaults to **1**, loading up to a 3×3 neighborhood. Increase for a wider view or use 0 for one tile.
 - Toggle cell borders to see the 16×16 terrain chunks in each tile.
@@ -43,7 +58,23 @@ ADT meshes preserve the staggered 145-vertex chunk grid, four triangles per squa
 
 MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds at most eight chunks per frame under a soft 1.5 ms deadline, leaving headroom for the proposed 2 ms upload target; one indivisible upload can exceed it. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
 
-The viewer renders terrain and creature proxies. M2/WMO objects, liquids, client skies, terrain collision, editing, and modern split ADT/CASC assets are not implemented. WMO-only indoor maps report that they have no terrain.
+Native ADT M2 doodads and WMO buildings load with the terrain. WDT global WMOs support interior-only
+maps. WMO groups, material batches, vertex colors and default/selected doodad sets load from MPQs.
+Duplicate ADT references are deduplicated by object ID. Repeated models use MultiMesh batches;
+meshes/materials/textures are shared. Decoding and native animation palette sampling run on one
+worker. GPU uploads build one surface per frame, and dormant model resources evict above a soft
+256 MiB cache target. Active resources can exceed that target. Model textures retain their full
+source mip resolution. Idle/selected-clip skinning uses a shared GPU palette sampled at up to 30 Hz,
+with interpolated frames; long clips are capped at 601 samples.
+
+This is a native asset preview, not complete client rendering parity. Character models use baked
+NPC body textures and a basic geoset selection; equipment, detailed hair/clothing composition,
+particles/ribbons, advanced multitexture/environment shaders, animated material/UV tracks,
+billboard bones and portal culling remain incomplete. Spline bone tracks use linear approximation
+and report that limitation. Templates with multiple model choices use the first available entry
+unless the spawn specifies an override; live server random model/equipment state is not simulated.
+Liquids, client skies, terrain collision, source editing/export and modern split ADT/CASC assets
+are not implemented. Client landmark/heading parity remains unverified for deployment.
 
 ## Verification
 
@@ -52,6 +83,14 @@ Run `./Launch-Viewer.ps1 -CheckAssets` for archive, map, terrain, texture, and a
 The smoke test loads nearby tiles, moves to a different neighborhood, checks unloading, and returns to verify revisiting. Running Godot with `-- --terrain-smoke` in graphical mode also saves `artifacts/terrain-preview.png`.
 
 Run Godot with `-- --creature-smoke` for a live read-only database check of selection and cancellation/map switching. It requires the configured world database and the default Azeroth/Kalimdor terrain. Graphical mode saves `artifacts/creature-preview.png`.
+
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --models`: real M2/WMO/texture corpus,
+  native Stand/Walk/Run clips, all interior-only WDT maps and outdoor WMO placement-bound checks.
+- `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks.
+- Godot `-- --visual-smoke`: native models, animation menu, gizmo drag/reopen/undo/redo, short warm
+  frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
+  under ignored `artifacts/`; uses isolated test drafts and leaves your application draft intact.
+- Godot `-- --gizmo-smoke`: focused headless movement/selection check with an isolated draft.
 
 Format and engine references: [StormLib](https://github.com/ladislav-zezula/StormLib), [Warcraft ADT implementation](https://github.com/wowemulation-dev/warcraft-rs), and [Godot ArrayMesh](https://docs.godotengine.org/en/4.7/classes/class_arraymesh.html).
 

@@ -10,6 +10,7 @@ public partial class TerrainViewer : Node3D
     ModelLibrary models = null!;
     WorldObjectScene objects = null!;
     Camera3D camera = null!;
+    WorldEnvironment environment = null!;
     readonly Dictionary<TileKey, Node3D> loaded = [];
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<TileKey> wanted = [];
@@ -43,6 +44,9 @@ public partial class TerrainViewer : Node3D
     int creatureSmokeStage;
     double creatureSelectedAt;
     double interiorReadyAt;
+    readonly List<double> visualFrameTimes = [];
+    int animationSmokeStage;
+    double animationReadyAt;
     int smokeStage;
     double smokeTime;
     TileKey smokeOriginal;
@@ -62,7 +66,7 @@ public partial class TerrainViewer : Node3D
         models = new ModelLibrary(); objects = new WorldObjectScene(this,models);
         camera = new Camera3D { Name = "Camera", Far = 8000, Near = 0.2f, Fov = 70, Current = true }; AddChild(camera);
         var light = new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), LightEnergy = 1.25f }; AddChild(light);
-        AddChild(new WorldEnvironment
+        environment = new WorldEnvironment
         {
             Environment = new Godot.Environment
             {
@@ -73,7 +77,7 @@ public partial class TerrainViewer : Node3D
                 AmbientLightEnergy = 0.65f,
                 TonemapMode = Godot.Environment.ToneMapper.Filmic
             }
-        });
+        }; AddChild(environment);
         creatures = new CreatureOverlay { Models = models }; AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
         BuildUi(); smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
@@ -106,7 +110,7 @@ public partial class TerrainViewer : Node3D
         var panel = new PanelContainer { Position = new Vector2(20, 20), CustomMinimumSize = new Vector2(330, 0) }; ui.AddChild(panel);
         var box = new VBoxContainer(); box.AddThemeConstantOverride("separation", 10); panel.AddChild(box);
         var title = new Label { Text = "AC WORLD EDIT" }; title.AddThemeFontSizeOverride("font_size", 24); box.AddChild(title);
-        var subtitle = new Label { Text = "TERRAIN EXPLORER  /  WRATH 3.3.5" }; subtitle.AddThemeColorOverride("font_color", new Color("5bd8c2")); subtitle.AddThemeFontSizeOverride("font_size", 12); box.AddChild(subtitle);
+        var subtitle = new Label { Text = "WORLD VIEWER  /  WRATH 3.3.5" }; subtitle.AddThemeColorOverride("font_color", new Color("5bd8c2")); subtitle.AddThemeFontSizeOverride("font_size", 12); box.AddChild(subtitle);
         box.AddChild(new HSeparator());
         box.AddChild(new Label { Text = "MPQ directory" });
         dataPath = new LineEdit { Text = ProjectSettings.GlobalizePath("res://wow-data"), CustomMinimumSize = new Vector2(294, 0) }; box.AddChild(dataPath);
@@ -116,7 +120,7 @@ public partial class TerrainViewer : Node3D
         var row = new HBoxContainer(); box.AddChild(row);
         row.AddChild(new Label { Text = "Tile X" }); tileX = new SpinBox { MinValue = 0, MaxValue = 63, Value = 34 }; row.AddChild(tileX);
         row.AddChild(new Label { Text = "Y" }); tileY = new SpinBox { MinValue = 0, MaxValue = 63, Value = 49 }; row.AddChild(tileY);
-        open = new Button { Text = "Open terrain", Disabled = true }; open.Pressed += async () => await OpenMap(); box.AddChild(open);
+        open = new Button { Text = "Open world", Disabled = true }; open.Pressed += async () => await OpenMap(); box.AddChild(open);
         var radiusRow = new HBoxContainer(); box.AddChild(radiusRow); radiusRow.AddChild(new Label { Text = "Nearby tile radius" });
         distance = new SpinBox { MinValue = 0, MaxValue = 3, Value = 1 }; radiusRow.AddChild(distance); distance.ValueChanged += value => { radius = (int)value; UpdateWanted(); };
         var grid = new CheckButton { Text = "Show terrain cell borders" }; grid.Toggled += value => renderer.SetGrid(value); box.AddChild(grid);
@@ -158,6 +162,8 @@ public partial class TerrainViewer : Node3D
         {
             world = await Task.Run(() => new WorldMap(name, assets.Read($"World/Maps/{name}/{name}.wdt")));
             currentMapId = checked((ushort)mapList[maps.Selected].Id);
+            environment.Environment.BackgroundColor = world.Tiles.Count == 0 ? new Color("080a0d") : new Color("91b5c9");
+            tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
             var requested = new TileKey((int)tileX.Value, (int)tileY.Value);
             if (world.Tiles.Count > 0)
@@ -167,8 +173,8 @@ public partial class TerrainViewer : Node3D
             }
             else
             {
-                var placement = world.GlobalObjects[0]; camera.Position = new(placement.Position.X,placement.Position.Y + 8,placement.Position.Z + 15);
-                camera.Rotation = new(-0.3f,0,0); yaw = 0; pitch = -0.3f; UpdateWanted();
+                var placement = world.GlobalObjects[0]; camera.Position = new(placement.Position.X,placement.Position.Y + 2.5f,placement.Position.Z + 10);
+                camera.Rotation = new(-0.12f,0,0); yaw = 0; pitch = -0.12f; UpdateWanted();
             }
             message = world.Tiles.Count > 0 ? $"{name} · {world.Tiles.Count} terrain tiles" : $"{name} · interior WMO";
             if (smoke) { smokeOriginal = requested; smokeStage = 0; smokeTime = 0; }
@@ -299,7 +305,7 @@ public partial class TerrainViewer : Node3D
         }
         status.Text = message;
         var current = CameraTile(); int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
-        telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {renderer.TextureCount} textures    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
+        telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creature models{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.World = world; minimap.Loaded = loaded.Keys.ToHashSet(); minimap.Current = current; minimap.CameraPosition = camera.Position; minimap.QueueRedraw();
         if (smoke) Smoke(delta);
         creatures.Update(camera);
@@ -398,6 +404,33 @@ public partial class TerrainViewer : Node3D
             {
                 if (!creatures.SmokeGizmo(camera)) { GD.PushError("GIZMO_SMOKE_FAILED"); GetTree().Quit(1); return; }
                 GD.Print("GIZMO_SMOKE_PASSED drag/model-position/reopen/undo/redo"); gizmoVerified = true; creatureSelectedAt = creatureSmokeTime; return;
+            }
+            if (visualSmoke)
+            {
+                if (animationSmokeStage == 0)
+                {
+                    if (!creatures.ChooseAnimationForSmoke(4)) { GD.PushError("ANIMATION_SMOKE_NO_WALK"); GetTree().Quit(1); return; }
+                    animationSmokeStage = 1; return;
+                }
+                if (animationSmokeStage == 1)
+                {
+                    if (!creatures.PreviewAnimationReady) return;
+                    if (animationReadyAt == 0) { animationReadyAt = creatureSmokeTime; return; }
+                    if (creatureSmokeTime-animationReadyAt < 0.5) return;
+                    if (DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/walk-preview.png"));
+                    if (!creatures.ChooseAnimationForSmoke(0)) { GetTree().Quit(1); return; }
+                    animationSmokeStage = 2; return;
+                }
+                if (animationSmokeStage == 2)
+                {
+                    if (!creatures.PreviewAnimationReady) return;
+                    GD.Print("NATIVE_ANIMATION_SMOKE_PASSED selected-model Walk/Stand UI and native clip loading");
+                    animationSmokeStage = 3; creatureSelectedAt = creatureSmokeTime; return;
+                }
+                visualFrameTimes.Add(delta*1000);
+                if (creatureSmokeTime-creatureSelectedAt < 4) return;
+                var samples = visualFrameTimes.Order().ToArray();
+                GD.Print($"VISUAL_FRAME_TIMES frames={samples.Length} p50Ms={samples[samples.Length/2]:F3} p95Ms={samples[(int)(samples.Length*0.95)]:F3}");
             }
             if (DisplayServer.GetName() != "headless")
             {
