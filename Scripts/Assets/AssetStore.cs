@@ -7,26 +7,14 @@ public sealed class AssetStore : IDisposable
     readonly List<MpqArchive> archives = [];
     readonly object gate = new();
     public int ArchiveCount => archives.Count;
-    public AssetStore(string directory)
+    public AssetStore(string directory) : this(directory, ClientMountProfile.StockEnUs) { }
+    public AssetStore(string directory, ClientMountProfile profile)
     {
         if (!System.IO.Directory.Exists(directory)) throw new DirectoryNotFoundException(directory);
-        var paths = System.IO.Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-            .Where(p => p.EndsWith(".mpq", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(p => Rank(System.IO.Path.GetFileNameWithoutExtension(p)))
-            .ThenBy(p => p, StringComparer.OrdinalIgnoreCase).ToArray();
+        var paths = profile.Resolve(directory);
         try { foreach (var path in paths) archives.Add(new MpqArchive(path)); }
         catch { Dispose(); throw; }
         if (archives.Count == 0) throw new FileNotFoundException("No MPQ archives found in " + directory);
-    }
-    static int Rank(string name)
-    {
-        name = name.ToLowerInvariant(); int patch = name.IndexOf("patch", StringComparison.Ordinal);
-        if (patch >= 0)
-        {
-            string suffix = name[(patch + 5)..].TrimStart('-');
-            return 100 + (suffix.Length == 0 ? 0 : int.TryParse(suffix, out int n) ? n : 20 + suffix[0]);
-        }
-        return name.Contains("lichking") ? 30 : name.Contains("expansion") ? 20 : name.Contains("common-2") ? 10 : 0;
     }
     public byte[] Read(string path)
     {
