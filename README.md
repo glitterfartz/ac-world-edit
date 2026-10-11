@@ -25,7 +25,7 @@ Archives remain read-only. The experimental stock 3.3.5.12340/enUS profile names
 
 ADT meshes preserve the staggered 145-vertex chunk grid, four triangles per square, hole masks, MCNR normals, MCCV tint, and MCSH shadows. BLP2 palette, raw BGRA, DXT1, DXT3, and DXT5 textures are decoded. Layers repeat eight times per chunk, with packed/full-byte/RLE alpha maps and legacy sequential or large-alpha weighted blending. Texture patches use the first available mip at or below 512 pixels.
 
-MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds at most eight chunks per frame under a soft 2 ms upload budget; one indivisible upload can exceed it. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
+MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds at most eight chunks per frame under a soft 1.5 ms deadline, leaving headroom for the proposed 2 ms upload target; one indivisible upload can exceed it. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
 
 This first stage renders terrain. M2/WMO objects, liquids, client skies, terrain collision, editing, and modern split ADT/CASC assets are not implemented. WMO-only indoor maps report that they have no terrain.
 
@@ -46,6 +46,8 @@ These proofs do not implement the Phase 1 placement editor.
   durable draft commands/recovery and review-only SQL fixture checks. Outputs stay under `artifacts/`.
 - `./Experiments/Run-ShellChecks.ps1`: matched standalone/EditorPlugin fixture smoke; the plugin
   is enabled only in an isolated project copy for this automated check.
+- `./Experiments/Run-StormLibChecks.ps1`: downloads the pinned official StormLib 9.40 DLL into
+  ignored artifacts, verifies ZIP/DLL checksums and compares selected asset bytes read-only.
 - For manual standalone trials, build and run Godot with `-- --foundation-shell`. For editor trials,
   enable **Phase 0 Foundation Trial** under Project Settings → Plugins. Use the same synthetic
   search/place/move/undo/redo/review/reopen sequence. Disable the plugin after comparison.

@@ -41,6 +41,7 @@ Research relocation: 38 files moved into `research/` with SHA256 equality checke
 Current guidance and trackers use repository paths. Historical research references remain archival.
 Milestone commits: `a27a638` mounts/corpus; `b28cb7d` domain/recovery;
 `0200d66` offline export and research relocation.
+`9259f0f` terrain boundaries, StormLib oracle, matched shells and benchmark baseline.
 
 P0-1 additional evidence: `./Experiments/Run-StormLibChecks.ps1` downloads the official pinned
 StormLib 9.40 DLL into ignored artifacts, verifies release ZIP and x64 DLL SHA256, opens archives
@@ -65,4 +66,20 @@ The initial `before-budget` report used smoothed Godot delta for frames, so its 
 are historical and not authoritative; upload durations were Stopwatch measurements.
 An elapsed-time upload limit improves scheduling but does not pass the 2 ms target yet.
 
-Next: refine measured upload scheduling; save final acceptance report and resource-dependent gates.
+Final scheduler diagnostic: a 1.5 ms soft deadline reserves 0.5 ms for indivisible chunk overhead.
+The next 60-second graphical run (`phase-0-viewport-headroom.json`) reports stationary median
+7.7107 ms (~130 FPS), streaming p95 12.488 ms, upload p95 1.8256 ms, max upload 17.7196 ms,
+process peak ~429 MiB and uncontrolled settle samples 3.81/3.29/2.61 s. P95 improved, but the
+strict per-frame upload target is not passed because individual uploads still exceed 2 ms.
+These are preliminary current-machine measurements, not an agreed hardware/30-minute release gate.
+
+Acceptance report: `research/progress/phase-0-acceptance.md`. Current-source and binary hashes:
+`research/progress/phase-0-provenance.json`. Full Phase 0 remains in progress.
+
+Next steps/resources:
+1. Designate an isolated client/test workspace for 12 visual landmarks/headings and two GO rotations.
+2. Designate a disposable MySQL clone and authorized test-write workflow for actual DML gates.
+3. Agree hardware and conduct matched viewport UX, 30-minute movement, input/VRAM/cold-warm tests.
+4. Investigate indivisible upload hitches, then decide whether narrower profile/batching/cache work is needed.
+5. Resolve numeric ID ownership, consistent snapshot strategy and final export packaging before Phase 1.
+Do not begin Phase 1 until its required gates pass or the user explicitly changes scope.

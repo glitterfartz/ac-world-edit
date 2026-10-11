@@ -51,6 +51,9 @@ Retain the roadmap's proposed 60 FPS median, 33 ms streaming p95, 50 ms input p9
 5/15-second warm/cold teleport, 4 GiB RAM and 2 GiB VRAM targets until measured and agreed.
 The benchmark mode uses radius 1 and 2,000 shared-mesh box nodes, teleports every 20 seconds,
 and records frame-time distributions, upload time, process working set and settle times.
+The scheduler stops starting chunks after 1.5 ms (at most eight), reserving headroom against the
+2 ms target; a single chunk can exceed the deadline. Latest short upload p95 is 1.8256 ms, but
+17.7196 ms maximum means the strict per-frame target remains open.
 Boxes are synthetic and not terrain-grounded. Headless runs do not measure GPU performance.
 Short graphical diagnostics do not replace the 30-minute movement, input/VRAM and controlled
 cold/warm gates. Input/VRAM are explicitly null rather than inferred.

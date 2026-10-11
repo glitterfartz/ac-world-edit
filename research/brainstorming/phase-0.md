@@ -17,3 +17,7 @@ StormLib 9.40 official release verified by published ZIP SHA256; extracted x64 D
 CPU terrain topology now shared by renderer and picker. Source MCNK anchors agree within 0.001303 units; actual client landmarks remain pending. Both shell fixture workflows and ephemeral projection unload pass. Standalone remains provisional; headless trial proves startup/reuse, not usability superiority.
 
 Short GPU trial found upload p95 above 2ms. Replaced count-only scheduling with elapsed 2ms soft budget. Corrected benchmark to Stopwatch callback intervals because Godot delta can be smoothed. Latest measured p95 remains 2.2104ms; investigate headroom for indivisible chunk costs. Do not report the full performance gate passed.
+
+Measured headroom decision: use a 1.5ms soft upload deadline to reserve 0.5ms for the final indivisible chunk. Latest graphical 60-second test gives 1.8256ms upload p95 but 17.7196ms maximum. Keep strict per-frame target open; investigate cold resource/shader/upload spikes on the agreed target. Stationary median ~130FPS and streaming p95 ~12.49ms are promising short diagnostics, not full release proof.
+
+Checkpoint 9259f0f saves shared geometry, corpus differential, matched shells and baseline diagnostics. Next work needs isolated client reference fixtures, disposable DB test target and agreed hardware/UX measurements. Do not proceed to Phase 1 while these gates remain open.

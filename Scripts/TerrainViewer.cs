@@ -226,9 +226,10 @@ public partial class TerrainViewer : Node3D
                 var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                 try
                 {
-                    // Soft time budget: a single indivisible resource upload can still exceed it.
+                    // Leave 0.5 ms headroom within the proposed 2 ms upload target.
+                    // A single indivisible resource upload can still exceed the soft deadline.
                     for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count &&
-                        (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 2); budget++, buildIndex++)
+                        (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
                         renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
                     if (buildIndex == building.Tile.Chunks.Count)
                     {

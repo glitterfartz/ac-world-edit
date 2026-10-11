@@ -1,0 +1,25 @@
+{
+  "scope": "Phase 0 viewport diagnostics; synthetic boxes, not terrain-grounded production spawns",
+  "frameMeasurement": "Stopwatch intervals between process callbacks (not smoothed Godot delta or GPU timer)",
+  "display": "Windows",
+  "godot": "4.7.1-stable (official)",
+  "seconds": 60.0336414,
+  "proxies": 2000,
+  "radius": 1,
+  "wantedTiles": 9,
+  "maximumLoadedTiles": 9,
+  "minimumSettledTiles": 9,
+  "stationaryMedianFrameMs": 7.7107,
+  "streamingP95FrameMs": 12.488,
+  "uploadP95Ms": 1.8256,
+  "maxUploadMs": 17.7196,
+  "usableSceneSeconds": [
+    3.8066122,
+    3.2872407000000017,
+    2.6123771999999974
+  ],
+  "peakProcessWorkingSetBytes": 449556480,
+  "inputP95Ms": null,
+  "peakVramBytes": null,
+  "acceptance": "Pending: agreed hardware, input/VRAM measurements, controlled cold/warm runs, matched plugin viewport and 30-minute movement"
+}
