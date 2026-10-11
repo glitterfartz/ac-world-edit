@@ -54,6 +54,7 @@ public sealed class TerrainChunk
     public sbyte[]? Normals;
     public byte[]? Colors, Shadow;
     public List<TerrainLayer> Layers = [];
+
 }
 public sealed class TerrainTile
 {
@@ -62,6 +63,7 @@ public sealed class TerrainTile
     public TileKey Key { get; }
     public List<TerrainChunk> Chunks { get; } = [];
     public List<WorldObject> Objects { get; }
+    public List<ModelSurface> Liquids { get; }
     public TerrainTile(TileKey key, byte[] b, bool bigAlpha)
     {
         Key = key; Objects = WorldObjects.Read(b); var top = Assets.Chunks.Read(b).ToList();
@@ -109,6 +111,7 @@ public sealed class TerrainTile
             }
             Chunks.Add(chunk);
         }
+        Liquids = LiquidData.Terrain(b).GroupBy(s=>s.LiquidType).Select(LiquidData.Merge).ToList();
         if (Chunks.Count != 256) throw new InvalidDataException($"Expected 256 MCNK chunks, found {Chunks.Count}");
     }
     public static byte[] DecodeAlpha(byte[] data, int offset, uint flags, bool big, bool fixEdges)

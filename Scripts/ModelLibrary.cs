@@ -53,6 +53,7 @@ public sealed class ModelLibrary
     ModelKey? pendingKey, buildingKey;
     Entry? building;
     long tick;
+    public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key,out var e) ? e.Data.Surfaces.Where(s=>s.LiquidType!=null).ToArray() : [];
     public int ReadyModels => cache.Count;
     public int TextureCount => textures.Count;
     public int FailedModels => failed.Count;
@@ -131,7 +132,8 @@ public sealed class ModelLibrary
                         ? WmoModel.Read(source,key.Path,key.DoodadSet,token) : M2Model.Read(source,key.Path,[key.Texture1,key.Texture2,key.Texture3],key.Baked.Length == 0 ? null : key.Baked,token,key.Animation);
                     Dictionary<string,BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
                     foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
-                    { token.ThrowIfCancellationRequested(); try { decoded[path] = BlpTexture.Decode(source.Read(path),0); } catch (Exception e) { GD.PushWarning($"Model texture unavailable: {path}: {e.Message}"); } }
+                    { token.ThrowIfCancellationRequested(); try { decoded[path] = path.StartsWith("@liquid/") ? LiquidTextures.For(source).Decode(uint.Parse(path[8..])) : BlpTexture.Decode(source.Read(path),0); } catch (Exception e) { GD.PushWarning($"Model texture unavailable: {path}: {e.Message}"); } }
+                    data = data with { Surfaces = data.Surfaces.Select(s => s.LiquidType is uint type ? s with { LiquidKind = LiquidTextures.For(source).Kind(type) } : s).ToArray() };
                     return new Entry(data,IdlePalette.Bake(data,token),decoded);
                 },token);
             }
@@ -171,7 +173,7 @@ public sealed class ModelLibrary
     }
     void AddSurface(Entry e, ModelSurface surface)
     {
-        if (surface.Indices.Length == 0) return;
+        if (surface.Indices.Length == 0 || (surface.LiquidType!=null && !e.Decoded.ContainsKey(surface.Texture))) return;
         var arrays = new Godot.Collections.Array(); arrays.Resize((int)Mesh.ArrayType.Max);
         arrays[(int)Mesh.ArrayType.Vertex] = surface.Positions.Select(v => new Vector3(v.X,v.Y,v.Z)).ToArray();
         arrays[(int)Mesh.ArrayType.Normal] = surface.Normals.Select(v => new Vector3(v.X,v.Y,v.Z)).ToArray();
@@ -198,13 +200,15 @@ public sealed class ModelLibrary
             if (surface.Unlit) code = code.Replace("render_mode ","render_mode unshaded, ");
             shader = new Shader { Code = code }; shaders[shaderKey] = shader;
         }
-        var material = new ShaderMaterial { Shader = shader };
+        var material = new ShaderMaterial { Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader };
         ImageTexture texture = fallback;
         if (surface.Texture.Length > 0 && e.Decoded.TryGetValue(surface.Texture,out var blp))
         {
-            if (!textures.TryGetValue(surface.Texture,out var t)) { using var image = Image.CreateFromData(blp.Width,blp.Height,false,Image.Format.Rgba8,blp.Rgba); image.GenerateMipmaps(); t = new(ImageTexture.CreateFromImage(image)); textures[surface.Texture] = t; }
+            if (!textures.TryGetValue(surface.Texture,out var t)) { using var image = Image.CreateFromData(blp.Width,blp.Height,false,Image.Format.Rgba8,blp.Rgba); if(surface.LiquidType==null) image.GenerateMipmaps(); t = new(ImageTexture.CreateFromImage(image)); textures[surface.Texture] = t; }
             if (e.TexturePaths.Add(surface.Texture)) t.References++; texture = t.Texture;
         }
+        if(surface.LiquidType!=null)
+        { LiquidRendering.Configure(material,texture,surface.LiquidKind); mesh.SurfaceSetMaterial(mesh.GetSurfaceCount()-1,material); return; }
         material.SetShaderParameter("albedo_tex",texture); material.SetShaderParameter("idle_palette",e.Idle!);
         material.SetShaderParameter("skinned",surface.Bones != null); material.SetShaderParameter("idle_frames",e.Palette.Height); material.SetShaderParameter("idle_duration",e.Palette.Duration);
         material.SetShaderParameter("blend_mode",surface.Blend); material.SetShaderParameter("vertex_color",surface.Colors != null);

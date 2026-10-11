@@ -55,3 +55,6 @@ read snapshots for current features. Unverified checks remain recorded, not clai
 - Pacing and moving existing GameObjects
 - Support for different phase editing
 - Scripted behavior simulation and editing
+
+Water previews load native outdoor and WMO liquid grids and animated client textures. Full client
+water lighting, reflections/refraction and underwater effects remain future fidelity work.

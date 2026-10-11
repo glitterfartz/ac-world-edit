@@ -4,11 +4,12 @@
 
 The minimap is inside the left panel. Native creatures, terrain doodads/buildings and WMO-only
 interiors now load from the stock client. Selecting a creature exposes its movement gizmo and
-available native animation clips. Stand/idle is the default; other clips preview in place.
+available native animation clips. Native outdoor and WMO liquids now render. Stand/idle is the default; other clips preview in place.
 Database, server configuration and client assets remain read-only. Credentials stay external.
 
 Saved checkpoints: e89db16 simplified roadmap; 30b71de read-only creature selection;
-65bd63a native model/idle/world-object/interior/gizmo implementation.
+65bd63a native model/idle/world-object/interior/gizmo implementation;
+ea45d17 native clip previews and validation.
 
 ## Implemented
 
@@ -50,7 +51,8 @@ Saved checkpoints: e89db16 simplified roadmap; 30b71de read-only creature select
 
 Full client parity remains incomplete: detailed character hair/clothing/equipment composition,
 particles/ribbons, advanced multitexture/environment shaders, material/UV animation, billboard bones,
-portal culling, liquids and client skies. Basic NPC baked textures/geosets are previews. Native spline
+portal culling and client skies. Water lighting/reflections/refraction, underwater fog, WMO flow
+overrides and procedural liquid entry 100 remain incomplete; water tint/opacity are approximations. Basic NPC baked textures/geosets are previews. Native spline
 tracks use linear approximation; long clips cap at 601 samples. Unsupported material cases are
 reported, including a base-texture fallback for the tested weapon rack. Animation variations use
 one deterministic clip rather than live server state. Selection does not test terrain occlusion.
@@ -61,3 +63,35 @@ Prioritize those visual gaps in further work. Local position previews are implem
 client landmark/heading verification and reviewed SQL export remain later work. Deployment/export
 must not be declared ready without those checks and an authorized disposable-database apply/reverse
 proof. Source data and unknown row fields remain untouched.
+
+## Water rendering — 2026-10-11
+
+- Added MH2O layers, visibility bitmaps, per-vertex heights/depth and native height/UV grids;
+  depth-only oceans use their native flat level. Legacy MCLQ and WMO MLIQ grids preserve hidden cells.
+  WMO liquid IDs follow root/group flags and legacy type conversion; lava/slime retain native UVs.
+- LiquidType.dbc selects native BLP frame sequences. Shared per-archive CPU atlases, GPU animation
+  at 30 Hz, static meshes and one outdoor batch per type/tile avoid per-frame geometry work.
+  Outdoor GPU textures/materials release on unload; WMO resources use existing shared cache/batches.
+  Water uses approximate blue tint, depth opacity and view-angle blending; lava/slime use native RGB.
+- Evidence: build passed; liquid checks cover 49 ADTs, 3,564 layers and 216,230 visible cells.
+  Synthetic masks, native heights, depth-only oceans, legacy/mixed MCLQ grids, WMO hidden cells
+  and malformed arrays passed.
+  All 25 classic liquid catalog entries decoded; native water has 30 animation frames with varying pixels,
+  fast-river sequences 16. Identical sequence atlases share CPU storage. Procedural entry 100 has
+  an unavailable source texture and reports unsupported; unsupported liquid surfaces are skipped.
+- Model corpus passed: 116 M2, 52 WMO, 1,988 material/atlas decodes, all 39 interior-only maps;
+  fourteen outdoor placements still meet source MODF bounds. Nineteen tested WMOs contain liquids,
+  including Stormwind, Blackfathom, Coilfang, Blackrock lava and Hellfire slime.
+- Graphical lake (Azeroth tile 32,49) and Blackfathom map 48 inspected: native heights, visible waves,
+  transparent lakebed, shoreline terrain clipping and WMO pool/building occlusion. Nine outdoor
+  liquid batches cover nine loaded tiles; Blackfathom has 17 native liquid surfaces.
+  An isolated four-second RTX 5080 lake sample at 2440x1400 had median 15.38 ms and p95 16.67 ms
+  across 191 frames (8,475 static objects, nine tiles). This is scene-specific, not a baseline
+  comparison or broad performance certification.
+  Paired water-region screenshots show animated pixel changes; native atlas frame checks also pass.
+  Captures/logs are ignored artifacts/water-preview.png, water-animated.png, water-interior.png,
+  water-interior-animated.png, liquid-checks.txt and water-model-checks.txt.
+- Terrain unload/move/revisit smoke passed nine tiles at each step. Client, server and database data
+  remain unchanged. User viewport configuration and unrelated generated UID files remain unstaged.
+- Fidelity follow-ups: client Light.dbc water colors, reflections/refraction, underwater fog,
+  exact client playback/blending and WMO flow overrides. No source water editing or collision added.

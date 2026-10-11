@@ -7,7 +7,7 @@ documents as prerequisites. Current user instructions take precedence.
 ## Scope
 
 Use the existing standalone Godot C# viewer. Current work previews native creatures and animation
-clips, ADT objects/buildings and WMO-only interiors. Selected creatures move in durable local drafts.
+clips, ADT objects/buildings, native liquids and WMO-only interiors. Selected creatures move in durable local drafts.
 Prioritize client visual fidelity and practical rendering performance. Keep unsupported effects
 explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObjects,
 new spawns, script/quest editing and shell comparisons unless the user requests them.

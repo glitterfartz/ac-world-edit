@@ -4,7 +4,7 @@ namespace ACWorldEdit.Assets;
 
 // Parsed data contains no Godot resources; all archive/decode work can run on a worker.
 public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices,
-    string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false);
+    string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0);
 public sealed record ModelDoodad(string Path, Vector3 Position, Quaternion Rotation, float Scale);
 public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null)
 {

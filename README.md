@@ -67,13 +67,22 @@ worker. GPU uploads build one surface per frame, and dormant model resources evi
 source mip resolution. Idle/selected-clip skinning uses a shared GPU palette sampled at up to 30 Hz,
 with interpolated frames; long clips are capped at 601 samples.
 
+Outdoor MH2O layers and legacy MCLQ grids, plus WMO MLIQ interiors, now render native liquid heights
+and visibility masks. LiquidType.dbc selects animated BLP sequences for water/oceans, lava and slime.
+Textures decode on workers into shared CPU atlases (up to 128 pixels per frame); shaders animate
+at 30 Hz without CPU mesh updates. Outdoor grids batch by type per tile, with reference-counted GPU
+textures/materials released on unloading. WMO liquids share existing model resources and placements.
+Water depth controls transparency; preview tint, opacity and view-angle blending are approximations.
+Client water lighting/reflections/refraction, underwater fog and WMO flow overrides remain incomplete.
+The stock procedural liquid entry 100 references an unavailable texture and reports as unsupported.
+
 This is a native asset preview, not complete client rendering parity. Character models use baked
 NPC body textures and a basic geoset selection; equipment, detailed hair/clothing composition,
 particles/ribbons, advanced multitexture/environment shaders, animated material/UV tracks,
 billboard bones and portal culling remain incomplete. Spline bone tracks use linear approximation
 and report that limitation. Templates with multiple model choices use the first available entry
 unless the spawn specifies an override; live server random model/equipment state is not simulated.
-Liquids, client skies, terrain collision, source editing/export and modern split ADT/CASC assets
+Client skies, terrain collision, source editing/export and modern split ADT/CASC assets
 are not implemented. Client landmark/heading parity remains unverified for deployment.
 
 ## Verification
@@ -86,11 +95,17 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
 
 - `dotnet run --project Tests/AssetChecks.csproj -- wow-data --models`: real M2/WMO/texture corpus,
   native Stand/Walk/Run clips, all interior-only WDT maps and outdoor WMO placement-bound checks.
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --liquids`: native liquid textures,
+  masked/height/depth-only grids, malformed arrays and 49 representative ADTs.
+- Godot `-- --water-smoke` and `-- --water-interior-smoke`: outdoor lake and Blackfathom liquid
+  previews, animated screenshots and short warm frame samples in ignored `artifacts/`.
 - `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks.
 - Godot `-- --visual-smoke`: native models, animation menu, gizmo drag/reopen/undo/redo, short warm
   frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
   under ignored `artifacts/`; uses isolated test drafts and leaves your application draft intact.
 - Godot `-- --gizmo-smoke`: focused headless movement/selection check with an isolated draft.
+
+Liquid schema reference: [WoWDBDefs LiquidType](https://github.com/wowdev/WoWDBDefs/blob/master/definitions/LiquidType.dbd).
 
 Format and engine references: [StormLib](https://github.com/ladislav-zezula/StormLib), [Warcraft ADT implementation](https://github.com/wowemulation-dev/warcraft-rs), and [Godot ArrayMesh](https://docs.godotengine.org/en/4.7/classes/class_arraymesh.html).
 

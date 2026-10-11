@@ -16,6 +16,16 @@ public static class WmoModel
             var gb = new BinaryAsset(store.Read(file)); var top = Chunks.Read(gb.Bytes).ToList(); var gp = top.First(c => c.Tag == "MOGP");
             if (gp.Size < 68) throw new InvalidDataException("Short WMO group header.");
             var sub = Chunks.Read(gb.Bytes, gp.Data + 68, gp.Data + gp.Size).GroupBy(c => c.Tag).ToDictionary(g => g.Key, g => g.First());
+            if (sub.TryGetValue("MLIQ",out var lq))
+            {
+                uint type = LiquidData.WmoType(gb.U(gp.Data+52),b.U(header.Data+60),gb.U(gp.Data+8));
+                if(type==0)
+                { int verticesCount=checked(gb.I(lq.Data)*gb.I(lq.Data+4)); gb.Range(lq.Data+30,verticesCount,8); int flags=lq.Data+30+verticesCount*8;
+                  gb.Range(flags,checked(gb.I(lq.Data+8)*gb.I(lq.Data+12)));
+                  byte value=gb.Bytes.Skip(flags).Take(gb.I(lq.Data+8)*gb.I(lq.Data+12)).FirstOrDefault(v=>(v&15)!=15);
+                  type=LiquidData.WmoType((uint)(value&15),0,gb.U(gp.Data+8)); }
+                surfaces.Add(LiquidData.Wmo(gb.Bytes.AsSpan(lq.Data,lq.Size).ToArray(),type,LiquidTextures.For(store).Kind(type)));
+            }
             if (!sub.TryGetValue("MOVT", out var vt) || !sub.TryGetValue("MOVI", out var ix) || !sub.TryGetValue("MOBA", out var ba)) continue;
             int vertices = vt.Size / 12; if (vt.Size % 12 != 0 || ix.Size % 6 != 0 || ba.Size % 24 != 0) throw new InvalidDataException("Invalid WMO geometry arrays.");
             var nr = sub.GetValueOrDefault("MONR"); var uv = sub.GetValueOrDefault("MOTV"); var colors = sub.GetValueOrDefault("MOCV");
@@ -68,7 +78,7 @@ public static class WmoModel
         }
         // Compact render batches and merge by material. Exported group arrays otherwise repeat
         // thousands of unused vertices for every tiny batch (especially Stormwind).
-        var merged = surfaces.GroupBy(s => (s.Texture,s.Blend,s.TwoSided,s.Unlit)).Select(group =>
+        var merged = surfaces.Where(s=>s.LiquidType==null).GroupBy(s => (s.Texture,s.Blend,s.TwoSided,s.Unlit)).Select(group =>
         {
             List<Vector3> positions = [], normals = []; List<Vector2> uv = []; List<Vector4> colors = []; List<int> indices = [];
             var remap = new Dictionary<(Vector3[] Source,int Index),int>();
@@ -82,6 +92,6 @@ public static class WmoModel
                 }
             return new ModelSurface(positions.ToArray(),normals.ToArray(),uv.ToArray(),indices.ToArray(),group.Key.Texture,group.Key.Blend,group.Key.TwoSided,Colors:colors.ToArray(),Unlit:group.Key.Unlit);
         }).ToArray();
-        return new(merged, [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
+        return new(merged.Concat(surfaces.Where(s=>s.LiquidType!=null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
     }
 }

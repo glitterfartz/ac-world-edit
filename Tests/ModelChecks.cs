@@ -40,11 +40,12 @@ public static class ModelChecks
             bool isWmo = item.Path.EndsWith(".wmo",StringComparison.OrdinalIgnoreCase);
             var model = isWmo ? WmoModel.Read(store,item.Path,item.Set) : M2Model.Read(store,item.Path,item.Path == animal.Path ? animal.Textures : null);
             parsed[(item.Path,item.Set)] = model;
+            if(model.Surfaces.Any(s=>s.LiquidType!=null)) Console.WriteLine($"WMO_LIQUID {item.Path}: surfaces={model.Surfaces.Count(s=>s.LiquidType!=null)} types={string.Join(',',model.Surfaces.Where(s=>s.LiquidType!=null).Select(s=>s.LiquidType).Distinct())}");
             Check(model.Surfaces.Length > 0,"Empty geometry: " + item.Path);
             foreach (var surface in model.Surfaces)
             {
                 Check(surface.Indices.Length % 3 == 0 && surface.Indices.All(i => i >= 0 && i < surface.Positions.Length),"Invalid model topology");
-                foreach (string path in new[] { surface.Texture }.Where(p => p.Length > 0).Distinct()) { var texture = BlpTexture.Decode(store.Read(path)); Check(texture.Rgba.Length == texture.Width*texture.Height*4,"Bad model texture"); textureCount++; }
+                foreach (string path in new[] { surface.Texture }.Where(p => p.Length > 0).Distinct()) { var texture = surface.LiquidType is uint liquid ? LiquidTextures.For(store).Decode(liquid) : BlpTexture.Decode(store.Read(path)); Check(texture.Rgba.Length == texture.Width*texture.Height*4,"Bad model texture"); textureCount++; }
             }
             var palette = IdlePalette.Bake(model,default);
             var floats = new float[palette.Pixels.Length/4]; Buffer.BlockCopy(palette.Pixels,0,floats,0,palette.Pixels.Length);

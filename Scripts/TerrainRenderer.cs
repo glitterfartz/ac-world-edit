@@ -10,7 +10,10 @@ public sealed class TerrainRenderer
     readonly ImageTexture fallback;
     readonly HashSet<ShaderMaterial> materials = [];
     bool grid;
+    sealed class LiquidEntry(ImageTexture texture,ShaderMaterial material) { public ImageTexture Texture=texture; public ShaderMaterial Material=material; public int References; }
+    readonly Dictionary<string,LiquidEntry> liquids=new();
     sealed class TextureEntry(ImageTexture texture) { public ImageTexture Texture = texture; public int References; }
+    public int LiquidSurfaceCount => liquids.Values.Sum(e=>e.References);
     public int TextureCount => textures.Count;
     public TerrainRenderer()
     {
@@ -83,6 +86,21 @@ public sealed class TerrainRenderer
         var instance = new MeshInstance3D { Name = $"Chunk_{c.X}_{c.Y}", Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
         instance.SetMeta("textures", c.Layers.Select(l => l.Texture).ToArray()); parent.AddChild(instance);
     }
+    public void AddLiquid(Node3D parent,ModelSurface surface,Dictionary<string,BlpTexture> decoded)
+    {
+
+        if(!decoded.TryGetValue(surface.Texture,out var pixels)) return;
+        if(!liquids.TryGetValue(surface.Texture,out var entry))
+        {
+            using var image=Image.CreateFromData(pixels.Width,pixels.Height,false,Image.Format.Rgba8,pixels.Rgba);
+            var texture=ImageTexture.CreateFromImage(image); var mat=new ShaderMaterial { Shader=LiquidRendering.Shader };
+            LiquidRendering.Configure(mat,texture,surface.LiquidKind); entry=new(texture,mat); liquids.Add(surface.Texture,entry);
+        }
+        entry.References++;
+        var container=parent.GetNodeOrNull<Node3D>("Liquids"); if(container==null) { container=new Node3D { Name="Liquids" }; parent.AddChild(container); }
+        var node=new MeshInstance3D { Mesh=LiquidRendering.Mesh(surface,entry.Material),CastShadow=GeometryInstance3D.ShadowCastingSetting.Off };
+        node.SetMeta("liquid",surface.Texture); container.AddChild(node);
+    }
     public void Release(Node3D tile)
     {
         foreach (var child in tile.GetChildren().OfType<MeshInstance3D>())
@@ -91,6 +109,13 @@ public sealed class TerrainRenderer
             foreach (string name in child.GetMeta("textures").AsStringArray())
                 if (textures.TryGetValue(name, out var e) && --e.References == 0) textures.Remove(name);
         }
+        if(tile.GetNodeOrNull<Node3D>("Liquids") is { } container)
+            foreach(var node in container.GetChildren().OfType<MeshInstance3D>())
+            {
+                string key=node.GetMeta("liquid").AsString();
+                if(liquids.TryGetValue(key,out var entry)&&--entry.References==0) { liquids.Remove(key); entry.Material.Dispose(); entry.Texture.Dispose(); }
+                node.Mesh.Dispose();
+            }
         tile.QueueFree();
     }
     public void SetGrid(bool value) { grid = value; foreach (var material in materials) material.SetShaderParameter("grid", value); }

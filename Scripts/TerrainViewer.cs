@@ -32,6 +32,7 @@ public partial class TerrainViewer : Node3D
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
     bool smoke;
+    bool waterSmoke,waterInterior; int waterStage,waterSurfaceCount; double waterTime,waterReady; readonly List<double> waterFrames=[];
     ACWorldEdit.Experiments.ViewportBenchmark? benchmark;
     Node3D? benchmarkProxies;
     bool foundationShell;
@@ -80,7 +81,7 @@ public partial class TerrainViewer : Node3D
         }; AddChild(environment);
         creatures = new CreatureOverlay { Models = models }; AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
-        BuildUi(); smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
+        BuildUi(); waterInterior=OS.GetCmdlineUserArgs().Contains("--water-interior-smoke"); waterSmoke=OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior; smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
         creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
         visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke"); creatureSmoke |= visualSmoke;
         gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke"); creatureSmoke |= gizmoSmoke;
@@ -146,7 +147,7 @@ public partial class TerrainViewer : Node3D
             var result = await Task.Run(() => { var s = new AssetStore(path); try { return (Store: s, Maps: s.Maps()); } catch { s.Dispose(); throw; } });
             store = result.Store; mapList = result.Maps; maps.Clear(); int selected = 0;
             await models.SetStore(store);
-            for (int i = 0; i < mapList.Count; i++) { maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})"); if (mapList[i].Directory == "Azeroth") selected = i; }
+            for (int i = 0; i < mapList.Count; i++) { maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})"); if (mapList[i].Directory == (waterInterior ? "Blackfathom" : "Azeroth")) selected = i; }
             maps.Select(selected); message = $"{store.ArchiveCount} archives · {mapList.Count} maps"; open.Disabled = mapList.Count == 0;
         }
         catch (Exception e) { message = "Archive error: " + e.Message; GD.PushError(message); }
@@ -165,7 +166,7 @@ public partial class TerrainViewer : Node3D
             environment.Environment.BackgroundColor = world.Tiles.Count == 0 ? new Color("080a0d") : new Color("91b5c9");
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
-            var requested = new TileKey((int)tileX.Value, (int)tileY.Value);
+            var requested = waterSmoke && waterStage == 0 ? new TileKey(32,49) : new TileKey((int)tileX.Value, (int)tileY.Value);
             if (world.Tiles.Count > 0)
             {
                 if (!world.Tiles.Contains(requested)) requested = world.Tiles.OrderBy(k => Math.Abs(k.X - requested.X) + Math.Abs(k.Y - requested.Y)).First();
@@ -234,6 +235,12 @@ public partial class TerrainViewer : Node3D
             try { decoded[path] = BlpTexture.Decode(assets.Read(path)); }
             catch (Exception e) { errors.Add(path + ": " + e.Message); }
         }
+        for(int i=0;i<tile.Liquids.Count;i++)
+        {
+            var surface=tile.Liquids[i]; uint type=surface.LiquidType!.Value; token.ThrowIfCancellationRequested();
+            try { decoded[surface.Texture]=LiquidTextures.For(assets).Decode(type); tile.Liquids[i]=surface with { LiquidKind=LiquidTextures.For(assets).Kind(type) }; }
+            catch(Exception e) { errors.Add(surface.Texture+": "+e.Message); }
+        }
         return new(version, tile, decoded, errors);
     }
     public override void _Process(double delta)
@@ -262,7 +269,7 @@ public partial class TerrainViewer : Node3D
                     if (result.Generation == generation && wanted.Contains(result.Tile.Key))
                     {
                         building = result; buildIndex = 0; buildingNode = renderer.BeginTile(result.Tile.Key); AddChild(buildingNode);
-                        if (result.Errors.Count > 0) { message = $"{result.Errors.Count} missing/unsupported textures (magenta). See log."; foreach (string e in result.Errors) GD.PushWarning(e); }
+                        if (result.Errors.Count > 0) { message = $"{result.Errors.Count} missing/unsupported textures. See log."; foreach (string e in result.Errors) GD.PushWarning(e); }
                     }
                 }
                 catch (OperationCanceledException) { }
@@ -277,10 +284,11 @@ public partial class TerrainViewer : Node3D
                 {
                     // Leave 0.5 ms headroom within the proposed 2 ms upload target.
                     // A single indivisible resource upload can still exceed the soft deadline.
-                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count &&
+                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count &&
                         (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
-                        renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
-                    if (buildIndex == building.Tile.Chunks.Count)
+                        if(buildIndex < building.Tile.Chunks.Count) renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
+                        else renderer.AddLiquid(buildingNode,building.Tile.Liquids[buildIndex-building.Tile.Chunks.Count],building.Textures);
+                    if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
                     {
                         loaded[building.Tile.Key] = buildingNode;
                         objects.SetTile(building.Tile.Key,building.Tile.Objects);
@@ -308,6 +316,7 @@ public partial class TerrainViewer : Node3D
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creature models{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.World = world; minimap.Loaded = loaded.Keys.ToHashSet(); minimap.Current = current; minimap.CameraPosition = camera.Position; minimap.QueueRedraw();
         if (smoke) Smoke(delta);
+        if(waterSmoke) WaterSmoke(delta);
         creatures.Update(camera);
         models.Update(camera);
         if (creatureSmoke) CreatureSmoke(delta);
@@ -373,6 +382,42 @@ public partial class TerrainViewer : Node3D
         {
             GD.Print($"TERRAIN_SMOKE_PASSED returned={CameraTile()} tiles={loaded.Count} textures={renderer.TextureCount}"); GetTree().Quit(); smokeStage = 3;
         }
+    }
+    void WaterSmoke(double delta)
+    {
+        waterTime+=delta;
+        if(waterTime>180) { GD.PushError("WATER_SMOKE_TIMEOUT "+message); GetTree().Quit(1); return; }
+        if(world==null||store==null||busy||pending!=null||building!=null||loaded.Count!=wanted.Count) return;
+        if(waterStage==0)
+        {
+            Vector3 target;
+            if(waterInterior)
+            {
+                var obj=world.GlobalObjects.First(); var surfaces=models.LiquidSurfaces(new ModelKey(obj.Path,DoodadSet:obj.DoodadSet)); if(surfaces.Length==0) return;
+                var native=surfaces.OrderByDescending(s=>s.Indices.Length).First();
+                var center=native.Positions.Aggregate(System.Numerics.Vector3.Zero,(a,b)=>a+b)/native.Positions.Length;
+                waterSurfaceCount=surfaces.Length; target=ModelLibrary.Placement(obj)*new Vector3(center.X,center.Y,center.Z);
+                camera.Position=target+new Vector3(6,3,6); camera.LookAt(target); UpdateWanted(); waterStage=1;
+                GD.Print($"WATER_INTERIOR_NATIVE map={currentMapId} surfaces={surfaces.Length} type={native.LiquidType} center={target}"); return;
+            }
+            var key=CameraTile(); var liquid=LiquidData.Terrain(store.Read(world.TilePath(key))).OrderByDescending(s=>s.Indices.Length*s.Colors!.Max(c=>c.W)).First();
+            var lakeCenter=liquid.Positions.Aggregate(System.Numerics.Vector3.Zero,(a,b)=>a+b)/liquid.Positions.Length;
+            target=new((key.X-32)*TerrainTile.Size+lakeCenter.X,lakeCenter.Y,(key.Y-32)*TerrainTile.Size+lakeCenter.Z);
+            camera.Position=target+new Vector3(0,30,25); camera.LookAt(target); UpdateWanted(); waterStage=1;
+            GD.Print($"WATER_SMOKE_NATIVE tile={key} type={liquid.LiquidType} height={lakeCenter.Y} cells={liquid.Indices.Length/6} alpha={liquid.Colors!.Min(c=>c.W)}/{liquid.Colors!.Average(c=>c.W)}/{liquid.Colors!.Max(c=>c.W)} center={lakeCenter}"); return;
+        }
+        if(models.Busy) return;
+        if(waterReady==0) { waterReady=waterTime; return; }
+        if(waterTime-waterReady<1) return;
+        if(waterStage==1)
+        { if(DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior.png" : "res://artifacts/water-preview.png")); waterStage=2; waterReady=waterTime; return; }
+        if(!waterInterior) waterSurfaceCount=renderer.LiquidSurfaceCount;
+        if(waterSurfaceCount==0) { GD.PushError("WATER_SMOKE_NO_SURFACES"); GetTree().Quit(1); return; }
+        waterFrames.Add(delta*1000);
+        if(waterTime-waterReady<4) return;
+        if(DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior-animated.png" : "res://artifacts/water-animated.png"));
+        var times=waterFrames.Order().ToArray();
+        GD.Print($"WATER_SMOKE_PASSED interior={waterInterior} surfaces={waterSurfaceCount} frames={times.Length} p50={times[times.Length/2]:F2}ms p95={times[(int)(times.Length*.95)]:F2}ms"); GetTree().Quit();
     }
     void CreatureSmoke(double delta)
     {
