@@ -1,0 +1,58 @@
+[
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainMinimap.cs",
+    "Hash": "668AD7142C02B976AF302E2BD8B2BE5D218C20AC9217E8F95CC4607C9A2D4E8D"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainMinimap.cs.uid",
+    "Hash": "07D094AE1AC488A051798486B5B0362AD250253D6B139A45FFFE3F1F4FF4D317"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainRenderer.cs",
+    "Hash": "BD7EE905262442FDEE66D013D9CDE1991E59DECAC70F6683958A56DF0EF747D1"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainRenderer.cs.uid",
+    "Hash": "79C8597913B9C98282B76BB3CB9603707F3B50D2756FEA18E1552CED34586E83"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainViewer.cs",
+    "Hash": "B53419E7E2CEA14167135DFA5CB1E1FB0F74FB13469DCF7D70B5CE19E027EA71"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\TerrainViewer.cs.uid",
+    "Hash": "816C801FC46FEEBCE5EDF4EF5BDEA74FC1436FADECE83B62C2EDCDC94D033EA8"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\AssetStore.cs",
+    "Hash": "0C737635CC42AA10E6E3DFD02CB11C9FFE39F74CBA22098D3EE219E76977F797"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\AssetStore.cs.uid",
+    "Hash": "4897DBAF537B5213F126B17B23482CE6FEF950DDAD23AC970C54638F70C3F205"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\BlpTexture.cs",
+    "Hash": "4E750E50AB2D1D47F62E74195EFBE992C1BD11A00486488034C8E2C1EA874768"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\BlpTexture.cs.uid",
+    "Hash": "3597D588BCCB50487152B8207425BD55A001934A9558FAC0BC44CC43989667F7"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\MpqArchive.cs",
+    "Hash": "763E0EBC0A83E013E7EDA46B163D40B4E97AC5B9B1F7169114E129B922E9BADF"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\MpqArchive.cs.uid",
+    "Hash": "103C4EB5744FDC20A611CA3F6F7FEE4253C675C4C3423B0DDDEFEEE9EF0EAD8C"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\TerrainData.cs",
+    "Hash": "9332E042B54CF2582560CF5C69E233BFA70C0E221CC37332FC17D4CEA69208AB"
+  },
+  {
+    "Path": "X:\\AzerothCore\\ACWorldEdit\\ac-world-edit\\Scripts\\Assets\\TerrainData.cs.uid",
+    "Hash": "41298C557B04F07334BE237CEC9609712A34D826BC450E8E283236C4D6BB5D6D"
+  }
+]

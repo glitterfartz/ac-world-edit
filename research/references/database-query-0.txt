@@ -1,0 +1,83 @@
+[
+  {
+    "TABLE_NAME": "conditions",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 14865
+  },
+  {
+    "TABLE_NAME": "creature",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 148262
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 28701
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 40507
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 95284
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 21402
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 37985
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 8987
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 9600
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 52651
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 126
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 6464
+  },
+  {
+    "TABLE_NAME": "updates",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 3092
+  },
+  {
+    "TABLE_NAME": "updates_include",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 4
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 149870
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "ENGINE": "InnoDB",
+    "TABLE_ROWS": 13826
+  }
+]
+Query execution time: 12.42 ms

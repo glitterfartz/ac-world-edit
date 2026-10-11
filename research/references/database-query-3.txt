@@ -1,0 +1,8 @@
+[
+  {
+    "TABLE_NAME": "creature_sparring",
+    "CONSTRAINT_NAME": "creature_sparring_ibfk_1",
+    "CONSTRAINT_TYPE": "FOREIGN KEY"
+  }
+]
+Query execution time: 10.50 ms

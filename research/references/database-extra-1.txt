@@ -1,0 +1,15 @@
+[
+  {
+    "INDEX_NAME": "idx_id",
+    "columns_used": "id"
+  },
+  {
+    "INDEX_NAME": "idx_map",
+    "columns_used": "map"
+  },
+  {
+    "INDEX_NAME": "PRIMARY",
+    "columns_used": "guid"
+  }
+]
+Query execution time: 6.37 ms

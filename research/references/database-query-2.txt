@@ -1,0 +1,1102 @@
+[
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "Entry",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "Item",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "Reference",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "Chance",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "QuestRequired",
+    "COLUMN_TYPE": "tinyint",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "LootMode",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "GroupId",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "MinCount",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "MaxCount",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "creature_loot_template",
+    "COLUMN_NAME": "Comment",
+    "COLUMN_TYPE": "varchar(255)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "creature_questender",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_questender",
+    "COLUMN_NAME": "quest",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_queststarter",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_queststarter",
+    "COLUMN_NAME": "quest",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "game_event_creature",
+    "COLUMN_NAME": "eventEntry",
+    "COLUMN_TYPE": "smallint",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "game_event_creature",
+    "COLUMN_NAME": "guid",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "gameobject_questender",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "gameobject_questender",
+    "COLUMN_NAME": "quest",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "gameobject_queststarter",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "gameobject_queststarter",
+    "COLUMN_NAME": "quest",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "entry",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "slot",
+    "COLUMN_TYPE": "smallint",
+    "COLUMN_KEY": "MUL",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "item",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "maxcount",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "incrtime",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "ExtendedCost",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "npc_vendor",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "pool_creature",
+    "COLUMN_NAME": "guid",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "pool_creature",
+    "COLUMN_NAME": "pool_entry",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "pool_creature",
+    "COLUMN_NAME": "chance",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "pool_creature",
+    "COLUMN_NAME": "description",
+    "COLUMN_TYPE": "varchar(255)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ID",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestType",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestLevel",
+    "COLUMN_TYPE": "smallint",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "MinLevel",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestSortID",
+    "COLUMN_TYPE": "smallint",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestInfoID",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "SuggestedGroupNum",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredFactionId1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredFactionId2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredFactionValue1",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredFactionValue2",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardNextQuest",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardXPDifficulty",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardMoney",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardMoneyDifficulty",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardDisplaySpell",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardSpell",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardHonor",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardKillHonor",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "StartItem",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "Flags",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredPlayerKills",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 22
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardItem1",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 23
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardAmount1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 24
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardItem2",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 25
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardAmount2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 26
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardItem3",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 27
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardAmount3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 28
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardItem4",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 29
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardAmount4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 30
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDrop1",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 31
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDropQuantity1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 32
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDrop2",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 33
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDropQuantity2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 34
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDrop3",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 35
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDropQuantity3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 36
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDrop4",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 37
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ItemDropQuantity4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 38
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID1",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 39
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 40
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID2",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 41
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 42
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID3",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 43
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 44
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID4",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 45
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 46
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID5",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 47
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity5",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 48
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemID6",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 49
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardChoiceItemQuantity6",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 50
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "POIContinent",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 51
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "POIx",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 52
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "POIy",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 53
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "POIPriority",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 54
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardTitle",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 55
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardTalents",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 56
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardArenaPoints",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 57
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionID1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 58
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionValue1",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 59
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionOverride1",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 60
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionID2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 61
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionValue2",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 62
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionOverride2",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 63
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionID3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 64
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionValue3",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 65
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionOverride3",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 66
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionID4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 67
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionValue4",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 68
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionOverride4",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 69
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionID5",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 70
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionValue5",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 71
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RewardFactionOverride5",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 72
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "TimeAllowed",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 73
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "AllowableRaces",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 74
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "LogTitle",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 75
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "LogDescription",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 76
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestDescription",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 77
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "AreaDescription",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 78
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "QuestCompletionLog",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 79
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGo1",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 80
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGo2",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 81
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGo3",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 82
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGo4",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 83
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGoCount1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 84
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGoCount2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 85
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGoCount3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 86
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredNpcOrGoCount4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 87
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId1",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 88
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId2",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 89
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId3",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 90
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId4",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 91
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId5",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 92
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemId6",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 93
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount1",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 94
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount2",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 95
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount3",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 96
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount4",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 97
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount5",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 98
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "RequiredItemCount6",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 99
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "Unknown0",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 100
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ObjectiveText1",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 101
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ObjectiveText2",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 102
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ObjectiveText3",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 103
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "ObjectiveText4",
+    "COLUMN_TYPE": "text",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 104
+  },
+  {
+    "TABLE_NAME": "quest_template",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 105
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "Entry",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "Item",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "Reference",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "Chance",
+    "COLUMN_TYPE": "float",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "QuestRequired",
+    "COLUMN_TYPE": "tinyint",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "LootMode",
+    "COLUMN_TYPE": "smallint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "GroupId",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "MinCount",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "MaxCount",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "reference_loot_template",
+    "COLUMN_NAME": "Comment",
+    "COLUMN_TYPE": "varchar(255)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "updates",
+    "COLUMN_NAME": "name",
+    "COLUMN_TYPE": "varchar(200)",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "updates",
+    "COLUMN_NAME": "hash",
+    "COLUMN_TYPE": "char(40)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "updates",
+    "COLUMN_NAME": "state",
+    "COLUMN_TYPE": "enum('RELEASED','CUSTOM','MODULE','ARCHIVED','PENDING')",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "updates",
+    "COLUMN_NAME": "timestamp",
+    "COLUMN_TYPE": "timestamp",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "updates",
+    "COLUMN_NAME": "speed",
+    "COLUMN_TYPE": "int unsigned",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "updates_include",
+    "COLUMN_NAME": "path",
+    "COLUMN_TYPE": "varchar(200)",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "updates_include",
+    "COLUMN_NAME": "state",
+    "COLUMN_TYPE": "enum('RELEASED','ARCHIVED','CUSTOM','PENDING')",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "version",
+    "COLUMN_NAME": "core_version",
+    "COLUMN_TYPE": "varchar(255)",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "version",
+    "COLUMN_NAME": "core_revision",
+    "COLUMN_TYPE": "varchar(120)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "version",
+    "COLUMN_NAME": "db_version",
+    "COLUMN_TYPE": "varchar(120)",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "version",
+    "COLUMN_NAME": "cache_id",
+    "COLUMN_TYPE": "int",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  }
+]
+Query execution time: 8.22 ms

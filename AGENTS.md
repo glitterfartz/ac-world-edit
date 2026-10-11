@@ -9,35 +9,35 @@ to implement the entire roadmap. The original research-only scope does not prohi
 
 ## Required research reference
 
-Research lives outside this repository at `X:\AzerothCore\research`.
+Research lives in this repository at `research/` (`X:\AzerothCore\ACWorldEdit\ac-world-edit\research`).
 Before architecture, content editing, database, client-format, scripting, or substantial rendering work:
 
-1. Read [the research index](X:/AzerothCore/research/README.md) and the documents relevant to the task.
+1. Read [the research index](research/README.md) and the documents relevant to the task.
 2. Use that research as the design and evidence reference; inspect current code/schema before relying on its findings.
 3. Distinguish confirmed existing behavior from proposals and unresolved assumptions.
 4. If new evidence changes a recommendation, explain the difference and update the relevant research document when in scope.
 
 Key references:
 
-- [Original research brief](X:/AzerothCore/research/RESEARCH.md).
-- [Existing project assessment](X:/AzerothCore/research/02-existing-project-assessment.md).
-- [AzerothCore architecture](X:/AzerothCore/research/03-azerothcore-architecture.md).
-- [Client formats and assets](X:/AzerothCore/research/04-client-formats-and-assets.md).
-- [Editor architecture](X:/AzerothCore/research/06-editor-architecture.md).
-- [Database abstraction and safe exports](X:/AzerothCore/research/07-database-abstraction.md).
-- [Scripting and IDE integration](X:/AzerothCore/research/08-scripting-and-ide.md).
-- [Roadmap](X:/AzerothCore/research/11-development-roadmap.md),
-  [MVP](X:/AzerothCore/research/12-mvp-specification.md), and
-  [open questions](X:/AzerothCore/research/13-open-questions.md).
-- [Source references](X:/AzerothCore/research/references/source-references.md) and
-  [research notes](X:/AzerothCore/research/references/research-notes.md).
+- [Original research brief](research/RESEARCH.md).
+- [Existing project assessment](research/02-existing-project-assessment.md).
+- [AzerothCore architecture](research/03-azerothcore-architecture.md).
+- [Client formats and assets](research/04-client-formats-and-assets.md).
+- [Editor architecture](research/06-editor-architecture.md).
+- [Database abstraction and safe exports](research/07-database-abstraction.md).
+- [Scripting and IDE integration](research/08-scripting-and-ide.md).
+- [Roadmap](research/11-development-roadmap.md),
+  [MVP](research/12-mvp-specification.md), and
+  [open questions](research/13-open-questions.md).
+- [Source references](research/references/source-references.md) and
+  [research notes](research/references/research-notes.md).
 
-Keep research documents and supporting research artifacts in that external directory. Git commits in this repository do not
-save changes to the external research directory; report external changes explicitly and preserve the files there.
+Keep research documents and supporting evidence in `research/` and commit their relevant updates alongside implementation.
+Historical research logs may mention the former external location; use the current repository directory to resume work.
 
 ## Phase planning, brainstorming and persistent progress
 
-Use `X:\AzerothCore\research` as the project's ongoing research, brainstorming and planning workspace.
+Use `research/` as the project's ongoing research, brainstorming and planning workspace.
 Keep concise findings, alternatives, experiment results and decision summaries there so later sessions can resume reliably.
 Preserve the original proposal as a reference; record implementation status separately rather than rewriting proposed
 acceptance criteria as if they have already passed.
@@ -48,7 +48,7 @@ When implementing a roadmap phase or another substantial task:
    questions. Identify the requested phase's goals, prerequisites, milestones, deliverables, dependencies and acceptance gates.
    Do not advance into another phase or treat an unresolved gate as passed without evidence or an explicit scope change.
 2. Create or resume `research/progress/phase-<N>.md` (for example,
-   `X:\AzerothCore\research\progress\phase-0.md`). For work outside the roadmap, use a descriptive task slug instead.
+   `research/progress/phase-0.md`). For work outside the roadmap, use a descriptive task slug instead.
    Maintain a living checklist tied to the research requirements, not just a chronological activity log.
 3. Record scope and source references; milestone status (`not started`, `in progress`, `blocked`, `complete`); acceptance
    criteria and evidence; completed changes and commit IDs; validation commands/results; decisions and justified deviations;
@@ -64,11 +64,11 @@ When implementing a roadmap phase or another substantial task:
    and reconcile actual implementation with recorded status. Continue outstanding work rather than restarting or relying on
    conversational memory alone. Record any discrepancies before proceeding.
 
-Because the research directory is outside this Git repository, also maintain a concise, tracked milestone summary at
+Also maintain a concise milestone summary at
 `docs/progress/phase-<N>.md` (or the corresponding task slug). Include scope, requirement/checklist status, validation,
-blockers, next steps and paths to the external progress/brainstorming notes. Update that summary with each milestone commit;
-after committing, record the resulting commit ID in the external progress document. The full research and brainstorming
-workspace stays in the research directory; the repository summary preserves implementation status alongside the code.
+blockers, next steps and paths to the research progress/brainstorming notes. Update these documents with each milestone
+commit. Record the resulting commit ID in the progress document in the next checkpoint; do not amend or create a recursive
+commit-only update. The full research and brainstorming workspace stays in `research/`.
 
 Create these tracking files when the corresponding work begins; do not mark an unstarted phase as implemented.
 Do not store secrets, copied client assets or unbounded raw logs in planning notes. Progress documents supplement regular
@@ -151,8 +151,8 @@ Report what passed, what failed, and any checks not run; do not call historical 
 - Use concise commit messages explaining the change. Do not amend, rewrite history or push unless the task authorizes it.
 - If a commit fails because of identity, hooks or repository configuration, report the blocker and preserve the files.
   Do not invent an identity, bypass hooks or silently initialize/change repositories to force a commit.
-- External research files require their own explicit version-control/backup workflow; do not create a research repository or
-  relocate those files into this repository without instruction.
+- Research is tracked in this repository following the user's explicit relocation instruction. Stage relevant research
+  updates with milestone commits; keep bounded evidence, never credentials or copied client assets.
 
 ## Completion reporting
 

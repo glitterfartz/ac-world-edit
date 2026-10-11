@@ -1,0 +1,19 @@
+[
+  {
+    "path": "$/data/sql/archive/db_world",
+    "state": "ARCHIVED"
+  },
+  {
+    "path": "$/data/sql/custom/db_world",
+    "state": "CUSTOM"
+  },
+  {
+    "path": "$/data/sql/updates/db_world",
+    "state": "RELEASED"
+  },
+  {
+    "path": "$/data/sql/updates/pending_db_world",
+    "state": "PENDING"
+  }
+]
+Query execution time: 2.36 ms

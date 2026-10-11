@@ -1,0 +1,2397 @@
+[
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "SourceTypeOrReferenceId",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "SourceGroup",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "SourceEntry",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "SourceId",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ElseGroup",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ConditionTypeOrReference",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ConditionTarget",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ConditionValue1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ConditionValue2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ConditionValue3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "NegativeCondition",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ErrorType",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ErrorTextId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "ScriptName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "conditions",
+    "COLUMN_NAME": "Comment",
+    "COLUMN_TYPE": "varchar(255)",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "guid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "MUL",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "map",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "MUL",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "zoneId",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "areaId",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "spawnMask",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "phaseMask",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "equipment_id",
+    "COLUMN_TYPE": "tinyint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "position_x",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "position_y",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "position_z",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "orientation",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "spawntimesecs",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "120",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "wander_distance",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "currentwaypoint",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "curhealth",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "curmana",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "MovementType",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "npcflag",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "unit_flags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "dynamicflags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "ScriptName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 22
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 23
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "CreateObject",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 24
+  },
+  {
+    "TABLE_NAME": "creature",
+    "COLUMN_NAME": "Comment",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 25
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "guid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "path_id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "mount",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "bytes1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "bytes2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "emote",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "visibilityDistanceType",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "creature_addon",
+    "COLUMN_NAME": "auras",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "creature_default_trainer",
+    "COLUMN_NAME": "CreatureId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_default_trainer",
+    "COLUMN_NAME": "TrainerId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "entry",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "difficulty_entry_1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "difficulty_entry_2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "difficulty_entry_3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "KillCredit1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "KillCredit2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "name",
+    "COLUMN_TYPE": "char(100)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "MUL",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "subname",
+    "COLUMN_TYPE": "char(100)",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "IconName",
+    "COLUMN_TYPE": "char(100)",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "gossip_menu_id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "minlevel",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "maxlevel",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "exp",
+    "COLUMN_TYPE": "smallint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "faction",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "npcflag",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "speed_walk",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "speed_run",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1.14286",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "speed_swim",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "speed_flight",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "detection_range",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "20",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "rank",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "dmgschool",
+    "COLUMN_TYPE": "tinyint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 22
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "DamageModifier",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 23
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "BaseAttackTime",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 24
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "RangeAttackTime",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 25
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "BaseVariance",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 26
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "RangeVariance",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 27
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "unit_class",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 28
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "unit_flags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 29
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "unit_flags2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 30
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "dynamicflags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 31
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "family",
+    "COLUMN_TYPE": "tinyint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 32
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 33
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "type_flags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 34
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "lootid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 35
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "pickpocketloot",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 36
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "skinloot",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 37
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "PetSpellDataId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 38
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "VehicleId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 39
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "mingold",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 40
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "maxgold",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 41
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "AIName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 42
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "MovementType",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 43
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "HoverHeight",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 44
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "HealthModifier",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 45
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "ManaModifier",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 46
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "ArmorModifier",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 47
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "ExperienceModifier",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 48
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "RacialLeader",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 49
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "movementId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 50
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "RegenHealth",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 51
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "CreatureImmunitiesId",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 52
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "flags_extra",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 53
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "ScriptName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 54
+  },
+  {
+    "TABLE_NAME": "creature_template",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 55
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "CreatureID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "Idx",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "CreatureDisplayID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "DisplayScale",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "Probability",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "creature_template_model",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "guid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "map",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "zoneId",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "areaId",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "spawnMask",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "phaseMask",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "position_x",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "position_y",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "position_z",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "orientation",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "rotation0",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "rotation1",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "rotation2",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "rotation3",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "spawntimesecs",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "animprogress",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "state",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "ScriptName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "gameobject",
+    "COLUMN_NAME": "Comment",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "entry",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "displayId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "name",
+    "COLUMN_TYPE": "varchar(100)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "MUL",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "IconName",
+    "COLUMN_TYPE": "varchar(100)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "castBarCaption",
+    "COLUMN_TYPE": "varchar(100)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "unk1",
+    "COLUMN_TYPE": "varchar(100)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "size",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "1",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data0",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data1",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data4",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data5",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data6",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data7",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data8",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data9",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data10",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data11",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data12",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data13",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 22
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data14",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 23
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data15",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 24
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data16",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 25
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data17",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 26
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data18",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 27
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data19",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 28
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data20",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 29
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data21",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 30
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data22",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 31
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "Data23",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 32
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "AIName",
+    "COLUMN_TYPE": "char(64)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 33
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "ScriptName",
+    "COLUMN_TYPE": "varchar(64)",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 34
+  },
+  {
+    "TABLE_NAME": "gameobject_template",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 35
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "MenuID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionID",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionIcon",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionText",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionBroadcastTextID",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionType",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "OptionNpcFlag",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "ActionMenuID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "ActionPoiID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "BoxCoded",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "BoxMoney",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "BoxText",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "BoxBroadcastTextID",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "gossip_menu_option",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "ID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "MaxLevel",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "AllowableClasses",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "SourceSpellID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "PrevQuestID",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "NextQuestID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "ExclusiveGroup",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "BreadcrumbForQuestId",
+    "COLUMN_TYPE": "mediumint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RewardMailTemplateID",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RewardMailDelay",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredSkillID",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredSkillPoints",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredMinRepFaction",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredMaxRepFaction",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredMinRepValue",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "RequiredMaxRepValue",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "ProvidedItemCount",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "quest_template_addon",
+    "COLUMN_NAME": "SpecialFlags",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "entryorguid",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "source_type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "link",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_phase_mask",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_chance",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "100",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_flags",
+    "COLUMN_TYPE": "smallint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param4",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param5",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "event_param6",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 14
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 15
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 16
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 17
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 18
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param4",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 19
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param5",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 20
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "action_param6",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 21
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 22
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_param1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 23
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_param2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 24
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_param3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 25
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_param4",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 26
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_x",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 27
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_y",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 28
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_z",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 29
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "target_o",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 30
+  },
+  {
+    "TABLE_NAME": "smart_scripts",
+    "COLUMN_NAME": "comment",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 31
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "COLUMN_NAME": "Id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "COLUMN_NAME": "Type",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "2",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "COLUMN_NAME": "Requirement",
+    "COLUMN_TYPE": "mediumint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "COLUMN_NAME": "Greeting",
+    "COLUMN_TYPE": "mediumtext",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "trainer",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "TrainerId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "SpellId",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "MoneyCost",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqSkillLine",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqSkillRank",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqAbility1",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqAbility2",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqAbility3",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "ReqLevel",
+    "COLUMN_TYPE": "tinyint unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "trainer_spell",
+    "COLUMN_NAME": "VerifiedBuild",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "id",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "point",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "position_x",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "position_y",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "position_z",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "orientation",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "velocity",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "delay",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "smoothTransition",
+    "COLUMN_TYPE": "tinyint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 9
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "move_type",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 10
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "action",
+    "COLUMN_TYPE": "int",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 11
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "action_chance",
+    "COLUMN_TYPE": "smallint",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "100",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 12
+  },
+  {
+    "TABLE_NAME": "waypoint_data",
+    "COLUMN_NAME": "wpguid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 13
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "entry",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 1
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "pointid",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "PRI",
+    "ORDINAL_POSITION": 2
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "position_x",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 3
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "position_y",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 4
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "position_z",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 5
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "orientation",
+    "COLUMN_TYPE": "float",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 6
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "delay",
+    "COLUMN_TYPE": "int unsigned",
+    "IS_NULLABLE": "NO",
+    "COLUMN_DEFAULT": "0",
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 7
+  },
+  {
+    "TABLE_NAME": "waypoints",
+    "COLUMN_NAME": "point_comment",
+    "COLUMN_TYPE": "text",
+    "IS_NULLABLE": "YES",
+    "COLUMN_DEFAULT": null,
+    "COLUMN_KEY": "",
+    "ORDINAL_POSITION": 8
+  }
+]
+Query execution time: 9.92 ms

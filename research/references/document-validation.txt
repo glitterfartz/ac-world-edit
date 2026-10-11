@@ -1,0 +1,4 @@
+Markdown files: 16
+Local links checked: 84
+Inspected source/config/binary hashes checked: 14
+Issues: 0

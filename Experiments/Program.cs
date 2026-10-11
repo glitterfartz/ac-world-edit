@@ -1,4 +1,6 @@
 using ACWorldEdit.Foundation;
+using System.Globalization;
+using System.Text.Json;
 
 static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
 static void Reject(Action action, string message)
@@ -62,3 +64,43 @@ File.WriteAllText(Path.Combine(corrupt, "journal.jsonl"), File.ReadAllText(journ
 Reject(() => { using var workspace = new DraftWorkspace(corrupt); }, "Checksum corruption accepted");
 Console.WriteLine("PASS commands/recovery: place, move, duplicate, delete, undo/redo, restart, map switch, branching, torn tail, checkpoint interruption, corruption rejection, writer lock.");
 Console.WriteLine("Workspace fixture artifacts: " + root);
+
+var schema = JsonSerializer.Deserialize<SchemaColumn[]>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "spawn-schema.json")))!;
+var identity = new SchemaIdentity("5ddc706b7fdc", "ACDB 335.17-dev", "9.7.2",
+    "IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION");
+var cells = new Dictionary<string, RawCell>
+{
+    ["guid"] = new("number", "42"), ["id"] = new("number", "2843"), ["map"] = new("number", "0"),
+    ["position_x"] = new("number", "-14467.8"), ["position_y"] = new("number", "468.374"),
+    ["position_z"] = new("number", "15.1064"), ["orientation"] = new("number", "0.139626"),
+    ["future_column"] = new("text", "quotes '\\ unicode Ω retained"), ["VerifiedBuild"] = new("null", null),
+    ["equipment_id"] = new("number", "-1")
+};
+var before = new SpawnRow(cells); cells["guid"] = new("number", "666");
+Check(before.Guid == 42, "Row snapshot mutated through input");
+var moved = before.WithPose(before.Pose with { X = -14466.8, Heading = Math.PI / 2 });
+Check(moved.Cells["future_column"] == before.Cells["future_column"] && moved.Cells["VerifiedBuild"] == before.Cells["VerifiedBuild"] &&
+    moved.Cells["equipment_id"] == before.Cells["equipment_id"], "Unknown/signed/null fields lost");
+var bundle = SpawnMoveExport.Compile(before, moved.Pose, schema, identity, "stock-12340-enUS-provisional");
+var originalCulture = CultureInfo.CurrentCulture;
+try
+{
+    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+    Check(SpawnMoveExport.Compile(before, moved.Pose, schema.Reverse().ToArray(), identity, "stock-12340-enUS-provisional") == bundle,
+        "Bundle ordering/culture nondeterministic");
+}
+finally { CultureInfo.CurrentCulture = originalCulture; }
+Check(bundle.ForwardSql.Contains("WHERE `id` = 2843 AND `guid` = 42") && !bundle.ForwardSql.Contains("future_column"), "Unbounded or lossy SQL");
+Reject(() => SpawnMoveExport.CheckBaseline(before, moved), "Stale row accepted");
+Reject(() => SpawnMoveExport.CheckBaseline(before, null), "Missing row accepted");
+SpawnMoveExport.CheckBaseline(before, before);
+Reject(() => SpawnMoveExport.CheckAbsent(42, new uint[] { 42 }), "GUID collision accepted");
+SpawnMoveExport.CheckAbsent(43, new uint[] { 42 });
+Reject(() => SpawnMoveExport.Compile(before, before.Pose with { Map = 1 }, schema, identity, "test"), "Cross-map export accepted");
+Reject(() => SpawnMoveExport.Compile(before, before.Pose, schema.Where(c => c.COLUMN_NAME != "orientation").ToArray(), identity, "test"), "Missing required schema accepted");
+Reject(() => SpawnMoveExport.Compile(before, before.Pose, schema.Select(c => c.COLUMN_NAME == "position_x" ? c with { COLUMN_TYPE = "double" } : c).ToArray(), identity, "test"), "Schema type drift accepted");
+File.WriteAllText(Path.Combine(root, "forward.sql"), bundle.ForwardSql);
+File.WriteAllText(Path.Combine(root, "reverse.sql"), bundle.ReverseSql);
+File.WriteAllText(Path.Combine(root, "manifest.json"), bundle.ManifestJson);
+Console.WriteLine("PASS schema/export: fingerprint=" + SpawnSchema.Fingerprint(schema, identity));
+Console.WriteLine("PASS unknown/signed/null retention, immutable rows, deterministic SQL/manifest, bounded predicates, stale/missing row and ID rejection, schema drift rejection. Real DB DML/reverse/transaction gates pending.");
