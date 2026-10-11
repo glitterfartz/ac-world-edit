@@ -8,7 +8,9 @@ static void Reject(Action action, string message)
     throw new Exception(message);
 }
 string path = args.Length > 0 ? args[0] : "wow-data";
+if (args.Contains("--draft")) { CreatureDraftChecks.Run(); return; }
 using var store = new AssetStore(path);
+if (args.Contains("--models")) { ModelChecks.Run(store); return; }
 using var oracle = args.Length > 1 ? new StormLibOracle(args[1], path) : null;
 int differentialCount = 0;
 void Compare(string asset, byte[] bytes)

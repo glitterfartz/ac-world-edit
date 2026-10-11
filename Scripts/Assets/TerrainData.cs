@@ -24,6 +24,7 @@ public sealed class WorldMap
     public string Name { get; }
     public bool BigAlpha { get; }
     public HashSet<TileKey> Tiles { get; } = [];
+    public List<WorldObject> GlobalObjects { get; }
     public WorldMap(string name, byte[] data)
     {
         Name = name;
@@ -37,7 +38,8 @@ public sealed class WorldMap
                     if ((MpqArchive.U(data, c.Data + (y * 64 + x) * 8) & 1) != 0) Tiles.Add(new(x, y));
             }
         }
-        if (Tiles.Count == 0) throw new NotSupportedException("This map has no ADT terrain (it may be an indoor WMO map).");
+        GlobalObjects = WorldObjects.Read(data, true);
+        if (Tiles.Count == 0 && GlobalObjects.Count == 0) throw new NotSupportedException("This map contains neither terrain nor a global WMO.");
     }
     public string TilePath(TileKey key) => $"World/Maps/{Name}/{Name}_{key.X}_{key.Y}.adt";
 }
@@ -59,9 +61,10 @@ public sealed class TerrainTile
     public const float ChunkSize = Size / 16;
     public TileKey Key { get; }
     public List<TerrainChunk> Chunks { get; } = [];
+    public List<WorldObject> Objects { get; }
     public TerrainTile(TileKey key, byte[] b, bool bigAlpha)
     {
-        Key = key; var top = Assets.Chunks.Read(b).ToList();
+        Key = key; Objects = WorldObjects.Read(b); var top = Assets.Chunks.Read(b).ToList();
         var version = top.FirstOrDefault(c => c.Tag == "MVER");
         if (version.Size != 4 || MpqArchive.U(b, version.Data) != 18) throw new NotSupportedException("Expected ADT version 18");
         var mtex = top.FirstOrDefault(c => c.Tag == "MTEX");

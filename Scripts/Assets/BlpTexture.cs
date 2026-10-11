@@ -2,14 +2,14 @@ namespace ACWorldEdit.Assets;
 
 public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
 {
-    public static BlpTexture Decode(byte[] b)
+    public static BlpTexture Decode(byte[] b, int maximumDimension = 512)
     {
         if (b.Length < 148 || System.Text.Encoding.ASCII.GetString(b, 0, 4) != "BLP2") throw new NotSupportedException("Expected BLP2 texture");
         int encoding = b[8], depth = b[9], alphaEncoding = b[10];
         int w = checked((int)MpqArchive.U(b, 12)), h = checked((int)MpqArchive.U(b, 16));
         if (w is < 1 or > 8192 || h is < 1 or > 8192) throw new InvalidDataException("Invalid BLP dimensions");
         // Use the first mip at or below 512px: terrain patches contain very large images.
-        int mip = 0; while (Math.Max(w, h) > 512 && mip < 15 && MpqArchive.U(b, 20 + (mip + 1) * 4) != 0) { mip++; w = Math.Max(1, w / 2); h = Math.Max(1, h / 2); }
+        int mip = 0; while (maximumDimension > 0 && Math.Max(w, h) > maximumDimension && mip < 15 && MpqArchive.U(b, 20 + (mip + 1) * 4) != 0) { mip++; w = Math.Max(1, w / 2); h = Math.Max(1, h / 2); }
         int offset = checked((int)MpqArchive.U(b, 20 + mip * 4)), length = checked((int)MpqArchive.U(b, 84 + mip * 4));
         byte[] input = b.AsSpan(offset, length).ToArray(); byte[] pixels = new byte[checked(w * h * 4)];
         if (encoding == 1)

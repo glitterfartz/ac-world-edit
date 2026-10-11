@@ -38,3 +38,25 @@ coordinate/heading parity and comprehensive failure/limit stress testing are not
 Next requested implementation milestone: move existing creatures in saved drafts with undo/redo.
 Verify positions/headings against actual client landmarks before enabling editing. SQL export
 follows later and requires application/reversal proof in an authorized disposable database.
+
+## Native visual milestone — implementation checkpoint
+
+User expanded scope to native creature models/materials/idle animation, outdoor objects/buildings,
+interior WMO maps and a local movement gizmo, with client visual fidelity taking priority.
+
+Implemented native MD20/SKIN and WMO group readers, CreatureDisplayInfo/model/extra DBC resolution,
+ADT/WDT placements, WMO doodad sets, batched shared models/materials, GPU idle palettes and incremental
+background loading. Minimap is now inside the left panel. A selected creature has world-axis handles;
+moves are durable local drafts with undo/redo, isolated source keys and baseline conflict detection.
+
+Checkpoint evidence: build passes; corpus parsed 116 M2 assets and 52 WMO assets covering all 39
+WMO-only maps in this client; native model textures decoded. Graphical Elwynn preview showed textured
+wolves/trees with 5,845 unique static placements and 254 nearby creature models. Interior rendering
+of map 35 was visually inspected, including textured walls, lamps and placed doodads. Headless gizmo
+check passed drag, model transform, draft reopen and undo/redo; standalone draft checks also passed
+source isolation/conflict, history branching, checksum rejection and single-writer locking.
+
+Continuing visual/performance validation before final handoff. Native idle data is used; full client
+render parity is not claimed. Character equipment/appearance composition, particles/ribbons, advanced
+multitexture/environment shaders, portal culling and non-idle playback are still unsupported. Such
+material limitations are reported. Source assets, configuration and database remain read-only.
