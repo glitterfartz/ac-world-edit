@@ -172,5 +172,3 @@ public partial class CreatureOverlay : Node3D
     public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
     public override void _ExitTree() { cancellation.Cancel(); cancellation.Dispose(); }
 }
-
-

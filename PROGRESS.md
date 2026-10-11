@@ -3,7 +3,7 @@
 ## Milestone 1: display and select existing creatures — complete
 
 The active plan is PLAN.md. The user's future-workflow additions remain intact; research was
-deliberately removed. Roadmap simplification was saved in commit e89db16.
+deliberately removed. Roadmap simplification was saved in commit e89db16; implementation was saved in 30b71de.
 
 - External worldserver configuration supplies credentials in memory. Fixed, parameterized SELECT
   queries run asynchronously in read-only transactions, bounded to 2,000 spawns plus a limit check.
