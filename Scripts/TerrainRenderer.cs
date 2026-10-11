@@ -25,7 +25,9 @@ public sealed class TerrainRenderer
     public Node3D BeginTile(TileKey key) => new() { Name = $"Tile_{key.X}_{key.Y}", Position = new Vector3((key.X - 32) * TerrainTile.Size, 0, (key.Y - 32) * TerrainTile.Size) };
     public void AddChunk(Node3D parent, TerrainChunk c, Dictionary<string, BlpTexture> decoded, bool bigAlpha)
     {
-        var vertices = new Vector3[145]; var uv = new Vector2[145]; var colors = new Color[145];
+        var geometry = TerrainGeometry.Build(c);
+        var vertices = geometry.Vertices.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
+        var uv = new Vector2[145]; var colors = new Color[145];
         int p = 0;
         // The file interleaves 9 outer and 8 inner vertices per row (17 rows).
         for (int row = 0; row < 17; row++)
@@ -34,21 +36,14 @@ public sealed class TerrainRenderer
             for (int col = 0; col < width; col++, p++)
             {
                 float x = col + ((row & 1) == 1 ? 0.5f : 0), y = row * 0.5f;
-                vertices[p] = new Vector3((c.X + x / 8) * TerrainTile.ChunkSize, c.Height + c.Heights[p], (c.Y + y / 8) * TerrainTile.ChunkSize);
                 uv[p] = new Vector2(x / 8, y / 8);
                 colors[p] = c.Colors == null ? Colors.White : new Color(c.Colors[p * 4 + 2] / 127f, c.Colors[p * 4 + 1] / 127f, c.Colors[p * 4] / 127f);
             }
         }
-        List<int> indices = [];
-        for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++)
-        {
-            if ((c.Holes & (1u << (y / 2 * 4 + x / 2))) != 0) continue;
-            int tl = y * 17 + x, tr = tl + 1, bl = tl + 17, br = bl + 1, center = tl + 9;
-            indices.AddRange([tl, tr, center, tr, br, center, br, bl, center, bl, tl, center]);
-        }
-        if (indices.Count == 0) return;
+        var indices = geometry.Indices;
+        if (indices.Length == 0) return;
         var normals = new Vector3[145];
-        for (int i = 0; i < indices.Count; i += 3)
+        for (int i = 0; i < indices.Length; i += 3)
         {
             int a = indices[i], b = indices[i + 1], d = indices[i + 2];
             var n = (vertices[d] - vertices[a]).Cross(vertices[b] - vertices[a]); normals[a] += n; normals[b] += n; normals[d] += n;

@@ -157,3 +157,4 @@ Corpus World/Maps/Northrend/Northrend_32_32.adt SHA256=A04963947DE4BE13696BF1F4B
 Northrend: 1131 tiles; TileKey { X = 32, Y = 32 }; 256 chunks; 2 decoded textures; big alpha=True
 All asset checks passed.
 Malformed-input and explicit-mount checks passed.
+Shared renderer/picker geometry: hole interior, both boundary sides and fully holed chunk pass.

@@ -47,6 +47,7 @@ public sealed class TerrainChunk
     public int X, Y;
     public uint Flags, Holes;
     public float Height;
+    public float ServerX, ServerY;
     public float[] Heights = new float[145];
     public sbyte[]? Normals;
     public byte[]? Colors, Shadow;
@@ -65,12 +66,15 @@ public sealed class TerrainTile
         if (version.Size != 4 || MpqArchive.U(b, version.Data) != 18) throw new NotSupportedException("Expected ADT version 18");
         var mtex = top.FirstOrDefault(c => c.Tag == "MTEX");
         string[] textures = Encoding.UTF8.GetString(b, mtex.Data, mtex.Size).Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        var chunkKeys = new HashSet<(int X, int Y)>();
         foreach (var c in top.Where(c => c.Tag == "MCNK"))
         {
             if (c.Size < 128) throw new InvalidDataException("Short MCNK header");
             int h = c.Data;
             var chunk = new TerrainChunk { Flags = MpqArchive.U(b, h), X = (int)MpqArchive.U(b, h + 4), Y = (int)MpqArchive.U(b, h + 8), Holes = MpqArchive.U(b, h + 60) & 0xFFFF, Height = Assets.Chunks.F(b, h + 112) };
+            chunk.ServerX = Assets.Chunks.F(b, h + 104); chunk.ServerY = Assets.Chunks.F(b, h + 108);
             if (chunk.X is < 0 or > 15 || chunk.Y is < 0 or > 15) throw new InvalidDataException("MCNK index out of range");
+            if (!chunkKeys.Add((chunk.X, chunk.Y))) throw new InvalidDataException("Duplicate MCNK index");
             byte[] Sub(int field, string tag, bool optional = false)
             {
                 int offset = checked((int)MpqArchive.U(b, h + field)); if (offset == 0 && optional) return [];

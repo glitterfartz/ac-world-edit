@@ -1,3 +1,10 @@
+# Historical research brief
+
+This brief is retained as the original proposal request. Its external output directory and
+research-only scope describe that completed task. The user subsequently authorized Phase 0
+implementation and relocation of research into this repository. Follow `../AGENTS.md`,
+`11-development-roadmap.md` and `progress/phase-0.md` for current work.
+
 # Project: AzerothCore Visual World Editor & Integrated Development Environment
 
 ## 1. Objective
@@ -376,10 +383,3 @@ The final product of this task is **a complete technical research and implementa
 Ensure every deliverable is saved in `X:\AzerothCore\research`.
 
 When finished, provide a concise summary of the strongest architectural recommendation, the proposed MVP, the largest technical risks, and an index of all documents created.
-# Historical research brief
-
-This brief is retained as the original proposal request. Its external output directory and
-research-only scope describe that completed task. The user subsequently authorized Phase 0
-implementation and relocation of research into this repository. Follow `../AGENTS.md`,
-`11-development-roadmap.md` and `progress/phase-0.md` for current work.
-

@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+TERRAIN_SMOKE_INITIAL tiles=9 textures=27
+TERRAIN_SMOKE_MOVED position=TileKey { X = 30, Y = 49 } tiles=9 textures=27
+TERRAIN_SMOKE_PASSED returned=TileKey { X = 34, Y = 49 } tiles=9 textures=27

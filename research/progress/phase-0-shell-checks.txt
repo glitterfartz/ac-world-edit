@@ -1,0 +1,54 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ACWorldEdit.Foundation -> X:\AzerothCore\ACWorldEdit\ac-world-edit\Foundation\bin\Debug\net8.0\ACWorldEdit.Foundation.dll
+  ACWorldEdit -> X:\AzerothCore\ACWorldEdit\ac-world-edit\.godot\mono\temp\bin\Debug\ACWorldEdit.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.94
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+Foundation standalone shell instantiated and fixture workflow passed.
+  Determining projects to restore...
+  Restored X:\AzerothCore\ACWorldEdit\ac-world-edit\artifacts\shell-host\e52741dd4cb147b8857e0ab1cd900486\Foundation\ACWorldEdit.Foundation.csproj (in 75 ms).
+  Restored X:\AzerothCore\ACWorldEdit\ac-world-edit\artifacts\shell-host\e52741dd4cb147b8857e0ab1cd900486\ACWorldEdit.csproj (in 108 ms).
+  ACWorldEdit.Foundation -> X:\AzerothCore\ACWorldEdit\ac-world-edit\artifacts\shell-host\e52741dd4cb147b8857e0ab1cd900486\Foundation\bin\Debug\net8.0\ACWorldEdit.Foundation.dll
+  ACWorldEdit -> X:\AzerothCore\ACWorldEdit\ac-world-edit\artifacts\shell-host\e52741dd4cb147b8857e0ab1cd900486\.godot\mono\temp\bin\Debug\ACWorldEdit.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.20
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+Foundation EditorPlugin shell instantiated and fixture workflow passed.
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (9 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  10% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  20% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  30% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  40% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  60% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  70% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  80% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+PASS matched standalone/EditorPlugin fixture smoke (headless; not usability or GPU evidence).

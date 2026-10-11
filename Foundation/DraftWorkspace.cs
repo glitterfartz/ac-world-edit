@@ -50,17 +50,18 @@ public sealed class DraftWorkspace : IDisposable
             var envelope = JsonSerializer.Deserialize<DurableEnvelope>(line) ?? throw new InvalidDataException("Missing envelope.");
             if (Hash(envelope.Payload) != envelope.Sha256) throw new InvalidDataException("Workspace checksum mismatch.");
             var snapshot = JsonSerializer.Deserialize<WorkspaceSnapshot>(envelope.Payload) ?? throw new InvalidDataException("Missing snapshot.");
-            if (snapshot.Version != 1 || snapshot.Sequence < 1 || snapshot.Cursor < 0 || snapshot.Cursor > snapshot.History.Length)
+            if (snapshot.Version != 1 || snapshot.Sequence < 1 || snapshot.History == null || snapshot.Cursor < 0 || snapshot.Cursor > snapshot.History.Length)
                 throw new InvalidDataException("Unsupported or invalid workspace snapshot.");
             var state = new Dictionary<Guid, Placement>();
             foreach (var change in snapshot.History)
             {
-                if (change.Before == null && change.After == null) throw new InvalidDataException("Empty command.");
+                if (change == null || (change.Before == null && change.After == null)) throw new InvalidDataException("Empty command.");
                 if (change.Before != null && (!state.TryGetValue(change.Before.StableId, out var previous) || previous != change.Before))
                     throw new InvalidDataException("Command baseline mismatch.");
                 if (change.Before != null) state.Remove(change.Before.StableId);
                 if (change.After != null)
                 {
+                    if (change.After.StableId == Guid.Empty || change.After.TemplateId == 0) throw new InvalidDataException("Invalid placement identity.");
                     change.After.Pose.Validate();
                     if (!state.TryAdd(change.After.StableId, change.After)) throw new InvalidDataException("Duplicate stable ID.");
                 }

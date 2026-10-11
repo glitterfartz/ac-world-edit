@@ -29,6 +29,9 @@ public partial class TerrainViewer : Node3D
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
     bool smoke;
+    ACWorldEdit.Experiments.ViewportBenchmark? benchmark;
+    Node3D? benchmarkProxies;
+    bool foundationShell;
     int smokeStage;
     double smokeTime;
     TileKey smokeOriginal;
@@ -36,6 +39,14 @@ public partial class TerrainViewer : Node3D
     sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors);
     public override async void _Ready()
     {
+        foundationShell = OS.GetCmdlineUserArgs().Contains("--foundation-shell");
+        if (foundationShell)
+        {
+            var trial = new ACWorldEdit.Experiments.FoundationShellTrial { Position = new(30, 30) }; AddChild(trial);
+            if (OS.GetCmdlineUserArgs().Contains("--foundation-shell-smoke"))
+            { trial.RunSmoke(); GD.Print("Foundation standalone shell instantiated and fixture workflow passed."); GetTree().Quit(); }
+            return;
+        }
         renderer = new TerrainRenderer();
         camera = new Camera3D { Name = "Camera", Far = 8000, Near = 0.2f, Fov = 70, Current = true }; AddChild(camera);
         var light = new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), LightEnergy = 1.25f }; AddChild(light);
@@ -52,6 +63,7 @@ public partial class TerrainViewer : Node3D
             }
         });
         BuildUi(); smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
+        if (OS.GetCmdlineUserArgs().Contains("--terrain-benchmark")) benchmark = new();
         await LoadArchives();
     }
     void BuildUi()
@@ -146,6 +158,11 @@ public partial class TerrainViewer : Node3D
         if (world == null || !world.Tiles.Contains(key)) return;
         camera.Position = new Vector3((key.X - 32 + 0.5f) * TerrainTile.Size, 250, (key.Y - 32 + 0.5f) * TerrainTile.Size);
         yaw = 0; pitch = -0.55f; camera.Rotation = new Vector3(pitch, yaw, 0); UpdateWanted();
+        if (benchmark != null)
+        {
+            benchmarkProxies?.QueueFree(); benchmarkProxies = new Node3D(); AddChild(benchmarkProxies);
+            benchmark.AddProxies(benchmarkProxies, camera.Position + new Vector3(0, -80, 0));
+        }
         // A loaded tile can supply elevation immediately; otherwise adjust when it finishes.
         if (loaded.TryGetValue(key, out var node)) RaiseAboveTerrain(node);
     }
@@ -172,6 +189,8 @@ public partial class TerrainViewer : Node3D
     }
     public override void _Process(double delta)
     {
+        if (foundationShell) return;
+        double uploadMs = 0;
         if (capture && !busy)
         {
             Vector3 move = Vector3.Zero;
@@ -204,9 +223,13 @@ public partial class TerrainViewer : Node3D
             }
             if (building != null && buildingNode != null)
             {
+                var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                 try
                 {
-                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count; budget++, buildIndex++) renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
+                    // Soft time budget: a single indivisible resource upload can still exceed it.
+                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count &&
+                        (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 2); budget++, buildIndex++)
+                        renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
                     if (buildIndex == building.Tile.Chunks.Count)
                     {
                         loaded[building.Tile.Key] = buildingNode;
@@ -215,6 +238,7 @@ public partial class TerrainViewer : Node3D
                     }
                 }
                 catch (Exception e) { if (building != null) failed.Add(building.Tile.Key); if (buildingNode != null) renderer.Release(buildingNode); building = null; buildingNode = null; message = "Render error: " + e.Message; GD.PushError(message); }
+                uploadMs = System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds;
             }
             if (pending == null && building == null)
             {
@@ -233,6 +257,15 @@ public partial class TerrainViewer : Node3D
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {renderer.TextureCount} textures    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.World = world; minimap.Loaded = loaded.Keys.ToHashSet(); minimap.Current = current; minimap.CameraPosition = camera.Position; minimap.QueueRedraw();
         if (smoke) Smoke(delta);
+        benchmark?.Sample(delta, uploadMs, world != null && !busy && loaded.Count == wanted.Count && loaded.Count > 0 && pending == null && building == null,
+            loaded.Count, wanted.Count, () =>
+            {
+                if (world == null) return;
+                var currentTile = CameraTile();
+                var destination = world.Tiles.Where(k => Math.Abs(k.X - currentTile.X) >= 4)
+                    .OrderBy(k => Math.Abs(k.X - currentTile.X) + Math.Abs(k.Y - currentTile.Y)).First();
+                Teleport(destination);
+            }, this);
     }
     void RaiseAboveTerrain(Node3D tile)
     {
@@ -248,6 +281,7 @@ public partial class TerrainViewer : Node3D
     }
     public override void _UnhandledInput(InputEvent input)
     {
+        if (foundationShell) return;
         if (input is InputEventMouseButton mouse)
         {
             if (mouse.ButtonIndex == MouseButton.Right) { capture = mouse.Pressed; Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible; }

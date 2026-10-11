@@ -34,6 +34,8 @@ Console.WriteLine($"PASS coordinate algebra: {coordinateSamples} synthetic posit
 string root = Path.GetFullPath(Path.Combine("artifacts", "foundation", Guid.NewGuid().ToString("N")));
 Directory.CreateDirectory(root); string journal = Path.Combine(root, "journal.jsonl");
 Guid id, duplicate;
+string expectedStateHash;
+static string StateHash(DraftWorkspace workspace) => ContentHash.Of(JsonSerializer.Serialize(workspace.Placements.Values.OrderBy(p => p.StableId).ToArray()));
 WorldPose pose = new(0, -100, 200, 30, 0);
 using (var workspace = new DraftWorkspace(root))
 {
@@ -41,21 +43,25 @@ using (var workspace = new DraftWorkspace(root))
     id = workspace.Place(2843, pose); workspace.Move(id, pose with { X = -101 });
     duplicate = workspace.Duplicate(id); workspace.Delete(id); workspace.Undo();
     Check(workspace.Placements.Count == 2, "Undo failed"); workspace.Checkpoint();
+    expectedStateHash = StateHash(workspace);
 }
 using (var workspace = new DraftWorkspace(root))
 {
     Check(workspace.Placements[id].Pose.X == -101 && workspace.Placements.ContainsKey(duplicate), "Restart lost stable ID/state");
+    Check(StateHash(workspace) == expectedStateHash, "Restart changed domain state hash");
     workspace.Redo(); Check(!workspace.Placements.ContainsKey(id), "Redo after restart failed");
     workspace.Undo(); workspace.Move(id, pose with { Map = 1 }); workspace.Redo();
     Check(workspace.Placements[id].Pose.Map == 1, "Branch failed to discard redo");
     Reject(() => workspace.Move(id, pose with { X = double.NaN }), "Nonfinite command accepted");
     workspace.Checkpoint();
+    expectedStateHash = StateHash(workspace);
 }
 File.WriteAllText(Path.Combine(root, "checkpoint.tmp"), "interrupted checkpoint");
 File.AppendAllText(journal, "{\"Payload\":\"torn");
 using (var workspace = new DraftWorkspace(root))
 {
     Check(workspace.RecoveryDiagnostic != null && workspace.Placements[id].Pose.Map == 1, "Torn tail recovery failed");
+    Check(StateHash(workspace) == expectedStateHash, "Interrupted save changed domain state hash");
     workspace.Delete(duplicate); workspace.Checkpoint();
 }
 using (var workspace = new DraftWorkspace(root)) Check(workspace.Placements.Count == 1, "Phantom recovery command");
@@ -79,6 +85,7 @@ var cells = new Dictionary<string, RawCell>
 var before = new SpawnRow(cells); cells["guid"] = new("number", "666");
 Check(before.Guid == 42, "Row snapshot mutated through input");
 var moved = before.WithPose(before.Pose with { X = -14466.8, Heading = Math.PI / 2 });
+Check(Math.Abs(moved.Pose.X - (-14466.8)) <= 0.01 && Math.Abs(moved.Pose.Heading - Math.PI / 2) <= 0.01, "Persisted float quantization exceeds proposed tolerances");
 Check(moved.Cells["future_column"] == before.Cells["future_column"] && moved.Cells["VerifiedBuild"] == before.Cells["VerifiedBuild"] &&
     moved.Cells["equipment_id"] == before.Cells["equipment_id"], "Unknown/signed/null fields lost");
 var bundle = SpawnMoveExport.Compile(before, moved.Pose, schema, identity, "stock-12340-enUS-provisional");

@@ -21,11 +21,11 @@ Or run `./Launch-Viewer.ps1` from PowerShell. The launcher builds the project an
 
 ## Implementation
 
-Archives remain read-only. Base/common, expansion, and Wrath archives load before patches. Numbered patches load in numeric order, followed by lettered patches; the last archive containing an asset wins. Locale archives are also searched. Map.dbc discovers maps; WDT supplies terrain availability and the alpha-map format.
+Archives remain read-only. The experimental stock 3.3.5.12340/enUS profile names 17 archives explicitly in `Scripts/Assets/ClientMountProfile.cs`; the last listed archive containing an asset wins. Backup archives and unlisted overlays are excluded. Missing required archives fail with their paths. This profile is provisional pending comparison with actual client lookup; other locales/HD clients are not supported profiles. Map.dbc discovers maps; WDT supplies terrain availability and the alpha-map format.
 
 ADT meshes preserve the staggered 145-vertex chunk grid, four triangles per square, hole masks, MCNR normals, MCCV tint, and MCSH shadows. BLP2 palette, raw BGRA, DXT1, DXT3, and DXT5 textures are decoded. Layers repeat eight times per chunk, with packed/full-byte/RLE alpha maps and legacy sequential or large-alpha weighted blending. Texture patches use the first available mip at or below 512 pixels.
 
-MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds eight chunks per frame. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
+MPQ reads, terrain parsing, and texture decoding run on a background worker. The main thread builds at most eight chunks per frame under a soft 2 ms upload budget; one indivisible upload can exceed it. Camera movement unloads distant nodes, discards obsolete requests, and releases texture-cache entries after their chunks disappear. Generation checks protect map switching. Missing textures appear magenta and report their paths; corrupt tiles report an error without retrying every frame.
 
 This first stage renders terrain. M2/WMO objects, liquids, client skies, terrain collision, editing, and modern split ADT/CASC assets are not implemented. WMO-only indoor maps report that they have no terrain.
 
@@ -36,3 +36,23 @@ Run `./Launch-Viewer.ps1 -CheckAssets` for archive, map, terrain, texture, and a
 The smoke test loads nearby tiles, moves to a different neighborhood, checks unloading, and returns to verify revisiting. Running Godot with `-- --terrain-smoke` in graphical mode also saves `artifacts/terrain-preview.png`.
 
 Format and engine references: [StormLib](https://github.com/ladislav-zezula/StormLib), [Warcraft ADT implementation](https://github.com/wowemulation-dev/warcraft-rs), and [Godot ArrayMesh](https://docs.godotengine.org/en/4.7/classes/class_arraymesh.html).
+
+## Phase 0 experiments
+
+See [progress](research/progress/phase-0.md) and [foundation contracts](docs/architecture/phase-0-contracts.md).
+These proofs do not implement the Phase 1 placement editor.
+
+- `dotnet run --project Experiments/FoundationChecks.csproj -p:NuGetAudit=false`: coordinates,
+  durable draft commands/recovery and review-only SQL fixture checks. Outputs stay under `artifacts/`.
+- `./Experiments/Run-ShellChecks.ps1`: matched standalone/EditorPlugin fixture smoke; the plugin
+  is enabled only in an isolated project copy for this automated check.
+- For manual standalone trials, build and run Godot with `-- --foundation-shell`. For editor trials,
+  enable **Phase 0 Foundation Trial** under Project Settings → Plugins. Use the same synthetic
+  search/place/move/undo/redo/review/reopen sequence. Disable the plugin after comparison.
+- For graphical performance diagnostics, build and run Godot with
+  `-- --terrain-benchmark --benchmark-seconds=1800`. It creates 2,000 synthetic box nodes,
+  teleports every 20 seconds and saves `artifacts/phase-0-viewport-benchmark.json`.
+  Short runs (`--benchmark-seconds=60`) and headless runs do not pass the 30-minute/GPU gates.
+  Input latency, VRAM and controlled cold/warm timings require additional measurement.
+
+No experiment connects to a writable database or modifies existing client/server data.
