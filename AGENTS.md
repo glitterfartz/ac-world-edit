@@ -35,6 +35,45 @@ Key references:
 Keep research documents and supporting research artifacts in that external directory. Git commits in this repository do not
 save changes to the external research directory; report external changes explicitly and preserve the files there.
 
+## Phase planning, brainstorming and persistent progress
+
+Use `X:\AzerothCore\research` as the project's ongoing research, brainstorming and planning workspace.
+Keep concise findings, alternatives, experiment results and decision summaries there so later sessions can resume reliably.
+Preserve the original proposal as a reference; record implementation status separately rather than rewriting proposed
+acceptance criteria as if they have already passed.
+
+When implementing a roadmap phase or another substantial task:
+
+1. Read `11-development-roadmap.md`, the relevant feature/architecture documents, and applicable risks, experiments and open
+   questions. Identify the requested phase's goals, prerequisites, milestones, deliverables, dependencies and acceptance gates.
+   Do not advance into another phase or treat an unresolved gate as passed without evidence or an explicit scope change.
+2. Create or resume `research/progress/phase-<N>.md` (for example,
+   `X:\AzerothCore\research\progress\phase-0.md`). For work outside the roadmap, use a descriptive task slug instead.
+   Maintain a living checklist tied to the research requirements, not just a chronological activity log.
+3. Record scope and source references; milestone status (`not started`, `in progress`, `blocked`, `complete`); acceptance
+   criteria and evidence; completed changes and commit IDs; validation commands/results; decisions and justified deviations;
+   unresolved questions/blockers; and the concrete next steps needed to resume. Mark a milestone complete only when its
+   deliverables and applicable acceptance checks are satisfied. Keep unrun checks explicitly pending.
+4. Keep exploratory notes in `research/brainstorming/phase-<N>.md` or a task-specific equivalent. Record considered options,
+   trade-offs, hypotheses, source-backed findings and proposed experiments. Distinguish tentative ideas from adopted decisions;
+   promote adopted decisions into the progress document and update the relevant research references when evidence warrants it.
+5. Update these documents after each meaningful milestone, important decision, test result or blocker; before a handoff or
+   ending a work session; and approximately every 30 minutes during sustained work even if no milestone has finished.
+   Keep updates useful and concise. Maintain an index of active/completed work in `research/progress/README.md` as files are added.
+6. Before resuming in a new session, read the current progress and brainstorming documents, inspect Git status/recent commits
+   and reconcile actual implementation with recorded status. Continue outstanding work rather than restarting or relying on
+   conversational memory alone. Record any discrepancies before proceeding.
+
+Because the research directory is outside this Git repository, also maintain a concise, tracked milestone summary at
+`docs/progress/phase-<N>.md` (or the corresponding task slug). Include scope, requirement/checklist status, validation,
+blockers, next steps and paths to the external progress/brainstorming notes. Update that summary with each milestone commit;
+after committing, record the resulting commit ID in the external progress document. The full research and brainstorming
+workspace stays in the research directory; the repository summary preserves implementation status alongside the code.
+
+Create these tracking files when the corresponding work begins; do not mark an unstarted phase as implemented.
+Do not store secrets, copied client assets or unbounded raw logs in planning notes. Progress documents supplement regular
+Git commits; neither chat updates nor commits alone replace the requirement/acceptance checklist.
+
 ## Repository map and toolchain
 
 - `Scripts/TerrainViewer.cs`: current UI, camera, asset lifecycle, streaming scheduler and smoke checks.
