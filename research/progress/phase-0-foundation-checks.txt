@@ -1,5 +1,0 @@
-PASS coordinate algebra: 12 synthetic positions, seam sides, four headings, ray hit/miss. Real landmark/GO gates pending.
-PASS commands/recovery: place, move, duplicate, delete, undo/redo, restart, map switch, branching, torn tail, checkpoint interruption, corruption rejection, writer lock.
-Workspace fixture artifacts: X:\AzerothCore\ACWorldEdit\ac-world-edit\artifacts\foundation\d58d4cbb88994b74be5de8a6ab73aeea
-PASS schema/export: fingerprint=23F43207F5A61242B9F7172FA7D7F11C03077898B6AB80A094FF0C2EA1EEAE5B
-PASS unknown/signed/null retention, immutable rows, deterministic SQL/manifest, bounded predicates, stale/missing row and ID rejection, schema drift rejection. Real DB DML/reverse/transaction gates pending.

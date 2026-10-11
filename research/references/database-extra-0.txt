@@ -1,6 +1,0 @@
-[
-  {
-    "orphan_spawns": 0
-  }
-]
-Query execution time: 221.99 ms

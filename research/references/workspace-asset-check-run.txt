@@ -1,5 +1,0 @@
-Opened 143 archives; discovered 102 maps.
-Unhandled exception. System.IO.InvalidDataException: Truncated chunk header
-   at ACWorldEdit.Assets.Chunks.Read(Byte[] b, Int32 start, Nullable`1 end)+MoveNext() in X:\AzerothCore\ACWorldEdit\ac-world-edit\Scripts\Assets\TerrainData.cs:line 13
-   at ACWorldEdit.Assets.WorldMap..ctor(String name, Byte[] data) in X:\AzerothCore\ACWorldEdit\ac-world-edit\Scripts\Assets\TerrainData.cs:line 30
-   at Program.<Main>$(String[] args) in X:\AzerothCore\ACWorldEdit\ac-world-edit\Tests\Program.cs:line 9

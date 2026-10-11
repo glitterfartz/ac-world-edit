@@ -1,6 +1,0 @@
-Opened 18 archives; discovered 101 maps.
-Azeroth: 687 tiles; TileKey { X = 32, Y = 48 }; 256 chunks; 7 decoded textures; big alpha=False
-Kalimdor: 988 tiles; TileKey { X = 32, Y = 32 }; 256 chunks; 12 decoded textures; big alpha=False
-Expansion01: 800 tiles; TileKey { X = 32, Y = 32 }; 256 chunks; 1 decoded textures; big alpha=False
-Northrend: 1131 tiles; TileKey { X = 32, Y = 32 }; 256 chunks; 2 decoded textures; big alpha=True
-All asset checks passed.
