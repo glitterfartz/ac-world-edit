@@ -2,8 +2,16 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
+
+/// <summary>
+/// UI composition for the viewer. Streaming, archive ownership and camera movement remain in the main partial; controls never write source data.
+/// </summary>
 public partial class TerrainViewer
 {
+    /// <summary>
+    /// Build viewer controls with the minimap inside the left panel. Creature controls come from the
+    /// overlay; actions only reload sources or change previews.
+    /// </summary>
     void BuildUi()
     {
         var layer = new CanvasLayer();

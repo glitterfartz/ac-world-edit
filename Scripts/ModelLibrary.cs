@@ -2,8 +2,16 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
+
+/// <summary>
+/// Shared native variant identity: replacement skins, baked texture, WMO doodad set and
+/// requested animation ID. Equal keys reuse decoded and GPU resources.
+/// </summary>
 public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0);
-/// <summary>Single decode worker, incremental GPU uploads, shared resources and GPU idle skinning.</summary>
+/// <summary>
+/// Main-thread resource owner with one decode worker. Upload surfaces incrementally, batch
+/// placements and animate on the GPU; active resources can exceed the dormant-cache target.
+/// </summary>
 public sealed class ModelLibrary
 {
     sealed class Entry(ModelData data, AnimationPalette palette, Dictionary<string, BlpTexture> textures)
@@ -13,24 +21,30 @@ public sealed class ModelLibrary
         public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
         public Dictionary<string, BlpTexture> Decoded = textures;
         public readonly List<ArrayMesh> Meshes = [];
-        public ImageTexture? Idle;
+        public ImageTexture? AnimationTexture;
         public int Surface;
         public long LastUsed;
         public long Bytes => Data.EstimatedBytes + Palette.Pixels.Length + Decoded.Values.Sum(t => (long)t.Rgba.Length);
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
+        /// Compute reference-pose bounds from distinct source arrays. Selection uses bounding boxes, not
+        /// animated triangles or terrain occlusion.
+        /// </summary>
         static (System.Numerics.Vector3, System.Numerics.Vector3) FindBounds(ModelData data)
         {
             var min = new System.Numerics.Vector3(float.MaxValue);
             var max = new System.Numerics.Vector3(float.MinValue);
             bool any = false;
             foreach (var positions in data.Surfaces.Select(s => s.Positions).Distinct())
+            {
                 foreach (var point in positions)
                 {
                     min = System.Numerics.Vector3.Min(min, point);
                     max = System.Numerics.Vector3.Max(max, point);
                     any = true;
                 }
+            }
 
             return any ? (min, max) : (System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero);
         }
@@ -51,17 +65,21 @@ public sealed class ModelLibrary
     readonly ImageTexture fallback;
     AssetStore? store;
     CancellationTokenSource cancellation = new();
+    // A variant progresses through exactly one decode slot, one upload slot, then
+    // the shared ready cache. Partial GPU resources are never bound to scene instances.
     Task<Entry>? pending;
     ModelKey? pendingKey, buildingKey;
     Entry? building;
     long tick;
+    /// <summary>
+    /// Expose cached parsed WMO liquid surfaces for opt-in smoke placement without archive reads or
+    /// GPU readback.
+    /// </summary>
     public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data.Surfaces.Where(s => s.LiquidType != null).ToArray() : [];
     public int ReadyModels => cache.Count;
     public int TextureCount => textures.Count;
-    public int FailedModels => failed.Count;
     public int ActiveFailedModels => instances.Count(i => failed.Contains(i.Key));
     public long CachedBytes => cache.Values.Sum(e => e.Bytes);
-    public int InstanceCount => instances.Count;
     public double UploadMilliseconds { get; private set; }
     public bool Busy => pending != null || building != null || instances.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public CreatureCatalog? Catalog { get; private set; }
@@ -73,6 +91,10 @@ public sealed class ModelLibrary
         fallback = ImageTexture.CreateFromImage(image);
     }
 
+    /// <summary>
+    /// Cancel/await the old worker before releasing client resources and loading the next catalog.
+    /// The caller may dispose old MPQs only after this completes.
+    /// </summary>
     public async Task SetStore(AssetStore? next)
     {
         cancellation.Cancel();
@@ -88,16 +110,30 @@ public sealed class ModelLibrary
         }
 
         pending = null;
+        // A reload can interrupt GPU upload before an entry reaches the ready cache.
+        // It still owns meshes, the palette and shared texture references at this point.
+        if (building != null)
+        {
+            DisposeEntry(building);
+        }
         building = null;
         pendingKey = buildingKey = null;
         cancellation.Dispose();
         cancellation = new();
         foreach (var i in instances)
+        {
             if (GodotObject.IsInstanceValid(i))
+            {
                 i.QueueFree();
+            }
+        }
+
         instances.Clear();
         foreach (var e in cache.Values)
+        {
             DisposeEntry(e);
+        }
+
         cache.Clear();
         textures.Clear();
         failed.Clear();
@@ -105,6 +141,10 @@ public sealed class ModelLibrary
         Catalog = next == null ? null : await Task.Run(() => new CreatureCatalog(next));
     }
 
+    /// <summary>
+    /// Register a scene binding immediately; Update resolves shared resources asynchronously. Null
+    /// transforms select a single mesh rather than a placement batch.
+    /// </summary>
     public ModelInstance Attach(Node3D parent, ModelKey key, Transform3D[]? transforms = null)
     {
         var node = new ModelInstance
@@ -117,6 +157,10 @@ public sealed class ModelLibrary
         return node;
     }
 
+    /// <summary>
+    /// Compose Godot column-vector static rotations/scaling. Order and the extra half-turn match the
+    /// CPU transform and source MODF bounds checks.
+    /// </summary>
     public static Transform3D Placement(WorldObject item)
     {
         // Client rotations are Z/Y/X in its Z-up model space. Convert that basis to Y-up.
@@ -125,128 +169,27 @@ public sealed class ModelLibrary
         return new(basis.Scaled(Vector3.One * item.Scale), new(item.Position.X, item.Position.Y, item.Position.Z));
     }
 
+    /// <summary>
+    /// Consume worker results, upload one surface, bind bounded instances, schedule the nearest
+    /// missing variant and evict dormant entries. Soft budgets cannot preempt a GPU upload.
+    /// </summary>
     public void Update(Camera3D camera)
     {
         var start = System.Diagnostics.Stopwatch.GetTimestamp();
         tick++;
         instances.RemoveAll(i => !GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion());
-        if (pending is { IsCompleted: true })
-        {
-            try
-            {
-                building = pending.GetAwaiter().GetResult();
-                buildingKey = pendingKey;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception e)
-            {
-                if (pendingKey != null && failed.Add(pendingKey))
-                    GD.PushWarning($"Model unavailable: {pendingKey.Path}: {e.Message}");
-            }
-
-            pending = null;
-            pendingKey = null;
-        }
-
-        if (building != null && buildingKey != null)
-        {
-            if (!instances.Any(i => i.Key == buildingKey))
-            {
-                DisposeEntry(building);
-                building = null;
-                buildingKey = null;
-            }
-            else
-            {
-                if (building.Idle == null)
-                {
-                    using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
-                    building.Idle = ImageTexture.CreateFromImage(image);
-                }
-
-                // One indivisible surface upload per frame; time is measured, never a hard guarantee.
-                if (building.Surface < building.Data.Surfaces.Length)
-                    AddSurface(building, building.Data.Surfaces[building.Surface++]);
-                else
-                {
-                    cache[buildingKey] = building;
-                    building.LastUsed = tick;
-                    foreach (string warning in building.Data.Warnings)
-                        GD.PushWarning(buildingKey.Path + ": " + warning);
-                    building = null;
-                    buildingKey = null;
-                }
-            }
-        }
-
-        int attached = 0;
-        foreach (var i in instances.ToArray())
-        {
-            if (cache.TryGetValue(i.Key, out var e))
-            {
-                e.LastUsed = tick;
-                if (!i.Built && attached < 8 && System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds < 2)
-                {
-                    BuildInstance(i, e);
-                    attached++;
-                }
-            }
-        }
-
-        if (store != null && pending == null && building == null)
-        {
-            var next = instances.Where(i => !i.Built && !cache.ContainsKey(i.Key) && !failed.Contains(i.Key)).OrderBy(i => i.GlobalPosition.DistanceSquaredTo(camera.GlobalPosition)).FirstOrDefault();
-            if (next != null)
-            {
-                var key = next.Key;
-                var source = store;
-                var token = cancellation.Token;
-                pendingKey = key;
-                pending = Task.Run(() =>
-                {
-                    token.ThrowIfCancellationRequested();
-                    var data = key.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase) ? WmoModel.Read(source, key.Path, key.DoodadSet, token) : M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3], key.Baked.Length == 0 ? null : key.Baked, token, key.Animation);
-                    Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
-                    foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
-                    {
-                        token.ThrowIfCancellationRequested();
-                        try
-                        {
-                            decoded[path] = path.StartsWith("@liquid/") ? LiquidTextures.For(source).Decode(uint.Parse(path[8..])) : BlpTexture.Decode(source.Read(path), 0);
-                        }
-                        catch (Exception e)
-                        {
-                            GD.PushWarning($"Model texture unavailable: {path}: {e.Message}");
-                        }
-                    }
-
-                    data = data with
-                    {
-                        Surfaces = data.Surfaces.Select(s => s.LiquidType is uint type ? s with { LiquidKind = LiquidTextures.For(source).Kind(type) } : s).ToArray()
-                    };
-                    return new Entry(data, AnimationPalette.Bake(data, token), decoded);
-                }, token);
-            }
-        }
-
-        // Bound retained cache to 256 MiB; in-use resources remain alive, dormant resources evict first.
-        long bytes = CachedBytes;
-        foreach (var pair in cache.OrderBy(p => p.Value.LastUsed).ToArray())
-        {
-            if (bytes <= 256L * 1024 * 1024)
-                break;
-            if (instances.Any(i => i.Key == pair.Key))
-                continue;
-            bytes -= pair.Value.Bytes;
-            cache.Remove(pair.Key);
-            DisposeEntry(pair.Value);
-        }
-
+        ConsumeDecodedModel();
+        UploadPendingModel();
+        BindReadyInstances(start);
+        ScheduleModelDecode(camera);
+        EvictDormantModels();
         UploadMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
 
+    /// <summary>
+    /// Bind shared meshes, publish selection bounds/clip IDs and batch embedded WMO doodads using
+    /// parent-composed transforms.
+    /// </summary>
     void BuildInstance(ModelInstance node, Entry entry)
     {
         var min = entry.Bounds.Min;
@@ -264,11 +207,16 @@ public sealed class ModelLibrary
                     InstanceCount = node.Transforms.Length
                 };
                 for (int n = 0; n < node.Transforms.Length; n++)
+                {
                     multi.SetInstanceTransform(n, node.Transforms[n]);
+                }
+
                 node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600 });
             }
             else
+            {
                 node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400 });
+            }
         }
 
         foreach (var group in entry.Data.Doodads.GroupBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
@@ -281,10 +229,17 @@ public sealed class ModelLibrary
         node.Built = true;
     }
 
+    /// <summary>
+    /// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
+    /// liquid-atlas mipmaps to prevent cross-frame bleeding.
+    /// </summary>
     void AddSurface(Entry e, ModelSurface surface)
     {
         if (surface.Indices.Length == 0 || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
+        {
             return;
+        }
+
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
         arrays[(int)Mesh.ArrayType.Vertex] = surface.Positions.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
@@ -292,7 +247,10 @@ public sealed class ModelLibrary
         arrays[(int)Mesh.ArrayType.TexUV] = surface.Uv.Select(v => new Vector2(v.X, v.Y)).ToArray();
         arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
         if (surface.Colors != null)
+        {
             arrays[(int)Mesh.ArrayType.Color] = surface.Colors.Select(v => new Color(v.X, v.Y, v.Z, v.W)).ToArray();
+        }
+
         Mesh.ArrayFormat flags = 0;
         if (surface.Bones != null && surface.Weights != null)
         {
@@ -302,7 +260,10 @@ public sealed class ModelLibrary
         }
 
         if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
+        {
             e.Meshes.Add(new ArrayMesh());
+        }
+
         var mesh = e.Meshes[^1];
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
         var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit);
@@ -316,9 +277,15 @@ public sealed class ModelLibrary
             }
 
             if (!surface.TwoSided)
+            {
                 code = code.Replace("cull_disabled", "cull_back");
+            }
+
             if (surface.Unlit)
+            {
                 code = code.Replace("render_mode ", "render_mode unshaded, ");
+            }
+
             shader = new Shader
             {
                 Code = code
@@ -337,13 +304,19 @@ public sealed class ModelLibrary
             {
                 using var image = Image.CreateFromData(blp.Width, blp.Height, false, Image.Format.Rgba8, blp.Rgba);
                 if (surface.LiquidType == null)
+                {
                     image.GenerateMipmaps();
+                }
+
                 t = new(ImageTexture.CreateFromImage(image));
                 textures[surface.Texture] = t;
             }
 
             if (e.TexturePaths.Add(surface.Texture))
+            {
                 t.References++;
+            }
+
             texture = t.Texture;
         }
 
@@ -355,10 +328,10 @@ public sealed class ModelLibrary
         }
 
         material.SetShaderParameter("albedo_tex", texture);
-        material.SetShaderParameter("idle_palette", e.Idle!);
+        material.SetShaderParameter("animation_palette", e.AnimationTexture!);
         material.SetShaderParameter("skinned", surface.Bones != null);
-        material.SetShaderParameter("idle_frames", e.Palette.Height);
-        material.SetShaderParameter("idle_duration", e.Palette.Duration);
+        material.SetShaderParameter("animation_frames", e.Palette.Height);
+        material.SetShaderParameter("animation_duration", e.Palette.Duration);
         material.SetShaderParameter("blend_mode", surface.Blend);
         material.SetShaderParameter("vertex_color", surface.Colors != null);
         mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
@@ -366,23 +339,209 @@ public sealed class ModelLibrary
         mesh.CustomAabb = mesh.GetAabb().Grow(5);
     }
 
+    /// <summary>
+    /// Release entry meshes/palette and decrement shared texture references. Dormant eviction calls
+    /// this only for entries without live scene bindings.
+    /// </summary>
     void DisposeEntry(Entry e)
     {
         foreach (var path in e.TexturePaths)
+        {
             if (textures.TryGetValue(path, out var texture) && --texture.References == 0)
             {
                 textures.Remove(path);
                 texture.Texture.Dispose();
             }
+        }
 
         foreach (var mesh in e.Meshes)
+        {
             mesh.Dispose();
-        e.Idle?.Dispose();
+        }
+
+        e.AnimationTexture?.Dispose();
     }
 
+    /// <summary>
+    /// Cancel scheduling and return the active task so shutdown can await archive reads before
+    /// closing the store.
+    /// </summary>
     public Task Stop()
     {
         cancellation.Cancel();
         return pending ?? Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Promote a completed CPU decode into the upload slot. Canceled/failed requests are consumed
+    /// once and missing variants are remembered to prevent per-frame retries.
+    /// </summary>
+    void ConsumeDecodedModel()
+    {
+        if (pending is { IsCompleted: true })
+        {
+            try
+            {
+                building = pending.GetAwaiter().GetResult();
+                buildingKey = pendingKey;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                if (pendingKey != null && failed.Add(pendingKey))
+                {
+                    GD.PushWarning($"Model unavailable: {pendingKey.Path}: {e.Message}");
+                }
+            }
+
+            pending = null;
+            pendingKey = null;
+        }
+    }
+
+    /// <summary>
+    /// Upload at most one surface per frame and publish the cache entry only after all surfaces are
+    /// ready. Drop work whose requesting instances have disappeared.
+    /// </summary>
+    void UploadPendingModel()
+    {
+        if (building != null && buildingKey != null)
+        {
+            if (!instances.Any(i => i.Key == buildingKey))
+            {
+                DisposeEntry(building);
+                building = null;
+                buildingKey = null;
+            }
+            else
+            {
+                if (building.AnimationTexture == null)
+                {
+                    using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
+                    building.AnimationTexture = ImageTexture.CreateFromImage(image);
+                }
+
+                // One indivisible surface upload per frame; time is measured, never a hard guarantee.
+                if (building.Surface < building.Data.Surfaces.Length)
+                {
+                    AddSurface(building, building.Data.Surfaces[building.Surface++]);
+                }
+                else
+                {
+                    cache[buildingKey] = building;
+                    building.LastUsed = tick;
+                    foreach (string warning in building.Data.Warnings)
+                    {
+                        GD.PushWarning(buildingKey.Path + ": " + warning);
+                    }
+
+                    building = null;
+                    buildingKey = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Attach at most eight ready bindings within the remaining soft two-millisecond budget. Access
+    /// refreshes cache recency even for already-built instances.
+    /// </summary>
+    void BindReadyInstances(long start)
+    {
+        // WMO attachment can enqueue embedded doodads. Iterate a snapshot so those
+        // new requests enter the next frame rather than mutating this enumeration.
+        int attached = 0;
+        foreach (var i in instances.ToArray())
+        {
+            if (cache.TryGetValue(i.Key, out var e))
+            {
+                e.LastUsed = tick;
+                if (!i.Built && attached < 8 && System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds < 2)
+                {
+                    BuildInstance(i, e);
+                    attached++;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Choose the nearest unbuilt variant and capture its store/cancellation token before starting
+    /// the sole decode worker. Never overlap decoding and incremental upload slots.
+    /// </summary>
+    void ScheduleModelDecode(Camera3D camera)
+    {
+        if (store != null && pending == null && building == null)
+        {
+            var next = instances.Where(i => !i.Built && !cache.ContainsKey(i.Key) && !failed.Contains(i.Key)).OrderBy(i => i.GlobalPosition.DistanceSquaredTo(camera.GlobalPosition)).FirstOrDefault();
+            if (next != null)
+            {
+                var key = next.Key;
+                var source = store;
+                var token = cancellation.Token;
+                pendingKey = key;
+                pending = Task.Run(() => DecodeModel(key, source, token), token);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reclaim least-recently-used entries until the soft 256 MiB estimate is met. Never evict
+    /// resources referenced by a current instance; active scenes may exceed this target.
+    /// </summary>
+    void EvictDormantModels()
+    {
+        // Bound retained cache to 256 MiB; in-use resources remain alive, dormant resources evict first.
+        long bytes = CachedBytes;
+        foreach (var pair in cache.OrderBy(p => p.Value.LastUsed).ToArray())
+        {
+            if (bytes <= 256L * 1024 * 1024)
+            {
+                break;
+            }
+
+            if (instances.Any(i => i.Key == pair.Key))
+            {
+                continue;
+            }
+
+            bytes -= pair.Value.Bytes;
+            cache.Remove(pair.Key);
+            DisposeEntry(pair.Value);
+        }
+    }
+
+    /// <summary>
+    /// Worker-only native parse, texture/atlas decode and animation sampling. Texture failures
+    /// retain warnings/fallbacks; all Godot resource creation is deferred to Update.
+    /// </summary>
+    Entry DecodeModel(ModelKey key, AssetStore source, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        var data = key.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase)
+            ? WmoModel.Read(source, key.Path, key.DoodadSet, token)
+            : M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3],
+                key.Baked.Length == 0 ? null : key.Baked, token, key.Animation);
+        Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                decoded[path] = path.StartsWith("@liquid/") ? LiquidTextures.For(source).Decode(uint.Parse(path[8..])) : BlpTexture.Decode(source.Read(path), 0);
+            }
+            catch (Exception e)
+            {
+                GD.PushWarning($"Model texture unavailable: {path}: {e.Message}");
+            }
+        }
+
+        data = data with
+        {
+            Surfaces = data.Surfaces.Select(s => s.LiquidType is uint type ? s with { LiquidKind = LiquidTextures.For(source).Kind(type) } : s).ToArray()
+        };
+        return new Entry(data, AnimationPalette.Bake(data, token), decoded);
     }
 }

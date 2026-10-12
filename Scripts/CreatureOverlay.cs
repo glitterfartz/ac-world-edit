@@ -4,7 +4,11 @@ using ACWorldEdit.Foundation;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
-/// <summary>Read-only, transient projection of nearby database spawns.</summary>
+
+/// <summary>
+/// Transient scene/list projection of bounded database records. CreatureDraft owns durable moves
+/// and ModelLibrary shared resources; unloading markers never changes rows.
+/// </summary>
 public partial class CreatureOverlay : Node3D
 {
     public ModelLibrary? Models { get; set; }
@@ -12,12 +16,14 @@ public partial class CreatureOverlay : Node3D
     readonly Dictionary<uint, CreatureAppearance?> appearances = [];
     readonly Dictionary<ModelKey, (ModelInstance Node, uint[] Guids)> modelBatches = [];
     long modelUpdate;
+    // Source records are immutable baselines. Markers/native transforms show effective
+    // draft poses; neither a streaming refresh nor a failed save replaces source rows.
     CreatureDraft? draft;
     string draftPath = "";
     string sourceKey = "";
     string draftMessage = "Local draft only; source database is unchanged.";
-    TranslationGizmo gizmo = null !;
-    OptionButton animation = null !;
+    TranslationGizmo gizmo = null!;
+    OptionButton animation = null!;
     ushort previewAnimation;
     uint? animationListGuid;
     public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
@@ -40,13 +46,15 @@ public partial class CreatureOverlay : Node3D
         Radius = 0.55f,
         Height = 2
     };
-    ItemList list = null !;
-    Label details = null !, status = null !;
-    LineEdit config = null !;
-    LineEdit filter = null !;
+    ItemList list = null!;
+    Label details = null!, status = null!;
+    LineEdit config = null!;
+    LineEdit filter = null!;
     CancellationTokenSource cancellation = new();
     CreatureRegion? region;
     Task<CreatureRegionResult>? pending;
+    // The query may finish after cancellation. Only its captured generation can publish
+    // records; the replacement waits so at most one database query is active.
     int generation, pendingGeneration;
     IReadOnlyList<CreatureSpawn> records = [];
     uint? selectedGuid;
@@ -69,6 +77,10 @@ public partial class CreatureOverlay : Node3D
     public string QueryStatus => queryStatus;
 
     public event Action<CreatureSpawn>? FocusRequested;
+    /// <summary>
+    /// Open a durable local draft, isolated for movement smoke checks, and attach the gizmo.
+    /// Recovery failures preserve the file and disable movement.
+    /// </summary>
     public override void _Ready()
     {
         draftPath = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--visual-smoke") || OS.GetCmdlineUserArgs().Contains("--gizmo-smoke") ? $"res://artifacts/gizmo-drafts/{Guid.NewGuid():N}/positions.json" : "user://drafts/creature-positions.json");
@@ -86,6 +98,10 @@ public partial class CreatureOverlay : Node3D
         gizmo.Changed += MoveSelection;
     }
 
+    /// <summary>
+    /// Build read-only details, config-path input, filtered list, animation menu and local history
+    /// controls. No control writes SQL or client assets.
+    /// </summary>
     public Control BuildPanel()
     {
         var panel = new PanelContainer
@@ -122,7 +138,9 @@ public partial class CreatureOverlay : Node3D
         focus.Pressed += () =>
         {
             if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker))
+            {
                 FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) });
+            }
         };
         box.AddChild(focus);
         box.AddChild(new Label { Text = "Preview animation (selected creature)" });
@@ -182,16 +200,30 @@ public partial class CreatureOverlay : Node3D
         return panel;
     }
 
+    /// <summary>
+    /// Restart on region changes while retaining same-map selection. Map changes clear
+    /// source-specific selection.
+    /// </summary>
     public void SetRegion(CreatureRegion? next)
     {
         if (region == next)
+        {
             return;
+        }
+
         bool preserveSelection = next != null && next.Map == region?.Map;
         region = next;
         Restart(preserveSelection);
     }
 
+    /// <summary>
+    /// Invalidate the snapshot and request fresh data through normal cancellation.
+    /// </summary>
     public void Refresh() => Restart();
+    /// <summary>
+    /// Advance generation and cancel the query, awaiting its completion before starting another.
+    /// Bound concurrency and reject stale results.
+    /// </summary>
     void Restart(bool preserveSelection = true)
     {
         generation++;
@@ -200,9 +232,13 @@ public partial class CreatureOverlay : Node3D
         cancellation = new();
         Clear(preserveSelection);
         queryStatus = region == null ? "Waiting for an outdoor map." : "Loading nearby creatures…";
-    // Keep at most one active query. Its cancellation completes before starting the replacement.
+        // Keep at most one active query. Its cancellation completes before starting the replacement.
     }
 
+    /// <summary>
+    /// Remove transient markers/batches and cancel the gizmo. Retain durable history and optionally
+    /// keep selection for same-map reloads.
+    /// </summary>
     void Clear(bool preserveSelection)
     {
         if (gizmo != null)
@@ -222,7 +258,10 @@ public partial class CreatureOverlay : Node3D
         modelUpdate = 0;
         animationListGuid = null;
         if (animation != null)
+        {
             animation.Disabled = true;
+        }
+
         foreach (var marker in markers.Values)
         {
             marker.Node.Visible = false;
@@ -233,13 +272,22 @@ public partial class CreatureOverlay : Node3D
         records = [];
         nextMarker = 0;
         if (!preserveSelection)
+        {
             selectedGuid = null;
+        }
+
         list?.Clear();
         if (!selectedGuid.HasValue && details != null)
+        {
             details.Text = "Click a creature marker or choose one above.";
+        }
     }
 
     int requestedGeneration = -1;
+    /// <summary>
+    /// Publish only current queries, create bounded marker batches and reconcile models/list/gizmo
+    /// state.
+    /// </summary>
     public void Update(Camera3D camera)
     {
         if (pending is { IsCompleted: true })
@@ -263,7 +311,9 @@ public partial class CreatureOverlay : Node3D
             catch (Exception error)
             {
                 if (pendingGeneration == generation)
+                {
                     queryStatus = CreatureSource.SafeError(error);
+                }
             }
 
             pending = null;
@@ -283,13 +333,18 @@ public partial class CreatureOverlay : Node3D
         {
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
             for (int i = 0; i < 64 && nextMarker < records.Count && (i == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 2); i++, nextMarker++)
+            {
                 AddMarker(records[nextMarker]);
+            }
+
             if (nextMarker == records.Count)
             {
                 if (selectedGuid.HasValue)
                 {
                     if (markers.ContainsKey(selectedGuid.Value))
+                    {
                         Select(selectedGuid.Value);
+                    }
                     else
                     {
                         selectedGuid = null;
@@ -300,11 +355,16 @@ public partial class CreatureOverlay : Node3D
                 queryStatus = truncated ? $"Showing first {records.Count} creatures. Reduce nearby tile radius for dense areas." : $"{records.Count} creatures loaded. Click a marker to select.";
             }
             else
+            {
                 queryStatus = $"Preparing markers {nextMarker}/{records.Count}…";
+            }
         }
 
         if (status != null)
+        {
             status.Text = queryStatus;
+        }
+
         if (Models?.Catalog != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
         {
             UpdateModels(camera);
@@ -312,11 +372,17 @@ public partial class CreatureOverlay : Node3D
         }
 
         foreach (var batch in modelBatches.Values)
+        {
             if (batch.Node.ModelReady)
             {
                 foreach (uint guid in batch.Guids)
+                {
                     if (markers.TryGetValue(guid, out var marker))
+                    {
                         marker.Body.Visible = false;
+                    }
+                }
+
                 if (selectedGuid.HasValue && batch.Guids.Contains(selectedGuid.Value) && animationListGuid != selectedGuid)
                 {
                     animation.Clear();
@@ -325,16 +391,22 @@ public partial class CreatureOverlay : Node3D
                     {
                         animation.AddItem($"{Models?.Catalog?.AnimationNames.GetValueOrDefault(id) ?? "Animation"} ({id})", id);
                         if (id == previewAnimation)
+                        {
                             selectedIndex = animation.ItemCount - 1;
+                        }
                     }
 
                     if (animation.ItemCount == 0)
+                    {
                         animation.AddItem("Static model", 0);
+                    }
+
                     animation.Select(selectedIndex);
                     animation.Disabled = batch.Node.AvailableAnimations.Length <= 1;
                     animationListGuid = selectedGuid;
                 }
             }
+        }
 
         foreach (var marker in markers.Values)
         {
@@ -346,15 +418,25 @@ public partial class CreatureOverlay : Node3D
         gizmo.Update(camera, draft != null && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var selectedMarker) ? selectedMarker.Node.GlobalPosition : null);
     }
 
+    /// <summary>
+    /// Cache appearances and group nearby creatures by variant/clip. Selection can preview a
+    /// separate animation without changing other creatures.
+    /// </summary>
     void UpdateModels(Camera3D camera)
     {
         if (Models?.Catalog == null)
+        {
             return;
+        }
+
         var groups = new Dictionary<ModelKey, List<uint>>();
         foreach (var marker in markers.Values)
         {
             if (selectedGuid != marker.Spawn.Guid && camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) > 350 * 350)
+            {
                 continue;
+            }
+
             if (!appearances.TryGetValue(marker.Spawn.DisplayId, out var appearance))
             {
                 try
@@ -371,30 +453,52 @@ public partial class CreatureOverlay : Node3D
             }
 
             if (appearance == null)
+            {
                 continue;
+            }
+
             var key = new ModelKey(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0);
             if (!groups.TryGetValue(key, out var list))
+            {
                 groups[key] = list = [];
+            }
+
             list.Add(marker.Spawn.Guid);
         }
 
         foreach (var batch in modelBatches.ToArray())
         {
             if (groups.TryGetValue(batch.Key, out var guids) && guids.SequenceEqual(batch.Value.Guids))
+            {
                 continue;
+            }
+
             foreach (uint guid in batch.Value.Guids)
+            {
                 if (markers.TryGetValue(guid, out var marker))
+                {
                     marker.Body.Visible = true;
+                }
+            }
+
             batch.Value.Node.Visible = false;
             batch.Value.Node.QueueFree();
             modelBatches.Remove(batch.Key);
         }
 
         foreach (var group in groups)
+        {
             if (!modelBatches.ContainsKey(group.Key))
+            {
                 modelBatches[group.Key] = (Models.Attach(this, group.Key, group.Value.Select(ModelTransform).ToArray()), group.Value.ToArray());
+            }
+        }
     }
 
+    /// <summary>
+    /// Compose creature heading, effective draft position and template/display scale. Static scenery
+    /// facing corrections do not belong here.
+    /// </summary>
     Transform3D ModelTransform(uint guid)
     {
         var marker = markers[guid];
@@ -402,6 +506,10 @@ public partial class CreatureOverlay : Node3D
         return new(marker.Node.Basis.Scaled(Vector3.One * scale), marker.Node.Position);
     }
 
+    /// <summary>
+    /// Create a labeled fallback at the effective pose; model readiness controls its body
+    /// visibility. GUID remains the stable selection identity.
+    /// </summary>
     void AddMarker(CreatureSpawn spawn)
     {
         var pose = PoseOf(spawn);
@@ -433,6 +541,10 @@ public partial class CreatureOverlay : Node3D
         markers.Add(spawn.Guid, (spawn, node, body, label));
     }
 
+    /// <summary>
+    /// Filter loaded records and preserve GUID metadata so duplicate names/templates cannot confuse
+    /// selection.
+    /// </summary>
     void PopulateList()
     {
         list.Clear();
@@ -442,16 +554,28 @@ public partial class CreatureOverlay : Node3D
             int index = list.AddItem($"{spawn.Name} · #{spawn.Guid} · template {spawn.TemplateId}");
             list.SetItemMetadata(index, spawn.Guid.ToString());
             if (selectedGuid == spawn.Guid)
+            {
                 list.Select(index);
+            }
         }
     }
 
+    /// <summary>
+    /// Synchronize viewport/list/details and reset the clip menu on selection changes. Highlight
+    /// fallback geometry when needed.
+    /// </summary>
     public void Select(uint guid)
     {
         if (!markers.TryGetValue(guid, out var marker))
+        {
             return;
+        }
+
         if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var previous))
+        {
             previous.Body.MaterialOverride = normal;
+        }
+
         if (selectedGuid != guid)
         {
             previewAnimation = 0;
@@ -467,28 +591,50 @@ public partial class CreatureOverlay : Node3D
         details.Text = FormattableString.Invariant($"{spawn.Name}\nGUID {spawn.Guid} · template {spawn.TemplateId} · display {spawn.DisplayId} · map {pose.Map}\nX {pose.X:F3}  Y {pose.Y:F3}  Z {pose.Z:F3}\nHeading {pose.Heading:F4} rad\nSpawn mask {spawn.SpawnMask} · phase mask {spawn.PhaseMask}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
         list.DeselectAll();
         for (int i = 0; i < list.ItemCount; i++)
+        {
             if (list.GetItemMetadata(i).AsString() == guid.ToString())
             {
                 list.Select(i);
                 list.CallDeferred(ItemList.MethodName.EnsureCurrentIsVisible);
                 break;
             }
+        }
     }
 
+    /// <summary>
+    /// Resolve the effective local pose while retaining the immutable source baseline for conflict
+    /// detection.
+    /// </summary>
     WorldPose PoseOf(CreatureSpawn spawn) => draft?.Effective(sourceKey, spawn.Guid, spawn.Pose) ?? spawn.Pose;
+    /// <summary>
+    /// Require a writable local draft, selection and a hit on a gizmo handle before moving.
+    /// </summary>
     public bool BeginDrag(Camera3D camera, Vector2 screen) => draft != null && selectedGuid.HasValue && gizmo.Begin(camera, screen);
+    /// <summary>
+    /// Update visual movement; persistence waits for completion of the gesture.
+    /// </summary>
     public void Drag(Camera3D camera, Vector2 screen) => gizmo.Drag(camera, screen);
+    /// <summary>
+    /// Finish/cancel through the gizmo callback, committing at most one history command.
+    /// </summary>
     public void EndDrag(bool commit) => gizmo.Finish(commit);
+    /// <summary>
+    /// Convert committed view coordinates into a local server-coordinate draft, then update
+    /// marker/model transforms together. Failed saves restore the persisted pose.
+    /// </summary>
     void MoveSelection(Vector3 position, bool commit)
     {
         if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
+        {
             return;
+        }
+
         if (commit && draft != null)
         {
             var p = WorldCoordinates.ToServer(new(position.X, position.Y, position.Z));
             try
             {
-                draft.Move(sourceKey, marker.Spawn.Guid, marker.Spawn.Pose, PoseOf(marker.Spawn)with { X = p.X, Y = p.Y, Z = p.Z });
+                draft.Move(sourceKey, marker.Spawn.Guid, marker.Spawn.Pose, PoseOf(marker.Spawn) with { X = p.X, Y = p.Y, Z = p.Z });
                 draftMessage = "Saved local draft. Drag colored axes to move; source unchanged.";
             }
             catch (Exception)
@@ -503,11 +649,15 @@ public partial class CreatureOverlay : Node3D
         {
             int index = Array.IndexOf(batch.Guids, marker.Spawn.Guid);
             if (index >= 0)
+            {
                 batch.Node.SetPlacement(index, ModelTransform(marker.Spawn.Guid));
+            }
         }
 
         if (commit)
+        {
             Select(marker.Spawn.Guid);
+        }
     }
 
     static Vector3 ViewPosition(WorldPose pose)
@@ -516,15 +666,23 @@ public partial class CreatureOverlay : Node3D
         return new((float)p.X, (float)p.Y, (float)p.Z);
     }
 
+    /// <summary>
+    /// Cancel the active preview, persist undo/redo and reconcile marker/native positions from
+    /// effective history.
+    /// </summary>
     void History(bool redo)
     {
         gizmo.Finish(false);
         try
         {
             if (redo)
+            {
                 draft?.Redo();
+            }
             else
+            {
                 draft?.Undo();
+            }
         }
         catch (Exception)
         {
@@ -533,14 +691,28 @@ public partial class CreatureOverlay : Node3D
         }
 
         foreach (var marker in markers.Values)
+        {
             marker.Node.Position = ViewPosition(PoseOf(marker.Spawn));
+        }
+
         foreach (var batch in modelBatches.Values)
+        {
             for (int i = 0; i < batch.Guids.Length; i++)
+            {
                 batch.Node.SetPlacement(i, ModelTransform(batch.Guids[i]));
+            }
+        }
+
         if (selectedGuid.HasValue)
+        {
             Select(selectedGuid.Value);
+        }
     }
 
+    /// <summary>
+    /// Choose the nearest native bounding-box hit or screen-space marker fallback. Terrain occlusion
+    /// and precise animated triangle picking are not implemented.
+    /// </summary>
     public bool Pick(Camera3D camera, Vector2 screen)
     {
         Vector3 origin = camera.ProjectRayOrigin(screen), direction = camera.ProjectRayNormal(screen);
@@ -550,7 +722,10 @@ public partial class CreatureOverlay : Node3D
         foreach (var batch in modelBatches.Values)
         {
             if (!batch.Node.ModelReady)
+            {
                 continue;
+            }
+
             for (int i = 0; i < batch.Guids.Length; i++)
             {
                 uint guid = batch.Guids[i];
@@ -568,27 +743,46 @@ public partial class CreatureOverlay : Node3D
         foreach (var marker in markers.Values)
         {
             if (modelGuids.Contains(marker.Spawn.Guid) || !marker.Node.Visible)
+            {
                 continue;
+            }
+
             Vector3 center = marker.Node.GlobalPosition + Vector3.Up;
             if (camera.IsPositionBehind(center))
+            {
                 continue;
+            }
+
             var offset = center - origin;
             float along = offset.Dot(direction);
             if (along < 0 || along > camera.Far || along > distance)
+            {
                 continue;
+            }
+
             // Small screen-space target remains selectable at a distance; only markers near the click qualify.
             if (camera.UnprojectPosition(center).DistanceSquaredTo(screen) > 12 * 12)
+            {
                 continue;
+            }
+
             nearest = marker.Spawn.Guid;
             distance = along;
         }
 
         if (!nearest.HasValue)
+        {
             return false;
+        }
+
         Select(nearest.Value);
         return true;
     }
 
+    /// <summary>
+    /// Slab intersection in instance-local space. Do not normalize transformed directions: ray
+    /// parameters must stay comparable across scaled instances.
+    /// </summary>
     static float? BoxHit(Aabb box, Vector3 origin, Vector3 direction)
     {
         float near = 0, far = float.MaxValue;
@@ -597,7 +791,10 @@ public partial class CreatureOverlay : Node3D
             if (Math.Abs(direction[axis]) < 0.000001f)
             {
                 if (origin[axis] < box.Position[axis] || origin[axis] > box.End[axis])
+                {
                     return null;
+                }
+
                 continue;
             }
 
@@ -605,13 +802,18 @@ public partial class CreatureOverlay : Node3D
             near = Math.Max(near, Math.Min(a, b));
             far = Math.Min(far, Math.Max(a, b));
             if (far < near)
+            {
                 return null;
+            }
         }
 
         return near;
     }
 
     public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
+    /// <summary>
+    /// Cancel read-only queries and release the draft writer lock on scene exit.
+    /// </summary>
     public override void _ExitTree()
     {
         cancellation.Cancel();

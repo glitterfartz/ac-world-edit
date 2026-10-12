@@ -2,11 +2,81 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
+
+/// <summary>
+/// Opt-in regression workflows compiled with the viewer. Flags gate execution; movement checks use isolated drafts and database access remains read-only.
+/// </summary>
 public partial class TerrainViewer
 {
     int waterStage, waterSurfaceCount;
     double waterTime, waterReady;
     readonly List<double> waterFrames = [];
+    bool reloadSmoke;
+    int reloadStage;
+    double reloadTime;
+
+    /// <summary>
+    /// Configure opt-in checks from CLI flags. Normal viewer startup never enables them.
+    /// </summary>
+    void ConfigureSmokeChecks()
+    {
+        waterInterior = OS.GetCmdlineUserArgs().Contains("--water-interior-smoke");
+        waterSmoke = OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior;
+        smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
+        creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
+        visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke");
+        creatureSmoke |= visualSmoke;
+        gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke");
+        creatureSmoke |= gizmoSmoke;
+        reloadSmoke = OS.GetCmdlineUserArgs().Contains("--reload-smoke");
+    }
+
+    /// <summary>
+    /// Reload real archives during the first partial model upload, then verify native scenery
+    /// finishes loading again. Exercises the same lifecycle as the Load archives button.
+    /// </summary>
+    void ReloadSmoke(double delta)
+    {
+        reloadTime += delta;
+        if (reloadTime > 120)
+        {
+            GD.PushError("RELOAD_SMOKE_TIMEOUT " + message);
+            GetTree().Quit(1);
+            return;
+        }
+        if (busy || world == null)
+        {
+            return;
+        }
+        if (reloadStage == 0)
+        {
+            // Textures exist before publication: this specifically interrupts the GPU upload
+            // slot rather than only reloading an empty store or a fully ready model cache.
+            if (models.ReadyModels != 0 || models.TextureCount == 0)
+            {
+                return;
+            }
+            reloadStage = 1;
+            GD.Print("RELOAD_SMOKE_INTERRUPTED_PARTIAL_UPLOAD");
+            _ = LoadArchives();
+            return;
+        }
+        if (loaded.Count == 0 || loaded.Count != wanted.Count || pending != null ||
+            building != null || models.Busy)
+        {
+            return;
+        }
+        if (currentMapId != 0 || models.ReadyModels == 0 || models.TextureCount == 0 ||
+            models.ActiveFailedModels != 0)
+        {
+            GD.PushError("RELOAD_SMOKE_FAILED");
+            GetTree().Quit(1);
+            return;
+        }
+        GD.Print($"RELOAD_SMOKE_PASSED tiles={loaded.Count} models={models.ReadyModels} textures={models.TextureCount}");
+        GetTree().Quit();
+    }
+
     bool smoke;
     bool waterSmoke, waterInterior;
     bool creatureSmoke;
@@ -23,6 +93,10 @@ public partial class TerrainViewer
     double smokeTime;
     TileKey smokeOriginal;
     int smokeSettle;
+    /// <summary>
+    /// Opt-in streaming regression: settle, move far enough to unload, return and check stale
+    /// ownership. Headless checks lifecycle; graphical mode saves a preview.
+    /// </summary>
     void Smoke(double delta)
     {
         smokeTime += delta;
@@ -34,7 +108,10 @@ public partial class TerrainViewer
         }
 
         if (world == null || busy)
+        {
             return;
+        }
+
         if (loaded.Count != wanted.Count || loaded.Count == 0 || pending != null || building != null)
         {
             smokeSettle = 0;
@@ -42,12 +119,18 @@ public partial class TerrainViewer
         }
 
         if (++smokeSettle < 3)
+        {
             return;
+        }
+
         if (smokeStage == 0)
         {
             System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
             if (DisplayServer.GetName() != "headless")
+            {
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/terrain-preview.png"));
+            }
+
             GD.Print($"TERRAIN_SMOKE_INITIAL tiles={loaded.Count} textures={renderer.TextureCount}");
             var destination = world.Tiles.Where(k => Math.Abs(k.X - smokeOriginal.X) >= 4).OrderBy(k => Math.Abs(k.X - smokeOriginal.X) + Math.Abs(k.Y - smokeOriginal.Y)).First();
             Teleport(destination);
@@ -76,6 +159,10 @@ public partial class TerrainViewer
         }
     }
 
+    /// <summary>
+    /// Opt-in native liquid check: choose actual heights/placements, await loading and capture
+    /// animated views with short scene-specific timings.
+    /// </summary>
     void WaterSmoke(double delta)
     {
         waterTime += delta;
@@ -87,7 +174,10 @@ public partial class TerrainViewer
         }
 
         if (world == null || store == null || busy || pending != null || building != null || loaded.Count != wanted.Count)
+        {
             return;
+        }
+
         if (waterStage == 0)
         {
             Vector3 target;
@@ -96,7 +186,10 @@ public partial class TerrainViewer
                 var obj = world.GlobalObjects.First();
                 var surfaces = models.LiquidSurfaces(new ModelKey(obj.Path, DoodadSet: obj.DoodadSet));
                 if (surfaces.Length == 0)
+                {
                     return;
+                }
+
                 var native = surfaces.OrderByDescending(s => s.Indices.Length).First();
                 var center = native.Positions.Aggregate(System.Numerics.Vector3.Zero, (a, b) => a + b) / native.Positions.Length;
                 waterSurfaceCount = surfaces.Length;
@@ -122,7 +215,10 @@ public partial class TerrainViewer
         }
 
         if (models.Busy)
+        {
             return;
+        }
+
         if (waterReady == 0)
         {
             waterReady = waterTime;
@@ -130,18 +226,27 @@ public partial class TerrainViewer
         }
 
         if (waterTime - waterReady < 1)
+        {
             return;
+        }
+
         if (waterStage == 1)
         {
             if (DisplayServer.GetName() != "headless")
+            {
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior.png" : "res://artifacts/water-preview.png"));
+            }
+
             waterStage = 2;
             waterReady = waterTime;
             return;
         }
 
         if (!waterInterior)
+        {
             waterSurfaceCount = renderer.LiquidSurfaceCount;
+        }
+
         if (waterSurfaceCount == 0)
         {
             GD.PushError("WATER_SMOKE_NO_SURFACES");
@@ -151,14 +256,24 @@ public partial class TerrainViewer
 
         waterFrames.Add(delta * 1000);
         if (waterTime - waterReady < 4)
+        {
             return;
+        }
+
         if (DisplayServer.GetName() != "headless")
+        {
             GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior-animated.png" : "res://artifacts/water-animated.png"));
+        }
+
         var times = waterFrames.Order().ToArray();
         GD.Print($"WATER_SMOKE_PASSED interior={waterInterior} surfaces={waterSurfaceCount} frames={times.Length} p50={times[times.Length / 2]:F2}ms p95={times[(int)(times.Length * .95)]:F2}ms");
         GetTree().Quit();
     }
 
+    /// <summary>
+    /// Opt-in read-only selection/map-cancellation check, extended in graphical mode to animation
+    /// menus, isolated draft gizmos and an interior.
+    /// </summary>
     void CreatureSmoke(double delta)
     {
         creatureSmokeTime += delta;
@@ -170,7 +285,10 @@ public partial class TerrainViewer
         }
 
         if (busy || world == null || (creatureSmokeStage < 3 && (creatures.IsLoading || creatures.Records.Count == 0)))
+        {
             return;
+        }
+
         if (creatures.Records.Any(s => s.Pose.Map != currentMapId))
         {
             GD.PushError("CREATURE_SMOKE_STALE_MAP");
@@ -181,7 +299,10 @@ public partial class TerrainViewer
         if (creatureSmokeStage == 0)
         {
             if (loaded.Count != wanted.Count || pending != null || building != null)
+            {
                 return;
+            }
+
             var centerTile = CameraTile();
             var spawn = creatures.Records.Where(s => ACWorldEdit.Foundation.WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y)).OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
             var position = creatures.PositionOf(spawn.Guid);
@@ -202,9 +323,15 @@ public partial class TerrainViewer
         else if (creatureSmokeStage == 1)
         {
             if (creatureSmokeTime - creatureSelectedAt < 1)
+            {
                 return;
+            }
+
             if (visualSmoke && (models.Busy || creatures.ModelCreatureCount == 0))
+            {
                 return;
+            }
+
             if ((visualSmoke || gizmoSmoke) && !gizmoVerified)
             {
                 if (!creatures.SmokeGizmo(camera))
@@ -238,7 +365,10 @@ public partial class TerrainViewer
                 if (animationSmokeStage == 1)
                 {
                     if (!creatures.PreviewAnimationReady)
+                    {
                         return;
+                    }
+
                     if (animationReadyAt == 0)
                     {
                         animationReadyAt = creatureSmokeTime;
@@ -246,9 +376,15 @@ public partial class TerrainViewer
                     }
 
                     if (creatureSmokeTime - animationReadyAt < 0.5)
+                    {
                         return;
+                    }
+
                     if (DisplayServer.GetName() != "headless")
+                    {
                         GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/walk-preview.png"));
+                    }
+
                     if (!creatures.ChooseAnimationForSmoke(0))
                     {
                         GetTree().Quit(1);
@@ -262,7 +398,10 @@ public partial class TerrainViewer
                 if (animationSmokeStage == 2)
                 {
                     if (!creatures.PreviewAnimationReady)
+                    {
                         return;
+                    }
+
                     GD.Print("NATIVE_ANIMATION_SMOKE_PASSED selected-model Walk/Stand UI and native clip loading");
                     animationSmokeStage = 3;
                     creatureSelectedAt = creatureSmokeTime;
@@ -271,7 +410,10 @@ public partial class TerrainViewer
 
                 visualFrameTimes.Add(delta * 1000);
                 if (creatureSmokeTime - creatureSelectedAt < 4)
+                {
                     return;
+                }
+
                 var samples = visualFrameTimes.Order().ToArray();
                 GD.Print($"VISUAL_FRAME_TIMES frames={samples.Length} p50Ms={samples[samples.Length / 2]:F3} p95Ms={samples[(int)(samples.Length * 0.95)]:F3}");
             }
@@ -283,7 +425,10 @@ public partial class TerrainViewer
             }
 
             if (visualSmoke)
+            {
                 GD.Print($"VISUAL_SMOKE models={models.ReadyModels} creatures={creatures.ModelCreatureCount} objects={objects.ObjectCount} textures={models.TextureCount} cacheMiB={models.CachedBytes / 1048576} uploadMs={models.UploadMilliseconds:F3} fps={Engine.GetFramesPerSecond()}");
+            }
+
             creatures.Refresh();
             creatures.Update(camera); // Start a query, then replace its map immediately.
             int nextMap = mapList.FindIndex(m => m.Directory == "Kalimdor");
@@ -329,7 +474,10 @@ public partial class TerrainViewer
         else
         {
             if (models.Busy)
+            {
                 return;
+            }
+
             if (world.Tiles.Count != 0 || world.GlobalObjects.Count == 0 || models.ActiveFailedModels > 0)
             {
                 GD.PushError("INTERIOR_SMOKE_FAILED");
@@ -344,9 +492,15 @@ public partial class TerrainViewer
             }
 
             if (creatureSmokeTime - interiorReadyAt < 1)
+            {
                 return;
+            }
+
             if (DisplayServer.GetName() != "headless")
+            {
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/interior-preview.png"));
+            }
+
             GD.Print($"INTERIOR_SMOKE_PASSED map={currentMapId} objects={objects.ObjectCount} models={models.ReadyModels} fps={Engine.GetFramesPerSecond()}");
             GetTree().Quit();
         }

@@ -2,15 +2,22 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
+
+/// <summary>
+/// Standalone camera/input/archive/streaming coordinator. UI lives in a partial file and opt-in
+/// smoke workflows under Diagnostics; GPU work stays on the Godot thread.
+/// </summary>
 public partial class TerrainViewer : Node3D
 {
     AssetStore? store;
     WorldMap? world;
-    TerrainRenderer renderer = null !;
-    ModelLibrary models = null !;
-    WorldObjectScene objects = null !;
-    Camera3D camera = null !;
-    WorldEnvironment environment = null !;
+    TerrainRenderer renderer = null!;
+    ModelLibrary models = null!;
+    WorldObjectScene objects = null!;
+    Camera3D camera = null!;
+    WorldEnvironment environment = null!;
+    // Three distinct ownership states: wanted keys, one worker/building result, and
+    // fully uploaded tile roots. Generation guards prevent map/reload races.
     readonly Dictionary<TileKey, Node3D> loaded = [];
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<TileKey> wanted = [];
@@ -23,17 +30,25 @@ public partial class TerrainViewer : Node3D
     bool busy, capture;
     float yaw, pitch = -0.4f, speed = 70;
     int radius = 1;
-    OptionButton maps = null !;
-    SpinBox tileX = null !, tileY = null !, distance = null !;
-    LineEdit dataPath = null !;
-    Button open = null !, reload = null !;
-    Label status = null !, telemetry = null !;
+    OptionButton maps = null!;
+    SpinBox tileX = null!, tileY = null!, distance = null!;
+    LineEdit dataPath = null!;
+    Button open = null!, reload = null!;
+    Label status = null!, telemetry = null!;
     List<MapInfo> mapList = [];
-    TerrainMinimap minimap = null !;
+    TerrainMinimap minimap = null!;
     string message = "Opening archives…";
-    CreatureOverlay creatures = null !;
+    CreatureOverlay creatures = null!;
     ushort? currentMapId;
+    /// <summary>
+    /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
+    /// generations cannot be published.
+    /// </summary>
     sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors);
+    /// <summary>
+    /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
+    /// archives.
+    /// </summary>
     public override async void _Ready()
     {
         renderer = new TerrainRenderer();
@@ -74,21 +89,21 @@ public partial class TerrainViewer : Node3D
         AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
         BuildUi();
-        waterInterior = OS.GetCmdlineUserArgs().Contains("--water-interior-smoke");
-        waterSmoke = OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior;
-        smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
-        creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
-        visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke");
-        creatureSmoke |= visualSmoke;
-        gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke");
-        creatureSmoke |= gizmoSmoke;
+        ConfigureSmokeChecks();
         await LoadArchives();
     }
 
+    /// <summary>
+    /// Cancel/await terrain and model readers before replacing the client store. Dispose old MPQs
+    /// only when no worker can still read them.
+    /// </summary>
     async Task LoadArchives()
     {
         if (busy)
+        {
             return;
+        }
+
         busy = true;
         open.Disabled = true;
         reload.Disabled = true;
@@ -136,7 +151,9 @@ public partial class TerrainViewer : Node3D
             {
                 maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})");
                 if (mapList[i].Directory == (waterInterior ? "Blackfathom" : "Azeroth"))
+                {
                     selected = i;
+                }
             }
 
             maps.Select(selected);
@@ -155,13 +172,22 @@ public partial class TerrainViewer : Node3D
         }
 
         if (store != null && mapList.Count > 0)
+        {
             await OpenMap();
+        }
     }
 
+    /// <summary>
+    /// Read WDT on a worker and choose outdoor navigation or an interior camera start. Map changes
+    /// invalidate terrain and creature generations.
+    /// </summary>
     async Task OpenMap()
     {
         if (busy || store == null || maps.Selected < 0)
+        {
             return;
+        }
+
         busy = true;
         open.Disabled = true;
         ResetTerrain();
@@ -179,7 +205,10 @@ public partial class TerrainViewer : Node3D
             if (world.Tiles.Count > 0)
             {
                 if (!world.Tiles.Contains(requested))
+                {
                     requested = world.Tiles.OrderBy(k => Math.Abs(k.X - requested.X) + Math.Abs(k.Y - requested.Y)).First();
+                }
+
                 tileX.Value = requested.X;
                 tileY.Value = requested.Y;
                 Teleport(requested);
@@ -214,6 +243,10 @@ public partial class TerrainViewer : Node3D
         }
     }
 
+    /// <summary>
+    /// Invalidate pending results, release complete/partial tiles and clear transient
+    /// objects/creatures. Scene nodes do not own source assets or durable drafts.
+    /// </summary>
     void ResetTerrain()
     {
         generation++;
@@ -221,10 +254,16 @@ public partial class TerrainViewer : Node3D
         cancellation.Dispose();
         cancellation = new();
         foreach (var n in loaded.Values)
+        {
             renderer.Release(n);
+        }
+
         loaded.Clear();
         if (buildingNode != null)
+        {
             renderer.Release(buildingNode);
+        }
+
         buildingNode = null;
         building = null;
         buildIndex = 0;
@@ -236,10 +275,17 @@ public partial class TerrainViewer : Node3D
         objects.Clear();
     }
 
+    /// <summary>
+    /// Move to an available tile and refresh streaming. Adjust elevation from cached geometry now or
+    /// when its pending upload completes.
+    /// </summary>
     void Teleport(TileKey key)
     {
         if (world == null || !world.Tiles.Contains(key))
+        {
             return;
+        }
+
         camera.Position = new Vector3((key.X - 32 + 0.5f) * TerrainTile.Size, 250, (key.Y - 32 + 0.5f) * TerrainTile.Size);
         yaw = 0;
         pitch = -0.55f;
@@ -247,10 +293,20 @@ public partial class TerrainViewer : Node3D
         UpdateWanted();
         // A loaded tile can supply elevation immediately; otherwise adjust when it finishes.
         if (loaded.TryGetValue(key, out var node))
+        {
             RaiseAboveTerrain(node);
+        }
     }
 
+    /// <summary>
+    /// Convert camera horizontal coordinates to floor-based tile indices. Interiors may have camera
+    /// indices outside the terrain grid.
+    /// </summary>
     TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
+    /// <summary>
+    /// Move near the effective draft pose and synchronize mouse-look angles before refreshing the
+    /// region.
+    /// </summary>
     void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
     {
         var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z));
@@ -262,19 +318,30 @@ public partial class TerrainViewer : Node3D
         UpdateWanted();
     }
 
+    /// <summary>
+    /// Compute nearby available tiles, release unwanted full/partial nodes and bound creature
+    /// queries. Interior maps use camera neighborhoods without inventing ADTs.
+    /// </summary>
     void UpdateWanted()
     {
         if (world == null)
+        {
             return;
+        }
+
         var center = CameraTile();
         wanted.Clear();
         for (int y = -radius; y <= radius; y++)
+        {
             for (int x = -radius; x <= radius; x++)
             {
                 var key = new TileKey(center.X + x, center.Y + y);
                 if (world.Tiles.Contains(key))
+                {
                     wanted.Add(key);
+                }
             }
+        }
 
         foreach (var key in loaded.Keys.Where(k => !wanted.Contains(k)).ToArray())
         {
@@ -286,17 +353,28 @@ public partial class TerrainViewer : Node3D
         if (building != null && !wanted.Contains(building.Tile.Key))
         {
             if (buildingNode != null)
+            {
                 renderer.Release(buildingNode);
+            }
+
             building = null;
             buildingNode = null;
         }
 
         if (currentMapId.HasValue && wanted.Count > 0)
+        {
             creatures.SetRegion(new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y)));
+        }
         else if (currentMapId.HasValue && world.Tiles.Count == 0)
+        {
             creatures.SetRegion(new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63)));
+        }
     }
 
+    /// <summary>
+    /// Worker-only tile/texture decode with cancellation checks. Carry decode errors to the main
+    /// thread for explicit warnings.
+    /// </summary>
     PreparedTile Prepare(AssetStore assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
@@ -338,117 +416,20 @@ public partial class TerrainViewer : Node3D
         return new(version, tile, decoded, errors);
     }
 
+    /// <summary>
+    /// Move the camera, publish current-generation results and incrementally upload/update systems.
+    /// One worker and soft upload budgets limit frame stalls.
+    /// </summary>
     public override void _Process(double delta)
     {
         if (capture && !busy)
         {
-            Vector3 move = Vector3.Zero;
-            if (Input.IsPhysicalKeyPressed(Key.W))
-                move -= camera.Basis.Z;
-            if (Input.IsPhysicalKeyPressed(Key.S))
-                move += camera.Basis.Z;
-            if (Input.IsPhysicalKeyPressed(Key.A))
-                move -= camera.Basis.X;
-            if (Input.IsPhysicalKeyPressed(Key.D))
-                move += camera.Basis.X;
-            if (Input.IsPhysicalKeyPressed(Key.Q))
-                move -= Vector3.Up;
-            if (Input.IsPhysicalKeyPressed(Key.E))
-                move += Vector3.Up;
-            camera.Position += move.Normalized() * speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
+            MoveCamera(delta);
         }
 
         if (!busy && world != null && store != null)
         {
-            UpdateWanted();
-            if (pending is { IsCompleted: true })
-            {
-                try
-                {
-                    var result = pending.GetAwaiter().GetResult();
-                    if (result.Generation == generation && wanted.Contains(result.Tile.Key))
-                    {
-                        building = result;
-                        buildIndex = 0;
-                        buildingNode = renderer.BeginTile(result.Tile.Key);
-                        AddChild(buildingNode);
-                        if (result.Errors.Count > 0)
-                        {
-                            message = $"{result.Errors.Count} missing/unsupported textures. See log.";
-                            foreach (string e in result.Errors)
-                                GD.PushWarning(e);
-                        }
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                }
-                catch (Exception e)
-                {
-                    if (pendingKey.HasValue)
-                        failed.Add(pendingKey.Value);
-                    pendingKey = null;
-                    message = "Tile error: " + e.Message;
-                    GD.PushError(message);
-                }
-
-                if (pendingKey.HasValue)
-                    failed.Remove(pendingKey.Value);
-                pendingKey = null;
-                pending = null;
-            }
-
-            if (building != null && buildingNode != null)
-            {
-                var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
-                try
-                {
-                    // Leave 0.5 ms headroom within the proposed 2 ms upload target.
-                    // A single indivisible resource upload can still exceed the soft deadline.
-                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
-                        if (buildIndex < building.Tile.Chunks.Count)
-                            renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
-                        else
-                            renderer.AddLiquid(buildingNode, building.Tile.Liquids[buildIndex - building.Tile.Chunks.Count], building.Textures);
-                    if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
-                    {
-                        loaded[building.Tile.Key] = buildingNode;
-                        objects.SetTile(building.Tile.Key, building.Tile.Objects);
-                        if (CameraTile() == building.Tile.Key)
-                            RaiseAboveTerrain(buildingNode);
-                        building = null;
-                        buildingNode = null;
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (building != null)
-                        failed.Add(building.Tile.Key);
-                    if (buildingNode != null)
-                        renderer.Release(buildingNode);
-                    building = null;
-                    buildingNode = null;
-                    message = "Render error: " + e.Message;
-                    GD.PushError(message);
-                }
-            }
-
-            if (pending == null && building == null)
-            {
-                var center = CameraTile();
-                var next = wanted.Where(k => !loaded.ContainsKey(k) && !failed.Contains(k)).OrderBy(k => (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y)).Select(k => (TileKey? )k).FirstOrDefault();
-                if (next.HasValue)
-                {
-                    var key = next.Value;
-                    var assets = store;
-                    var map = world;
-                    int version = generation;
-                    var token = cancellation.Token;
-                    // Failed tiles are tracked separately; obsolete requests can be retried when revisited.
-                    pendingKey = key;
-                    pending = Task.Run(() => Prepare(assets, map, key, version, token));
-                }
-            }
+            UpdateTerrainStreaming(world, store);
         }
 
         status.Text = message;
@@ -461,15 +442,31 @@ public partial class TerrainViewer : Node3D
         minimap.CameraPosition = camera.Position;
         minimap.QueueRedraw();
         if (smoke)
+        {
             Smoke(delta);
+        }
+
         if (waterSmoke)
+        {
             WaterSmoke(delta);
+        }
+
         creatures.Update(camera);
         models.Update(camera);
         if (creatureSmoke)
+        {
             CreatureSmoke(delta);
+        }
+        if (reloadSmoke)
+        {
+            ReloadSmoke(delta);
+        }
     }
 
+    /// <summary>
+    /// Lift the camera above the nearest terrain sample after loading/teleport. Navigation
+    /// assistance is not collision or movement snapping.
+    /// </summary>
     void RaiseAboveTerrain(Node3D tile)
     {
         // Pick nearest mesh vertex to prevent spawning inside mountains.
@@ -491,9 +488,15 @@ public partial class TerrainViewer : Node3D
         }
 
         if (camera.Position.Y < height + 35)
+        {
             camera.Position = new Vector3(camera.Position.X, height + 80, camera.Position.Z);
+        }
     }
 
+    /// <summary>
+    /// Handle navigation/clicks after UI consumption. Gizmo handles take priority over creature
+    /// selection.
+    /// </summary>
     public override void _UnhandledInput(InputEvent input)
     {
         if (input is InputEventMouseButton mouse)
@@ -501,7 +504,10 @@ public partial class TerrainViewer : Node3D
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)
             {
                 if (!creatures.BeginDrag(camera, mouse.Position))
+                {
                     creatures.Pick(camera, mouse.Position);
+                }
+
                 return;
             }
 
@@ -512,9 +518,14 @@ public partial class TerrainViewer : Node3D
             }
 
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelUp)
+            {
                 speed = Math.Min(1500, speed * 1.25f);
+            }
+
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelDown)
+            {
                 speed = Math.Max(5, speed / 1.25f);
+            }
         }
 
         if (input is InputEventMouseMotion motion && capture)
@@ -531,6 +542,9 @@ public partial class TerrainViewer : Node3D
         }
     }
 
+    /// <summary>
+    /// Release camera capture and cancel an active draft drag when window focus is lost.
+    /// </summary>
     public override void _Notification(int what)
     {
         if (what == NotificationWMWindowFocusOut)
@@ -541,28 +555,215 @@ public partial class TerrainViewer : Node3D
         }
     }
 
+    /// <summary>
+    /// Own an active drag through release/Escape even across UI. Completion saves locally;
+    /// cancellation restores the starting pose.
+    /// </summary>
     public override void _Input(InputEvent input)
     {
         if (creatures == null || !creatures.IsDragging)
+        {
             return;
+        }
+
         if (input is InputEventMouseMotion motion)
+        {
             creatures.Drag(camera, motion.Position);
+        }
         else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
+        {
             creatures.EndDrag(true);
+        }
         else if (input is InputEventKey { Keycode: Key.Escape, Pressed: true })
+        {
             creatures.EndDrag(false);
+        }
+
         GetViewport().SetInputAsHandled();
     }
 
+    /// <summary>
+    /// Cancel streaming and delay store disposal until worker reads complete. Closing the viewer
+    /// never mutates client/server data.
+    /// </summary>
     public override void _ExitTree()
     {
         cancellation.Cancel();
         var assets = store;
         var modelTask = models?.Stop() ?? Task.CompletedTask;
         if (pending != null || !modelTask.IsCompleted)
+        {
             _ = Task.WhenAll(pending ?? Task.CompletedTask, modelTask).ContinueWith(_ => assets?.Dispose());
+        }
         else
+        {
             assets?.Dispose();
+        }
+
         cancellation.Dispose();
+    }
+
+    /// <summary>
+    /// Translate captured keyboard input along camera/world axes. Normalize combined movement so
+    /// diagonal flight has the same base speed.
+    /// </summary>
+    void MoveCamera(double delta)
+    {
+        Vector3 move = Vector3.Zero;
+        if (Input.IsPhysicalKeyPressed(Key.W))
+        {
+            move -= camera.Basis.Z;
+        }
+
+        if (Input.IsPhysicalKeyPressed(Key.S))
+        {
+            move += camera.Basis.Z;
+        }
+
+        if (Input.IsPhysicalKeyPressed(Key.A))
+        {
+            move -= camera.Basis.X;
+        }
+
+        if (Input.IsPhysicalKeyPressed(Key.D))
+        {
+            move += camera.Basis.X;
+        }
+
+        if (Input.IsPhysicalKeyPressed(Key.Q))
+        {
+            move -= Vector3.Up;
+        }
+
+        if (Input.IsPhysicalKeyPressed(Key.E))
+        {
+            move += Vector3.Up;
+        }
+
+        camera.Position += move.Normalized() * speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
+    }
+
+    /// <summary>
+    /// Consume completed tile reads, reject obsolete generations, build within a soft per-frame
+    /// budget and schedule the nearest missing tile. Explicit map/store arguments preserve a stable
+    /// non-null worker source.
+    /// </summary>
+    void UpdateTerrainStreaming(WorldMap activeWorld, AssetStore activeAssets)
+    {
+        UpdateWanted();
+        if (pending is { IsCompleted: true })
+        {
+            try
+            {
+                var result = pending.GetAwaiter().GetResult();
+                // Cancellation is cooperative: a finished read may still belong to the
+                // previous map or camera region. Check both identity and current interest.
+                if (result.Generation == generation && wanted.Contains(result.Tile.Key))
+                {
+                    building = result;
+                    buildIndex = 0;
+                    buildingNode = renderer.BeginTile(result.Tile.Key);
+                    AddChild(buildingNode);
+                    if (result.Errors.Count > 0)
+                    {
+                        message = $"{result.Errors.Count} missing/unsupported textures. See log.";
+                        foreach (string e in result.Errors)
+                        {
+                            GD.PushWarning(e);
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                if (pendingKey.HasValue)
+                {
+                    failed.Add(pendingKey.Value);
+                }
+
+                pendingKey = null;
+                message = "Tile error: " + e.Message;
+                GD.PushError(message);
+            }
+
+            if (pendingKey.HasValue)
+            {
+                failed.Remove(pendingKey.Value);
+            }
+
+            pendingKey = null;
+            pending = null;
+        }
+
+        if (building != null && buildingNode != null)
+        {
+            var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+            try
+            {
+                // Leave 0.5 ms headroom within the proposed 2 ms upload target.
+                // A single indivisible resource upload can still exceed the soft deadline.
+                for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
+                {
+                    if (buildIndex < building.Tile.Chunks.Count)
+                    {
+                        renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, activeWorld.BigAlpha);
+                    }
+                    else
+                    {
+                        renderer.AddLiquid(buildingNode, building.Tile.Liquids[buildIndex - building.Tile.Chunks.Count], building.Textures);
+                    }
+                }
+
+                if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
+                {
+                    loaded[building.Tile.Key] = buildingNode;
+                    objects.SetTile(building.Tile.Key, building.Tile.Objects);
+                    if (CameraTile() == building.Tile.Key)
+                    {
+                        RaiseAboveTerrain(buildingNode);
+                    }
+
+                    building = null;
+                    buildingNode = null;
+                }
+            }
+            catch (Exception e)
+            {
+                if (building != null)
+                {
+                    failed.Add(building.Tile.Key);
+                }
+
+                if (buildingNode != null)
+                {
+                    renderer.Release(buildingNode);
+                }
+
+                building = null;
+                buildingNode = null;
+                message = "Render error: " + e.Message;
+                GD.PushError(message);
+            }
+        }
+
+        if (pending == null && building == null)
+        {
+            var center = CameraTile();
+            var next = wanted.Where(k => !loaded.ContainsKey(k) && !failed.Contains(k)).OrderBy(k => (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y)).Select(k => (TileKey?)k).FirstOrDefault();
+            if (next.HasValue)
+            {
+                var key = next.Value;
+                var assets = activeAssets;
+                var map = activeWorld;
+                int version = generation;
+                var token = cancellation.Token;
+                // Failed tiles are tracked separately; obsolete requests can be retried when revisited.
+                pendingKey = key;
+                pending = Task.Run(() => Prepare(assets, map, key, version, token));
+            }
+        }
     }
 }

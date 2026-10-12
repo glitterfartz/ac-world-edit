@@ -30,6 +30,12 @@ new spawns, script/quest editing and shell comparisons unless the user requests 
 - Preserve user changes. No reset/clean/amend/push without instruction.
 - Keep Godot .NET 4.7.1/.NET 8 and pinned SDK; respect UTF-8 and existing conventions.
 - Prefer focused changes and reuse over speculative frameworks.
+- Follow .editorconfig: UTF-8/LF, four-space C# indentation, explicit control-flow braces and
+  one statement per line. Keep dependency versions and source formats stable during cleanup.
+- Document binary layouts, coordinate conventions, resource ownership, worker/main-thread
+  boundaries and failure handling. Explain intent/invariants rather than narrating obvious syntax.
+- Keep opt-in smoke workflows in Scripts/Diagnostics and viewer UI in its partial source file.
+  Do not restore retired Phase 0 shells, plugin trials, duplicate draft/export code or research gates.
 - Do not commit credentials, client assets, caches, build outputs or raw operational logs.
 
 ## Progress and saving work
@@ -42,4 +48,6 @@ next checkpoint; don't create recursive commit-only updates.
 Build/check what changed. For creature overlays, verify real read-only queries, viewport/list
 selection, region/map changes, cancellation/stale results, draft/gizmo history and terrain streaming.
 For native models, run model corpus checks and a graphical visual smoke including interiors. Headless or
-synthetic checks do not prove in-game visual parity. Documentation changes need link/diff checks
+synthetic checks do not prove in-game visual parity. For lifecycle changes, run --reload-smoke to
+reload archives during a partial GPU upload. Check formatting with dotnet format whitespace
+ACWorldEdit.csproj --no-restore --verify-no-changes. Documentation changes need link/diff checks.

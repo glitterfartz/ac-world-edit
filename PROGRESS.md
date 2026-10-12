@@ -64,7 +64,7 @@ client landmark/heading verification and reviewed SQL export remain later work. 
 must not be declared ready without those checks and an authorized disposable-database apply/reverse
 proof. Source data and unknown row fields remain untouched.
 
-## Water rendering — 2026-10-11
+## Water rendering â€” 2026-10-11
 
 - Added MH2O layers, visibility bitmaps, per-vertex heights/depth and native height/UV grids;
   depth-only oceans use their native flat level. Legacy MCLQ and WMO MLIQ grids preserve hidden cells.
@@ -96,14 +96,32 @@ proof. Source data and unknown row fields remain untouched.
 - Fidelity follow-ups: client Light.dbc water colors, reflections/refraction, underwater fog,
   exact client playback/blending and WMO flow overrides. No source water editing or collision added.
 
-## Refactor and cleanup — in progress
+## Refactor and cleanup â€” completed 2026-10-11
 
-- Removed retired Phase 0 shell/plugin, synthetic benchmark, duplicate generic draft workspace,
-  unused SQL exporter and stale research-linked documents. Active position drafts are preserved.
-- Kept the independent native MPQ comparison and moved its runner to Tests/Run-StormLibChecks.ps1.
-- Separated viewer UI and opt-in viewer/creature smoke workflows from the main runtime files.
-  Split reusable binary/DBC/appearance/map/liquid catalog helpers into focused source files.
-  AnimationPalette replaces the misleading IdlePalette name; native clip behavior is unchanged.
-- Structural checkpoint: main project builds with zero warnings/errors; creature draft checks pass.
-  Remaining: consistent formatting, extensive algorithm/ownership comments, corpus and graphical
-  regression checks, and final documentation checkpoint. User viewport settings remain unstaged.
+- Saved structural checkpoint 5b277b7. Removed the retired shell/plugin and synthetic benchmark,
+  duplicate generic draft workspace, unused SQL exporter and stale research-linked documents.
+  Active durable creature drafts and all useful native asset/draft checks remain.
+- Moved the independent MPQ comparison runner to Tests/Run-StormLibChecks.ps1. Viewer UI and
+  opt-in smoke workflows now have separate partial files. Binary/DBC/creature catalog/map/liquid
+  catalog/model binding helpers have focused files; AnimationPalette names all supported clips.
+- Applied .editorconfig rules, expanded compressed statements/control flow, removed unused
+  imports/members and formatted project XML/shaders. Extensive class/method and algorithm comments
+  document formats, transforms, ownership, cancellation, persistence and unsupported behavior.
+- Streaming and model-cache update methods now delegate named lifecycle steps. Animation palette
+  texture/uniform names match their purpose. Removed the unused playback override from liquid shader.
+- Fixed interrupted model uploads leaking their explicit resource ownership on archive reload:
+  the in-progress entry now releases meshes/palette/shared texture references before store reset.
+- Validation: main build zero warnings/errors; formatting verification passed. Asset/geometry and
+  malformed-input checks passed, including 133 independent byte comparisons against pinned StormLib.
+  Liquid corpus: 49 ADTs, 3,564 layers, 216,230 visible cells. Model corpus: 116 M2, 52 WMO, 1,988
+  material/atlas decodes, 39 interior maps and fourteen MODF bounds checks. Draft recovery checks passed.
+- Graphical regression passed real viewport/list selection, native Walk/Stand, gizmo movement and
+  reopen/undo/redo, canceled query/map switching and Stockade interiors. Nine-tile streaming
+  unload/revisit passed. Archive reload interrupted a partial GPU upload and returned to nine
+  loaded tiles, 333 ready models and 442 textures. Blackfathom liquid graphical check passed.
+  Evidence remains under ignored artifacts/refactor-*.txt, refactor-*.out.txt and preview PNGs.
+- Source client/server/database data and the user's viewport configuration remain unchanged.
+  Event/pool/phase visibility filters remain future work; this cleanup does not change spawn display.
+- Automatic approval review rejected recursive deletion of obsolete ignored Experiments build
+  caches with "blocked by policy". Those caches remain ignored; their source projects/classes
+  are removed, and generic bin/obj exclusions prevent stale generated code entering the build.

@@ -2,15 +2,26 @@ using System.Numerics;
 using System.Text;
 
 namespace ACWorldEdit.Assets;
+
+/// <summary>
+/// Bounds-checked little-endian reader shared by M2, WMO and DBC parsers. It rejects non-finite
+/// float geometry and resolves byte offsets explicitly; it allocates no engine resources.
+/// </summary>
 public sealed class BinaryAsset(byte[] bytes)
 {
     public byte[] Bytes => bytes;
     public int Length => bytes.Length;
 
+    /// <summary>
+    /// Validate range/count/stride with wide arithmetic before allocation or indexing, including
+    /// nested binary array descriptors.
+    /// </summary>
     public void Range(int p, int count, int stride = 1)
     {
         if (p < 0 || count < 0 || stride < 0 || (long)p + (long)count * stride > bytes.Length)
+        {
             throw new InvalidDataException("Model array outside asset bounds.");
+        }
     }
 
     public uint U(int p)
@@ -32,20 +43,34 @@ public sealed class BinaryAsset(byte[] bytes)
         Range(p, 4);
         float v = BitConverter.ToSingle(bytes, p);
         if (!float.IsFinite(v))
+        {
             throw new InvalidDataException("Non-finite model value.");
+        }
+
         return v;
     }
 
     public Vector3 V(int p) => new(F(p), F(p + 4), F(p + 8));
+    /// <summary>
+    /// Read a NUL-terminated UTF-8 asset string; unterminated or out-of-range strings are malformed
+    /// data.
+    /// </summary>
     public string Str(int p)
     {
         Range(p, 1);
         int end = System.Array.IndexOf(bytes, (byte)0, p);
         if (end < 0)
+        {
             throw new InvalidDataException("Unterminated asset string.");
+        }
+
         return Encoding.UTF8.GetString(bytes, p, end - p);
     }
 
+    /// <summary>
+    /// Read a native count/offset pair and validate its full byte extent using the caller-provided
+    /// record stride.
+    /// </summary>
     public (int Count, int Offset) Array(int p, int stride)
     {
         int count = I(p), offset = I(p + 4);
@@ -53,7 +78,19 @@ public sealed class BinaryAsset(byte[] bytes)
         return (count, offset);
     }
 
+    /// <summary>
+    /// Convert model vectors or quaternion axes into the Y-up viewer basis. Quaternion normalization
+    /// keeps rotations usable by CPU animation and Godot.
+    /// </summary>
     public static Vector3 View(Vector3 v) => new(-v.Y, v.Z, -v.X);
+    /// <summary>
+    /// Convert model vectors or quaternion axes into the Y-up viewer basis. Quaternion normalization
+    /// keeps rotations usable by CPU animation and Godot.
+    /// </summary>
     public static Quaternion View(Quaternion q) => Quaternion.Normalize(new(-q.Y, q.Z, -q.X, q.W));
+    /// <summary>
+    /// Normalize client separators and legacy .mdx names to the .m2 asset path used by the Wrath
+    /// reader.
+    /// </summary>
     public static string ModelPath(string path) => System.IO.Path.ChangeExtension(path.Replace('\\', '/'), ".m2");
 }

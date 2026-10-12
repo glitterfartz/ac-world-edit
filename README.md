@@ -35,7 +35,8 @@ Horizontal moves preserve height; there is no terrain snapping, yaw editing or S
 Queries still locate spawns by their source positions. A draft moved far outside its source region
 reappears when that source region is queried again; a cross-region draft index is follow-up work.
 
-All spawn/phase masks are displayed without simulation or filtering. Model picking uses bounding
+The editor shows database placements, including inactive event/pool spawns. Spawn/phase masks
+are displayed without simulation or filtering. Model picking uses bounding
 boxes, while fallback markers use a screen-space target; terrain occlusion is not tested.
 
 ## Explore
@@ -104,6 +105,10 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
   under ignored `artifacts/`; uses isolated test drafts and leaves your application draft intact.
 - Godot `-- --gizmo-smoke`: focused headless movement/selection check with an isolated draft.
+- Godot `-- --reload-smoke`: interrupt a partially uploaded native model by reloading archives,
+  then verify the replacement map/models finish loading.
+- `dotnet format whitespace ACWorldEdit.csproj --no-restore --verify-no-changes`: check the
+  committed C# formatting rules; run without `--verify-no-changes` to apply them.
 
 Liquid schema reference: [WoWDBDefs LiquidType](https://github.com/wowdev/WoWDBDefs/blob/master/definitions/LiquidType.dbd).
 

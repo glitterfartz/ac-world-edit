@@ -1,12 +1,13 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
+// Atlas texels retain native ripples; preview water tint/opacity are approximations.
 uniform sampler2D albedo_tex : source_color, filter_linear, repeat_disable;
 uniform float frames = 1.0;
 uniform int liquid_kind = 0;
-uniform float playback_time = -1.0;
+
 void fragment() {
-    float clock = playback_time >= 0.0 ? playback_time : TIME;
-    float frame = mod(floor(clock * 30.0), frames);
+    // Animate only the native texture sequence; keep geometry at its stored elevation.
+    float frame = mod(floor(TIME * 30.0), frames);
     vec2 size = vec2(textureSize(albedo_tex, 0));
     vec2 tile = fract(UV);
     // Clamp inside each frame to avoid sampling its neighbor in the atlas.
@@ -14,6 +15,8 @@ void fragment() {
     tile = mix(inset, vec2(1.0) - inset, tile);
     vec4 tex = texture(albedo_tex, vec2((frame + tile.x) / frames, tile.y));
     ALBEDO = liquid_kind >= 2 ? tex.rgb : mix(vec3(0.035, 0.16, 0.23), vec3(0.16, 0.37, 0.43), clamp(tex.r * 8.0, 0.0, 1.0));
+    // Lava/slime retain their native RGB. Water blends over the scene without writing
+    // depth, so source terrain and WMO geometry still determine visible shorelines.
     if (liquid_kind >= 2) {
         ALPHA = 1.0;
         EMISSION = tex.rgb * (liquid_kind == 2 ? 0.35 : 0.08);
