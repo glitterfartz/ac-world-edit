@@ -93,8 +93,65 @@ proof. Source data and unknown row fields remain untouched.
   water-interior-animated.png, liquid-checks.txt and water-model-checks.txt.
 - Terrain unload/move/revisit smoke passed nine tiles at each step. Client, server and database data
   remain unchanged. User viewport configuration and unrelated generated UID files remain unstaged.
-- Fidelity follow-ups: client Light.dbc water colors, reflections/refraction, underwater fog,
-  exact client playback/blending and WMO flow overrides. No source water editing or collision added.
+- Fidelity follow-ups: reflections/refraction, underwater fog, exact client playback/blending and
+  WMO flow overrides remain approximate. Light.dbc water/ocean/river color bands are now parsed
+  but not yet wired into liquid tint (see the lighting section below). No source water editing or
+  collision added.
+
+## Lighting, shadows, time-of-day and zone/continent UI — implemented 2026-10-12
+
+- Added real-time shadow casting: terrain chunks and native model/WMO/creature/GameObject geometry
+  now cast shadows from the directional light (`CastShadow.On`); liquids, gizmo arms and fallback
+  marker boxes stay non-casting on purpose (matches client water, keeps editor overlays inert).
+  `DirectionalLight3D` uses 4-split parallel shadows with blended splits out to 400 yards.
+- Added `Scripts/Assets/ClientLighting.cs`, reading Light.dbc/LightParams.dbc/LightSkybox.dbc/
+  LightIntBand.dbc through the existing `DbcTable` reader (extended with positional `UAt`/`FAt`/
+  `Position` accessors, since LightIntBand associates with a LightParams row by file position, not
+  ID). Only each region's Default time-of-day slot and five bands (diffuse, ambient, sky top,
+  sky horizon, fog) are used; the other seven weather/combat/dungeon slots and bands 8-17
+  (secondary accents, water-specific colors) are explicit future fidelity work, not fabricated.
+- The Light.dbc position/falloff coordinate convention (1/36-yard scale, tile-grid-corner origin,
+  no recentering) was not assumed from memory: a scratch probe (gitignored,
+  `artifacts/light-probe/`) brute-force-checked candidate scales/origins/axis orders against real
+  WDT tile presence for Eastern Kingdoms, Kalimdor and Northrend, and this convention was the clear,
+  consistent winner (126/126 Kalimdor, 96/97 Northrend, 77/81 Eastern Kingdoms local lights land on
+  an existing tile; the few misses are plausible dev-leftover rows). Band semantics were checked
+  the same way: EK's default LightParams bands show physically sensible day/night colors (warm
+  orange diffuse at noon, blue-gray at night; bright horizon haze at noon, orange at sunset/sunrise).
+- Added `Scripts/SkyLighting.cs`: a time-of-day clock (default 09:00, adjustable play/pause and
+  speed), per-map region resolution (falloff-weighted blend between the map's default light and the
+  nearest in-range local light), and application to the sun color/energy/approximate elevation,
+  `WorldEnvironment` ambient/fog, a `ProceduralSkyMaterial` gradient, and the LightSkybox M2 model
+  (loaded through the existing `ModelLibrary`/`ModelInstance` pipeline, camera-anchored, forced
+  non-shadow-casting). Interior/WMO-only maps and maps without a usable lighting table keep the
+  previous fixed neutral look rather than guessing at portal-gated interior light. Sun
+  direction/elevation across the day is a simple, explicitly approximate cosine curve, not a
+  reconstruction of the client's exact sun trajectory.
+- Added a zone/continent title above the minimap. `TerrainChunk.AreaId` (MCNK offset +52, confirmed
+  against the already-working offsets for height/holes/layers in the same header) is now parsed and
+  kept per loaded tile; `Scripts/Assets/AreaTable.cs` resolves it through AreaTable.dbc (schema
+  confirmed against known IDs: Elwynn Forest=12, Durotar=14, Stormwind City=1519, Ironforge=1537,
+  Orgrimmar=1637). Shows "Parent — Subzone" when the chunk is inside a named subzone, plus the
+  map's own Map.dbc display name as the continent/instance line. Interiors (no ADT) show only the
+  map name.
+- Added time-of-day controls (pause/resume, 0-24h scrub slider, speed presets) to the main panel,
+  and wrapped that panel's content in a `ScrollContainer` anchored above the bottom telemetry bar
+  (matching the Scene explorer's own pattern) so the added controls — and anything added later —
+  cannot clip off-screen on a shorter window; previously this panel had no scroll and only fit by
+  luck.
+- Evidence: main build and `dotnet format whitespace --verify-no-changes` both passed clean. Ran
+  the live viewer twice via the Godot MCP (`run_project`/`get_debug_output`/`stop_project`) over
+  Elwynn/Stormwind on continent 0 for 30+ seconds each, including creature/WMO streaming; no
+  exceptions or new warnings from the lighting/area/UI code, only pre-existing unrelated model
+  warnings (weapon rack base-texture fallback, Tauren replaceable-texture type 8). This confirms
+  runtime stability, not visual correctness — nobody has yet eyeballed the sky/shadow/zone-label
+  rendering in the running editor, which this repo's own standard requires before calling visual
+  fidelity work done. Do that before relying on this for anything client-facing.
+- Not done: Light.dbc's seven non-Default weather/dungeon/death LightParams slots; bands 8-17
+  (water/ocean/river colors, which could later replace the approximate liquid tint); WMO interior
+  portal-based light isolation (interiors keep the old flat look); exact sun trajectory; a
+  position-based pick among several overlapping local lights only uses the smallest-radius one,
+  never a true multi-light blend.
 
 ## Refactor and cleanup — completed 2026-10-11
 

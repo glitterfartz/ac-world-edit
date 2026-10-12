@@ -214,11 +214,11 @@ public sealed class ModelLibrary
                     multi.SetInstanceTransform(n, node.Transforms[n]);
                 }
 
-                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600 });
+                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 1600 });
             }
             else
             {
-                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400 });
+                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 400 });
             }
         }
 

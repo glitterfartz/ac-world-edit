@@ -19,7 +19,7 @@ public sealed record TerrainLayer(string Texture, byte[] Alpha);
 public sealed class TerrainChunk
 {
     public int X, Y;
-    public uint Flags, Holes;
+    public uint Flags, Holes, AreaId;
     public float Height;
     public float ServerX, ServerY;
     public float[] Heights = new float[145];
@@ -73,6 +73,7 @@ public sealed class TerrainTile
                 X = (int)MpqArchive.U(b, h + 4),
                 Y = (int)MpqArchive.U(b, h + 8),
                 Holes = MpqArchive.U(b, h + 60) & 0xFFFF,
+                AreaId = MpqArchive.U(b, h + 52),
                 Height = Assets.Chunks.F(b, h + 112)
             };
             chunk.ServerX = Assets.Chunks.F(b, h + 104);

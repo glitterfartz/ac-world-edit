@@ -173,7 +173,7 @@ public sealed class TerrainRenderer
         {
             Name = $"Chunk_{c.X}_{c.Y}",
             Mesh = mesh,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.On
         };
         instance.SetMeta("textures", c.Layers.Select(l => l.Texture).ToArray());
         parent.AddChild(instance);

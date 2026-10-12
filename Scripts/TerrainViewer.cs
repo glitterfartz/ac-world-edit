@@ -15,10 +15,15 @@ public partial class TerrainViewer : Node3D
     ModelLibrary models = null!;
     WorldObjectScene objects = null!;
     Camera3D camera = null!;
-    WorldEnvironment environment = null!;
+    SkyLighting sky = null!;
+    ClientLighting? lighting;
+    AreaLookup? areas;
     // Three distinct ownership states: wanted keys, one worker/building result, and
     // fully uploaded tile roots. Generation guards prevent map/reload races.
     readonly Dictionary<TileKey, Node3D> loaded = [];
+    // Per-tile MCNK AreaId grid (chunkY*16+chunkX), kept only for the current zone/continent label;
+    // CPU terrain data is otherwise discarded once a tile finishes uploading.
+    readonly Dictionary<TileKey, uint[]> chunkAreas = [];
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<TileKey> wanted = [];
     Task<PreparedTile>? pending;
@@ -34,7 +39,10 @@ public partial class TerrainViewer : Node3D
     SpinBox tileX = null!, tileY = null!, distance = null!;
     LineEdit dataPath = null!;
     Button open = null!, reload = null!;
-    Label status = null!, telemetry = null!;
+    Label status = null!, telemetry = null!, zoneLabel = null!, continentLabel = null!;
+    Slider timeOfDay = null!;
+    Label timeOfDayLabel = null!;
+    Button playTime = null!;
     List<MapInfo> mapList = [];
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
@@ -65,25 +73,8 @@ public partial class TerrainViewer : Node3D
             Current = true
         };
         AddChild(camera);
-        var light = new DirectionalLight3D
-        {
-            RotationDegrees = new Vector3(-50, -30, 0),
-            LightEnergy = 1.25f
-        };
-        AddChild(light);
-        environment = new WorldEnvironment
-        {
-            Environment = new Godot.Environment
-            {
-                BackgroundMode = Godot.Environment.BGMode.Color,
-                BackgroundColor = new Color("91b5c9"),
-                AmbientLightSource = Godot.Environment.AmbientSource.Color,
-                AmbientLightColor = new Color("c8d7e5"),
-                AmbientLightEnergy = 0.65f,
-                TonemapMode = Godot.Environment.ToneMapper.Filmic
-            }
-        };
-        AddChild(environment);
+        sky = new SkyLighting(models);
+        AddChild(sky);
         creatures = new CreatureOverlay
         {
             Models = models
@@ -139,7 +130,7 @@ public partial class TerrainViewer : Node3D
                 var s = new AssetStore(path);
                 try
                 {
-                    return (Store: s, Maps: s.Maps());
+                    return (Store: s, Maps: s.Maps(), Lighting: ClientLighting.TryLoad(s), Areas: AreaLookup.TryLoad(s));
                 }
                 catch
                 {
@@ -149,6 +140,8 @@ public partial class TerrainViewer : Node3D
             });
             store = result.Store;
             mapList = result.Maps;
+            lighting = result.Lighting;
+            areas = result.Areas;
             maps.Clear();
             int selected = 0;
             await models.SetStore(store);
@@ -203,7 +196,7 @@ public partial class TerrainViewer : Node3D
         {
             world = await Task.Run(() => new WorldMap(name, assets.Read($"World/Maps/{name}/{name}.wdt")));
             currentMapId = checked((ushort)mapList[maps.Selected].Id);
-            environment.Environment.BackgroundColor = world.Tiles.Count == 0 ? new Color("080a0d") : new Color("91b5c9");
+            sky.SetMap(lighting, currentMapId, world.Tiles.Count == 0);
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
             var requested = waterSmoke && waterStage == 0 ? new TileKey(32, 49) : new TileKey((int)tileX.Value, (int)tileY.Value);
@@ -264,6 +257,7 @@ public partial class TerrainViewer : Node3D
         }
 
         loaded.Clear();
+        chunkAreas.Clear();
         if (buildingNode != null)
         {
             renderer.Release(buildingNode);
@@ -309,6 +303,35 @@ public partial class TerrainViewer : Node3D
     /// indices outside the terrain grid.
     /// </summary>
     TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
+    /// <summary>
+    /// Resolve the camera's current zone/subzone and continent for the UI title. Outdoor maps use the
+    /// nearest loaded chunk's MCNK AreaId; interiors have no per-chunk area, so only the map's own
+    /// display name is shown.
+    /// </summary>
+    (string Zone, string Continent) CurrentLocation()
+    {
+        string continent = maps.Selected >= 0 && maps.Selected < mapList.Count ? mapList[maps.Selected].Name : "";
+        if (world == null)
+        {
+            return ("", "");
+        }
+
+        if (world.Tiles.Count == 0)
+        {
+            return (continent, "");
+        }
+
+        var tile = CameraTile();
+        if (areas == null || !chunkAreas.TryGetValue(tile, out var ids) || !loaded.TryGetValue(tile, out var root))
+        {
+            return ("", continent);
+        }
+
+        int cx = Math.Clamp((int)((camera.Position.X - root.Position.X) / TerrainTile.ChunkSize), 0, 15);
+        int cy = Math.Clamp((int)((camera.Position.Z - root.Position.Z) / TerrainTile.ChunkSize), 0, 15);
+        var (zone, parent) = areas.Describe(ids[cy * 16 + cx]);
+        return (parent != null ? $"{parent} — {zone}" : zone, continent);
+    }
     /// <summary>
     /// Move near the effective draft pose and synchronize mouse-look angles before refreshing the
     /// region.
@@ -356,6 +379,7 @@ public partial class TerrainViewer : Node3D
         {
             renderer.Release(loaded[key]);
             loaded.Remove(key);
+            chunkAreas.Remove(key);
             objects.RemoveTile(key);
         }
 
@@ -445,6 +469,14 @@ public partial class TerrainViewer : Node3D
         }
 
         status.Text = message;
+        sky.Update(camera, delta);
+        timeOfDay.SetValueNoSignal(sky.TimeOfDayHours);
+        int hh = (int)sky.TimeOfDayHours, mm = (int)((sky.TimeOfDayHours - hh) * 60);
+        timeOfDayLabel.Text = $"{hh:00}:{mm:00}";
+        var (zone, continent) = CurrentLocation();
+        zoneLabel.Text = zone;
+        zoneLabel.Visible = zone.Length > 0;
+        continentLabel.Text = continent;
         var current = CameraTile();
         int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
@@ -747,6 +779,13 @@ public partial class TerrainViewer : Node3D
                 if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
                 {
                     loaded[building.Tile.Key] = buildingNode;
+                    var ids = new uint[256];
+                    foreach (var c in building.Tile.Chunks)
+                    {
+                        ids[c.Y * 16 + c.X] = c.AreaId;
+                    }
+
+                    chunkAreas[building.Tile.Key] = ids;
                     objects.SetTile(building.Tile.Key, building.Tile.Objects);
                     if (CameraTile() == building.Tile.Key)
                     {

@@ -65,4 +65,35 @@ public sealed class DbcTable
     /// Resolve a string-block-relative offset and require a valid terminated string.
     /// </summary>
     public string Str(uint id, int field) => data.Str(checked(strings + (int)U(id, field)));
+
+    public int RecordCount => count;
+    /// <summary>
+    /// File-order row position for an ID, independent of its ID value. LightIntBand/LightFloatBand
+    /// associate with a LightParams row by file position (18 contiguous rows per entry), not by ID;
+    /// both tables carry small ID gaps from deleted dev rows, confirmed against the Wrath 3.3.5a
+    /// client (15300 LightIntBand rows == 850 LightParams rows * 18).
+    /// </summary>
+    public int Position(uint id) => rows.TryGetValue(id, out int p) ? (p - 20) / stride : throw new InvalidDataException("Missing DBC record.");
+    /// <summary>
+    /// Field access by raw file-order row position rather than ID lookup.
+    /// </summary>
+    public uint UAt(int row, int field)
+    {
+        if (row < 0 || row >= count || field < 0 || field >= fields)
+        {
+            throw new InvalidDataException("DBC row/field out of range.");
+        }
+
+        return data.U(20 + row * stride + field * 4);
+    }
+
+    public float FAt(int row, int field)
+    {
+        if (row < 0 || row >= count || field < 0 || field >= fields)
+        {
+            throw new InvalidDataException("DBC row/field out of range.");
+        }
+
+        return data.F(20 + row * stride + field * 4);
+    }
 }
