@@ -125,3 +125,17 @@ proof. Source data and unknown row fields remain untouched.
 - Automatic approval review rejected recursive deletion of obsolete ignored Experiments build
   caches with "blocked by policy". Those caches remain ignored; their source projects/classes
   are removed, and generic bin/obj exclusions prevent stale generated code entering the build.
+
+## Visibility controls and GameObjects — in progress
+
+- Added immutable bounded preview settings and SQL-only creature/GameObject adapters. Event
+  membership (including negative event links), phase/difficulty overlap, pool membership, hidden
+  helpers, SQL conditions, script bindings and initially despawned GameObjects filter before LIMIT.
+- Default: phase 1/normal, SQL-scheduled events, no pool alternatives/helpers/conditional objects/
+  initially despawned objects. Script-bound spawns remain included because bindings do not prove
+  invisibility. Missing required metadata fails closed; broad inspection still has hard bounds.
+- Read-only SQL evidence: GUID 96098/template 26724 is hidden by defaults and visible with All
+  stored spawns or manual event 31. Phase mismatch, nearest-first three-row cap, script filter,
+  cancellation and 59 ordinary GameObjects at the example location passed.
+- Remaining: native GameObject rendering/selection, performance-aware layer toggles, polished
+  scene/creature/GameObject inspector and end-to-end rendering/UI/filter tests.

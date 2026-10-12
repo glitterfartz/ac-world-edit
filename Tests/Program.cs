@@ -35,6 +35,12 @@ if (args.Contains("--draft"))
     return;
 }
 
+if (args.Contains("--spawns"))
+{
+    await SpawnFilterChecks.Run();
+    return;
+}
+
 using var store = new AssetStore(path);
 if (args.Contains("--liquids"))
 {
