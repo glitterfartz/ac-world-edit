@@ -172,6 +172,7 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        ui.AddChild(creatures.BuildPanel());
+        sidebar = new SceneSidebar(creatures, gameObjects, objects);
+        ui.AddChild(sidebar);
     }
 }

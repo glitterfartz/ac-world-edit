@@ -7,9 +7,10 @@ documents as prerequisites. Current user instructions take precedence.
 ## Scope
 
 Use the existing standalone Godot C# viewer. Current work previews native creatures and animation
-clips, ADT objects/buildings, native liquids and WMO-only interiors. Selected creatures move in durable local drafts.
+clips, read-only GameObjects, ADT objects/buildings, native liquids and WMO-only interiors.
+Selected creatures move in durable local drafts. The Scene explorer controls layers and SQL visibility.
 Prioritize client visual fidelity and practical rendering performance. Keep unsupported effects
-explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObjects,
+explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObject editing,
 new spawns, script/quest editing and shell comparisons unless the user requests them.
 
 ## Engineering and data
@@ -20,6 +21,11 @@ new spawns, script/quest editing and shell comparisons unless the user requests 
 - Share native mesh/material/texture resources, batch repeated models, decode on workers and bound
   main-thread uploads. Validate actual animation data and graphical output; record measured limits.
 - Use asynchronous parameterized queries, bounded results, cancellation and stale-result checks.
+  Apply SQL visibility/search before LIMIT. Default to phase 1/normal and scheduled event preview,
+  excluding helpers, pools, SQL conditions and initially despawned objects. Never remove spatial,
+  row or native-instance budgets in broad preview. Missing required metadata must fail closed.
+  Bindings alone do not prove invisibility: include script-bound spawns by default and explain that
+  SQL cannot evaluate C++/SmartAI runtime, live pools or player state. Hidden layers must stop work.
   Create Godot resources on the main thread. Unloading proxies never changes source data.
 - Read credentials only from external user configuration; never copy them into repo, logs or UI.
   Show safe errors without connection strings, passwords or full provider exceptions.
@@ -51,3 +57,5 @@ For native models, run model corpus checks and a graphical visual smoke includin
 synthetic checks do not prove in-game visual parity. For lifecycle changes, run --reload-smoke to
 reload archives during a partial GPU upload. Check formatting with dotnet format whitespace
 ACWorldEdit.csproj --no-restore --verify-no-changes. Documentation changes need link/diff checks.
+For visibility/GameObjects, run the read-only --spawns and native --gameobjects checks plus graphical
+--visibility-smoke: real model/list selection, layers, event overrides, masks and broad-preview caps.

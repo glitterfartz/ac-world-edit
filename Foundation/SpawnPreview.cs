@@ -1,7 +1,13 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>How database event associations are interpreted; none of these modes reads live core state.</summary>
-public enum EventPreviewMode { Scheduled, None, Selected, All }
+public enum EventPreviewMode
+{
+    Scheduled,
+    None,
+    Selected,
+    All
+}
 
 /// <summary>
 /// Immutable preview policy captured by each query. Broad visibility never removes spatial,
@@ -26,8 +32,12 @@ public sealed record SpawnPreview
 
     public static SpawnPreview AllStored => new()
     {
-        RespectMasks = false, Events = EventPreviewMode.All, IncludeHelpers = true,
-        IncludePools = true, IncludeConditional = true, IncludeDespawned = true
+        RespectMasks = false,
+        Events = EventPreviewMode.All,
+        IncludeHelpers = true,
+        IncludePools = true,
+        IncludeConditional = true,
+        IncludeDespawned = true
     };
 
     public void Validate()
@@ -46,7 +56,10 @@ public sealed record SpawnPreview
 
     public bool MatchesEvents(IEnumerable<int> bindings, IEnumerable<int> scheduled)
     {
-        if (Events == EventPreviewMode.All) { return true; }
+        if (Events == EventPreviewMode.All)
+        {
+            return true;
+        }
         var active = (Events == EventPreviewMode.Selected ? ActiveEvents :
             Events == EventPreviewMode.Scheduled ? scheduled : []).ToHashSet();
         var values = bindings.ToArray();

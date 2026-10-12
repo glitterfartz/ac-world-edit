@@ -126,7 +126,7 @@ proof. Source data and unknown row fields remain untouched.
   caches with "blocked by policy". Those caches remain ignored; their source projects/classes
   are removed, and generic bin/obj exclusions prevent stale generated code entering the build.
 
-## Visibility controls and GameObjects — in progress
+## Visibility controls and GameObjects — implemented 2026-10-11
 
 - Added immutable bounded preview settings and SQL-only creature/GameObject adapters. Event
   membership (including negative event links), phase/difficulty overlap, pool membership, hidden
@@ -137,5 +137,46 @@ proof. Source data and unknown row fields remain untouched.
 - Read-only SQL evidence: GUID 96098/template 26724 is hidden by defaults and visible with All
   stored spawns or manual event 31. Phase mismatch, nearest-first three-row cap, script filter,
   cancellation and 59 ordinary GameObjects at the example location passed.
-- Remaining: native GameObject rendering/selection, performance-aware layer toggles, polished
-  scene/creature/GameObject inspector and end-to-end rendering/UI/filter tests.
+- Saved SQL/filter checkpoint 5e5f403. Native GameObjectDisplayInfo.dbc lookup now uses shared
+  M2/WMO geometry, materials, GPU animation palettes, template scale and normalized SQL quaternions.
+  GO rotation uses the model coordinate boundary without the ADT half-turn. Model/list/viewport
+  selection and fly-to work; unsupported displays use bounded boxes. GameObjects remain read-only.
+- Replaced the old creature panel with a scrollable Scene explorer: Scene / Creatures / GameObjects,
+  consistent cards, clear selection identity, SQL restriction details, event picker, hex/decimal phase
+  masks, difficulty, display budgets and optional name labels. Kept animation and durable creature
+  movement/history controls. External credentials remain outside the repository and logs.
+- Layer switches remove native requests/instances for scenery props (including embedded WMO doodads),
+  buildings/interiors and spawn layers. Disabled spawn layers stop queries. Selection of either entity
+  deselects the other, canceling unfinished creature movement while retaining its identity for restore.
+- Defaults: 200-yard 3D range, 384 nearest SQL rows and 128 admitted instances per spawn layer;
+  name labels off. Low/Balanced/High budgets admit 64/128/256; High allows 768 SQL rows. Range stays
+  within 60–600 yards. Labels cap at 64 nearby per layer plus selected labels. Broad preview retains
+  spatial, SQL, fallback and native admission limits. Camera centers quantize to 64 yards with a
+  query halo; searches/mask typing are debounced. Each layer has one cancellable query slot.
+- Acceptance evidence: read-only SQL/policy checks passed masks, positive/negative event semantics, explicit
+  event 31, conservative pool/helper/condition defaults, script bindings, three-row caps, normalized
+  GO rotations, nearest order, spatial bounds, parameterized hostile search text and cancellation.
+  Real GameObject display checks: 59 SQL rows, 12 M2 and 3 WMO paths, 189 material decodes and
+  twelve sampled animation palettes. Native corpus: 116 M2 / 52 WMO / 1,988 textures / 39 interiors.
+- Graphical --visibility-smoke passed native GameObject list/ray/input selection, all four hidden
+  layers with zero spawn records/model queue, event/phase controls, rapid canceled preview changes
+  and dense All stored preview at 600 yards: 384 creature + 384 GO rows, exactly 64 admitted per
+  layer under Low budget. The cap includes native requests and fallbacks. No source writes occurred.
+  Layout screenshots inspected at 2440x1400 and 1440x900; corrected wrapped count/phase captions.
+- Existing graphical regression passed creature viewport/list selection, Stand/Walk menu, durable
+  gizmo drag/reopen/undo/redo, map-switch cancellation and Stockade interior. Draft checks passed.
+  A 240-frame default-scene sample at 2440x1400 measured median 11.11 ms / p95 12.12 ms on RTX 5080;
+  another isolated run measured 7.28 / 9.09 ms. These are scene-specific observations, not broad
+  certification or controlled before/after comparisons. Nine streamed tiles held 5,845 static props.
+- Final checks passed: archive reload interrupted partial GPU upload and returned to nine tiles,
+  302 ready models and 402 textures. Inspected an isolated native Bundle of Wood GO screenshot
+  with the matching database identity, material, scale and selection. Final build: zero warnings/errors;
+  formatting and diff checks passed. Entity UI is split into partial files, separate from rendering.
+  Ignored evidence: artifacts/visibility-*.out.txt, visibility-*.err.txt and visibility-*.png.
+- Limits: SQL schedules approximate ordinary repeating events using DB time; holiday/manual/world
+  event state, live pool winners, C++/SmartAI and player visibility are not simulated. Script bindings
+  are optional metadata filters, not an invisibility verdict. GO DB state is shown; interactions,
+  transport motion/open-close simulation and GO editing are deferred. Bounding-box picking has no
+  terrain/triangle occlusion. Existing native material/client-fidelity limitations still apply.
+- PLAN.md, README.md and AGENTS.md now describe this scope and the conservative filters. Source
+  client/server/database data, user viewport changes and unrelated UID files remain untouched.

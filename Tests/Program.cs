@@ -42,6 +42,11 @@ if (args.Contains("--spawns"))
 }
 
 using var store = new AssetStore(path);
+if (args.Contains("--gameobjects"))
+{
+    await GameObjectChecks.Run(store);
+    return;
+}
 if (args.Contains("--liquids"))
 {
     LiquidChecks.Run(store);

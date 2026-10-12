@@ -10,22 +10,42 @@ Or run `./Launch-Viewer.ps1` from PowerShell. The launcher builds the project an
 
 The simple roadmap is in [PLAN.md](PLAN.md); current results and limits are in [PROGRESS.md](PROGRESS.md).
 
-## Existing creatures
+## Scene explorer and existing spawns
 
 The right panel reads `WorldDatabaseInfo` from the external file
 `X:\AzerothCore\azerothcore-wotlk\build\bin\Debug\configs\worldserver.conf`.
-Set `ACWORLD_SERVER_CONFIG` before launching or change the path in the panel and click **Refresh creatures**.
+Set `ACWORLD_SERVER_CONFIG` before launching or open **Scene → Database connection…**, change the path and click **Apply & refresh**.
 Credentials stay outside the project. Queries run in read-only transactions; nothing is written to the world database.
 
-- Nearby creatures refresh when the camera changes tile region or map.
-- Click a creature model or choose a list entry to select it and inspect its GUID, template, display, coordinates, heading and masks.
-- Filter the loaded list by name, GUID or template ID. **Fly to selected creature** brings the camera to its position.
-- Queries show at most 2,000 creatures; reduce the nearby tile radius if the limit is reached.
+The right sidebar has **Scene**, **Creatures** and **GameObjects** tabs. Scene controls visibility
+and loading; entity tabs provide search, a selection list, details and **Fly to selection**.
 
-Creatures within 350 yards load native M2/SKIN models and display textures, with native Stand/idle
-animation on the GPU. Selecting a creature exposes **Preview animation**, populated from that
-model's available clips and client animation names. Previewing Walk or another clip changes no
-spawn behavior. A labeled capsule remains when an appearance cannot be resolved.
+- Toggle scenery props (including embedded WMO doodads), buildings/interiors, creatures and GameObjects.
+  Hidden layers release their nodes and stop scheduling model/spawn work.
+- Normal preview matches phase **1** and normal difficulty. It includes SQL-scheduled event spawns
+  and excludes inactive events, pool alternatives, hidden helpers/ghost-only creatures, SQL visibility/
+  respawn conditions and initially despawned GameObjects.
+- Choose **No events**, **Selected events** or **All event spawns** to inspect event associations.
+  **All stored spawns** also bypasses gameplay masks and includes the special-case categories.
+- Phase masks accept decimal or hex; **3** matches phase 1 OR phase 2. Difficulty uses overlapping bits.
+  These controls only affect the preview.
+- **Script-bound spawns** is on by default: a SQL script/AI binding does not imply invisibility.
+  Turning it off excludes those bindings; SQL cannot detect every script or determine runtime visibility.
+- Search by name, GUID or template filters SQL before LIMIT. The camera refreshes its bounded
+  neighborhood on map/region changes and each 64-yard query cell; typing is debounced.
+
+Defaults are **200 yards**, **384 nearest SQL rows** and **128 admitted models per spawn layer**.
+The Low/Balanced/High budgets allow 64/128/256 models; High increases the SQL cap to 768.
+View distance is limited to 60–600 yards. Every mode, including All stored spawns, keeps these caps.
+Only admitted instances queue model work; nearby name labels default off and are capped at 64 per
+layer plus the selection label. Native counts have tooltips showing SQL matches and admission counts.
+Each spawn layer has one asynchronous query slot, cancellation and stale-result rejection.
+
+Creatures use native M2/SKIN/display textures and GPU Stand/idle animation. The selection animation
+menu lists available native clips. GameObjects resolve GameObjectDisplayInfo.dbc to native M2/WMO
+models, materials and animation data, using database quaternion rotation and template scale.
+Unsupported appearances retain bounded capsules/boxes. GameObjects are read-only previews: DB state
+is shown, but open/close, interaction and transport/script behavior are not simulated.
 
 Selection exposes a colored movement gizmo: red is view X, green is height, blue is view Z.
 Drag an axis to move; release saves a local draft. **Esc** cancels the drag. **Undo move** and
@@ -35,9 +55,13 @@ Horizontal moves preserve height; there is no terrain snapping, yaw editing or S
 Queries still locate spawns by their source positions. A draft moved far outside its source region
 reappears when that source region is queried again; a cross-region draft index is follow-up work.
 
-The editor shows database placements, including inactive event/pool spawns. Spawn/phase masks
-are displayed without simulation or filtering. Model picking uses bounding
-boxes, while fallback markers use a screen-space target; terrain occlusion is not tested.
+SQL schedules approximate ordinary repeating events using database time. Holiday/manual/world-event
+state, live pool winners, player quests/auras, SmartAI and C++ visibility are not evaluated. Pool and
+conditional toggles include all candidates instead of fabricating live winners. GUID **96098** /
+template **26724** is tied to event **31** and stays hidden by default; Selected event 31 exposes it.
+Missing required visibility metadata reports a safe error rather than silently showing everything.
+Model picking uses bounding boxes; creature fallbacks use a screen-space target. Terrain occlusion
+and precise animated triangle selection are not implemented.
 
 ## Explore
 
@@ -100,6 +124,12 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   masked/height/depth-only grids, malformed arrays and 49 representative ADTs.
 - Godot `-- --water-smoke` and `-- --water-interior-smoke`: outdoor lake and Blackfathom liquid
   previews, animated screenshots and short warm frame samples in ignored `artifacts/`.
+- `dotnet run --project Tests/AssetChecks.csproj -- --spawns`: live read-only SQL visibility, budgets,
+  masks, event overrides, search escaping and cancellation checks.
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --gameobjects`: database display paths,
+  native M2/WMO geometry, materials and animation palettes.
+- Godot `-- --visibility-smoke`: GameObject model/list selection, layer unloading, the event-31
+  mannequin, masks, canceled generations and broad-preview model admission caps.
 - `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks.
 - Godot `-- --visual-smoke`: native models, animation menu, gizmo drag/reopen/undo/redo, short warm
   frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
@@ -121,8 +151,11 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
 - `Scripts/Diagnostics/`: opt-in viewer/creature smoke workflows; normal editing does not run them.
 - `Scripts/Assets/`: engine-independent archive, texture, terrain, model and animation decoders.
 - `Scripts/ModelLibrary.cs`, `TerrainRenderer.cs`, `LiquidRendering.cs`: main-thread GPU resources.
-- `Scripts/CreatureOverlay.cs`, `TranslationGizmo.cs`, `Data/CreatureSource.cs`: read-only spawns,
-  selection and draft movement.
+- `Scripts/SceneSidebar.cs`, `InspectorUi.cs`, `CreatureOverlay.Ui.cs`, `GameObjectOverlay.Ui.cs`: scene
+  and entity inspector.
+- `Scripts/CreatureOverlay.cs`, `GameObjectOverlay.cs`, `TranslationGizmo.cs`: bounded native spawn
+  projection, selection and creature draft movement.
+- `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
 - `Foundation/`: engine-independent coordinates, spawn records and durable creature drafts.
 - `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.
 

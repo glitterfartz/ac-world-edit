@@ -4,7 +4,6 @@ using ACWorldEdit.Foundation;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
-
 /// <summary>
 /// Transient scene/list projection of bounded database records. CreatureDraft owns durable moves
 /// and ModelLibrary shared resources; unloading markers never changes rows.
@@ -29,6 +28,7 @@ public partial class CreatureOverlay : Node3D
     public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
     public bool IsDragging => gizmo.Dragging;
     public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
+    public int AdmittedCreatureCount => admitted.Count;
 
     readonly Dictionary<uint, (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)> markers = [];
     readonly StandardMaterial3D normal = new()
@@ -50,6 +50,53 @@ public partial class CreatureOverlay : Node3D
     Label details = null!, status = null!;
     LineEdit config = null!;
     LineEdit filter = null!;
+    Label selectionName = null!, selectionMeta = null!;
+    public LineEdit ConnectionControl => config;
+    public string ConnectionPath => config.Text;
+    public SpawnPreview Preview { get; private set; } = new();
+    public bool LayerEnabled { get; private set; } = true;
+    public WorldEventInfo[] EventCatalog { get; private set; } = [];
+
+    public event Action? SelectionChanged;
+    SpawnQueryPoint? queryPoint;
+    readonly HashSet<uint> admitted = [];
+    bool searchPending;
+    long searchChanged;
+    public void SetPreview(SpawnPreview preview)
+    {
+        preview.Validate();
+        Preview = preview;
+        Restart(false);
+    }
+
+    public void SetLayerEnabled(bool value)
+    {
+        if (LayerEnabled == value)
+        {
+            return;
+        }
+
+        LayerEnabled = value;
+        Restart(false);
+    }
+
+    public void Deselect()
+    {
+        // Cancel while the selected identity still exists so an unfinished move restores its pose.
+        gizmo.Finish(false);
+        if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var old))
+        {
+            old.Body.MaterialOverride = normal;
+        }
+
+        selectedGuid = null;
+        list?.DeselectAll();
+        animation.Disabled = true;
+        selectionName.Text = "Select a creature";
+        selectionMeta.Text = "Click a model or choose one above";
+        details.Text = "Selection details appear here.";
+    }
+
     CancellationTokenSource cancellation = new();
     CreatureRegion? region;
     Task<CreatureRegionResult>? pending;
@@ -99,108 +146,6 @@ public partial class CreatureOverlay : Node3D
     }
 
     /// <summary>
-    /// Build read-only details, config-path input, filtered list, animation menu and local history
-    /// controls. No control writes SQL or client assets.
-    /// </summary>
-    public Control BuildPanel()
-    {
-        var panel = new PanelContainer
-        {
-            AnchorLeft = 1,
-            AnchorRight = 1,
-            OffsetLeft = -380,
-            OffsetRight = -20,
-            OffsetTop = 20
-        };
-        var box = new VBoxContainer
-        {
-            CustomMinimumSize = new(340, 0)
-        };
-        panel.AddChild(box);
-        box.AddChild(new Label { Text = "CREATURES · LOCAL DRAFT" });
-        config = new LineEdit
-        {
-            Text = System.Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath,
-            PlaceholderText = "worldserver.conf path",
-            TooltipText = "Read WorldDatabaseInfo from this external file; credentials stay out of the project."
-        };
-        box.AddChild(config);
-        var refresh = new Button
-        {
-            Text = "Refresh creatures"
-        };
-        refresh.Pressed += Refresh;
-        box.AddChild(refresh);
-        var focus = new Button
-        {
-            Text = "Fly to selected creature"
-        };
-        focus.Pressed += () =>
-        {
-            if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker))
-            {
-                FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) });
-            }
-        };
-        box.AddChild(focus);
-        box.AddChild(new Label { Text = "Preview animation (selected creature)" });
-        animation = new OptionButton
-        {
-            FitToLongestItem = false,
-            Disabled = true
-        };
-        animation.AddItem("Stand / idle", 0);
-        box.AddChild(animation);
-        animation.ItemSelected += index =>
-        {
-            previewAnimation = (ushort)animation.GetItemId((int)index);
-            modelUpdate = 0;
-        };
-        var history = new HBoxContainer();
-        box.AddChild(history);
-        var undo = new Button
-        {
-            Text = "Undo move",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        history.AddChild(undo);
-        undo.Pressed += () => History(false);
-        var redo = new Button
-        {
-            Text = "Redo move",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        history.AddChild(redo);
-        redo.Pressed += () => History(true);
-        filter = new LineEdit
-        {
-            PlaceholderText = "Filter loaded creatures by name / GUID / template"
-        };
-        box.AddChild(filter);
-        filter.TextChanged += _ => PopulateList();
-        list = new ItemList
-        {
-            CustomMinimumSize = new(340, 190)
-        };
-        box.AddChild(list);
-        list.ItemSelected += index => Select(uint.Parse(list.GetItemMetadata((int)index).AsString()));
-        status = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new(340, 40)
-        };
-        box.AddChild(status);
-        details = new Label
-        {
-            Text = "Click a creature marker or choose one above.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new(340, 90)
-        };
-        box.AddChild(details);
-        return panel;
-    }
-
-    /// <summary>
     /// Restart on region changes while retaining same-map selection. Map changes clear
     /// source-specific selection.
     /// </summary>
@@ -213,6 +158,11 @@ public partial class CreatureOverlay : Node3D
 
         bool preserveSelection = next != null && next.Map == region?.Map;
         region = next;
+        if (!preserveSelection)
+        {
+            queryPoint = null;
+        }
+
         Restart(preserveSelection);
     }
 
@@ -269,11 +219,19 @@ public partial class CreatureOverlay : Node3D
         }
 
         markers.Clear();
+        admitted.Clear();
         records = [];
         nextMarker = 0;
         if (!preserveSelection)
         {
-            selectedGuid = null;
+            if (selectionName != null)
+            {
+                Deselect();
+            }
+            else
+            {
+                selectedGuid = null;
+            }
         }
 
         list?.Clear();
@@ -290,6 +248,23 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public void Update(Camera3D camera)
     {
+        if (LayerEnabled && region != null)
+        {
+            var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
+            var point = SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            if (point != queryPoint)
+            {
+                queryPoint = point;
+                Restart(true);
+            }
+        }
+
+        if (searchPending && System.Diagnostics.Stopwatch.GetElapsedTime(searchChanged).TotalSeconds >= 0.3)
+        {
+            searchPending = false;
+            Restart(false);
+        }
+
         if (pending is { IsCompleted: true })
         {
             try
@@ -299,8 +274,14 @@ public partial class CreatureOverlay : Node3D
                 {
                     records = result.Spawns;
                     sourceKey = result.SourceKey;
+                    EventCatalog = result.Events ?? [];
                     truncated = result.Truncated;
                     nextMarker = 0;
+                    if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
+                    {
+                        Deselect();
+                    }
+
                     PopulateList();
                     queryStatus = records.Count == 0 ? "No creatures in this region." : "Preparing creature markers…";
                 }
@@ -319,14 +300,17 @@ public partial class CreatureOverlay : Node3D
             pending = null;
         }
 
-        if (requestedGeneration != generation && pending == null && region != null)
+        if (requestedGeneration != generation && pending == null && region != null && LayerEnabled)
         {
             requestedGeneration = generation;
             pendingGeneration = generation;
             var next = region;
-            string path = config.Text;
+            string path = ConnectionPath;
+            var preview = Preview;
+            var point = queryPoint;
+            string search = filter.Text;
             var token = cancellation.Token;
-            pending = Task.Run(async () => await new CreatureSource(path).ReadAsync(next, token), token);
+            pending = Task.Run(async () => await new CreatureSource(path).ReadAsync(next, preview, point, search, token), token);
         }
 
         if (nextMarker < records.Count)
@@ -347,12 +331,12 @@ public partial class CreatureOverlay : Node3D
                     }
                     else
                     {
-                        selectedGuid = null;
+                        Deselect();
                         details.Text = "Selected creature is outside the current region.";
                     }
                 }
 
-                queryStatus = truncated ? $"Showing first {records.Count} creatures. Reduce nearby tile radius for dense areas." : $"{records.Count} creatures loaded. Click a marker to select.";
+                queryStatus = truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
             }
             else
             {
@@ -362,7 +346,7 @@ public partial class CreatureOverlay : Node3D
 
         if (status != null)
         {
-            status.Text = queryStatus;
+            status.Text = LayerEnabled ? queryStatus : "Creature layer hidden";
         }
 
         if (Models?.Catalog != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
@@ -408,13 +392,20 @@ public partial class CreatureOverlay : Node3D
             }
         }
 
+        int visibleNames = 0;
         foreach (var marker in markers.Values)
         {
-            bool nearby = selectedGuid == marker.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 350 * 350;
+            bool nearby = LayerEnabled && admitted.Contains(marker.Spawn.Guid);
             marker.Node.Visible = nearby;
-            marker.Label.Visible = selectedGuid == marker.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 120 * 120;
+            bool showName = nearby && Preview.ShowNames && visibleNames < 64 && camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 80 * 80;
+            marker.Label.Visible = selectedGuid == marker.Spawn.Guid || showName;
+            if (showName)
+            {
+                visibleNames++;
+            }
         }
 
+        UpdateInspectorActions();
         gizmo.Update(camera, draft != null && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var selectedMarker) ? selectedMarker.Node.GlobalPosition : null);
     }
 
@@ -430,9 +421,12 @@ public partial class CreatureOverlay : Node3D
         }
 
         var groups = new Dictionary<ModelKey, List<uint>>();
-        foreach (var marker in markers.Values)
+        admitted.Clear();
+        var candidates = markers.Values.Where(m => selectedGuid == m.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition) <= Preview.ViewDistance * Preview.ViewDistance).OrderBy(m => selectedGuid == m.Spawn.Guid ? 0 : 1).ThenBy(m => camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition)).Take(Preview.ModelLimit);
+        foreach (var marker in candidates)
         {
-            if (selectedGuid != marker.Spawn.Guid && camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) > 350 * 350)
+            admitted.Add(marker.Spawn.Guid);
+            if (!LayerEnabled)
             {
                 continue;
             }
@@ -526,6 +520,7 @@ public partial class CreatureOverlay : Node3D
             MaterialOverride = normal,
             Position = new(0, 1, 0)
         };
+        node.Visible = false;
         node.AddChild(body);
         body.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
         var label = new Label3D
@@ -551,7 +546,8 @@ public partial class CreatureOverlay : Node3D
         string term = filter.Text.Trim();
         foreach (var spawn in records.Where(s => $"{s.Name} {s.Guid} {s.TemplateId}".Contains(term, StringComparison.OrdinalIgnoreCase)))
         {
-            int index = list.AddItem($"{spawn.Name} · #{spawn.Guid} · template {spawn.TemplateId}");
+            int index = list.AddItem($"{spawn.Name}   ·   {spawn.Guid}");
+            list.SetItemTooltip(index, $"GUID {spawn.Guid} · Template {spawn.TemplateId}\n{spawn.Visibility?.Description}");
             list.SetItemMetadata(index, spawn.Guid.ToString());
             if (selectedGuid == spawn.Guid)
             {
@@ -586,9 +582,12 @@ public partial class CreatureOverlay : Node3D
 
         selectedGuid = guid;
         marker.Body.MaterialOverride = selected;
+        SelectionChanged?.Invoke();
         var spawn = marker.Spawn;
         var pose = PoseOf(spawn);
-        details.Text = FormattableString.Invariant($"{spawn.Name}\nGUID {spawn.Guid} · template {spawn.TemplateId} · display {spawn.DisplayId} · map {pose.Map}\nX {pose.X:F3}  Y {pose.Y:F3}  Z {pose.Z:F3}\nHeading {pose.Heading:F4} rad\nSpawn mask {spawn.SpawnMask} · phase mask {spawn.PhaseMask}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
+        selectionName.Text = spawn.Name;
+        selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
+        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {pose.Heading:F3} rad\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
         list.DeselectAll();
         for (int i = 0; i < list.ItemCount; i++)
         {
@@ -709,12 +708,13 @@ public partial class CreatureOverlay : Node3D
         }
     }
 
-    /// <summary>
-    /// Choose the nearest native bounding-box hit or screen-space marker fallback. Terrain occlusion
-    /// and precise animated triangle picking are not implemented.
-    /// </summary>
-    public bool Pick(Camera3D camera, Vector2 screen)
+    public (uint Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
     {
+        if (!LayerEnabled)
+        {
+            return null;
+        }
+
         Vector3 origin = camera.ProjectRayOrigin(screen), direction = camera.ProjectRayNormal(screen);
         uint? nearest = null;
         float distance = float.MaxValue;
@@ -731,7 +731,7 @@ public partial class CreatureOverlay : Node3D
                 uint guid = batch.Guids[i];
                 modelGuids.Add(guid);
                 var inverse = batch.Node.Transforms![i].AffineInverse();
-                float? hit = BoxHit(batch.Node.Bounds, inverse * origin, inverse.Basis * direction);
+                float? hit = ScenePicking.BoxHit(batch.Node.Bounds, inverse * origin, inverse.Basis * direction);
                 if (hit.HasValue && hit.Value < distance && hit.Value < camera.Far)
                 {
                     nearest = guid;
@@ -770,44 +770,19 @@ public partial class CreatureOverlay : Node3D
             distance = along;
         }
 
-        if (!nearest.HasValue)
+        return nearest.HasValue ? (nearest.Value, distance) : null;
+    }
+
+    public bool Pick(Camera3D camera, Vector2 screen)
+    {
+        var hit = FindHit(camera, screen);
+        if (!hit.HasValue)
         {
             return false;
         }
 
-        Select(nearest.Value);
+        Select(hit.Value.Guid);
         return true;
-    }
-
-    /// <summary>
-    /// Slab intersection in instance-local space. Do not normalize transformed directions: ray
-    /// parameters must stay comparable across scaled instances.
-    /// </summary>
-    static float? BoxHit(Aabb box, Vector3 origin, Vector3 direction)
-    {
-        float near = 0, far = float.MaxValue;
-        for (int axis = 0; axis < 3; axis++)
-        {
-            if (Math.Abs(direction[axis]) < 0.000001f)
-            {
-                if (origin[axis] < box.Position[axis] || origin[axis] > box.End[axis])
-                {
-                    return null;
-                }
-
-                continue;
-            }
-
-            float a = (box.Position[axis] - origin[axis]) / direction[axis], b = (box.End[axis] - origin[axis]) / direction[axis];
-            near = Math.Max(near, Math.Min(a, b));
-            far = Math.Min(far, Math.Max(a, b));
-            if (far < near)
-            {
-                return null;
-            }
-        }
-
-        return near;
     }
 
     public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;

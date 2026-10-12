@@ -1,6 +1,6 @@
 # Simple implementation plan
 
-Use the existing standalone Godot viewer and ordinary existing creatures on outdoor maps.
+Use the existing standalone Godot viewer and existing creatures/GameObjects on outdoor and interior maps.
 Source database and client files stay unchanged.
 
 Current addition requested by the user: improve client visual fidelity with native creature models,
@@ -20,14 +20,26 @@ Done when real spawns display, viewport/list selection agree, and navigation/map
 attach stale results. Queries use read-only transactions; credentials stay in external config.
 Models and clips preview native client data; complete in-game visual parity remains follow-up work.
 
-## 2. Move creatures in a saved draft — positions implemented; yaw and verification later
+## 2. Control scene visibility and load GameObjects — implemented
+
+Use the Scene explorer to toggle scenery props, buildings/interiors, creatures and GameObjects.
+Preview SQL event membership, phases/difficulties, pools, hidden helpers, conditions and script bindings.
+Defaults hide special-case spawns conservatively; manual event and All stored modes support inspection.
+Read GameObject display paths from the client, share native M2/WMO resources and allow model/list selection.
+Keep GameObjects read-only; interaction scripts and open/close behavior are future work.
+
+Done when filters run before the result limit, inactive GUID 96098 is hidden by default, layer hiding
+stops work, and broad inspection cannot bypass row/model budgets. Use 200 yards, 384 rows and 128 models
+per spawn layer by default. SQL previews do not guarantee live client visibility.
+
+## 3. Move creatures in a saved draft — positions implemented; yaw and verification later
 
 Move/yaw an existing creature, undo/redo, leave the area and reopen without losing edits.
 Position gizmos now edit local previews. Verify coordinates/headings against actual client landmarks
 before declaring placement/export ready; yaw editing and terrain snapping still need implementation.
 Preserve source rows and unknown fields. No new spawns, duplication or deletion in this slice.
 
-## 3. Export a reviewed SQL change — later
+## 4. Export a reviewed SQL change — later
 
 Export bounded forward/reverse SQL with original rows and freshness checks. Prove application
 and reversal in an explicitly authorized disposable database before declaring export ready.
@@ -35,7 +47,7 @@ The application remains export-only and never applies changes to source.
 
 ## Defer
 
-GameObjects, ID allocation, templates/quests/scripts, terrain writing and live apply.
+GameObject editing/interactions, ID allocation, templates/quests/scripts, terrain writing and live apply.
 Use standalone Godot without an EditorPlugin comparison gate. Full performance certification and
 advanced snapshot machinery follow usage evidence; retain practical responsiveness and complete
 read snapshots for current features. Unverified checks remain recorded, not claimed passed.

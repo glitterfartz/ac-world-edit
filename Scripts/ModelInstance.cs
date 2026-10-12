@@ -12,6 +12,7 @@ public partial class ModelInstance : Node3D
     internal ModelKey Key = null!;
     internal Transform3D[]? Transforms;
     internal bool Built;
+    internal bool DoodadsAttached;
     public Aabb Bounds { get; internal set; }
     public ushort[] AvailableAnimations { get; internal set; } = [];
     public bool ModelReady => Built;

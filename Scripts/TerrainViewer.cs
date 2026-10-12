@@ -39,6 +39,8 @@ public partial class TerrainViewer : Node3D
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
     CreatureOverlay creatures = null!;
+    GameObjectOverlay gameObjects = null!;
+    SceneSidebar sidebar = null!;
     ushort? currentMapId;
     /// <summary>
     /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
@@ -88,6 +90,9 @@ public partial class TerrainViewer : Node3D
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
+        gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => creatures.ConnectionPath };
+        AddChild(gameObjects);
+        gameObjects.FocusRequested += FocusPose;
         BuildUi();
         ConfigureSmokeChecks();
         await LoadArchives();
@@ -272,6 +277,7 @@ public partial class TerrainViewer : Node3D
         world = null;
         currentMapId = null;
         creatures.SetRegion(null);
+        gameObjects.SetRegion(null);
         objects.Clear();
     }
 
@@ -308,8 +314,11 @@ public partial class TerrainViewer : Node3D
     /// region.
     /// </summary>
     void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
+        => FocusPose(spawn.Pose);
+
+    void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
     {
-        var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z));
+        var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(pose.X, pose.Y, pose.Z));
         var position = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
         camera.Position = position + new Vector3(0, 8, 15);
         camera.LookAt(position + Vector3.Up);
@@ -361,14 +370,17 @@ public partial class TerrainViewer : Node3D
             buildingNode = null;
         }
 
+        ACWorldEdit.Foundation.CreatureRegion? spawnRegion = null;
         if (currentMapId.HasValue && wanted.Count > 0)
         {
-            creatures.SetRegion(new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y)));
+            spawnRegion = new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y));
         }
         else if (currentMapId.HasValue && world.Tiles.Count == 0)
         {
-            creatures.SetRegion(new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63)));
+            spawnRegion = new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63));
         }
+        creatures.SetRegion(spawnRegion);
+        gameObjects.SetRegion(spawnRegion);
     }
 
     /// <summary>
@@ -435,7 +447,7 @@ public partial class TerrainViewer : Node3D
         status.Text = message;
         var current = CameraTile();
         int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
-        telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creature models{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
+        telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.World = world;
         minimap.Loaded = loaded.Keys.ToHashSet();
         minimap.Current = current;
@@ -452,7 +464,13 @@ public partial class TerrainViewer : Node3D
         }
 
         creatures.Update(camera);
+        gameObjects.Update(camera);
         models.Update(camera);
+        sidebar.UpdateCounts();
+        if (visibilitySmoke)
+        {
+            VisibilitySmoke(delta);
+        }
         if (creatureSmoke)
         {
             CreatureSmoke(delta);
@@ -505,7 +523,16 @@ public partial class TerrainViewer : Node3D
             {
                 if (!creatures.BeginDrag(camera, mouse.Position))
                 {
-                    creatures.Pick(camera, mouse.Position);
+                    var creatureHit = creatures.FindHit(camera, mouse.Position);
+                    var objectHit = gameObjects.FindHit(camera, mouse.Position);
+                    if (creatureHit.HasValue && (!objectHit.HasValue || creatureHit.Value.Distance <= objectHit.Value.Distance))
+                    {
+                        creatures.Select(creatureHit.Value.Guid);
+                    }
+                    else if (objectHit.HasValue)
+                    {
+                        gameObjects.Select(objectHit.Value.Guid);
+                    }
                 }
 
                 return;

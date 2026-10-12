@@ -2,7 +2,6 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
-
 /// <summary>
 /// Deduplicate ADT references by native type/ID and batch static placements per tile/variant.
 /// Global WDT objects have a separate owner key.
@@ -13,6 +12,17 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     readonly Dictionary<(TileKey Tile, ModelKey Model), (ModelInstance Node, WorldObject[] Items)> batches = [];
     WorldObject[] globals = [];
     public int ObjectCount { get; private set; }
+    public int DoodadCount { get; private set; }
+    public int WmoCount { get; private set; }
+
+    bool showDoodads = true, showWmos = true;
+    public void SetLayers(bool doodads, bool wmos)
+    {
+        showDoodads = doodads;
+        showWmos = wmos;
+        library.SetDoodadsVisible(doodads);
+        Reconcile();
+    }
 
     /// <summary>
     /// Publish a completed tile list; partial/stale uploads never attach scenery.
@@ -62,6 +72,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
         tiles.Clear();
         globals = [];
         ObjectCount = 0;
+        DoodadCount = WmoCount = 0;
     }
 
     /// <summary>
@@ -76,6 +87,11 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
         {
             foreach (var item in items)
             {
+                if (item.IsWmo ? !showWmos : !showDoodads)
+                {
+                    continue;
+                }
+
                 if (!seen.Add((item.IsWmo, item.Id)))
                 {
                     continue;
@@ -118,5 +134,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
         }
 
         ObjectCount = seen.Count;
+        DoodadCount = seen.Count(id => !id.Item1);
+        WmoCount = seen.Count(id => id.Item1);
     }
 }

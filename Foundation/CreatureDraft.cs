@@ -24,6 +24,8 @@ public sealed class CreatureDraft : IDisposable
     readonly string path;
     readonly FileStream writerLock;
     CreatureDraftSnapshot state = new(1, [], 0);
+    public bool CanUndo => state.Cursor > 0;
+    public bool CanRedo => state.Cursor < state.History.Length;
     /// <summary>
     /// Acquire an exclusive sibling lock before recovering local history. Failed recovery releases
     /// the lock and preserves the existing draft.

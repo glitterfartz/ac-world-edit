@@ -2,7 +2,6 @@ using Godot;
 using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
-
 /// <summary>
 /// Shared native variant identity: replacement skins, baked texture, WMO doodad set and
 /// requested animation ID. Equal keys reuse decoded and GPU resources.
@@ -83,7 +82,9 @@ public sealed class ModelLibrary
     public double UploadMilliseconds { get; private set; }
     public bool Busy => pending != null || building != null || instances.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public CreatureCatalog? Catalog { get; private set; }
+    public GameObjectCatalog? GameObjects { get; private set; }
 
+    bool embeddedDoodadsVisible = true;
     public ModelLibrary()
     {
         byte[] pink = [255, 0, 255, 255];
@@ -116,6 +117,7 @@ public sealed class ModelLibrary
         {
             DisposeEntry(building);
         }
+
         building = null;
         pendingKey = buildingKey = null;
         cancellation.Dispose();
@@ -139,6 +141,7 @@ public sealed class ModelLibrary
         failed.Clear();
         store = next;
         Catalog = next == null ? null : await Task.Run(() => new CreatureCatalog(next));
+        GameObjects = next == null ? null : await Task.Run(() => new GameObjectCatalog(next));
     }
 
     /// <summary>
@@ -219,6 +222,50 @@ public sealed class ModelLibrary
             }
         }
 
+        AttachDoodads(node, entry);
+        node.Built = true;
+    }
+
+    /// <summary>Scenery toggles remove embedded requests as well as hiding their geometry.</summary>
+    public void SetDoodadsVisible(bool visible)
+    {
+        if (embeddedDoodadsVisible == visible)
+        {
+            return;
+        }
+
+        embeddedDoodadsVisible = visible;
+        foreach (var node in instances.ToArray().Where(i => GodotObject.IsInstanceValid(i) && i.Built))
+        {
+            if (!cache.TryGetValue(node.Key, out var entry) || entry.Data.Doodads.Length == 0)
+            {
+                continue;
+            }
+
+            if (visible)
+            {
+                AttachDoodads(node, entry);
+            }
+            else
+            {
+                foreach (var child in node.GetChildren().OfType<ModelInstance>())
+                {
+                    child.Visible = false;
+                    child.QueueFree();
+                }
+
+                node.DoodadsAttached = false;
+            }
+        }
+    }
+
+    void AttachDoodads(ModelInstance node, Entry entry)
+    {
+        if (!embeddedDoodadsVisible || node.DoodadsAttached)
+        {
+            return;
+        }
+
         foreach (var group in entry.Data.Doodads.GroupBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
         {
             var local = group.Select(d => new Transform3D(new Basis(new Quaternion(d.Rotation.X, d.Rotation.Y, d.Rotation.Z, d.Rotation.W)).Scaled(Vector3.One * d.Scale), new(d.Position.X, d.Position.Y, d.Position.Z))).ToArray();
@@ -226,7 +273,7 @@ public sealed class ModelLibrary
             Attach(node, new(group.Key), transforms);
         }
 
-        node.Built = true;
+        node.DoodadsAttached = true;
     }
 
     /// <summary>
