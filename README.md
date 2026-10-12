@@ -109,23 +109,18 @@ Liquid schema reference: [WoWDBDefs LiquidType](https://github.com/wowdev/WoWDBD
 
 Format and engine references: [StormLib](https://github.com/ladislav-zezula/StormLib), [Warcraft ADT implementation](https://github.com/wowemulation-dev/warcraft-rs), and [Godot ArrayMesh](https://docs.godotengine.org/en/4.7/classes/class_arraymesh.html).
 
-## Phase 0 experiments
+## Code layout
 
-These optional historical experiments are separate from the active three-milestone plan.
+- `Scripts/TerrainViewer.cs`: camera navigation, terrain streaming and archive/map lifetime.
+- `Scripts/TerrainViewer.Ui.cs`: viewer controls and minimap layout.
+- `Scripts/Diagnostics/`: opt-in viewer/creature smoke workflows; normal editing does not run them.
+- `Scripts/Assets/`: engine-independent archive, texture, terrain, model and animation decoders.
+- `Scripts/ModelLibrary.cs`, `TerrainRenderer.cs`, `LiquidRendering.cs`: main-thread GPU resources.
+- `Scripts/CreatureOverlay.cs`, `TranslationGizmo.cs`, `Data/CreatureSource.cs`: read-only spawns,
+  selection and draft movement.
+- `Foundation/`: engine-independent coordinates, spawn records and durable creature drafts.
+- `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.
 
-- `dotnet run --project Experiments/FoundationChecks.csproj -p:NuGetAudit=false`: coordinates,
-  durable draft commands/recovery and review-only SQL fixture checks. Outputs stay under `artifacts/`.
-- `./Experiments/Run-ShellChecks.ps1`: matched standalone/EditorPlugin fixture smoke; the plugin
-  is enabled only in an isolated project copy for this automated check.
-- `./Experiments/Run-StormLibChecks.ps1`: downloads the pinned official StormLib 9.40 DLL into
-  ignored artifacts, verifies ZIP/DLL checksums and compares selected asset bytes read-only.
-- For manual standalone trials, build and run Godot with `-- --foundation-shell`. For editor trials,
-  enable **Phase 0 Foundation Trial** under Project Settings → Plugins. Use the same synthetic
-  search/place/move/undo/redo/review/reopen sequence. Disable the plugin after comparison.
-- For graphical performance diagnostics, build and run Godot with
-  `-- --terrain-benchmark --benchmark-seconds=1800`. It creates 2,000 synthetic box nodes,
-  teleports every 20 seconds and saves `artifacts/phase-0-viewport-benchmark.json`.
-  Short runs (`--benchmark-seconds=60`) and headless runs do not pass the 30-minute/GPU gates.
-  Input latency, VRAM and controlled cold/warm timings require additional measurement.
-
-No experiment connects to a writable database or modifies existing client/server data.
+The obsolete Phase 0 shell/plugin, synthetic benchmark, generic draft workspace and experimental
+SQL exporter have been removed. Reviewed SQL export remains future work in PLAN.md.
+The useful independent MPQ comparison remains available through `./Tests/Run-StormLibChecks.ps1`.

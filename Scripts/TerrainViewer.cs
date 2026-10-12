@@ -1,16 +1,16 @@
 using Godot;
 using ACWorldEdit.Assets;
-namespace ACWorldEdit;
 
+namespace ACWorldEdit;
 public partial class TerrainViewer : Node3D
 {
     AssetStore? store;
     WorldMap? world;
-    TerrainRenderer renderer = null!;
-    ModelLibrary models = null!;
-    WorldObjectScene objects = null!;
-    Camera3D camera = null!;
-    WorldEnvironment environment = null!;
+    TerrainRenderer renderer = null !;
+    ModelLibrary models = null !;
+    WorldObjectScene objects = null !;
+    Camera3D camera = null !;
+    WorldEnvironment environment = null !;
     readonly Dictionary<TileKey, Node3D> loaded = [];
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<TileKey> wanted = [];
@@ -23,50 +23,37 @@ public partial class TerrainViewer : Node3D
     bool busy, capture;
     float yaw, pitch = -0.4f, speed = 70;
     int radius = 1;
-    OptionButton maps = null!;
-    SpinBox tileX = null!, tileY = null!, distance = null!;
-    LineEdit dataPath = null!;
-    Button open = null!, reload = null!;
-    Label status = null!, telemetry = null!;
+    OptionButton maps = null !;
+    SpinBox tileX = null !, tileY = null !, distance = null !;
+    LineEdit dataPath = null !;
+    Button open = null !, reload = null !;
+    Label status = null !, telemetry = null !;
     List<MapInfo> mapList = [];
-    TerrainMinimap minimap = null!;
+    TerrainMinimap minimap = null !;
     string message = "Opening archives…";
-    bool smoke;
-    bool waterSmoke,waterInterior; int waterStage,waterSurfaceCount; double waterTime,waterReady; readonly List<double> waterFrames=[];
-    ACWorldEdit.Experiments.ViewportBenchmark? benchmark;
-    Node3D? benchmarkProxies;
-    bool foundationShell;
-    CreatureOverlay creatures = null!;
+    CreatureOverlay creatures = null !;
     ushort? currentMapId;
-    bool creatureSmoke;
-    bool visualSmoke;
-    bool gizmoSmoke, gizmoVerified;
-    double creatureSmokeTime;
-    int creatureSmokeStage;
-    double creatureSelectedAt;
-    double interiorReadyAt;
-    readonly List<double> visualFrameTimes = [];
-    int animationSmokeStage;
-    double animationReadyAt;
-    int smokeStage;
-    double smokeTime;
-    TileKey smokeOriginal;
-    int smokeSettle;
     sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors);
     public override async void _Ready()
     {
-        foundationShell = OS.GetCmdlineUserArgs().Contains("--foundation-shell");
-        if (foundationShell)
-        {
-            var trial = new ACWorldEdit.Experiments.FoundationShellTrial { Position = new(30, 30) }; AddChild(trial);
-            if (OS.GetCmdlineUserArgs().Contains("--foundation-shell-smoke"))
-            { trial.RunSmoke(); GD.Print("Foundation standalone shell instantiated and fixture workflow passed."); GetTree().Quit(); }
-            return;
-        }
         renderer = new TerrainRenderer();
-        models = new ModelLibrary(); objects = new WorldObjectScene(this,models);
-        camera = new Camera3D { Name = "Camera", Far = 8000, Near = 0.2f, Fov = 70, Current = true }; AddChild(camera);
-        var light = new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), LightEnergy = 1.25f }; AddChild(light);
+        models = new ModelLibrary();
+        objects = new WorldObjectScene(this, models);
+        camera = new Camera3D
+        {
+            Name = "Camera",
+            Far = 8000,
+            Near = 0.2f,
+            Fov = 70,
+            Current = true
+        };
+        AddChild(camera);
+        var light = new DirectionalLight3D
+        {
+            RotationDegrees = new Vector3(-50, -30, 0),
+            LightEnergy = 1.25f
+        };
+        AddChild(light);
         environment = new WorldEnvironment
         {
             Environment = new Godot.Environment
@@ -78,87 +65,109 @@ public partial class TerrainViewer : Node3D
                 AmbientLightEnergy = 0.65f,
                 TonemapMode = Godot.Environment.ToneMapper.Filmic
             }
-        }; AddChild(environment);
-        creatures = new CreatureOverlay { Models = models }; AddChild(creatures);
+        };
+        AddChild(environment);
+        creatures = new CreatureOverlay
+        {
+            Models = models
+        };
+        AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
-        BuildUi(); waterInterior=OS.GetCmdlineUserArgs().Contains("--water-interior-smoke"); waterSmoke=OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior; smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
+        BuildUi();
+        waterInterior = OS.GetCmdlineUserArgs().Contains("--water-interior-smoke");
+        waterSmoke = OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior;
+        smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
         creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
-        visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke"); creatureSmoke |= visualSmoke;
-        gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke"); creatureSmoke |= gizmoSmoke;
-        if (OS.GetCmdlineUserArgs().Contains("--terrain-benchmark")) benchmark = new();
+        visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke");
+        creatureSmoke |= visualSmoke;
+        gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke");
+        creatureSmoke |= gizmoSmoke;
         await LoadArchives();
     }
-    void BuildUi()
-    {
-        var layer = new CanvasLayer(); AddChild(layer);
-        var ui = new Control { Name = "Interface", MouseFilter = Control.MouseFilterEnum.Ignore }; ui.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect); layer.AddChild(ui);
-        var theme = new Theme(); theme.DefaultFontSize = 15;
-        theme.SetColor("font_color", "Label", new Color("e7eef4"));
-        theme.SetColor("font_color", "Button", new Color("e7eef4"));
-        var style = new StyleBoxFlat
-        {
-            BgColor = new Color(0.055f, 0.08f, 0.11f, 0.94f),
-            CornerRadiusTopLeft = 12,
-            CornerRadiusTopRight = 12,
-            CornerRadiusBottomLeft = 12,
-            CornerRadiusBottomRight = 12,
-            ContentMarginLeft = 18,
-            ContentMarginRight = 18,
-            ContentMarginTop = 16,
-            ContentMarginBottom = 16
-        };
-        theme.SetStylebox("panel", "PanelContainer", style); ui.Theme = theme;
-        var panel = new PanelContainer { Position = new Vector2(20, 20), CustomMinimumSize = new Vector2(330, 0) }; ui.AddChild(panel);
-        var box = new VBoxContainer(); box.AddThemeConstantOverride("separation", 10); panel.AddChild(box);
-        var title = new Label { Text = "AC WORLD EDIT" }; title.AddThemeFontSizeOverride("font_size", 24); box.AddChild(title);
-        var subtitle = new Label { Text = "WORLD VIEWER  /  WRATH 3.3.5" }; subtitle.AddThemeColorOverride("font_color", new Color("5bd8c2")); subtitle.AddThemeFontSizeOverride("font_size", 12); box.AddChild(subtitle);
-        box.AddChild(new HSeparator());
-        box.AddChild(new Label { Text = "MPQ directory" });
-        dataPath = new LineEdit { Text = ProjectSettings.GlobalizePath("res://wow-data"), CustomMinimumSize = new Vector2(294, 0) }; box.AddChild(dataPath);
-        reload = new Button { Text = "Load archives" }; reload.Pressed += async () => await LoadArchives(); box.AddChild(reload);
-        box.AddChild(new Label { Text = "World" }); maps = new OptionButton(); box.AddChild(maps);
-        maps.ItemSelected += id => { if ((int)id < mapList.Count) { var m = mapList[(int)id]; tileX.Value = m.Directory == "Azeroth" ? 34 : 32; tileY.Value = m.Directory == "Azeroth" ? 49 : 32; } };
-        var row = new HBoxContainer(); box.AddChild(row);
-        row.AddChild(new Label { Text = "Tile X" }); tileX = new SpinBox { MinValue = 0, MaxValue = 63, Value = 34 }; row.AddChild(tileX);
-        row.AddChild(new Label { Text = "Y" }); tileY = new SpinBox { MinValue = 0, MaxValue = 63, Value = 49 }; row.AddChild(tileY);
-        open = new Button { Text = "Open world", Disabled = true }; open.Pressed += async () => await OpenMap(); box.AddChild(open);
-        var radiusRow = new HBoxContainer(); box.AddChild(radiusRow); radiusRow.AddChild(new Label { Text = "Nearby tile radius" });
-        distance = new SpinBox { MinValue = 0, MaxValue = 3, Value = 1 }; radiusRow.AddChild(distance); distance.ValueChanged += value => { radius = (int)value; UpdateWanted(); };
-        var grid = new CheckButton { Text = "Show terrain cell borders" }; grid.Toggled += value => renderer.SetGrid(value); box.AddChild(grid);
-        box.AddChild(new HSeparator());
-        box.AddChild(new Label { Text = "Right mouse  ·  look / fly\nW A S D  ·  move     Q / E  ·  down / up\nShift  ·  faster     Wheel  ·  flight speed\nEsc  ·  release mouse", Modulate = new Color("aabac8") });
-        status = new Label { Text = message, AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(294, 55) }; box.AddChild(status);
-        var bottom = new PanelContainer { AnchorTop = 1, AnchorBottom = 1, AnchorRight = 1, OffsetLeft = 20, OffsetRight = -20, OffsetTop = -62, OffsetBottom = -18 }; ui.AddChild(bottom);
-        telemetry = new Label { Text = "Waiting for terrain" }; bottom.AddChild(telemetry);
-        minimap = new TerrainMinimap { CustomMinimumSize = new Vector2(180, 180), MouseFilter = Control.MouseFilterEnum.Stop }; box.AddChild(minimap);
-        minimap.Jump += key => { tileX.Value = key.X; tileY.Value = key.Y; Teleport(key); };
-        ui.AddChild(creatures.BuildPanel());
-    }
+
     async Task LoadArchives()
     {
-        if (busy) return; busy = true; open.Disabled = true; reload.Disabled = true; ResetTerrain();
-        var old = store; store = null;
-        if (pending != null) { try { await pending; } catch { } pending = null; }
+        if (busy)
+            return;
+        busy = true;
+        open.Disabled = true;
+        reload.Disabled = true;
+        ResetTerrain();
+        var old = store;
+        store = null;
+        if (pending != null)
+        {
+            try
+            {
+                await pending;
+            }
+            catch
+            {
+            }
+
+            pending = null;
+        }
+
         await models.SetStore(null);
-        old?.Dispose(); message = "Reading MPQ tables and map list…";
+        old?.Dispose();
+        message = "Reading MPQ tables and map list…";
         string path = dataPath.Text;
         try
         {
-            var result = await Task.Run(() => { var s = new AssetStore(path); try { return (Store: s, Maps: s.Maps()); } catch { s.Dispose(); throw; } });
-            store = result.Store; mapList = result.Maps; maps.Clear(); int selected = 0;
+            var result = await Task.Run(() =>
+            {
+                var s = new AssetStore(path);
+                try
+                {
+                    return (Store: s, Maps: s.Maps());
+                }
+                catch
+                {
+                    s.Dispose();
+                    throw;
+                }
+            });
+            store = result.Store;
+            mapList = result.Maps;
+            maps.Clear();
+            int selected = 0;
             await models.SetStore(store);
-            for (int i = 0; i < mapList.Count; i++) { maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})"); if (mapList[i].Directory == (waterInterior ? "Blackfathom" : "Azeroth")) selected = i; }
-            maps.Select(selected); message = $"{store.ArchiveCount} archives · {mapList.Count} maps"; open.Disabled = mapList.Count == 0;
+            for (int i = 0; i < mapList.Count; i++)
+            {
+                maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})");
+                if (mapList[i].Directory == (waterInterior ? "Blackfathom" : "Azeroth"))
+                    selected = i;
+            }
+
+            maps.Select(selected);
+            message = $"{store.ArchiveCount} archives · {mapList.Count} maps";
+            open.Disabled = mapList.Count == 0;
         }
-        catch (Exception e) { message = "Archive error: " + e.Message; GD.PushError(message); }
-        finally { busy = false; reload.Disabled = false; }
-        if (store != null && mapList.Count > 0) await OpenMap();
+        catch (Exception e)
+        {
+            message = "Archive error: " + e.Message;
+            GD.PushError(message);
+        }
+        finally
+        {
+            busy = false;
+            reload.Disabled = false;
+        }
+
+        if (store != null && mapList.Count > 0)
+            await OpenMap();
     }
+
     async Task OpenMap()
     {
-        if (busy || store == null || maps.Selected < 0) return;
-        busy = true; open.Disabled = true; ResetTerrain(); message = "Reading terrain index…";
-        var assets = store; string name = mapList[maps.Selected].Directory;
+        if (busy || store == null || maps.Selected < 0)
+            return;
+        busy = true;
+        open.Disabled = true;
+        ResetTerrain();
+        message = "Reading terrain index…";
+        var assets = store;
+        string name = mapList[maps.Selected].Directory;
         try
         {
             world = await Task.Run(() => new WorldMap(name, assets.Read($"World/Maps/{name}/{name}.wdt")));
@@ -166,98 +175,189 @@ public partial class TerrainViewer : Node3D
             environment.Environment.BackgroundColor = world.Tiles.Count == 0 ? new Color("080a0d") : new Color("91b5c9");
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
-            var requested = waterSmoke && waterStage == 0 ? new TileKey(32,49) : new TileKey((int)tileX.Value, (int)tileY.Value);
+            var requested = waterSmoke && waterStage == 0 ? new TileKey(32, 49) : new TileKey((int)tileX.Value, (int)tileY.Value);
             if (world.Tiles.Count > 0)
             {
-                if (!world.Tiles.Contains(requested)) requested = world.Tiles.OrderBy(k => Math.Abs(k.X - requested.X) + Math.Abs(k.Y - requested.Y)).First();
-                tileX.Value = requested.X; tileY.Value = requested.Y; Teleport(requested);
+                if (!world.Tiles.Contains(requested))
+                    requested = world.Tiles.OrderBy(k => Math.Abs(k.X - requested.X) + Math.Abs(k.Y - requested.Y)).First();
+                tileX.Value = requested.X;
+                tileY.Value = requested.Y;
+                Teleport(requested);
             }
             else
             {
-                var placement = world.GlobalObjects[0]; camera.Position = new(placement.Position.X,placement.Position.Y + 2.5f,placement.Position.Z + 10);
-                camera.Rotation = new(-0.12f,0,0); yaw = 0; pitch = -0.12f; UpdateWanted();
+                var placement = world.GlobalObjects[0];
+                camera.Position = new(placement.Position.X, placement.Position.Y + 2.5f, placement.Position.Z + 10);
+                camera.Rotation = new(-0.12f, 0, 0);
+                yaw = 0;
+                pitch = -0.12f;
+                UpdateWanted();
             }
+
             message = world.Tiles.Count > 0 ? $"{name} · {world.Tiles.Count} terrain tiles" : $"{name} · interior WMO";
-            if (smoke) { smokeOriginal = requested; smokeStage = 0; smokeTime = 0; }
+            if (smoke)
+            {
+                smokeOriginal = requested;
+                smokeStage = 0;
+                smokeTime = 0;
+            }
         }
-        catch (Exception e) { message = "Map error: " + e.Message; GD.PushWarning(message); }
-        finally { busy = false; open.Disabled = false; }
+        catch (Exception e)
+        {
+            message = "Map error: " + e.Message;
+            GD.PushWarning(message);
+        }
+        finally
+        {
+            busy = false;
+            open.Disabled = false;
+        }
     }
+
     void ResetTerrain()
     {
-        generation++; cancellation.Cancel(); cancellation.Dispose(); cancellation = new();
-        foreach (var n in loaded.Values) renderer.Release(n); loaded.Clear();
-        if (buildingNode != null) renderer.Release(buildingNode);
-        buildingNode = null; building = null; buildIndex = 0; failed.Clear(); wanted.Clear(); world = null;
-        currentMapId = null; creatures.SetRegion(null);
+        generation++;
+        cancellation.Cancel();
+        cancellation.Dispose();
+        cancellation = new();
+        foreach (var n in loaded.Values)
+            renderer.Release(n);
+        loaded.Clear();
+        if (buildingNode != null)
+            renderer.Release(buildingNode);
+        buildingNode = null;
+        building = null;
+        buildIndex = 0;
+        failed.Clear();
+        wanted.Clear();
+        world = null;
+        currentMapId = null;
+        creatures.SetRegion(null);
         objects.Clear();
     }
+
     void Teleport(TileKey key)
     {
-        if (world == null || !world.Tiles.Contains(key)) return;
+        if (world == null || !world.Tiles.Contains(key))
+            return;
         camera.Position = new Vector3((key.X - 32 + 0.5f) * TerrainTile.Size, 250, (key.Y - 32 + 0.5f) * TerrainTile.Size);
-        yaw = 0; pitch = -0.55f; camera.Rotation = new Vector3(pitch, yaw, 0); UpdateWanted();
-        if (benchmark != null)
-        {
-            benchmarkProxies?.QueueFree(); benchmarkProxies = new Node3D(); AddChild(benchmarkProxies);
-            benchmark.AddProxies(benchmarkProxies, camera.Position + new Vector3(0, -80, 0));
-        }
+        yaw = 0;
+        pitch = -0.55f;
+        camera.Rotation = new Vector3(pitch, yaw, 0);
+        UpdateWanted();
         // A loaded tile can supply elevation immediately; otherwise adjust when it finishes.
-        if (loaded.TryGetValue(key, out var node)) RaiseAboveTerrain(node);
+        if (loaded.TryGetValue(key, out var node))
+            RaiseAboveTerrain(node);
     }
+
     TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
     void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
     {
         var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z));
         var position = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
-        camera.Position = position + new Vector3(0, 8, 15); camera.LookAt(position + Vector3.Up);
-        yaw = camera.Rotation.Y; pitch = camera.Rotation.X; UpdateWanted();
+        camera.Position = position + new Vector3(0, 8, 15);
+        camera.LookAt(position + Vector3.Up);
+        yaw = camera.Rotation.Y;
+        pitch = camera.Rotation.X;
+        UpdateWanted();
     }
+
     void UpdateWanted()
     {
-        if (world == null) return; var center = CameraTile(); wanted.Clear();
-        for (int y = -radius; y <= radius; y++) for (int x = -radius; x <= radius; x++)
-        { var key = new TileKey(center.X + x, center.Y + y); if (world.Tiles.Contains(key)) wanted.Add(key); }
-        foreach (var key in loaded.Keys.Where(k => !wanted.Contains(k)).ToArray()) { renderer.Release(loaded[key]); loaded.Remove(key); objects.RemoveTile(key); }
-        if (building != null && !wanted.Contains(building.Tile.Key)) { if (buildingNode != null) renderer.Release(buildingNode); building = null; buildingNode = null; }
+        if (world == null)
+            return;
+        var center = CameraTile();
+        wanted.Clear();
+        for (int y = -radius; y <= radius; y++)
+            for (int x = -radius; x <= radius; x++)
+            {
+                var key = new TileKey(center.X + x, center.Y + y);
+                if (world.Tiles.Contains(key))
+                    wanted.Add(key);
+            }
+
+        foreach (var key in loaded.Keys.Where(k => !wanted.Contains(k)).ToArray())
+        {
+            renderer.Release(loaded[key]);
+            loaded.Remove(key);
+            objects.RemoveTile(key);
+        }
+
+        if (building != null && !wanted.Contains(building.Tile.Key))
+        {
+            if (buildingNode != null)
+                renderer.Release(buildingNode);
+            building = null;
+            buildingNode = null;
+        }
+
         if (currentMapId.HasValue && wanted.Count > 0)
             creatures.SetRegion(new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y)));
         else if (currentMapId.HasValue && world.Tiles.Count == 0)
-            creatures.SetRegion(new(currentMapId.Value,Math.Clamp(center.X-radius,0,63),Math.Clamp(center.X+radius,0,63),Math.Clamp(center.Y-radius,0,63),Math.Clamp(center.Y+radius,0,63)));
+            creatures.SetRegion(new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63)));
     }
+
     PreparedTile Prepare(AssetStore assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
-        token.ThrowIfCancellationRequested(); var tile = new TerrainTile(key, assets.Read(map.TilePath(key)), map.BigAlpha);
-        var decoded = new Dictionary<string, BlpTexture>(StringComparer.OrdinalIgnoreCase); List<string> errors = [];
+        token.ThrowIfCancellationRequested();
+        var tile = new TerrainTile(key, assets.Read(map.TilePath(key)), map.BigAlpha);
+        var decoded = new Dictionary<string, BlpTexture>(StringComparer.OrdinalIgnoreCase);
+        List<string> errors = [];
         foreach (string path in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             token.ThrowIfCancellationRequested();
-            try { decoded[path] = BlpTexture.Decode(assets.Read(path)); }
-            catch (Exception e) { errors.Add(path + ": " + e.Message); }
+            try
+            {
+                decoded[path] = BlpTexture.Decode(assets.Read(path));
+            }
+            catch (Exception e)
+            {
+                errors.Add(path + ": " + e.Message);
+            }
         }
-        for(int i=0;i<tile.Liquids.Count;i++)
+
+        for (int i = 0; i < tile.Liquids.Count; i++)
         {
-            var surface=tile.Liquids[i]; uint type=surface.LiquidType!.Value; token.ThrowIfCancellationRequested();
-            try { decoded[surface.Texture]=LiquidTextures.For(assets).Decode(type); tile.Liquids[i]=surface with { LiquidKind=LiquidTextures.For(assets).Kind(type) }; }
-            catch(Exception e) { errors.Add(surface.Texture+": "+e.Message); }
+            var surface = tile.Liquids[i];
+            uint type = surface.LiquidType!.Value;
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                decoded[surface.Texture] = LiquidTextures.For(assets).Decode(type);
+                tile.Liquids[i] = surface with
+                {
+                    LiquidKind = LiquidTextures.For(assets).Kind(type)
+                };
+            }
+            catch (Exception e)
+            {
+                errors.Add(surface.Texture + ": " + e.Message);
+            }
         }
+
         return new(version, tile, decoded, errors);
     }
+
     public override void _Process(double delta)
     {
-        if (foundationShell) return;
-        double uploadMs = 0;
         if (capture && !busy)
         {
             Vector3 move = Vector3.Zero;
-            if (Input.IsPhysicalKeyPressed(Key.W)) move -= camera.Basis.Z;
-            if (Input.IsPhysicalKeyPressed(Key.S)) move += camera.Basis.Z;
-            if (Input.IsPhysicalKeyPressed(Key.A)) move -= camera.Basis.X;
-            if (Input.IsPhysicalKeyPressed(Key.D)) move += camera.Basis.X;
-            if (Input.IsPhysicalKeyPressed(Key.Q)) move -= Vector3.Up;
-            if (Input.IsPhysicalKeyPressed(Key.E)) move += Vector3.Up;
+            if (Input.IsPhysicalKeyPressed(Key.W))
+                move -= camera.Basis.Z;
+            if (Input.IsPhysicalKeyPressed(Key.S))
+                move += camera.Basis.Z;
+            if (Input.IsPhysicalKeyPressed(Key.A))
+                move -= camera.Basis.X;
+            if (Input.IsPhysicalKeyPressed(Key.D))
+                move += camera.Basis.X;
+            if (Input.IsPhysicalKeyPressed(Key.Q))
+                move -= Vector3.Up;
+            if (Input.IsPhysicalKeyPressed(Key.E))
+                move += Vector3.Up;
             camera.Position += move.Normalized() * speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
         }
+
         if (!busy && world != null && store != null)
         {
             UpdateWanted();
@@ -268,15 +368,36 @@ public partial class TerrainViewer : Node3D
                     var result = pending.GetAwaiter().GetResult();
                     if (result.Generation == generation && wanted.Contains(result.Tile.Key))
                     {
-                        building = result; buildIndex = 0; buildingNode = renderer.BeginTile(result.Tile.Key); AddChild(buildingNode);
-                        if (result.Errors.Count > 0) { message = $"{result.Errors.Count} missing/unsupported textures. See log."; foreach (string e in result.Errors) GD.PushWarning(e); }
+                        building = result;
+                        buildIndex = 0;
+                        buildingNode = renderer.BeginTile(result.Tile.Key);
+                        AddChild(buildingNode);
+                        if (result.Errors.Count > 0)
+                        {
+                            message = $"{result.Errors.Count} missing/unsupported textures. See log.";
+                            foreach (string e in result.Errors)
+                                GD.PushWarning(e);
+                        }
                     }
                 }
-                catch (OperationCanceledException) { }
-                catch (Exception e) { if (pendingKey.HasValue) failed.Add(pendingKey.Value); pendingKey = null; message = "Tile error: " + e.Message; GD.PushError(message); }
-                if (pendingKey.HasValue) failed.Remove(pendingKey.Value); pendingKey = null;
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception e)
+                {
+                    if (pendingKey.HasValue)
+                        failed.Add(pendingKey.Value);
+                    pendingKey = null;
+                    message = "Tile error: " + e.Message;
+                    GD.PushError(message);
+                }
+
+                if (pendingKey.HasValue)
+                    failed.Remove(pendingKey.Value);
+                pendingKey = null;
                 pending = null;
             }
+
             if (building != null && buildingNode != null)
             {
                 var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -284,249 +405,164 @@ public partial class TerrainViewer : Node3D
                 {
                     // Leave 0.5 ms headroom within the proposed 2 ms upload target.
                     // A single indivisible resource upload can still exceed the soft deadline.
-                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count &&
-                        (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
-                        if(buildIndex < building.Tile.Chunks.Count) renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
-                        else renderer.AddLiquid(buildingNode,building.Tile.Liquids[buildIndex-building.Tile.Chunks.Count],building.Textures);
+                    for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
+                        if (buildIndex < building.Tile.Chunks.Count)
+                            renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, world.BigAlpha);
+                        else
+                            renderer.AddLiquid(buildingNode, building.Tile.Liquids[buildIndex - building.Tile.Chunks.Count], building.Textures);
                     if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
                     {
                         loaded[building.Tile.Key] = buildingNode;
-                        objects.SetTile(building.Tile.Key,building.Tile.Objects);
-                        if (CameraTile() == building.Tile.Key) RaiseAboveTerrain(buildingNode);
-                        building = null; buildingNode = null;
+                        objects.SetTile(building.Tile.Key, building.Tile.Objects);
+                        if (CameraTile() == building.Tile.Key)
+                            RaiseAboveTerrain(buildingNode);
+                        building = null;
+                        buildingNode = null;
                     }
                 }
-                catch (Exception e) { if (building != null) failed.Add(building.Tile.Key); if (buildingNode != null) renderer.Release(buildingNode); building = null; buildingNode = null; message = "Render error: " + e.Message; GD.PushError(message); }
-                uploadMs = System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds;
+                catch (Exception e)
+                {
+                    if (building != null)
+                        failed.Add(building.Tile.Key);
+                    if (buildingNode != null)
+                        renderer.Release(buildingNode);
+                    building = null;
+                    buildingNode = null;
+                    message = "Render error: " + e.Message;
+                    GD.PushError(message);
+                }
             }
+
             if (pending == null && building == null)
             {
                 var center = CameraTile();
-                var next = wanted.Where(k => !loaded.ContainsKey(k) && !failed.Contains(k)).OrderBy(k => (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y)).Select(k => (TileKey?)k).FirstOrDefault();
+                var next = wanted.Where(k => !loaded.ContainsKey(k) && !failed.Contains(k)).OrderBy(k => (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y)).Select(k => (TileKey? )k).FirstOrDefault();
                 if (next.HasValue)
                 {
-                    var key = next.Value; var assets = store; var map = world; int version = generation; var token = cancellation.Token;
+                    var key = next.Value;
+                    var assets = store;
+                    var map = world;
+                    int version = generation;
+                    var token = cancellation.Token;
                     // Failed tiles are tracked separately; obsolete requests can be retried when revisited.
-                    pendingKey = key; pending = Task.Run(() => Prepare(assets, map, key, version, token));
+                    pendingKey = key;
+                    pending = Task.Run(() => Prepare(assets, map, key, version, token));
                 }
             }
         }
+
         status.Text = message;
-        var current = CameraTile(); int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
+        var current = CameraTile();
+        int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creature models{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
-        minimap.World = world; minimap.Loaded = loaded.Keys.ToHashSet(); minimap.Current = current; minimap.CameraPosition = camera.Position; minimap.QueueRedraw();
-        if (smoke) Smoke(delta);
-        if(waterSmoke) WaterSmoke(delta);
+        minimap.World = world;
+        minimap.Loaded = loaded.Keys.ToHashSet();
+        minimap.Current = current;
+        minimap.CameraPosition = camera.Position;
+        minimap.QueueRedraw();
+        if (smoke)
+            Smoke(delta);
+        if (waterSmoke)
+            WaterSmoke(delta);
         creatures.Update(camera);
         models.Update(camera);
-        if (creatureSmoke) CreatureSmoke(delta);
-        benchmark?.Sample(delta, uploadMs, world != null && !busy && loaded.Count == wanted.Count && loaded.Count > 0 && pending == null && building == null,
-            loaded.Count, wanted.Count, () =>
-            {
-                if (world == null) return;
-                var currentTile = CameraTile();
-                var destination = world.Tiles.Where(k => Math.Abs(k.X - currentTile.X) >= 4)
-                    .OrderBy(k => Math.Abs(k.X - currentTile.X) + Math.Abs(k.Y - currentTile.Y)).First();
-                Teleport(destination);
-            }, this);
+        if (creatureSmoke)
+            CreatureSmoke(delta);
     }
+
     void RaiseAboveTerrain(Node3D tile)
     {
         // Pick nearest mesh vertex to prevent spawning inside mountains.
         float best = float.MaxValue, height = camera.Position.Y;
         foreach (var mesh in tile.GetChildren().OfType<MeshInstance3D>())
         {
-            var arrays = mesh.Mesh.SurfaceGetArrays(0); var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+            var arrays = mesh.Mesh.SurfaceGetArrays(0);
+            var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
             foreach (var v in vertices)
-            { var pos = tile.Position + v; float d = new Vector2(pos.X - camera.Position.X, pos.Z - camera.Position.Z).LengthSquared(); if (d < best) { best = d; height = pos.Y; } }
+            {
+                var pos = tile.Position + v;
+                float d = new Vector2(pos.X - camera.Position.X, pos.Z - camera.Position.Z).LengthSquared();
+                if (d < best)
+                {
+                    best = d;
+                    height = pos.Y;
+                }
+            }
         }
-        if (camera.Position.Y < height + 35) camera.Position = new Vector3(camera.Position.X, height + 80, camera.Position.Z);
+
+        if (camera.Position.Y < height + 35)
+            camera.Position = new Vector3(camera.Position.X, height + 80, camera.Position.Z);
     }
+
     public override void _UnhandledInput(InputEvent input)
     {
-        if (foundationShell) return;
         if (input is InputEventMouseButton mouse)
         {
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)
-            { if (!creatures.BeginDrag(camera,mouse.Position)) creatures.Pick(camera, mouse.Position); return; }
-            if (mouse.ButtonIndex == MouseButton.Right) { capture = mouse.Pressed; Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible; }
-            if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelUp) speed = Math.Min(1500, speed * 1.25f);
-            if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelDown) speed = Math.Max(5, speed / 1.25f);
+            {
+                if (!creatures.BeginDrag(camera, mouse.Position))
+                    creatures.Pick(camera, mouse.Position);
+                return;
+            }
+
+            if (mouse.ButtonIndex == MouseButton.Right)
+            {
+                capture = mouse.Pressed;
+                Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
+            }
+
+            if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelUp)
+                speed = Math.Min(1500, speed * 1.25f);
+            if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelDown)
+                speed = Math.Max(5, speed / 1.25f);
         }
+
         if (input is InputEventMouseMotion motion && capture)
-        { yaw -= motion.Relative.X * 0.0025f; pitch = Mathf.Clamp(pitch - motion.Relative.Y * 0.0025f, -1.55f, 1.55f); camera.Rotation = new Vector3(pitch, yaw, 0); }
-        if (input is InputEventKey key && key.Pressed && key.Keycode == Key.Escape) { capture = false; Input.MouseMode = Input.MouseModeEnum.Visible; }
-    }
-    void Smoke(double delta)
-    {
-        smokeTime += delta;
-        if (smokeTime > 120) { GD.PushError("TERRAIN_SMOKE_TIMEOUT " + message); GetTree().Quit(1); return; }
-        if (world == null || busy) return;
-        if (loaded.Count != wanted.Count || loaded.Count == 0 || pending != null || building != null) { smokeSettle = 0; return; }
-        if (++smokeSettle < 3) return;
-        if (smokeStage == 0)
         {
-            System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
-            if (DisplayServer.GetName() != "headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/terrain-preview.png"));
-            GD.Print($"TERRAIN_SMOKE_INITIAL tiles={loaded.Count} textures={renderer.TextureCount}");
-            var destination = world.Tiles.Where(k => Math.Abs(k.X - smokeOriginal.X) >= 4).OrderBy(k => Math.Abs(k.X - smokeOriginal.X) + Math.Abs(k.Y - smokeOriginal.Y)).First();
-            Teleport(destination); smokeStage = 1; smokeSettle = 0;
+            yaw -= motion.Relative.X * 0.0025f;
+            pitch = Mathf.Clamp(pitch - motion.Relative.Y * 0.0025f, -1.55f, 1.55f);
+            camera.Rotation = new Vector3(pitch, yaw, 0);
         }
-        else if (smokeStage == 1 && loaded.Count == wanted.Count && loaded.Count > 0 && pending == null && building == null)
+
+        if (input is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
         {
-            if (loaded.Keys.Any(k => !wanted.Contains(k)) || loaded.ContainsKey(smokeOriginal)) { GD.PushError("Stale streamed tiles"); GetTree().Quit(1); return; }
-            GD.Print($"TERRAIN_SMOKE_MOVED position={CameraTile()} tiles={loaded.Count} textures={renderer.TextureCount}");
-            Teleport(smokeOriginal); smokeStage = 2; smokeSettle = 0;
-        }
-        else if (smokeStage == 2)
-        {
-            GD.Print($"TERRAIN_SMOKE_PASSED returned={CameraTile()} tiles={loaded.Count} textures={renderer.TextureCount}"); GetTree().Quit(); smokeStage = 3;
+            capture = false;
+            Input.MouseMode = Input.MouseModeEnum.Visible;
         }
     }
-    void WaterSmoke(double delta)
-    {
-        waterTime+=delta;
-        if(waterTime>180) { GD.PushError("WATER_SMOKE_TIMEOUT "+message); GetTree().Quit(1); return; }
-        if(world==null||store==null||busy||pending!=null||building!=null||loaded.Count!=wanted.Count) return;
-        if(waterStage==0)
-        {
-            Vector3 target;
-            if(waterInterior)
-            {
-                var obj=world.GlobalObjects.First(); var surfaces=models.LiquidSurfaces(new ModelKey(obj.Path,DoodadSet:obj.DoodadSet)); if(surfaces.Length==0) return;
-                var native=surfaces.OrderByDescending(s=>s.Indices.Length).First();
-                var center=native.Positions.Aggregate(System.Numerics.Vector3.Zero,(a,b)=>a+b)/native.Positions.Length;
-                waterSurfaceCount=surfaces.Length; target=ModelLibrary.Placement(obj)*new Vector3(center.X,center.Y,center.Z);
-                camera.Position=target+new Vector3(6,3,6); camera.LookAt(target); UpdateWanted(); waterStage=1;
-                GD.Print($"WATER_INTERIOR_NATIVE map={currentMapId} surfaces={surfaces.Length} type={native.LiquidType} center={target}"); return;
-            }
-            var key=CameraTile(); var liquid=LiquidData.Terrain(store.Read(world.TilePath(key))).OrderByDescending(s=>s.Indices.Length*s.Colors!.Max(c=>c.W)).First();
-            var lakeCenter=liquid.Positions.Aggregate(System.Numerics.Vector3.Zero,(a,b)=>a+b)/liquid.Positions.Length;
-            target=new((key.X-32)*TerrainTile.Size+lakeCenter.X,lakeCenter.Y,(key.Y-32)*TerrainTile.Size+lakeCenter.Z);
-            camera.Position=target+new Vector3(0,30,25); camera.LookAt(target); UpdateWanted(); waterStage=1;
-            GD.Print($"WATER_SMOKE_NATIVE tile={key} type={liquid.LiquidType} height={lakeCenter.Y} cells={liquid.Indices.Length/6} alpha={liquid.Colors!.Min(c=>c.W)}/{liquid.Colors!.Average(c=>c.W)}/{liquid.Colors!.Max(c=>c.W)} center={lakeCenter}"); return;
-        }
-        if(models.Busy) return;
-        if(waterReady==0) { waterReady=waterTime; return; }
-        if(waterTime-waterReady<1) return;
-        if(waterStage==1)
-        { if(DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior.png" : "res://artifacts/water-preview.png")); waterStage=2; waterReady=waterTime; return; }
-        if(!waterInterior) waterSurfaceCount=renderer.LiquidSurfaceCount;
-        if(waterSurfaceCount==0) { GD.PushError("WATER_SMOKE_NO_SURFACES"); GetTree().Quit(1); return; }
-        waterFrames.Add(delta*1000);
-        if(waterTime-waterReady<4) return;
-        if(DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(waterInterior ? "res://artifacts/water-interior-animated.png" : "res://artifacts/water-animated.png"));
-        var times=waterFrames.Order().ToArray();
-        GD.Print($"WATER_SMOKE_PASSED interior={waterInterior} surfaces={waterSurfaceCount} frames={times.Length} p50={times[times.Length/2]:F2}ms p95={times[(int)(times.Length*.95)]:F2}ms"); GetTree().Quit();
-    }
-    void CreatureSmoke(double delta)
-    {
-        creatureSmokeTime += delta;
-        if (creatureSmokeTime > (visualSmoke ? 180 : 60))
-        { GD.PushError("CREATURE_SMOKE_TIMEOUT " + creatures.QueryStatus); GetTree().Quit(1); return; }
-        if (busy || world == null || (creatureSmokeStage < 3 && (creatures.IsLoading || creatures.Records.Count == 0))) return;
-        if (creatures.Records.Any(s => s.Pose.Map != currentMapId))
-        { GD.PushError("CREATURE_SMOKE_STALE_MAP"); GetTree().Quit(1); return; }
-        if (creatureSmokeStage == 0)
-        {
-            if (loaded.Count != wanted.Count || pending != null || building != null) return;
-            var centerTile = CameraTile();
-            var spawn = creatures.Records.Where(s => ACWorldEdit.Foundation.WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y))
-                .OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
-            var position = creatures.PositionOf(spawn.Guid);
-            camera.Position = position + new Vector3(0, 8, 15); camera.LookAt(position + Vector3.Up);
-            if (!creatures.Pick(camera, camera.UnprojectPosition(position + Vector3.Up)) || creatures.SelectedGuid != spawn.Guid || creatures.SelectedListGuid != spawn.Guid)
-            { GD.PushError("CREATURE_SMOKE_PICK_FAILED"); GetTree().Quit(1); return; }
-            creatures.Select(spawn.Guid);
-            GD.Print($"CREATURE_SMOKE_SELECTED count={creatures.Records.Count} guid={spawn.Guid} map={spawn.Pose.Map}");
-            creatureSelectedAt = creatureSmokeTime; creatureSmokeStage = 1;
-        }
-        else if (creatureSmokeStage == 1)
-        {
-            if (creatureSmokeTime - creatureSelectedAt < 1) return;
-            if (visualSmoke && (models.Busy || creatures.ModelCreatureCount == 0)) return;
-            if ((visualSmoke || gizmoSmoke) && !gizmoVerified)
-            {
-                if (!creatures.SmokeGizmo(camera)) { GD.PushError("GIZMO_SMOKE_FAILED"); GetTree().Quit(1); return; }
-                GD.Print("GIZMO_SMOKE_PASSED drag/model-position/reopen/undo/redo"); gizmoVerified = true; creatureSelectedAt = creatureSmokeTime; return;
-            }
-            if (visualSmoke)
-            {
-                if (animationSmokeStage == 0)
-                {
-                    if (!creatures.ChooseAnimationForSmoke(4)) { GD.PushError("ANIMATION_SMOKE_NO_WALK"); GetTree().Quit(1); return; }
-                    animationSmokeStage = 1; return;
-                }
-                if (animationSmokeStage == 1)
-                {
-                    if (!creatures.PreviewAnimationReady) return;
-                    if (animationReadyAt == 0) { animationReadyAt = creatureSmokeTime; return; }
-                    if (creatureSmokeTime-animationReadyAt < 0.5) return;
-                    if (DisplayServer.GetName()!="headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/walk-preview.png"));
-                    if (!creatures.ChooseAnimationForSmoke(0)) { GetTree().Quit(1); return; }
-                    animationSmokeStage = 2; return;
-                }
-                if (animationSmokeStage == 2)
-                {
-                    if (!creatures.PreviewAnimationReady) return;
-                    GD.Print("NATIVE_ANIMATION_SMOKE_PASSED selected-model Walk/Stand UI and native clip loading");
-                    animationSmokeStage = 3; creatureSelectedAt = creatureSmokeTime; return;
-                }
-                visualFrameTimes.Add(delta*1000);
-                if (creatureSmokeTime-creatureSelectedAt < 4) return;
-                var samples = visualFrameTimes.Order().ToArray();
-                GD.Print($"VISUAL_FRAME_TIMES frames={samples.Length} p50Ms={samples[samples.Length/2]:F3} p95Ms={samples[(int)(samples.Length*0.95)]:F3}");
-            }
-            if (DisplayServer.GetName() != "headless")
-            {
-                System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(visualSmoke ? "res://artifacts/native-preview.png" : "res://artifacts/creature-preview.png"));
-            }
-            if (visualSmoke) GD.Print($"VISUAL_SMOKE models={models.ReadyModels} creatures={creatures.ModelCreatureCount} objects={objects.ObjectCount} textures={models.TextureCount} cacheMiB={models.CachedBytes/1048576} uploadMs={models.UploadMilliseconds:F3} fps={Engine.GetFramesPerSecond()}");
-            creatures.Refresh(); creatures.Update(camera); // Start a query, then replace its map immediately.
-            int nextMap = mapList.FindIndex(m => m.Directory == "Kalimdor");
-            if (nextMap < 0) { GetTree().Quit(1); return; }
-            maps.Select(nextMap); tileX.Value = 32; tileY.Value = 32;
-            creatureSmokeStage = 2; _ = OpenMap();
-        }
-        else if (creatureSmokeStage == 2)
-        {
-            if (currentMapId != 1 || creatures.Records.Any(s => s.Pose.Map != 1))
-            { GD.PushError("CREATURE_SMOKE_MAP_SWITCH_FAILED"); GetTree().Quit(1); return; }
-            GD.Print($"CREATURE_SMOKE_PASSED map-switch/cancel count={creatures.Records.Count}");
-            if (!visualSmoke) { GetTree().Quit(); return; }
-            int interior = mapList.FindIndex(m => m.Directory == "StormwindJail");
-            if (interior < 0) { GetTree().Quit(1); return; }
-            maps.Select(interior); creatureSmokeStage = 3; _ = OpenMap();
-        }
-        else
-        {
-            if (models.Busy) return;
-            if (world.Tiles.Count != 0 || world.GlobalObjects.Count == 0 || models.ActiveFailedModels > 0)
-            { GD.PushError("INTERIOR_SMOKE_FAILED"); GetTree().Quit(1); return; }
-            if (interiorReadyAt == 0) { interiorReadyAt = creatureSmokeTime; return; }
-            if (creatureSmokeTime - interiorReadyAt < 1) return;
-            if (DisplayServer.GetName() != "headless") GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/interior-preview.png"));
-            GD.Print($"INTERIOR_SMOKE_PASSED map={currentMapId} objects={objects.ObjectCount} models={models.ReadyModels} fps={Engine.GetFramesPerSecond()}"); GetTree().Quit();
-        }
-    }
+
     public override void _Notification(int what)
     {
-        if (what == NotificationWMWindowFocusOut) { capture = false; Input.MouseMode = Input.MouseModeEnum.Visible; creatures?.EndDrag(false); }
+        if (what == NotificationWMWindowFocusOut)
+        {
+            capture = false;
+            Input.MouseMode = Input.MouseModeEnum.Visible;
+            creatures?.EndDrag(false);
+        }
     }
+
     public override void _Input(InputEvent input)
     {
-        if (creatures == null || !creatures.IsDragging) return;
-        if (input is InputEventMouseMotion motion) creatures.Drag(camera,motion.Position);
-        else if (input is InputEventMouseButton { ButtonIndex:MouseButton.Left,Pressed:false }) creatures.EndDrag(true);
-        else if (input is InputEventKey { Keycode:Key.Escape,Pressed:true }) creatures.EndDrag(false);
+        if (creatures == null || !creatures.IsDragging)
+            return;
+        if (input is InputEventMouseMotion motion)
+            creatures.Drag(camera, motion.Position);
+        else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
+            creatures.EndDrag(true);
+        else if (input is InputEventKey { Keycode: Key.Escape, Pressed: true })
+            creatures.EndDrag(false);
         GetViewport().SetInputAsHandled();
     }
+
     public override void _ExitTree()
     {
-        cancellation.Cancel(); var assets = store;
+        cancellation.Cancel();
+        var assets = store;
         var modelTask = models?.Stop() ?? Task.CompletedTask;
-        if (pending != null || !modelTask.IsCompleted) _ = Task.WhenAll(pending ?? Task.CompletedTask,modelTask).ContinueWith(_ => assets?.Dispose()); else assets?.Dispose();
+        if (pending != null || !modelTask.IsCompleted)
+            _ = Task.WhenAll(pending ?? Task.CompletedTask, modelTask).ContinueWith(_ => assets?.Dispose());
+        else
+            assets?.Dispose();
         cancellation.Dispose();
     }
 }

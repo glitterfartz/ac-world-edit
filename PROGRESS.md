@@ -95,3 +95,15 @@ proof. Source data and unknown row fields remain untouched.
   remain unchanged. User viewport configuration and unrelated generated UID files remain unstaged.
 - Fidelity follow-ups: client Light.dbc water colors, reflections/refraction, underwater fog,
   exact client playback/blending and WMO flow overrides. No source water editing or collision added.
+
+## Refactor and cleanup — in progress
+
+- Removed retired Phase 0 shell/plugin, synthetic benchmark, duplicate generic draft workspace,
+  unused SQL exporter and stale research-linked documents. Active position drafts are preserved.
+- Kept the independent native MPQ comparison and moved its runner to Tests/Run-StormLibChecks.ps1.
+- Separated viewer UI and opt-in viewer/creature smoke workflows from the main runtime files.
+  Split reusable binary/DBC/appearance/map/liquid catalog helpers into focused source files.
+  AnimationPalette replaces the misleading IdlePalette name; native clip behavior is unchanged.
+- Structural checkpoint: main project builds with zero warnings/errors; creature draft checks pass.
+  Remaining: consistent formatting, extensive algorithm/ownership comments, corpus and graphical
+  regression checks, and final documentation checkpoint. User viewport settings remain unstaged.

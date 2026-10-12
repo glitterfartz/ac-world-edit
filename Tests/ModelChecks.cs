@@ -12,7 +12,7 @@ public static class ModelChecks
         {
             var clip = M2Model.Read(store,wolf.Path,wolf.Textures,animationId:id);
             Check(clip.Duration > 0 && clip.AnimationIds!.Contains(id),"Missing native wolf clip " + id);
-            var clipPalette = IdlePalette.Bake(clip,default); Check(clipPalette.Height>1,"Static wolf clip " + id);
+            var clipPalette = AnimationPalette.Bake(clip,default); Check(clipPalette.Height>1,"Static wolf clip " + id);
             Console.WriteLine($"NATIVE_CLIP_PASSED {catalog.AnimationNames[id]} ({id}) duration={clip.Duration}ms frames={clipPalette.Height}");
         }
         var candidates = new List<(string Path,ushort Set)> { (animal.Path,0) };
@@ -47,7 +47,7 @@ public static class ModelChecks
                 Check(surface.Indices.Length % 3 == 0 && surface.Indices.All(i => i >= 0 && i < surface.Positions.Length),"Invalid model topology");
                 foreach (string path in new[] { surface.Texture }.Where(p => p.Length > 0).Distinct()) { var texture = surface.LiquidType is uint liquid ? LiquidTextures.For(store).Decode(liquid) : BlpTexture.Decode(store.Read(path)); Check(texture.Rgba.Length == texture.Width*texture.Height*4,"Bad model texture"); textureCount++; }
             }
-            var palette = IdlePalette.Bake(model,default);
+            var palette = AnimationPalette.Bake(model,default);
             var floats = new float[palette.Pixels.Length/4]; Buffer.BlockCopy(palette.Pixels,0,floats,0,palette.Pixels.Length);
             Check(floats.All(float.IsFinite),"Nonfinite native animation palette");
             if (model.Duration > 0 && model.Bones.Any(b => b.Rotation.Values.Length > 1 || b.Translation.Values.Length > 1))

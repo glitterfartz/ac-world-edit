@@ -1,9 +1,9 @@
 using System.Numerics;
 namespace ACWorldEdit.Assets;
 
-public sealed record IdlePalette(int Width, int Height, byte[] Pixels, float Duration)
+public sealed record AnimationPalette(int Width, int Height, byte[] Pixels, float Duration)
 {
-    public static IdlePalette Bake(ModelData model, CancellationToken token)
+    public static AnimationPalette Bake(ModelData model, CancellationToken token)
     {
         int bones = Math.Max(1, model.Bones.Length);
         int frames = model.Duration > 0 && model.Bones.Length > 0 ? Math.Clamp((int)(model.Duration / 1000f * 30) + 1, 2, 601) : 1;
