@@ -214,11 +214,14 @@ public sealed class ModelLibrary
                     multi.SetInstanceTransform(n, node.Transforms[n]);
                 }
 
-                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 1600 });
+                // A margin with the default (disabled) fade mode acts as hysteresis around the cutoff,
+                // not a visual fade: it stops small back-and-forth drift at the boundary from popping
+                // geometry in and out every frame while flying.
+                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
             }
             else
             {
-                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 400 });
+                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
             }
         }
 
@@ -449,8 +452,11 @@ public sealed class ModelLibrary
     }
 
     /// <summary>
-    /// Upload at most one surface per frame and publish the cache entry only after all surfaces are
-    /// ready. Drop work whose requesting instances have disappeared.
+    /// Upload within a soft per-frame time budget rather than exactly one surface, and publish the
+    /// cache entry only after all surfaces are ready. Drop work whose requesting instances have
+    /// disappeared. A multi-surface model (complex creatures, WMOs) that trickled in at one surface
+    /// per frame held the decode worker idle for several extra frames per model, which visibly
+    /// prolonged the fallback-marker period while flying through new areas.
     /// </summary>
     void UploadPendingModel()
     {
@@ -470,12 +476,15 @@ public sealed class ModelLibrary
                     building.AnimationTexture = ImageTexture.CreateFromImage(image);
                 }
 
-                // One indivisible surface upload per frame; time is measured, never a hard guarantee.
-                if (building.Surface < building.Data.Surfaces.Length)
+                // Leave headroom within the soft 2 ms upload target; a single indivisible surface
+                // upload can still exceed the deadline.
+                var started = System.Diagnostics.Stopwatch.GetTimestamp();
+                for (int budget = 0; budget < 8 && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
                 {
                     AddSurface(building, building.Data.Surfaces[building.Surface++]);
                 }
-                else
+
+                if (building.Surface == building.Data.Surfaces.Length)
                 {
                     cache[buildingKey] = building;
                     building.LastUsed = tick;

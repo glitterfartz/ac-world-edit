@@ -96,43 +96,58 @@ public partial class GameObjectOverlay : Node3D
     }
 
     public void Refresh() => Restart();
-    void Restart()
+    /// <summary>
+    /// Cancel and reissue the query. `hard` wipes every native model/fallback/label and the record
+    /// cache (used for an explicit filter/map/layer change); the routine camera-driven requery in
+    /// Update() uses `hard: false` so the existing display stays exactly as it is until the new
+    /// result arrives, which Reconcile() then diffs in rather than rebuilding from nothing. Without
+    /// this, flying triggered a visible "clear and reload" every time the quantized query center
+    /// shifted, even though almost the same objects were still in range.
+    /// </summary>
+    void Restart(bool hard = true)
     {
-        AdmittedObjectCount = 0;
         // The old task is retained until cancellation completes. Each layer has one query slot,
         // and a generation check prevents rapid filter/map changes from publishing stale rows.
         generation++;
         cancellation.Cancel();
         cancellation.Dispose();
         cancellation = new();
-        foreach (var batch in batches.Values)
+        if (hard)
         {
-            batch.Node.Visible = false;
-            batch.Node.QueueFree();
-        }
+            AdmittedObjectCount = 0;
+            foreach (var batch in batches.Values)
+            {
+                batch.Node.Visible = false;
+                batch.Node.QueueFree();
+            }
 
-        foreach (var node in fallbacks.Values)
+            foreach (var node in fallbacks.Values)
+            {
+                node.Visible = false;
+                node.QueueFree();
+            }
+
+            foreach (var node in names.Values)
+            {
+                node.Visible = false;
+                node.QueueFree();
+            }
+
+            names.Clear();
+            batches.Clear();
+            fallbacks.Clear();
+            paths.Clear();
+            lookup.Clear();
+            records = [];
+            list?.Clear();
+            Deselect();
+            modelUpdate = 0;
+            queryStatus = LayerEnabled ? "Loading nearby objects…" : "GameObject layer hidden";
+        }
+        else
         {
-            node.Visible = false;
-            node.QueueFree();
+            queryStatus = LayerEnabled ? (records.Count > 0 ? "Refreshing nearby objects…" : "Loading nearby objects…") : "GameObject layer hidden";
         }
-
-        foreach (var node in names.Values)
-        {
-            node.Visible = false;
-            node.QueueFree();
-        }
-
-        names.Clear();
-        batches.Clear();
-        fallbacks.Clear();
-        paths.Clear();
-        lookup.Clear();
-        records = [];
-        list?.Clear();
-        Deselect();
-        queryStatus = LayerEnabled ? "Loading nearby objects…" : "GameObject layer hidden";
-        modelUpdate = 0;
     }
 
     public void Update(Camera3D camera)
@@ -144,7 +159,7 @@ public partial class GameObjectOverlay : Node3D
             if (point != next)
             {
                 point = next;
-                Restart();
+                Restart(false);
             }
         }
 
@@ -161,6 +176,14 @@ public partial class GameObjectOverlay : Node3D
                 var result = pending.GetAwaiter().GetResult();
                 if (pendingGeneration == generation)
                 {
+                    var incoming = result.Spawns.ToDictionary(s => s.Guid);
+                    // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
+                    // their native model/fallback/label on its next tick without needing a full wipe.
+                    foreach (uint guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
+                    {
+                        lookup.Remove(guid);
+                    }
+
                     records = result.Spawns;
                     EventCatalog = result.Events;
                     foreach (var spawn in records)
@@ -249,7 +272,10 @@ public partial class GameObjectOverlay : Node3D
 
         foreach (var pair in batches.ToArray())
         {
-            if (groups.TryGetValue(pair.Key, out var guids) && guids.SequenceEqual(pair.Value.Guids))
+            // Compare membership, not order: distance-sorted candidates reorder every tick while
+            // flying even when the visible set is unchanged, and rebuilding the batch on pure
+            // reordering is what flickers the fallback marker back in for no reason.
+            if (groups.TryGetValue(pair.Key, out var guids) && guids.Count == pair.Value.Guids.Length && guids.ToHashSet().SetEquals(pair.Value.Guids))
             {
                 continue;
             }

@@ -105,12 +105,12 @@ public partial class CreatureOverlay : Node3D
     int generation, pendingGeneration;
     IReadOnlyList<CreatureSpawn> records = [];
     uint? selectedGuid;
-    int nextMarker;
+    List<CreatureSpawn> pendingMarkers = [];
     bool truncated;
     string queryStatus = "Waiting for an outdoor map.";
     public uint? SelectedGuid => selectedGuid;
     public IReadOnlyList<CreatureSpawn> Records => records;
-    public bool IsLoading => pending != null || nextMarker < records.Count;
+    public bool IsLoading => pending != null || pendingMarkers.Count > 0;
 
     public uint? SelectedListGuid
     {
@@ -180,9 +180,22 @@ public partial class CreatureOverlay : Node3D
         cancellation.Cancel();
         cancellation.Dispose();
         cancellation = new();
-        Clear(preserveSelection);
-        queryStatus = region == null ? "Waiting for an outdoor map." : "Loading nearby creatures…";
         // Keep at most one active query. Its cancellation completes before starting the replacement.
+        if (preserveSelection)
+        {
+            // Same region (routine camera movement, search/filter tweaks): cancel and reissue the
+            // query but leave every current marker/model exactly as it is. ReconcileSpawns() diffs
+            // the arriving result by GUID instead of wiping the scene first, which is what made
+            // flying trigger a visible "clear and reload" for nearly the same nearby creatures every
+            // time the quantized query center shifted.
+            pendingMarkers.Clear();
+            queryStatus = region == null ? "Waiting for an outdoor map." : records.Count > 0 ? "Refreshing nearby creatures…" : "Loading nearby creatures…";
+        }
+        else
+        {
+            Clear(false);
+            queryStatus = region == null ? "Waiting for an outdoor map." : "Loading nearby creatures…";
+        }
     }
 
     /// <summary>
@@ -221,7 +234,7 @@ public partial class CreatureOverlay : Node3D
         markers.Clear();
         admitted.Clear();
         records = [];
-        nextMarker = 0;
+        pendingMarkers.Clear();
         if (!preserveSelection)
         {
             if (selectionName != null)
@@ -272,18 +285,16 @@ public partial class CreatureOverlay : Node3D
                 var result = pending.GetAwaiter().GetResult();
                 if (pendingGeneration == generation)
                 {
-                    records = result.Spawns;
                     sourceKey = result.SourceKey;
                     EventCatalog = result.Events ?? [];
                     truncated = result.Truncated;
-                    nextMarker = 0;
+                    ReconcileSpawns(result.Spawns);
                     if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
                     {
                         Deselect();
                     }
 
                     PopulateList();
-                    queryStatus = records.Count == 0 ? "No creatures in this region." : "Preparing creature markers…";
                 }
             }
             catch (OperationCanceledException)
@@ -313,15 +324,19 @@ public partial class CreatureOverlay : Node3D
             pending = Task.Run(async () => await new CreatureSource(path).ReadAsync(next, preview, point, search, token), token);
         }
 
-        if (nextMarker < records.Count)
+        if (pendingMarkers.Count > 0)
         {
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
-            for (int i = 0; i < 64 && nextMarker < records.Count && (i == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 2); i++, nextMarker++)
+            int created = 0;
+            while (pendingMarkers.Count > 0 && created < 64 && (created == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 2))
             {
-                AddMarker(records[nextMarker]);
+                var spawn = pendingMarkers[^1];
+                pendingMarkers.RemoveAt(pendingMarkers.Count - 1);
+                AddMarker(spawn);
+                created++;
             }
 
-            if (nextMarker == records.Count)
+            if (pendingMarkers.Count == 0)
             {
                 if (selectedGuid.HasValue)
                 {
@@ -336,11 +351,11 @@ public partial class CreatureOverlay : Node3D
                     }
                 }
 
-                queryStatus = truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
+                queryStatus = CreatureStatusText();
             }
             else
             {
-                queryStatus = $"Preparing markers {nextMarker}/{records.Count}…";
+                queryStatus = $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}…";
             }
         }
 
@@ -462,7 +477,10 @@ public partial class CreatureOverlay : Node3D
 
         foreach (var batch in modelBatches.ToArray())
         {
-            if (groups.TryGetValue(batch.Key, out var guids) && guids.SequenceEqual(batch.Value.Guids))
+            // Compare membership, not order: distance-sorted candidates reorder every tick while
+            // flying even when the visible set is unchanged, and rebuilding the batch on pure
+            // reordering is what flickers the fallback marker back in for no reason.
+            if (groups.TryGetValue(batch.Key, out var guids) && guids.Count == batch.Value.Guids.Length && guids.ToHashSet().SetEquals(batch.Value.Guids))
             {
                 continue;
             }
@@ -499,6 +517,39 @@ public partial class CreatureOverlay : Node3D
         float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
         return new(marker.Node.Basis.Scaled(Vector3.One * scale), marker.Node.Position);
     }
+
+    /// <summary>
+    /// Diff a freshly queried snapshot against the markers already on screen instead of wiping and
+    /// rebuilding: creatures no longer present are removed, creatures already shown keep their
+    /// existing node/native model untouched (only their cached record is refreshed), and only
+    /// genuinely new creatures queue for incremental marker creation.
+    /// </summary>
+    void ReconcileSpawns(IReadOnlyList<CreatureSpawn> spawns)
+    {
+        var incoming = spawns.ToDictionary(s => s.Guid);
+        foreach (uint guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
+        {
+            var marker = markers[guid];
+            marker.Node.Visible = false;
+            marker.Node.QueueFree();
+            markers.Remove(guid);
+            admitted.Remove(guid);
+        }
+
+        foreach (var spawn in spawns)
+        {
+            if (markers.TryGetValue(spawn.Guid, out var existing))
+            {
+                markers[spawn.Guid] = (spawn, existing.Node, existing.Body, existing.Label);
+            }
+        }
+
+        records = spawns;
+        pendingMarkers = spawns.Where(s => !markers.ContainsKey(s.Guid)).ToList();
+        queryStatus = pendingMarkers.Count > 0 ? $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}…" : CreatureStatusText();
+    }
+
+    string CreatureStatusText() => records.Count == 0 ? "No creatures in this region." : truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
 
     /// <summary>
     /// Create a labeled fallback at the effective pose; model readiness controls its body

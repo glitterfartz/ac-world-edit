@@ -35,6 +35,10 @@ public partial class TerrainViewer : Node3D
     bool busy, capture;
     float yaw, pitch = -0.4f, speed = 70;
     int radius = 1;
+    // The SQL query region is intentionally stickier than the terrain load/release window (see
+    // UpdateWanted); these remember its last recompute center/radius.
+    TileKey? spawnRegionCenter;
+    int spawnRegionLoadRadius = -1;
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
     LineEdit dataPath = null!;
@@ -258,6 +262,7 @@ public partial class TerrainViewer : Node3D
 
         loaded.Clear();
         chunkAreas.Clear();
+        spawnRegionCenter = null;
         if (buildingNode != null)
         {
             renderer.Release(buildingNode);
@@ -375,7 +380,11 @@ public partial class TerrainViewer : Node3D
             }
         }
 
-        foreach (var key in loaded.Keys.Where(k => !wanted.Contains(k)).ToArray())
+        // Release with one extra ring of hysteresis beyond the load radius: turning or wobbling
+        // right at the boundary must not repeatedly tear down and reload the same tile, which is
+        // what made streamed terrain/scenery appear to flicker in and out while flying.
+        bool KeepLoaded(TileKey key) => Math.Abs(key.X - center.X) <= radius + 1 && Math.Abs(key.Y - center.Y) <= radius + 1;
+        foreach (var key in loaded.Keys.Where(k => !KeepLoaded(k)).ToArray())
         {
             renderer.Release(loaded[key]);
             loaded.Remove(key);
@@ -383,7 +392,7 @@ public partial class TerrainViewer : Node3D
             objects.RemoveTile(key);
         }
 
-        if (building != null && !wanted.Contains(building.Tile.Key))
+        if (building != null && !KeepLoaded(building.Tile.Key))
         {
             if (buildingNode != null)
             {
@@ -397,12 +406,34 @@ public partial class TerrainViewer : Node3D
         ACWorldEdit.Foundation.CreatureRegion? spawnRegion = null;
         if (currentMapId.HasValue && wanted.Count > 0)
         {
-            spawnRegion = new(currentMapId.Value, wanted.Min(k => k.X), wanted.Max(k => k.X), wanted.Min(k => k.Y), wanted.Max(k => k.Y));
+            // Sticky with generous padding: recomputing this tightly around `center` every time the
+            // camera crosses a tile boundary forced CreatureOverlay/GameObjectOverlay to fully clear
+            // and re-query (visibly "Loading nearby creatures…") every ~533 yards of ordinary flight,
+            // even though the SQL query already re-centers its own nearest-radius filter far more
+            // cheaply via the quantized camera point. Keep the same padded region until the camera
+            // actually nears its edge, or the radius setting itself changes.
+            const int pad = 3;
+            if (spawnRegionCenter == null || radius != spawnRegionLoadRadius ||
+                Math.Abs(center.X - spawnRegionCenter.Value.X) > pad || Math.Abs(center.Y - spawnRegionCenter.Value.Y) > pad)
+            {
+                spawnRegionCenter = center;
+                spawnRegionLoadRadius = radius;
+            }
+
+            var regionCenter = spawnRegionCenter.Value;
+            int r = radius + pad;
+            spawnRegion = new(currentMapId.Value, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
         }
         else if (currentMapId.HasValue && world.Tiles.Count == 0)
         {
+            spawnRegionCenter = null;
             spawnRegion = new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63));
         }
+        else
+        {
+            spawnRegionCenter = null;
+        }
+
         creatures.SetRegion(spawnRegion);
         gameObjects.SetRegion(spawnRegion);
     }

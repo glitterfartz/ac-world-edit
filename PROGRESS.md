@@ -153,6 +153,68 @@ proof. Source data and unknown row fields remain untouched.
   position-based pick among several overlapping local lights only uses the smallest-radius one,
   never a true multi-light blend.
 
+## Streaming/smoothness pass — implemented 2026-10-12
+
+User report: flying around made placeholder creature markers flicker against native models, native
+models/terrain scenery popped in and out, and models took a long time to load. Root causes found by
+reading the streaming paths, not by guessing:
+
+- `CreatureOverlay`/`GameObjectOverlay` rebuilt a creature/GameObject's whole native MultiMesh batch
+  whenever its GUID list changed — including pure *reorder* with no membership change, which happens
+  on nearly every tick while flying because the candidate list is sorted by live camera distance.
+  Rebuilding tears down and recreates the `ModelInstance`, which starts unbuilt (fallback marker
+  visible) until the next bind pass. Fixed both to compare membership (`SetEquals`) instead of
+  order (`SequenceEqual`).
+- `WorldObjectScene` (ADT doodad/WMO placement) deduplicates border-shared objects referenced by more
+  than one neighboring tile by recomputing "which tile owns it" from scratch, in tile order, on
+  every single tile load/unload. Whichever tile happened to be enumerated first that call could
+  reassign a shared prop's ownership away from an already-loaded, unrelated tile, tearing down and
+  rebuilding that tile's batch for no reason — this is what flickered terrain scenery/buildings
+  specifically near tile borders. Fixed with a persistent `owner` map: an object keeps its current
+  owner tile as long as that tile stays loaded, regardless of what else streams in or out.
+- `TerrainViewer.UpdateWanted()` released a loaded tile the instant it left the exact `radius`
+  window, so turning or wobbling right at the boundary repeatedly released and reloaded the same
+  tile. Added one extra ring of hysteresis (`radius + 1`) before release; the load window itself is
+  unchanged.
+- The same method also rebuilt the creature/GameObject SQL query region tightly around the camera
+  tile every call, so crossing any tile boundary (~533 yards — easy to do several times a minute
+  while flying) produced a *new* `CreatureRegion` record and triggered `SetRegion` → a full requery.
+  Made the region sticky with a 3-tile pad: it only moves once the camera drifts near its edge, or
+  the radius setting itself changes.
+- Deeper issue once the above landed: the overlays' own 64-yard quantized camera-query trigger
+  (`SpawnQueryPoint`, pre-existing, meant to bound DB load) was *itself* still destructive —
+  `Restart()` synchronously freed every marker/native-model/label before the replacement query
+  returned, so the UI visibly emptied and showed "Loading nearby creatures…"/"Loading nearby
+  objects…" on every quantized step, independent of the region fix above. Split both overlays'
+  restart into a soft path (routine camera movement: cancel and reissue the query, leave the current
+  display untouched) and the existing hard path (explicit filter/layer/map changes: wipe and
+  reload). Added `CreatureOverlay.ReconcileSpawns`/the GameObject result handler's `lookup` diff to
+  merge the arriving result by GUID — removing creatures/objects no longer present, keeping existing
+  markers' nodes and native models exactly as they are, and only queuing genuinely new spawns for
+  the existing incrementally-budgeted marker creation. `GameObjectOverlay.Reconcile()` already diffed
+  its fallbacks/labels/batches this way; only its `Restart()` was destructive.
+- `ModelLibrary.UploadPendingModel` uploaded exactly one surface per frame regardless of budget, so
+  a multi-surface model (a creature with several materials, a WMO) held the single background decode
+  worker idle for several extra frames per model purely waiting on the main-thread upload queue
+  before the next model could even start decoding. Changed to a soft per-frame time budget (up to 8
+  surfaces / ~1.5 ms), mirroring the pattern terrain chunk upload already used.
+- Added `VisibilityRangeEndMargin` to native model/doodad instances. With the default (disabled)
+  fade mode this acts as pure hysteresis around the distance cutoff (confirmed in the Godot 4.7 API
+  docs before relying on it) — geometry doesn't pop back in and out from being near the exact
+  boundary distance, at no added render cost.
+- Evidence: build and `dotnet format whitespace --verify-no-changes` both passed clean after every
+  edit. Re-ran the live viewer via the Godot MCP (`run_project`/`get_debug_output`/`stop_project`)
+  multiple times over Elwynn/Stormwind for 20-35 seconds each; no exceptions, same pre-existing
+  unrelated model warnings as before. The Godot MCP has no input-injection or screenshot capability
+  available in this session, so this only confirms the new code paths run without crashing under
+  real streaming load — it does **not** confirm the reported flicker is actually gone, since nothing
+  here could simulate flying the camera. Please fly around and confirm before considering this done;
+  if it's still happening, the next place to look is whether `ModelLibrary`'s single global decode
+  worker (shared across creatures/GameObjects/static props/WMO/skybox, one model at a time) is
+  simply too slow for how many distinct new models appear at once in dense areas — that would need a
+  real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
+  decode/upload/cache lifecycle invariants.
+
 ## Refactor and cleanup — completed 2026-10-11
 
 - Saved structural checkpoint 5b277b7. Removed the retired shell/plugin and synthetic benchmark,

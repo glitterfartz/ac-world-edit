@@ -10,6 +10,10 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
 {
     readonly Dictionary<TileKey, List<WorldObject>> tiles = [];
     readonly Dictionary<(TileKey Tile, ModelKey Model), (ModelInstance Node, WorldObject[] Items)> batches = [];
+    // A border-straddling object can be referenced by more than one neighboring tile. Sticky
+    // ownership keeps it on whichever tile already owns it (while that tile stays loaded) so an
+    // unrelated tile streaming in/out elsewhere cannot reassign it and force a visible rebuild.
+    readonly Dictionary<(bool IsWmo, uint Id), TileKey> owner = [];
     WorldObject[] globals = [];
     public int ObjectCount { get; private set; }
     public int DoodadCount { get; private set; }
@@ -70,20 +74,22 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
 
         batches.Clear();
         tiles.Clear();
+        owner.Clear();
         globals = [];
         ObjectCount = 0;
         DoodadCount = WmoCount = 0;
     }
 
     /// <summary>
-    /// Pick deterministic owners for duplicate IDs and retain unchanged batches. ModelLibrary
-    /// attaches embedded doodads after each WMO becomes ready.
+    /// Pick sticky owners for duplicate/border-shared IDs and retain unchanged batches. An object
+    /// keeps its current owner tile as long as that tile stays loaded, so one tile streaming in or
+    /// out elsewhere cannot reassign a shared object and force an unrelated batch to rebuild.
+    /// ModelLibrary attaches embedded doodads after each WMO becomes ready.
     /// </summary>
     void Reconcile()
     {
-        var seen = new HashSet<(bool, uint)>();
-        var desired = new Dictionary<(TileKey Tile, ModelKey Model), List<WorldObject>>();
-        void Add(TileKey tile, IEnumerable<WorldObject> items)
+        var candidates = new Dictionary<(bool IsWmo, uint Id), List<(TileKey Tile, WorldObject Item)>>();
+        void Collect(TileKey tile, IEnumerable<WorldObject> items)
         {
             foreach (var item in items)
             {
@@ -92,25 +98,44 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
                     continue;
                 }
 
-                if (!seen.Add((item.IsWmo, item.Id)))
+                var id = (item.IsWmo, item.Id);
+                if (!candidates.TryGetValue(id, out var list))
                 {
-                    continue;
+                    candidates[id] = list = [];
                 }
 
-                var key = (tile, new ModelKey(item.Path, DoodadSet: item.DoodadSet));
-                if (!desired.TryGetValue(key, out var list))
-                {
-                    desired[key] = list = [];
-                }
-
-                list.Add(item);
+                list.Add((tile, item));
             }
         }
 
-        Add(new(-1, -1), globals);
-        foreach (var tile in tiles.OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y))
+        Collect(new(-1, -1), globals);
+        foreach (var tile in tiles)
         {
-            Add(tile.Key, tile.Value);
+            Collect(tile.Key, tile.Value);
+        }
+
+        var desired = new Dictionary<(TileKey Tile, ModelKey Model), List<WorldObject>>();
+        foreach (var (id, options) in candidates)
+        {
+            var chosen = owner.TryGetValue(id, out var prior) ? options.FirstOrDefault(o => o.Tile == prior) : default;
+            if (chosen.Item == null)
+            {
+                chosen = options.OrderBy(o => o.Tile.X).ThenBy(o => o.Tile.Y).First();
+            }
+
+            owner[id] = chosen.Tile;
+            var key = (chosen.Tile, new ModelKey(chosen.Item.Path, DoodadSet: chosen.Item.DoodadSet));
+            if (!desired.TryGetValue(key, out var list))
+            {
+                desired[key] = list = [];
+            }
+
+            list.Add(chosen.Item);
+        }
+
+        foreach (var id in owner.Keys.Except(candidates.Keys).ToArray())
+        {
+            owner.Remove(id);
         }
 
         foreach (var pair in batches.ToArray())
@@ -133,8 +158,8 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
             }
         }
 
-        ObjectCount = seen.Count;
-        DoodadCount = seen.Count(id => !id.Item1);
-        WmoCount = seen.Count(id => id.Item1);
+        ObjectCount = candidates.Count;
+        DoodadCount = candidates.Keys.Count(id => !id.IsWmo);
+        WmoCount = candidates.Keys.Count(id => id.IsWmo);
     }
 }
