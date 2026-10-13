@@ -79,6 +79,25 @@ Missing required visibility metadata reports a safe error rather than silently s
 Model picking uses bounding boxes; creature fallbacks use a screen-space target. Terrain occlusion
 and precise animated triangle selection are not implemented.
 
+### Creature interactions
+
+**Right-click a creature without dragging** (or press **Interact…** in its inspector) to open a
+client-style window built from the database: gossip text and options with client gossip icons
+(submenus, Back, options hidden by `OptionNpcFlag`), available/completable quests with details,
+vendor items in the merchant grid with client item icons and gold/silver/copper or extended cost,
+trainer spells, spell click, flight master and SmartAI/C++ notes. Conditions, SmartAI, C++ scripts
+and player state are counted but not evaluated. Holding and dragging the right mouse still looks.
+
+**Edit** turns the window into an editor over a local interaction draft
+(`user://drafts/interactions.json`; undo/redo; stale-row conflicts): greeting text (clears the
+broadcast ID so the edit shows in game), options (icon, text, type, NpcFlag, submenu, order,
+add with a new submenu), quest links, vendor items (search, stock, restock, extended cost),
+trainer assignment and spells, spell clicks, npcflag and subname. Edits are checked against the
+server's loader rules; npcflag inconsistencies the server only logs appear as warnings with a
+**Fix**. Shared menus and trainers say how many creatures use them and offer **Make a copy for this
+NPC** (copying a menu drops its SQL conditions, as warned). Quest content opens in the read-only
+**Quest Editor** skeleton (toolbar **Quests**, View → Quest editor).
+
 ### Graveyards
 
 The **Graveyards** layer draws a tombstone icon over each `game_graveyard` row in the streamed region,
@@ -180,6 +199,13 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
 - Godot `-- --graveyard-smoke`: live graveyard markers, a real viewport click on an icon, list
   agreement, move/drop/name/link edits with rule rejections, draft reopen, layer hiding and a map
   switch, using an isolated draft. Graphical runs save `artifacts/graveyard-preview.png`.
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --interactions`: client DBC offsets
+  (Spell, TaxiNodes, ItemExtendedCost, ItemDisplayInfo) and real Goldshire innkeeper, quest giver,
+  vendor and trainer interactions; bounded, escaped searches and cancellation.
+- Godot `-- --interaction-smoke` (graphical): right-drag vs short right-click, gossip/vendor/submenu/
+  quest pages, quest editor from a quest and the toolbar, Edit mode (fork, new submenu, greeting,
+  vendor add/remove, flag warning fix, undo/redo, reopen) and close on map switch, on isolated
+  drafts; saves `artifacts/interaction-*.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
   Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%
   of opaque world pixels (found by rendering over two solid backgrounds; open sky and translucent

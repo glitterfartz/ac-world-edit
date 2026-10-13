@@ -1,0 +1,331 @@
+using System.Text.RegularExpressions;
+
+namespace ACWorldEdit.Foundation;
+
+public sealed record ItemInfo(uint Id, string Name, int Quality, long BuyPrice, uint DisplayId);
+public sealed record QuestInfo(uint Id, string Title, int Level, int MinLevel, string Details, string Objectives, int RewardMoney, string[] RewardItems);
+/// <summary>
+/// SmartAI row that reacts to interaction (event 64 gossip hello, 62 gossip select, 19 quest
+/// accepted, 20 quest rewarded). Shown as a warning; never simulated.
+/// </summary>
+public sealed record ScriptHook(int EventType, int ActionType, int EventParam1, int EventParam2, string Comment);
+
+/// <summary>
+/// Read-only facts the editor needs beyond the editable rows: names, existence checks for server
+/// validation, sharing counts and script/condition context. Implemented by the database/client
+/// layer; Foundation stays engine- and database-independent.
+/// </summary>
+public interface IInteractionLookup
+{
+    ItemInfo? Item(uint id);
+    QuestInfo? Quest(uint id);
+    string? SpellName(uint id);
+    bool ExtendedCostExists(uint id);
+    (string Male, string Female)? BroadcastText(uint id);
+    bool PoiExists(uint id);
+    /// <summary>
+    /// Database rows outside this NPC's loaded scope (another NPC's menu, an existing trainer).
+    /// </summary>
+    bool MenuExists(uint menuId);
+    bool TextExists(uint textId);
+    bool TrainerExists(uint id);
+    IReadOnlyList<Row> ReferenceVendor(uint entry);
+    int MenuUsers(uint menuId);
+    int TextUsers(uint textId);
+    int TrainerUsers(uint trainerId);
+}
+
+/// <summary>
+/// npcflag bits from UnitDefines.h and the server's gossip option/icon enums (GossipDef.h).
+/// </summary>
+public static class NpcFlags
+{
+    public const uint Gossip = 0x1, QuestGiver = 0x2, Trainer = 0x10, TrainerClass = 0x20, TrainerProfession = 0x40, Vendor = 0x80, VendorAmmo = 0x100, VendorFood = 0x200, VendorPoison = 0x400, VendorReagent = 0x800, Repair = 0x1000, FlightMaster = 0x2000, SpiritHealer = 0x4000, SpiritGuide = 0x8000, Innkeeper = 0x10000, Banker = 0x20000, Petitioner = 0x40000, TabardDesigner = 0x80000, Battlemaster = 0x100000, Auctioneer = 0x200000, StableMaster = 0x400000, GuildBanker = 0x800000, SpellClick = 0x1000000, PlayerVehicle = 0x2000000, Mailbox = 0x4000000;
+    public const uint VendorMask = Vendor | VendorAmmo | VendorFood | VendorPoison | VendorReagent;
+
+    public static readonly (uint Bit, string Name)[] All =
+    [
+        (Gossip, "Gossip"), (QuestGiver, "Quest giver"), (Trainer, "Trainer"), (TrainerClass, "Class trainer"), (TrainerProfession, "Profession trainer"),
+        (Vendor, "Vendor"), (VendorAmmo, "Ammo vendor"), (VendorFood, "Food vendor"), (VendorPoison, "Poison vendor"), (VendorReagent, "Reagent vendor"),
+        (Repair, "Repair"), (FlightMaster, "Flight master"), (SpiritHealer, "Spirit healer"), (SpiritGuide, "Spirit guide"), (Innkeeper, "Innkeeper"),
+        (Banker, "Banker"), (Petitioner, "Petitioner"), (TabardDesigner, "Tabard designer"), (Battlemaster, "Battlemaster"), (Auctioneer, "Auctioneer"),
+        (StableMaster, "Stable master"), (GuildBanker, "Guild banker"), (SpellClick, "Spell click"), (PlayerVehicle, "Player vehicle"), (Mailbox, "Mailbox")
+    ];
+
+    public static IEnumerable<string> Names(uint flags) => All.Where(f => (flags & f.Bit) != 0).Select(f => f.Name);
+
+    /// <summary>
+    /// GOSSIP_OPTION_* names; values at or above Count are rejected by the server.
+    /// </summary>
+    public static readonly string[] OptionTypes = ["None", "Gossip", "Quest giver", "Vendor", "Taxi", "Trainer", "Spirit healer", "Spirit guide", "Innkeeper", "Banker", "Petitioner", "Tabard designer", "Battlefield", "Auctioneer", "Stable", "Armorer", "Unlearn talents", "Unlearn pet talents", "Learn dual spec", "Outdoor PvP", "Dual spec info"];
+    /// <summary>
+    /// GOSSIP_ICON_* names; 14 and 15 are invalid and 21+ are replaced by the server.
+    /// </summary>
+    public static readonly string[] OptionIcons = ["Chat", "Vendor", "Taxi", "Trainer", "Interact", "Interact 2", "Money bag", "Talk", "Tabard", "Battle", "Dot", "Chat 11", "Chat 12", "Chat 13", "Invalid 14", "Invalid 15", "Chat 16", "Chat 17", "Chat 18", "Chat 19", "Chat 20"];
+}
+
+public sealed record TextView(uint TextId, string Male, string Female, bool FromBroadcast, uint BroadcastId, float Probability, bool Edited);
+public sealed record OptionView(Row Row, uint OptionId, uint Icon, string Text, bool FromBroadcast, uint Type, uint NpcFlag, uint ActionMenu, uint Poi, bool BoxCoded, uint BoxMoney, string BoxText, bool HiddenByFlags, bool Edited);
+public sealed record MenuView(uint MenuId, TextView[] Texts, OptionView[] Options, int SharedBy, bool Edited);
+public sealed record VendorView(Row? Row, uint Item, uint ExtendedCost, int Slot, uint MaxCount, uint IncrTime, ItemInfo? Info, uint FromReference, bool Edited);
+public sealed record TrainerSpellView(Row Row, uint SpellId, string Name, uint Cost, uint ReqSkillLine, uint ReqSkillRank, uint ReqLevel, bool Edited);
+public sealed record TrainerView(uint Id, uint Type, uint Requirement, string Greeting, TrainerSpellView[] Spells, int SharedBy, bool Exists);
+public sealed record QuestLinkView(uint Quest, QuestInfo? Info, bool Edited);
+public sealed record SpellClickView(Row Row, uint SpellId, string Name, uint CastFlags, uint UserType, bool Edited);
+
+/// <summary>
+/// Problem found by validation. Errors block a command; warnings mirror what the server logs and
+/// may carry a one-click fix.
+/// </summary>
+public sealed record InteractionIssue(bool Error, string Message, RowEdit[]? Fix = null);
+
+/// <summary>
+/// Effective interaction view of one creature entry: database rows plus the local draft, with
+/// names resolved. Rebuilt after every edit; never mutated.
+/// </summary>
+public sealed record NpcInteraction(
+    uint Entry,
+    uint Guid,
+    string Name,
+    Row Template,
+    string ScriptName,
+    string AIName,
+    int SpawnCount,
+    IReadOnlyDictionary<uint, MenuView> Menus,
+    QuestLinkView[] Starts,
+    QuestLinkView[] Ends,
+    VendorView[] Vendor,
+    TrainerView? Trainer,
+    SpellClickView[] SpellClicks,
+    ScriptHook[] Scripts,
+    IReadOnlyDictionary<int, int> Conditions,
+    InteractionIssue[] Issues)
+{
+    public uint NpcFlag => Template.U("npcflag");
+    public uint GossipMenuId => Template.U("gossip_menu_id");
+    public string Subname => Template.T("subname");
+
+    /// <summary>
+    /// Maximum menus followed through ActionMenuID, matching the source's bound.
+    /// </summary>
+    public const int MaxMenus = 32;
+
+    /// <summary>
+    /// Build the view from effective rows. Edited marks compare against the database snapshot.
+    /// </summary>
+    public static NpcInteraction Build(uint entry, uint guid, string name, string scriptName, string aiName, int spawnCount, RowSet snapshot, RowSet rows, IInteractionLookup lookup, ScriptHook[] scripts, IReadOnlyDictionary<int, int> conditions)
+    {
+        bool Edited(TableSchema table, Row row) => snapshot.Get(table, table.KeyOf(row)) != row;
+        var template = rows.Get(InteractionTables.CreatureTemplate, entry.ToString()) ?? throw new InvalidDataException($"Creature template {entry} is missing.");
+        uint flags = template.U("npcflag");
+        var menus = new Dictionary<uint, MenuView>();
+        var queue = new Queue<uint>();
+        if (template.U("gossip_menu_id") != 0)
+        {
+            queue.Enqueue(template.U("gossip_menu_id"));
+        }
+
+        while (queue.Count > 0 && menus.Count < MaxMenus)
+        {
+            uint menu = queue.Dequeue();
+            if (menus.ContainsKey(menu))
+            {
+                continue;
+            }
+
+            var texts = rows.All(InteractionTables.GossipMenu).Where(r => r.U("MenuID") == menu).Select(r =>
+            {
+                uint id = r.U("TextID");
+                var text = rows.Get(InteractionTables.NpcText, id.ToString());
+                if (text == null)
+                {
+                    return new TextView(id, $"(npc_text {id} not loaded)", "", false, 0, 0, false);
+                }
+
+                uint broadcast = (uint)Math.Max(0, text.I("BroadcastTextID0"));
+                // The server sends broadcast_text instead of npc_text whenever the ID resolves.
+                var fromBroadcast = broadcast != 0 ? lookup.BroadcastText(broadcast) : null;
+                return new TextView(id, fromBroadcast?.Male ?? text.T("text0_0"), fromBroadcast?.Female ?? text.T("text0_1"), fromBroadcast != null, broadcast, text.F("Probability0"), Edited(InteractionTables.NpcText, text) || Edited(InteractionTables.GossipMenu, r));
+            }).ToArray();
+            var options = rows.All(InteractionTables.GossipOption).Where(r => r.U("MenuID") == menu).OrderBy(r => r.U("OptionID")).Select(r =>
+            {
+                uint broadcast = (uint)Math.Max(0, r.I("OptionBroadcastTextID"));
+                var fromBroadcast = broadcast != 0 ? lookup.BroadcastText(broadcast) : null;
+                uint action = r.U("ActionMenuID");
+                if (action != 0)
+                {
+                    queue.Enqueue(action);
+                }
+
+                return new OptionView(r, r.U("OptionID"), r.U("OptionIcon"), fromBroadcast?.Male ?? r.T("OptionText"), fromBroadcast != null, r.U("OptionType"), r.U("OptionNpcFlag"), action, r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.U("BoxMoney"), r.T("BoxText"), (r.U("OptionNpcFlag") & flags) == 0, Edited(InteractionTables.GossipOption, r));
+            }).ToArray();
+            menus[menu] = new MenuView(menu, texts, options, lookup.MenuUsers(menu), texts.Any(t => t.Edited) || options.Any(o => o.Edited));
+        }
+
+        QuestLinkView[] Quests(TableSchema table) => rows.All(table).Where(r => r.U("id") == entry).OrderBy(r => r.U("quest")).Select(r => new QuestLinkView(r.U("quest"), lookup.Quest(r.U("quest")), Edited(table, r))).ToArray();
+
+        List<VendorView> vendor = [];
+        foreach (var row in rows.All(InteractionTables.Vendor).Where(r => r.U("entry") == entry).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item")))
+        {
+            int item = row.I("item");
+            if (item < 0)
+            {
+                // A negative item references another vendor's list; its rows are edited there.
+                foreach (var referenced in lookup.ReferenceVendor((uint)-item).Where(r => r.I("item") > 0))
+                {
+                    vendor.Add(new VendorView(null, (uint)referenced.I("item"), referenced.U("ExtendedCost"), row.I("slot"), referenced.U("maxcount"), referenced.U("incrtime"), lookup.Item((uint)referenced.I("item")), (uint)-item, false));
+                }
+
+                continue;
+            }
+
+            vendor.Add(new VendorView(row, (uint)item, row.U("ExtendedCost"), row.I("slot"), row.U("maxcount"), row.U("incrtime"), lookup.Item((uint)item), 0, Edited(InteractionTables.Vendor, row)));
+        }
+
+        TrainerView? trainer = null;
+        if (rows.Get(InteractionTables.DefaultTrainer, entry.ToString()) is { } link)
+        {
+            uint id = link.U("TrainerId");
+            var info = rows.Get(InteractionTables.Trainer, id.ToString());
+            var spells = rows.All(InteractionTables.TrainerSpell).Where(r => r.U("TrainerId") == id).OrderBy(r => r.U("ReqLevel")).ThenBy(r => r.U("SpellId"))
+                .Select(r => new TrainerSpellView(r, r.U("SpellId"), lookup.SpellName(r.U("SpellId")) ?? $"Spell {r.U("SpellId")}", r.U("MoneyCost"), r.U("ReqSkillLine"), r.U("ReqSkillRank"), r.U("ReqLevel"), Edited(InteractionTables.TrainerSpell, r))).ToArray();
+            trainer = new TrainerView(id, info?.U("Type") ?? 0, info?.U("Requirement") ?? 0, info?.T("Greeting") ?? "", spells, lookup.TrainerUsers(id), info != null || lookup.TrainerExists(id));
+        }
+
+        var clicks = rows.All(InteractionTables.SpellClick).Where(r => r.U("npc_entry") == entry).Select(r => new SpellClickView(r, r.U("spell_id"), lookup.SpellName(r.U("spell_id")) ?? $"Spell {r.U("spell_id")}", r.U("cast_flags"), r.U("user_type"), Edited(InteractionTables.SpellClick, r))).ToArray();
+        var view = new NpcInteraction(entry, guid, name, template, scriptName, aiName, spawnCount, menus, Quests(InteractionTables.QuestStarter), Quests(InteractionTables.QuestEnder), vendor.ToArray(), trainer, clicks, scripts, conditions, []);
+        return view with { Issues = InteractionRules.Check(view, rows, lookup).ToArray() };
+    }
+
+    /// <summary>
+    /// Render client text placeholders for preview: $B newline, $N/$C/$R name/class/race tokens,
+    /// $g male:female; picks the male form. Raw text stays in the rows.
+    /// </summary>
+    public static string Render(string text)
+    {
+        text = Regex.Replace(text, @"\$[gG]\s*([^:;]*):([^;]*);", m => m.Groups[1].Value);
+        return text.Replace("$B", "\n").Replace("$b", "\n").Replace("$N", "<name>").Replace("$n", "<name>").Replace("$C", "<class>").Replace("$c", "<class>").Replace("$R", "<race>").Replace("$r", "<race>");
+    }
+}
+
+/// <summary>
+/// Server loading rules (ObjectMgr Load*), as errors, and server-logged npcflag inconsistencies, as
+/// warnings with fixes. Only rows in this NPC's effective scope are checked.
+/// </summary>
+public static class InteractionRules
+{
+    public static IEnumerable<InteractionIssue> Check(NpcInteraction view, RowSet rows, IInteractionLookup lookup)
+    {
+        uint entry = view.Entry, flags = view.NpcFlag;
+        bool MenuExists(uint id) => rows.All(InteractionTables.GossipMenu).Any(r => r.U("MenuID") == id) || lookup.MenuExists(id);
+        foreach (var menu in view.Menus.Values)
+        {
+            foreach (var text in menu.Texts.Where(t => rows.Get(InteractionTables.NpcText, t.TextId.ToString()) == null && !lookup.TextExists(t.TextId)))
+            {
+                yield return new(true, $"Menu {menu.MenuId} uses npc_text {text.TextId}, which does not exist.");
+            }
+
+            foreach (var option in menu.Options)
+            {
+                string where = $"Menu {menu.MenuId} option {option.OptionId}";
+                if (option.Type >= NpcFlags.OptionTypes.Length)
+                {
+                    yield return new(true, $"{where}: option type {option.Type} is unknown; the server will not use it.");
+                }
+
+                if (option.Icon >= NpcFlags.OptionIcons.Length || option.Icon is 14 or 15)
+                {
+                    yield return new(true, $"{where}: icon {option.Icon} is invalid.");
+                }
+
+                if (option.ActionMenu != 0 && !MenuExists(option.ActionMenu))
+                {
+                    yield return new(true, $"{where}: submenu {option.ActionMenu} does not exist.");
+                }
+
+                if (option.Poi != 0 && !lookup.PoiExists(option.Poi))
+                {
+                    yield return new(true, $"{where}: point of interest {option.Poi} does not exist.");
+                }
+            }
+        }
+
+        foreach (var link in view.Starts.Concat(view.Ends).Where(q => q.Info == null))
+        {
+            yield return new(true, $"Quest {link.Quest} does not exist in quest_template.");
+        }
+
+        foreach (var item in view.Vendor.Where(v => v.Row != null))
+        {
+            if (item.Info == null)
+            {
+                yield return new(true, $"Vendor item {item.Item} does not exist in item_template.");
+            }
+
+            if (item.ExtendedCost != 0 && !lookup.ExtendedCostExists(item.ExtendedCost))
+            {
+                yield return new(true, $"Vendor item {item.Item}: extended cost {item.ExtendedCost} is not in ItemExtendedCost.dbc.");
+            }
+
+            if (item.MaxCount > 0 && item.IncrTime == 0)
+            {
+                yield return new(true, $"Vendor item {item.Item}: limited stock needs a restock time (incrtime).");
+            }
+
+            if (item.MaxCount == 0 && item.IncrTime != 0)
+            {
+                yield return new(true, $"Vendor item {item.Item}: a restock time needs a limited stock (maxcount).");
+            }
+        }
+
+        foreach (var reference in rows.All(InteractionTables.Vendor).Where(r => r.U("entry") == entry && r.I("item") < 0 && lookup.ReferenceVendor((uint)-r.I("item")).Count == 0))
+        {
+            yield return new(true, $"Vendor reference {-reference.I("item")} has no items.");
+        }
+
+        if (view.Trainer is { } trainer)
+        {
+            if (!trainer.Exists)
+            {
+                yield return new(true, $"Trainer {trainer.Id} does not exist.");
+            }
+
+            foreach (var spell in trainer.Spells.Where(s => lookup.SpellName(s.SpellId) == null))
+            {
+                yield return new(true, $"Trainer spell {spell.SpellId} is not in Spell.dbc.");
+            }
+        }
+
+        foreach (var click in view.SpellClicks.Where(c => lookup.SpellName(c.SpellId) == null))
+        {
+            yield return new(true, $"Spell click {click.SpellId} is not in Spell.dbc.");
+        }
+
+        // Server-logged inconsistencies: the data loads, but the client never offers it.
+        InteractionIssue Missing(uint bit, string what) => new(false, $"{what}, but npcflag lacks {NpcFlags.Names(bit).First()}.", [new RowEdit(InteractionTables.CreatureTemplate.Name, entry.ToString(), view.Template, view.Template.With("npcflag", flags | bit))]);
+        if ((view.Starts.Length > 0 || view.Ends.Length > 0) && (flags & NpcFlags.QuestGiver) == 0)
+        {
+            yield return Missing(NpcFlags.QuestGiver, "Quests are linked");
+        }
+
+        if (view.Vendor.Length > 0 && (flags & NpcFlags.VendorMask) == 0)
+        {
+            yield return Missing(NpcFlags.Vendor, "Vendor items exist");
+        }
+
+        if (view.Trainer != null && (flags & (NpcFlags.Trainer | NpcFlags.TrainerClass | NpcFlags.TrainerProfession)) == 0)
+        {
+            yield return Missing(NpcFlags.Trainer, "A trainer is assigned");
+        }
+
+        if (view.SpellClicks.Length > 0 && (flags & NpcFlags.SpellClick) == 0)
+        {
+            yield return Missing(NpcFlags.SpellClick, "Spell clicks exist");
+        }
+
+        if (view.GossipMenuId != 0 && (flags & NpcFlags.Gossip) == 0)
+        {
+            yield return Missing(NpcFlags.Gossip, "A gossip menu is set");
+        }
+    }
+}

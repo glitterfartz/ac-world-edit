@@ -43,7 +43,7 @@ public partial class GraveyardOverlay : IPlacementEditor
     void OpenDraft()
     {
         var args = OS.GetCmdlineUserArgs();
-        bool smoke = args.Contains("--graveyard-smoke") || args.Contains("--visual-smoke") || args.Contains("--gizmo-smoke");
+        bool smoke = args.Contains("--graveyard-smoke") || args.Contains("--visual-smoke") || args.Contains("--gizmo-smoke") || args.Contains("--interaction-smoke");
         draftPath = ProjectSettings.GlobalizePath(smoke ? $"res://artifacts/graveyard-drafts/{Guid.NewGuid():N}/graveyards.json" : "user://drafts/graveyards.json");
         try
         {

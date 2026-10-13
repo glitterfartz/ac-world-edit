@@ -131,7 +131,7 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public override void _Ready()
     {
-        draftPath = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--visual-smoke") || OS.GetCmdlineUserArgs().Contains("--gizmo-smoke") ? $"res://artifacts/gizmo-drafts/{Guid.NewGuid():N}/positions.json" : "user://drafts/creature-positions.json");
+        draftPath = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--visual-smoke") || OS.GetCmdlineUserArgs().Contains("--gizmo-smoke") || OS.GetCmdlineUserArgs().Contains("--interaction-smoke") || OS.GetCmdlineUserArgs().Contains("--graveyard-smoke") ? $"res://artifacts/gizmo-drafts/{Guid.NewGuid():N}/positions.json" : "user://drafts/creature-positions.json");
         try
         {
             draft = new CreatureDraft(draftPath);

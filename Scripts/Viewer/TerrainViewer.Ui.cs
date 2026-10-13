@@ -242,9 +242,28 @@ public partial class TerrainViewer
         };
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, objects);
         ui.AddChild(sidebar);
+        interaction = new InteractionWindow
+        {
+            ConnectionPath = () => creatures.ConnectionPath,
+            Store = () => store
+        };
+        questEditor = new QuestEditorWindow
+        {
+            ConnectionPath = () => creatures.ConnectionPath,
+            FlyToEntry = entry => creatures.FlyToEntry(entry, camera.Position)
+        };
+        // Floating windows sit on the UI layer above the panels.
+        layer.AddChild(interaction);
+        layer.AddChild(questEditor);
+        interaction.SummaryChanged += creatures.SetInteractionSummary;
+        interaction.QuestEditorRequested += questEditor.Open;
+        creatures.InteractRequested += interaction.Open;
         BuildMenus();
         BuildToolbar();
     }
+
+    InteractionWindow interaction = null!;
+    QuestEditorWindow questEditor = null!;
 
     /// <summary>
     /// Full-width flat strip holding the menu bar above the toolbar.
@@ -333,6 +352,7 @@ public partial class TerrainViewer
 
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
+        menu.Command(view, "Quest editor", () => questEditor.Open(0));
         menu.Command(view, "Scene explorer", () =>
         {
             sidebar.Visible = true;
@@ -366,6 +386,7 @@ public partial class TerrainViewer
           End                   drop to ground
           Ctrl+Z / Ctrl+Y       undo / redo (also Ctrl+Shift+Z)
           F                     fly to selection
+          Right-click (no drag) a creature to see its gossip, quests, vendor and trainer
           Esc during a drag     cancel
         """;
 
@@ -405,6 +426,8 @@ public partial class TerrainViewer
         toolbar.AddChild(step);
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
+        toolbar.Separator();
+        toolbar.Action("Quests", "Open the quest editor (skeleton)", () => questEditor.Open(0));
     }
 
     /// <summary>

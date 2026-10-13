@@ -53,6 +53,16 @@ zone links (area/zone + faction) in a local graveyard draft with undo/redo, vali
 server's loading rules (AreaTable zone, faction 0/469/67, no duplicate link). Export joins step 4.
 Battleground/default graveyard IDs are referenced from core C++; spirit healers are not moved.
 
+## 3c. Creature interactions — preview and draft editing implemented; quest editor skeleton
+
+A short right-click (or Interact…) opens a client-style window: gossip text and options (submenus,
+NpcFlag gating), quests, vendor items with client icons, trainer spells, spell click, flight
+master and script/condition notes. Edit mode records gossip/npc_text/option, quest-link, vendor,
+trainer, spell-click and npcflag/subname changes in a local interaction draft, validated against
+server loader rules, with shared-record forks and reserved new IDs. Quest content opens in a
+read-only Quest Editor skeleton (toolbar Quests / View → Quest editor). Conditions, SmartAI, C++
+scripts and player state are listed, never evaluated; export joins step 4.
+
 ## 4. Export a reviewed SQL change — later
 
 Export bounded forward/reverse SQL with original rows and freshness checks. Prove application

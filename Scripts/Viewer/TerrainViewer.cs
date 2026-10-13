@@ -285,6 +285,7 @@ public partial class TerrainViewer : Node3D
         creatures.SetRegion(null);
         gameObjects.SetRegion(null);
         graveyards.SetRegion(null);
+        interaction?.Reset();
         objects.Clear();
     }
 
@@ -541,6 +542,7 @@ public partial class TerrainViewer : Node3D
         creatures.Update(camera);
         gameObjects.Update(camera);
         graveyards.Update(camera);
+        interaction.Track(creatures.SelectedSpawn);
         models.Update(camera);
         sidebar.UpdateCounts();
         if (visibilitySmoke)
@@ -564,6 +566,11 @@ public partial class TerrainViewer : Node3D
         if (graveyardSmoke)
         {
             GraveyardSmoke(delta);
+        }
+
+        if (interactionSmoke)
+        {
+            InteractionSmoke(delta);
         }
     }
 
@@ -635,6 +642,27 @@ public partial class TerrainViewer : Node3D
 
             if (mouse.ButtonIndex == MouseButton.Right)
             {
+                if (mouse.Pressed)
+                {
+                    rightPress = (mouse.Position, Time.GetTicksMsec(), yaw, pitch);
+                    rightMotion = 0;
+                }
+                else if (rightPress is { } press && rightMotion < 6 && Time.GetTicksMsec() - press.Ticks < 350)
+                {
+                    // A short right-click without dragging interacts, like the client; a drag looks.
+                    yaw = press.Yaw;
+                    pitch = press.Pitch;
+                    camera.Rotation = new Vector3(pitch, yaw, 0);
+                    if (creatures.FindHit(camera, press.Position) is { } hit)
+                    {
+                        creatures.Select(hit.Guid);
+                        if (creatures.SelectedSpawn is { } spawn)
+                        {
+                            interaction.Open(spawn);
+                        }
+                    }
+                }
+
                 capture = mouse.Pressed;
                 Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
             }
@@ -652,6 +680,7 @@ public partial class TerrainViewer : Node3D
 
         if (input is InputEventMouseMotion motion && capture)
         {
+            rightMotion += motion.Relative.Length();
             yaw -= motion.Relative.X * 0.0025f;
             pitch = Mathf.Clamp(pitch - motion.Relative.Y * 0.0025f, -1.55f, 1.55f);
             camera.Rotation = new Vector3(pitch, yaw, 0);
@@ -682,6 +711,9 @@ public partial class TerrainViewer : Node3D
     /// The draft editor that owns the current selection; creatures when nothing editable is
     /// selected. Menus, toolbar and viewport drags route through it.
     /// </summary>
+    (Vector2 Position, ulong Ticks, float Yaw, float Pitch)? rightPress;
+    float rightMotion;
+
     IPlacementEditor ActiveEditor => graveyards != null && graveyards.HasSelection ? graveyards : creatures;
 
     /// <summary>

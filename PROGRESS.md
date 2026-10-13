@@ -216,6 +216,41 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## Creature interactions, edit mode and quest editor skeleton — implemented 2026-10-13
+
+- Prior checkpoints: 94d0e58 graveyard markers/drafts; 1e1a910 creature labels.
+- Data (verified in server ObjectMgr/PlayerGossip/QueryHandler): creature_template npcflag/
+  gossip_menu_id/subname, gossip_menu, npc_text (broadcast_text wins when its ID resolves),
+  gossip_menu_option (shown only if OptionNpcFlag & npcflag), creature_queststarter/ender +
+  quest_template, npc_vendor (negative item = reference list) + item_template, trainer/
+  trainer_spell/creature_default_trainer (legacy npc_trainer is not loaded by the server),
+  npc_spellclick_spells, smart_scripts events 64/62/19/20, conditions 14/15/19/23 (counted only).
+  Client: Spell.dbc 136/153, TaxiNodes 1-5, ItemExtendedCost 1-13, ItemDisplayInfo 5, gossip/quest
+  and item icon BLPs.
+- Foundation: InteractionRows (table registry with keys + column whitelist), InteractionDraft
+  (grouped row commands on DraftFile, undo/redo, conflicts, reserved IDs, frozen worker view),
+  NpcInteraction (view builder, placeholder rendering) and InteractionRules (server loader errors;
+  npcflag warnings with fixes).
+- InteractionSource reads the NPC scope plus draft-touched rows and follows reachable menus/texts/
+  trainers in the effective view; InteractionWindow (+ .Edit) is the client-style preview/editor;
+  QuestEditorWindow + QuestSource are a read-only skeleton. Short right-click (<6 px, <350 ms)
+  interacts; dragging still looks.
+- Evidence: `--interactions` live: Innkeeper Farley (2 menus, 4 options incl. bind, 12 items),
+  William Pestle (4 quests), Noblegarden Vendor (10 items), Priestess Josetta (240 named trainer
+  spells); DBC offsets; search escaping; cancellation. `--draft` adds interaction command/rule/
+  conflict checks. `--interaction-smoke` passes end to end (shared menu 1291 forked to 90003);
+  screenshots reviewed (gossip, merchant grid with client icons, quest detail, edit gossip/info,
+  quest editor). Settled FPS in the Goldshire inn is the same with the edit window open (33) and
+  closed (33). Regression `--visual/--visibility/--graveyard/--reload-smoke`, format and other
+  checks pass.
+- Fixed during review: smoke stand-off distance, ambiguous quest-title click, screenshot frame lag,
+  editor label wrapping, toggled-button padding, windows growing from stale wrapped-label sizes,
+  and smokes now isolate creature/graveyard drafts too.
+- Limits: conditions/SmartAI/C++/player state are not evaluated (counted and warned); forking a menu
+  drops its SQL conditions (warned); only npc_text group 0 is editable; quest content, SmartAI,
+  conditions and event vendors are not editable; reserved IDs are claims until export; shared
+  records affect every user unless forked.
+
 ## Graveyard markers and local drafts — implemented 2026-10-13
 
 - Prior checkpoints: 00955a1 reload smoke fix; 1e1a910 creature labels above model heads.

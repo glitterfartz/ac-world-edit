@@ -33,6 +33,7 @@ if (args.Contains("--draft"))
 {
     CreatureDraftChecks.Run();
     GraveyardDraftChecks.Run();
+    InteractionDraftChecks.Run();
     return;
 }
 
@@ -49,6 +50,12 @@ if (args.Contains("--spawns"))
 }
 
 using var store = new AssetStore(path);
+if (args.Contains("--interactions"))
+{
+    await InteractionChecks.Run(store);
+    return;
+}
+
 if (args.Contains("--graveyards"))
 {
     await GraveyardChecks.Run(store);

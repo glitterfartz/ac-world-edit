@@ -44,6 +44,27 @@ public partial class CreatureOverlay : IPlacementEditor
         set => gizmo.RotationStep = value;
     }
 
+    /// <summary>
+    /// The selected creature with its effective (draft) pose, or null.
+    /// </summary>
+    public CreatureSpawn? SelectedSpawn => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker.Spawn with { Pose = PoseOf(marker.Spawn) } : null;
+
+    /// <summary>
+    /// Select and fly to the nearest loaded spawn of a template entry (quest editor links).
+    /// </summary>
+    public bool FlyToEntry(uint entry, Vector3 from)
+    {
+        var nearest = markers.Values.Where(m => m.Spawn.TemplateId == entry).OrderBy(m => m.Node.GlobalPosition.DistanceSquaredTo(from)).Select(m => (uint?)m.Spawn.Guid).FirstOrDefault();
+        if (nearest is not uint guid)
+        {
+            return false;
+        }
+
+        Select(guid);
+        FlyToSelection();
+        return true;
+    }
+
     public void Undo() => History(false);
     public void Redo() => History(true);
 
