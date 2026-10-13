@@ -146,15 +146,20 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
 
 ## Code layout
 
-- `Scripts/TerrainViewer.cs`: camera navigation, terrain streaming and archive/map lifetime.
-- `Scripts/TerrainViewer.Ui.cs`: viewer controls and minimap layout.
+- `Scripts/Viewer/`: `TerrainViewer` (camera navigation, terrain streaming, archive/map lifetime and
+  its `.Ui` controls), minimap, sky/time-of-day lighting, viewport picking, and the Godot-bound
+  `ClientLighting`/`AreaTable` DBC readers that feed them.
+- `Scripts/Rendering/`: main-thread GPU resources for models, terrain, liquids and world objects.
+- `Scripts/Overlays/`: bounded native creature/GameObject spawn projection, selection, creature
+  draft movement and the translation gizmo; each overlay keeps its inspector UI in a `.Ui` partial.
+- `Scripts/Ui/`: scene sidebar and entity inspector.
 - `Scripts/Diagnostics/`: opt-in viewer/creature smoke workflows; normal editing does not run them.
-- `Scripts/Assets/`: engine-independent archive, texture, terrain, model and animation decoders.
-- `Scripts/ModelLibrary.cs`, `TerrainRenderer.cs`, `LiquidRendering.cs`: main-thread GPU resources.
-- `Scripts/SceneSidebar.cs`, `InspectorUi.cs`, `CreatureOverlay.Ui.cs`, `GameObjectOverlay.Ui.cs`: scene
-  and entity inspector.
-- `Scripts/CreatureOverlay.cs`, `GameObjectOverlay.cs`, `TranslationGizmo.cs`: bounded native spawn
-  projection, selection and creature draft movement.
+- `Scripts/Assets/`: engine-independent decoders, compiled into `Tests/` as well:
+  - `Archives/`: MPQ reading, the client mount profile and the shared `AssetStore`.
+  - `Formats/`: low-level binary readers, chunk streams, DBC tables and BLP textures.
+  - `Client/`: DBC-backed creature/GameObject display catalogs and liquid textures.
+  - `Models/`: M2/WMO model decoding and animation data.
+  - `World/`: ADT/WDT terrain, liquids, map metadata and placed world objects.
 - `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
 - `Foundation/`: engine-independent coordinates, spawn records and durable creature drafts.
 - `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.

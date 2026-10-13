@@ -215,6 +215,17 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## Scripts folder layout — completed 2026-10-12
+
+- Prior checkpoints: 30ca255 streaming pass; 0fc3b8e binary reader docs.
+- Grouped `Scripts/` into `Viewer/`, `Rendering/`, `Overlays/`, `Ui/`, and split `Assets/` into
+  `Archives/`, `Formats/`, `Client/`, `Models/`, `World/` (see README "Code layout"). Each `.cs.uid`
+  moved with its script; namespaces are unchanged. Earlier entries cite pre-move paths.
+- `AreaTable`/`ClientLighting` moved from `Assets/` to `Viewer/`: they use Godot `Color`/`GD`, which
+  had broken the engine-independent `Tests/AssetChecks.csproj` build since 625ffc7.
+- Validation: main and test projects build with 0 warnings/errors; whitespace format check passes.
+  Not yet run: Godot editor reimport or graphical smoke after the path change.
+
 ## Refactor and cleanup — completed 2026-10-11
 
 - Saved structural checkpoint 5b277b7. Removed the retired shell/plugin and synthetic benchmark,
