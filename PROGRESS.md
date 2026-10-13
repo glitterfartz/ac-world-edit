@@ -51,7 +51,7 @@ ea45d17 native clip previews and validation.
 ## Remaining visual fidelity and editing work
 
 Full client parity remains incomplete: detailed character hair/clothing/equipment composition,
-particles/ribbons, advanced multitexture/environment shaders, material/UV animation, billboard bones,
+particles/ribbons, advanced multitexture/environment shaders (second texture unit), billboard bones,
 portal culling and client skies. Water lighting/reflections/refraction, underwater fog, WMO flow
 overrides and procedural liquid entry 100 remain incomplete; water tint/opacity are approximations. Basic NPC baked textures/geosets are previews. Native spline
 tracks use linear approximation; long clips cap at 601 samples. Unsupported material cases are
@@ -215,6 +215,40 @@ reading the streaming paths, not by guessing:
   simply too slow for how many distinct new models appear at once in dense areas — that would need a
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
+
+## M2 batch color/UV animation, door state clips, untextured chunks — implemented 2026-10-13
+
+- Prior checkpoint: 469f161 SmartAI rule composer.
+- User report: Ruby Sanctum tile 30,25 missing; solid circles around the dragons and the portal.
+- Terrain: shipped ADTs contain chunks with an empty MCLY (ChamberOfAspectsRed_30_25 has three).
+  The parser rejected the whole tile; empty layer lists now load untextured. A scan of all 5,744
+  client tiles found one other failure, in the unused developer map ExteriorTest.
+- Cause of the circles (read from the real assets and `acore_world`): the rings are
+  `rubysanctum_door_01..04.m2` (Fire Field, Flame Walls, Halion Flame Ring, Twilight Ring), door
+  GameObjects whose visibility, orange/purple tint and flame scrolling live only in batch color
+  alpha and UV tracks. `Opened` sets alpha 0. Instance portals use static texture weights
+  (0.2-0.8), keyed alpha flicker and UV scrolling; the burnt trees hide variants with weight 0.
+  The viewer ignored all of these and drew every batch opaque and static.
+- M2Model now resolves each batch's M2Color (RGB + alpha), texture weight (transparency lookup)
+  and first-unit texture transform (translation, rotation and scale about the UV center).
+  MaterialPalette bakes them on the worker into a per-variant RGBA-float texture (30 Hz, max 601
+  rows, each channel looping on its clip or global sequence); static values go in as uniforms.
+  The model shader tints, fades and transforms UVs from it on the shared TIME clock. Batches whose
+  alpha is always zero are never uploaded. Opaque batches only honor alpha at zero.
+- GameObject doors/buttons play Closed (GO_STATE_READY 1) or Opened (ACTIVE 0/2; GOState in
+  GameObjectData.h), falling back to Stand when the model lacks the clip. In the default phase,
+  Halion's Flame Ring (state 0) is hidden and Fire Field/Flame Walls (state 1) show as scrolling
+  fire. Live script state changes are not simulated.
+- Evidence: `--models` passed (116 M2, 52 WMO, all 39 interiors; every material palette finite)
+  with new real-data assertions: the Closed flame ring scrolls (u -0.984 -> -0.482 over its 1.63 s
+  loop), Opened hides every batch, the burnt tree hides 2 batches, and 10/11 heroic-portal batches
+  animate. Graphical `--visual-smoke` passed with no shader errors (frame times p50 8.3 ms are the
+  120 Hz vsync cap, so not a performance comparison); `--visibility-smoke` passed (GameObject
+  list/viewport/layers/events/phase/broad-preview) and `--reload-smoke` passed during a partial
+  upload (9 tiles, 302 models, 401 textures). Format check passed.
+- Not verified: Ruby Sanctum was not inspected on screen. No smoke can position the camera there,
+  and Godot MCP cannot take screenshots. Second texture units (most portal/ring batches have two)
+  still use only the base texture, and the Twilight Ring is phase 32, outside the default preview.
 
 ## SmartAI rule composer and grouped type pickers — implemented 2026-10-13
 

@@ -157,7 +157,9 @@ public sealed class TerrainTile
             var layers = Sub(28, "MCLY");
             var alpha = Sub(36, "MCAL", true);
             int count = layers.Length / 16;
-            if (count is < 1 or > 4 || layers.Length % 16 != 0)
+            // Shipped ADTs contain untextured chunks with an empty MCLY (for example
+            // ChamberOfAspectsRed_30_25); they still carry heights and render untextured.
+            if (count > 4 || layers.Length % 16 != 0)
             {
                 throw new InvalidDataException("Invalid terrain layer count");
             }

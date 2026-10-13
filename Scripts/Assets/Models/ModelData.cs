@@ -7,7 +7,7 @@ namespace ACWorldEdit.Assets;
 /// Detached batch with viewer-space vertices, material metadata and optional four-influence
 /// skinning, color or liquid channels. Format readers validate array/index relationships.
 /// </summary>
-public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0);
+public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0, SurfaceAnimation? Material = null);
 /// <summary>
 /// Embedded WMO M2 placement in viewer-space local coordinates. Its parent WMO transform
 /// composes with this pose when binding instances.
@@ -31,4 +31,10 @@ public sealed record ModelBone(int Parent, Vector3 Pivot, ModelTrack<Vector3> Tr
 /// Native timestamps/keys, interpolation mode and optional global loop duration. Empty sequences
 /// use the channel&apos;s identity/default value.
 /// </summary>
-public sealed record ModelTrack<T>(uint[] Times, T[] Values, ushort Interpolation, uint GlobalDuration);
+public sealed record ModelTrack<T>(uint[] Times, T[] Values, ushort Interpolation, uint GlobalDuration, bool Global = false);
+/// <summary>
+/// Native M2 batch appearance tracks: color (RGB/alpha), texture weight and the first texture
+/// unit's UV transform. The client multiplies color alpha by weight; a fully transparent batch
+/// is not drawn. Untextured-UV batches leave the transform tracks empty (identity).
+/// </summary>
+public sealed record SurfaceAnimation(ModelTrack<Vector3> Color, ModelTrack<float> Alpha, ModelTrack<float> Weight, ModelTrack<Vector3> UvTranslation, ModelTrack<Quaternion> UvRotation, ModelTrack<Vector3> UvScale);

@@ -186,8 +186,10 @@ The stock procedural liquid entry 100 references an unavailable texture and repo
 
 This is a native asset preview, not complete client rendering parity. Character models use baked
 NPC body textures and a basic geoset selection; equipment, detailed hair/clothing composition,
-particles/ribbons, advanced multitexture/environment shaders, animated material/UV tracks,
-billboard bones and portal culling remain incomplete. Spline bone tracks use linear approximation
+particles/ribbons, advanced multitexture/environment shaders (second texture units and their UV
+animation), billboard bones and portal culling remain incomplete. Batch color, alpha, texture
+weight and first-unit UV animation are sampled; opaque batches only honor alpha at zero. Door and
+button GameObjects play their Closed/Opened clip from the spawn state. Spline bone tracks use linear approximation
 and report that limitation. Templates with multiple model choices use the first available entry
 unless the spawn specifies an override; live server random model/equipment state is not simulated.
 Client skies, terrain collision, source editing/export and modern split ADT/CASC assets

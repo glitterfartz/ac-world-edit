@@ -14,17 +14,19 @@ public sealed record ModelKey(string Path, string Texture1 = "", string Texture2
 /// </summary>
 public sealed class ModelLibrary
 {
-    sealed class Entry(ModelData data, AnimationPalette palette, Dictionary<string, BlpTexture> textures)
+    sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
     {
         public ModelData Data = data;
         public AnimationPalette Palette = palette;
+        public MaterialPalette Materials = materials;
         public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
         public Dictionary<string, BlpTexture> Decoded = textures;
         public readonly List<ArrayMesh> Meshes = [];
         public ImageTexture? AnimationTexture;
+        public ImageTexture? MaterialTexture;
         public int Surface;
         public long LastUsed;
-        public long Bytes => Data.EstimatedBytes + Palette.Pixels.Length + Decoded.Values.Sum(t => (long)t.Rgba.Length);
+        public long Bytes => Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length + Decoded.Values.Sum(t => (long)t.Rgba.Length);
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
         /// <summary>
@@ -317,11 +319,11 @@ public sealed class ModelLibrary
         code = code.Replace("render_mode cull_disabled;", $"render_mode {cull}, {blend}, depth_draw_never, unshaded, fog_disabled;");
         if (surface.Blend >= 2)
         {
-            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a; ROUGHNESS = 1.0;");
+            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
         }
         else
         {
-            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = 1.0; ROUGHNESS = 1.0;");
+            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = batch_color.a; ROUGHNESS = 1.0;");
         }
 
         string distance = SkyLighting.ShellDistance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
@@ -334,9 +336,13 @@ public sealed class ModelLibrary
     /// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
     /// liquid-atlas mipmaps to prevent cross-frame bleeding.
     /// </summary>
-    void AddSurface(Entry e, ModelSurface surface, bool skybox)
+    void AddSurface(Entry e, int index, bool skybox)
     {
-        if (surface.Indices.Length == 0 || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
+        var surface = e.Data.Surfaces[index];
+        var appearance = e.Materials.Surfaces[index];
+        // Batches whose color/weight alpha is constantly zero (closed-door effects, unused burnt
+        // tree variants) are invisible in the client; never upload them.
+        if (surface.Indices.Length == 0 || appearance.Hidden || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
         {
             return;
         }
@@ -378,7 +384,7 @@ public sealed class ModelLibrary
             else if (surface.Blend >= 2)
             {
                 code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
-                code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a; ROUGHNESS = 1.0;");
+                code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
             }
 
             if (!surface.TwoSided)
@@ -443,6 +449,15 @@ public sealed class ModelLibrary
         material.SetShaderParameter("animation_duration", e.Palette.Duration);
         material.SetShaderParameter("blend_mode", surface.Blend);
         material.SetShaderParameter("vertex_color", surface.Colors != null);
+        material.SetShaderParameter("material_palette", e.MaterialTexture!);
+        material.SetShaderParameter("material_column", appearance.Column);
+        material.SetShaderParameter("color_frames", appearance.ColorFrames);
+        material.SetShaderParameter("color_period", appearance.ColorPeriod);
+        material.SetShaderParameter("uv_frames", appearance.UvFrames);
+        material.SetShaderParameter("uv_period", appearance.UvPeriod);
+        material.SetShaderParameter("surface_color", new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W));
+        material.SetShaderParameter("uv_row0", new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z));
+        material.SetShaderParameter("uv_row1", new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z));
         mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
         // Include sampled animated bounds, rather than culling to only the unanimated pose.
         mesh.CustomAabb = mesh.GetAabb().Grow(5);
@@ -469,6 +484,7 @@ public sealed class ModelLibrary
         }
 
         e.AnimationTexture?.Dispose();
+        e.MaterialTexture?.Dispose();
     }
 
     /// <summary>
@@ -537,13 +553,19 @@ public sealed class ModelLibrary
                     building.AnimationTexture = ImageTexture.CreateFromImage(image);
                 }
 
+                if (building.MaterialTexture == null)
+                {
+                    using var image = Image.CreateFromData(building.Materials.Width, building.Materials.Height, false, Image.Format.Rgbaf, building.Materials.Pixels);
+                    building.MaterialTexture = ImageTexture.CreateFromImage(image);
+                }
+
                 // Leave headroom within the soft 2 ms upload target; a single indivisible surface
                 // upload can still exceed the deadline.
                 var started = System.Diagnostics.Stopwatch.GetTimestamp();
                 int maxSurfaces = HoldPartialUploads ? 1 : 8;
                 for (int budget = 0; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
                 {
-                    AddSurface(building, building.Data.Surfaces[building.Surface++], buildingKey.Skybox);
+                    AddSurface(building, building.Surface++, buildingKey.Skybox);
                 }
 
                 if (building.Surface == building.Data.Surfaces.Length && !HoldPartialUploads)
@@ -660,6 +682,6 @@ public sealed class ModelLibrary
         {
             Surfaces = data.Surfaces.Select(s => s.LiquidType is uint type ? s with { LiquidKind = LiquidTextures.For(source).Kind(type) } : s).ToArray()
         };
-        return new Entry(data, AnimationPalette.Bake(data, token), decoded);
+        return new Entry(data, AnimationPalette.Bake(data, token), MaterialPalette.Bake(data, token), decoded);
     }
 }

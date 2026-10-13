@@ -32,6 +32,14 @@ public static class M2Model
         var materials = b.Array(112, 4);
         var textureLookup = b.Array(128, 2);
         var globals = b.Array(20, 4);
+        // Batch appearance: M2Color is two 20-byte tracks (RGB, fixed16 alpha), texture weights
+        // one fixed16 track and texture transforms translation/float-quaternion/scale tracks.
+        // Batches reach them through the transparency and texture-transform lookup tables.
+        var colors = b.Array(72, 40);
+        var textureWeights = b.Array(88, 20);
+        var textureTransforms = b.Array(96, 60);
+        var weightLookup = b.Array(144, 2);
+        var transformLookup = b.Array(152, 2);
         List<string> warnings = [];
         int sequenceIndex = -1;
         var available = Enumerable.Range(0, sequences.Count).Select(i => b.H(sequences.Offset + i * 64)).Distinct().Order().ToArray();
@@ -41,6 +49,20 @@ public static class M2Model
             {
                 sequenceIndex = i;
                 break;
+            }
+        }
+
+        // GameObject state clips (Closed/Opened) are requested for every door, but many door
+        // models only author Stand; the client then plays Stand as well.
+        if (sequenceIndex < 0 && animationId != 0)
+        {
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                if (b.H(sequences.Offset + i * 64) == 0)
+                {
+                    sequenceIndex = i;
+                    break;
+                }
             }
         }
 
@@ -97,7 +119,7 @@ public static class M2Model
             int sequence = global >= 0 ? 0 : sequenceIndex;
             if (sequence < 0 || sequence >= timeArrays.Count || sequence >= keyArrays.Count)
             {
-                return new([], [], interpolation, globalDuration);
+                return new([], [], interpolation, globalDuration, global >= 0);
             }
 
             // Array descriptors live in MD20 even when ordinary sequence payloads live in
@@ -129,10 +151,39 @@ public static class M2Model
                 warnings.Add("Spline animation track approximated with linear interpolation.");
             }
 
-            return new(times, values, interpolation, globalDuration);
+            return new(times, values, interpolation, globalDuration, global >= 0);
         }
 
         float Q(short v) => (v < 0 ? v + 32768 : v - 32767) / 32767f;
+        ModelTrack<float> Fixed16(int p) => Track(p, 2, (d, o) => d.S(o) / 32767f);
+        var appearance = new Dictionary<(int, int, int), SurfaceAnimation>();
+        // Resolve one batch's color, weight and first-unit UV transform. Lookup entries of -1
+        // mean "no animation": opaque white, full weight and identity UVs.
+        SurfaceAnimation Appearance(int color, int weightCombo, int transformCombo)
+        {
+            int weight = weightCombo < weightLookup.Count ? b.S(weightLookup.Offset + weightCombo * 2) : -1;
+            int transform = transformCombo < transformLookup.Count ? b.S(transformLookup.Offset + transformCombo * 2) : -1;
+            color = color < colors.Count ? color : -1;
+            weight = weight < textureWeights.Count ? weight : -1;
+            transform = transform < textureTransforms.Count ? transform : -1;
+            if (appearance.TryGetValue((color, weight, transform), out var found))
+            {
+                return found;
+            }
+
+            ModelTrack<Vector3> noVector = new([], [], 0, 0);
+            int c = colors.Offset + color * 40, t = textureTransforms.Offset + transform * 60;
+            found = new(
+                color >= 0 ? Track(c, 12, (d, o) => d.V(o)) : noVector,
+                color >= 0 ? Fixed16(c + 20) : new([], [], 0, 0),
+                weight >= 0 ? Fixed16(textureWeights.Offset + weight * 20) : new([], [], 0, 0),
+                transform >= 0 ? Track(t, 12, (d, o) => d.V(o)) : noVector,
+                transform >= 0 ? Track(t + 20, 16, (d, o) => new Quaternion(d.F(o), d.F(o + 4), d.F(o + 8), d.F(o + 12))) : new([], [], 0, 0),
+                transform >= 0 ? Track(t + 40, 12, (d, o) => d.V(o)) : noVector);
+            appearance[(color, weight, transform)] = found;
+            return found;
+        }
+
         ModelBone[] skeleton = new ModelBone[bones.Count];
         for (int i = 0; i < bones.Count; i++)
         {
@@ -275,7 +326,7 @@ public static class M2Model
                 (indices[j + 1], indices[j + 2]) = (indices[j + 2], indices[j + 1]);
             }
 
-            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0));
+            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0, Material: Appearance(skin.S(p + 8), skin.H(p + 20), skin.H(p + 22))));
             if (skin.H(p + 14) > 1)
             {
                 warnings.Add("Multitexture M2 batch currently uses its base texture.");

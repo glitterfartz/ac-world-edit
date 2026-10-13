@@ -231,6 +231,14 @@ public partial class GameObjectOverlay : Node3D
         selectionLabel.Visible = LayerEnabled && selected.HasValue && lookup.ContainsKey(selected.Value);
     }
 
+    /// <summary>
+    /// Doors and buttons show their spawn state through native clips: GO_STATE_READY (1) is
+    /// closed, ACTIVE (0) and ACTIVE_ALTERNATIVE (2) are open (GameObjectData.h GOState). Effect
+    /// "doors" such as the Ruby Sanctum flame rings fade to alpha zero in Opened. Models without
+    /// these clips play Stand. Other types and live script/state changes are not simulated.
+    /// </summary>
+    static ushort StateAnimation(GameObjectSpawn spawn) => spawn.Type is 0 or 1 ? (spawn.State == 1 ? (ushort)147 : (ushort)149) : (ushort)0;
+
     /// <summary>128 default native instances, nearest first. Unadmitted records create no nodes or model requests.</summary>
     void Reconcile(Camera3D camera)
     {
@@ -261,7 +269,7 @@ public partial class GameObjectOverlay : Node3D
                 continue;
             }
 
-            var key = new ModelKey(path);
+            var key = new ModelKey(path, Animation: StateAnimation(spawn));
             if (!groups.TryGetValue(key, out var guids))
             {
                 groups[key] = guids = [];

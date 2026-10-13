@@ -11,6 +11,26 @@ uniform int animation_frames = 1;
 uniform bool skinned = false;
 uniform int blend_mode = 0;
 uniform bool vertex_color = false;
+// Native batch color (alpha includes texture weight) and first-unit UV affine rows. Animated
+// batches read them from material_palette at material_column (color), +1 and +2 (UV rows),
+// each channel looping over its own period; static batches use the uniforms below.
+uniform sampler2D material_palette : filter_nearest, repeat_disable;
+uniform int material_column = -1;
+uniform int color_frames = 1;
+uniform float color_period = 0.0;
+uniform int uv_frames = 1;
+uniform float uv_period = 0.0;
+uniform vec4 surface_color = vec4(1.0);
+uniform vec3 uv_row0 = vec3(1.0, 0.0, 0.0);
+uniform vec3 uv_row1 = vec3(0.0, 1.0, 0.0);
+varying vec4 batch_color;
+
+vec4 material_sample(int column, int frames, float period, float time) {
+    float frame = mod(time, period) / period * float(frames - 1);
+    int a = int(floor(frame));
+    return mix(texelFetch(material_palette, ivec2(column, a), 0),
+        texelFetch(material_palette, ivec2(column, min(a + 1, frames - 1)), 0), fract(frame));
+}
 
 mat4 bone_matrix(int bone, int frame) {
     int x = bone * 4;
@@ -52,6 +72,17 @@ void vertex() {
             NORMAL = normalize(n);
         }
     }
+    batch_color = surface_color;
+    vec3 row0 = uv_row0;
+    vec3 row1 = uv_row1;
+    if (material_column >= 0 && color_frames > 1) {
+        batch_color = material_sample(material_column, color_frames, color_period, TIME);
+    }
+    if (material_column >= 0 && uv_frames > 1) {
+        row0 = material_sample(material_column + 1, uv_frames, uv_period, TIME).xyz;
+        row1 = material_sample(material_column + 2, uv_frames, uv_period, TIME).xyz;
+    }
+    UV = vec2(dot(row0, vec3(UV, 1.0)), dot(row1, vec3(UV, 1.0)));
     // SKYBOX_VERTEX: ModelLibrary replaces this line for LightSkybox variants.
 }
 
@@ -62,7 +93,12 @@ void fragment() {
     if (blend_mode == 1 && tex.a < 0.5) {
         discard;
     }
-    ALBEDO = tex.rgb * (vertex_color ? COLOR.rgb : vec3(1.0));
+    // A fully faded batch is skipped like the client does. Opaque batches cannot blend in
+    // this pass, so their partial alpha only matters at zero.
+    if (batch_color.a <= 1.0 / 255.0) {
+        discard;
+    }
+    ALBEDO = tex.rgb * batch_color.rgb * (vertex_color ? COLOR.rgb : vec3(1.0));
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
 }
