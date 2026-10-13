@@ -4,9 +4,10 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 /// <summary>
 /// Shared native variant identity: replacement skins, baked texture, WMO doodad set and
-/// requested animation ID. Equal keys reuse decoded and GPU resources.
+/// requested animation ID. Equal keys reuse decoded and GPU resources. Skybox variants get
+/// unlit, fog-free, first-drawn materials and unculled, shadowless instances (see SkyLighting).
 /// </summary>
-public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0);
+public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false);
 /// <summary>
 /// Main-thread resource owner with one decode worker. Upload surfaces incrementally, batch
 /// placements and animate on the GPU; active resources can exceed the dormant-cache target.
@@ -60,7 +61,7 @@ public sealed class ModelLibrary
     readonly HashSet<ModelKey> failed = [];
     readonly List<ModelInstance> instances = [];
     readonly Shader baseShader = GD.Load<Shader>("res://Shaders/model.gdshader");
-    readonly Dictionary<(int Blend, bool TwoSided, bool Unlit), Shader> shaders = [];
+    readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
     readonly ImageTexture fallback;
     AssetStore? store;
     CancellationTokenSource cancellation = new();
@@ -224,6 +225,12 @@ public sealed class ModelLibrary
                 // geometry in and out every frame while flying.
                 node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
             }
+            else if (node.Key.Skybox)
+            {
+                // The sky shell is scaled far out around the camera: it must never be range-culled
+                // or cast a shadow over the whole scene.
+                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+            }
             else
             {
                 node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
@@ -285,10 +292,39 @@ public sealed class ModelLibrary
     }
 
     /// <summary>
+    /// The client draws LightSkybox models first around the eye, with the world always on top.
+    /// Native skyboxes are nested layers 100-600 yd across (inner rocks/clouds included), so plain
+    /// geometry hid any world farther than a layer. This variant projects every vertex along its
+    /// own view direction onto a sphere just inside the camera far plane (screen position unchanged,
+    /// independent of the renderer's depth convention), draws in the translucent pass after the
+    /// background sky without writing depth, and is unlit and fog-free. World pixels drawn earlier
+    /// always win the depth test; opaque sky batches become alpha 1 to join that pass.
+    /// </summary>
+    static string SkyboxShader(string code, ModelSurface surface)
+    {
+        string blend = surface.Blend is 3 or 4 ? "blend_add" : surface.Blend is 5 or 6 ? "blend_mul" : "blend_mix";
+        string cull = surface.TwoSided ? "cull_disabled" : "cull_back";
+        code = code.Replace("render_mode cull_disabled;", $"render_mode {cull}, {blend}, depth_draw_never, unshaded, fog_disabled;");
+        if (surface.Blend >= 2)
+        {
+            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a; ROUGHNESS = 1.0;");
+        }
+        else
+        {
+            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = 1.0; ROUGHNESS = 1.0;");
+        }
+
+        string distance = SkyLighting.ShellDistance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+        return code.Replace(
+            "    // SKYBOX_VERTEX: ModelLibrary replaces this line for LightSkybox variants.",
+            "    vec3 sky_eye = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;\n    POSITION = PROJECTION_MATRIX * vec4(normalize(sky_eye) * " + distance + ", 1.0);");
+    }
+
+    /// <summary>
     /// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
     /// liquid-atlas mipmaps to prevent cross-frame bleeding.
     /// </summary>
-    void AddSurface(Entry e, ModelSurface surface)
+    void AddSurface(Entry e, ModelSurface surface, bool skybox)
     {
         if (surface.Indices.Length == 0 || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
         {
@@ -321,11 +357,15 @@ public sealed class ModelLibrary
 
         var mesh = e.Meshes[^1];
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
-        var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit);
+        var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit, skybox);
         if (!shaders.TryGetValue(shaderKey, out var shader))
         {
             string code = baseShader.Code;
-            if (surface.Blend >= 2)
+            if (skybox)
+            {
+                code = SkyboxShader(code, surface);
+            }
+            else if (surface.Blend >= 2)
             {
                 code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
                 code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a; ROUGHNESS = 1.0;");
@@ -336,7 +376,8 @@ public sealed class ModelLibrary
                 code = code.Replace("cull_disabled", "cull_back");
             }
 
-            if (surface.Unlit)
+            // Skybox variants are already unshaded.
+            if (!skybox && surface.Unlit)
             {
                 code = code.Replace("render_mode ", "render_mode unshaded, ");
             }
@@ -350,7 +391,10 @@ public sealed class ModelLibrary
 
         var material = new ShaderMaterial
         {
-            Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader
+            Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader,
+            // Sky layers keep native batch order and draw before translucent world surfaces such
+            // as water.
+            RenderPriority = skybox ? Math.Min((int)Material.RenderPriorityMin + e.Meshes.Sum(m => m.GetSurfaceCount()), -1) : 0
         };
         ImageTexture texture = fallback;
         if (surface.Texture.Length > 0 && e.Decoded.TryGetValue(surface.Texture, out var blp))
@@ -486,7 +530,7 @@ public sealed class ModelLibrary
                 var started = System.Diagnostics.Stopwatch.GetTimestamp();
                 for (int budget = 0; budget < 8 && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
                 {
-                    AddSurface(building, building.Data.Surfaces[building.Surface++]);
+                    AddSurface(building, building.Data.Surfaces[building.Surface++], buildingKey.Skybox);
                 }
 
                 if (building.Surface == building.Data.Surfaces.Length)

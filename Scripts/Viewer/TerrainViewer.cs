@@ -548,6 +548,11 @@ public partial class TerrainViewer : Node3D
         {
             ReloadSmoke(delta);
         }
+
+        if (skyboxSmoke)
+        {
+            SkyboxSmoke(delta);
+        }
     }
 
     /// <summary>

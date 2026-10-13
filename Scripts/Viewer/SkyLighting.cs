@@ -27,6 +27,20 @@ public sealed partial class SkyLighting : Node3D
     public bool Playing { get; set; } = true;
     public float Speed { get; set; } = 1;
 
+    public string? SkyboxPath => skyboxPath;
+    public bool SkyboxReady => skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance) && skyboxInstance.ModelReady;
+    public Aabb? SkyboxBounds => SkyboxReady ? skyboxInstance!.Bounds : null;
+
+    /// <summary>
+    /// Hide or show the skybox model without changing the resolved path; used by the skybox smoke
+    /// to compare frames with and without it.
+    /// </summary>
+    public bool SkyboxVisible
+    {
+        get => skyboxAnchor.Visible;
+        set => skyboxAnchor.Visible = value;
+    }
+
     /// <summary>Manually scrub the clock; wraps to the 0-24 range.</summary>
     public void SetTimeOfDay(double hours) => TimeOfDayHours = ((hours % 24) + 24) % 24;
 
@@ -93,7 +107,6 @@ public sealed partial class SkyLighting : Node3D
             TimeOfDayHours = (TimeOfDayHours + delta / 60.0 * Speed) % 24.0;
         }
 
-        UpdateSkyboxShadowCasting();
         if (interior || table == null || mapId == null)
         {
             return;
@@ -172,7 +185,34 @@ public sealed partial class SkyLighting : Node3D
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
         SetSkybox(table.SkyboxPath(table.Profile(activeParamsId)?.SkyboxId ?? 0));
         skyboxAnchor.Position = camera.Position;
+        ApplyDiagnosticBackground();
     }
+
+    /// <summary>
+    /// Diagnostic override: a solid background color replacing the procedural sky, so the skybox
+    /// smoke can tell opaque world pixels (unchanged by the background) from sky and translucent
+    /// surfaces. Null restores normal behavior on the next update.
+    /// </summary>
+    public Color? DiagnosticBackground { get; set; }
+
+    void ApplyDiagnosticBackground()
+    {
+        if (DiagnosticBackground is Color color)
+        {
+            // Fog covers the background in the Compatibility renderer even with sky affect 0, so it
+            // is off for diagnostic frames; the next normal update re-enables it.
+            environment.Environment.FogEnabled = false;
+            environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
+            environment.Environment.BackgroundColor = color;
+        }
+    }
+
+    /// <summary>
+    /// Eye distance the skybox shader projects sky vertices to. Must stay inside the camera far
+    /// plane (TerrainViewer uses 8000) and beyond all streamed world geometry (about 2 km at the
+    /// largest tile radius).
+    /// </summary>
+    public const float ShellDistance = 7500;
 
     /// <summary>
     /// Swap the attached LightSkybox model when the resolved path changes. Reuses ModelLibrary's
@@ -191,23 +231,6 @@ public sealed partial class SkyLighting : Node3D
             skyboxInstance.QueueFree();
         }
 
-        skyboxInstance = path == null ? null : models.Attach(skyboxAnchor, new ModelKey(path));
-    }
-
-    /// <summary>
-    /// A giant camera-anchored sky mesh must never cast a shadow over the whole scene; ModelLibrary's
-    /// shared build path defaults new instances to casting, so this clears it once built.
-    /// </summary>
-    void UpdateSkyboxShadowCasting()
-    {
-        if (skyboxInstance == null || !GodotObject.IsInstanceValid(skyboxInstance) || !skyboxInstance.ModelReady)
-        {
-            return;
-        }
-
-        foreach (var child in skyboxInstance.GetChildren().OfType<GeometryInstance3D>())
-        {
-            child.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
-        }
+        skyboxInstance = path == null ? null : models.Attach(skyboxAnchor, new ModelKey(path, Skybox: true));
     }
 }

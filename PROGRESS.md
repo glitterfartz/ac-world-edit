@@ -216,6 +216,32 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## Skybox depth fix — implemented 2026-10-13
+
+- Prior checkpoint: 47d2574 step 3 placement editing, menu bar and toolbar.
+- Cause: LightSkybox M2s were drawn as ordinary camera-centered geometry. Their nested layers are
+  only ~120-600 yd across (Hellfire 361 yd with inner rock/cloud layers, Icecrown raid skies 119-243
+  yd), so world farther than a layer failed the depth test and vanished behind the sky. A uniform
+  scale-out was tried and rejected: inner layers still landed in front of distant terrain.
+- Fix: `ModelKey.Skybox` variants get their own shader (`ModelLibrary.SkyboxShader`). Each vertex is
+  projected along its view direction to `SkyLighting.ShellDistance` (7500, inside the 8000 far
+  plane), drawn in the translucent pass after the background without writing depth, unlit and
+  fog-free, with native batch order kept through render priority. This is renderer-convention
+  independent (the project uses the Compatibility renderer). Skybox instances are never
+  range-culled or shadow-casting; the old per-frame shadow workaround is gone.
+- Evidence: new graphical `--skybox-smoke` covers 32 views across Hellfire, Bone Wastes, two
+  Icecrown Citadel raid skies, two Northrend auroras and Zul'Drak. Sky over opaque world is at most
+  0.38% (0.0000 for Hellfire and IceCrownRaidSky02). With the fix disabled the same check measured
+  60-99.8% in Hellfire/Icecrown and 3-39% elsewhere. Screenshots reviewed: Hellfire terrain and
+  mountains render in front of the starry sky; translucent precipice crystals still show sky.
+  `--visual-smoke`, `--water-interior-smoke` and format checks pass.
+- Pre-existing, not caused by this change: `--reload-smoke` times out at HEAD too (stash-verified).
+  Its first stage waits for a frame with textures uploaded but no model published; the first model
+  now uploads within one frame's budget (likely a warm shader cache), so that frame never occurs.
+- Limits: views where no skybox resolves (region center off the terrain, nested region winning)
+  are reported as skipped. Skybox fidelity beyond depth (exact client layer blending/animation) is
+  not verified against the client.
+
 ## Step 3 placement editing, menu bar and toolbar — implemented 2026-10-12
 
 - Prior checkpoints: 1c8cb97 Scripts folder layout; 1d61646 AGENTS tools/references.

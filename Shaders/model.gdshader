@@ -52,6 +52,7 @@ void vertex() {
             NORMAL = normalize(n);
         }
     }
+    // SKYBOX_VERTEX: ModelLibrary replaces this line for LightSkybox variants.
 }
 
 void fragment() {

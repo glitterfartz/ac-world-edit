@@ -30,6 +30,7 @@ public partial class TerrainViewer
         creatureSmoke |= gizmoSmoke;
         reloadSmoke = OS.GetCmdlineUserArgs().Contains("--reload-smoke");
         visibilitySmoke = OS.GetCmdlineUserArgs().Contains("--visibility-smoke");
+        skyboxSmoke = OS.GetCmdlineUserArgs().Contains("--skybox-smoke");
     }
 
     /// <summary>

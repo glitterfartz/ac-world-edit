@@ -163,6 +163,10 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   and real Ctrl+Z/Q/W/E key events through the menu and toolbar.
 - Godot `-- --reload-smoke`: interrupt a partially uploaded native model by reloading archives,
   then verify the replacement map/models finish loading.
+- Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
+  Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%
+  of opaque world pixels (found by rendering over two solid backgrounds; open sky and translucent
+  surfaces are excluded). Saves views, plus leak masks on failure, under ignored `artifacts/`.
 - `dotnet format whitespace ACWorldEdit.csproj --no-restore --verify-no-changes`: check the
   committed C# formatting rules; run without `--verify-no-changes` to apply them.
 
