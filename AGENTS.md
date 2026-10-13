@@ -13,6 +13,20 @@ Prioritize client visual fidelity and practical rendering performance. Keep unsu
 explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObject editing,
 new spawns, script/quest editing and shell comparisons unless the user requests them.
 
+## Tools and references
+
+- AzerothCore server source: `X:\AzerothCore\azerothcore-wotlk` (official git clone). Read and cite it
+  for server behavior: movement generators, spawn/phase/event/pool loading, coordinate/heading
+  handling and `data/sql/base/db_world` schemas. Prefer it over guessing. It is read-only reference:
+  never edit, build, run or pull it.
+- MySQL MCP (`mcp_server_mysql`): read-only world-database inspection for checking real rows and
+  schemas. SELECT only; never write rows, change schemas or privileges, and never echo credentials.
+- Godot MCP: `run_project`/`get_debug_output`/`stop_project` give live runtime and log checks. It has
+  no input injection or screenshots, so it cannot replace the graphical smoke checks; record what it
+  could not verify.
+- MCP servers are configured outside the repo and may be unavailable; say so rather than assuming
+  results.
+
 ## Engineering and data
 
 - Keep records and server coordinates independent of Godot nodes. Reuse the coordinate boundary.

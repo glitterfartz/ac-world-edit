@@ -1,5 +1,6 @@
 {
     "files.exclude": {
         "**/*.uid": true
-    }
+    },
+    "godotTools.editorPath.godot4": "c:\\Program Files\\Godot\\Godot.exe"
 }
