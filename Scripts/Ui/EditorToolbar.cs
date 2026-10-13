@@ -45,7 +45,7 @@ public partial class EditorToolbar : HBoxContainer
     /// Mutually exclusive mode button. The group keeps exactly one pressed; Pressed mirrors the
     /// source of truth so changes from menus or code show here too.
     /// </summary>
-    public Button Mode(string text, string tooltip, ButtonGroup group, Action select, Func<bool> active, Shortcut? shortcut = null)
+    public Button Mode(string text, string tooltip, ButtonGroup group, Action select, Func<bool> active, Shortcut? shortcut = null, Func<bool>? enabled = null)
     {
         var button = new Button
         {
@@ -59,7 +59,7 @@ public partial class EditorToolbar : HBoxContainer
         };
         button.Pressed += select;
         AddChild(button);
-        refresh.Add((button, null, active));
+        refresh.Add((button, enabled, active));
         return button;
     }
 

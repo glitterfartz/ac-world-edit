@@ -26,6 +26,44 @@ public sealed class AreaLookup
     }
 
     /// <summary>
+    /// True when the ID is an AreaTable row; graveyard_zone.GhostZone must be one (the server
+    /// skips links to unknown areas).
+    /// </summary>
+    public bool Contains(uint areaId) => table.Contains(areaId);
+
+    /// <summary>
+    /// Map (ContinentID, field 1) an area belongs to, or null for unknown IDs.
+    /// </summary>
+    public uint? MapOf(uint areaId) => table.Contains(areaId) ? table.U(areaId, 1) : null;
+
+    /// <summary>
+    /// Areas whose name contains the term (or whose ID equals it), preferring the given map, then
+    /// zones (no parent) before subzones. Bounded for list display.
+    /// </summary>
+    public IReadOnlyList<(uint Id, string Name, string? Parent, uint Map)> Search(string term, uint? preferredMap, int limit = 30)
+    {
+        term = term.Trim();
+        uint.TryParse(term, out uint exact);
+        var matches = new List<(uint Id, string Name, string? Parent, uint Map)>();
+        foreach (uint id in table.Ids)
+        {
+            var (name, parent) = Describe(id);
+            if (term.Length == 0 || id == exact || name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                matches.Add((id, name, parent, table.U(id, 1)));
+            }
+        }
+
+        return matches
+            .OrderBy(m => m.Id == exact && exact != 0 ? 0 : 1)
+            .ThenBy(m => preferredMap.HasValue && m.Map == preferredMap.Value ? 0 : 1)
+            .ThenBy(m => m.Parent == null ? 0 : 1)
+            .ThenBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(limit)
+            .ToList();
+    }
+
+    /// <summary>
     /// Resolve a zone name and, when the area is a named subzone, its parent zone name. Unknown IDs
     /// report a numeric placeholder rather than failing closed, since this is a display label only.
     /// </summary>

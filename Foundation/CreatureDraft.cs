@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 namespace ACWorldEdit.Foundation;
@@ -16,13 +14,12 @@ public sealed record CreatureMove(string Source, uint Guid, WorldPose Before, Wo
 public sealed record CreatureDraftSnapshot(int Version, CreatureMove[] History, int Cursor);
 /// <summary>
 /// Single-writer position-only draft independent of scene nodes and the database. Checksummed
-/// whole-history snapshots are replaced atomically; source identity and the first baseline
-/// prevent replaying stale edits.
+/// whole-history snapshots are replaced atomically (DraftFile); source identity and the first
+/// baseline prevent replaying stale edits.
 /// </summary>
 public sealed class CreatureDraft : IDisposable
 {
-    readonly string path;
-    readonly FileStream writerLock;
+    readonly DraftFile file;
     CreatureDraftSnapshot state = new(1, [], 0);
     public bool CanUndo => state.Cursor > 0;
     public bool CanRedo => state.Cursor < state.History.Length;
@@ -32,16 +29,14 @@ public sealed class CreatureDraft : IDisposable
     /// </summary>
     public CreatureDraft(string path)
     {
-        this.path = path;
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        writerLock = new FileStream(path + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        file = new DraftFile(path);
         try
         {
             Recover();
         }
         catch
         {
-            writerLock.Dispose();
+            file.Dispose();
             throw;
         }
     }
@@ -52,18 +47,12 @@ public sealed class CreatureDraft : IDisposable
     /// </summary>
     void Recover()
     {
-        if (!File.Exists(path))
+        if (file.Read() is not string payload)
         {
             return;
         }
 
-        var envelope = JsonSerializer.Deserialize<string[]>(File.ReadAllText(path)) ?? throw new InvalidDataException("Invalid creature draft.");
-        if (envelope.Length != 2 || Hash(envelope[0]) != envelope[1])
-        {
-            throw new InvalidDataException("Creature draft checksum mismatch.");
-        }
-
-        var restored = JsonSerializer.Deserialize<CreatureDraftSnapshot>(envelope[0]) ?? throw new InvalidDataException("Invalid creature draft.");
+        var restored = JsonSerializer.Deserialize<CreatureDraftSnapshot>(payload) ?? throw new InvalidDataException("Invalid creature draft.");
         if (restored.Version != 1 || restored.Cursor < 0 || restored.Cursor > restored.History.Length)
         {
             throw new InvalidDataException("Unsupported creature draft.");
@@ -82,7 +71,6 @@ public sealed class CreatureDraft : IDisposable
         state = restored;
     }
 
-    static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     /// <summary>
     /// Resolve the last applied move only when its first baseline still equals the source pose.
     /// Conflicts return the source position so outdated drafts cannot silently win.
@@ -153,21 +141,12 @@ public sealed class CreatureDraft : IDisposable
     }
 
     /// <summary>
-    /// Flush a checksummed snapshot into a sibling temporary file, then replace the draft and
-    /// publish memory state. A failed write cannot advance history.
+    /// Persist the whole snapshot before publishing memory state. A failed write cannot advance
+    /// history.
     /// </summary>
     void Save(CreatureDraftSnapshot next)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        string payload = JsonSerializer.Serialize(next), temp = path + ".tmp";
-        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new[] { payload, Hash(payload) }));
-            stream.Write(bytes);
-            stream.Flush(true);
-        }
-
-        File.Move(temp, path, true);
+        file.Write(JsonSerializer.Serialize(next));
         state = next;
     }
 
@@ -175,5 +154,5 @@ public sealed class CreatureDraft : IDisposable
     /// Release this draft writer lock. Persistence happens at each completed command, not on
     /// disposal.
     /// </summary>
-    public void Dispose() => writerLock.Dispose();
+    public void Dispose() => file.Dispose();
 }

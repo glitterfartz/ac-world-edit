@@ -79,6 +79,18 @@ Missing required visibility metadata reports a safe error rather than silently s
 Model picking uses bounding boxes; creature fallbacks use a screen-space target. Terrain occlusion
 and precise animated triangle selection are not implemented.
 
+### Graveyards
+
+The **Graveyards** layer draws a tombstone icon over each `game_graveyard` row in the streamed region,
+with a ground ring colored by its `graveyard_zone` links (blue Alliance, red Horde, grey neutral,
+white mixed, dark when unlinked). Click an icon or choose it in the **Graveyards** tab to edit X/Y/Z
+(Move tool, typed fields, Drop to ground), the name and its zone links: pick an area or zone by
+name/ID, choose a faction, edit or remove links. Edits go to a separate local draft
+(`user://drafts/graveyards.json`) with undo/redo and stale-source detection, and are checked against
+the server's loading rules (zone exists in AreaTable, faction 0/469/67, no duplicate zone, name at
+most 255 characters). Nearby spirit healers are listed but are separate creature spawns and do not
+move with the graveyard. Battleground and default graveyards are also referenced by core C++ code.
+
 ## Explore
 
 The menu bar holds commands: **File** (load archives from a chosen directory, open the selected
@@ -163,6 +175,11 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   and real Ctrl+Z/Q/W/E key events through the menu and toolbar.
 - Godot `-- --reload-smoke`: interrupt a partially uploaded native model by reloading archives,
   then verify the replacement map/models finish loading.
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --graveyards`: live read-only graveyard
+  table integrity against AreaTable.dbc, bounded regional reads, search escaping and cancellation.
+- Godot `-- --graveyard-smoke`: live graveyard markers, a real viewport click on an icon, list
+  agreement, move/drop/name/link edits with rule rejections, draft reopen, layer hiding and a map
+  switch, using an isolated draft. Graphical runs save `artifacts/graveyard-preview.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
   Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%
   of opaque world pixels (found by rendering over two solid backgrounds; open sky and translucent
@@ -193,7 +210,8 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
   - `Models/`: M2/WMO model decoding and animation data.
   - `World/`: ADT/WDT terrain, liquids, map metadata, placed world objects and ground probes.
 - `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
-- `Foundation/`: engine-independent coordinates, spawn records and durable creature drafts.
+- `Foundation/`: engine-independent coordinates, spawn records, the shared `DraftFile` and durable
+  creature and graveyard drafts.
 - `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.
 
 The obsolete Phase 0 shell/plugin, synthetic benchmark, generic draft workspace and experimental

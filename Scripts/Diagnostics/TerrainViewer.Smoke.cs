@@ -31,6 +31,7 @@ public partial class TerrainViewer
         reloadSmoke = OS.GetCmdlineUserArgs().Contains("--reload-smoke");
         visibilitySmoke = OS.GetCmdlineUserArgs().Contains("--visibility-smoke");
         skyboxSmoke = OS.GetCmdlineUserArgs().Contains("--skybox-smoke");
+        graveyardSmoke = OS.GetCmdlineUserArgs().Contains("--graveyard-smoke");
     }
 
     /// <summary>

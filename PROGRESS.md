@@ -216,6 +216,32 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## Graveyard markers and local drafts — implemented 2026-10-13
+
+- Prior checkpoints: 00955a1 reload smoke fix; 1e1a910 creature labels above model heads.
+- Tables: `game_graveyard` (ID, Map, x, y, z, Comment; no orientation) and `graveyard_zone`
+  (ID, GhostZone, Faction, Comment; PK ID+GhostZone), per server `GameGraveyard.cpp`; GhostZone is an
+  AreaTable ID (area checked before zone). Spirit healers are creature spawns with npcflag 0x4000.
+- `Foundation/DraftFile.cs` holds the lock/checksum/atomic-replace mechanics now shared by
+  `CreatureDraft` (unchanged file format; a pre-extraction envelope still loads) and the new
+  `GraveyardDraft` (whole-record edits, same stale-baseline rules, server-rule validation).
+- `Scripts/Data/GraveyardSource.cs`: read-only, parameterized, region-bounded (limit 128,
+  nearest-first) graveyards, their links and spirit healers within 40 yd.
+- `GraveyardOverlay` (+ `.Ui`, `.Editing`): tombstone billboard (editor-drawn icon, not a client
+  asset), faction ring, label, Graveyards tab and layer, Move gizmo, drop to ground, typed position,
+  name, link add/remove/faction/comment, reset, Copy `.go`. `IPlacementEditor` routes Edit menu,
+  toolbar and drags to the selected kind; Rotate is disabled for graveyards. Selection is exclusive
+  across creatures, GameObjects and graveyards.
+- Evidence: live tables 685 graveyards / 704 links, 0 orphan links, 0 bad factions, 0 unknown
+  GhostZones (166 distinct), 103 graveyards with no link. Nearest Goldshire graveyard 106 links Elwynn
+  Forest (12, Alliance) and 717, with Spirit Healer #79628. `--draft`, `--graveyards`,
+  `--graveyard-smoke` (viewport click on graveyard 854, edits, rule rejections, reopen, layer hide,
+  Kalimdor switch), `--visual-smoke`, `--visibility-smoke` and format checks pass. Screenshot
+  reviewed: icon, mixed-faction ring, label and inspector render; Rotate greyed for graveyards.
+- Limits: edits are local only (export is step 4); battleground/default graveyard IDs are
+  referenced from C++ (effects SQL cannot show); spirit healers are not moved; graveyards far
+  outside their source region reappear only when that region is queried, as with creatures.
+
 ## Skybox depth fix — implemented 2026-10-13
 
 - Prior checkpoint: 47d2574 step 3 placement editing, menu bar and toolbar.

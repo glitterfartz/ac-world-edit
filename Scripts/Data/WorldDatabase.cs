@@ -89,7 +89,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
             SELECT CONCAT(TABLE_NAME,'.',COLUMN_NAME) FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN
             ('creature','creature_template','creature_template_model','gameobject','gameobject_template',
-             'game_event','game_event_creature','game_event_gameobject','pool_creature','pool_gameobject','conditions')
+             'game_event','game_event_creature','game_event_gameobject','pool_creature','pool_gameobject','conditions',
+             'game_graveyard','graveyard_zone')
             """);
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))

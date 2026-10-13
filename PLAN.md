@@ -45,6 +45,14 @@ in-game via the copied `.go xyz` command, including one inside a building and on
 Until then placement is not export-ready. Preserve source rows and unknown fields. No new spawns,
 duplication or deletion in this slice. M2 doodads are not snap targets.
 
+## 3b. Graveyards in a saved draft — implemented
+
+Show `game_graveyard` rows near the camera as selectable tombstone icons with faction-colored rings
+and labels, each with its `graveyard_zone` links and nearby spirit healers. Edit position, name and
+zone links (area/zone + faction) in a local graveyard draft with undo/redo, validated against the
+server's loading rules (AreaTable zone, faction 0/469/67, no duplicate link). Export joins step 4.
+Battleground/default graveyard IDs are referenced from core C++; spirit healers are not moved.
+
 ## 4. Export a reviewed SQL change — later
 
 Export bounded forward/reverse SQL with original rows and freshness checks. Prove application

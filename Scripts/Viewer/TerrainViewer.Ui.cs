@@ -240,7 +240,7 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        sidebar = new SceneSidebar(creatures, gameObjects, objects);
+        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, objects);
         ui.AddChild(sidebar);
         BuildMenus();
         BuildToolbar();
@@ -276,11 +276,15 @@ public partial class TerrainViewer
         return strip;
     }
 
-    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue;
+    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection;
 
     void FlyToSelection()
     {
-        if (creatures.SelectedGuid.HasValue)
+        if (graveyards.HasSelection)
+        {
+            graveyards.FlyToSelection();
+        }
+        else if (creatures.SelectedGuid.HasValue)
         {
             creatures.FlyToSelection();
         }
@@ -288,6 +292,15 @@ public partial class TerrainViewer
         {
             gameObjects.FlyToSelection();
         }
+    }
+
+    /// <summary>
+    /// Tool mode applies to both draft editors; graveyards map Rotate to hidden handles.
+    /// </summary>
+    void SetMode(GizmoMode mode)
+    {
+        creatures.Mode = mode;
+        graveyards.Mode = mode;
     }
 
     /// <summary>
@@ -311,12 +324,12 @@ public partial class TerrainViewer
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
 
         var edit = menu.Menu("Edit");
-        menu.Command(edit, "Undo move", creatures.Undo, () => creatures.CanUndo && !creatures.IsDragging, ctrl | Key.Z);
-        menu.Command(edit, "Redo move", creatures.Redo, () => creatures.CanRedo && !creatures.IsDragging, ctrl | Key.Y);
+        menu.Command(edit, "Undo", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging, ctrl | Key.Z);
+        menu.Command(edit, "Redo", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, ctrl | Key.Y);
         edit.AddSeparator();
-        menu.Command(edit, "Drop to ground", creatures.DropToGround, () => creatures.CanEdit, Key.End);
-        menu.Command(edit, "Reset to source pose", creatures.ResetToSource, () => creatures.CanEdit);
-        menu.Command(edit, "Copy .go command", creatures.CopyGoCommand, () => creatures.SelectedGuid.HasValue, ctrl | shift | Key.C);
+        menu.Command(edit, "Drop to ground", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit, Key.End);
+        menu.Command(edit, "Reset to source", () => ActiveEditor.ResetToSource(), () => ActiveEditor.CanEdit);
+        menu.Command(edit, "Copy .go command", () => ActiveEditor.CopyGoCommand(), () => ActiveEditor.HasSelection, ctrl | shift | Key.C);
 
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
@@ -363,15 +376,19 @@ public partial class TerrainViewer
     void BuildToolbar()
     {
         var modes = new ButtonGroup();
-        toolbar.Mode("Select", "Pick only; hide handles", modes, () => creatures.Mode = GizmoMode.Select, () => creatures.Mode == GizmoMode.Select, EditorToolbar.Shortcut(Key.Q));
-        toolbar.Mode("Move", "Drag colored axes to move", modes, () => creatures.Mode = GizmoMode.Move, () => creatures.Mode == GizmoMode.Move, EditorToolbar.Shortcut(Key.W));
-        toolbar.Mode("Rotate", "Drag the yellow ring to change heading", modes, () => creatures.Mode = GizmoMode.Rotate, () => creatures.Mode == GizmoMode.Rotate, EditorToolbar.Shortcut(Key.E));
+        toolbar.Mode("Select", "Pick only; hide handles", modes, () => SetMode(GizmoMode.Select), () => creatures.Mode == GizmoMode.Select, EditorToolbar.Shortcut(Key.Q));
+        toolbar.Mode("Move", "Drag colored axes to move", modes, () => SetMode(GizmoMode.Move), () => creatures.Mode == GizmoMode.Move, EditorToolbar.Shortcut(Key.W));
+        toolbar.Mode("Rotate", "Drag the yellow ring to change heading (creatures only)", modes, () => SetMode(GizmoMode.Rotate), () => creatures.Mode == GizmoMode.Rotate, EditorToolbar.Shortcut(Key.E), () => ActiveEditor.SupportsRotation);
         toolbar.Separator();
-        toolbar.Action("Undo", "Undo the last local move (Ctrl+Z)", creatures.Undo, () => creatures.CanUndo && !creatures.IsDragging);
-        toolbar.Action("Redo", "Redo (Ctrl+Y)", creatures.Redo, () => creatures.CanRedo && !creatures.IsDragging, EditorToolbar.Shortcut(Key.Z, ctrl: true, shift: true));
+        toolbar.Action("Undo", "Undo the last local change for the selected kind (Ctrl+Z)", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging);
+        toolbar.Action("Redo", "Redo (Ctrl+Y)", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, EditorToolbar.Shortcut(Key.Z, ctrl: true, shift: true));
         toolbar.Separator();
-        toolbar.Action("Drop to ground", "Snap the selected creature to terrain or a building floor below it (End)", creatures.DropToGround, () => creatures.CanEdit);
-        toolbar.Toggle("Snap on drop", "Snap to the ground when you release a move drag", value => creatures.SnapOnDrop = value, () => creatures.SnapOnDrop);
+        toolbar.Action("Drop to ground", "Snap the selection to terrain or a building floor below it (End)", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit);
+        toolbar.Toggle("Snap on drop", "Snap to the ground when you release a move drag", value =>
+        {
+            creatures.SnapOnDrop = value;
+            graveyards.SnapOnDrop = value;
+        }, () => creatures.SnapOnDrop);
         toolbar.AddChild(new Label { Text = "Rotation step", Modulate = new Color("aabac8") });
         var step = new OptionButton
         {

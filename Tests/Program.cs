@@ -32,6 +32,7 @@ string path = args.Length > 0 ? args[0] : "wow-data";
 if (args.Contains("--draft"))
 {
     CreatureDraftChecks.Run();
+    GraveyardDraftChecks.Run();
     return;
 }
 
@@ -48,6 +49,12 @@ if (args.Contains("--spawns"))
 }
 
 using var store = new AssetStore(path);
+if (args.Contains("--graveyards"))
+{
+    await GraveyardChecks.Run(store);
+    return;
+}
+
 if (args.Contains("--gameobjects"))
 {
     await GameObjectChecks.Run(store);

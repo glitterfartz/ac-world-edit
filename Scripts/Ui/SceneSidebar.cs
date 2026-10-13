@@ -11,6 +11,7 @@ public partial class SceneSidebar : PanelContainer
 {
     readonly CreatureOverlay creatures;
     readonly GameObjectOverlay gameObjects;
+    readonly GraveyardOverlay graveyards;
     readonly WorldObjectScene scenery;
     TabContainer tabs = null!;
     OptionButton preset = null!, eventMode = null!, difficulty = null!, budget = null!;
@@ -28,10 +29,11 @@ public partial class SceneSidebar : PanelContainer
     public bool DoodadsEnabled { get; private set; } = true;
     public bool WmosEnabled { get; private set; } = true;
 
-    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, WorldObjectScene scenery)
+    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, WorldObjectScene scenery)
     {
         this.creatures = creatures;
         this.gameObjects = gameObjects;
+        this.graveyards = graveyards;
         this.scenery = scenery;
         AnchorLeft = AnchorRight = AnchorBottom = 1;
         OffsetLeft = -424;
@@ -52,18 +54,29 @@ public partial class SceneSidebar : PanelContainer
         root.AddChild(tabs);
         var creaturePage = creatures.BuildPanel();
         var objectPage = gameObjects.BuildPanel();
+        var graveyardPage = graveyards.BuildPanel();
         tabs.AddChild(BuildScenePage());
         tabs.AddChild(creaturePage);
         tabs.AddChild(objectPage);
+        tabs.AddChild(graveyardPage);
+        // One selection at a time across kinds, so menus and the gizmo act on a single target.
         creatures.SelectionChanged += () =>
         {
             gameObjects.Deselect();
+            graveyards.Deselect();
             tabs.CurrentTab = 1;
         };
         gameObjects.SelectionChanged += () =>
         {
             creatures.Deselect();
+            graveyards.Deselect();
             tabs.CurrentTab = 2;
+        };
+        graveyards.SelectionChanged += () =>
+        {
+            creatures.Deselect();
+            gameObjects.Deselect();
+            tabs.CurrentTab = 3;
         };
     }
 
@@ -98,6 +111,7 @@ public partial class SceneSidebar : PanelContainer
         });
         Layer(layers, "Creatures", "creatures", creatures.SetLayerEnabled);
         Layer(layers, "GameObjects", "gameobjects", gameObjects.SetLayerEnabled);
+        Layer(layers, "Graveyards", "graveyards", graveyards.SetLayerEnabled);
         layers.AddChild(InspectorUi.Text("Hidden layers stop queuing models and spawn queries.", 11, true));
         var preview = InspectorUi.Card(page, "Visibility preview");
         preset = new OptionButton
@@ -430,6 +444,8 @@ public partial class SceneSidebar : PanelContainer
         counts["wmos"].Text = scenery.WmoCount.ToString("N0");
         counts["creatures"].Text = creatures.ModelCreatureCount.ToString("N0");
         counts["gameobjects"].Text = gameObjects.ModelObjectCount.ToString("N0");
+        counts["graveyards"].Text = graveyards.Sites.Count.ToString("N0");
+        counts["graveyards"].TooltipText = graveyards.QueryStatus;
         counts["creatures"].TooltipText = $"{creatures.Records.Count} SQL matches · {creatures.AdmittedCreatureCount} admitted · {creatures.ModelCreatureCount} native models ready";
         counts["gameobjects"].TooltipText = $"{gameObjects.Records.Count} SQL matches · {gameObjects.AdmittedObjectCount} admitted · {gameObjects.ModelObjectCount} native models ready";
         var catalog = creatures.EventCatalog.Length > 0 ? creatures.EventCatalog : gameObjects.EventCatalog;

@@ -55,6 +55,7 @@ public partial class TerrainViewer : Node3D
     string message = "Opening archives…";
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
+    GraveyardOverlay graveyards = null!;
     SceneSidebar sidebar = null!;
     ushort? currentMapId;
     /// <summary>
@@ -92,6 +93,9 @@ public partial class TerrainViewer : Node3D
         gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => creatures.ConnectionPath };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
+        graveyards = new GraveyardOverlay { ConnectionPath = () => creatures.ConnectionPath, Areas = () => areas, GroundAt = GroundAt };
+        AddChild(graveyards);
+        graveyards.FocusRequested += FocusPose;
         BuildUi();
         ConfigureSmokeChecks();
         await LoadArchives();
@@ -280,6 +284,7 @@ public partial class TerrainViewer : Node3D
         currentMapId = null;
         creatures.SetRegion(null);
         gameObjects.SetRegion(null);
+        graveyards.SetRegion(null);
         objects.Clear();
     }
 
@@ -440,6 +445,7 @@ public partial class TerrainViewer : Node3D
 
         creatures.SetRegion(spawnRegion);
         gameObjects.SetRegion(spawnRegion);
+        graveyards.SetRegion(spawnRegion);
     }
 
     /// <summary>
@@ -534,6 +540,7 @@ public partial class TerrainViewer : Node3D
 
         creatures.Update(camera);
         gameObjects.Update(camera);
+        graveyards.Update(camera);
         models.Update(camera);
         sidebar.UpdateCounts();
         if (visibilitySmoke)
@@ -552,6 +559,11 @@ public partial class TerrainViewer : Node3D
         if (skyboxSmoke)
         {
             SkyboxSmoke(delta);
+        }
+
+        if (graveyardSmoke)
+        {
+            GraveyardSmoke(delta);
         }
     }
 
@@ -595,11 +607,20 @@ public partial class TerrainViewer : Node3D
         {
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)
             {
-                if (!creatures.BeginDrag(camera, mouse.Position))
+                if (!ActiveEditor.BeginDrag(camera, mouse.Position))
                 {
+                    // Nearest ray hit wins across creatures, GameObjects and graveyard icons.
                     var creatureHit = creatures.FindHit(camera, mouse.Position);
                     var objectHit = gameObjects.FindHit(camera, mouse.Position);
-                    if (creatureHit.HasValue && (!objectHit.HasValue || creatureHit.Value.Distance <= objectHit.Value.Distance))
+                    var graveyardHit = graveyards.FindHit(camera, mouse.Position);
+                    float creatureDistance = creatureHit?.Distance ?? float.MaxValue;
+                    float objectDistance = objectHit?.Distance ?? float.MaxValue;
+                    float graveyardDistance = graveyardHit?.Distance ?? float.MaxValue;
+                    if (graveyardHit.HasValue && graveyardDistance <= creatureDistance && graveyardDistance <= objectDistance)
+                    {
+                        graveyards.Select(graveyardHit.Value.Id);
+                    }
+                    else if (creatureHit.HasValue && creatureDistance <= objectDistance)
                     {
                         creatures.Select(creatureHit.Value.Guid);
                     }
@@ -653,8 +674,15 @@ public partial class TerrainViewer : Node3D
             capture = false;
             Input.MouseMode = Input.MouseModeEnum.Visible;
             creatures?.EndDrag(false);
+            graveyards?.EndDrag(false);
         }
     }
+
+    /// <summary>
+    /// The draft editor that owns the current selection; creatures when nothing editable is
+    /// selected. Menus, toolbar and viewport drags route through it.
+    /// </summary>
+    IPlacementEditor ActiveEditor => graveyards != null && graveyards.HasSelection ? graveyards : creatures;
 
     /// <summary>
     /// Keep flight keys away from shortcuts, and own an active drag through release/Escape even
@@ -671,22 +699,23 @@ public partial class TerrainViewer : Node3D
             return;
         }
 
-        if (creatures == null || !creatures.IsDragging)
+        if (creatures == null || graveyards == null || !ActiveEditor.IsDragging)
         {
             return;
         }
 
+        var editor = ActiveEditor;
         if (input is InputEventMouseMotion motion)
         {
-            creatures.Drag(camera, motion.Position);
+            editor.Drag(camera, motion.Position);
         }
         else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
         {
-            creatures.EndDrag(true);
+            editor.EndDrag(true);
         }
         else if (input is InputEventKey { Keycode: Key.Escape, Pressed: true })
         {
-            creatures.EndDrag(false);
+            editor.EndDrag(false);
         }
 
         GetViewport().SetInputAsHandled();

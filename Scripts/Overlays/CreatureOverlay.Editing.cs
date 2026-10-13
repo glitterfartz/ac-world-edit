@@ -13,8 +13,11 @@ public readonly record struct GroundHit(float? Height, string Message, double Mi
 /// Placement commands shared by the gizmo, inspector, menus, toolbar and shortcuts. Each command
 /// records at most one local draft command; source rows are never touched.
 /// </summary>
-public partial class CreatureOverlay
+public partial class CreatureOverlay : IPlacementEditor
 {
+    public bool HasSelection => selectedGuid.HasValue;
+    public bool SupportsRotation => true;
+
     /// <summary>
     /// Viewer-supplied probe over loaded terrain and ready WMO floors. Unset means snapping is
     /// unavailable.
