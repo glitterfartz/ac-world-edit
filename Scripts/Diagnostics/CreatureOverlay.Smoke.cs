@@ -112,6 +112,39 @@ public partial class CreatureOverlay
 
     public double? SmokeSelectedHeading() => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? PoseOf(marker.Spawn).Heading : null;
 
+    /// <summary>
+    /// Every creature drawn with its native model must carry its label above the scaled model top.
+    /// Returns (checked, tallest model height) or null when a label sits inside its model.
+    /// </summary>
+    public (int Checked, float Tallest)? SmokeLabels()
+    {
+        int count = 0;
+        float tallest = 0;
+        foreach (var batch in modelBatches.Values.Where(b => b.Node.ModelReady))
+        {
+            foreach (uint guid in batch.Guids)
+            {
+                if (!markers.TryGetValue(guid, out var marker))
+                {
+                    continue;
+                }
+
+                float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
+                float top = batch.Node.Bounds.End.Y * scale;
+                if (marker.Label.Position.Y <= top)
+                {
+                    GD.PushError($"LABEL_INSIDE_MODEL guid={guid} label={marker.Label.Position.Y} top={top}");
+                    return null;
+                }
+
+                tallest = Math.Max(tallest, top);
+                count++;
+            }
+        }
+
+        return (count, tallest);
+    }
+
     static bool Fail(string step)
     {
         GD.PushError("GIZMO_SMOKE_STEP_FAILED " + step);

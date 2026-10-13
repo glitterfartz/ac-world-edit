@@ -363,6 +363,14 @@ public partial class TerrainViewer
                 }
 
                 GD.Print("GIZMO_SMOKE_PASSED drag/rotate/ground/model-position/reopen/undo/redo");
+                if (creatures.SmokeLabels() is not { } labels || labels.Checked == 0)
+                {
+                    GD.PushError("LABEL_SMOKE_FAILED");
+                    GetTree().Quit(1);
+                    return;
+                }
+
+                GD.Print(FormattableString.Invariant($"LABEL_SMOKE_PASSED creatures={labels.Checked} tallestModel={labels.Tallest:F2}yd"));
                 if (!WmoGroundSmoke())
                 {
                     GetTree().Quit(1);

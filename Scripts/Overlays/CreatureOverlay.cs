@@ -380,6 +380,7 @@ public partial class CreatureOverlay : Node3D
                     if (markers.TryGetValue(guid, out var marker))
                     {
                         marker.Body.Visible = false;
+                        marker.Label.Position = new(0, LabelHeight(guid, batch.Node.Bounds), 0);
                     }
                 }
 
@@ -492,6 +493,7 @@ public partial class CreatureOverlay : Node3D
                 if (markers.TryGetValue(guid, out var marker))
                 {
                     marker.Body.Visible = true;
+                    marker.Label.Position = new(0, FallbackLabelHeight, 0);
                 }
             }
 
@@ -507,6 +509,24 @@ public partial class CreatureOverlay : Node3D
                 modelBatches[group.Key] = (Models.Attach(this, group.Key, group.Value.Select(ModelTransform).ToArray()), group.Value.ToArray());
             }
         }
+    }
+
+    /// <summary>
+    /// Label height above the capsule fallback marker (2 yd tall).
+    /// </summary>
+    const float FallbackLabelHeight = 3;
+
+    /// <summary>
+    /// Place the name label just above the scaled native model's reference-pose top so large
+    /// creatures (dragons, giants) do not swallow it. Bounds are model space (Y up) and the label is
+    /// a child of the unscaled marker node, so the model's display scale is applied here.
+    /// </summary>
+    float LabelHeight(uint guid, Aabb bounds)
+    {
+        var marker = markers[guid];
+        float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
+        float top = bounds.End.Y * scale;
+        return float.IsFinite(top) && top > 0 ? top + 0.6f : FallbackLabelHeight;
     }
 
     /// <summary>
@@ -579,7 +599,7 @@ public partial class CreatureOverlay : Node3D
         var label = new Label3D
         {
             Text = $"{spawn.Name}\n#{spawn.Guid}",
-            Position = new(0, 3, 0),
+            Position = new(0, FallbackLabelHeight, 0),
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             FontSize = 32,
             PixelSize = 0.018f
