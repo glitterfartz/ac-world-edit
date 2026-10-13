@@ -40,5 +40,9 @@ public static class Chunks
         }
     }
 
+    /// <summary>
+    /// Read a raw 32-bit float from a chunk payload. Unlike <see cref="BinaryAsset.F"/>, this does
+    /// not reject non-finite values; callers own the payload bounds.
+    /// </summary>
     public static float F(byte[] b, int p) => BitConverter.ToSingle(b, p);
 }

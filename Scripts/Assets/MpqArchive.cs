@@ -303,6 +303,10 @@ public sealed class MpqArchive : IDisposable
         return data;
     }
 
+    /// <summary>
+    /// Read a little-endian unsigned 32-bit integer (uint32) from a raw byte array. Out-of-range
+    /// offsets throw <see cref="ArgumentOutOfRangeException"/>.
+    /// </summary>
     public static uint U(byte[] data, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(offset, 4));
     /// <summary>
     /// Build the deterministic MPQ lookup tables used for path hashes and rolling-key decryption.

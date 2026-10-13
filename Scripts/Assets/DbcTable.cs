@@ -59,10 +59,17 @@ public sealed class DbcTable
     public bool Contains(uint id) => rows.ContainsKey(id);
     public IEnumerable<uint> Ids => rows.Keys;
 
+    /// <summary>
+    /// Read field <paramref name="field"/> of the row with ID <paramref name="id"/> as a uint32.
+    /// </summary>
     public uint U(uint id, int field) => data.U(Field(id, field));
+    /// <summary>
+    /// Read field <paramref name="field"/> of the row with ID <paramref name="id"/> as a finite float.
+    /// </summary>
     public float F(uint id, int field) => data.F(Field(id, field));
     /// <summary>
-    /// Resolve a string-block-relative offset and require a valid terminated string.
+    /// Read a string field: the field holds an offset into the trailing string block, and the
+    /// string there must be NUL-terminated.
     /// </summary>
     public string Str(uint id, int field) => data.Str(checked(strings + (int)U(id, field)));
 
@@ -87,6 +94,9 @@ public sealed class DbcTable
         return data.U(20 + row * stride + field * 4);
     }
 
+    /// <summary>
+    /// Float field access by raw file-order row position rather than ID lookup.
+    /// </summary>
     public float FAt(int row, int field)
     {
         if (row < 0 || row >= count || field < 0 || field >= fields)

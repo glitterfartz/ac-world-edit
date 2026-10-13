@@ -24,20 +24,36 @@ public sealed class BinaryAsset(byte[] bytes)
         }
     }
 
+    /// <summary>
+    /// Read an unsigned 32-bit integer (uint32) at byte offset <paramref name="p"/>.
+    /// </summary>
     public uint U(int p)
     {
         Range(p, 4);
         return BitConverter.ToUInt32(bytes, p);
     }
 
+    /// <summary>
+    /// Read a signed 32-bit integer (int32). Values above <see cref="int.MaxValue"/> throw
+    /// <see cref="OverflowException"/> so corrupt counts/offsets fail instead of turning negative.
+    /// </summary>
     public int I(int p) => checked((int)U(p));
+    /// <summary>
+    /// Read an unsigned 16-bit integer (uint16, "half" word).
+    /// </summary>
     public ushort H(int p)
     {
         Range(p, 2);
         return BitConverter.ToUInt16(bytes, p);
     }
 
+    /// <summary>
+    /// Read a signed 16-bit integer (int16, "short").
+    /// </summary>
     public short S(int p) => unchecked((short)H(p));
+    /// <summary>
+    /// Read a 32-bit float; NaN and infinity are rejected as malformed geometry.
+    /// </summary>
     public float F(int p)
     {
         Range(p, 4);
@@ -50,6 +66,10 @@ public sealed class BinaryAsset(byte[] bytes)
         return v;
     }
 
+    /// <summary>
+    /// Read three consecutive floats (12 bytes) as a vector in native file axes; use
+    /// <see cref="View(Vector3)"/> to convert to the viewer basis.
+    /// </summary>
     public Vector3 V(int p) => new(F(p), F(p + 4), F(p + 8));
     /// <summary>
     /// Read a NUL-terminated UTF-8 asset string; unterminated or out-of-range strings are malformed
