@@ -226,8 +226,13 @@ reading the streaming paths, not by guessing:
   leaves the camera there with an explanation). Right-panel "Fly to selection" is unchanged.
 - Picker searches no longer list unnamed rows except by exact ID (an empty search led with blank
   creatures; the content smoke had chosen one through a stale result and now waits for its term).
-- Evidence: `--content-smoke` locates Thrall from Goldshire (Kalimdor opened, GUID 4770 selected)
-  and checks the picked objective is Kobold Vermin; `--content` live checks and format pass.
+- Evidence: `--content-smoke` locates Kaltunk (outdoors, Valley of Trials) from Goldshire: Kalimdor
+  opens, GUID 3442 is selected, and the camera stays 17 yd from him after terrain loads and after
+  his tile is reloaded under the focused camera; it also checks the picked objective is Kobold
+  Vermin. `--content` live checks, `--gizmo/--visual-smoke` and format pass.
+- Fixed after user report (focus needed a second click): a tile finishing under the camera lifted
+  it 80 yd above terrain even right after a deliberate focus. Focus now holds until keyboard
+  movement or a teleport; reproduced without the fix (camera 81 yd away), passes with it.
 
 ## Quest editor and SmartAI behavior editor — implemented 2026-10-13
 

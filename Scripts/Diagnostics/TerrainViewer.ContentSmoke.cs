@@ -22,7 +22,7 @@ public partial class TerrainViewer
     uint smokeTalkRule, smokeGroup, smokeNewQuest;
     int smokeRuleCount;
     string smokeAiBefore = "", smokeLocateStatus = "";
-    const uint SmokeThrall = 4949;
+    const uint SmokeThrall = 10176;
 
     void ContentSmoke(double delta)
     {
@@ -366,8 +366,8 @@ public partial class TerrainViewer
             Require(quest.T("LogTitle") == "A Warm Welcome" && quest.U("RequiredNpcOrGoCount1") == 8 && quest.I("RewardMoney") == 1500, "reopened draft lost quest edits");
             Require(drafts.Draft?.CanRedo == true, "reopened draft lost redo history");
             GD.Print($"CONTENT_SMOKE_QUEST {smokeNewQuest} '{quest.T("LogTitle")}' objective={quest.I("RequiredNpcOrGo1")}x{quest.U("RequiredNpcOrGoCount1")} issues={string.Join("; ", questEditor.SmokeIssues.Select(i => i.Message))}");
-            // Locate a creature that is not loaded and lives on another map (Thrall, Orgrimmar).
-            _ = LocateCreature(SmokeThrall, "Thrall").ContinueWith(t => smokeLocateStatus = t.Result, TaskScheduler.FromCurrentSynchronizationContext());
+            // Locate a creature that is not loaded and lives on another map (Kaltunk, outdoors in the Valley of Trials).
+            _ = LocateCreature(SmokeThrall, "Kaltunk").ContinueWith(t => smokeLocateStatus = t.Result, TaskScheduler.FromCurrentSynchronizationContext());
             return true;
         }),
         ("locate-other-map", () =>
@@ -377,8 +377,42 @@ public partial class TerrainViewer
                 return false;
             }
 
-            GD.Print($"CONTENT_SMOKE_LOCATE '{smokeLocateStatus}' map={currentMapId} guid={creatures.SelectedGuid}");
-            Screenshot("locate-thrall");
+            return true;
+        }),
+        ("locate-stays-focused", () =>
+        {
+            // The camera's tile finishing must not lift it away from the located creature.
+            if (busy || loaded.Count != wanted.Count || building != null || pending != null)
+            {
+                return false;
+            }
+
+            float distance = camera.Position.DistanceTo(creatures.PositionOf(creatures.SelectedGuid!.Value));
+            GD.Print($"CONTENT_SMOKE_LOCATE '{smokeLocateStatus}' map={currentMapId} guid={creatures.SelectedGuid} distance={distance:F1}");
+            Require(distance < 40, $"camera drifted {distance:F0} yd from the located creature after terrain loaded");
+            // Reproduce the order seen in normal use: the creature is focused first and the
+            // camera's tile finishes afterwards. Unload that tile so it streams back in now.
+            var tile = CameraTile();
+            if (loaded.Remove(tile, out var node))
+            {
+                renderer.Release(node);
+                chunkAreas.Remove(tile);
+                terrainHeights.Remove(tile);
+            }
+
+            return true;
+        }),
+        ("locate-tile-reload-keeps-focus", () =>
+        {
+            if (busy || loaded.Count != wanted.Count || building != null || pending != null)
+            {
+                return false;
+            }
+
+            float distance = camera.Position.DistanceTo(creatures.PositionOf(creatures.SelectedGuid!.Value));
+            GD.Print($"CONTENT_SMOKE_LOCATE_RELOAD distance={distance:F1}");
+            Require(distance < 40, $"a tile finishing under the focused camera lifted it {distance:F0} yd away");
+            Screenshot("locate-giver");
             return true;
         })
     ];

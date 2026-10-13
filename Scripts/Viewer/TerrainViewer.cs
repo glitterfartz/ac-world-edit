@@ -300,6 +300,7 @@ public partial class TerrainViewer : Node3D
             return;
         }
 
+        cameraFocused = false;
         camera.Position = new Vector3((key.X - 32 + 0.5f) * TerrainTile.Size, 250, (key.Y - 32 + 0.5f) * TerrainTile.Size);
         yaw = 0;
         pitch = -0.55f;
@@ -353,8 +354,16 @@ public partial class TerrainViewer : Node3D
     void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
         => FocusPose(spawn.Pose);
 
+    /// <summary>
+    /// True after a deliberate focus (fly to a creature, object or graveyard): the camera sits just
+    /// above that target on purpose, so a tile finishing underneath must not lift it away. Cleared
+    /// by keyboard movement and teleports, which keep the lift-above-terrain assistance.
+    /// </summary>
+    bool cameraFocused;
+
     void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
     {
+        cameraFocused = true;
         var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(pose.X, pose.Y, pose.Z));
         var position = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
         camera.Position = position + new Vector3(0, 8, 15);
@@ -819,6 +828,11 @@ public partial class TerrainViewer : Node3D
             move += Vector3.Up;
         }
 
+        if (move != Vector3.Zero)
+        {
+            cameraFocused = false;
+        }
+
         camera.Position += move.Normalized() * speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
     }
 
@@ -908,7 +922,7 @@ public partial class TerrainViewer : Node3D
                     chunkAreas[building.Tile.Key] = ids;
                     terrainHeights[building.Tile.Key] = new TerrainHeights(building.Tile);
                     objects.SetTile(building.Tile.Key, building.Tile.Objects);
-                    if (CameraTile() == building.Tile.Key)
+                    if (CameraTile() == building.Tile.Key && !cameraFocused)
                     {
                         RaiseAboveTerrain(buildingNode);
                     }

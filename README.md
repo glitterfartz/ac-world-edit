@@ -238,7 +238,8 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   behavior snapshots (names, rules as sentences, action lists, speech, free action-list IDs).
 - Godot `-- --content-smoke` (graphical): Behavior editor on Innkeeper Farley (rule, speech line,
   Then step, reorder, action list, undo/redo) and Quest Editor (create, picker objective, story,
-  rejected reward, givers, every page, undo, draft reopen, then locating Thrall on another map) on
+  rejected reward, givers, every page, undo, draft reopen, then locating an outdoor giver on another
+  map and keeping the camera on it while terrain loads) on
   an isolated draft; saves
   `artifacts/content-*.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
