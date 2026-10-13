@@ -40,8 +40,29 @@ public static class ContentDraftChecks
             CheckSmart(draft, names);
         }
 
+        CheckCategories();
+
         Directory.Delete(Path.GetDirectoryName(path)!, true);
-        Console.WriteLine("CONTENT_DRAFT_CHECKS_PASSED quest create/edit/rules, SmartAI sentences/chains/rekey/fix, speech rows");
+        Console.WriteLine("CONTENT_DRAFT_CHECKS_PASSED quest create/edit/rules, SmartAI sentences/chains/rekey/fix, speech rows, type categories");
+    }
+
+    /// <summary>
+    /// Every selectable SmartAI type appears exactly once in the grouped pickers; server range
+    /// markers are neither selectable nor valid.
+    /// </summary>
+    static void CheckCategories()
+    {
+        foreach (var (kind, types) in new[] { ("event", SmartCatalog.Events), ("action", SmartCatalog.Actions), ("target", SmartCatalog.Targets) })
+        {
+            var selectable = types.Where(t => !SmartCatalog.IsMarker(t)).ToList();
+            var groups = SmartCatalog.Grouped(types, kind).ToList();
+            Check(groups.Sum(g => g.Types.Count) == selectable.Count && groups.SelectMany(g => g.Types).Distinct().Count() == selectable.Count, $"{kind} grouping lost or duplicated types");
+            Console.WriteLine($"  {kind}s={selectable.Count} markers={types.Length - selectable.Count}: " + string.Join(", ", groups.Select(g => $"{g.Category} {g.Types.Count}")));
+        }
+
+        var marker = SmartCatalog.Events.First(SmartCatalog.IsMarker);
+        Check(SmartCatalog.Event((uint)marker.Id) == null, "Range marker accepted as an event");
+        Check(SmartCatalog.Category(SmartCatalog.Event(4)!) == "Combat" && SmartCatalog.Category(SmartCatalog.Action(11)!) == "Spells & combat" && SmartCatalog.Category(SmartCatalog.Target(2)!) == "Enemies", "Category assignment");
     }
 
     static void CheckQuest(InteractionDraft draft, IContentNames names)

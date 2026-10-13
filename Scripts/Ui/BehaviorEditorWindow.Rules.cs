@@ -27,6 +27,14 @@ public partial class BehaviorEditorWindow
         ("Blank rule", 4, [], 0, [], 1)
     ];
 
+    bool composing;
+    /// <summary>
+    /// The composer card currently shown (re-created on each render; for diagnostics).
+    /// </summary>
+    PanelContainer? composerCard;
+    uint composeEvent = 4, composeAction = 1, composeTarget = 1;
+    double composeDelay;
+
     static readonly (string Label, uint Action, uint[] ActionParams, uint Target)[] StepTemplates =
     [
         ("Say a line", 1, [0], 1),
@@ -62,42 +70,26 @@ public partial class BehaviorEditorWindow
             page.AddChild(ClientStyle.Text(list ? "No steps yet." : "No rules yet. Add one below.", 14, ClientStyle.Faded));
         }
 
-        var add = new MenuButton
+        if (composing)
         {
-            Text = list ? "+ Add step ▾" : "+ Add rule ▾",
-            Flat = false,
-            Name = "AddRule"
-        };
-        var popup = add.GetPopup();
-        if (list)
-        {
-            foreach (var template in StepTemplates)
-            {
-                popup.AddItem(template.Label);
-            }
-
-            popup.IdPressed += index =>
-            {
-                var t = StepTemplates[index];
-                AddRule(shown, t.Label, 0, [], t.Action, t.ActionParams, t.Target);
-            };
-        }
-        else
-        {
-            foreach (var template in RuleTemplates)
-            {
-                popup.AddItem(template.Label);
-            }
-
-            popup.IdPressed += index =>
-            {
-                var t = RuleTemplates[index];
-                AddRule(shown, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
-            };
+            RenderComposer(shown, list);
         }
 
         var bottom = new HBoxContainer();
-        bottom.AddChild(add);
+        if (!composing)
+        {
+            var add = ButtonOf(list ? "+ Add step" : "+ Add rule", () =>
+            {
+                composing = true;
+                expanded = null;
+                Render();
+            });
+            add.Name = "AddRule";
+            add.TooltipText = "Build a rule from any event, action and target the server supports.";
+            bottom.AddChild(add);
+        }
+
+        bottom.AddChild(TemplatesButton(shown, list));
         if (shown.IsSpawn && rules.Count == 0 && RulesOf(effective, EntryScope).Count > 0)
         {
             Small(bottom, "Copy rules from all spawns", () => CopyScope(EntryScope, shown));
@@ -177,13 +169,13 @@ public partial class BehaviorEditorWindow
         }
         else
         {
-            box.AddChild(EditorFields.Row("When", TypeButton(e, rule.Event, "event", SmartCatalog.Events.Where(x => x.Id != SmartCatalog.LinkEvent), id => ChangeType(rule, "event", id))));
+            box.AddChild(EditorFields.Row("When", TypeChooser(rule.Event, "event", id => ChangeType(rule, "event", id))));
             box.AddChild(Parameters(rule, e, "event_param", rule.EventParam, 6));
         }
 
-        box.AddChild(EditorFields.Row("Do", TypeButton(a, rule.Action, "action", SmartCatalog.Actions, id => ChangeType(rule, "action", id))));
+        box.AddChild(EditorFields.Row("Do", TypeChooser(rule.Action, "action", id => ChangeType(rule, "action", id))));
         box.AddChild(Parameters(rule, a, "action_param", rule.ActionParam, 6));
-        box.AddChild(EditorFields.Row("On", TypeButton(t, rule.Target, "target", SmartCatalog.Targets, id => ChangeType(rule, "target", id))));
+        box.AddChild(EditorFields.Row("On", TypeChooser(rule.Target, "target", id => ChangeType(rule, "target", id))));
         box.AddChild(Parameters(rule, t, "target_param", i => i <= 4 ? rule.TargetParam(i) : 0, 4));
         if (t != null && (t.Sentence.Contains("{x}", StringComparison.Ordinal) || t.Help.Contains("xyz", StringComparison.OrdinalIgnoreCase)))
         {
@@ -233,18 +225,201 @@ public partial class BehaviorEditorWindow
     }
 
     /// <summary>
-    /// The current type as a button; pressing it opens a searchable list of every type by name,
-    /// with the curated (common) ones first.
+    /// Every selectable type of a kind, for dropdowns and search. "Then (linked)" is not offered as
+    /// an event: "+ Then" creates linked steps so their link stays consistent.
     /// </summary>
-    Button TypeButton(SmartType? current, uint id, string what, IEnumerable<SmartType> types, Action<uint> choose)
+    static IEnumerable<SmartType> TypesOf(string kind) => kind switch
     {
-        var button = ButtonOf(current == null ? $"Unknown {what} {id}" : current.Name, () => { });
-        button.Name = "Choose" + char.ToUpperInvariant(what[0]) + what[1..];
-        var all = SmartCatalog.Ordered(types).ToList();
-        button.Pressed += () => PickerPopup.Show(this, $"Choose {what}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
-            .Where(x => term.Length == 0 || x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Code.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Sentence.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
-            .Select(x => ((uint)x.Id, x.Sentence.Length > 0 ? $"{x.Name} — {x.Sentence}" : x.Name)).Take(200).ToList()), (picked, _) => choose(picked));
-        return button;
+        "event" => SmartCatalog.Events.Where(x => x.Id != SmartCatalog.LinkEvent),
+        "action" => SmartCatalog.Actions,
+        _ => SmartCatalog.Targets
+    };
+
+    static SmartType? Lookup(string kind, uint id) => kind switch
+    {
+        "event" => SmartCatalog.Event(id),
+        "action" => SmartCatalog.Action(id),
+        _ => SmartCatalog.Target(id)
+    };
+
+    /// <summary>
+    /// A dropdown of every type of a kind under category headings (hover shows what it does), plus
+    /// a search button over names, sentences, categories, server codes and IDs.
+    /// </summary>
+    HBoxContainer TypeChooser(uint id, string kind, Action<uint> choose)
+    {
+        var row = new HBoxContainer();
+        var picker = new OptionButton
+        {
+            FitToLongestItem = false,
+            CustomMinimumSize = new(280, 0),
+            Name = "Choose" + char.ToUpperInvariant(kind[0]) + kind[1..]
+        };
+        int selected = -1;
+        if (Lookup(kind, id) == null)
+        {
+            picker.AddItem($"Unknown {kind} {id}");
+            picker.SetItemMetadata(0, (long)id);
+            selected = 0;
+        }
+
+        foreach (var (category, types) in SmartCatalog.Grouped(TypesOf(kind), kind))
+        {
+            picker.AddSeparator(category);
+            foreach (var type in types)
+            {
+                picker.AddItem(type.Name);
+                int index = picker.ItemCount - 1;
+                picker.SetItemMetadata(index, (long)type.Id);
+                picker.SetItemTooltip(index, type.Sentence.Length > 0 ? type.Sentence : type.Help);
+                if (type.Id == id)
+                {
+                    selected = index;
+                }
+            }
+        }
+
+        picker.Select(selected);
+        picker.ItemSelected += index => choose((uint)picker.GetItemMetadata((int)index).AsInt64());
+        row.AddChild(picker);
+        var all = SmartCatalog.Grouped(TypesOf(kind), kind).SelectMany(g => g.Types.Select(t => (g.Category, Type: t))).ToList();
+        var search = ButtonOf("Search…", () => PickerPopup.Show(this, $"Find {kind}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
+            .Where(x => term.Length == 0 || x.Type.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Code.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Sentence.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Category.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
+            .Select(x => ((uint)x.Type.Id, $"{x.Category}: {x.Type.Name}{(x.Type.Sentence.Length > 0 ? " — " + x.Type.Sentence : "")}")).Take(200).ToList()), (picked, _) => choose(picked)));
+        search.TooltipText = $"Search every {kind} by name, description or server code";
+        row.AddChild(search);
+        return row;
+    }
+
+    /// <summary>
+    /// The new-rule composer: pick When / Do / On from the full lists, read the rule as a sentence,
+    /// then add it (its details open for the parameters). Nothing is drafted until Add.
+    /// </summary>
+    void RenderComposer(SmartScope shown, bool list)
+    {
+        var card = new PanelContainer
+        {
+            Name = "Composer"
+        };
+        var style = new StyleBoxFlat
+        {
+            BgColor = new Color(0.98f, 0.93f, 0.78f, 0.9f),
+            BorderColor = new Color(0.55f, 0.4f, 0.1f),
+            ContentMarginLeft = 10,
+            ContentMarginRight = 10,
+            ContentMarginTop = 6,
+            ContentMarginBottom = 6
+        };
+        style.SetBorderWidthAll(2);
+        style.SetCornerRadiusAll(4);
+        card.AddThemeStyleboxOverride("panel", style);
+        page.AddChild(card);
+        composerCard = card;
+        var box = new VBoxContainer();
+        card.AddChild(box);
+        box.AddChild(ClientStyle.Text(list ? "New step" : "New rule", 16, ClientStyle.Header));
+        if (list)
+        {
+            box.AddChild(EditorFields.Row("Wait", EditorFields.Decimal(composeDelay, seconds =>
+            {
+                composeDelay = Math.Max(0, seconds);
+                Render();
+            }, 60), ClientStyle.Tag("seconds after the previous step")));
+        }
+        else
+        {
+            box.AddChild(EditorFields.Row("When", TypeChooser(composeEvent, "event", id =>
+            {
+                composeEvent = id;
+                Render();
+            })));
+        }
+
+        box.AddChild(EditorFields.Row("Do", TypeChooser(composeAction, "action", id =>
+        {
+            composeAction = id;
+            Render();
+        })));
+        box.AddChild(EditorFields.Row("On", TypeChooser(composeTarget, "target", id =>
+        {
+            composeTarget = id;
+            Render();
+        })));
+        var preview = new SmartRule(ComposedRow(shown, list));
+        var sentence = ClientStyle.Text("Reads: " + SmartCatalog.Describe(preview, snapshot!.Names, entry), 14, ClientStyle.Edited);
+        sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        sentence.Name = "ComposerPreview";
+        box.AddChild(sentence);
+        var chosen = new[] { list ? null : SmartCatalog.Event(composeEvent), SmartCatalog.Action(composeAction), SmartCatalog.Target(composeTarget) };
+        foreach (var type in chosen.Where(t => t != null && t.Help.Length > 0 && !t.Help.Equals("NONE", StringComparison.OrdinalIgnoreCase)))
+        {
+            var help = ClientStyle.Text($"{type!.Name}: {type.Help}", 11, ClientStyle.Faded);
+            help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            box.AddChild(help);
+        }
+
+        box.AddChild(ClientStyle.Text("Details such as the spell, text or timing are set after adding.", 11, ClientStyle.Faded));
+        var buttons = new HBoxContainer();
+        var add = ButtonOf(list ? "Add step" : "Add rule", () => AddComposed(shown, list));
+        add.Name = "ComposerAdd";
+        buttons.AddChild(add);
+        buttons.AddChild(ButtonOf("Cancel", () =>
+        {
+            composing = false;
+            Render();
+        }));
+        box.AddChild(buttons);
+    }
+
+    Row ComposedRow(SmartScope shown, bool list)
+    {
+        uint delay = (uint)Math.Round(composeDelay * 1000);
+        return Template(shown, NextId(shown), list ? 0 : composeEvent, list ? [delay, delay] : [], composeAction, [], composeTarget);
+    }
+
+    void AddComposed(SmartScope shown, bool list)
+    {
+        var rule = new SmartRule(ComposedRow(shown, list));
+        composing = false;
+        AddRule(shown, SmartCatalog.Describe(rule, snapshot!.Names, entry), rule.Event, Enumerable.Range(1, 6).Select(rule.EventParam).ToArray(), rule.Action, rule.Action == SmartCatalog.Talk ? [0] : [], rule.Target);
+    }
+
+    /// <summary>
+    /// Ready-made rules, kept apart from Add so it is clear they are starting points.
+    /// </summary>
+    MenuButton TemplatesButton(SmartScope shown, bool list)
+    {
+        var templates = new MenuButton
+        {
+            Text = "Templates ▾",
+            Flat = false,
+            Name = "Templates",
+            TooltipText = "Start from a ready-made rule, then adjust it."
+        };
+        var popup = templates.GetPopup();
+        popup.AddSeparator("Start from a template");
+        var labels = list ? StepTemplates.Select(t => t.Label) : RuleTemplates.Select(t => t.Label);
+        int index = 0;
+        foreach (string label in labels)
+        {
+            popup.AddItem(label, index++);
+        }
+
+        popup.IdPressed += id =>
+        {
+            composing = false;
+            if (list)
+            {
+                var t = StepTemplates[id];
+                AddRule(shown, t.Label, 0, [], t.Action, t.ActionParams, t.Target);
+            }
+            else
+            {
+                var t = RuleTemplates[id];
+                AddRule(shown, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
+            }
+        };
+        return templates;
     }
 
     /// <summary>

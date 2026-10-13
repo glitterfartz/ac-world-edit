@@ -157,6 +157,7 @@ public partial class BehaviorEditorWindow : PanelContainer
             guid = spawnGuid;
             snapshot = null;
             expanded = null;
+            composing = false;
             scope = entry == 0 ? null : new SmartScope((int)entry, SmartScope.Creature);
             status = "";
         }
@@ -372,6 +373,7 @@ public partial class BehaviorEditorWindow : PanelContainer
     {
         scope = value;
         expanded = null;
+        composing = false;
         Render();
     }
 

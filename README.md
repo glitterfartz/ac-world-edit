@@ -116,8 +116,11 @@ an edit that introduces a server loader error (missing item/creature, zero count
 
 **Behavior…** in the creature inspector, the interaction window, a quest giver or the toolbar opens
 it for a creature. Rules read as sentences ("Every 8 s in combat (first after 3 s): cast Fireball →
-its victim"). **+ Add rule** offers starting points (say on aggro, cast on a timer, low-health spell,
-death line, wave back, quest scene); **Edit** shows When / Do / On with searchable type pickers and
+its victim"). **+ Add rule** opens a composer with When / Do / On dropdowns listing every type the
+server supports (93 events, 178 actions, 37 targets) under category headings, a **Search…** for
+each, the server's help and a live sentence preview; **Add rule** then opens its details.
+**Templates ▾** offers ready-made starting points (say on aggro, cast on a timer, low-health spell,
+death line, wave back, quest scene). **Edit** shows the same grouped When / Do / On choosers and
 typed fields (seconds, spells, creatures, emotes, text groups, positions), chance, only-once,
 phases and difficulty. **+ Then** adds a linked step; ▲▼ reorder; **Copy** duplicates a chain;
 Delete keeps chains consistent. Scopes: all spawns of the entry, this spawn only, and action lists

@@ -216,6 +216,24 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## SmartAI rule composer and grouped type pickers — implemented 2026-10-13
+
+- Prior checkpoint: d6de8ee locate focus fix.
+- User feedback: "+ Add rule ▾" looked like the full SmartAI list but was 8 templates. Now **+ Add
+  rule** opens an inline composer (When / Do / On dropdowns with category headings, Search…,
+  server help, sentence preview, Add/Cancel; nothing is drafted until Add) and templates moved to
+  an explicit **Templates ▾** button. Rule editing uses the same grouped choosers.
+- SmartCategories groups types by server code keywords. Server range markers (TC_END, AC_START,
+  AC_END) and a reserved slot were listed as types: they are now excluded from pickers and
+  validation reports them as unknown. Real counts: 93 events, 178 actions, 37 targets (the earlier
+  96/182/40 included 10 markers).
+- Fixed: reference labels wrapped to one letter per line inside parameter rows.
+- Evidence: `--draft` checks every selectable type appears once in the groups and markers are
+  rejected; `--content-smoke` opens the composer through its button, checks the dropdowns hold all
+  92/178/37 choices (Then excluded from events), chooses Hit by spell → Summon creature → Itself
+  through the real dropdown signals, checks the preview and that nothing is drafted before Add,
+  then adds it; screenshots reviewed. The open dropdown list itself is not screenshotted.
+
 ## Locate creatures across maps — implemented 2026-10-13
 
 - Prior checkpoint: a46c7f6 quest and behavior editors.

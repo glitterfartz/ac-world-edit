@@ -201,6 +201,40 @@ public partial class TerrainViewer
             Screenshot("behavior-rules");
             return true;
         }),
+        ("composer-open", () =>
+        {
+            Require(behaviorEditor.SmokePress("AddRule"), "no + Add rule button");
+            return true;
+        }),
+        ("composer-choose", () =>
+        {
+            int events = SmartCatalog.Events.Count(t => !SmartCatalog.IsMarker(t) && t.Id != SmartCatalog.LinkEvent);
+            int actions = SmartCatalog.Actions.Count(t => !SmartCatalog.IsMarker(t));
+            int targets = SmartCatalog.Targets.Count(t => !SmartCatalog.IsMarker(t));
+            Require(behaviorEditor.SmokeComposerOptions("event") == events && behaviorEditor.SmokeComposerOptions("action") == actions && behaviorEditor.SmokeComposerOptions("target") == targets,
+                $"composer lists {behaviorEditor.SmokeComposerOptions("event")}/{behaviorEditor.SmokeComposerOptions("action")}/{behaviorEditor.SmokeComposerOptions("target")}, expected {events}/{actions}/{targets}");
+            smokeRuleCount = behaviorEditor.SmokeRules(FarleyScope).Count;
+            Require(behaviorEditor.SmokeComposerChoose("event", 8) && behaviorEditor.SmokeComposerChoose("action", 12), "composer selection failed");
+            return true;
+        }),
+        ("composer-preview", () =>
+        {
+            Require(behaviorEditor.SmokeComposerChoose("target", 1), "composer target selection failed");
+            string preview = behaviorEditor.SmokeComposerPreview;
+            Require(preview.Contains("When hit by", StringComparison.Ordinal) && preview.Contains("summon", StringComparison.Ordinal), "composer preview: " + preview);
+            Require(behaviorEditor.SmokeRules(FarleyScope).Count == smokeRuleCount, "composer drafted a rule before Add");
+            GD.Print($"CONTENT_SMOKE_COMPOSER {preview}");
+            Screenshot("behavior-composer");
+            return true;
+        }),
+        ("composer-add", () =>
+        {
+            Require(behaviorEditor.SmokePress("ComposerAdd"), "no composer Add button");
+            var added = behaviorEditor.SmokeRules(FarleyScope).MaxBy(r => r.Id)!;
+            Require(behaviorEditor.SmokeRules(FarleyScope).Count == smokeRuleCount + 1 && added.Event == 8 && added.Action == 12 && added.Target == 1, "composed rule not added: " + behaviorEditor.SmokeStatus);
+            Screenshot("behavior-composed");
+            return true;
+        }),
         ("action-list", () =>
         {
             behaviorEditor.SmokeAddRule(5);

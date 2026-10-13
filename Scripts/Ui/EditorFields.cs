@@ -214,6 +214,10 @@ public static class EditorFields
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         var label = ClientStyle.Text(text, 14, missing ? ClientStyle.Error : null);
+        // Names stay on one line: in wrapping parameter rows a wrapping label is squeezed to one
+        // character per line and stretches its neighbours.
+        label.AutowrapMode = TextServer.AutowrapMode.Off;
+        label.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(label);
         var pick = new Button
         {

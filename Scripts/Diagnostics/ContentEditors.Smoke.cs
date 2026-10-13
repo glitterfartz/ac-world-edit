@@ -74,6 +74,62 @@ public partial class BehaviorEditorWindow
 
     public void SmokeHistory(bool forward) => History(forward);
 
+    /// <summary>
+    /// Press a page button by node name (e.g. "AddRule", "ComposerAdd").
+    /// </summary>
+    public bool SmokePress(string name)
+    {
+        // Re-rendered pages leave old nodes queued for deletion until the frame ends; skip them.
+        var button = page.FindChildren(name, "BaseButton", true, false).OfType<BaseButton>().FirstOrDefault(Live);
+        button?.EmitSignal(BaseButton.SignalName.Pressed);
+        return button != null;
+    }
+
+    bool Live(Node node)
+    {
+        for (var current = node; current != null && current != page; current = current.GetParent())
+        {
+            if (current.IsQueuedForDeletion())
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    Node? LiveComposer => composerCard != null && IsInstanceValid(composerCard) && !composerCard.IsQueuedForDeletion() ? composerCard : null;
+
+    OptionButton? ComposerChooser(string kind) => LiveComposer?.FindChild("Choose" + char.ToUpperInvariant(kind[0]) + kind[1..], true, false) as OptionButton;
+
+    /// <summary>
+    /// Selectable (non-heading) entries in the composer's dropdown for a kind.
+    /// </summary>
+    public int SmokeComposerOptions(string kind) => ComposerChooser(kind) is { } picker ? Enumerable.Range(0, picker.ItemCount).Count(i => !picker.IsItemSeparator(i)) : -1;
+
+    /// <summary>
+    /// Pick a type in the composer dropdown the way a click does (select + ItemSelected).
+    /// </summary>
+    public bool SmokeComposerChoose(string kind, uint id)
+    {
+        if (ComposerChooser(kind) is not { } picker)
+        {
+            return false;
+        }
+
+        int index = Enumerable.Range(0, picker.ItemCount).FirstOrDefault(i => !picker.IsItemSeparator(i) && picker.GetItemMetadata(i).AsInt64() == id, -1);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        picker.Select(index);
+        picker.EmitSignal(OptionButton.SignalName.ItemSelected, index);
+        return true;
+    }
+
+    public string SmokeComposerPreview => (LiveComposer?.FindChild("ComposerPreview", true, false) as Label)?.Text ?? "";
+
     public void SmokeExpand(uint? id)
     {
         expanded = id;

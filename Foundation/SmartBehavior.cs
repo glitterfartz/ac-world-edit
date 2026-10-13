@@ -88,14 +88,15 @@ public static partial class SmartCatalog
     // order across partial files is undefined.
     static Dictionary<int, SmartType>? events, actions, targets;
 
-    public static SmartType? Event(uint id) => (events ??= Events.ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
-    public static SmartType? Action(uint id) => (actions ??= Actions.ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
-    public static SmartType? Target(uint id) => (targets ??= Targets.ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
+    // Range markers are not types: looking one up returns null, so validation reports it unknown.
+    public static SmartType? Event(uint id) => (events ??= Events.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
+    public static SmartType? Action(uint id) => (actions ??= Actions.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
+    public static SmartType? Target(uint id) => (targets ??= Targets.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
 
     /// <summary>
     /// Curated types first (those with sentences), then the rest alphabetically, for dropdowns.
     /// </summary>
-    public static IEnumerable<SmartType> Ordered(IEnumerable<SmartType> types) => types.OrderBy(t => t.Sentence.Length == 0 ? 1 : 0).ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase);
+    public static IEnumerable<SmartType> Ordered(IEnumerable<SmartType> types) => types.Where(t => !IsMarker(t)).OrderBy(t => t.Sentence.Length == 0 ? 1 : 0).ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// A complete smart_scripts row with every whitelisted column, defaults for a new rule.
