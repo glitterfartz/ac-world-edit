@@ -95,8 +95,35 @@ add with a new submenu), quest links, vendor items (search, stock, restock, exte
 trainer assignment and spells, spell clicks, npcflag and subname. Edits are checked against the
 server's loader rules; npcflag inconsistencies the server only logs appear as warnings with a
 **Fix**. Shared menus and trainers say how many creatures use them and offer **Make a copy for this
-NPC** (copying a menu drops its SQL conditions, as warned). Quest content opens in the read-only
-**Quest Editor** skeleton (toolbar **Quests**, View → Quest editor).
+NPC** (copying a menu drops its SQL conditions, as warned). **Open in Quest Editor** and
+**Behavior…** lead to the editors below; all three share one draft and one undo history.
+
+### Quest editor
+
+Toolbar **Quests** (or View → Quest editor, or a quest's detail page) opens it. Find a quest on the
+left, or **+ New quest** / **Duplicate** (the next free ID above the database and the draft). Pages:
+**Overview** (title, kind, availability, quest log zone from AreaTable, levels, time limit, races and
+classes, options), **Story** (offer, progress and turn-in texts with gestures; buttons insert `$N`,
+`$C`, `$R`, `$B`, `$G`), **Objectives** (kill/use with search pickers, items to collect, quest drops,
+reputation goals, starting item), **Rewards** (gold/silver/copper, XP tier, fixed and choice items,
+reputation, spells, honor, mail), **Chain & requirements** (previous/next/follow-up/breadcrumb,
+exclusive group, skill and reputation), **Givers** (who offers and completes it, fly to them, open
+their behavior) and **Preview** (the quest as the client shows it). Problems appear at the bottom;
+an edit that introduces a server loader error (missing item/creature, zero counts…) is not saved.
+
+### Behavior editor (SmartAI)
+
+**Behavior…** in the creature inspector, the interaction window, a quest giver or the toolbar opens
+it for a creature. Rules read as sentences ("Every 8 s in combat (first after 3 s): cast Fireball →
+its victim"). **+ Add rule** offers starting points (say on aggro, cast on a timer, low-health spell,
+death line, wave back, quest scene); **Edit** shows When / Do / On with searchable type pickers and
+typed fields (seconds, spells, creatures, emotes, text groups, positions), chance, only-once,
+phases and difficulty. **+ Then** adds a linked step; ▲▼ reorder; **Copy** duplicates a chain;
+Delete keeps chains consistent. Scopes: all spawns of the entry, this spawn only, and action lists
+(**Create list** allocates a free ID near entry×100 and opens it; steps wait seconds after the
+previous one). **Speech** edits `creature_text` groups and lines (says/yells/emote, language, range,
+chance, gesture) and flags lines that a broadcast text overrides. Adding the first rule to a
+creature on the default AI switches it to SmartAI; other AIs and C++ `ScriptName`s are warned about.
 
 ### Graveyards
 
@@ -206,6 +233,12 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   quest pages, quest editor from a quest and the toolbar, Edit mode (fork, new submenu, greeting,
   vendor add/remove, flag warning fix, undo/redo, reopen) and close on map switch, on isolated
   drafts; saves `artifacts/interaction-*.png`.
+- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --content`: live read-only quest and
+  behavior snapshots (names, rules as sentences, action lists, speech, free action-list IDs).
+- Godot `-- --content-smoke` (graphical): Behavior editor on Innkeeper Farley (rule, speech line,
+  Then step, reorder, action list, undo/redo) and Quest Editor (create, picker objective, story,
+  rejected reward, givers, every page, undo, draft reopen) on an isolated draft; saves
+  `artifacts/content-*.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
   Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%
   of opaque world pixels (found by rendering over two solid backgrounds; open sky and translucent

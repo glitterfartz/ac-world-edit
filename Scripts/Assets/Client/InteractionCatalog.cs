@@ -5,19 +5,25 @@ namespace ACWorldEdit.Assets;
 /// rows: Spell.dbc 136 name / 153 rank (spell 133 "Fireball", "Rank 1"); TaxiNodes.dbc 1 map,
 /// 2-4 x/y/z, 5 name (node 2 "Stormwind, Elwynn"); ItemExtendedCost.dbc 1 honor, 2 arena,
 /// 4-8 items, 9-13 counts (2425 = 10000 honor); ItemDisplayInfo.dbc 5 inventory icon (1542
-/// "INV_Sword_04"). Built on a worker; immutable afterwards.
+/// "INV_Sword_04"); Emotes.dbc 1 name (3 "ONESHOT_WAVE(DNR)"); EmotesText.dbc 1 command (101
+/// "WAVE"); Faction.dbc 23 name (72 "Stormwind"); FactionTemplate.dbc 1 faction. Built on a worker;
+/// immutable afterwards.
 /// </summary>
 public sealed class InteractionCatalog
 {
-    readonly DbcTable spells, taxi, costs, displays;
+    readonly DbcTable spells, taxi, costs, displays, emotes, textEmotes, factions, factionTemplates;
     readonly Dictionary<uint, string> spellNames = [];
 
-    InteractionCatalog(DbcTable spells, DbcTable taxi, DbcTable costs, DbcTable displays)
+    InteractionCatalog(DbcTable spells, DbcTable taxi, DbcTable costs, DbcTable displays, DbcTable emotes, DbcTable textEmotes, DbcTable factions, DbcTable factionTemplates)
     {
         this.spells = spells;
         this.taxi = taxi;
         this.costs = costs;
         this.displays = displays;
+        this.emotes = emotes;
+        this.textEmotes = textEmotes;
+        this.factions = factions;
+        this.factionTemplates = factionTemplates;
         foreach (uint id in spells.Ids)
         {
             string name = spells.Str(id, 136);
@@ -30,7 +36,34 @@ public sealed class InteractionCatalog
         new DbcTable(store.Read("DBFilesClient/Spell.dbc")),
         new DbcTable(store.Read("DBFilesClient/TaxiNodes.dbc")),
         new DbcTable(store.Read("DBFilesClient/ItemExtendedCost.dbc")),
-        new DbcTable(store.Read("DBFilesClient/ItemDisplayInfo.dbc")));
+        new DbcTable(store.Read("DBFilesClient/ItemDisplayInfo.dbc")),
+        new DbcTable(store.Read("DBFilesClient/Emotes.dbc")),
+        new DbcTable(store.Read("DBFilesClient/EmotesText.dbc")),
+        new DbcTable(store.Read("DBFilesClient/Faction.dbc")),
+        new DbcTable(store.Read("DBFilesClient/FactionTemplate.dbc")));
+
+    /// <summary>
+    /// Readable animation emote: "ONESHOT_WAVE(DNR)" becomes "wave".
+    /// </summary>
+    public string? EmoteName(uint id) => emotes.Contains(id) ? System.Text.RegularExpressions.Regex.Replace(emotes.Str(id, 1), @"^(ONESHOT_|STATE_)|\(.*?\)", "").Replace('_', ' ').Trim().ToLowerInvariant() : null;
+
+    public string? TextEmoteName(uint id) => textEmotes.Contains(id) ? textEmotes.Str(id, 1).ToLowerInvariant() : null;
+
+    public string? FactionName(uint id) => factions.Contains(id) ? factions.Str(id, 23) : null;
+
+    public string? FactionTemplateName(uint id) => factionTemplates.Contains(id) && FactionName(factionTemplates.U(id, 1)) is { } name ? $"{name} ({id})" : null;
+
+    /// <summary>
+    /// All IDs with names for dropdown pickers (emotes, text emotes, factions).
+    /// </summary>
+    public IEnumerable<(uint Id, string Name)> All(string kind) => kind switch
+    {
+        "Emote" => emotes.Ids.Select(id => (id, EmoteName(id) ?? "")),
+        "TextEmote" => textEmotes.Ids.Select(id => (id, TextEmoteName(id) ?? "")),
+        "Faction" => factions.Ids.Select(id => (id, FactionName(id) ?? "")),
+        "FactionTemplate" => factionTemplates.Ids.Select(id => (id, FactionTemplateName(id) ?? "")),
+        _ => []
+    };
 
     public string? SpellName(uint id) => spellNames.TryGetValue(id, out var name) ? name : null;
 

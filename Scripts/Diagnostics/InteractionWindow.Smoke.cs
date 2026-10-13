@@ -125,8 +125,7 @@ public partial class InteractionWindow
     /// </summary>
     public void SmokeReopenDraft()
     {
-        draft?.Dispose();
-        draft = new InteractionDraft(draftPath);
+        Drafts.Reopen();
         Rebuild();
     }
 

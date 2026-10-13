@@ -572,6 +572,11 @@ public partial class TerrainViewer : Node3D
         {
             InteractionSmoke(delta);
         }
+
+        if (contentSmoke)
+        {
+            ContentSmoke(delta);
+        }
     }
 
     /// <summary>
@@ -772,6 +777,7 @@ public partial class TerrainViewer : Node3D
         }
 
         cancellation.Dispose();
+        drafts?.Dispose();
     }
 
     /// <summary>

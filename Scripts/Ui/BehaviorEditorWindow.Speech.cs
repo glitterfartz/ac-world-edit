@@ -1,0 +1,104 @@
+using Godot;
+using ACWorldEdit.Foundation;
+
+namespace ACWorldEdit;
+
+/// <summary>
+/// Speech page over creature_text: lines grouped the way "Say text" picks them (one random line of
+/// a group, weighted by chance). Rules follow CreatureTextMgr::LoadCreatureTexts: a valid
+/// BroadcastTextId replaces the line's own text, so such lines show that clearly.
+/// </summary>
+public partial class BehaviorEditorWindow
+{
+    /// <summary>
+    /// ChatMsg values creatures use (SharedDefines.h).
+    /// </summary>
+    static readonly (uint Value, string Name)[] SpeechTypes = [(12, "Says"), (14, "Yells"), (16, "Emote text"), (15, "Whispers"), (41, "Boss emote"), (42, "Boss whisper"), (13, "Party")];
+    static readonly (uint Value, string Name)[] Languages = [(0, "Universal"), (7, "Common"), (1, "Orcish"), (2, "Darnassian"), (3, "Taurahe"), (6, "Dwarvish"), (10, "Thalassian"), (11, "Draconic"), (13, "Gnomish"), (14, "Troll"), (33, "Gutterspeak"), (35, "Draenei"), (8, "Demonic"), (9, "Titan")];
+    static readonly (uint Value, string Name)[] Ranges = [(0, "Nearby"), (1, "Area"), (2, "Zone"), (3, "Map"), (4, "World")];
+
+    void RenderSpeech()
+    {
+        var help = ClientStyle.Text("\"Say text\" actions pick one line of a group at random (weighted by chance). Use $n for the player's name.", 12, ClientStyle.Faded);
+        help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        page.AddChild(help);
+        var lines = effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).ToList();
+        var allRules = Scopes(effective).SelectMany(s => RulesOf(effective, s)).ToList();
+        foreach (var group in lines.GroupBy(t => t.U("GroupID")).OrderBy(g => g.Key))
+        {
+            int users = allRules.Count(r => r.Action == SmartCatalog.Talk && r.ActionParam(1) == group.Key);
+            page.AddChild(ClientStyle.Text($"Group {group.Key}{(users == 0 ? " · not used by any rule" : $" · used by {users} rule(s)")}", 16, ClientStyle.Header));
+            foreach (var line in group.OrderBy(t => t.U("ID")))
+            {
+                RenderLine(line);
+            }
+
+            uint groupId = group.Key;
+            page.AddChild(ButtonOf("+ Add line to this group", () => AddLine(groupId)));
+        }
+
+        if (lines.Count == 0)
+        {
+            page.AddChild(ClientStyle.Text("This creature has no lines yet.", 14, ClientStyle.Faded));
+        }
+
+        uint nextGroup = lines.Select(t => t.U("GroupID") + 1).DefaultIfEmpty(0u).Max();
+        var add = ButtonOf("+ New group", () => AddLine(nextGroup));
+        add.Name = "AddSpeechGroup";
+        page.AddChild(add);
+    }
+
+    void RenderLine(Row line)
+    {
+        var table = InteractionTables.CreatureText;
+        bool edited = snapshot!.Rows.Get(table, table.KeyOf(line)) != line;
+        void Put(string label, params (string Column, object Value)[] values)
+        {
+            var current = effective.Get(table, table.KeyOf(line));
+            if (current == null)
+            {
+                return;
+            }
+
+            var after = current;
+            foreach (var (column, value) in values)
+            {
+                after = after.With(column, value);
+            }
+
+            if (after != current)
+            {
+                Commit(label, new RowEdit(table.Name, table.KeyOf(current), current, after));
+            }
+        }
+
+        var text = EditorFields.Line(line.T("Text"), value => Put("Edit line", ("Text", value)), "What the creature says");
+        if (edited)
+        {
+            text.AddThemeColorOverride("font_color", ClientStyle.Edited);
+        }
+
+        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", new RowEdit(table.Name, table.KeyOf(line), line, null)))));
+        var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
+        page.AddChild(EditorFields.Row("",
+            EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value))),
+            ClientStyle.Tag("in"), EditorFields.Choice(Languages, (uint)Math.Max(0, line.I("Language")), value => Put("Change language", ("Language", (int)value))),
+            ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value))),
+            ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50), ClientStyle.Tag("%"),
+            ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)))));
+        if (line.I("BroadcastTextId") != 0)
+        {
+            page.AddChild(EditorFields.Row("", ClientStyle.Text($"Uses broadcast text #{line.I("BroadcastTextId")}: the server shows that (localized) text instead of this one.", 11, ClientStyle.Warning),
+                ButtonOf("Use my text", () => Put("Unlink broadcast text", ("BroadcastTextId", 0)))));
+        }
+    }
+
+    void AddLine(uint group)
+    {
+        var table = InteractionTables.CreatureText;
+        uint id = effective.All(table).Where(t => t.U("CreatureID") == entry && t.U("GroupID") == group).Select(t => t.U("ID") + 1).DefaultIfEmpty(0u).Max();
+        var row = Row.Of(("CreatureID", entry), ("GroupID", group), ("ID", id), ("Text", ""), ("Type", 12u), ("Language", 0), ("Probability", 100f), ("Emote", 0u),
+            ("Duration", 0u), ("Sound", 0u), ("BroadcastTextId", 0), ("TextRange", 0u), ("comment", snapshot!.CreatureName));
+        Commit(id == 0 ? $"Add speech group {group}" : $"Add line to group {group}", new RowEdit(table.Name, table.KeyOf(row), null, row));
+    }
+}

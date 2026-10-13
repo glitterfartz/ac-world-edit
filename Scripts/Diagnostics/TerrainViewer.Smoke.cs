@@ -33,6 +33,7 @@ public partial class TerrainViewer
         skyboxSmoke = OS.GetCmdlineUserArgs().Contains("--skybox-smoke");
         graveyardSmoke = OS.GetCmdlineUserArgs().Contains("--graveyard-smoke");
         interactionSmoke = OS.GetCmdlineUserArgs().Contains("--interaction-smoke");
+        contentSmoke = OS.GetCmdlineUserArgs().Contains("--content-smoke");
     }
 
     /// <summary>

@@ -1,29 +1,62 @@
+using System.Globalization;
 using Godot;
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
 /// <summary>
-/// Quest editor skeleton: read-only quest search and summary with links back to the creatures that
-/// start or end the quest. Editing sections are placeholders with disabled Save/Undo; nothing is
-/// drafted or written yet.
+/// Quest editor: friendly pages over quest_template, quest_template_addon, quest_request_items,
+/// quest_offer_reward and the creature starter/ender links. Every change is one validated command
+/// in the shared local content draft (undo/redo, stale-row conflicts); nothing is written to the
+/// database. Pages are in QuestEditorWindow.Pages.cs.
 /// </summary>
 public partial class QuestEditorWindow : PanelContainer
 {
+    public enum Tab
+    {
+        Overview,
+        Story,
+        Objectives,
+        Rewards,
+        Chain,
+        Givers,
+        Preview
+    }
+
+    static readonly Vector2 TargetSize = new(1000, 720);
     public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<AssetStore?> Store { get; set; } = () => null;
+    public Func<AreaLookup?> Areas { get; set; } = () => null;
+    public ContentDrafts Drafts { get; set; } = null!;
     /// <summary>
     /// Fly to a loaded spawn of a creature entry; returns false when none is loaded nearby.
     /// </summary>
     public Func<uint, bool> FlyToEntry { get; set; } = _ => false;
+    /// <summary>
+    /// Open the behavior editor for a creature entry (giver cards link to its SmartAI).
+    /// </summary>
+    public Action<uint> BehaviorRequested { get; set; } = _ => { };
 
+    InteractionCatalog? catalog;
+    AssetStore? catalogStore;
+    ContentSnapshot? snapshot;
+    RowSet effective = new();
+    IReadOnlyList<InteractionIssue> issues = [];
+    string sourceKey = "", status = "";
+    int generation, searchGeneration;
+    Tab tab;
     LineEdit search = null!;
-    VBoxContainer results = null!, detail = null!;
-    Label status = null!;
+    ItemList results = null!;
+    VBoxContainer page = null!, issueBox = null!;
+    HBoxContainer tabs = null!;
+    Label title = null!, subtitle = null!, statusLabel = null!;
+    Button undo = null!, redo = null!, duplicate = null!;
     Vector2? dragOffset;
-    int generation;
     public uint? QuestId { get; private set; }
     public int ResultCount { get; private set; }
+    public bool IsLoading { get; private set; }
 
     public QuestEditorWindow()
     {
@@ -31,89 +64,103 @@ public partial class QuestEditorWindow : PanelContainer
         Visible = false;
         Theme = ClientStyle.Theme();
         AddThemeStyleboxOverride("panel", ClientStyle.Panel());
-        CustomMinimumSize = new(560, 620);
-        Size = new(560, 640);
+        Size = TargetSize;
     }
 
     public override void _Ready()
     {
+        Drafts.Changed += sender =>
+        {
+            if (sender != this && QuestId.HasValue && Visible)
+            {
+                _ = Load(QuestId.Value);
+            }
+        };
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
         var header = new HBoxContainer();
         header.GuiInput += Drag;
         root.AddChild(header);
-        var title = ClientStyle.Text("Quest Editor", 19, ClientStyle.Header);
-        title.MouseFilter = MouseFilterEnum.Ignore;
-        header.AddChild(title);
-        var save = new Button
+        var heading = ClientStyle.Text("Quest Editor", 19, ClientStyle.Header);
+        heading.MouseFilter = MouseFilterEnum.Ignore;
+        heading.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        header.AddChild(heading);
+        undo = HeaderButton(header, "Undo", () => History(false));
+        redo = HeaderButton(header, "Redo", () => History(true));
+        HeaderButton(header, "+ New quest", () => _ = NewQuest(null));
+        duplicate = HeaderButton(header, "Duplicate", () => _ = NewQuest(QuestId));
+        duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
+        HeaderButton(header, "✕", () => Visible = false);
+        var split = new HBoxContainer
         {
-            Text = "Save",
-            Disabled = true,
-            TooltipText = "Quest editing is not implemented yet."
+            SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        var undo = new Button
+        root.AddChild(split);
+        var left = new VBoxContainer
         {
-            Text = "Undo",
-            Disabled = true,
-            TooltipText = "Quest editing is not implemented yet."
+            CustomMinimumSize = new(220, 0)
         };
-        header.AddChild(save);
-        header.AddChild(undo);
-        var close = new Button
-        {
-            Text = "✕"
-        };
-        close.Pressed += () => Visible = false;
-        header.AddChild(close);
-        root.AddChild(ClientStyle.Text("Skeleton: browse quests read-only. Editing sections are placeholders; nothing is drafted or written.", 11, ClientStyle.Warning));
-        var row = new HBoxContainer();
-        root.AddChild(row);
+        split.AddChild(left);
         search = new LineEdit
         {
-            PlaceholderText = "Quest title or ID…",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            PlaceholderText = "Find quest by title or ID…",
+            ClearButtonEnabled = true
         };
         search.TextSubmitted += text =>
         {
             _ = Search();
         };
-        row.AddChild(search);
-        var go = new Button
+        left.AddChild(search);
+        results = new ItemList
         {
-            Text = "Search"
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
         };
-        go.Pressed += () => _ = Search();
-        row.AddChild(go);
-        var split = new HSplitContainer
-        {
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        root.AddChild(split);
-        var resultScroll = new ScrollContainer
-        {
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            CustomMinimumSize = new(190, 0)
-        };
-        results = new VBoxContainer
+        results.ItemSelected += index => _ = Load((uint)results.GetItemMetadata((int)index).AsInt64());
+        left.AddChild(results);
+        split.AddChild(new VSeparator());
+        var right = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        resultScroll.AddChild(results);
-        split.AddChild(resultScroll);
-        var detailScroll = new ScrollContainer
+        split.AddChild(right);
+        title = ClientStyle.Text("", 19, ClientStyle.Header);
+        right.AddChild(title);
+        subtitle = ClientStyle.Text("", 12, ClientStyle.Faded);
+        right.AddChild(subtitle);
+        tabs = new HBoxContainer();
+        right.AddChild(tabs);
+        var scroll = new ScrollContainer
         {
+            SizeFlagsVertical = SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
         };
-        detail = new VBoxContainer
+        right.AddChild(scroll);
+        page = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        detailScroll.AddChild(detail);
-        split.AddChild(detailScroll);
-        status = ClientStyle.Text("", 12, ClientStyle.Faded);
-        root.AddChild(status);
-        ShowEmpty();
+        page.AddThemeConstantOverride("separation", 6);
+        scroll.AddChild(page);
+        root.AddChild(new HSeparator());
+        issueBox = new VBoxContainer();
+        root.AddChild(issueBox);
+        statusLabel = ClientStyle.Text("", 12, ClientStyle.Warning);
+        root.AddChild(statusLabel);
+        root.AddChild(ClientStyle.Text("Local content draft · database unchanged · shared with the interaction and behavior editors", 11, ClientStyle.Faded));
+        Render();
+    }
+
+    static Button HeaderButton(HBoxContainer header, string text, Action action)
+    {
+        var button = new Button
+        {
+            Text = text
+        };
+        button.Pressed += action;
+        header.AddChild(button);
+        return button;
     }
 
     void Drag(InputEvent input)
@@ -131,21 +178,33 @@ public partial class QuestEditorWindow : PanelContainer
     }
 
     /// <summary>
-    /// Show the editor; a quest ID of 0 opens it empty (toolbar), otherwise loads that quest.
+    /// Keep the intended size: wrapped labels report a stale larger minimum until laid out, which
+    /// would otherwise grow the window permanently.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        if (Visible && Size != TargetSize)
+        {
+            Size = TargetSize;
+        }
+    }
+
+    /// <summary>
+    /// Show the editor; 0 opens it without a quest (toolbar), otherwise loads that quest.
     /// </summary>
     public void Open(uint quest)
     {
         Visible = true;
         if (Position == Vector2.Zero)
         {
-            Position = new(GetViewportRect().Size.X / 2 - Size.X / 2 + 60, 110);
+            Position = new(Math.Max(0, GetViewportRect().Size.X / 2 - TargetSize.X / 2), 80);
         }
-
 
         if (quest == 0)
         {
             QuestId = null;
-            ShowEmpty();
+            snapshot = null;
+            Render();
         }
         else
         {
@@ -153,149 +212,394 @@ public partial class QuestEditorWindow : PanelContainer
         }
     }
 
-    /// <summary>
-    /// Re-apply the intended size each frame it differs: wrapped labels report a stale larger
-    /// minimum until laid out, which would otherwise grow the window permanently.
-    /// </summary>
-    public override void _Process(double delta)
+    async Task<InteractionCatalog?> EnsureCatalog()
     {
-        var target = new Vector2(560, 640);
-        if (Visible && Size != target)
+        var store = Store();
+        if (store != null && !ReferenceEquals(store, catalogStore))
         {
-            Size = target;
-        }
-    }
-
-    void ShowEmpty()
-    {
-        foreach (var child in detail.GetChildren())
-        {
-            child.QueueFree();
+            catalogStore = store;
+            catalog = await Task.Run(() => InteractionCatalog.Load(store));
         }
 
-        detail.AddChild(ClientStyle.Text("Search for a quest, or open one from a creature's interaction window.", 14, ClientStyle.Faded));
+        return catalog;
     }
 
-    async Task Search()
+    public async Task Search()
     {
-        int current = ++generation;
-        status.Text = "Searching…";
+        int current = ++searchGeneration;
+        status = "Searching…";
+        UpdateStatus();
         try
         {
-            var found = await new QuestSource(ConnectionPath()).SearchAsync(search.Text, CancellationToken.None);
-            if (current != generation)
+            var found = await new ContentSource(ConnectionPath()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
+            if (current != searchGeneration)
             {
                 return;
             }
 
-            foreach (var child in results.GetChildren())
+            results.Clear();
+            foreach (var (id, name) in found)
             {
-                child.QueueFree();
-            }
-
-            foreach (var (id, title, level) in found)
-            {
-                var button = new Button
-                {
-                    Text = $"{title} ({level})",
-                    Alignment = HorizontalAlignment.Left,
-                    TooltipText = $"Quest {id}"
-                };
-                button.Pressed += () => _ = Load(id);
-                results.AddChild(button);
+                results.AddItem($"{(name.Length > 0 ? name : "(untitled)")}  ·  {id}");
+                results.SetItemMetadata(results.ItemCount - 1, (long)id);
             }
 
             ResultCount = found.Count;
-            status.Text = $"{found.Count} result(s){(found.Count >= InteractionSource.MaxSearch ? " · limit reached" : "")}";
+            status = found.Count >= InteractionSource.MaxSearch ? "Showing the first matches; refine the search for more." : "";
         }
         catch (Exception error)
         {
-            status.Text = CreatureSource.SafeError(error);
+            status = CreatureSource.SafeError(error);
         }
+
+        UpdateStatus();
     }
 
-    async Task Load(uint quest)
+    /// <summary>
+    /// Read the quest rows (plus every draft-touched quest row) on a worker; stale results drop.
+    /// </summary>
+    public async Task Load(uint quest)
     {
         int current = ++generation;
-        status.Text = $"Loading quest {quest}…";
+        IsLoading = true;
         try
         {
-            var details = await new QuestSource(ConnectionPath()).ReadAsync(quest, CancellationToken.None);
+            var source = new ContentSource(ConnectionPath());
+            var cat = await EnsureCatalog();
+            var draft = Drafts.Draft;
+            var keys = draft?.Keys(source.SourceKey) ?? [];
+            var apply = draft?.Frozen(source.SourceKey) ?? (rows => rows);
+            var result = await Task.Run(() => source.ReadQuestAsync(quest, keys, apply, cat, CancellationToken.None));
             if (current != generation)
             {
                 return;
             }
 
+            sourceKey = source.SourceKey;
+            if (QuestId != quest)
+            {
+                status = "";
+            }
+
             QuestId = quest;
-            Render(quest, details);
-            status.Text = "";
+            snapshot = result;
+            if (draft != null && draft.Conflicts(sourceKey, result.Rows).Count > 0)
+            {
+                status = "Some draft rows changed in the database since you edited them; undo or re-edit them.";
+            }
+
+            Rebuild();
         }
         catch (Exception error)
         {
-            status.Text = CreatureSource.SafeError(error);
+            if (current == generation)
+            {
+                status = CreatureSource.SafeError(error);
+                UpdateStatus();
+            }
+        }
+        finally
+        {
+            if (current == generation)
+            {
+                IsLoading = false;
+            }
         }
     }
 
-    void Render(uint quest, QuestDetails? details)
+    void Rebuild()
     {
-        foreach (var child in detail.GetChildren())
+        if (snapshot == null)
+        {
+            Render();
+            return;
+        }
+
+        effective = Drafts.Draft?.Effective(sourceKey, snapshot.Rows) ?? snapshot.Rows;
+        issues = QuestId is uint id ? QuestModel.Check(id, effective, snapshot.Names, ZoneExists).ToArray() : [];
+        Render();
+    }
+
+    Func<uint, bool>? ZoneExists => Areas() is { } areas ? areas.Contains : null;
+
+    string Key => QuestId!.Value.ToString(CultureInfo.InvariantCulture);
+
+    Row? Quest => QuestId.HasValue ? effective.Get(InteractionTables.QuestTemplate, Key) : null;
+
+    /// <summary>
+    /// The quest's row in a per-quest table, or its default when the quest has none yet (the first
+    /// edit then inserts it).
+    /// </summary>
+    Row RowOf(TableSchema table) => effective.Get(table, Key) ?? QuestModel.NewQuest(QuestId!.Value, "")[Array.IndexOf(QuestModel.Tables, table)];
+
+    /// <summary>
+    /// Record one validated command against this quest's rows.
+    /// </summary>
+    bool Commit(string label, params RowEdit[] edits)
+    {
+        if (snapshot == null || QuestId is not uint id)
+        {
+            return false;
+        }
+
+        var names = snapshot.Names;
+        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot.Rows, effective, label, edits, rows => QuestModel.Check(id, rows, names, ZoneExists));
+        status = message;
+        if (ok)
+        {
+            Rebuild();
+        }
+        else
+        {
+            UpdateStatus();
+        }
+
+        return ok;
+    }
+
+    /// <summary>
+    /// Change columns on one per-quest row (inserting the row with defaults when missing).
+    /// </summary>
+    bool Set(TableSchema table, string label, params (string Column, object Value)[] values)
+    {
+        var existing = effective.Get(table, Key);
+        var row = RowOf(table);
+        foreach (var (column, value) in values)
+        {
+            row = row.With(column, value);
+        }
+
+        if (row == existing)
+        {
+            return true;
+        }
+
+        return Commit(label, new RowEdit(table.Name, Key, existing, row));
+    }
+
+    void History(bool forward)
+    {
+        status = Drafts.History(this, forward);
+        Rebuild();
+        if (QuestId is uint id)
+        {
+            _ = Load(id);
+        }
+    }
+
+    /// <summary>
+    /// Create a quest (or copy the current one) under the next ID above both the database maximum
+    /// and every quest ID already reserved in the draft.
+    /// </summary>
+    public async Task NewQuest(uint? copyFrom)
+    {
+        int current = ++generation;
+        try
+        {
+            var source = new ContentSource(ConnectionPath());
+            var cat = await EnsureCatalog();
+            var draft = Drafts.Draft;
+            if (draft == null)
+            {
+                status = Drafts.Error ?? "Editing is disabled.";
+                UpdateStatus();
+                return;
+            }
+
+            var keys = draft.Keys(source.SourceKey);
+            var apply = draft.Frozen(source.SourceKey);
+            var probe = await Task.Run(() => source.ReadQuestAsync(copyFrom ?? 0, keys, apply, cat, CancellationToken.None));
+            if (current != generation)
+            {
+                return;
+            }
+
+            sourceKey = source.SourceKey;
+            uint id = Math.Max(probe.MaxQuestId, draft.MaxReserved(sourceKey, InteractionTables.QuestTemplate, "ID")) + 1;
+            string key = id.ToString(CultureInfo.InvariantCulture);
+            var probeView = draft.Effective(sourceKey, probe.Rows);
+            var defaults = QuestModel.NewQuest(id, "New quest");
+            List<RowEdit> edits = [];
+            for (int i = 0; i < QuestModel.Tables.Length; i++)
+            {
+                var table = QuestModel.Tables[i];
+                var row = copyFrom is uint from && probeView.Get(table, from.ToString(CultureInfo.InvariantCulture)) is { } original ? original.With("ID", id) : defaults[i];
+                if (copyFrom != null && i == 0)
+                {
+                    row = row.With("LogTitle", row.T("LogTitle") + " (copy)");
+                }
+
+                edits.Add(new RowEdit(table.Name, key, null, row));
+            }
+
+            var (ok, message) = Drafts.Commit(this, sourceKey, probe.Rows, probeView, copyFrom == null ? $"Create quest {id}" : $"Copy quest {copyFrom} as {id}", edits, _ => []);
+            status = ok ? (copyFrom == null ? $"Created quest {id}. Give it a title and an objective, then pick who offers it." : $"Copied as quest {id}. Givers are not copied.") : message;
+            if (ok)
+            {
+                tab = Tab.Overview;
+                await Load(id);
+            }
+            else
+            {
+                UpdateStatus();
+            }
+        }
+        catch (Exception error)
+        {
+            status = CreatureSource.SafeError(error);
+            UpdateStatus();
+        }
+    }
+
+    /// <summary>
+    /// Search picker over creatures, objects, items or quests. The chosen name is remembered so the
+    /// edit validates before the next reload.
+    /// </summary>
+    void Pick(SmartParamKind kind, string heading, Action<uint> apply)
+    {
+        var names = snapshot?.Names;
+        PickerPopup.Show(this, heading, term => new ContentSource(ConnectionPath()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        {
+            var target = kind switch
+            {
+                SmartParamKind.Creature => names?.Creatures,
+                SmartParamKind.GameObject => names?.GameObjects,
+                SmartParamKind.Item => names?.Items,
+                _ => names?.Quests
+            };
+            if (target != null)
+            {
+                target[id] = name;
+            }
+
+            apply(id);
+        });
+    }
+
+    void PickSpell(string heading, Action<uint> apply) =>
+        PickerPopup.Show(this, heading, term => Task.FromResult(catalog?.SearchSpells(term) ?? []), (id, _) => apply(id));
+
+    void PickFromList(string heading, IEnumerable<(uint Id, string Name)> all, Action<uint> apply)
+    {
+        var list = all.Where(e => e.Name.Length > 0).ToList();
+        PickerPopup.Show(this, heading, term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(list
+            .Where(e => term.Length == 0 || e.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || e.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
+            .OrderBy(e => e.Name.Length).Take(200).ToList()), (id, _) => apply(id));
+    }
+
+    void UpdateStatus()
+    {
+        if (statusLabel != null)
+        {
+            statusLabel.Text = status;
+            statusLabel.Visible = status.Length > 0;
+        }
+    }
+
+    void Render()
+    {
+        if (page == null)
+        {
+            return;
+        }
+
+        foreach (var child in page.GetChildren().Concat(tabs.GetChildren()).Concat(issueBox.GetChildren()))
         {
             child.QueueFree();
         }
 
-        if (details == null)
+        EditorFields.Error = message =>
         {
-            detail.AddChild(ClientStyle.Text($"Quest {quest} is not in quest_template.", 15, ClientStyle.Error));
+            status = message;
+            UpdateStatus();
+        };
+        UpdateStatus();
+        var draft = Drafts.Draft;
+        undo.Disabled = draft?.CanUndo != true;
+        redo.Disabled = draft?.CanRedo != true;
+        undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
+        redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
+        duplicate.Disabled = Quest == null;
+        if (Quest is not { } q)
+        {
+            title.Text = QuestId.HasValue ? $"Quest {QuestId} does not exist" : "No quest open";
+            subtitle.Text = QuestId.HasValue ? "Create one with + New quest, or search for another." : "Find a quest on the left, or create one with + New quest.";
             return;
         }
 
-        var info = details.Info;
-        detail.AddChild(ClientStyle.Text(info.Title, 19, ClientStyle.Header));
-        detail.AddChild(ClientStyle.Text($"ID {info.Id} · level {info.Level} · requires {info.MinLevel} · type {details.QuestType} · flags 0x{details.Flags:X}", 12, ClientStyle.Faded));
-        Section("Description", NpcInteraction.Render(info.Details));
-        Section("Objectives text", NpcInteraction.Render(info.Objectives));
-        foreach (string placeholder in new[] { "Objectives", "Rewards", "Requirements", "Quest chain (previous / next)", "Conditions" })
+        var original = snapshot!.Rows.Get(InteractionTables.QuestTemplate, Key);
+        title.Text = q.T("LogTitle").Length > 0 ? q.T("LogTitle") : "(untitled quest)";
+        subtitle.Text = $"Quest {Key} · level {q.I("QuestLevel")} · requires level {q.U("MinLevel")}{(original == null ? " · new in draft" : QuestModel.Tables.Any(t => snapshot.Rows.Get(t, Key) != effective.Get(t, Key)) ? " · edited in draft" : "")}";
+        foreach (var value in Enum.GetValues<Tab>())
         {
-            Section(placeholder, "Editing not implemented yet.", true);
-        }
-
-        detail.AddChild(ClientStyle.Text("Starters / Enders", 16, ClientStyle.Header));
-        if (details.Givers.Length == 0)
-        {
-            detail.AddChild(ClientStyle.Text("No creature starts or ends this quest (it may use items or GameObjects).", 13, ClientStyle.Faded));
-        }
-
-        foreach (var giver in details.Givers)
-        {
-            var row = new HBoxContainer();
-            row.AddChild(ClientStyle.Text($"{(giver.Starts ? "Starts" : "Ends")}: {giver.Name} ({giver.Entry})", 13));
-            var fly = new Button
+            var button = new Button
             {
-                Text = "Fly to"
+                Text = value == Tab.Chain ? "Chain & requirements" : value.ToString(),
+                ToggleMode = true,
+                ButtonPressed = tab == value,
+                Name = "Tab" + value
             };
-            var entry = giver.Entry;
-            fly.Pressed += () => status.Text = FlyToEntry(entry) ? "" : $"No loaded spawn of creature {entry} nearby.";
-            row.AddChild(fly);
-            detail.AddChild(row);
+            var chosen = value;
+            button.Pressed += () =>
+            {
+                tab = chosen;
+                Render();
+            };
+            tabs.AddChild(button);
         }
+
+        switch (tab)
+        {
+            case Tab.Overview:
+                RenderOverview(q);
+                break;
+            case Tab.Story:
+                RenderStory(q);
+                break;
+            case Tab.Objectives:
+                RenderObjectives(q);
+                break;
+            case Tab.Rewards:
+                RenderRewards(q);
+                break;
+            case Tab.Chain:
+                RenderChain(q);
+                break;
+            case Tab.Givers:
+                RenderGivers();
+                break;
+            default:
+                RenderPreview(q);
+                break;
+        }
+
+        RenderIssues();
     }
 
-    void Section(string heading, string text, bool placeholder = false)
+    void RenderIssues()
     {
-        detail.AddChild(ClientStyle.Text(heading, 16, ClientStyle.Header));
-        detail.AddChild(ClientStyle.Text(text.Length == 0 ? "(empty)" : text, placeholder ? 12 : 14, placeholder ? ClientStyle.Faded : null));
+        foreach (var issue in issues.OrderByDescending(i => i.Error).Take(5))
+        {
+            var row = new HBoxContainer();
+            var label = ClientStyle.Text((issue.Error ? "⛔ " : "⚠ ") + issue.Message, 12, issue.Error ? ClientStyle.Error : ClientStyle.Warning);
+            label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            row.AddChild(label);
+            issueBox.AddChild(row);
+        }
+
+        if (issues.Count > 5)
+        {
+            issueBox.AddChild(ClientStyle.Text($"…and {issues.Count - 5} more.", 11, ClientStyle.Faded));
+        }
     }
 
     /// <summary>
-    /// Smoke hooks: run the real search path, and confirm the editing controls stay disabled.
+    /// Switch page (smoke hook and cross-links).
     /// </summary>
-    public void SmokeSearch(string term)
+    public void ShowTab(Tab value)
     {
-        search.Text = term;
-        _ = Search();
+        tab = value;
+        Render();
     }
-
-    public string SmokeStatus => status.Text;
-
-    public bool SmokeEditingDisabled => FindChildren("*", "Button", true, false).OfType<Button>().Where(b => b.Text is "Save" or "Undo").All(b => b.Disabled);
 }

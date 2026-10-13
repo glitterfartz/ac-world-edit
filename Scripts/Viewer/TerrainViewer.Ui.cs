@@ -242,28 +242,64 @@ public partial class TerrainViewer
         };
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, objects);
         ui.AddChild(sidebar);
+        drafts = ContentDrafts.Open();
         interaction = new InteractionWindow
         {
             ConnectionPath = () => creatures.ConnectionPath,
-            Store = () => store
+            Store = () => store,
+            Drafts = drafts
+        };
+        behaviorEditor = new BehaviorEditorWindow
+        {
+            ConnectionPath = () => creatures.ConnectionPath,
+            Store = () => store,
+            Drafts = drafts
         };
         questEditor = new QuestEditorWindow
         {
             ConnectionPath = () => creatures.ConnectionPath,
-            FlyToEntry = entry => creatures.FlyToEntry(entry, camera.Position)
+            Store = () => store,
+            Areas = () => areas,
+            Drafts = drafts,
+            FlyToEntry = entry => creatures.FlyToEntry(entry, camera.Position),
+            BehaviorRequested = entry => behaviorEditor.Open(entry, 0)
         };
+        behaviorEditor.QuestEditorRequested = questEditor.Open;
         // Floating windows sit on the UI layer above the panels.
         layer.AddChild(interaction);
         layer.AddChild(questEditor);
+        layer.AddChild(behaviorEditor);
         interaction.SummaryChanged += creatures.SetInteractionSummary;
         interaction.QuestEditorRequested += questEditor.Open;
         creatures.InteractRequested += interaction.Open;
+        creatures.BehaviorRequested += spawn => behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
+        interaction.BehaviorRequested += behaviorEditor.Open;
         BuildMenus();
         BuildToolbar();
     }
 
     InteractionWindow interaction = null!;
+    /// <summary>
+    /// The shared local content draft for interaction, quest and behavior editing.
+    /// </summary>
+    ContentDrafts drafts = null!;
     QuestEditorWindow questEditor = null!;
+    BehaviorEditorWindow behaviorEditor = null!;
+
+    /// <summary>
+    /// Behavior editor for the selected creature, or its empty hint when nothing is selected.
+    /// </summary>
+    void OpenBehaviorEditor()
+    {
+        if (creatures.SelectedSpawn is { } spawn)
+        {
+            behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
+        }
+        else
+        {
+            behaviorEditor.Open(0, 0);
+        }
+    }
 
     /// <summary>
     /// Full-width flat strip holding the menu bar above the toolbar.
@@ -353,6 +389,7 @@ public partial class TerrainViewer
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
         menu.Command(view, "Quest editor", () => questEditor.Open(0));
+        menu.Command(view, "Behavior editor (selected creature)", OpenBehaviorEditor);
         menu.Command(view, "Scene explorer", () =>
         {
             sidebar.Visible = true;
@@ -427,7 +464,8 @@ public partial class TerrainViewer
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
         toolbar.Separator();
-        toolbar.Action("Quests", "Open the quest editor (skeleton)", () => questEditor.Open(0));
+        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0));
+        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor);
     }
 
     /// <summary>

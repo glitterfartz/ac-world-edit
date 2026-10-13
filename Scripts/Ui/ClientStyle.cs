@@ -32,6 +32,8 @@ public static class ClientStyle
         theme.SetColor("font_color", "CheckBox", Ink);
         theme.SetColor("font_color", "LineEdit", Ink);
         theme.SetColor("font_color", "TextEdit", Ink);
+        theme.SetColor("font_placeholder_color", "LineEdit", Faded);
+        theme.SetColor("font_placeholder_color", "TextEdit", Faded);
         theme.SetColor("font_color", "OptionButton", Ink);
         theme.SetColor("font_color", "ItemList", Ink);
         StyleBoxFlat Box(Color background, int border = 0) => new()

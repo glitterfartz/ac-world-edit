@@ -11,10 +11,12 @@ clips, read-only GameObjects, ADT objects/buildings, native liquids and WMO-only
 Selected creatures move in durable local drafts; graveyards (game_graveyard/graveyard_zone) are
 edited in their own local drafts; creature interactions (gossip, quest links, vendor, trainer,
 spell click, npcflag) are previewed in a client-style window and edited in a local interaction
-draft. The quest editor is a read-only skeleton. The Scene explorer controls layers and SQL visibility.
+draft. The quest editor (quest_template/addon/request/offer, starters/enders) and behavior editor
+(SmartAI smart_scripts, AIName, creature_text) record into the same shared content draft, validated
+against server loader rules. The Scene explorer controls layers and SQL visibility.
 Prioritize client visual fidelity and practical rendering performance. Keep unsupported effects
 explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObject editing,
-new spawns, script/quest editing and shell comparisons unless the user requests them.
+new spawns, C++ script and conditions editing and shell comparisons unless the user requests them.
 
 ## Tools and references
 

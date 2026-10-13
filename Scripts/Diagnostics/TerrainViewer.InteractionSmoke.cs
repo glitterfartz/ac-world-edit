@@ -89,6 +89,10 @@ public partial class TerrainViewer
     }
 
     (string Name, int Frames)? shot;
+    /// <summary>
+    /// Screenshot file prefix: artifacts/{prefix}-{name}.png.
+    /// </summary>
+    string shotPrefix = "interaction";
 
     /// <summary>
     /// Capture a few frames later: the viewport texture holds the previously drawn frame, so an
@@ -112,7 +116,7 @@ public partial class TerrainViewer
         shot = null;
         if (DisplayServer.GetName() != "headless")
         {
-            GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://artifacts/interaction-{pending.Name}.png"));
+            GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://artifacts/{shotPrefix}-{pending.Name}.png"));
         }
     }
 
@@ -263,7 +267,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            Require(questEditor.ResultCount <= Data.InteractionSource.MaxSearch && questEditor.SmokeEditingDisabled, "quest search unbounded or editing enabled");
+            Require(questEditor.ResultCount <= Data.InteractionSource.MaxSearch && !questEditor.SmokeEditingEnabled, "quest search unbounded or a quest opened unexpectedly");
             Screenshot("quest-editor");
             return true;
         }),

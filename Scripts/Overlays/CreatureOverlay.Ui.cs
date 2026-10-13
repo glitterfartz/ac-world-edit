@@ -5,7 +5,7 @@ namespace ACWorldEdit;
 /// <summary>Focused entity page; scene visibility and external connection settings live on the Scene tab.</summary>
 public partial class CreatureOverlay
 {
-    Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!, interact = null!;
+    Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!, interact = null!, behavior = null!;
     Label interactionSummary = null!;
     // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
     readonly LineEdit[] poseFields = new LineEdit[4];
@@ -126,7 +126,18 @@ public partial class CreatureOverlay
                 InteractRequested?.Invoke(spawn);
             }
         });
-        interactions.AddChild(interact);
+        behavior = InspectorUi.Button("Behavior…", () =>
+        {
+            if (SelectedSpawn is { } spawn)
+            {
+                BehaviorRequested?.Invoke(spawn);
+            }
+        });
+        behavior.TooltipText = "Edit this creature's SmartAI rules and speech";
+        var buttons = new HBoxContainer();
+        buttons.AddChild(interact);
+        buttons.AddChild(behavior);
+        interactions.AddChild(buttons);
         interactions.AddChild(InspectorUi.Text("Or right-click the creature without dragging.", 11, true));
         return scroll;
     }
@@ -135,6 +146,10 @@ public partial class CreatureOverlay
     /// Open the interaction window for a creature (viewport short right-click or Interact…).
     /// </summary>
     public event Action<Foundation.CreatureSpawn>? InteractRequested;
+    /// <summary>
+    /// Open the behavior editor for the selected creature.
+    /// </summary>
+    public event Action<Foundation.CreatureSpawn>? BehaviorRequested;
 
     public void SetInteractionSummary(string text) => interactionSummary.Text = text;
 
@@ -192,6 +207,7 @@ public partial class CreatureOverlay
         reset.Disabled = !editable;
         copyGo.Disabled = !selectedGuid.HasValue;
         interact.Disabled = !selectedGuid.HasValue;
+        behavior.Disabled = !selectedGuid.HasValue;
         fly.Disabled = !LayerEnabled || !selectedGuid.HasValue || !markers.ContainsKey(selectedGuid.Value);
         undo.Disabled = draft == null || !draft.CanUndo;
         redo.Disabled = draft == null || !draft.CanRedo;

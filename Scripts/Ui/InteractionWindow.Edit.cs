@@ -12,8 +12,11 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class InteractionWindow
 {
-    InteractionDraft? draft;
-    string draftPath = "";
+    /// <summary>
+    /// Shared content draft (one file and one undo history for all editors).
+    /// </summary>
+    public ContentDrafts Drafts { get; set; } = null!;
+    InteractionDraft? draft => Drafts?.Draft;
     bool editing;
     Button editToggle = null!, undo = null!, redo = null!;
     Label historyLabel = null!;
@@ -21,18 +24,19 @@ public partial class InteractionWindow
 
     public bool Editing => editing;
 
-    void OpenDraft()
+    /// <summary>
+    /// Reload when another editor changes the shared draft.
+    /// </summary>
+    void WatchDrafts()
     {
-        var args = OS.GetCmdlineUserArgs();
-        draftPath = ProjectSettings.GlobalizePath(args.Contains("--interaction-smoke") || args.Contains("--visual-smoke") ? $"res://artifacts/interaction-drafts/{Guid.NewGuid():N}/interactions.json" : "user://drafts/interactions.json");
-        try
+        status = Drafts.Error ?? "";
+        Drafts.Changed += sender =>
         {
-            draft = new InteractionDraft(draftPath);
-        }
-        catch (Exception)
-        {
-            status = "Cannot open the interaction draft; editing disabled, existing file preserved.";
-        }
+            if (sender != this && target != null)
+            {
+                _ = Reload();
+            }
+        };
     }
 
     void BuildEditToggle(HBoxContainer header)
@@ -41,7 +45,7 @@ public partial class InteractionWindow
         {
             Text = "Edit",
             ToggleMode = true,
-            TooltipText = "Edit these records in your local interaction draft (nothing is written to the database)."
+            TooltipText = "Edit these records in your local content draft (nothing is written to the database)."
         };
         editToggle.Toggled += value =>
         {
@@ -80,29 +84,12 @@ public partial class InteractionWindow
         redo.Disabled = draft?.CanRedo != true;
         undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
         redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
-        historyLabel.Text = draft == null ? "" : "Local interaction draft · database unchanged";
+        historyLabel.Text = draft == null ? "" : "Local content draft · database unchanged";
     }
 
     void History(bool forward)
     {
-        try
-        {
-            if (forward)
-            {
-                draft?.Redo();
-            }
-            else
-            {
-                draft?.Undo();
-            }
-
-            status = forward ? "Redid last interaction change." : "Undid last interaction change.";
-        }
-        catch (Exception)
-        {
-            status = "Could not save the interaction draft history.";
-        }
-
+        status = Drafts.History(this, forward);
         Rebuild();
         _ = Reload();
     }
@@ -118,44 +105,10 @@ public partial class InteractionWindow
             return false;
         }
 
-        var list = edits.ToArray();
-        var prospective = effective.Clone();
-        foreach (var edit in list)
+        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot.Rows, effective, label, edits.ToArray(), rows => BuildView(rows).Issues);
+        status = message;
+        if (!ok)
         {
-            var table = InteractionTables.Find(edit.Table);
-            if (edit.After == null)
-            {
-                prospective.Remove(table, edit.Key);
-            }
-            else
-            {
-                prospective.Set(table, edit.After);
-            }
-        }
-
-        try
-        {
-            var before = view.Issues.Where(i => i.Error).Select(i => i.Message).ToHashSet();
-            var introduced = BuildView(prospective).Issues.FirstOrDefault(i => i.Error && !before.Contains(i.Message));
-            if (introduced != null)
-            {
-                status = "Not saved: " + introduced.Message;
-                Render();
-                return false;
-            }
-
-            draft.Execute(sourceKey, snapshot.Rows, label, list);
-            status = $"Saved \"{label}\" to the local draft.";
-        }
-        catch (InvalidDataException error)
-        {
-            status = "Not saved: " + error.Message;
-            Render();
-            return false;
-        }
-        catch (Exception)
-        {
-            status = "Could not save the interaction draft; previous draft preserved.";
             Render();
             return false;
         }

@@ -34,6 +34,10 @@ public partial class InteractionWindow : PanelContainer
     /// Open the quest editor on a quest (0 = no quest).
     /// </summary>
     public event Action<uint>? QuestEditorRequested;
+    /// <summary>
+    /// Open the behavior (SmartAI) editor for a creature entry and spawn GUID.
+    /// </summary>
+    public event Action<uint, uint>? BehaviorRequested;
 
     InteractionCatalog? catalog;
     AssetStore? catalogStore;
@@ -73,7 +77,7 @@ public partial class InteractionWindow : PanelContainer
     public override void _Ready()
     {
         icons = new ClientIcons(() => Store());
-        OpenDraft();
+        WatchDrafts();
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
@@ -95,6 +99,19 @@ public partial class InteractionWindow : PanelContainer
         subtitle = ClientStyle.Text("", 13, ClientStyle.Faded);
         subtitle.MouseFilter = MouseFilterEnum.Ignore;
         titles.AddChild(subtitle);
+        var behavior = new Button
+        {
+            Text = "Behavior…",
+            TooltipText = "Edit what this creature does (SmartAI rules and speech)."
+        };
+        behavior.Pressed += () =>
+        {
+            if (target != null)
+            {
+                BehaviorRequested?.Invoke(target.TemplateId, target.Guid);
+            }
+        };
+        header.AddChild(behavior);
         BuildEditToggle(header);
         var close = new Button
         {
@@ -873,6 +890,5 @@ public partial class InteractionWindow : PanelContainer
     public override void _ExitTree()
     {
         cancellation.Cancel();
-        draft?.Dispose();
     }
 }

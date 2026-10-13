@@ -184,10 +184,10 @@ public sealed class InteractionSource(string configPath)
     /// Load rows of one table matching a parameterized predicate (identifiers come from the schema
     /// registry, never from input) into the snapshot, bounded by MaxRows.
     /// </summary>
-    static async Task Load(WorldReadSession session, RowSet rows, TableSchema table, string predicate, object[] values, CancellationToken token)
+    internal static async Task Load(WorldReadSession session, RowSet rows, TableSchema table, string predicate, object[] values, CancellationToken token)
     {
         string columns = string.Join(',', table.Columns.Select(c => c.Kind == ColumnKind.Text ? $"COALESCE(`{c.Name}`,'')" : $"`{c.Name}`"));
-        await using var command = session.Command($"SELECT {columns} FROM `{table.Name}` WHERE {predicate} LIMIT {MaxRows}");
+        await using var command = session.Command($"SELECT {columns} FROM `{table.SqlName}` WHERE {predicate} LIMIT {MaxRows}");
         for (int i = 0; i < values.Length; i++)
         {
             command.Parameters.AddWithValue($"@k{i}", values[i]);
@@ -207,7 +207,7 @@ public sealed class InteractionSource(string configPath)
         }
     }
 
-    static async Task<object?> Scalar(WorldReadSession session, string sql, object[] values, CancellationToken token)
+    internal static async Task<object?> Scalar(WorldReadSession session, string sql, object[] values, CancellationToken token)
     {
         await using var command = session.Command(sql);
         for (int i = 0; i < values.Length; i++)
@@ -218,7 +218,7 @@ public sealed class InteractionSource(string configPath)
         return await command.ExecuteScalarAsync(token).ConfigureAwait(false);
     }
 
-    static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix)
+    internal static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix)
     {
         var list = ids.Distinct().Take(MaxRows).Select((id, i) =>
         {
@@ -285,7 +285,7 @@ public sealed class InteractionSource(string configPath)
         lookup.MaxTrainerId = Convert.ToUInt32(await Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM trainer", [], token));
     }
 
-    static async Task ReadIds(WorldReadSession session, string sql, IEnumerable<uint> ids, HashSet<uint> target, CancellationToken token)
+    internal static async Task ReadIds(WorldReadSession session, string sql, IEnumerable<uint> ids, HashSet<uint> target, CancellationToken token)
     {
         await using var command = session.Command("");
         command.CommandText = string.Format(CultureInfo.InvariantCulture, sql, InList(command, ids, "x"));
@@ -454,7 +454,7 @@ public sealed class InteractionSource(string configPath)
         return quests;
     }
 
-    static void AddSearch(MySqlCommand command, string term)
+    internal static void AddSearch(MySqlCommand command, string term)
     {
         term = term.Trim();
         if (term.Length > 80)
