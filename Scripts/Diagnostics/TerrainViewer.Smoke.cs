@@ -34,8 +34,10 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// Reload real archives during the first partial model upload, then verify native scenery
-    /// finishes loading again. Exercises the same lifecycle as the Load archives button.
+    /// Reload real archives while a native model is partially uploaded, then verify native scenery
+    /// finishes loading again. Exercises the same lifecycle as File → Load archives. A diagnostic
+    /// upload hold guarantees the partial state on any machine; it is released once the reload has
+    /// discarded the held entry, so the replacement loads at normal speed.
     /// </summary>
     void ReloadSmoke(double delta)
     {
@@ -46,35 +48,50 @@ public partial class TerrainViewer
             GetTree().Quit(1);
             return;
         }
+
+        if (reloadStage == 0)
+        {
+            models.HoldPartialUploads = true;
+        }
+        else if (models.HoldPartialUploads && !models.HasPartialUpload)
+        {
+            // The reload (or its instance reset) disposed the held entry; let the new store load.
+            models.HoldPartialUploads = false;
+            GD.Print("RELOAD_SMOKE_PARTIAL_UPLOAD_DISCARDED");
+        }
+
         if (busy || world == null)
         {
             return;
         }
+
         if (reloadStage == 0)
         {
-            // Textures exist before publication: this specifically interrupts the GPU upload
-            // slot rather than only reloading an empty store or a fully ready model cache.
-            if (models.ReadyModels != 0 || models.TextureCount == 0)
+            // Textures and surfaces exist before publication: this interrupts the GPU upload slot
+            // rather than only reloading an empty store or a fully ready model cache.
+            if (!models.HasPartialUpload || models.ReadyModels != 0 || models.TextureCount == 0)
             {
                 return;
             }
+
             reloadStage = 1;
-            GD.Print("RELOAD_SMOKE_INTERRUPTED_PARTIAL_UPLOAD");
+            GD.Print($"RELOAD_SMOKE_INTERRUPTED_PARTIAL_UPLOAD textures={models.TextureCount}");
             _ = LoadArchives();
             return;
         }
-        if (loaded.Count == 0 || loaded.Count != wanted.Count || pending != null ||
-            building != null || models.Busy)
+
+        if (models.HoldPartialUploads || loaded.Count == 0 || loaded.Count != wanted.Count || pending != null || building != null || models.Busy)
         {
             return;
         }
-        if (currentMapId != 0 || models.ReadyModels == 0 || models.TextureCount == 0 ||
-            models.ActiveFailedModels != 0)
+
+        if (currentMapId != 0 || models.ReadyModels == 0 || models.TextureCount == 0 || models.ActiveFailedModels != 0)
         {
             GD.PushError("RELOAD_SMOKE_FAILED");
             GetTree().Quit(1);
             return;
         }
+
         GD.Print($"RELOAD_SMOKE_PASSED tiles={loaded.Count} models={models.ReadyModels} textures={models.TextureCount}");
         GetTree().Quit();
     }

@@ -82,6 +82,16 @@ public sealed class ModelLibrary
     /// </summary>
     public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
     public int ReadyModels => cache.Count;
+    /// <summary>
+    /// Diagnostic hold for --reload-smoke: at most one surface uploads per frame and nothing is
+    /// published while set. Fast machines otherwise finish a model inside one frame, leaving no
+    /// partial upload to interrupt. Never set during normal viewing.
+    /// </summary>
+    public bool HoldPartialUploads { get; set; }
+    /// <summary>
+    /// An entry owns uploaded GPU surfaces but has not reached the ready cache.
+    /// </summary>
+    public bool HasPartialUpload => building != null && building.Surface > 0;
     public int TextureCount => textures.Count;
     public int ActiveFailedModels => instances.Count(i => failed.Contains(i.Key));
     public long CachedBytes => cache.Values.Sum(e => e.Bytes);
@@ -509,6 +519,8 @@ public sealed class ModelLibrary
     /// </summary>
     void UploadPendingModel()
     {
+        // HoldPartialUploads (diagnostics only) narrows uploads to one surface per frame and keeps
+        // the entry unpublished, so a reload can be timed against a guaranteed partial upload.
         if (building != null && buildingKey != null)
         {
             if (!instances.Any(i => i.Key == buildingKey))
@@ -528,12 +540,13 @@ public sealed class ModelLibrary
                 // Leave headroom within the soft 2 ms upload target; a single indivisible surface
                 // upload can still exceed the deadline.
                 var started = System.Diagnostics.Stopwatch.GetTimestamp();
-                for (int budget = 0; budget < 8 && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
+                int maxSurfaces = HoldPartialUploads ? 1 : 8;
+                for (int budget = 0; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
                 {
                     AddSurface(building, building.Data.Surfaces[building.Surface++], buildingKey.Skybox);
                 }
 
-                if (building.Surface == building.Data.Surfaces.Length)
+                if (building.Surface == building.Data.Surfaces.Length && !HoldPartialUploads)
                 {
                     cache[buildingKey] = building;
                     building.LastUsed = tick;

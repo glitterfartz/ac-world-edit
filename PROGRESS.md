@@ -235,9 +235,12 @@ reading the streaming paths, not by guessing:
   60-99.8% in Hellfire/Icecrown and 3-39% elsewhere. Screenshots reviewed: Hellfire terrain and
   mountains render in front of the starry sky; translucent precipice crystals still show sky.
   `--visual-smoke`, `--water-interior-smoke` and format checks pass.
-- Pre-existing, not caused by this change: `--reload-smoke` times out at HEAD too (stash-verified).
-  Its first stage waits for a frame with textures uploaded but no model published; the first model
-  now uploads within one frame's budget (likely a warm shader cache), so that frame never occurs.
+- `--reload-smoke` had been timing out at HEAD too (stash-verified): its first stage waited for a
+  frame with textures uploaded but no model published, and the first model now uploads within one
+  frame's budget, so that frame never occurred. Fixed in the next commit with a diagnostic
+  `ModelLibrary.HoldPartialUploads` (one surface per frame, no publication) that the smoke sets
+  until the reload discards the held entry. Three consecutive runs pass: partial upload with one
+  texture interrupted, discarded, then 9 tiles / 302 models / 402 textures reloaded.
 - Limits: views where no skybox resolves (region center off the terrain, nested region winning)
   are reported as skipped. Skybox fidelity beyond depth (exact client layer blending/animation) is
   not verified against the client.
