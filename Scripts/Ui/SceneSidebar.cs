@@ -68,9 +68,23 @@ public partial class SceneSidebar : PanelContainer
     }
 
     public void ShowSceneTab() => tabs.CurrentTab = 0;
+    /// <summary>
+    /// Open the Scene tab with the database connection settings expanded and scrolled into view
+    /// (File → Database connection…).
+    /// </summary>
+    public void ShowConnection()
+    {
+        ShowSceneTab();
+        connectionDetails.Visible = true;
+        sceneScroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, connectionDetails);
+    }
+
+    VBoxContainer connectionDetails = null!;
+    ScrollContainer sceneScroll = null!;
     Control BuildScenePage()
     {
         var page = InspectorUi.Page("Scene", out var scroll);
+        sceneScroll = scroll;
         var layers = InspectorUi.Card(page, "Scene layers");
         Layer(layers, "Scenery props", "doodads", value =>
         {
@@ -238,7 +252,7 @@ public partial class SceneSidebar : PanelContainer
         limits = InspectorUi.Text("", 11, true);
         performance.AddChild(limits);
         var connection = InspectorUi.Card(page, "Data source");
-        var advanced = new VBoxContainer
+        var advanced = connectionDetails = new VBoxContainer
         {
             Visible = false
         };

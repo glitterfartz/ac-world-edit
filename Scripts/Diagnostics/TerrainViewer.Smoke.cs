@@ -83,6 +83,8 @@ public partial class TerrainViewer
     bool creatureSmoke;
     bool visualSmoke;
     bool gizmoSmoke, gizmoVerified;
+    int shortcutStage;
+    double? shortcutHeading;
     double creatureSmokeTime;
     int creatureSmokeStage;
     double creatureSelectedAt;
@@ -342,9 +344,25 @@ public partial class TerrainViewer
                     return;
                 }
 
-                GD.Print("GIZMO_SMOKE_PASSED drag/model-position/reopen/undo/redo");
+                GD.Print("GIZMO_SMOKE_PASSED drag/rotate/ground/model-position/reopen/undo/redo");
+                if (!WmoGroundSmoke())
+                {
+                    GetTree().Quit(1);
+                    return;
+                }
+
                 gizmoVerified = true;
                 creatureSelectedAt = creatureSmokeTime;
+                return;
+            }
+
+            if ((visualSmoke || gizmoSmoke) && shortcutStage < 4)
+            {
+                if (!ShortcutSmoke())
+                {
+                    GetTree().Quit(1);
+                }
+
                 return;
             }
 
@@ -505,5 +523,104 @@ public partial class TerrainViewer
             GD.Print($"INTERIOR_SMOKE_PASSED map={currentMapId} objects={objects.ObjectCount} models={models.ReadyModels} fps={Engine.GetFramesPerSecond()}");
             GetTree().Quit();
         }
+    }
+
+    /// <summary>
+    /// Probe from above the nearest ready building with bounds: the chosen surface must come from
+    /// the WMO (above the terrain beneath it), and the probe cost is reported. Skips, rather than
+    /// fails, when no building near the smoke location has finished loading.
+    /// </summary>
+    bool WmoGroundSmoke()
+    {
+        // Bounds centers can fall in courtyards, so try a few of the nearest ready buildings.
+        var buildings = objects.ReadyWmoPlacements()
+            .Where(item => item.BoundsMinimum.HasValue && item.BoundsMaximum.HasValue)
+            .OrderBy(item => new Vector3(item.Position.X, item.Position.Y, item.Position.Z).DistanceSquaredTo(camera.Position))
+            .Take(5)
+            .ToArray();
+        if (buildings.Length == 0)
+        {
+            GD.Print("WMO_GROUND_SMOKE_SKIPPED no ready building with bounds nearby");
+            return true;
+        }
+
+        foreach (var building in buildings)
+        {
+            var min = building.BoundsMinimum!.Value;
+            var max = building.BoundsMaximum!.Value;
+            var top = new Vector3((min.X + max.X) / 2, Math.Max(min.Y, max.Y) + 50, (min.Z + max.Z) / 2);
+            var hit = GroundAt(top);
+            var key = new TileKey((int)Math.Floor(top.X / TerrainTile.Size + 32), (int)Math.Floor(top.Z / TerrainTile.Size + 32));
+            float? terrain = terrainHeights.TryGetValue(key, out var tile) ? tile.Probe(top.X - (key.X - 32) * TerrainTile.Size, top.Z - (key.Y - 32) * TerrainTile.Size) : null;
+            var (floors, _) = objects.FloorHeights(top);
+            GD.Print(FormattableString.Invariant($"WMO_GROUND_SMOKE path={building.Path} wmoHits={floors.Count} chosen={hit.Height:F3} terrain={terrain:F3} ms={hit.Milliseconds:F3} via={hit.Message}"));
+            if (floors.Count > 0 && hit.Height is float chosen && (terrain is not float t || chosen > t + 0.5f))
+            {
+                GD.Print("WMO_GROUND_SMOKE_PASSED building surface chosen over terrain");
+                return true;
+            }
+        }
+
+        GD.PushError("WMO_GROUND_SMOKE_FAILED no building surface chosen");
+        return false;
+    }
+
+    /// <summary>
+    /// Send real key events through Godot's input pipeline, one stage per frame: Ctrl+Z must reach
+    /// the Edit menu accelerator and undo a heading change, and E/Q/W must reach the toolbar mode
+    /// buttons. Proves menu and toolbar shortcuts, not just direct method calls.
+    /// </summary>
+    bool ShortcutSmoke()
+    {
+        static void Press(Key key, bool ctrl = false)
+        {
+            Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, CtrlPressed = ctrl, Pressed = true });
+            Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, CtrlPressed = ctrl, Pressed = false });
+        }
+
+        switch (shortcutStage)
+        {
+            case 0:
+                shortcutHeading = creatures.SmokeNudgeHeading();
+                if (shortcutHeading == null)
+                {
+                    GD.PushError("SHORTCUT_SMOKE_FAILED could not record a heading change");
+                    return false;
+                }
+
+                Press(Key.Z, ctrl: true);
+                Press(Key.E);
+                break;
+            case 1:
+                if (creatures.SmokeSelectedHeading() != shortcutHeading || creatures.Mode != GizmoMode.Rotate)
+                {
+                    GD.PushError($"SHORTCUT_SMOKE_FAILED ctrl+z/E heading={creatures.SmokeSelectedHeading()} expected={shortcutHeading} mode={creatures.Mode}");
+                    return false;
+                }
+
+                Press(Key.Q);
+                break;
+            case 2:
+                if (creatures.Mode != GizmoMode.Select)
+                {
+                    GD.PushError("SHORTCUT_SMOKE_FAILED Q mode=" + creatures.Mode);
+                    return false;
+                }
+
+                Press(Key.W);
+                break;
+            case 3:
+                if (creatures.Mode != GizmoMode.Move)
+                {
+                    GD.PushError("SHORTCUT_SMOKE_FAILED W mode=" + creatures.Mode);
+                    return false;
+                }
+
+                GD.Print("SHORTCUT_SMOKE_PASSED ctrl+z menu undo, E/Q/W toolbar modes");
+                break;
+        }
+
+        shortcutStage++;
+        return true;
     }
 }

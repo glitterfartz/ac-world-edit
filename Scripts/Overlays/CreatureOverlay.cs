@@ -21,7 +21,7 @@ public partial class CreatureOverlay : Node3D
     string draftPath = "";
     string sourceKey = "";
     string draftMessage = "Local draft only; source database is unchanged.";
-    TranslationGizmo gizmo = null!;
+    TransformGizmo gizmo = null!;
     OptionButton animation = null!;
     ushort previewAnimation;
     uint? animationListGuid;
@@ -95,6 +95,7 @@ public partial class CreatureOverlay : Node3D
         selectionName.Text = "Select a creature";
         selectionMeta.Text = "Click a model or choose one above";
         details.Text = "Selection details appear here.";
+        ShowPose(null);
     }
 
     CancellationTokenSource cancellation = new();
@@ -140,7 +141,7 @@ public partial class CreatureOverlay : Node3D
             draftMessage = "Cannot open local draft. Movement disabled; existing file preserved.";
         }
 
-        gizmo = new TranslationGizmo();
+        gizmo = new TransformGizmo();
         AddChild(gizmo);
         gizmo.Changed += MoveSelection;
     }
@@ -421,7 +422,8 @@ public partial class CreatureOverlay : Node3D
         }
 
         UpdateInspectorActions();
-        gizmo.Update(camera, draft != null && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var selectedMarker) ? selectedMarker.Node.GlobalPosition : null);
+        var editing = EditableMarker();
+        gizmo.Update(camera, editing?.Node.GlobalPosition, editing?.Node.Rotation.Y ?? 0);
     }
 
     /// <summary>
@@ -638,7 +640,8 @@ public partial class CreatureOverlay : Node3D
         var pose = PoseOf(spawn);
         selectionName.Text = spawn.Name;
         selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
-        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {pose.Heading:F3} rad\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
+        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {HeadingText(pose.Heading)}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
+        ShowPose(pose);
         list.DeselectAll();
         for (int i = 0; i < list.ItemCount; i++)
         {
@@ -669,44 +672,116 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public void EndDrag(bool commit) => gizmo.Finish(commit);
     /// <summary>
-    /// Convert committed view coordinates into a local server-coordinate draft, then update
-    /// marker/model transforms together. Failed saves restore the persisted pose.
+    /// Apply gizmo previews to the marker/models and commit completed gestures. Untouched pose
+    /// components keep their exact double source values: a move never rewrites heading, and a
+    /// rotation never rewrites coordinates through float round-off.
     /// </summary>
-    void MoveSelection(Vector3 position, bool commit)
+    void MoveSelection(GizmoEdit edit)
     {
         if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
         {
             return;
         }
 
-        if (commit && draft != null)
+        if (!edit.Commit)
         {
-            var p = WorldCoordinates.ToServer(new(position.X, position.Y, position.Z));
-            try
-            {
-                draft.Move(sourceKey, marker.Spawn.Guid, marker.Spawn.Pose, PoseOf(marker.Spawn) with { X = p.X, Y = p.Y, Z = p.Z });
-                draftMessage = "Saved local draft. Drag colored axes to move; source unchanged.";
-            }
-            catch (Exception)
-            {
-                draftMessage = "Could not save move or source changed. Previous draft preserved.";
-                position = ViewPosition(PoseOf(marker.Spawn));
-            }
+            marker.Node.Position = edit.Position;
+            marker.Node.Rotation = new(0, edit.Yaw, 0);
+            PlaceModels(marker.Spawn.Guid);
+            return;
         }
 
-        marker.Node.Position = position;
+        var before = PoseOf(marker.Spawn);
+        var after = before;
+        string success = "Saved local draft; source unchanged.";
+        if (edit.Moved)
+        {
+            var position = edit.Position;
+            if (SnapOnDrop)
+            {
+                var ground = GroundAt?.Invoke(position) ?? new GroundHit(null, "Ground probe unavailable.");
+                if (ground.Height is float height)
+                {
+                    position.Y = height;
+                    success = "Saved local draft; snapped to ground.";
+                }
+                else
+                {
+                    success = "Saved local draft; not snapped: " + ground.Message;
+                }
+            }
+
+            var startView = ViewPosition(before);
+            var server = WorldCoordinates.ToServer(new(position.X, position.Y, position.Z));
+            // View X = -server Y, view Y = server Z, view Z = -server X.
+            after = before with
+            {
+                X = position.Z == startView.Z ? before.X : server.X,
+                Y = position.X == startView.X ? before.Y : server.Y,
+                Z = position.Y == startView.Y ? before.Z : server.Z
+            };
+        }
+        else if (edit.Yaw != (float)before.Heading)
+        {
+            after = before with { Heading = WorldCoordinates.NormalizeHeading(edit.Yaw) };
+        }
+
+        Commit(marker.Spawn, after, success);
+    }
+
+    /// <summary>
+    /// Record one draft command for a creature and reconcile its marker/models from effective
+    /// history. Failed saves or stale baselines keep the persisted pose.
+    /// </summary>
+    void Commit(CreatureSpawn spawn, WorldPose after, string success)
+    {
+        if (draft == null)
+        {
+            return;
+        }
+
+        // A click without a drag (or an unchanged typed pose) records nothing; just re-sync.
+        if (after == PoseOf(spawn))
+        {
+            ApplyPose(spawn.Guid);
+            return;
+        }
+
+        try
+        {
+            draft.Move(sourceKey, spawn.Guid, spawn.Pose, after);
+            draftMessage = success;
+        }
+        catch (Exception)
+        {
+            draftMessage = "Could not save change or source changed. Previous draft preserved.";
+        }
+
+        ApplyPose(spawn.Guid);
+        Select(spawn.Guid);
+    }
+
+    /// <summary>
+    /// Move a marker and its native model placements to the effective draft pose.
+    /// </summary>
+    void ApplyPose(uint guid)
+    {
+        var marker = markers[guid];
+        var pose = PoseOf(marker.Spawn);
+        marker.Node.Position = ViewPosition(pose);
+        marker.Node.Rotation = new(0, (float)pose.Heading, 0);
+        PlaceModels(guid);
+    }
+
+    void PlaceModels(uint guid)
+    {
         foreach (var batch in modelBatches.Values)
         {
-            int index = Array.IndexOf(batch.Guids, marker.Spawn.Guid);
+            int index = Array.IndexOf(batch.Guids, guid);
             if (index >= 0)
             {
-                batch.Node.SetPlacement(index, ModelTransform(marker.Spawn.Guid));
+                batch.Node.SetPlacement(index, ModelTransform(guid));
             }
-        }
-
-        if (commit)
-        {
-            Select(marker.Spawn.Guid);
         }
     }
 
@@ -717,7 +792,7 @@ public partial class CreatureOverlay : Node3D
     }
 
     /// <summary>
-    /// Cancel the active preview, persist undo/redo and reconcile marker/native positions from
+    /// Cancel the active preview, persist undo/redo and reconcile marker/native poses from
     /// effective history.
     /// </summary>
     void History(bool redo)
@@ -740,17 +815,11 @@ public partial class CreatureOverlay : Node3D
             return;
         }
 
-        foreach (var marker in markers.Values)
-        {
-            marker.Node.Position = ViewPosition(PoseOf(marker.Spawn));
-        }
+        draftMessage = redo ? "Redid last local change." : "Undid last local change.";
 
-        foreach (var batch in modelBatches.Values)
+        foreach (var guid in markers.Keys)
         {
-            for (int i = 0; i < batch.Guids.Length; i++)
-            {
-                batch.Node.SetPlacement(i, ModelTransform(batch.Guids[i]));
-            }
+            ApplyPose(guid);
         }
 
         if (selectedGuid.HasValue)

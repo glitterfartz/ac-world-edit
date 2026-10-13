@@ -22,7 +22,8 @@ ea45d17 native clip previews and validation.
   Dormant resources evict above a soft 256 MiB target; in-use resources may exceed it.
 - Native model bounding-box selection, fallback markers, filtered list, details and fly-to-selection.
 - Axis gizmo drag/cancel; durable local position drafts; undo/redo/reopen; source identity isolation,
-  stale-baseline detection, checksums and single-writer locking. No yaw editing or terrain snapping.
+  stale-baseline detection, checksums and single-writer locking. Yaw editing and ground snapping
+  were added in the step 3 checkpoint below.
 - Updated PLAN.md/AGENTS.md/README.md; user's future-workflow additions preserved.
 
 ## Evidence — 2026-10-11
@@ -59,8 +60,8 @@ one deterministic clip rather than live server state. Selection does not test te
 Drafts far outside their source query region reappear when that source region is queried again;
 a cross-region draft index remains follow-up work.
 
-Prioritize those visual gaps in further work. Local position previews are implemented; yaw editing,
-client landmark/heading verification and reviewed SQL export remain later work. Deployment/export
+Prioritize those visual gaps in further work. Position/yaw drafts and ground snapping are
+implemented; client landmark/heading verification and reviewed SQL export remain later work. Deployment/export
 must not be declared ready without those checks and an authorized disposable-database apply/reverse
 proof. Source data and unknown row fields remain untouched.
 
@@ -214,6 +215,40 @@ reading the streaming paths, not by guessing:
   simply too slow for how many distinct new models appear at once in dense areas — that would need a
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
+
+## Step 3 placement editing, menu bar and toolbar — implemented 2026-10-12
+
+- Prior checkpoints: 1c8cb97 Scripts folder layout; 1d61646 AGENTS tools/references.
+- `TransformGizmo` (renamed from TranslationGizmo, uid kept) adds a Rotate mode: a yellow yaw ring
+  with a heading pointer, Ctrl/fixed-step snapping and cancel restoring yaw. Rotation edits set only
+  `Rotation.Y`; the creature heading mapping is unchanged. Commits normalize to [0, 2π) like
+  `Position::NormalizeOrientation`. Untouched components keep exact doubles (a move never rewrites
+  heading; a rotation never rewrites X/Y/Z). Undo/redo now restore rotation as well as position.
+- Ground probes: `TerrainHeights` keeps ~150 KB of height/hole data per loaded tile (same lifetime
+  as the tile node); `GroundProbe` tests WMO render triangles (liquids excluded) with cached
+  per-surface bounds. Rule: highest surface at or below Y + 3 yd; otherwise fail closed with a
+  reason (no ground, tile not loaded, covering WMO still loading, buildings layer hidden).
+- `CreatureOverlay.Editing`: Drop to ground, Snap on drop (off by default), typed X/Y/Z/heading°,
+  Reset to source and Copy `.go xyz X Y Z map O` (argument order from cs_go.cpp). Inspector shows
+  heading in rad/degrees with a compass point.
+- Menu bar + toolbar strip (`Scripts/Ui/EditorMenu.cs`, `EditorToolbar.cs`). The left panel keeps
+  navigation; MPQ path/Load archives, cell borders and the controls text moved to File/View/Help.
+  MenuBar did not fire accelerators for closed menus in Godot 4.7.1, so EditorMenu matches them in
+  `_ShortcutInput` and consumes the event. Keys are consumed during right-mouse flight so Q/W/E
+  fly rather than switch tools.
+- Evidence: main and test builds clean; whitespace format checks pass. `--placement`, `--draft`,
+  default asset and `--models` checks pass. Real-data `--gizmo-smoke` and graphical
+  `--visual-smoke`: rotate 3.2727→4.8435 rad (error 0.0000) with exact coordinates; drop to ground
+  Z 67.530→67.481 via terrain (~2.5 ms incl. first-call cost); fail-closed probe; Goldshire lumber
+  mill roof 70.24 chosen over terrain 48.04 (0.8 ms); Ctrl+Z (menu) and E/Q/W (toolbar) through
+  real input events. `--reload-smoke` and `--visibility-smoke` still pass. Screenshot review of
+  `artifacts/native-preview.png` confirmed strip/panel layout and the pose grid.
+- Measured worst probe: Stormwind city WMO (672,786 triangles, 209 surfaces) 12.6 ms first probe,
+  1.0 ms warm in Release (~100 ms first probe in Debug).
+- Limits: render triangles approximate client collision; M2 doodads (bridges, docks) are not snap
+  targets; WMOs without MODF bounds are always probed. Not verified: in-client landmark/heading
+  parity (step 3 stays open until checked via `.go xyz`), the gizmo ring and menus by hand, and
+  key blocking during flight.
 
 ## Scripts folder layout — completed 2026-10-12
 

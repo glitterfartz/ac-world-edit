@@ -3,9 +3,10 @@
 Use the existing standalone Godot viewer and existing creatures/GameObjects on outdoor and interior maps.
 Source database and client files stay unchanged.
 
-Current addition requested by the user: improve client visual fidelity with native creature models,
-animation previews, terrain doodads/buildings and WMO interiors. Selecting a creature exposes a
-movement gizmo with saved local position drafts and undo/redo. Keep these previews separate from
+Current addition requested by the user: complete step 3 placement editing (yaw, ground snapping,
+landmark verification) with an editor menu bar and toolbar, alongside client visual fidelity for
+native creature models, animation previews, terrain doodads/buildings and WMO interiors. Selecting a
+creature exposes move/rotate gizmos with saved local drafts and undo/redo. Keep these previews separate from
 deployment readiness; source data stays read-only. Character equipment/appearance, client effects
 and exact client visual parity still need focused follow-up; do not claim them complete.
 
@@ -32,12 +33,17 @@ Done when filters run before the result limit, inactive GUID 96098 is hidden by 
 stops work, and broad inspection cannot bypass row/model budgets. Use 200 yards, 384 rows and 128 models
 per spawn layer by default. SQL previews do not guarantee live client visibility.
 
-## 3. Move creatures in a saved draft — positions implemented; yaw and verification later
+## 3. Place creatures in a saved draft — implemented; client landmark verification pending
 
-Move/yaw an existing creature, undo/redo, leave the area and reopen without losing edits.
-Position gizmos now edit local previews. Verify coordinates/headings against actual client landmarks
-before declaring placement/export ready; yaw editing and terrain snapping still need implementation.
-Preserve source rows and unknown fields. No new spawns, duplication or deletion in this slice.
+Move/yaw an existing creature, undo/redo, leave the area and reopen without losing edits. Move and
+rotate gizmos, typed pose entry, drop to ground (terrain + WMO floors, fail-closed, optional snap on
+drop) and reset to source all record local draft commands. A menu bar (File/Edit/View/Help) and
+toolbar (tool modes, history, ground snap, rotation step) carry the commands.
+
+Done when coordinates/headings match the client at reference landmarks: compare several creatures
+in-game via the copied `.go xyz` command, including one inside a building and one rotated draft.
+Until then placement is not export-ready. Preserve source rows and unknown fields. No new spawns,
+duplication or deletion in this slice. M2 doodads are not snap targets.
 
 ## 4. Export a reviewed SQL change — later
 

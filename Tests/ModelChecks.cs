@@ -153,6 +153,28 @@ public static class ModelChecks
 
         Check(maximumBoundsError < 2, "WMO geometry disagrees with ADT placement bounds: " + maximumBoundsError);
         Console.WriteLine($"PLACEMENT_BOUNDS_PASSED outdoorWmos={placements.Count} maxHorizontalError={maximumBoundsError:F4}");
+        // Ground-probe cost: one vertical line through each placement's bounds center. Report the
+        // slowest building, which bounds the cost of one on-demand Drop to ground.
+        var slowest = (Path: "", Triangles: 0, Surfaces: 0, Milliseconds: 0.0, Warm: 0.0, Hits: 0);
+        foreach (var placement in placements)
+        {
+            var model = parsed[(placement.Path, placement.DoodadSet)];
+            var min = placement.BoundsMinimum!.Value;
+            var max = placement.BoundsMaximum!.Value;
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            var hits = GroundProbe.WmoHeights(placement, model, (min + max) / 2);
+            double elapsed = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            // A second probe elsewhere reuses cached surface bounds, like repeated drops in the viewer.
+            started = System.Diagnostics.Stopwatch.GetTimestamp();
+            GroundProbe.WmoHeights(placement, model, min + (max - min) * 0.3f);
+            double warm = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            if (elapsed > slowest.Milliseconds)
+            {
+                slowest = (placement.Path, model.Surfaces.Sum(surface => surface.Indices.Length / 3), model.Surfaces.Length, elapsed, warm, hits.Count);
+            }
+        }
+
+        Console.WriteLine($"WMO_GROUND_PROBE_COST slowest={slowest.Path} triangles={slowest.Triangles} surfaces={slowest.Surfaces} firstMs={slowest.Milliseconds:F3} warmMs={slowest.Warm:F3} hits={slowest.Hits}");
         Console.WriteLine($"MODEL_CHECKS_PASSED M2={m2} WMO={wmo} animated={animated} textures={textureCount} interiorMaps={interiors}");
     }
 }

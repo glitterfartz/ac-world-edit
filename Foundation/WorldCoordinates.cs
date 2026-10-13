@@ -50,6 +50,22 @@ public static class WorldCoordinates
     /// Find the ADT tile containing a server position using floor rather than truncation, including
     /// negative coordinates.
     /// </summary>
+    /// <summary>
+    /// Wrap a heading into [0, 2π), matching the server's Position::NormalizeOrientation. View yaw
+    /// (Godot Rotation.Y) equals server heading under this basis, so edited yaw commits directly.
+    /// </summary>
+    public static double NormalizeHeading(double heading)
+    {
+        double wrapped = heading % (2 * Math.PI);
+        if (wrapped < 0)
+        {
+            wrapped += 2 * Math.PI;
+        }
+
+        // Rounding can land exactly on 2π for tiny negative inputs; keep the range half-open.
+        return wrapped >= 2 * Math.PI ? 0 : wrapped;
+    }
+
     public static (int X, int Y) Tile(Point3 server) => ((int)Math.Floor(32 - server.Y / TileSize), (int)Math.Floor(32 - server.X / TileSize));
     /// <summary>
     /// Two-sided Moller-Trumbore triangle intersection. Returns the nonnegative ray parameter, not

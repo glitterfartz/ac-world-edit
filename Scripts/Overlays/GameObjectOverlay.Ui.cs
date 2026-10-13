@@ -37,13 +37,7 @@ public partial class GameObjectOverlay
         var row = new HBoxContainer();
         page.AddChild(row);
         row.AddChild(InspectorUi.Button("Refresh", Refresh));
-        fly = InspectorUi.Button("Fly to selection", () =>
-        {
-            if (selected.HasValue && lookup.TryGetValue(selected.Value, out var item))
-            {
-                FocusRequested?.Invoke(item.Pose);
-            }
-        });
+        fly = InspectorUi.Button("Fly to selection", FlyToSelection);
         fly.Disabled = true;
         row.AddChild(fly);
         var card = InspectorUi.Card(page, "Selection");
@@ -58,4 +52,14 @@ public partial class GameObjectOverlay
         return scroll;
     }
 
+    /// <summary>
+    /// Move the camera near the selected GameObject's source pose.
+    /// </summary>
+    public void FlyToSelection()
+    {
+        if (selected.HasValue && lookup.TryGetValue(selected.Value, out var item))
+        {
+            FocusRequested?.Invoke(item.Pose);
+        }
+    }
 }

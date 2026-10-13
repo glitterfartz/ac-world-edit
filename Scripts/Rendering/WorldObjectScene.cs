@@ -58,6 +58,52 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     }
 
     /// <summary>
+    /// Collect WMO floor heights under a viewer-space point from visible, ready buildings. Pending
+    /// counts covering buildings whose geometry is not decoded yet, so callers can refuse to guess.
+    /// Hidden WMO layers contribute nothing.
+    /// </summary>
+    public (List<float> Heights, int Pending) FloorHeights(Vector3 point)
+    {
+        List<float> heights = [];
+        int pending = 0;
+        var probe = new System.Numerics.Vector3(point.X, point.Y, point.Z);
+        foreach (var ((_, model), (_, items)) in batches)
+        {
+            if (!model.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var covering = items.Where(item => GroundProbe.Covers(item, probe)).ToArray();
+            if (covering.Length == 0)
+            {
+                continue;
+            }
+
+            var data = library.ReadyData(model);
+            if (data == null)
+            {
+                pending += covering.Length;
+                continue;
+            }
+
+            foreach (var item in covering)
+            {
+                heights.AddRange(GroundProbe.WmoHeights(item, data, probe));
+            }
+        }
+
+        return (heights, pending);
+    }
+
+    /// <summary>
+    /// Bound WMO placements whose geometry is decoded, for opt-in ground-probe smoke checks.
+    /// </summary>
+    public IEnumerable<WorldObject> ReadyWmoPlacements() => batches
+        .Where(pair => pair.Key.Model.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase) && library.ReadyData(pair.Key.Model) != null)
+        .SelectMany(pair => pair.Value.Items);
+
+    /// <summary>
     /// Hide/free batches and clear ownership on map/client changes. ModelLibrary still owns the
     /// shared cache.
     /// </summary>

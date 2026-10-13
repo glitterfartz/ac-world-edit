@@ -75,6 +75,11 @@ public sealed class ModelLibrary
     /// GPU readback.
     /// </summary>
     public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data.Surfaces.Where(s => s.LiquidType != null).ToArray() : [];
+    /// <summary>
+    /// Expose a ready variant's decoded CPU data for on-demand ground probes. Null means the
+    /// variant is still decoding/uploading (or failed), not that it has no geometry.
+    /// </summary>
+    public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
     public int ReadyModels => cache.Count;
     public int TextureCount => textures.Count;
     public int ActiveFailedModels => instances.Count(i => failed.Contains(i.Key));

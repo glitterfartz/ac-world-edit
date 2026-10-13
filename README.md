@@ -47,11 +47,27 @@ models, materials and animation data, using database quaternion rotation and tem
 Unsupported appearances retain bounded capsules/boxes. GameObjects are read-only previews: DB state
 is shown, but open/close, interaction and transport/script behavior are not simulated.
 
-Selection exposes a colored movement gizmo: red is view X, green is height, blue is view Z.
-Drag an axis to move; release saves a local draft. **Esc** cancels the drag. **Undo move** and
-**Redo move** persist history. Drafts reopen from Godot's `user://drafts/creature-positions.json`
-under the application data directory. A source position conflict prevents applying a stale draft.
-Horizontal moves preserve height; there is no terrain snapping, yaw editing or SQL export yet.
+### Placement editing
+
+The toolbar picks the tool for a selected creature: **Select (Q)** only picks, **Move (W)** shows
+colored axes (red view X, green height, blue view Z) and **Rotate (E)** shows a yellow ring whose
+pointer marks the heading. Drag a handle; release saves one local draft command and **Esc** cancels.
+Hold **Ctrl** while rotating for 15° steps, or choose a fixed **Rotation step**. Q/W/E only switch
+tools while the camera is not flying.
+
+- **Drop to ground (End)** snaps Z to the highest loaded terrain or building (WMO) surface at or
+  below 3 yd above the creature. **Snap on drop** (off by default) does the same when a move drag is
+  released. Probes fail closed with a reason, leaving Z unchanged, when nothing qualifies, the tile is
+  not loaded, a covering building is still loading or the buildings layer is hidden. They use render
+  triangles, not the client's collision meshes, and do not include M2 doodads such as bridges.
+- The Selection card shows heading in radians and degrees with a compass point (server heading 0
+  faces north/+X and increases toward west/+Y). Type X/Y/Z/heading° and press **Enter** to commit.
+  Fields you leave alone keep their exact stored values; headings are normalized to [0, 2π).
+- **Reset to source** is an undoable move back to the database pose.
+- **Copy .go** copies `.go xyz X Y Z map heading` for comparing the pose in the client.
+- **Ctrl+Z / Ctrl+Y** (or Ctrl+Shift+Z) undo and redo. Drafts reopen from Godot's
+  `user://drafts/creature-positions.json` under the application data directory. A source position
+  conflict prevents applying a stale draft. SQL export is not implemented yet.
 Queries still locate spawns by their source positions. A draft moved far outside its source region
 reappears when that source region is queried again; a cross-region draft index is follow-up work.
 
@@ -65,6 +81,11 @@ and precise animated triangle selection are not implemented.
 
 ## Explore
 
+The menu bar holds commands: **File** (load archives from a chosen directory, open the selected
+world, database connection, quit), **Edit** (undo/redo, drop to ground, reset, copy .go), **View**
+(fly to selection, Scene explorer, terrain cell borders, panel visibility) and **Help** (controls).
+Layer and SQL visibility stay in the Scene explorer.
+
 - Hold **right mouse** to look and fly; **WASD** moves relative to the camera.
 - **Q/E** descends/ascends; **Shift** accelerates; the **wheel** adjusts speed.
 - **Esc** releases the mouse. Losing window focus also releases it.
@@ -72,8 +93,8 @@ and precise animated triangle selection are not implemented.
 - WMO-only worlds open their global building directly; tile controls are disabled. Fly to explore interiors.
 - Click land in the minimap to jump. Mint tiles are loaded; white marks the camera.
 - Nearby tile radius defaults to **1**, loading up to a 3×3 neighborhood. Increase for a wider view or use 0 for one tile.
-- Toggle cell borders to see the 16×16 terrain chunks in each tile.
-- Enter another MPQ directory and click **Load archives** to reopen the asset source.
+- **View → Terrain cell borders** shows the 16×16 terrain chunks in each tile.
+- **File → Load archives…** chooses another client Data directory and reopens the asset source.
 
 ## Implementation
 
@@ -130,11 +151,16 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   native M2/WMO geometry, materials and animation palettes.
 - Godot `-- --visibility-smoke`: GameObject model/list selection, layer unloading, the event-31
   mannequin, masks, canceled generations and broad-preview model admission caps.
-- `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks.
+- `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks,
+  including heading-only moves.
+- `dotnet run --project Tests/AssetChecks.csproj -- --placement`: heading normalization, terrain
+  height probes (flat/slope/hole), step-up choice and WMO floor probes without client data.
 - Godot `-- --visual-smoke`: native models, animation menu, gizmo drag/reopen/undo/redo, short warm
   frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
   under ignored `artifacts/`; uses isolated test drafts and leaves your application draft intact.
-- Godot `-- --gizmo-smoke`: focused headless movement/selection check with an isolated draft.
+- Godot `-- --gizmo-smoke`: focused movement/rotation/selection check with an isolated draft: ring
+  rotation with cancel/undo/redo, drop to ground, fail-closed probes, a WMO floor chosen over terrain,
+  and real Ctrl+Z/Q/W/E key events through the menu and toolbar.
 - Godot `-- --reload-smoke`: interrupt a partially uploaded native model by reloading archives,
   then verify the replacement map/models finish loading.
 - `dotnet format whitespace ACWorldEdit.csproj --no-restore --verify-no-changes`: check the
@@ -148,18 +174,20 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
 
 - `Scripts/Viewer/`: `TerrainViewer` (camera navigation, terrain streaming, archive/map lifetime and
   its `.Ui` controls), minimap, sky/time-of-day lighting, viewport picking, and the Godot-bound
-  `ClientLighting`/`AreaTable` DBC readers that feed them.
+  `ClientLighting`/`AreaTable` DBC readers that feed them. `TerrainViewer.Ground` combines terrain and
+  WMO probes for placement snapping.
 - `Scripts/Rendering/`: main-thread GPU resources for models, terrain, liquids and world objects.
 - `Scripts/Overlays/`: bounded native creature/GameObject spawn projection, selection, creature
-  draft movement and the translation gizmo; each overlay keeps its inspector UI in a `.Ui` partial.
-- `Scripts/Ui/`: scene sidebar and entity inspector.
+  draft placement (`CreatureOverlay.Editing`) and the move/rotate gizmo; each overlay keeps its
+  inspector UI in a `.Ui` partial.
+- `Scripts/Ui/`: menu bar, toolbar, scene sidebar and entity inspector.
 - `Scripts/Diagnostics/`: opt-in viewer/creature smoke workflows; normal editing does not run them.
 - `Scripts/Assets/`: engine-independent decoders, compiled into `Tests/` as well:
   - `Archives/`: MPQ reading, the client mount profile and the shared `AssetStore`.
   - `Formats/`: low-level binary readers, chunk streams, DBC tables and BLP textures.
   - `Client/`: DBC-backed creature/GameObject display catalogs and liquid textures.
   - `Models/`: M2/WMO model decoding and animation data.
-  - `World/`: ADT/WDT terrain, liquids, map metadata and placed world objects.
+  - `World/`: ADT/WDT terrain, liquids, map metadata, placed world objects and ground probes.
 - `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
 - `Foundation/`: engine-independent coordinates, spawn records and durable creature drafts.
 - `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.

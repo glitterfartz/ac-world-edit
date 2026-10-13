@@ -5,7 +5,9 @@ namespace ACWorldEdit;
 /// <summary>Focused entity page; scene visibility and external connection settings live on the Scene tab.</summary>
 public partial class CreatureOverlay
 {
-    Button fly = null!, undo = null!, redo = null!;
+    Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!;
+    // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
+    readonly LineEdit[] poseFields = new LineEdit[4];
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("Creatures", out var scroll);
@@ -44,13 +46,7 @@ public partial class CreatureOverlay
         var actions = new HBoxContainer();
         page.AddChild(actions);
         actions.AddChild(InspectorUi.Button("Refresh", Refresh));
-        fly = InspectorUi.Button("Fly to selection", () =>
-        {
-            if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker))
-            {
-                FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) });
-            }
-        });
+        fly = InspectorUi.Button("Fly to selection", FlyToSelection);
         fly.Disabled = true;
         actions.AddChild(fly);
         var card = InspectorUi.Card(page, "Selection");
@@ -80,12 +76,101 @@ public partial class CreatureOverlay
         redo = InspectorUi.Button("Redo move", () => History(true));
         history.AddChild(undo);
         history.AddChild(redo);
-        card.AddChild(InspectorUi.Text("Drag a colored axis to move. Changes save to your local draft.", 12, true));
+        card.AddChild(new HSeparator());
+        card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
+        var grid = new GridContainer
+        {
+            Columns = 4
+        };
+        card.AddChild(grid);
+        string[] names = ["X", "Y", "Z", "Heading°"];
+        for (int i = 0; i < 4; i++)
+        {
+            // Plain non-wrapping labels: wrapped text has no minimum width inside a grid cell.
+            var label = new Label
+            {
+                Text = names[i],
+                Modulate = InspectorUi.Muted
+            };
+            label.AddThemeFontSizeOverride("font_size", 12);
+            grid.AddChild(label);
+            poseFields[i] = new LineEdit
+            {
+                Editable = false,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                CustomMinimumSize = new(70, 0),
+                SelectAllOnFocus = true
+            };
+            poseFields[i].TextSubmitted += _ => SubmitPose();
+            grid.AddChild(poseFields[i]);
+        }
+
+        var placement = new HBoxContainer();
+        card.AddChild(placement);
+        drop = InspectorUi.Button("Drop to ground", DropToGround);
+        reset = InspectorUi.Button("Reset to source", ResetToSource);
+        copyGo = InspectorUi.Button("Copy .go", CopyGoCommand);
+        copyGo.TooltipText = "Copy a GM teleport (.go xyz X Y Z map heading) to compare this pose in the client";
+        placement.AddChild(drop);
+        placement.AddChild(reset);
+        placement.AddChild(copyGo);
+        card.AddChild(InspectorUi.Text("Move (W) drags colored axes; Rotate (E) drags the yellow ring. Changes save to your local draft.", 12, true));
         return scroll;
+    }
+
+    /// <summary>
+    /// Move the camera near the selection's effective draft pose.
+    /// </summary>
+    public void FlyToSelection()
+    {
+        if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker))
+        {
+            FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) });
+        }
+    }
+
+    /// <summary>
+    /// Parse the four pose fields with invariant culture and commit them as one draft command.
+    /// </summary>
+    void SubmitPose()
+    {
+        var values = new double[4];
+        for (int i = 0; i < 4; i++)
+        {
+            if (!double.TryParse(poseFields[i].Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out values[i]))
+            {
+                draftMessage = "Pose fields must be numbers (use . for decimals).";
+                if (selectedGuid.HasValue)
+                {
+                    Select(selectedGuid.Value);
+                }
+
+                return;
+            }
+        }
+
+        SetPose(values[0], values[1], values[2], values[3]);
+    }
+
+    /// <summary>
+    /// Show the effective pose in the entry fields; editing is enabled only with a writable draft.
+    /// </summary>
+    void ShowPose(Foundation.WorldPose? pose)
+    {
+        double[] values = pose == null ? [] : [pose.X, pose.Y, pose.Z, Mathf.RadToDeg(Foundation.WorldCoordinates.NormalizeHeading(pose.Heading))];
+        for (int i = 0; i < 4; i++)
+        {
+            poseFields[i].Text = pose == null ? "" : values[i].ToString(i == 3 ? "F2" : "F4", System.Globalization.CultureInfo.InvariantCulture);
+            poseFields[i].Editable = pose != null && draft != null;
+        }
     }
 
     void UpdateInspectorActions()
     {
+        bool editable = CanEdit;
+        drop.Disabled = !editable || GroundAt == null;
+        reset.Disabled = !editable;
+        copyGo.Disabled = !selectedGuid.HasValue;
         fly.Disabled = !LayerEnabled || !selectedGuid.HasValue || !markers.ContainsKey(selectedGuid.Value);
         undo.Disabled = draft == null || !draft.CanUndo;
         redo.Disabled = draft == null || !draft.CanRedo;

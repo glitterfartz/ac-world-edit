@@ -24,6 +24,8 @@ public partial class TerrainViewer : Node3D
     // Per-tile MCNK AreaId grid (chunkY*16+chunkX), kept only for the current zone/continent label;
     // CPU terrain data is otherwise discarded once a tile finishes uploading.
     readonly Dictionary<TileKey, uint[]> chunkAreas = [];
+    // CPU height copies for ground snapping; same lifetime as the loaded tile node.
+    readonly Dictionary<TileKey, TerrainHeights> terrainHeights = [];
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<TileKey> wanted = [];
     Task<PreparedTile>? pending;
@@ -41,8 +43,9 @@ public partial class TerrainViewer : Node3D
     int spawnRegionLoadRadius = -1;
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
-    LineEdit dataPath = null!;
-    Button open = null!, reload = null!;
+    // MPQ directory chosen through File → Load archives…; defaults to the project's wow-data junction.
+    string dataDirectory = "";
+    Button open = null!;
     Label status = null!, telemetry = null!, zoneLabel = null!, continentLabel = null!;
     Slider timeOfDay = null!;
     Label timeOfDayLabel = null!;
@@ -85,6 +88,7 @@ public partial class TerrainViewer : Node3D
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusCreature;
+        creatures.GroundAt = GroundAt;
         gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => creatures.ConnectionPath };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
@@ -106,7 +110,6 @@ public partial class TerrainViewer : Node3D
 
         busy = true;
         open.Disabled = true;
-        reload.Disabled = true;
         ResetTerrain();
         var old = store;
         store = null;
@@ -126,7 +129,7 @@ public partial class TerrainViewer : Node3D
         await models.SetStore(null);
         old?.Dispose();
         message = "Reading MPQ tables and map list…";
-        string path = dataPath.Text;
+        string path = dataDirectory;
         try
         {
             var result = await Task.Run(() =>
@@ -170,7 +173,6 @@ public partial class TerrainViewer : Node3D
         finally
         {
             busy = false;
-            reload.Disabled = false;
         }
 
         if (store != null && mapList.Count > 0)
@@ -262,6 +264,7 @@ public partial class TerrainViewer : Node3D
 
         loaded.Clear();
         chunkAreas.Clear();
+        terrainHeights.Clear();
         spawnRegionCenter = null;
         if (buildingNode != null)
         {
@@ -389,6 +392,7 @@ public partial class TerrainViewer : Node3D
             renderer.Release(loaded[key]);
             loaded.Remove(key);
             chunkAreas.Remove(key);
+            terrainHeights.Remove(key);
             objects.RemoveTile(key);
         }
 
@@ -500,6 +504,8 @@ public partial class TerrainViewer : Node3D
         }
 
         status.Text = message;
+        menu.Refresh();
+        toolbar.Refresh();
         sky.Update(camera, delta);
         timeOfDay.SetValueNoSignal(sky.TimeOfDayHours);
         int hh = (int)sky.TimeOfDayHours, mm = (int)((sky.TimeOfDayHours - hh) * 60);
@@ -646,11 +652,20 @@ public partial class TerrainViewer : Node3D
     }
 
     /// <summary>
-    /// Own an active drag through release/Escape even across UI. Completion saves locally;
-    /// cancellation restores the starting pose.
+    /// Keep flight keys away from shortcuts, and own an active drag through release/Escape even
+    /// across UI. Completion saves locally; cancellation restores the starting pose.
     /// </summary>
     public override void _Input(InputEvent input)
     {
+        // While right-mouse flight is active, W/A/S/D/Q/E drive the camera by polling. Consume key
+        // events here (before shortcut input) so they cannot also switch tools or run menu
+        // commands. Esc still reaches _UnhandledInput to release the mouse.
+        if (capture && input is InputEventKey { Keycode: not Key.Escape })
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (creatures == null || !creatures.IsDragging)
         {
             return;
@@ -817,6 +832,7 @@ public partial class TerrainViewer : Node3D
                     }
 
                     chunkAreas[building.Tile.Key] = ids;
+                    terrainHeights[building.Tile.Key] = new TerrainHeights(building.Tile);
                     objects.SetTile(building.Tile.Key, building.Tile.Objects);
                     if (CameraTile() == building.Tile.Key)
                     {

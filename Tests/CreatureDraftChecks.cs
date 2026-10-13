@@ -56,6 +56,22 @@ public static class CreatureDraftChecks
             Check(draft.Effective("source-a", 7, baseline).Y == 220, "Branch retained invalid redo");
         }
 
+        // Heading-only edits use the same command type; reopen must keep the exact double heading.
+        var turned = baseline with { Heading = WorldCoordinates.NormalizeHeading(baseline.Heading + Math.PI / 2) };
+        using (var draft = new CreatureDraft(path))
+        {
+            draft.Move("source-a", 8, baseline, turned);
+        }
+
+        using (var draft = new CreatureDraft(path))
+        {
+            Check(draft.Effective("source-a", 8, baseline) == turned, "Reopen lost heading-only move");
+            draft.Undo();
+            Check(draft.Effective("source-a", 8, baseline) == baseline, "Heading undo failed");
+            draft.Redo();
+            Check(draft.Effective("source-a", 8, baseline).Heading == turned.Heading, "Heading redo changed value");
+        }
+
         string saved = File.ReadAllText(path);
         File.WriteAllText(path, saved.Replace("source-a", "source-z"));
         try
@@ -68,6 +84,6 @@ public static class CreatureDraftChecks
         }
 
         Check(File.ReadAllText(path) != saved, "Corrupt draft was silently replaced");
-        Console.WriteLine("CREATURE_DRAFT_CHECKS_PASSED move/reopen/undo/redo/branch/source-conflict/single-writer/checksum");
+        Console.WriteLine("CREATURE_DRAFT_CHECKS_PASSED move/heading/reopen/undo/redo/branch/source-conflict/single-writer/checksum");
     }
 }

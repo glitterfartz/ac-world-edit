@@ -35,6 +35,12 @@ if (args.Contains("--draft"))
     return;
 }
 
+if (args.Contains("--placement"))
+{
+    PlacementChecks.Run();
+    return;
+}
+
 if (args.Contains("--spawns"))
 {
     await SpawnFilterChecks.Run();
