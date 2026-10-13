@@ -363,9 +363,11 @@ public partial class QuestEditorWindow
             uint entry = link.U("id");
             var row = new HBoxContainer();
             row.AddChild(ClientStyle.Text(Named(SmartParamKind.Creature, entry), 14, Missing(SmartParamKind.Creature, entry) ? ClientStyle.Error : null));
-            row.AddChild(SmallButton("Fly to", () =>
+            row.AddChild(SmallButton("Fly to", async () =>
             {
-                status = FlyToEntry(entry) ? "" : $"No loaded spawn of {Named(SmartParamKind.Creature, entry)} nearby.";
+                status = $"Locating {snapshot!.Names.Creature(entry) ?? $"creature {entry}"}…";
+                UpdateStatus();
+                status = await FlyToEntry(entry, snapshot.Names.Creature(entry) ?? $"Creature {entry}");
                 UpdateStatus();
             }));
             row.AddChild(SmallButton("Behavior…", () => BehaviorRequested(entry)));

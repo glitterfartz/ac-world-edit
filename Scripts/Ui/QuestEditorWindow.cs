@@ -31,9 +31,10 @@ public partial class QuestEditorWindow : PanelContainer
     public Func<AreaLookup?> Areas { get; set; } = () => null;
     public ContentDrafts Drafts { get; set; } = null!;
     /// <summary>
-    /// Fly to a loaded spawn of a creature entry; returns false when none is loaded nearby.
+    /// Locate a creature entry (loading its map when needed) by entry and display name; returns a
+    /// status line, empty when it was selected immediately.
     /// </summary>
-    public Func<uint, bool> FlyToEntry { get; set; } = _ => false;
+    public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
     /// <summary>
     /// Open the behavior editor for a creature entry (giver cards link to its SmartAI).
     /// </summary>

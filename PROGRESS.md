@@ -216,6 +216,19 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## Locate creatures across maps — implemented 2026-10-13
+
+- Prior checkpoint: a46c7f6 quest and behavior editors.
+- Quest editor **Fly to** (givers) now uses TerrainViewer.LocateCreature: a loaded spawn is selected
+  as before; otherwise a bounded read-only spawn lookup (creature.id1, 500 rows) picks the current
+  map's nearest spawn or the first on a client map, opens that map at its tile, focuses it and
+  selects the spawn when the streamed region contains it (30 s; a spawn hidden by SQL visibility
+  leaves the camera there with an explanation). Right-panel "Fly to selection" is unchanged.
+- Picker searches no longer list unnamed rows except by exact ID (an empty search led with blank
+  creatures; the content smoke had chosen one through a stale result and now waits for its term).
+- Evidence: `--content-smoke` locates Thrall from Goldshire (Kalimdor opened, GUID 4770 selected)
+  and checks the picked objective is Kobold Vermin; `--content` live checks and format pass.
+
 ## Quest editor and SmartAI behavior editor — implemented 2026-10-13
 
 - Prior checkpoint: 6dedce1 creature interactions/edit mode/quest editor skeleton.

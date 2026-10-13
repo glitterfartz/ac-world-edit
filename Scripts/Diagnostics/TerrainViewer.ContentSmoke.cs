@@ -21,7 +21,8 @@ public partial class TerrainViewer
     List<(string Name, Func<bool> Step)>? contentSteps;
     uint smokeTalkRule, smokeGroup, smokeNewQuest;
     int smokeRuleCount;
-    string smokeAiBefore = "";
+    string smokeAiBefore = "", smokeLocateStatus = "";
+    const uint SmokeThrall = 4949;
 
     void ContentSmoke(double delta)
     {
@@ -281,7 +282,7 @@ public partial class TerrainViewer
         }),
         ("quest-picker-choose", () =>
         {
-            if (questEditor.SmokePicker is not { ResultCount: > 0 } picker)
+            if (questEditor.SmokePicker is not { ResultCount: > 0, ShownTerm: "Kobold Vermin" } picker)
             {
                 return false;
             }
@@ -293,6 +294,7 @@ public partial class TerrainViewer
         {
             var quest = questEditor.SmokeQuest!;
             Require(quest.I("RequiredNpcOrGo1") > 0 && quest.U("RequiredNpcOrGoCount1") == 1, "picker did not set the objective: " + questEditor.SmokeStatus);
+            Require(questEditor.SmokeObjectiveName(1) == "Kobold Vermin", "picker chose the wrong creature: " + questEditor.SmokeObjectiveName(1));
             Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change objective count", ("RequiredNpcOrGoCount1", 8u)), "count: " + questEditor.SmokeStatus);
             Screenshot("quest-objectives");
             return true;
@@ -364,6 +366,19 @@ public partial class TerrainViewer
             Require(quest.T("LogTitle") == "A Warm Welcome" && quest.U("RequiredNpcOrGoCount1") == 8 && quest.I("RewardMoney") == 1500, "reopened draft lost quest edits");
             Require(drafts.Draft?.CanRedo == true, "reopened draft lost redo history");
             GD.Print($"CONTENT_SMOKE_QUEST {smokeNewQuest} '{quest.T("LogTitle")}' objective={quest.I("RequiredNpcOrGo1")}x{quest.U("RequiredNpcOrGoCount1")} issues={string.Join("; ", questEditor.SmokeIssues.Select(i => i.Message))}");
+            // Locate a creature that is not loaded and lives on another map (Thrall, Orgrimmar).
+            _ = LocateCreature(SmokeThrall, "Thrall").ContinueWith(t => smokeLocateStatus = t.Result, TaskScheduler.FromCurrentSynchronizationContext());
+            return true;
+        }),
+        ("locate-other-map", () =>
+        {
+            if (busy || currentMapId != 1 || LocatePending || creatures.SelectedSpawn?.TemplateId != SmokeThrall)
+            {
+                return false;
+            }
+
+            GD.Print($"CONTENT_SMOKE_LOCATE '{smokeLocateStatus}' map={currentMapId} guid={creatures.SelectedGuid}");
+            Screenshot("locate-thrall");
             return true;
         })
     ];

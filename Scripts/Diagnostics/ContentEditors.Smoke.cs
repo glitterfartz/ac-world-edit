@@ -37,6 +37,8 @@ public partial class QuestEditorWindow
         return button != null;
     }
 
+    public string? SmokeObjectiveName(int slot) => Quest is { } q && q.I($"RequiredNpcOrGo{slot}") > 0 ? snapshot?.Names.Creature((uint)q.I($"RequiredNpcOrGo{slot}")) : null;
+
     public PickerPopup? SmokePicker => GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
 }
 

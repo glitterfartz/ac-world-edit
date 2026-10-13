@@ -107,7 +107,8 @@ classes, options), **Story** (offer, progress and turn-in texts with gestures; b
 `$C`, `$R`, `$B`, `$G`), **Objectives** (kill/use with search pickers, items to collect, quest drops,
 reputation goals, starting item), **Rewards** (gold/silver/copper, XP tier, fixed and choice items,
 reputation, spells, honor, mail), **Chain & requirements** (previous/next/follow-up/breadcrumb,
-exclusive group, skill and reputation), **Givers** (who offers and completes it, fly to them, open
+exclusive group, skill and reputation), **Givers** (who offers and completes it; **Fly to** finds a
+spawn in the database, opens its map when needed, travels there and selects it once loaded; open
 their behavior) and **Preview** (the quest as the client shows it). Problems appear at the bottom;
 an edit that introduces a server loader error (missing item/creature, zero counts…) is not saved.
 
@@ -237,7 +238,8 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   behavior snapshots (names, rules as sentences, action lists, speech, free action-list IDs).
 - Godot `-- --content-smoke` (graphical): Behavior editor on Innkeeper Farley (rule, speech line,
   Then step, reorder, action list, undo/redo) and Quest Editor (create, picker objective, story,
-  rejected reward, givers, every page, undo, draft reopen) on an isolated draft; saves
+  rejected reward, givers, every page, undo, draft reopen, then locating Thrall on another map) on
+  an isolated draft; saves
   `artifacts/content-*.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
   Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%

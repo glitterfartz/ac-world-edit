@@ -510,6 +510,8 @@ public partial class TerrainViewer : Node3D
             UpdateTerrainStreaming(world, store);
         }
 
+        UpdatePendingLocate(delta);
+
         status.Text = message;
         menu.Refresh();
         toolbar.Refresh();

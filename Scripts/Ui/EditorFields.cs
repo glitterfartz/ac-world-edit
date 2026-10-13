@@ -332,6 +332,7 @@ public partial class PickerPopup : PopupPanel
             }
 
             status.Text = found.Count == 0 ? "No matches." : $"{found.Count} result(s) · double-click to choose";
+            ShownTerm = term;
         }
         catch (Exception error)
         {
@@ -340,6 +341,10 @@ public partial class PickerPopup : PopupPanel
     }
 
     public int ResultCount => results.ItemCount;
+    /// <summary>
+    /// Search term whose results are currently listed.
+    /// </summary>
+    public string? ShownTerm { get; private set; }
 
     /// <summary>
     /// Choose a result by index (Enter picks the first).

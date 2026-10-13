@@ -209,6 +209,27 @@ public sealed class ContentSource(string configPath)
     }
 
     /// <summary>
+    /// Spawns of a creature entry (guid, map, server position), bounded, for locating a creature
+    /// that is not loaded in the viewer. AzerothCore stores the entry in creature.id1 (older schemas
+    /// use id).
+    /// </summary>
+    public async Task<IReadOnlyList<(uint Guid, uint Map, double X, double Y, double Z)>> FindSpawnsAsync(uint entry, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        string column = session.Has("creature.id1") ? "id1" : "id";
+        await using var command = session.Command($"SELECT guid,map,position_x,position_y,position_z FROM creature WHERE {column}=@k0 ORDER BY guid LIMIT {InteractionSource.MaxRows}");
+        command.Parameters.AddWithValue("@k0", entry);
+        List<(uint, uint, double, double, double)> spawns = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            spawns.Add((Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), Convert.ToDouble(reader.GetValue(2)), Convert.ToDouble(reader.GetValue(3)), Convert.ToDouble(reader.GetValue(4))));
+        }
+
+        return spawns;
+    }
+
+    /// <summary>
     /// Action list IDs already used in the database within [from, to] (bounded range), so a new
     /// list never collides with another script's list.
     /// </summary>
@@ -267,6 +288,7 @@ public sealed class ContentSource(string configPath)
 
     /// <summary>
     /// Bounded picker search over creature, object, item or quest names (escaped LIKE or exact ID).
+    /// Unnamed rows only match by ID, so an empty search lists real names first.
     /// </summary>
     public async Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token)
     {
@@ -279,7 +301,7 @@ public sealed class ContentSource(string configPath)
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        await using var command = session.Command($"SELECT {id},COALESCE({name},'') FROM {table} WHERE {name} LIKE @s ESCAPE '=' OR {id}=@id ORDER BY {id}=@id DESC, CHAR_LENGTH({name}), {id} LIMIT {InteractionSource.MaxSearch}");
+        await using var command = session.Command($"SELECT {id},COALESCE({name},'') FROM {table} WHERE ({name} LIKE @s ESCAPE '=' AND {name}<>'') OR {id}=@id ORDER BY {id}=@id DESC, CHAR_LENGTH({name}), {id} LIMIT {InteractionSource.MaxSearch}");
         InteractionSource.AddSearch(command, term);
         List<(uint, string)> results = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);

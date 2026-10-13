@@ -261,7 +261,7 @@ public partial class TerrainViewer
             Store = () => store,
             Areas = () => areas,
             Drafts = drafts,
-            FlyToEntry = entry => creatures.FlyToEntry(entry, camera.Position),
+            FlyToEntry = LocateCreature,
             BehaviorRequested = entry => behaviorEditor.Open(entry, 0)
         };
         behaviorEditor.QuestEditorRequested = questEditor.Open;
