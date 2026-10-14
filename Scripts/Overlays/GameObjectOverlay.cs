@@ -384,14 +384,7 @@ public partial class GameObjectOverlay : Node3D
         selectionLabel.Text = spawn.Name;
         selectionLabel.Position = ViewPosition(spawn) + Vector3.Up * 2;
         list.DeselectAll();
-        for (int i = 0; i < list.ItemCount; i++)
-        {
-            if (list.GetItemMetadata(i).AsString() == guid.ToString())
-            {
-                list.Select(i);
-                break;
-            }
-        }
+        InspectorUi.SelectRow(list, guid, reveal: false);
     }
 
     public void Deselect()

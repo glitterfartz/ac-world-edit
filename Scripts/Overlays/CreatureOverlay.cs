@@ -620,15 +620,7 @@ public partial class CreatureOverlay : Node3D
         details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {HeadingText(pose.Heading)}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
         ShowPose(pose);
         list.DeselectAll();
-        for (int i = 0; i < list.ItemCount; i++)
-        {
-            if (list.GetItemMetadata(i).AsString() == guid.ToString())
-            {
-                list.Select(i);
-                list.CallDeferred(ItemList.MethodName.EnsureCurrentIsVisible);
-                break;
-            }
-        }
+        InspectorUi.SelectRow(list, guid);
     }
 
     /// <summary>

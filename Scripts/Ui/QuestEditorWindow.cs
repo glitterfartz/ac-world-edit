@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 /// in the shared local content draft (undo/redo, stale-row conflicts); nothing is written to the
 /// database. Pages are in QuestEditorWindow.Pages.cs.
 /// </summary>
-public partial class QuestEditorWindow : PanelContainer
+public partial class QuestEditorWindow : ContentEditorWindow
 {
     public enum Tab
     {
@@ -25,11 +25,8 @@ public partial class QuestEditorWindow : PanelContainer
         Preview
     }
 
-    static readonly Vector2 TargetSize = new(1000, 720);
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
-    public Func<AssetStore?> Store { get; set; } = () => null;
+    protected override Vector2 TargetSize => new(1000, 720);
     public Func<AreaLookup?> Areas { get; set; } = () => null;
-    public ContentDrafts Drafts { get; set; } = null!;
     /// <summary>
     /// Locate a creature entry (loading its map when needed) by entry and display name; returns a
     /// status line, empty when it was selected immediately.
@@ -40,8 +37,6 @@ public partial class QuestEditorWindow : PanelContainer
     /// </summary>
     public Action<uint> BehaviorRequested { get; set; } = _ => { };
 
-    InteractionCatalog? catalog;
-    AssetStore? catalogStore;
     ContentSnapshot? snapshot;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
@@ -54,17 +49,12 @@ public partial class QuestEditorWindow : PanelContainer
     HBoxContainer tabs = null!;
     Label title = null!, subtitle = null!, statusLabel = null!;
     Button undo = null!, redo = null!, duplicate = null!;
-    Vector2? dragOffset;
     public uint? QuestId { get; private set; }
     public int ResultCount { get; private set; }
     public bool IsLoading { get; private set; }
 
-    public QuestEditorWindow()
+    public QuestEditorWindow() : base("QuestEditor")
     {
-        Name = "QuestEditor";
-        Visible = false;
-        Theme = ClientStyle.Theme();
-        AddThemeStyleboxOverride("panel", ClientStyle.Panel());
         Size = TargetSize;
     }
 
@@ -81,18 +71,18 @@ public partial class QuestEditorWindow : PanelContainer
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
         var header = new HBoxContainer();
-        header.GuiInput += Drag;
+        header.GuiInput += DragHeader;
         root.AddChild(header);
         var heading = ClientStyle.Text("Quest Editor", 19, ClientStyle.Header);
         heading.MouseFilter = MouseFilterEnum.Ignore;
         heading.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         header.AddChild(heading);
-        undo = HeaderButton(header, "Undo", () => History(false));
-        redo = HeaderButton(header, "Redo", () => History(true));
-        HeaderButton(header, "+ New quest", () => _ = NewQuest(null));
-        duplicate = HeaderButton(header, "Duplicate", () => _ = NewQuest(QuestId));
+        undo = ButtonIn(header, "Undo", () => History(false));
+        redo = ButtonIn(header, "Redo", () => History(true));
+        ButtonIn(header, "+ New quest", () => _ = NewQuest(null));
+        duplicate = ButtonIn(header, "Duplicate", () => _ = NewQuest(QuestId));
         duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
-        HeaderButton(header, "✕", () => Visible = false);
+        ButtonIn(header, "✕", () => Visible = false);
         var split = new HBoxContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill
@@ -153,53 +143,13 @@ public partial class QuestEditorWindow : PanelContainer
         Render();
     }
 
-    static Button HeaderButton(HBoxContainer header, string text, Action action)
-    {
-        var button = new Button
-        {
-            Text = text
-        };
-        button.Pressed += action;
-        header.AddChild(button);
-        return button;
-    }
-
-    void Drag(InputEvent input)
-    {
-        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } button)
-        {
-            dragOffset = button.Pressed ? button.GlobalPosition - GlobalPosition : null;
-            AcceptEvent();
-        }
-        else if (input is InputEventMouseMotion motion && dragOffset.HasValue)
-        {
-            GlobalPosition = (motion.GlobalPosition - dragOffset.Value).Clamp(Vector2.Zero, (GetViewportRect().Size - Size).Max(Vector2.Zero));
-            AcceptEvent();
-        }
-    }
-
-    /// <summary>
-    /// Keep the intended size: wrapped labels report a stale larger minimum until laid out, which
-    /// would otherwise grow the window permanently.
-    /// </summary>
-    public override void _Process(double delta)
-    {
-        if (Visible && Size != TargetSize)
-        {
-            Size = TargetSize;
-        }
-    }
-
     /// <summary>
     /// Show the editor; 0 opens it without a quest (toolbar), otherwise loads that quest.
     /// </summary>
     public void Open(uint quest)
     {
         Visible = true;
-        if (Position == Vector2.Zero)
-        {
-            Position = new(Math.Max(0, GetViewportRect().Size.X / 2 - TargetSize.X / 2), 80);
-        }
+        PlaceOnFirstOpen(0, 80);
 
         if (quest == 0)
         {
@@ -211,18 +161,6 @@ public partial class QuestEditorWindow : PanelContainer
         {
             _ = Load(quest);
         }
-    }
-
-    async Task<InteractionCatalog?> EnsureCatalog()
-    {
-        var store = Store();
-        if (store != null && !ReferenceEquals(store, catalogStore))
-        {
-            catalogStore = store;
-            catalog = await Task.Run(() => InteractionCatalog.Load(store));
-        }
-
-        return catalog;
     }
 
     public async Task Search()
@@ -515,11 +453,7 @@ public partial class QuestEditorWindow : PanelContainer
             UpdateStatus();
         };
         UpdateStatus();
-        var draft = Drafts.Draft;
-        undo.Disabled = draft?.CanUndo != true;
-        redo.Disabled = draft?.CanRedo != true;
-        undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
-        redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
+        SyncHistoryButtons(undo, redo);
         duplicate.Disabled = Quest == null;
         if (Quest is not { } q)
         {

@@ -101,6 +101,28 @@ public static class InspectorUi
         return page;
     }
 
+    /// <summary>
+    /// Select the list row whose string metadata is this ID (entity lists store IDs that way), and
+    /// optionally scroll it into view. Does nothing when the row is not listed.
+    /// </summary>
+    public static void SelectRow(ItemList list, uint id, bool reveal = true)
+    {
+        string key = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        for (int i = 0; i < list.ItemCount; i++)
+        {
+            if (list.GetItemMetadata(i).AsString() == key)
+            {
+                list.Select(i);
+                if (reveal)
+                {
+                    list.CallDeferred(ItemList.MethodName.EnsureCurrentIsVisible);
+                }
+
+                return;
+            }
+        }
+    }
+
     public static Button Button(string text, Action action)
     {
         var button = new Button

@@ -1,0 +1,135 @@
+using Godot;
+using ACWorldEdit.Assets;
+using ACWorldEdit.Data;
+
+namespace ACWorldEdit;
+
+/// <summary>
+/// Shared frame of the draft-backed editor windows (interaction, quest, behavior): a client-styled
+/// panel that can be dragged by its header and is pinned to its intended size, the connection, asset
+/// and draft hooks the viewer wires up, and the client spell/item catalog loaded once per asset store.
+/// Everything else (pages, loading, commits) stays in each window.
+/// </summary>
+public partial class ContentEditorWindow : PanelContainer
+{
+    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<AssetStore?> Store { get; set; } = () => null;
+    public ContentDrafts Drafts { get; set; } = null!;
+
+    // One catalog per loaded asset store, shared by every editor window (reloading archives gives
+    // the store a new identity). A failed load degrades to null: names and icons are then limited.
+    static AssetStore? catalogStore;
+    static Task<InteractionCatalog?>? catalogLoad;
+    protected InteractionCatalog? catalog;
+    Vector2? dragOffset;
+
+    protected ContentEditorWindow(string name)
+    {
+        Name = name;
+        Visible = false;
+        Theme = ClientStyle.Theme();
+        AddThemeStyleboxOverride("panel", ClientStyle.Panel());
+    }
+
+    /// <summary>
+    /// Intended size. Wrapped labels report a stale larger minimum until laid out, which would
+    /// otherwise grow the window permanently, so _Process re-applies this whenever it differs.
+    /// </summary>
+    protected virtual Vector2 TargetSize => Size;
+
+    public override void _Process(double delta)
+    {
+        if (Visible && Size != TargetSize)
+        {
+            Size = TargetSize;
+        }
+    }
+
+    /// <summary>
+    /// Drag the window by its header; it stays inside the viewport.
+    /// </summary>
+    protected void DragHeader(InputEvent input)
+    {
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } button)
+        {
+            dragOffset = button.Pressed ? button.GlobalPosition - GlobalPosition : null;
+            AcceptEvent();
+        }
+        else if (input is InputEventMouseMotion motion && dragOffset.HasValue)
+        {
+            GlobalPosition = (motion.GlobalPosition - dragOffset.Value).Clamp(Vector2.Zero, (GetViewportRect().Size - Size).Max(Vector2.Zero));
+            AcceptEvent();
+        }
+    }
+
+    protected void EndDrag() => dragOffset = null;
+
+    /// <summary>
+    /// First time shown: center horizontally (shifted by xShift) at the given height. Later opens
+    /// keep wherever the user dragged it.
+    /// </summary>
+    protected void PlaceOnFirstOpen(float xShift, float y)
+    {
+        if (Position == Vector2.Zero)
+        {
+            Position = new(Math.Max(0, GetViewportRect().Size.X / 2 - TargetSize.X / 2 + xShift), y);
+        }
+    }
+
+    protected async Task<InteractionCatalog?> EnsureCatalog()
+    {
+        var store = Store();
+        if (store == null)
+        {
+            return null;
+        }
+
+        if (!ReferenceEquals(store, catalogStore))
+        {
+            catalogStore = store;
+            catalogLoad = Task.Run(() =>
+            {
+                try
+                {
+                    return InteractionCatalog.Load(store);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            });
+        }
+
+        catalog = await catalogLoad!;
+        return catalog;
+    }
+
+    protected static Button ButtonOf(string text, Action action)
+    {
+        var button = new Button
+        {
+            Text = text
+        };
+        button.Pressed += action;
+        return button;
+    }
+
+    protected static Button ButtonIn(Container parent, string text, Action action)
+    {
+        var button = ButtonOf(text, action);
+        parent.AddChild(button);
+        return button;
+    }
+
+    /// <summary>
+    /// Enable and label the header Undo/Redo buttons from the shared draft history.
+    /// </summary>
+    protected void SyncHistoryButtons(Button undo, Button redo)
+    {
+        var draft = Drafts.Draft;
+        undo.Disabled = draft?.CanUndo != true;
+        redo.Disabled = draft?.CanRedo != true;
+        undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
+        redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
+    }
+}

@@ -173,8 +173,8 @@ public partial class QuestEditorWindow
             row.AddChild(ClientStyle.Tag($"{slot}."));
             if (target == 0)
             {
-                row.AddChild(SmallButton("Kill a creature…", () => Pick(SmartParamKind.Creature, "Choose creature to defeat", id => SetObjective(slot, (int)id))));
-                row.AddChild(SmallButton("Use an object…", () => Pick(SmartParamKind.GameObject, "Choose object to use", id => SetObjective(slot, -(int)id))));
+                row.AddChild(ButtonOf("Kill a creature…", () => Pick(SmartParamKind.Creature, "Choose creature to defeat", id => SetObjective(slot, (int)id))));
+                row.AddChild(ButtonOf("Use an object…", () => Pick(SmartParamKind.GameObject, "Choose object to use", id => SetObjective(slot, -(int)id))));
             }
             else
             {
@@ -229,22 +229,12 @@ public partial class QuestEditorWindow
         uint item = q.U(itemColumn);
         if (item == 0)
         {
-            Add(caption, SmallButton($"Add {what}…", () => Pick(SmartParamKind.Item, $"Choose {what}", id => Set(Template, label, (itemColumn, id), (countColumn, Math.Max(1u, Quest!.U(countColumn)))))));
+            Add(caption, ButtonOf($"Add {what}…", () => Pick(SmartParamKind.Item, $"Choose {what}", id => Set(Template, label, (itemColumn, id), (countColumn, Math.Max(1u, Quest!.U(countColumn)))))));
             return;
         }
 
         Add(caption, EditorFields.Number(q.U(countColumn), count => Set(Template, label, (countColumn, count)), 50), ClientStyle.Tag("×"),
             EditorFields.Reference(Named(SmartParamKind.Item, item), () => Pick(SmartParamKind.Item, $"Choose {what}", id => Set(Template, label, (itemColumn, id))), () => Set(Template, label, (itemColumn, 0), (countColumn, 0)), Missing(SmartParamKind.Item, item)));
-    }
-
-    static Button SmallButton(string text, Action action)
-    {
-        var button = new Button
-        {
-            Text = text
-        };
-        button.Pressed += action;
-        return button;
     }
 
     HBoxContainer FactionRef(TableSchema table, string column, string label)
@@ -348,7 +338,7 @@ public partial class QuestEditorWindow
         var missing = starters.Where(s => !enders.Contains(s)).ToList();
         if (missing.Count > 0)
         {
-            page.AddChild(SmallButton("Givers also complete it", () => Commit("Givers also complete the quest", missing.Select(id =>
+            page.AddChild(ButtonOf("Givers also complete it", () => Commit("Givers also complete the quest", missing.Select(id =>
                 new RowEdit(InteractionTables.QuestEnder.Name, $"{id}|{QuestId}", null, Row.Of(("id", id), ("quest", QuestId!.Value)))).ToArray())));
         }
 
@@ -363,20 +353,20 @@ public partial class QuestEditorWindow
             uint entry = link.U("id");
             var row = new HBoxContainer();
             row.AddChild(ClientStyle.Text(Named(SmartParamKind.Creature, entry), 14, Missing(SmartParamKind.Creature, entry) ? ClientStyle.Error : null));
-            row.AddChild(SmallButton("Fly to", async () =>
+            row.AddChild(ButtonOf("Fly to", async () =>
             {
                 status = $"Locating {snapshot!.Names.Creature(entry) ?? $"creature {entry}"}…";
                 UpdateStatus();
                 status = await FlyToEntry(entry, snapshot.Names.Creature(entry) ?? $"Creature {entry}");
                 UpdateStatus();
             }));
-            row.AddChild(SmallButton("Behavior…", () => BehaviorRequested(entry)));
+            row.AddChild(ButtonOf("Behavior…", () => BehaviorRequested(entry)));
             var linkRow = link;
-            row.AddChild(SmallButton("Remove", () => Commit($"Remove {what}", new RowEdit(table.Name, table.KeyOf(linkRow), linkRow, null))));
+            row.AddChild(ButtonOf("Remove", () => Commit($"Remove {what}", new RowEdit(table.Name, table.KeyOf(linkRow), linkRow, null))));
             page.AddChild(row);
         }
 
-        page.AddChild(SmallButton($"+ Add {what}…", () => Pick(SmartParamKind.Creature, $"Choose {what}", id =>
+        page.AddChild(ButtonOf($"+ Add {what}…", () => Pick(SmartParamKind.Creature, $"Choose {what}", id =>
         {
             var row = Row.Of(("id", id), ("quest", QuestId!.Value));
             if (effective.Get(table, table.KeyOf(row)) == null)

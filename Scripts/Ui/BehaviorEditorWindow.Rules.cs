@@ -107,7 +107,7 @@ public partial class BehaviorEditorWindow
         bottom.AddChild(TemplatesButton(shown, list));
         if (shown.IsSpawn && rules.Count == 0 && RulesOf(effective, EntryScope).Count > 0)
         {
-            Small(bottom, "Copy rules from all spawns", () => CopyScope(EntryScope, shown));
+            ButtonIn(bottom, "Copy rules from all spawns", () => CopyScope(EntryScope, shown));
         }
 
         page.AddChild(bottom);
@@ -141,7 +141,7 @@ public partial class BehaviorEditorWindow
         label.TooltipText = $"Rule {rule.Id}{(rule.Comment.Length > 0 ? " · " + rule.Comment : "")}{(edited ? " · edited in draft" : "")}";
         label.MouseFilter = MouseFilterEnum.Pass;
         header.AddChild(label);
-        Small(header, expanded == rule.Id ? "Done" : "Edit", () =>
+        ButtonIn(header, expanded == rule.Id ? "Done" : "Edit", () =>
         {
             expanded = expanded == rule.Id ? null : rule.Id;
             Render();
@@ -149,16 +149,16 @@ public partial class BehaviorEditorWindow
         if (!linked)
         {
             int index = roots.FindIndex(r => r.Id == rule.Id);
-            var upButton = Small(header, "▲", () => Swap(shown, rule, roots[index - 1]));
+            var upButton = ButtonIn(header, "▲", () => Swap(shown, rule, roots[index - 1]));
             upButton.Disabled = index <= 0;
             upButton.TooltipText = list ? "Run this step earlier" : "Check this rule earlier";
-            var downButton = Small(header, "▼", () => Swap(shown, rule, roots[index + 1]));
+            var downButton = ButtonIn(header, "▼", () => Swap(shown, rule, roots[index + 1]));
             downButton.Disabled = index < 0 || index >= roots.Count - 1;
-            Small(header, "Copy", () => Duplicate(shown, rule)).TooltipText = "Duplicate this rule and its \"Then\" steps";
+            ButtonIn(header, "Copy", () => Duplicate(shown, rule)).TooltipText = "Duplicate this rule and its \"Then\" steps";
         }
 
-        Small(header, "+ Then", () => AddThen(shown, rule)).TooltipText = "Add an action that runs right after this one";
-        Small(header, "Delete", () => Delete(shown, rule));
+        ButtonIn(header, "+ Then", () => AddThen(shown, rule)).TooltipText = "Add an action that runs right after this one";
+        ButtonIn(header, "Delete", () => Delete(shown, rule));
         if (expanded == rule.Id)
         {
             RenderEditor(box, shown, rule, linked);
@@ -227,16 +227,6 @@ public partial class BehaviorEditorWindow
             help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             box.AddChild(help);
         }
-    }
-
-    static Button ButtonOf(string text, Action action)
-    {
-        var button = new Button
-        {
-            Text = text
-        };
-        button.Pressed += action;
-        return button;
     }
 
     /// <summary>

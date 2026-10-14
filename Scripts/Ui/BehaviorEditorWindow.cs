@@ -16,16 +16,11 @@ namespace ACWorldEdit;
 /// Every change is one validated command in the shared local content draft; nothing is written to
 /// the database. Rule cards are in BehaviorEditorWindow.Rules.cs, speech in .Speech.cs.
 /// </summary>
-public partial class BehaviorEditorWindow : PanelContainer
+public partial class BehaviorEditorWindow : ContentEditorWindow
 {
-    static readonly Vector2 TargetSize = new(980, 720);
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
-    public Func<AssetStore?> Store { get; set; } = () => null;
-    public ContentDrafts Drafts { get; set; } = null!;
+    protected override Vector2 TargetSize => new(980, 720);
     public Action<uint> QuestEditorRequested { get; set; } = _ => { };
 
-    InteractionCatalog? catalog;
-    AssetStore? catalogStore;
     ContentSnapshot? snapshot;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
@@ -42,19 +37,14 @@ public partial class BehaviorEditorWindow : PanelContainer
     HFlowContainer scopes = null!;
     Label title = null!, subtitle = null!, statusLabel = null!;
     Button undo = null!, redo = null!;
-    Vector2? dragOffset;
     public bool IsLoading { get; private set; }
     public uint Entry => entry;
     public bool IsAreaTrigger => areaTrigger;
     public SmartScope? Scope => scope;
     public IReadOnlyList<InteractionIssue> Issues => issues;
 
-    public BehaviorEditorWindow()
+    public BehaviorEditorWindow() : base("BehaviorEditor")
     {
-        Name = "BehaviorEditor";
-        Visible = false;
-        Theme = ClientStyle.Theme();
-        AddThemeStyleboxOverride("panel", ClientStyle.Panel());
         Size = TargetSize;
     }
 
@@ -71,15 +61,15 @@ public partial class BehaviorEditorWindow : PanelContainer
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
         var header = new HBoxContainer();
-        header.GuiInput += Drag;
+        header.GuiInput += DragHeader;
         root.AddChild(header);
         title = ClientStyle.Text("Behavior", 19, ClientStyle.Header);
         title.MouseFilter = MouseFilterEnum.Ignore;
         title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         header.AddChild(title);
-        undo = Small(header, "Undo", () => History(false));
-        redo = Small(header, "Redo", () => History(true));
-        Small(header, "✕", () => Visible = false);
+        undo = ButtonIn(header, "Undo", () => History(false));
+        redo = ButtonIn(header, "Redo", () => History(true));
+        ButtonIn(header, "✕", () => Visible = false);
         subtitle = ClientStyle.Text("", 12, ClientStyle.Faded);
         subtitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         root.AddChild(subtitle);
@@ -107,42 +97,6 @@ public partial class BehaviorEditorWindow : PanelContainer
         Render();
     }
 
-    static Button Small(Container parent, string text, Action action)
-    {
-        var button = new Button
-        {
-            Text = text
-        };
-        button.Pressed += action;
-        parent.AddChild(button);
-        return button;
-    }
-
-    void Drag(InputEvent input)
-    {
-        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } button)
-        {
-            dragOffset = button.Pressed ? button.GlobalPosition - GlobalPosition : null;
-            AcceptEvent();
-        }
-        else if (input is InputEventMouseMotion motion && dragOffset.HasValue)
-        {
-            GlobalPosition = (motion.GlobalPosition - dragOffset.Value).Clamp(Vector2.Zero, (GetViewportRect().Size - Size).Max(Vector2.Zero));
-            AcceptEvent();
-        }
-    }
-
-    /// <summary>
-    /// Keep the intended size: wrapped labels report a stale larger minimum until laid out.
-    /// </summary>
-    public override void _Process(double delta)
-    {
-        if (Visible && Size != TargetSize)
-        {
-            Size = TargetSize;
-        }
-    }
-
     /// <summary>
     /// Show the behavior of a creature entry; a non-zero GUID also offers that spawn's own rules.
     /// Entry 0 opens the window with a hint (toolbar without a selection).
@@ -155,10 +109,7 @@ public partial class BehaviorEditorWindow : PanelContainer
     void Show(uint owner, uint spawnGuid, bool trigger)
     {
         Visible = true;
-        if (Position == Vector2.Zero)
-        {
-            Position = new(Math.Max(0, GetViewportRect().Size.X / 2 - TargetSize.X / 2 + 40), 90);
-        }
+        PlaceOnFirstOpen(40, 90);
 
         if (owner != entry || spawnGuid != guid || trigger != areaTrigger)
         {
@@ -180,18 +131,6 @@ public partial class BehaviorEditorWindow : PanelContainer
         {
             _ = Load();
         }
-    }
-
-    async Task<InteractionCatalog?> EnsureCatalog()
-    {
-        var store = Store();
-        if (store != null && !ReferenceEquals(store, catalogStore))
-        {
-            catalogStore = store;
-            catalog = await Task.Run(() => InteractionCatalog.Load(store));
-        }
-
-        return catalog;
     }
 
     /// <summary>
@@ -419,11 +358,7 @@ public partial class BehaviorEditorWindow : PanelContainer
             UpdateStatus();
         };
         UpdateStatus();
-        var draft = Drafts.Draft;
-        undo.Disabled = draft?.CanUndo != true;
-        redo.Disabled = draft?.CanRedo != true;
-        undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
-        redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
+        SyncHistoryButtons(undo, redo);
         if (entry == 0 || snapshot == null)
         {
             title.Text = "Behavior";

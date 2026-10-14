@@ -290,15 +290,7 @@ public partial class GraveyardOverlay
             : "Spirit healers (separate creature spawns, not moved with the graveyard): " + string.Join(", ", site.Healers.Select(h => $"{h.Name} #{h.Guid}"));
         string conflict = draft?.Conflict(sourceKey, site.Record) == true ? "Source graveyard changed since this draft; draft requires review.\n" : "";
         details.Text = $"{conflict}{draftMessage}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";
-        for (int i = 0; i < list.ItemCount; i++)
-        {
-            if (list.GetItemMetadata(i).AsString() == record.Id.ToString(CultureInfo.InvariantCulture))
-            {
-                list.Select(i);
-                list.CallDeferred(ItemList.MethodName.EnsureCurrentIsVisible);
-                break;
-            }
-        }
+        InspectorUi.SelectRow(list, record.Id);
 
         if (zoneResults.ItemCount == 0)
         {

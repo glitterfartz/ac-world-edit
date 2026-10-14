@@ -160,15 +160,7 @@ public partial class AreaTriggerOverlay
         }
 
         details.Text = string.Join('\n', lines);
-        for (int i = 0; i < list.ItemCount; i++)
-        {
-            if (list.GetItemMetadata(i).AsString() == t.Entry.ToString(CultureInfo.InvariantCulture))
-            {
-                list.Select(i);
-                list.CallDeferred(ItemList.MethodName.EnsureCurrentIsVisible);
-                break;
-            }
-        }
+        InspectorUi.SelectRow(list, t.Entry);
     }
 
     void UpdateActions()

@@ -12,10 +12,6 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class InteractionWindow
 {
-    /// <summary>
-    /// Shared content draft (one file and one undo history for all editors).
-    /// </summary>
-    public ContentDrafts Drafts { get; set; } = null!;
     InteractionDraft? draft => Drafts?.Draft;
     bool editing;
     Button editToggle = null!, undo = null!, redo = null!;
@@ -60,16 +56,8 @@ public partial class InteractionWindow
     {
         var row = new HBoxContainer();
         root.AddChild(row);
-        undo = new Button
-        {
-            Text = "Undo"
-        };
-        undo.Pressed += () => History(false);
-        redo = new Button
-        {
-            Text = "Redo"
-        };
-        redo.Pressed += () => History(true);
+        undo = ButtonOf("Undo", () => History(false));
+        redo = ButtonOf("Redo", () => History(true));
         historyLabel = ClientStyle.Text("", 11, ClientStyle.Faded);
         row.AddChild(undo);
         row.AddChild(redo);
@@ -80,10 +68,7 @@ public partial class InteractionWindow
     {
         editToggle.Disabled = draft == null;
         editToggle.SetPressedNoSignal(editing);
-        undo.Disabled = draft?.CanUndo != true;
-        redo.Disabled = draft?.CanRedo != true;
-        undo.TooltipText = draft?.LastLabel is { } last ? $"Undo \"{last}\"" : "";
-        redo.TooltipText = draft?.NextLabel is { } next ? $"Redo \"{next}\"" : "";
+        SyncHistoryButtons(undo, redo);
         historyLabel.Text = draft == null ? "" : "Local content draft · database unchanged";
     }
 

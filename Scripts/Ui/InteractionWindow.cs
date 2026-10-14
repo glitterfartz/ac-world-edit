@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 /// plus the local interaction draft. Edit mode (InteractionWindow.Edit.cs) records changes in that
 /// draft only. Conditions, SmartAI, C++ scripts and player state are listed, never evaluated.
 /// </summary>
-public partial class InteractionWindow : PanelContainer
+public partial class InteractionWindow : ContentEditorWindow
 {
     enum Page
     {
@@ -24,8 +24,6 @@ public partial class InteractionWindow : PanelContainer
     }
 
     const int VendorPageSize = 10;
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
-    public Func<AssetStore?> Store { get; set; } = () => null;
     /// <summary>
     /// Summary for the creature inspector card, updated after each load or edit.
     /// </summary>
@@ -39,8 +37,6 @@ public partial class InteractionWindow : PanelContainer
     /// </summary>
     public event Action<uint, uint>? BehaviorRequested;
 
-    InteractionCatalog? catalog;
-    AssetStore? catalogStore;
     ClientIcons icons = null!;
     CreatureSpawn? target;
     InteractionSnapshot? snapshot;
@@ -57,18 +53,13 @@ public partial class InteractionWindow : PanelContainer
     Label title = null!, subtitle = null!, statusLabel = null!, footer = null!;
     VBoxContainer body = null!;
     HBoxContainer tabs = null!;
-    Vector2? dragOffset;
 
     public bool IsOpen => Visible;
     public uint? Entry => target?.TemplateId;
     public NpcInteraction? View => view;
 
-    public InteractionWindow()
+    public InteractionWindow() : base("InteractionWindow")
     {
-        Name = "InteractionWindow";
-        Visible = false;
-        Theme = ClientStyle.Theme();
-        AddThemeStyleboxOverride("panel", ClientStyle.Panel());
         CustomMinimumSize = new(470, 540);
         Size = new(470, 600);
         MouseFilter = MouseFilterEnum.Stop;
@@ -143,24 +134,6 @@ public partial class InteractionWindow : PanelContainer
         root.AddChild(footer);
     }
 
-    /// <summary>
-    /// Drag the window by its header; it stays inside the viewport.
-    /// </summary>
-    void DragHeader(InputEvent input)
-    {
-        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } button)
-        {
-            dragOffset = button.Pressed ? button.GlobalPosition - GlobalPosition : null;
-            AcceptEvent();
-        }
-        else if (input is InputEventMouseMotion motion && dragOffset.HasValue)
-        {
-            var area = GetViewportRect().Size - Size;
-            GlobalPosition = (motion.GlobalPosition - dragOffset.Value).Clamp(Vector2.Zero, area.Max(Vector2.Zero));
-            AcceptEvent();
-        }
-    }
-
     public override void _Process(double delta)
     {
         if (icons.Poll() && Visible)
@@ -168,10 +141,7 @@ public partial class InteractionWindow : PanelContainer
             Render();
         }
 
-        if (Visible && Size != TargetSize)
-        {
-            KeepSize();
-        }
+        base._Process(delta);
     }
 
     public override void _UnhandledInput(InputEvent input)
@@ -221,10 +191,7 @@ public partial class InteractionWindow : PanelContainer
         page = Page.Gossip;
         vendorPage = 0;
         Visible = true;
-        if (Position == Vector2.Zero)
-        {
-            Position = new(GetViewportRect().Size.X / 2 - Size.X / 2, 140);
-        }
+        PlaceOnFirstOpen(0, 140);
 
         KeepSize();
 
@@ -234,7 +201,7 @@ public partial class InteractionWindow : PanelContainer
     public void CloseWindow()
     {
         Visible = false;
-        dragOffset = null;
+        EndDrag();
     }
 
     /// <summary>
@@ -248,31 +215,6 @@ public partial class InteractionWindow : PanelContainer
         snapshot = null;
         view = null;
         CloseWindow();
-    }
-
-    async Task<InteractionCatalog?> EnsureCatalog()
-    {
-        var store = Store();
-        if (store == null)
-        {
-            return null;
-        }
-
-        if (!ReferenceEquals(store, catalogStore))
-        {
-            catalogStore = store;
-            catalog = null;
-            try
-            {
-                catalog = await Task.Run(() => InteractionCatalog.Load(store));
-            }
-            catch (Exception)
-            {
-                status = "Client spell/item tables unavailable; names and icons limited.";
-            }
-        }
-
-        return catalog;
     }
 
     /// <summary>
@@ -299,6 +241,11 @@ public partial class InteractionWindow : PanelContainer
         {
             var source = new InteractionSource(ConnectionPath());
             var cat = await EnsureCatalog();
+            if (cat == null && Store() != null)
+            {
+                status = "Client spell/item tables unavailable; names and icons limited.";
+            }
+
             sourceKey = source.SourceKey;
             var keys = draft?.Keys(sourceKey) ?? [];
             var apply = draft?.Frozen(sourceKey) ?? (rows => rows);
@@ -424,7 +371,7 @@ public partial class InteractionWindow : PanelContainer
     /// minimum size until their layout settles, which clamps the panel larger and never shrinks it;
     /// _Process re-applies this every frame it differs, so the window converges after layout.
     /// </summary>
-    Vector2 TargetSize => new(editing ? 660 : 470, 600);
+    protected override Vector2 TargetSize => new(editing ? 660 : 470, 600);
 
     void KeepSize() => Size = TargetSize;
 
