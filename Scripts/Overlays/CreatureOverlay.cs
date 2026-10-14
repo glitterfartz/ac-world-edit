@@ -426,7 +426,7 @@ public partial class CreatureOverlay : Node3D
                 continue;
             }
 
-            var key = new ModelKey(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0);
+            var key = new ModelKey(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset);
             if (!groups.TryGetValue(key, out var list))
             {
                 groups[key] = list = [];

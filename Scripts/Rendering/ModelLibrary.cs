@@ -7,7 +7,7 @@ namespace ACWorldEdit;
 /// requested animation ID. Equal keys reuse decoded and GPU resources. Skybox variants get
 /// unlit, fog-free, first-drawn materials and unculled, shadowless instances (see SkyLighting).
 /// </summary>
-public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false);
+public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1);
 /// <summary>
 /// Main-thread resource owner with one decode worker. Upload surfaces incrementally, batch
 /// placements and animate on the GPU; active resources can exceed the dormant-cache target.
@@ -673,7 +673,7 @@ public sealed class ModelLibrary
         var data = key.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase)
             ? WmoModel.Read(source, key.Path, key.DoodadSet, token)
             : M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3],
-                key.Baked.Length == 0 ? null : key.Baked, token, key.Animation);
+                key.Baked.Length == 0 ? null : key.Baked, token, key.Animation, key.Hair.Length == 0 ? null : key.Hair, key.Fur.Length == 0 ? null : key.Fur, key.HairGeoset);
         Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
         foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
         {

@@ -648,3 +648,15 @@ reading the streaming paths, not by guessing:
   texel. Additive and multiply variants now use `fog_disabled` (cause inferred from render modes and data).
 - Validation: build 0 warnings/errors, whitespace format check, `--models` corpus checks passed.
   Not verified graphically; confirmed visually by the user in the viewer.
+
+## NPC hair and fur textures — 2026-10-13
+
+- Purple hair on Tauren, Blood Elf and Taunka NPCs was the missing-texture placeholder: M2 texture type 6
+  (hair) and 8 (fur/extra skin) were never resolved. `CreatureCatalog` now reads CharSections.dbc
+  (race/sex/type/variation/color) with the display's CreatureDisplayInfoExtra row for hair (type 3 tex1)
+  and fur (type 0 tex2), and CharHairGeosets.dbc for the hairstyle geoset (previously always geoset 1).
+- Rows naming files that exist only beside the model (Tauren male hair) fall back to the model folder.
+  Hair with no file (Tauren female, FelOrc, Naga, Skeleton `Hair00_xx`) is hidden, not drawn pink.
+- Scan of all CreatureDisplayInfo rows: type 6 unresolved went to zero. Remaining unresolved types 1/2/8/11-13
+  are mostly displays without an extra row or equipment/cape slots, not addressed. Equipment, helms and
+  facial hair are still not composed. Build and `--models` corpus checks pass; not verified graphically.
