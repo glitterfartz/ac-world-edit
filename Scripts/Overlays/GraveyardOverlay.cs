@@ -22,7 +22,6 @@ public partial class GraveyardOverlay : Node3D
     public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
     public Func<AreaLookup?> Areas { get; set; } = () => null;
     public bool LayerEnabled { get; private set; } = true;
-    public uint? SelectedId => selected;
     public IReadOnlyList<GraveyardSite> Sites => sites;
     public bool IsLoading => pending != null;
     public string QueryStatus => queryStatus;
@@ -389,8 +388,6 @@ public partial class GraveyardOverlay : Node3D
 
         return best;
     }
-
-    public Vector3? PositionOf(uint id) => markers.TryGetValue(id, out var marker) ? marker.Node.GlobalPosition : null;
 
     public override void _ExitTree()
     {

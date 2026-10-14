@@ -12,6 +12,7 @@ public partial class TerrainViewer
     double waterTime, waterReady;
     readonly List<double> waterFrames = [];
     bool reloadSmoke;
+    bool LocatePending => pendingLocate != null;
     int reloadStage;
     double reloadTime;
 
@@ -20,21 +21,76 @@ public partial class TerrainViewer
     /// </summary>
     void ConfigureSmokeChecks()
     {
-        waterInterior = OS.GetCmdlineUserArgs().Contains("--water-interior-smoke");
-        waterSmoke = OS.GetCmdlineUserArgs().Contains("--water-smoke") || waterInterior;
-        smoke = OS.GetCmdlineUserArgs().Contains("--terrain-smoke");
-        creatureSmoke = OS.GetCmdlineUserArgs().Contains("--creature-smoke");
-        visualSmoke = OS.GetCmdlineUserArgs().Contains("--visual-smoke");
-        creatureSmoke |= visualSmoke;
-        gizmoSmoke = OS.GetCmdlineUserArgs().Contains("--gizmo-smoke");
-        creatureSmoke |= gizmoSmoke;
-        reloadSmoke = OS.GetCmdlineUserArgs().Contains("--reload-smoke");
-        visibilitySmoke = OS.GetCmdlineUserArgs().Contains("--visibility-smoke");
-        skyboxSmoke = OS.GetCmdlineUserArgs().Contains("--skybox-smoke");
-        graveyardSmoke = OS.GetCmdlineUserArgs().Contains("--graveyard-smoke");
-        interactionSmoke = OS.GetCmdlineUserArgs().Contains("--interaction-smoke");
-        contentSmoke = OS.GetCmdlineUserArgs().Contains("--content-smoke");
-        areaTriggerSmoke = OS.GetCmdlineUserArgs().Contains("--areatrigger-smoke");
+        var flags = OS.GetCmdlineUserArgs().ToHashSet();
+        waterInterior = flags.Contains("--water-interior-smoke");
+        waterSmoke = flags.Contains("--water-smoke") || waterInterior;
+        smoke = flags.Contains("--terrain-smoke");
+        visualSmoke = flags.Contains("--visual-smoke");
+        gizmoSmoke = flags.Contains("--gizmo-smoke");
+        creatureSmoke = flags.Contains("--creature-smoke") || visualSmoke || gizmoSmoke;
+        reloadSmoke = flags.Contains("--reload-smoke");
+        visibilitySmoke = flags.Contains("--visibility-smoke");
+        skyboxSmoke = flags.Contains("--skybox-smoke");
+        graveyardSmoke = flags.Contains("--graveyard-smoke");
+        interactionSmoke = flags.Contains("--interaction-smoke");
+        contentSmoke = flags.Contains("--content-smoke");
+        areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
+    }
+
+    /// <summary>
+    /// Advance every enabled smoke workflow once per frame, after the viewer's own per-frame updates.
+    /// </summary>
+    void RunSmokeChecks(double delta)
+    {
+        if (smoke)
+        {
+            Smoke(delta);
+        }
+
+        if (waterSmoke)
+        {
+            WaterSmoke(delta);
+        }
+
+        if (visibilitySmoke)
+        {
+            VisibilitySmoke(delta);
+        }
+
+        if (creatureSmoke)
+        {
+            CreatureSmoke(delta);
+        }
+
+        if (reloadSmoke)
+        {
+            ReloadSmoke(delta);
+        }
+
+        if (skyboxSmoke)
+        {
+            SkyboxSmoke(delta);
+        }
+
+        if (graveyardSmoke)
+        {
+            GraveyardSmoke(delta);
+        }
+
+        if (interactionSmoke)
+        {
+            InteractionSmoke(delta);
+        }
+
+        if (contentSmoke)
+        {
+            ContentSmoke(delta);
+        }
+
+        if (areaTriggerSmoke)
+        {
+            AreaTriggerSmoke(delta);
+        }
     }
 
     /// <summary>

@@ -10,6 +10,31 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class CreatureOverlay
 {
+    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
+
+    public uint? SelectedListGuid
+    {
+        get
+        {
+            var indices = list.GetSelectedItems();
+            return indices.Length == 0 ? null : uint.Parse(list.GetItemMetadata(indices[0]).AsString());
+        }
+    }
+
+    public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
+
+    public bool Pick(Camera3D camera, Vector2 screen)
+    {
+        var hit = FindHit(camera, screen);
+        if (!hit.HasValue)
+        {
+            return false;
+        }
+
+        Select(hit.Value.Guid);
+        return true;
+    }
+
     /// <summary>
     /// Exercise the real dropdown/signal path instead of setting internal animation state directly.
     /// </summary>

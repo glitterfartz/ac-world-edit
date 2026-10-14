@@ -546,16 +546,6 @@ public partial class TerrainViewer : Node3D
         minimap.Current = current;
         minimap.CameraPosition = camera.Position;
         minimap.QueueRedraw();
-        if (smoke)
-        {
-            Smoke(delta);
-        }
-
-        if (waterSmoke)
-        {
-            WaterSmoke(delta);
-        }
-
         creatures.Update(camera);
         gameObjects.Update(camera);
         graveyards.Update(camera);
@@ -563,43 +553,7 @@ public partial class TerrainViewer : Node3D
         interaction.Track(creatures.SelectedSpawn);
         models.Update(camera);
         sidebar.UpdateCounts();
-        if (visibilitySmoke)
-        {
-            VisibilitySmoke(delta);
-        }
-        if (creatureSmoke)
-        {
-            CreatureSmoke(delta);
-        }
-        if (reloadSmoke)
-        {
-            ReloadSmoke(delta);
-        }
-
-        if (skyboxSmoke)
-        {
-            SkyboxSmoke(delta);
-        }
-
-        if (graveyardSmoke)
-        {
-            GraveyardSmoke(delta);
-        }
-
-        if (interactionSmoke)
-        {
-            InteractionSmoke(delta);
-        }
-
-        if (contentSmoke)
-        {
-            ContentSmoke(delta);
-        }
-
-        if (areaTriggerSmoke)
-        {
-            AreaTriggerSmoke(delta);
-        }
+        RunSmokeChecks(delta);
     }
 
     /// <summary>

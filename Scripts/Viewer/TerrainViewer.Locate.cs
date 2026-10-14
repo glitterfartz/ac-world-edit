@@ -110,6 +110,4 @@ public partial class TerrainViewer
             message = $"{pending.Name} (spawn #{pending.Guid}) is hidden by the current visibility filters (phase, event or pool); the camera is at its position.";
         }
     }
-
-    public bool LocatePending => pendingLocate != null;
 }

@@ -25,7 +25,6 @@ public partial class CreatureOverlay : Node3D
     OptionButton animation = null!;
     ushort previewAnimation;
     uint? animationListGuid;
-    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
     public bool IsDragging => gizmo.Dragging;
     public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedCreatureCount => admitted.Count;
@@ -113,15 +112,6 @@ public partial class CreatureOverlay : Node3D
     public IReadOnlyList<CreatureSpawn> Records => records;
     public bool IsLoading => pending != null || pendingMarkers.Count > 0;
 
-    public uint? SelectedListGuid
-    {
-        get
-        {
-            var indices = list.GetSelectedItems();
-            return indices.Length == 0 ? null : uint.Parse(list.GetItemMetadata(indices[0]).AsString());
-        }
-    }
-
     public string QueryStatus => queryStatus;
 
     public event Action<CreatureSpawn>? FocusRequested;
@@ -131,7 +121,7 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public override void _Ready()
     {
-        draftPath = ProjectSettings.GlobalizePath(OS.GetCmdlineUserArgs().Contains("--visual-smoke") || OS.GetCmdlineUserArgs().Contains("--gizmo-smoke") || OS.GetCmdlineUserArgs().Contains("--interaction-smoke") || OS.GetCmdlineUserArgs().Contains("--graveyard-smoke") ? $"res://artifacts/gizmo-drafts/{Guid.NewGuid():N}/positions.json" : "user://drafts/creature-positions.json");
+        draftPath = ContentDrafts.LocalPath("creature-positions.json");
         try
         {
             draft = new CreatureDraft(draftPath);
@@ -913,19 +903,6 @@ public partial class CreatureOverlay : Node3D
         return nearest.HasValue ? (nearest.Value, distance) : null;
     }
 
-    public bool Pick(Camera3D camera, Vector2 screen)
-    {
-        var hit = FindHit(camera, screen);
-        if (!hit.HasValue)
-        {
-            return false;
-        }
-
-        Select(hit.Value.Guid);
-        return true;
-    }
-
-    public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
     /// <summary>
     /// Cancel read-only queries and release the draft writer lock on scene exit.
     /// </summary>
