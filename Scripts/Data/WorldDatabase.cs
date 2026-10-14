@@ -199,16 +199,46 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         return names.Count == 0 ? "0" : string.Join(",", names);
     }
 
-    public static string Spatial(MySqlCommand command, CreatureRegion region, SpawnQueryPoint? point, SpawnPreview preview, string alias, string search, string id)
+    /// <summary>
+    /// Bind the streamed region (@map, @minX..@maxY), the nearest-first sort origin (@x, @y, @z; the
+    /// region center when there is no query point yet) and @limit. Values only, never SQL text.
+    /// </summary>
+    public static void AddRegion(MySqlCommand command, CreatureRegion region, SpawnQueryPoint? point, int limit)
     {
         command.Parameters.AddWithValue("@map", region.Map);
         command.Parameters.AddWithValue("@minX", region.MinServerX);
         command.Parameters.AddWithValue("@maxX", region.MaxServerX);
         command.Parameters.AddWithValue("@minY", region.MinServerY);
         command.Parameters.AddWithValue("@maxY", region.MaxServerY);
+        command.Parameters.AddWithValue("@x", point?.X ?? (region.MinServerX + region.MaxServerX) / 2);
+        command.Parameters.AddWithValue("@y", point?.Y ?? (region.MinServerY + region.MaxServerY) / 2);
+        command.Parameters.AddWithValue("@z", point?.Z ?? 0);
+        command.Parameters.AddWithValue("@limit", limit);
+    }
+
+    /// <summary>
+    /// Bind a user search term as parameters: trimmed and capped at 80 characters, '=' escapes LIKE
+    /// wildcards, and a numeric term also binds as an exact ID. Returns whether a filter is wanted
+    /// (the term is not empty).
+    /// </summary>
+    public static bool AddSearch(MySqlCommand command, string term, string like = "@search", string id = "@searchId")
+    {
+        term = term.Trim();
+        if (term.Length > 80)
+        {
+            term = term[..80];
+        }
+
+        command.Parameters.AddWithValue(like, "%" + term.Replace("=", "==").Replace("%", "=%").Replace("_", "=_") + "%");
+        command.Parameters.AddWithValue(id, uint.TryParse(term, out uint number) ? number : 0);
+        return term.Length > 0;
+    }
+
+    public static string Spatial(MySqlCommand command, CreatureRegion region, SpawnQueryPoint? point, SpawnPreview preview, string alias, string search, string id)
+    {
+        AddRegion(command, region, point, preview.QueryLimit + 1);
         command.Parameters.AddWithValue("@phase", preview.PhaseMask);
         command.Parameters.AddWithValue("@spawn", preview.SpawnMask);
-        command.Parameters.AddWithValue("@limit", preview.QueryLimit + 1);
         string spatial = $"{alias}.map=@map AND {alias}.position_x>@minX AND {alias}.position_x<=@maxX AND {alias}.position_y>@minY AND {alias}.position_y<=@maxY";
         if (preview.RespectMasks)
         {
@@ -216,25 +246,14 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         }
 
         // A 64-yard halo accommodates quantized centers without gaps at the render-distance edge.
-        command.Parameters.AddWithValue("@x", point?.X ?? (region.MinServerX + region.MaxServerX) / 2);
-        command.Parameters.AddWithValue("@y", point?.Y ?? (region.MinServerY + region.MaxServerY) / 2);
-        command.Parameters.AddWithValue("@z", point?.Z ?? 0);
         command.Parameters.AddWithValue("@radius", preview.ViewDistance + 64);
         if (point != null)
         {
             spatial += $" AND {Distance(alias)}<=@radius*@radius";
         }
 
-        search = search.Trim();
-        if (search.Length > 80)
+        if (AddSearch(command, search))
         {
-            search = search[..80];
-        }
-
-        if (search.Length > 0)
-        {
-            command.Parameters.AddWithValue("@search", "%" + search.Replace("=", "==").Replace("%", "=%").Replace("_", "=_") + "%");
-            command.Parameters.AddWithValue("@searchId", uint.TryParse(search, out uint number) ? number : 0);
             spatial += $" AND (t.name LIKE @search ESCAPE '=' OR {alias}.guid=@searchId OR {id}=@searchId)";
         }
 

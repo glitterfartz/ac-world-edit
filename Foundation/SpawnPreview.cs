@@ -81,7 +81,6 @@ public readonly record struct SpawnQueryPoint(double X, double Y, double Z)
 public sealed record SpawnVisibility(int[] Events, uint Pool, bool Conditional, string Script,
     bool Helper, bool InitiallyDespawned = false)
 {
-    public static SpawnVisibility Ordinary { get; } = new([], 0, false, "", false);
     public string Description => string.Join(" · ", new[]
     {
         Events.Length > 0 ? "Events " + string.Join(", ", Events) : "",

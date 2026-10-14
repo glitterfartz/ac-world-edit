@@ -6,7 +6,6 @@ namespace ACWorldEdit.Data;
 public sealed class CreatureSource
 {
     public const string DefaultConfigPath = @"X:\AzerothCore\azerothcore-wotlk\build\bin\Debug\configs\worldserver.conf";
-    public const int MaximumSpawns = 768;
     readonly WorldDatabase database;
     public CreatureSource(string configPath) => database = new(configPath);
     public Task<CreatureRegionResult> ReadAsync(CreatureRegion region, CancellationToken token) => ReadAsync(region, new SpawnPreview(), null, "", token);

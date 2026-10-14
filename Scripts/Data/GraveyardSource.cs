@@ -52,27 +52,10 @@ public sealed class GraveyardSource(string configPath)
     static async Task<List<GraveyardRecord>> ReadGraveyards(WorldReadSession session, CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token)
     {
         await using var command = session.Command("");
-        command.Parameters.AddWithValue("@map", region.Map);
-        command.Parameters.AddWithValue("@minX", region.MinServerX);
-        command.Parameters.AddWithValue("@maxX", region.MaxServerX);
-        command.Parameters.AddWithValue("@minY", region.MinServerY);
-        command.Parameters.AddWithValue("@maxY", region.MaxServerY);
-        command.Parameters.AddWithValue("@x", point?.X ?? (region.MinServerX + region.MaxServerX) / 2);
-        command.Parameters.AddWithValue("@y", point?.Y ?? (region.MinServerY + region.MaxServerY) / 2);
-        command.Parameters.AddWithValue("@z", point?.Z ?? 0);
-        command.Parameters.AddWithValue("@limit", Limit + 1);
+        WorldReadSession.AddRegion(command, region, point, Limit + 1);
         string filter = "1=1";
-        search = search.Trim();
-        if (search.Length > 80)
+        if (WorldReadSession.AddSearch(command, search))
         {
-            search = search[..80];
-        }
-
-        if (search.Length > 0)
-        {
-            // Same escaping as spawn search: '=' escapes LIKE wildcards; values stay parameters.
-            command.Parameters.AddWithValue("@search", "%" + search.Replace("=", "==").Replace("%", "=%").Replace("_", "=_") + "%");
-            command.Parameters.AddWithValue("@searchId", uint.TryParse(search, out uint number) ? number : 0);
             filter = "(g.Comment LIKE @search ESCAPE '=' OR g.ID=@searchId)";
         }
 

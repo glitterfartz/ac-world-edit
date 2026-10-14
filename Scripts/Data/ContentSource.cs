@@ -313,15 +313,6 @@ public sealed class ContentSource(string configPath)
     }
 
     /// <summary>
-    /// Resolve names for IDs picked in the editor before they are committed, so validation sees them.
-    /// </summary>
-    public async Task SeedNamesAsync(ContentNames names, SmartParamKind kind, uint id, CancellationToken token)
-    {
-        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        await ResolveNames(session, names, kind == SmartParamKind.Creature ? [id] : [], kind == SmartParamKind.GameObject ? [id] : [], kind == SmartParamKind.Item ? [id] : [], kind == SmartParamKind.Quest ? [id] : [], token);
-    }
-
-    /// <summary>
     /// Bounded picker search over creature, object, item or quest names (escaped LIKE or exact ID).
     /// Unnamed rows only match by ID, so an empty search lists real names first.
     /// </summary>
@@ -337,7 +328,7 @@ public sealed class ContentSource(string configPath)
         };
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         await using var command = session.Command($"SELECT {id},COALESCE({name},'') FROM {table} WHERE ({name} LIKE @s ESCAPE '=' AND {name}<>'') OR {id}=@id ORDER BY {id}=@id DESC, CHAR_LENGTH({name}), {id} LIMIT {InteractionSource.MaxSearch}");
-        InteractionSource.AddSearch(command, term);
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
         List<(uint, string)> results = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))

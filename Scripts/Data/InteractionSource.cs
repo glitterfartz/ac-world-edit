@@ -423,7 +423,7 @@ public sealed class InteractionSource(string configPath)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         await using var command = session.Command($"SELECT entry,name,Quality,BuyPrice,displayid FROM item_template WHERE name LIKE @s ESCAPE '=' OR entry=@id ORDER BY entry=@id DESC, CHAR_LENGTH(name), entry LIMIT {MaxSearch}");
-        AddSearch(command, term);
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
         List<ItemInfo> items = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -443,7 +443,7 @@ public sealed class InteractionSource(string configPath)
     internal static async Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuests(WorldReadSession session, string term, CancellationToken token)
     {
         await using var command = session.Command($"SELECT ID,COALESCE(LogTitle,''),QuestLevel FROM quest_template WHERE LogTitle LIKE @s ESCAPE '=' OR ID=@id ORDER BY ID=@id DESC, CHAR_LENGTH(LogTitle), ID LIMIT {MaxSearch}");
-        AddSearch(command, term);
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
         List<(uint, string, int)> quests = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -452,17 +452,5 @@ public sealed class InteractionSource(string configPath)
         }
 
         return quests;
-    }
-
-    internal static void AddSearch(MySqlCommand command, string term)
-    {
-        term = term.Trim();
-        if (term.Length > 80)
-        {
-            term = term[..80];
-        }
-
-        command.Parameters.AddWithValue("@s", "%" + term.Replace("=", "==").Replace("%", "=%").Replace("_", "=_") + "%");
-        command.Parameters.AddWithValue("@id", uint.TryParse(term, out uint id) ? id : 0);
     }
 }

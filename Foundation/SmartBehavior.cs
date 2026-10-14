@@ -131,11 +131,6 @@ public static partial class SmartCatalog
     public static SmartType? Target(uint id) => (targets ??= Targets.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
 
     /// <summary>
-    /// Curated types first (those with sentences), then the rest alphabetically, for dropdowns.
-    /// </summary>
-    public static IEnumerable<SmartType> Ordered(IEnumerable<SmartType> types) => types.Where(t => !IsMarker(t)).OrderBy(t => t.Sentence.Length == 0 ? 1 : 0).ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
     /// A complete smart_scripts row with every whitelisted column, defaults for a new rule.
     /// </summary>
     public static Row NewRow(SmartScope scope, uint id, uint eventType, uint action, uint target, string comment = "")

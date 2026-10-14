@@ -20,7 +20,6 @@ public sealed record TableSchema(string Name, string[] Key, (string Name, Column
 {
     public string SqlName => Sql ?? Name;
 
-    public ColumnKind KindOf(string column) => Columns.First(c => c.Name == column).Kind;
     public bool Has(string column) => Columns.Any(c => c.Name == column);
     public string KeyOf(Row row) => string.Join('|', Key.Select(k => row[k]));
 }

@@ -23,32 +23,15 @@ public sealed class AreaTriggerSource(string configPath)
             "areatrigger.length", "areatrigger.width", "areatrigger.height", "areatrigger.orientation",
             "areatrigger_scripts.entry", "areatrigger_scripts.ScriptName", "smart_scripts.entryorguid", "smart_scripts.source_type");
         await using var command = session.Command("");
-        command.Parameters.AddWithValue("@map", region.Map);
-        command.Parameters.AddWithValue("@minX", region.MinServerX);
-        command.Parameters.AddWithValue("@maxX", region.MaxServerX);
-        command.Parameters.AddWithValue("@minY", region.MinServerY);
-        command.Parameters.AddWithValue("@maxY", region.MaxServerY);
-        command.Parameters.AddWithValue("@x", point?.X ?? (region.MinServerX + region.MaxServerX) / 2);
-        command.Parameters.AddWithValue("@y", point?.Y ?? (region.MinServerY + region.MaxServerY) / 2);
-        command.Parameters.AddWithValue("@z", point?.Z ?? 0);
-        command.Parameters.AddWithValue("@limit", Limit + 1);
+        WorldReadSession.AddRegion(command, region, point, Limit + 1);
         // Optional link tables degrade to "no link" rather than failing the whole layer.
         bool teleports = session.Has("areatrigger_teleport.ID") && session.Has("areatrigger_teleport.target_map");
         bool quests = session.Has("areatrigger_involvedrelation.id") && session.Has("areatrigger_involvedrelation.quest");
         bool taverns = session.Has("areatrigger_tavern.id") && session.Has("areatrigger_tavern.name");
         bool titles = quests && session.Has("quest_template.ID") && session.Has("quest_template.LogTitle");
         string filter = "1=1";
-        search = search.Trim();
-        if (search.Length > 80)
+        if (WorldReadSession.AddSearch(command, search))
         {
-            search = search[..80];
-        }
-
-        if (search.Length > 0)
-        {
-            // Same escaping as spawn search: '=' escapes LIKE wildcards; values stay parameters.
-            command.Parameters.AddWithValue("@search", "%" + search.Replace("=", "==").Replace("%", "=%").Replace("_", "=_") + "%");
-            command.Parameters.AddWithValue("@searchId", uint.TryParse(search, out uint number) ? number : 0);
             filter = "(a.entry=@searchId OR s.ScriptName LIKE @search ESCAPE '='" + (teleports ? " OR t.Name LIKE @search ESCAPE '='" : "") + (taverns ? " OR v.name LIKE @search ESCAPE '='" : "") + ")";
         }
 
