@@ -353,6 +353,22 @@ public sealed class RowSet
     public IReadOnlyCollection<Row> All(TableSchema table) => tables.TryGetValue(table.Name, out var rows) ? rows.Values : [];
     public Row? Get(TableSchema table, string key) => tables.TryGetValue(table.Name, out var rows) && rows.TryGetValue(key, out var row) ? row : null;
 
+    /// <summary>
+    /// Layer one edit on top: delete when After is null, otherwise insert or replace.
+    /// </summary>
+    public void Apply(RowEdit edit)
+    {
+        var table = InteractionTables.Find(edit.Table);
+        if (edit.After == null)
+        {
+            Remove(table, edit.Key);
+        }
+        else
+        {
+            Set(table, edit.After);
+        }
+    }
+
     public void Set(TableSchema table, Row row)
     {
         if (!tables.TryGetValue(table.Name, out var rows))

@@ -5,7 +5,7 @@ using ACWorldEdit.Foundation;
 
 /// <summary>
 /// Graveyard draft persistence and server-rule validation using disposable artifact paths, plus a
-/// check that creature drafts written before the DraftFile extraction still load.
+/// check that creature drafts written before the DraftHistory extraction still load.
 /// </summary>
 public static class GraveyardDraftChecks
 {
@@ -91,7 +91,7 @@ public static class GraveyardDraftChecks
         // A creature draft envelope built exactly as the pre-extraction code wrote it must still load.
         string legacy = Path.Combine(root, "creature-positions.json");
         var pose = new WorldPose(0, 1, 2, 3, 0.5);
-        string payload = JsonSerializer.Serialize(new CreatureDraftSnapshot(1, [new CreatureMove("db", 9, pose, pose with { X = 5 })], 1));
+        string payload = JsonSerializer.Serialize(new DraftSnapshot<CreatureMove>(1, [new CreatureMove("db", 9, pose, pose with { X = 5 })], 1));
         string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
         File.WriteAllText(legacy, JsonSerializer.Serialize(new[] { payload, hash }));
         using (var creatures = new CreatureDraft(legacy))

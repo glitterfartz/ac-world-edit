@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
@@ -11,7 +9,6 @@ public sealed record RowEdit(string Table, string Key, Row? Before, Row? After);
 /// redo together.
 /// </summary>
 public sealed record InteractionCommand(string Source, string Label, RowEdit[] Edits);
-public sealed record InteractionDraftSnapshot(int Version, InteractionCommand[] History, int Cursor);
 
 /// <summary>
 /// Single-writer local draft for NPC interaction rows (gossip, quest links, vendor, trainer, spell
@@ -22,50 +19,22 @@ public sealed record InteractionDraftSnapshot(int Version, InteractionCommand[] 
 /// </summary>
 public sealed class InteractionDraft : IDisposable
 {
-    readonly DraftFile file;
-    InteractionDraftSnapshot state = new(1, [], 0);
-    public bool CanUndo => state.Cursor > 0;
-    public bool CanRedo => state.Cursor < state.History.Length;
+    readonly DraftHistory<InteractionCommand> history;
+    DraftSnapshot<InteractionCommand> state => history.State;
+    public bool CanUndo => history.CanUndo;
+    public bool CanRedo => history.CanRedo;
     public string? NextLabel => CanRedo ? state.History[state.Cursor].Label : null;
     public string? LastLabel => CanUndo ? state.History[state.Cursor - 1].Label : null;
 
-    public InteractionDraft(string path)
+    public InteractionDraft(string path) => history = new(path, "interaction", command =>
     {
-        file = new DraftFile(path);
-        try
+        foreach (var edit in command.Edits)
         {
-            Recover();
-        }
-        catch
-        {
-            file.Dispose();
-            throw;
-        }
-    }
-
-    void Recover()
-    {
-        if (file.Read() is not string payload)
-        {
-            return;
+            ValidateEdit(edit);
         }
 
-        var restored = JsonSerializer.Deserialize<InteractionDraftSnapshot>(payload) ?? throw new InvalidDataException("Invalid interaction draft.");
-        if (restored.Version != 1 || restored.Cursor < 0 || restored.Cursor > restored.History.Length)
-        {
-            throw new InvalidDataException("Unsupported interaction draft.");
-        }
-
-        foreach (var command in restored.History)
-        {
-            foreach (var edit in command.Edits)
-            {
-                ValidateEdit(edit);
-            }
-        }
-
-        state = restored;
-    }
+        return command;
+    });
 
     static void ValidateEdit(RowEdit edit)
     {
@@ -90,7 +59,7 @@ public sealed class InteractionDraft : IDisposable
         }
     }
 
-    static IEnumerable<InteractionCommand> Applied(InteractionDraftSnapshot state, string source) => state.History.Take(state.Cursor).Where(c => c.Source == source);
+    static IEnumerable<InteractionCommand> Applied(DraftSnapshot<InteractionCommand> state, string source) => state.AppliedEntries().Where(c => c.Source == source);
 
     /// <summary>
     /// Every row key the draft touches for this source, so the reader can load those rows too.
@@ -102,7 +71,7 @@ public sealed class InteractionDraft : IDisposable
     /// </summary>
     public IReadOnlyList<(string Table, string Key)> Conflicts(string source, RowSet snapshot) => Conflicts(state, source, snapshot);
 
-    static IReadOnlyList<(string Table, string Key)> Conflicts(InteractionDraftSnapshot state, string source, RowSet snapshot)
+    static IReadOnlyList<(string Table, string Key)> Conflicts(DraftSnapshot<InteractionCommand> state, string source, RowSet snapshot)
     {
         var seen = new HashSet<(string, string)>();
         List<(string, string)> conflicts = [];
@@ -133,7 +102,7 @@ public sealed class InteractionDraft : IDisposable
         return rows => Effective(captured, source, rows);
     }
 
-    static RowSet Effective(InteractionDraftSnapshot state, string source, RowSet snapshot)
+    static RowSet Effective(DraftSnapshot<InteractionCommand> state, string source, RowSet snapshot)
     {
         var conflicts = Conflicts(state, source, snapshot).ToHashSet();
         var result = snapshot.Clone();
@@ -144,15 +113,7 @@ public sealed class InteractionDraft : IDisposable
                 continue;
             }
 
-            var schema = InteractionTables.Find(edit.Table);
-            if (edit.After == null)
-            {
-                result.Remove(schema, edit.Key);
-            }
-            else
-            {
-                result.Set(schema, edit.After);
-            }
+            result.Apply(edit);
         }
 
         return result;
@@ -186,14 +147,7 @@ public sealed class InteractionDraft : IDisposable
             }
 
             kept.Add(edit);
-            if (edit.After == null)
-            {
-                effective.Remove(schema, edit.Key);
-            }
-            else
-            {
-                effective.Set(schema, edit.After);
-            }
+            effective.Apply(edit);
         }
 
         if (kept.Count == 0)
@@ -201,7 +155,7 @@ public sealed class InteractionDraft : IDisposable
             return;
         }
 
-        Save(new(1, state.History.Take(state.Cursor).Append(new InteractionCommand(source, label, kept.ToArray())).ToArray(), state.Cursor + 1));
+        history.Append(new InteractionCommand(source, label, kept.ToArray()));
     }
 
     /// <summary>
@@ -209,27 +163,9 @@ public sealed class InteractionDraft : IDisposable
     /// </summary>
     public uint MaxReserved(string source, TableSchema table, string column) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Where(e => e.Table == table.Name && e.After != null).Select(e => e.After!.U(column)).DefaultIfEmpty(0u).Max();
 
-    public void Undo()
-    {
-        if (state.Cursor > 0)
-        {
-            Save(state with { Cursor = state.Cursor - 1 });
-        }
-    }
+    public void Undo() => history.Undo();
 
-    public void Redo()
-    {
-        if (state.Cursor < state.History.Length)
-        {
-            Save(state with { Cursor = state.Cursor + 1 });
-        }
-    }
+    public void Redo() => history.Redo();
 
-    void Save(InteractionDraftSnapshot next)
-    {
-        file.Write(JsonSerializer.Serialize(next));
-        state = next;
-    }
-
-    public void Dispose() => file.Dispose();
+    public void Dispose() => history.Dispose();
 }

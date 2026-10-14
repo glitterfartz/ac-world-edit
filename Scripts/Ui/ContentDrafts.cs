@@ -67,15 +67,7 @@ public sealed class ContentDrafts : IDisposable
         var prospective = effective.Clone();
         foreach (var edit in edits)
         {
-            var table = InteractionTables.Find(edit.Table);
-            if (edit.After == null)
-            {
-                prospective.Remove(table, edit.Key);
-            }
-            else
-            {
-                prospective.Set(table, edit.After);
-            }
+            prospective.Apply(edit);
         }
 
         try

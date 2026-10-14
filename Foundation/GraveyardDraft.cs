@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
@@ -78,74 +76,39 @@ public sealed record GraveyardRecord(uint Id, ushort Map, double X, double Y, do
 /// One local history command for a graveyard; Before/After are whole normalized records.
 /// </summary>
 public sealed record GraveyardEdit(string Source, uint Id, GraveyardRecord Before, GraveyardRecord After);
-/// <summary>
-/// Versioned persisted history and undo cursor, like CreatureDraftSnapshot.
-/// </summary>
-public sealed record GraveyardDraftSnapshot(int Version, GraveyardEdit[] History, int Cursor);
 
 /// <summary>
-/// Single-writer local graveyard draft, independent of scene nodes and the database. Follows the
-/// creature draft rules: the earliest applied edit's Before must still equal the source row, or the
-/// draft is reported as a conflict and not applied; a new edit discards the redo branch.
+/// Local graveyard draft, independent of scene nodes and the database, persisted by DraftHistory.
+/// Follows the creature draft rules: the earliest applied edit's Before must still equal the source
+/// row, or the draft is reported as a conflict and not applied; a new edit discards the redo branch.
 /// </summary>
 public sealed class GraveyardDraft : IDisposable
 {
-    readonly DraftFile file;
-    GraveyardDraftSnapshot state = new(1, [], 0);
-    public bool CanUndo => state.Cursor > 0;
-    public bool CanRedo => state.Cursor < state.History.Length;
+    readonly DraftHistory<GraveyardEdit> history;
+    public bool CanUndo => history.CanUndo;
+    public bool CanRedo => history.CanRedo;
 
-    public GraveyardDraft(string path)
-    {
-        file = new DraftFile(path);
-        try
-        {
-            Recover();
-        }
-        catch
-        {
-            file.Dispose();
-            throw;
-        }
-    }
+    public GraveyardDraft(string path) => history = new(path, "graveyard", Check);
 
     /// <summary>
-    /// Verify version, cursor and every record before publishing recovered history. Zone existence
-    /// is not rechecked here because it needs client data; edits were validated when made.
+    /// Verify and normalize every recovered record. Zone existence is not rechecked here because it
+    /// needs client data; edits were validated when made.
     /// </summary>
-    void Recover()
+    static GraveyardEdit Check(GraveyardEdit edit)
     {
-        if (file.Read() is not string payload)
+        var before = edit.Before.Normalized();
+        var after = edit.After.Normalized();
+        before.Validate();
+        after.Validate();
+        if (before.Id != edit.Id || after.Id != edit.Id || before.Map != after.Map)
         {
-            return;
+            throw new InvalidDataException("Inconsistent graveyard draft.");
         }
 
-        var restored = JsonSerializer.Deserialize<GraveyardDraftSnapshot>(payload) ?? throw new InvalidDataException("Invalid graveyard draft.");
-        if (restored.Version != 1 || restored.Cursor < 0 || restored.Cursor > restored.History.Length)
-        {
-            throw new InvalidDataException("Unsupported graveyard draft.");
-        }
-
-        var history = new GraveyardEdit[restored.History.Length];
-        for (int i = 0; i < history.Length; i++)
-        {
-            var edit = restored.History[i];
-            var before = edit.Before.Normalized();
-            var after = edit.After.Normalized();
-            before.Validate();
-            after.Validate();
-            if (before.Id != edit.Id || after.Id != edit.Id || before.Map != after.Map)
-            {
-                throw new InvalidDataException("Inconsistent graveyard draft.");
-            }
-
-            history[i] = edit with { Before = before, After = after };
-        }
-
-        state = restored with { History = history };
+        return edit with { Before = before, After = after };
     }
 
-    IEnumerable<GraveyardEdit> Applied(string source, GraveyardRecord original) => state.History.Take(state.Cursor).Where(e => e.Source == source && e.Id == original.Id && e.Before.Map == original.Map);
+    IEnumerable<GraveyardEdit> Applied(string source, GraveyardRecord original) => history.State.AppliedEntries().Where(e => e.Source == source && e.Id == original.Id && e.Before.Map == original.Map);
 
     /// <summary>
     /// Last applied edit when its first baseline still equals the source row; otherwise the source.
@@ -184,35 +147,15 @@ public sealed class GraveyardDraft : IDisposable
         }
 
         var before = Effective(source, original);
-        if (after == before)
+        if (after != before)
         {
-            return;
-        }
-
-        Save(new(1, state.History.Take(state.Cursor).Append(new GraveyardEdit(source, original.Id, before, after)).ToArray(), state.Cursor + 1));
-    }
-
-    public void Undo()
-    {
-        if (state.Cursor > 0)
-        {
-            Save(state with { Cursor = state.Cursor - 1 });
+            history.Append(new GraveyardEdit(source, original.Id, before, after));
         }
     }
 
-    public void Redo()
-    {
-        if (state.Cursor < state.History.Length)
-        {
-            Save(state with { Cursor = state.Cursor + 1 });
-        }
-    }
+    public void Undo() => history.Undo();
 
-    void Save(GraveyardDraftSnapshot next)
-    {
-        file.Write(JsonSerializer.Serialize(next));
-        state = next;
-    }
+    public void Redo() => history.Redo();
 
-    public void Dispose() => file.Dispose();
+    public void Dispose() => history.Dispose();
 }
