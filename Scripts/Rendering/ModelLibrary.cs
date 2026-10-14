@@ -393,7 +393,7 @@ public sealed class ModelLibrary
             }
             else if (surface.Blend >= 2)
             {
-                code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
+                code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never, fog_disabled;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never, fog_disabled;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
                 code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
             }
 
@@ -458,7 +458,7 @@ public sealed class ModelLibrary
         material.SetShaderParameter("animation_frames", e.Palette.Height);
         material.SetShaderParameter("animation_duration", e.Palette.Duration);
         material.SetShaderParameter("blend_mode", surface.Blend);
-        material.SetShaderParameter("vertex_color", surface.Colors != null);
+        material.SetShaderParameter("vertex_color", (int)surface.ColorMode);
         material.SetShaderParameter("material_palette", e.MaterialTexture!);
         material.SetShaderParameter("material_column", appearance.Column);
         material.SetShaderParameter("color_frames", appearance.ColorFrames);

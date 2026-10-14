@@ -4,10 +4,22 @@ using System.Text;
 namespace ACWorldEdit.Assets;
 // Parsed data contains no Godot resources; all archive/decode work can run on a worker.
 /// <summary>
+/// How a WMO batch uses its baked MOCV colors. Interior groups (flag 0x2000) store their lighting
+/// there: it replaces scene lighting and is doubled like the client's modulate-2x. Exterior groups
+/// keep sun lighting and add the colors as an emissive term, since many are near black.
+/// </summary>
+public enum VertexColorMode
+{
+    None,
+    BakedInterior,
+    ExteriorEmissive
+}
+
+/// <summary>
 /// Detached batch with viewer-space vertices, material metadata and optional four-influence
 /// skinning, color or liquid channels. Format readers validate array/index relationships.
 /// </summary>
-public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0, SurfaceAnimation? Material = null);
+public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0, SurfaceAnimation? Material = null, VertexColorMode ColorMode = VertexColorMode.None);
 /// <summary>
 /// Embedded WMO M2 placement in viewer-space local coordinates. Its parent WMO transform
 /// composes with this pose when binding instances.

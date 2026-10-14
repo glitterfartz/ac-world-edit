@@ -80,6 +80,8 @@ public static class WmoModel
             var nr = sub.GetValueOrDefault("MONR");
             var uv = sub.GetValueOrDefault("MOTV");
             var colors = sub.GetValueOrDefault("MOCV");
+            bool interior = (gb.U(gp.Data + 8) & 0x2000) != 0;
+            var colorMode = colors.Size == 0 ? VertexColorMode.None : interior ? VertexColorMode.BakedInterior : VertexColorMode.ExteriorEmissive;
             Vector3[] positions = new Vector3[vertices], normals = new Vector3[vertices];
             Vector2[] uvs = new Vector2[vertices];
             Vector4[] tint = new Vector4[vertices];
@@ -138,7 +140,7 @@ public static class WmoModel
                     (indices[j + 1], indices[j + 2]) = (indices[j + 2], indices[j + 1]);
                 }
 
-                surfaces.Add(new(positions, normals, uvs, indices, b.Str(names.Data + texOffset).Replace('\\', '/'), b.I(m + 8), (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colors.Size > 0));
+                surfaces.Add(new(positions, normals, uvs, indices, b.Str(names.Data + texOffset).Replace('\\', '/'), b.I(m + 8), (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode));
                 if (b.U(m + 4) != 0)
                 {
                     warnings.Add($"WMO shader {b.U(m + 4)} uses base-texture preview.");
@@ -189,7 +191,7 @@ public static class WmoModel
 
         // Compact render batches and merge by material. Exported group arrays otherwise repeat
         // thousands of unused vertices for every tiny batch (especially Stormwind).
-        var merged = surfaces.Where(s => s.LiquidType == null).GroupBy(s => (s.Texture, s.Blend, s.TwoSided, s.Unlit)).Select(group =>
+        var merged = surfaces.Where(s => s.LiquidType == null).GroupBy(s => (s.Texture, s.Blend, s.TwoSided, s.Unlit, s.ColorMode)).Select(group =>
         {
             List<Vector3> positions = [], normals = [];
             List<Vector2> uv = [];
@@ -215,7 +217,7 @@ public static class WmoModel
                 }
             }
 
-            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit);
+            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode);
         }).ToArray();
         return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
     }

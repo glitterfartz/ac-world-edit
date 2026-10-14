@@ -635,3 +635,16 @@ reading the streaming paths, not by guessing:
   terrain/triangle occlusion. Existing native material/client-fidelity limitations still apply.
 - PLAN.md, README.md and AGENTS.md now describe this scope and the conservative filters. Source
   client/server/database data, user viewport changes and unrelated UID files remain untouched.
+
+## WMO baked-color and additive-fog fixes — 2026-10-13
+
+- Nexus (map 576) rendered near black: its interior WMO groups (MOGP flag 0x2000) store lighting in
+  MOCV (mean about 0.4) and were drawn unlit at 1x. Interior groups now use `VertexColorMode.BakedInterior`
+  (unlit, colors x2 like the client's modulate-2x). The 2x factor is an assumption, not a client trace.
+- Ulduar exterior WMOs (`ulduar_ext01/03`, Northrend tile 33,15) have near-zero MOCV and also went black.
+  Exterior groups now keep sun lighting and add MOCV as emission (`ExteriorEmissive`). Exterior batches with
+  the WMO unlit material flag ignore the emissive term. Azeroth exterior WMOs (Stormwind etc.) change look.
+- `STORMPEAKS_FOG_01` is an unlit additive M2 with a mostly black texture; scene fog added its color to every
+  texel. Additive and multiply variants now use `fog_disabled` (cause inferred from render modes and data).
+- Validation: build 0 warnings/errors, whitespace format check, `--models` corpus checks passed.
+  Not verified graphically; confirmed visually by the user in the viewer.

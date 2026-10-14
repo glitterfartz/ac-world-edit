@@ -10,7 +10,9 @@ uniform float animation_duration = 0.0;
 uniform int animation_frames = 1;
 uniform bool skinned = false;
 uniform int blend_mode = 0;
-uniform bool vertex_color = false;
+// 0 none, 1 baked interior WMO lighting (replaces scene light, modulate-2x), 2 exterior WMO
+// colors added as emission on top of sun lighting.
+uniform int vertex_color = 0;
 // Native batch color (alpha includes texture weight) and first-unit UV affine rows. Animated
 // batches read them from material_palette at material_column (color), +1 and +2 (UV rows),
 // each channel looping over its own period; static batches use the uniforms below.
@@ -98,7 +100,9 @@ void fragment() {
     if (batch_color.a <= 1.0 / 255.0) {
         discard;
     }
-    ALBEDO = tex.rgb * batch_color.rgb * (vertex_color ? COLOR.rgb : vec3(1.0));
+    vec3 base = tex.rgb * batch_color.rgb;
+    ALBEDO = vertex_color == 1 ? base * COLOR.rgb * 2.0 : base;
+    EMISSION = vertex_color == 2 ? base * COLOR.rgb : vec3(0.0);
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
 }
