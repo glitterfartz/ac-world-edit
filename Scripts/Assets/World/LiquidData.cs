@@ -202,7 +202,8 @@ public static class LiquidData
 
     /// <summary>
     /// Decode MLIQ dimensions, native heights and hidden cells. Axis conversion needs WMO-specific
-    /// winding; magma/slime can use stored UV pairs.
+    /// winding; magma/slime can use stored UV pairs. kind is the LiquidType.dbc material kind,
+    /// carried on the surface so rendering needs no archive lookup.
     /// </summary>
     public static ModelSurface Wmo(byte[] bytes, uint type, uint kind = 0)
     {
@@ -234,7 +235,7 @@ public static class LiquidData
             (surface.Indices[i + 1], surface.Indices[i + 2]) = (surface.Indices[i + 2], surface.Indices[i + 1]);
         }
 
-        return surface;
+        return surface with { LiquidKind = kind };
     }
 
     /// <summary>

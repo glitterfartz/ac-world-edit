@@ -106,49 +106,21 @@ public sealed class AssetStore : IDisposable
     /// </summary>
     public List<MapInfo> Maps()
     {
-        byte[] b = Read(@"DBFilesClient/Map.dbc");
-        if (Encoding.ASCII.GetString(b, 0, 4) != "WDBC")
-        {
-            throw new InvalidDataException("Expected Wrath Map.dbc");
-        }
-
-        int records = checked((int)MpqArchive.U(b, 4)), fields = checked((int)MpqArchive.U(b, 8));
-        int stride = checked((int)MpqArchive.U(b, 12)), strings = checked(20 + records * stride);
-        if (fields < 6 || stride < 24 || strings > b.Length)
-        {
-            throw new InvalidDataException("Bad Map.dbc header");
-        }
-
-        string Str(int offset)
-        {
-            int p = checked(strings + offset);
-            if (p < strings || p >= b.Length)
-            {
-                return "";
-            }
-
-            int end = Array.IndexOf(b, (byte)0, p);
-            return end < 0 ? "" : Encoding.UTF8.GetString(b, p, end - p);
-        }
-
+        // Map.dbc: field 0 ID, field 1 directory, fields 5..20 localized names (one per locale).
+        var table = new DbcTable(Read(@"DBFilesClient/Map.dbc"));
         List<MapInfo> maps = [];
-        for (int i = 0; i < records; i++)
+        foreach (uint id in table.Ids)
         {
-            int p = 20 + i * stride;
-            string dir = Str((int)MpqArchive.U(b, p + 4));
+            string dir = table.Str(id, 1);
             string name = "";
-            for (int locale = 0; locale < 16 && 5 + locale < fields; locale++)
+            for (int locale = 0; locale < 16 && name.Length == 0; locale++)
             {
-                name = Str((int)MpqArchive.U(b, p + (5 + locale) * 4));
-                if (name.Length > 0)
-                {
-                    break;
-                }
+                name = table.Str(id, 5 + locale);
             }
 
             if (dir.Length > 0 && Exists($@"World/Maps/{dir}/{dir}.wdt"))
             {
-                maps.Add(new((int)MpqArchive.U(b, p), dir, name.Length == 0 ? dir : name));
+                maps.Add(new((int)id, dir, name.Length == 0 ? dir : name));
             }
         }
 

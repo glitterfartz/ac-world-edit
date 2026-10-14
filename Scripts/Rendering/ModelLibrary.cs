@@ -182,6 +182,26 @@ public sealed class ModelLibrary
     /// Compose Godot column-vector static rotations/scaling. Order and the extra half-turn match the
     /// CPU transform and source MODF bounds checks.
     /// </summary>
+    /// <summary>
+    /// Vertex, normal, UV, index and (when present) color arrays of one parsed surface, converted from
+    /// the engine-free numerics types. Shared with the terrain liquid meshes.
+    /// </summary>
+    public static Godot.Collections.Array SurfaceArrays(ModelSurface surface)
+    {
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = surface.Positions.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
+        arrays[(int)Mesh.ArrayType.Normal] = surface.Normals.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
+        arrays[(int)Mesh.ArrayType.TexUV] = surface.Uv.Select(v => new Vector2(v.X, v.Y)).ToArray();
+        arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
+        if (surface.Colors != null)
+        {
+            arrays[(int)Mesh.ArrayType.Color] = surface.Colors.Select(v => new Color(v.X, v.Y, v.Z, v.W)).ToArray();
+        }
+
+        return arrays;
+    }
+
     public static Transform3D Placement(WorldObject item)
     {
         // Client rotations are Z/Y/X in its Z-up model space. Convert that basis to Y-up.
@@ -347,17 +367,7 @@ public sealed class ModelLibrary
             return;
         }
 
-        var arrays = new Godot.Collections.Array();
-        arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = surface.Positions.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
-        arrays[(int)Mesh.ArrayType.Normal] = surface.Normals.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
-        arrays[(int)Mesh.ArrayType.TexUV] = surface.Uv.Select(v => new Vector2(v.X, v.Y)).ToArray();
-        arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
-        if (surface.Colors != null)
-        {
-            arrays[(int)Mesh.ArrayType.Color] = surface.Colors.Select(v => new Color(v.X, v.Y, v.Z, v.W)).ToArray();
-        }
-
+        var arrays = SurfaceArrays(surface);
         Mesh.ArrayFormat flags = 0;
         if (surface.Bones != null && surface.Weights != null)
         {
@@ -678,10 +688,6 @@ public sealed class ModelLibrary
             }
         }
 
-        data = data with
-        {
-            Surfaces = data.Surfaces.Select(s => s.LiquidType is uint type ? s with { LiquidKind = LiquidTextures.For(source).Kind(type) } : s).ToArray()
-        };
         return new Entry(data, AnimationPalette.Bake(data, token), MaterialPalette.Bake(data, token), decoded);
     }
 }
