@@ -30,8 +30,7 @@ public partial class CreatureOverlay
         filter.TextChanged += _ =>
         {
             PopulateList();
-            searchPending = true;
-            searchChanged = System.Diagnostics.Stopwatch.GetTimestamp();
+            query.MarkSearchChanged();
         };
         list = new ItemList
         {

@@ -59,8 +59,6 @@ public partial class CreatureOverlay : Node3D
     public event Action? SelectionChanged;
     SpawnQueryPoint? queryPoint;
     readonly HashSet<uint> admitted = [];
-    bool searchPending;
-    long searchChanged;
     public void SetPreview(SpawnPreview preview)
     {
         preview.Validate();
@@ -97,12 +95,10 @@ public partial class CreatureOverlay : Node3D
         ShowPose(null);
     }
 
-    CancellationTokenSource cancellation = new();
     CreatureRegion? region;
-    Task<CreatureRegionResult>? pending;
-    // The query may finish after cancellation. Only its captured generation can publish
-    // records; the replacement waits so at most one database query is active.
-    int generation, pendingGeneration;
+    // The query may finish after cancellation; RegionQuery publishes only the current generation
+    // and keeps at most one database query active.
+    readonly RegionQuery<CreatureRegionResult> query = new();
     IReadOnlyList<CreatureSpawn> records = [];
     uint? selectedGuid;
     List<CreatureSpawn> pendingMarkers = [];
@@ -110,7 +106,7 @@ public partial class CreatureOverlay : Node3D
     string queryStatus = "Waiting for an outdoor map.";
     public uint? SelectedGuid => selectedGuid;
     public IReadOnlyList<CreatureSpawn> Records => records;
-    public bool IsLoading => pending != null || pendingMarkers.Count > 0;
+    public bool IsLoading => query.IsLoading || pendingMarkers.Count > 0;
 
     public string QueryStatus => queryStatus;
 
@@ -167,11 +163,7 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     void Restart(bool preserveSelection = true)
     {
-        generation++;
-        cancellation.Cancel();
-        cancellation.Dispose();
-        cancellation = new();
-        // Keep at most one active query. Its cancellation completes before starting the replacement.
+        query.Restart();
         if (preserveSelection)
         {
             // Same region (routine camera movement, search/filter tweaks): cancel and reissue the
@@ -245,7 +237,20 @@ public partial class CreatureOverlay : Node3D
         }
     }
 
-    int requestedGeneration = -1;
+    void Publish(CreatureRegionResult result)
+    {
+        sourceKey = result.SourceKey;
+        EventCatalog = result.Events ?? [];
+        truncated = result.Truncated;
+        ReconcileSpawns(result.Spawns);
+        if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
+        {
+            Deselect();
+        }
+
+        PopulateList();
+    }
+
     /// <summary>
     /// Publish only current queries, create bounded marker batches and reconcile models/list/gizmo
     /// state.
@@ -263,56 +268,20 @@ public partial class CreatureOverlay : Node3D
             }
         }
 
-        if (searchPending && System.Diagnostics.Stopwatch.GetElapsedTime(searchChanged).TotalSeconds >= 0.3)
+        if (query.TakeSettledSearch())
         {
-            searchPending = false;
             Restart(false);
         }
 
-        if (pending is { IsCompleted: true })
+        query.Poll(Publish, error => queryStatus = error);
+        if (region != null && LayerEnabled && query.WantsStart)
         {
-            try
-            {
-                var result = pending.GetAwaiter().GetResult();
-                if (pendingGeneration == generation)
-                {
-                    sourceKey = result.SourceKey;
-                    EventCatalog = result.Events ?? [];
-                    truncated = result.Truncated;
-                    ReconcileSpawns(result.Spawns);
-                    if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
-                    {
-                        Deselect();
-                    }
-
-                    PopulateList();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception error)
-            {
-                if (pendingGeneration == generation)
-                {
-                    queryStatus = CreatureSource.SafeError(error);
-                }
-            }
-
-            pending = null;
-        }
-
-        if (requestedGeneration != generation && pending == null && region != null && LayerEnabled)
-        {
-            requestedGeneration = generation;
-            pendingGeneration = generation;
             var next = region;
             string path = ConnectionPath;
             var preview = Preview;
             var point = queryPoint;
-            string search = filter.Text;
-            var token = cancellation.Token;
-            pending = Task.Run(async () => await new CreatureSource(path).ReadAsync(next, preview, point, search, token), token);
+            string term = filter.Text;
+            query.Start(token => new CreatureSource(path).ReadAsync(next, preview, point, term, token));
         }
 
         if (pendingMarkers.Count > 0)
@@ -908,8 +877,7 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public override void _ExitTree()
     {
-        cancellation.Cancel();
-        cancellation.Dispose();
+        query.Dispose();
         draft?.Dispose();
     }
 }

@@ -6,7 +6,7 @@ namespace ACWorldEdit;
 /// <summary>Read-only accessors and button presses for --areatrigger-smoke.</summary>
 public partial class AreaTriggerOverlay
 {
-    public bool SmokeQueryIdle => pending == null && requested == generation;
+    public bool SmokeQueryIdle => query.IsIdle;
     public int SmokeVisibleVolumes => markers.Values.Count(m => m.Node.Visible && !m.Node.IsQueuedForDeletion());
     public bool SmokeHasOutline => outline != null && !outline.IsQueuedForDeletion();
     public string SmokeDetails => details.Text;

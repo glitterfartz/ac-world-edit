@@ -29,7 +29,7 @@ public partial class AreaTriggerOverlay : Node3D
     public uint? SelectedEntry => selected;
     public bool HasSelection => selected.HasValue;
     public IReadOnlyList<AreaTriggerRecord> Triggers => triggers;
-    public bool IsLoading => pending != null;
+    public bool IsLoading => query.IsLoading;
     public string QueryStatus => queryStatus;
     public event Action? SelectionChanged;
     public event Action<WorldPose>? FocusRequested;
@@ -47,11 +47,7 @@ public partial class AreaTriggerOverlay : Node3D
     uint? selected;
     CreatureRegion? region;
     SpawnQueryPoint? point;
-    Task<AreaTriggerRegionResult>? pending;
-    CancellationTokenSource cancellation = new();
-    int generation, pendingGeneration, requested = -1;
-    bool searchPending;
-    long searchChanged;
+    readonly RegionQuery<AreaTriggerRegionResult> query = new();
     string queryStatus = "AreaTrigger layer hidden";
     string message = "";
 
@@ -105,10 +101,7 @@ public partial class AreaTriggerOverlay : Node3D
     /// </summary>
     void Restart(bool hard)
     {
-        generation++;
-        cancellation.Cancel();
-        cancellation.Dispose();
-        cancellation = new();
+        query.Restart();
         if (hard)
         {
             Deselect();
@@ -135,44 +128,18 @@ public partial class AreaTriggerOverlay : Node3D
             point ??= SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
         }
 
-        if (searchPending && System.Diagnostics.Stopwatch.GetElapsedTime(searchChanged).TotalSeconds >= 0.3)
+        if (query.TakeSettledSearch())
         {
-            searchPending = false;
             Restart(true);
         }
 
-        if (pending is { IsCompleted: true })
+        query.Poll(Publish, error => queryStatus = error);
+        if (LayerEnabled && region != null && query.WantsStart)
         {
-            try
-            {
-                var result = pending.GetAwaiter().GetResult();
-                if (pendingGeneration == generation)
-                {
-                    Publish(result);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception error)
-            {
-                if (pendingGeneration == generation)
-                {
-                    queryStatus = CreatureSource.SafeError(error);
-                }
-            }
-
-            pending = null;
-        }
-
-        if (LayerEnabled && requested != generation && pending == null && region != null)
-        {
-            requested = pendingGeneration = generation;
             var area = region;
             var center = point;
             string term = search.Text, config = ConnectionPath();
-            var token = cancellation.Token;
-            pending = Task.Run(() => new AreaTriggerSource(config).ReadAsync(area, center, term, token), token);
+            query.Start(token => new AreaTriggerSource(config).ReadAsync(area, center, term, token));
         }
 
         foreach (var (entry, marker) in markers)
@@ -430,5 +397,5 @@ public partial class AreaTriggerOverlay : Node3D
         ? FormattableString.Invariant($".go xyz {t.X:0.###} {t.Y:0.###} {t.Z:0.###} {t.Map}")
         : null;
 
-    public override void _ExitTree() => cancellation.Cancel();
+    public override void _ExitTree() => query.Dispose();
 }

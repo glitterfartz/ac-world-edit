@@ -32,8 +32,7 @@ public partial class GraveyardOverlay
         };
         search.TextChanged += _ =>
         {
-            searchPending = true;
-            searchChanged = System.Diagnostics.Stopwatch.GetTimestamp();
+            query.MarkSearchChanged();
         };
         page.AddChild(search);
         list = new ItemList

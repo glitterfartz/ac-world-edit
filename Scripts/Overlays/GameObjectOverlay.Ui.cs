@@ -20,8 +20,7 @@ public partial class GameObjectOverlay
         search.TextChanged += _ =>
         {
             Populate();
-            searchPending = true;
-            searchChanged = System.Diagnostics.Stopwatch.GetTimestamp();
+            query.MarkSearchChanged();
         };
         list = new ItemList
         {

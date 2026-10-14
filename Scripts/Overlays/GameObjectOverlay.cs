@@ -19,7 +19,7 @@ public partial class GameObjectOverlay : Node3D
     public uint? SelectedGuid => selected;
     public int ModelObjectCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedObjectCount { get; private set; }
-    public bool IsLoading => pending != null;
+    public bool IsLoading => query.IsLoading;
 
     public event Action<WorldPose>? FocusRequested;
     public event Action? SelectionChanged;
@@ -41,11 +41,8 @@ public partial class GameObjectOverlay : Node3D
     uint? selected;
     CreatureRegion? region;
     SpawnQueryPoint? point;
-    Task<GameObjectRegionResult>? pending;
-    CancellationTokenSource cancellation = new();
-    int generation, pendingGeneration, requested = -1;
-    long modelUpdate, searchChanged;
-    bool searchPending;
+    readonly RegionQuery<GameObjectRegionResult> query = new();
+    long modelUpdate;
     ItemList list = null!;
     LineEdit search = null!;
     Label status = null!, title = null!, identity = null!, details = null!;
@@ -106,12 +103,7 @@ public partial class GameObjectOverlay : Node3D
     /// </summary>
     void Restart(bool hard = true)
     {
-        // The old task is retained until cancellation completes. Each layer has one query slot,
-        // and a generation check prevents rapid filter/map changes from publishing stale rows.
-        generation++;
-        cancellation.Cancel();
-        cancellation.Dispose();
-        cancellation = new();
+        query.Restart();
         if (hard)
         {
             AdmittedObjectCount = 0;
@@ -163,61 +155,19 @@ public partial class GameObjectOverlay : Node3D
             }
         }
 
-        if (searchPending && System.Diagnostics.Stopwatch.GetElapsedTime(searchChanged).TotalSeconds >= 0.3)
+        if (query.TakeSettledSearch())
         {
-            searchPending = false;
             Restart();
         }
 
-        if (pending is { IsCompleted: true })
+        query.Poll(Publish, error => queryStatus = error);
+        if (LayerEnabled && region != null && query.WantsStart)
         {
-            try
-            {
-                var result = pending.GetAwaiter().GetResult();
-                if (pendingGeneration == generation)
-                {
-                    var incoming = result.Spawns.ToDictionary(s => s.Guid);
-                    // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
-                    // their native model/fallback/label on its next tick without needing a full wipe.
-                    foreach (uint guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
-                    {
-                        lookup.Remove(guid);
-                    }
-
-                    records = result.Spawns;
-                    EventCatalog = result.Events;
-                    foreach (var spawn in records)
-                    {
-                        lookup[spawn.Guid] = spawn;
-                    }
-
-                    Populate();
-                    queryStatus = result.Truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception error)
-            {
-                if (pendingGeneration == generation)
-                {
-                    queryStatus = CreatureSource.SafeError(error);
-                }
-            }
-
-            pending = null;
-        }
-
-        if (LayerEnabled && requested != generation && pending == null && region != null)
-        {
-            requested = pendingGeneration = generation;
             var area = region;
             var preview = Preview;
             var center = point;
             string term = search.Text, config = ConnectionPath();
-            var token = cancellation.Token;
-            pending = Task.Run(() => new GameObjectSource(config).ReadAsync(area, preview, center, term, token), token);
+            query.Start(token => new GameObjectSource(config).ReadAsync(area, preview, center, term, token));
         }
 
         if (LayerEnabled && Models.GameObjects != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
@@ -229,6 +179,27 @@ public partial class GameObjectOverlay : Node3D
         status.Text = queryStatus;
         fly.Disabled = !selected.HasValue || !lookup.ContainsKey(selected.Value);
         selectionLabel.Visible = LayerEnabled && selected.HasValue && lookup.ContainsKey(selected.Value);
+    }
+
+    void Publish(GameObjectRegionResult result)
+    {
+        var incoming = result.Spawns.ToDictionary(s => s.Guid);
+        // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
+        // their native model/fallback/label on its next tick without needing a full wipe.
+        foreach (uint guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
+        {
+            lookup.Remove(guid);
+        }
+
+        records = result.Spawns;
+        EventCatalog = result.Events;
+        foreach (var spawn in records)
+        {
+            lookup[spawn.Guid] = spawn;
+        }
+
+        Populate();
+        queryStatus = result.Truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
     }
 
     /// <summary>
@@ -485,9 +456,5 @@ public partial class GameObjectOverlay : Node3D
         return nearest.HasValue ? (nearest.Value, distance) : null;
     }
 
-    public override void _ExitTree()
-    {
-        cancellation.Cancel();
-        cancellation.Dispose();
-    }
+    public override void _ExitTree() => query.Dispose();
 }

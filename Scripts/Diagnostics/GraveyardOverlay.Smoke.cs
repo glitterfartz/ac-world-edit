@@ -15,7 +15,7 @@ public partial class GraveyardOverlay
     public uint? SmokeListSelection => list.GetSelectedItems() is { Length: > 0 } items ? uint.Parse(list.GetItemMetadata(items[0]).AsString(), CultureInfo.InvariantCulture) : null;
     public int SmokeVisibleMarkers => markers.Values.Count(m => m.Node.Visible);
     public Vector3? SmokeIconPosition(uint id) => markers.TryGetValue(id, out var m) ? m.Icon.GlobalPosition : null;
-    public bool SmokeQueryIdle => pending == null && requested == generation;
+    public bool SmokeQueryIdle => query.IsIdle;
 
     static bool Fail(string step)
     {
