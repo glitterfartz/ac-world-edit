@@ -86,6 +86,9 @@ public partial class TerrainViewer
 
                 // Panels never change between captures; hiding them keeps the fraction about the 3D view.
                 SetInterfaceVisible(false);
+                // Animated materials (ice, glow, water) would drift between the three captures and
+                // read as the sky changing world pixels, so freeze engine time until they are taken.
+                Engine.TimeScale = 0;
                 sky.SkyboxVisible = false;
                 sky.DiagnosticBackground = SmokeBackgroundA;
                 skyboxStage = 4;
@@ -106,6 +109,7 @@ public partial class TerrainViewer
                 break;
             case 6:
                 CompareSkyboxFrames();
+                Engine.TimeScale = 1;
                 sky.DiagnosticBackground = null;
                 SetInterfaceVisible(true);
                 skyboxView++;

@@ -58,14 +58,17 @@ Validation: `dotnet build` clean; `dotnet format whitespace` clean; the console 
 `--visibility-smoke` pass; `--graveyard-smoke` and `--areatrigger-smoke` passed after the
 draft/`RegionQuery` commits.
 
-Not verified: from the viewer-wiring and editor-window commits onward the click-driven graphical smokes
-(`--graveyard-smoke`, `--areatrigger-smoke`, `--interaction-smoke`, `--content-smoke`) fail at their
-first synthetic viewport click ("pick failed" / "short right-click did not open"). They fail identically
-on the original baseline 696bd80, and passed earlier the same day on this code, so this looks like the
-current desktop session (synthetic input) and not the refactor; but it means the sidebar selection
-loop, the three editor windows on the new base class, `SelectRow` and the connection control have only
-been build- and boot-checked, not clicked through. Re-run those four smokes before relying on them.
-`--skybox-smoke` also fails on the baseline (different Icecrown views each run); not a regression.
+Smokes: after the refactor every smoke passes: terrain and creature (headless); graphical graveyard,
+areatrigger, interaction, content, visibility, reload, water, water-interior, gizmo, visual and
+skybox. Between the viewer-wiring commit and the final sweep the click-driven smokes (graveyard,
+areatrigger, interaction, content) failed at their first synthetic viewport click, identically on the
+original baseline 696bd80, and then passed again without any code change; the cause was not
+reproduced (probably the desktop session: another window or a locked/inactive display), so if they
+fail again, check that before suspecting the code. `--skybox-smoke` was genuinely flaky on the
+baseline (a different Icecrown view failed each run, up to 41% "sky over world"): it compared three
+captures taken a few frames apart while animated ice/glow materials kept moving, so shimmer counted as
+sky leaking. It now freezes `Engine.TimeScale` for the captures; worst leak across three runs is
+0.05% against the 1% threshold.
 
 ## Implemented
 
