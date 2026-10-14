@@ -1,4 +1,5 @@
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Engine- and database-independent checks of InteractionDraft (grouped row edits, undo/redo,
@@ -21,28 +22,6 @@ public static class InteractionDraftChecks
         public int MenuUsers(uint menuId) => menuId == 50 ? 3 : 1;
         public int TextUsers(uint textId) => 1;
         public int TrainerUsers(uint trainerId) => 1;
-    }
-
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
-    static void Rejects(Action action, string message)
-    {
-        try
-        {
-            action();
-        }
-        catch (InvalidDataException)
-        {
-            return;
-        }
-
-        throw new Exception(message);
     }
 
     static NpcInteraction View(RowSet snapshot, RowSet rows) => NpcInteraction.Build(42, 1, "Test NPC", "", "", 1, snapshot, rows, new FakeLookup(), [], new Dictionary<int, int>());

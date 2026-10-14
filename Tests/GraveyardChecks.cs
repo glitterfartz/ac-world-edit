@@ -1,6 +1,7 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Live, read-only graveyard checks: whole-table integrity against the server's loading rules and
@@ -9,18 +10,10 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class GraveyardChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     public static async Task Run(AssetStore store)
     {
         var areas = new DbcTable(store.Read("DBFilesClient/AreaTable.dbc"));
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var database = new WorldDatabase(config);
         await using (var session = await database.OpenAsync(CancellationToken.None))
         {

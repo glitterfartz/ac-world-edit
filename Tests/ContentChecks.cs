@@ -1,6 +1,7 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Live, read-only quest and SmartAI snapshot checks against real rows: a known Elwynn quest, a
@@ -8,18 +9,10 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class ContentChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     public static async Task Run(AssetStore store)
     {
         var catalog = InteractionCatalog.Load(store);
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var source = new ContentSource(config);
         var quests = await source.SearchAsync(SmartParamKind.Quest, "Kobold Camp Cleanup", CancellationToken.None);
         Check(quests.Count > 0, "Quest search found nothing");

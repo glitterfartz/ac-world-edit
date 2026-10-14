@@ -1,21 +1,14 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>Native models and material/animation data reached through real database GO displays.</summary>
 public static class GameObjectChecks
 {
     public static async Task Run(AssetStore store)
     {
-        void Check(bool value, string reason)
-        {
-            if (!value)
-            {
-                throw new Exception(reason);
-            }
-        }
-
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var result = await new GameObjectSource(config).ReadAsync(new(0, 31, 33, 48, 50), new(), new(-9492.72, 75.6383, 56.1841), "", default);
         var catalog = new GameObjectCatalog(store);
         var table = new DbcTable(store.Read("DBFilesClient/GameObjectDisplayInfo.dbc"));

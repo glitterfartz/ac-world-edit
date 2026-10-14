@@ -1,5 +1,6 @@
 using ACWorldEdit.Assets;
 using System.Numerics;
+using static Test;
 
 /// <summary>
 /// Native texture/ADT corpus checks plus explicit binary fixtures for MH2O/MCLQ/WMO masks and
@@ -7,14 +8,6 @@ using System.Numerics;
 /// </summary>
 static class LiquidChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     /// <summary>
     /// Validate categories, animated/shared atlases and representative grids. Report unsupported
     /// procedural entries rather than claiming they render.

@@ -1,17 +1,10 @@
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>SQL-only, read-only preview checks against the user's known event-bound mannequin.</summary>
 public static class SpawnFilterChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     public static async Task Run()
     {
         var policy = new SpawnPreview();
@@ -34,7 +27,7 @@ public static class SpawnFilterChecks
         {
         }
 
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var source = new CreatureSource(config);
         var region = new CreatureRegion(0, 31, 33, 48, 50);
         var point = new SpawnQueryPoint(-9492.72, 75.6383, 56.1841);

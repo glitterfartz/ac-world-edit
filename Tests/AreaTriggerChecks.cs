@@ -1,6 +1,7 @@
 using System.Numerics;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Live, read-only AreaTrigger checks: table links against the server loaders, the bounded regional
@@ -10,17 +11,9 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class AreaTriggerChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     public static async Task Run()
     {
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var database = new WorldDatabase(config);
         long total, smart;
         await using (var session = await database.OpenAsync(CancellationToken.None))

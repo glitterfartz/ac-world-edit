@@ -1,6 +1,7 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Live, read-only interaction checks: DBC field offsets against known rows, then real Goldshire
@@ -8,14 +9,6 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class InteractionChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     public static async Task Run(AssetStore store)
     {
         var catalog = InteractionCatalog.Load(store);
@@ -26,7 +19,7 @@ public static class InteractionChecks
         Check(catalog.SearchSpells("Fireball").Count > 0 && catalog.SearchSpells("").Count == 0, "Spell search");
         Console.WriteLine("INTERACTION_CATALOG_PASSED spell/taxi/extended-cost/icon offsets");
 
-        string config = Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+        string config = Config;
         var database = new WorldDatabase(config);
         var samples = new Dictionary<string, (uint Entry, uint Guid)>();
         await using (var session = await database.OpenAsync(CancellationToken.None))

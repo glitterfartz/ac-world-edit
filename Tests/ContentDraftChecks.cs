@@ -1,4 +1,5 @@
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Engine- and database-independent checks of quest and SmartAI editing over the shared
@@ -20,14 +21,6 @@ public static class ContentDraftChecks
         public string? TextEmote(uint id) => id == 101 ? "wave" : null;
         public string? FactionTemplate(uint id) => null;
         public string? Faction(uint id) => null;
-    }
-
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
     }
 
     public static void Run()

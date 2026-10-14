@@ -1,6 +1,7 @@
 using System.Numerics;
 using ACWorldEdit.Assets;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Engine-independent placement checks: heading normalization, terrain height probes over synthetic
@@ -8,14 +9,6 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class PlacementChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
     static bool Near(double a, double b, double tolerance = 1e-4) => Math.Abs(a - b) <= tolerance;
 
     public static void Run()

@@ -1,4 +1,5 @@
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Persistence checks using unique disposable artifact paths without any source database.
@@ -18,14 +19,6 @@ public static class CreatureDraftChecks
             X = 110,
             Z = 35
         };
-        void Check(bool condition, string message)
-        {
-            if (!condition)
-            {
-                throw new Exception(message);
-            }
-        }
-
         using (var draft = new CreatureDraft(path))
         {
             draft.Move("source-a", 7, baseline, moved);

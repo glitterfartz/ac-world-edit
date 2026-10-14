@@ -1,5 +1,6 @@
 using ACWorldEdit.Assets;
 using System.Numerics;
+using static Test;
 
 /// <summary>
 /// Read-only native geometry/texture/animation corpus and static placement bounds checks. CPU
@@ -13,14 +14,6 @@ public static class ModelChecks
     /// </summary>
     public static void Run(AssetStore store)
     {
-        void Check(bool condition, string message)
-        {
-            if (!condition)
-            {
-                throw new Exception(message);
-            }
-        }
-
         var catalog = new CreatureCatalog(store);
         var animal = catalog.Resolve(1141); // Stock rat; real display->model/skin lookup.
         var wolf = catalog.Resolve(11415);

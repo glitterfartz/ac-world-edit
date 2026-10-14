@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using ACWorldEdit.Foundation;
+using static Test;
 
 /// <summary>
 /// Graveyard draft persistence and server-rule validation using disposable artifact paths, plus a
@@ -9,28 +10,6 @@ using ACWorldEdit.Foundation;
 /// </summary>
 public static class GraveyardDraftChecks
 {
-    static void Check(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new Exception(message);
-        }
-    }
-
-    static void Rejects(Action action, string message)
-    {
-        try
-        {
-            action();
-        }
-        catch (InvalidDataException)
-        {
-            return;
-        }
-
-        throw new Exception(message);
-    }
-
     public static void Run()
     {
         string root = Path.GetFullPath(Path.Combine("artifacts", "draft-checks", Guid.NewGuid().ToString("N")));

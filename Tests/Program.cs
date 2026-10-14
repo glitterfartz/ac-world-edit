@@ -1,14 +1,7 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Foundation;
 using System.Security.Cryptography;
-
-static void Check(bool condition, string message)
-{
-    if (!condition)
-    {
-        throw new Exception(message);
-    }
-}
+using static Test;
 
 static void Reject(Action action, string message)
 {
