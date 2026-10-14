@@ -38,6 +38,20 @@ public partial class TerrainViewer
     }
 
     /// <summary>
+    /// Every wanted tile is loaded and no tile decode or build is in flight.
+    /// </summary>
+    bool TerrainSettled => loaded.Count == wanted.Count && pending == null && building == null;
+
+    /// <summary>
+    /// Report a smoke failure and exit non-zero; callers return so the step does not continue.
+    /// </summary>
+    void SmokeFail(string message)
+    {
+        GD.PushError(message);
+        GetTree().Quit(1);
+    }
+
+    /// <summary>
     /// Advance every enabled smoke workflow once per frame, after the viewer's own per-frame updates.
     /// </summary>
     void RunSmokeChecks(double delta)
@@ -104,8 +118,7 @@ public partial class TerrainViewer
         reloadTime += delta;
         if (reloadTime > 120)
         {
-            GD.PushError("RELOAD_SMOKE_TIMEOUT " + message);
-            GetTree().Quit(1);
+            SmokeFail("RELOAD_SMOKE_TIMEOUT " + message);
             return;
         }
 
@@ -140,15 +153,14 @@ public partial class TerrainViewer
             return;
         }
 
-        if (models.HoldPartialUploads || loaded.Count == 0 || loaded.Count != wanted.Count || pending != null || building != null || models.Busy)
+        if (models.HoldPartialUploads || loaded.Count == 0 || !TerrainSettled || models.Busy)
         {
             return;
         }
 
         if (currentMapId != 0 || models.ReadyModels == 0 || models.TextureCount == 0 || models.ActiveFailedModels != 0)
         {
-            GD.PushError("RELOAD_SMOKE_FAILED");
-            GetTree().Quit(1);
+            SmokeFail("RELOAD_SMOKE_FAILED");
             return;
         }
 
@@ -183,8 +195,7 @@ public partial class TerrainViewer
         smokeTime += delta;
         if (smokeTime > 120)
         {
-            GD.PushError("TERRAIN_SMOKE_TIMEOUT " + message);
-            GetTree().Quit(1);
+            SmokeFail("TERRAIN_SMOKE_TIMEOUT " + message);
             return;
         }
 
@@ -222,8 +233,7 @@ public partial class TerrainViewer
         {
             if (loaded.Keys.Any(k => !wanted.Contains(k)) || loaded.ContainsKey(smokeOriginal))
             {
-                GD.PushError("Stale streamed tiles");
-                GetTree().Quit(1);
+                SmokeFail("Stale streamed tiles");
                 return;
             }
 
@@ -249,8 +259,7 @@ public partial class TerrainViewer
         waterTime += delta;
         if (waterTime > 180)
         {
-            GD.PushError("WATER_SMOKE_TIMEOUT " + message);
-            GetTree().Quit(1);
+            SmokeFail("WATER_SMOKE_TIMEOUT " + message);
             return;
         }
 
@@ -330,8 +339,7 @@ public partial class TerrainViewer
 
         if (waterSurfaceCount == 0)
         {
-            GD.PushError("WATER_SMOKE_NO_SURFACES");
-            GetTree().Quit(1);
+            SmokeFail("WATER_SMOKE_NO_SURFACES");
             return;
         }
 
@@ -360,8 +368,7 @@ public partial class TerrainViewer
         creatureSmokeTime += delta;
         if (creatureSmokeTime > (visualSmoke ? 180 : 60))
         {
-            GD.PushError("CREATURE_SMOKE_TIMEOUT " + creatures.QueryStatus);
-            GetTree().Quit(1);
+            SmokeFail("CREATURE_SMOKE_TIMEOUT " + creatures.QueryStatus);
             return;
         }
 
@@ -372,14 +379,13 @@ public partial class TerrainViewer
 
         if (creatures.Records.Any(s => s.Pose.Map != currentMapId))
         {
-            GD.PushError("CREATURE_SMOKE_STALE_MAP");
-            GetTree().Quit(1);
+            SmokeFail("CREATURE_SMOKE_STALE_MAP");
             return;
         }
 
         if (creatureSmokeStage == 0)
         {
-            if (loaded.Count != wanted.Count || pending != null || building != null)
+            if (!TerrainSettled)
             {
                 return;
             }
@@ -391,8 +397,7 @@ public partial class TerrainViewer
             camera.LookAt(position + Vector3.Up);
             if (!creatures.Pick(camera, camera.UnprojectPosition(position + Vector3.Up)) || creatures.SelectedGuid != spawn.Guid || creatures.SelectedListGuid != spawn.Guid)
             {
-                GD.PushError("CREATURE_SMOKE_PICK_FAILED");
-                GetTree().Quit(1);
+                SmokeFail("CREATURE_SMOKE_PICK_FAILED");
                 return;
             }
 
@@ -417,16 +422,14 @@ public partial class TerrainViewer
             {
                 if (!creatures.SmokeGizmo(camera))
                 {
-                    GD.PushError("GIZMO_SMOKE_FAILED");
-                    GetTree().Quit(1);
+                    SmokeFail("GIZMO_SMOKE_FAILED");
                     return;
                 }
 
                 GD.Print("GIZMO_SMOKE_PASSED drag/rotate/ground/model-position/reopen/undo/redo");
                 if (creatures.SmokeLabels() is not { } labels || labels.Checked == 0)
                 {
-                    GD.PushError("LABEL_SMOKE_FAILED");
-                    GetTree().Quit(1);
+                    SmokeFail("LABEL_SMOKE_FAILED");
                     return;
                 }
 
@@ -458,8 +461,7 @@ public partial class TerrainViewer
                 {
                     if (!creatures.ChooseAnimationForSmoke(4))
                     {
-                        GD.PushError("ANIMATION_SMOKE_NO_WALK");
-                        GetTree().Quit(1);
+                        SmokeFail("ANIMATION_SMOKE_NO_WALK");
                         return;
                     }
 
@@ -553,8 +555,7 @@ public partial class TerrainViewer
         {
             if (currentMapId != 1 || creatures.Records.Any(s => s.Pose.Map != 1))
             {
-                GD.PushError("CREATURE_SMOKE_MAP_SWITCH_FAILED");
-                GetTree().Quit(1);
+                SmokeFail("CREATURE_SMOKE_MAP_SWITCH_FAILED");
                 return;
             }
 
@@ -585,8 +586,7 @@ public partial class TerrainViewer
 
             if (world.Tiles.Count != 0 || world.GlobalObjects.Count == 0 || models.ActiveFailedModels > 0)
             {
-                GD.PushError("INTERIOR_SMOKE_FAILED");
-                GetTree().Quit(1);
+                SmokeFail("INTERIOR_SMOKE_FAILED");
                 return;
             }
 

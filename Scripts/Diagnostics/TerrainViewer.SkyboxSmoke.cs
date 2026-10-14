@@ -31,15 +31,13 @@ public partial class TerrainViewer
         skyboxTime += delta;
         if (skyboxTime > 900)
         {
-            GD.PushError("SKYBOX_SMOKE_TIMEOUT " + message);
-            GetTree().Quit(1);
+            SmokeFail("SKYBOX_SMOKE_TIMEOUT " + message);
             return;
         }
 
         if (DisplayServer.GetName() == "headless")
         {
-            GD.PushError("SKYBOX_SMOKE_NEEDS_RENDERING run without --headless");
-            GetTree().Quit(1);
+            SmokeFail("SKYBOX_SMOKE_NEEDS_RENDERING run without --headless");
             return;
         }
 
@@ -54,7 +52,7 @@ public partial class TerrainViewer
             return;
         }
 
-        bool settled = world != null && loaded.Count == wanted.Count && pending == null && building == null && !models.Busy;
+        bool settled = world != null && TerrainSettled && !models.Busy;
         switch (skyboxStage)
         {
             case 0:

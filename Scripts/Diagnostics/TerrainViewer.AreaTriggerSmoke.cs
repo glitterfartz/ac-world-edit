@@ -20,14 +20,13 @@ public partial class TerrainViewer
 
     void AreaTriggerSmokeFail(string message)
     {
-        GD.PushError("AREATRIGGER_SMOKE_FAILED " + message);
-        GetTree().Quit(1);
+        SmokeFail("AREATRIGGER_SMOKE_FAILED " + message);
     }
 
     void AreaTriggerSmoke(double delta)
     {
         areaTriggerTime += delta;
-        bool settled = !busy && world != null && loaded.Count == wanted.Count && pending == null && building == null;
+        bool settled = !busy && world != null && TerrainSettled;
         if (areaTriggerTime > 180)
         {
             AreaTriggerSmokeFail($"timeout stage={areaTriggerStage} busy={busy} tiles={loaded.Count}/{wanted.Count} failed={failed.Count} tileWorker={pending != null || building != null} query={areaTriggers.QueryStatus} {message}");

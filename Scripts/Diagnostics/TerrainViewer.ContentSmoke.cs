@@ -39,8 +39,7 @@ public partial class TerrainViewer
         string Where() => $"behavior='{behaviorEditor.SmokeStatus}' quest='{questEditor.SmokeStatus}' questId={questEditor.QuestId}";
         if (contentStepTime > 60 || contentTime > 360)
         {
-            GD.PushError($"CONTENT_SMOKE_TIMEOUT step={contentSteps[Math.Min(contentStep, contentSteps.Count - 1)].Name} {Where()}");
-            GetTree().Quit(1);
+            SmokeFail($"CONTENT_SMOKE_TIMEOUT step={contentSteps[Math.Min(contentStep, contentSteps.Count - 1)].Name} {Where()}");
             return;
         }
 
@@ -80,8 +79,7 @@ public partial class TerrainViewer
         }
         catch (Exception error)
         {
-            GD.PushError($"CONTENT_SMOKE_FAILED {name}: {error.Message} {Where()}");
-            GetTree().Quit(1);
+            SmokeFail($"CONTENT_SMOKE_FAILED {name}: {error.Message} {Where()}");
         }
     }
 
@@ -416,7 +414,7 @@ public partial class TerrainViewer
         ("locate-stays-focused", () =>
         {
             // The camera's tile finishing must not lift it away from the located creature.
-            if (busy || loaded.Count != wanted.Count || building != null || pending != null)
+            if (busy || !TerrainSettled)
             {
                 return false;
             }
@@ -438,7 +436,7 @@ public partial class TerrainViewer
         }),
         ("locate-tile-reload-keeps-focus", () =>
         {
-            if (busy || loaded.Count != wanted.Count || building != null || pending != null)
+            if (busy || !TerrainSettled)
             {
                 return false;
             }

@@ -76,7 +76,7 @@ public partial class TerrainViewer
             switch (visibilityStage)
             {
                 case 0:
-                    if (loaded.Count != wanted.Count || pending != null || building != null || models.Busy || gameObjects.ModelObjectCount == 0)
+                    if (!TerrainSettled || models.Busy || gameObjects.ModelObjectCount == 0)
                     {
                         return;
                     }
@@ -247,8 +247,7 @@ public partial class TerrainViewer
         }
         catch (Exception error)
         {
-            GD.PushError($"VISIBILITY_SMOKE_FAILED stage={visibilityStage}: {error.Message}");
-            GetTree().Quit(1);
+            SmokeFail($"VISIBILITY_SMOKE_FAILED stage={visibilityStage}: {error.Message}");
         }
     }
 }

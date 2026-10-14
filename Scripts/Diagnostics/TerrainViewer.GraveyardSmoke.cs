@@ -21,8 +21,7 @@ public partial class TerrainViewer
         graveyardTime += delta;
         if (graveyardTime > 240)
         {
-            GD.PushError($"GRAVEYARD_SMOKE_TIMEOUT stage={graveyardStage} {graveyards.QueryStatus}");
-            GetTree().Quit(1);
+            SmokeFail($"GRAVEYARD_SMOKE_TIMEOUT stage={graveyardStage} {graveyards.QueryStatus}");
             return;
         }
 
@@ -32,7 +31,7 @@ public partial class TerrainViewer
             return;
         }
 
-        bool settled = !busy && world != null && loaded.Count == wanted.Count && pending == null && building == null;
+        bool settled = !busy && world != null && TerrainSettled;
         if (!settled)
         {
             return;
@@ -56,8 +55,7 @@ public partial class TerrainViewer
             case 1:
                 if (graveyards.SmokeIconPosition(graveyardTarget) is not Vector3 icon || camera.IsPositionBehind(icon))
                 {
-                    GD.PushError("GRAVEYARD_SMOKE_ICON_NOT_VISIBLE");
-                    GetTree().Quit(1);
+                    SmokeFail("GRAVEYARD_SMOKE_ICON_NOT_VISIBLE");
                     return;
                 }
 
@@ -71,8 +69,7 @@ public partial class TerrainViewer
             case 2:
                 if (graveyards.SelectedId != graveyardTarget || graveyards.SmokeListSelection != graveyardTarget || creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue)
                 {
-                    GD.PushError($"GRAVEYARD_SMOKE_PICK_FAILED selected={graveyards.SelectedId} list={graveyards.SmokeListSelection}");
-                    GetTree().Quit(1);
+                    SmokeFail($"GRAVEYARD_SMOKE_PICK_FAILED selected={graveyards.SelectedId} list={graveyards.SmokeListSelection}");
                     return;
                 }
 
@@ -98,8 +95,7 @@ public partial class TerrainViewer
             case 4:
                 if (graveyards.SmokeVisibleMarkers != 0 || graveyards.Sites.Count != 0 || graveyards.IsLoading || graveyards.HasSelection)
                 {
-                    GD.PushError("GRAVEYARD_SMOKE_LAYER_HIDE_FAILED");
-                    GetTree().Quit(1);
+                    SmokeFail("GRAVEYARD_SMOKE_LAYER_HIDE_FAILED");
                     return;
                 }
 
@@ -121,8 +117,7 @@ public partial class TerrainViewer
 
                 if (graveyards.Sites.Any(s => s.Record.Map != 1))
                 {
-                    GD.PushError("GRAVEYARD_SMOKE_STALE_MAP");
-                    GetTree().Quit(1);
+                    SmokeFail("GRAVEYARD_SMOKE_STALE_MAP");
                     return;
                 }
 

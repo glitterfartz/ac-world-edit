@@ -34,8 +34,7 @@ public partial class TerrainViewer
         // Fail fast with the stuck step's name rather than waiting on a long global timeout.
         if (interactionStepTime > 60 || interactionTime > 300)
         {
-            GD.PushError($"INTERACTION_SMOKE_TIMEOUT step={interactionSteps[Math.Min(interactionStep, interactionSteps.Count - 1)].Name} status={interaction.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}");
-            GetTree().Quit(1);
+            SmokeFail($"INTERACTION_SMOKE_TIMEOUT step={interactionSteps[Math.Min(interactionStep, interactionSteps.Count - 1)].Name} status={interaction.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}");
             return;
         }
 
@@ -75,8 +74,7 @@ public partial class TerrainViewer
         }
         catch (Exception error)
         {
-            GD.PushError($"INTERACTION_SMOKE_FAILED {name}: {error.Message} status={interaction.SmokeStatus}");
-            GetTree().Quit(1);
+            SmokeFail($"INTERACTION_SMOKE_FAILED {name}: {error.Message} status={interaction.SmokeStatus}");
         }
     }
 
