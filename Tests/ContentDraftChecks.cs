@@ -41,9 +41,10 @@ public static class ContentDraftChecks
         }
 
         CheckCategories();
+        CheckAreaTrigger(Path.Combine(Path.GetDirectoryName(path)!, "areatrigger.json"), names);
 
         Directory.Delete(Path.GetDirectoryName(path)!, true);
-        Console.WriteLine("CONTENT_DRAFT_CHECKS_PASSED quest create/edit/rules, SmartAI sentences/chains/rekey/fix, speech rows, type categories");
+        Console.WriteLine("CONTENT_DRAFT_CHECKS_PASSED quest create/edit/rules, SmartAI sentences/chains/rekey/fix, speech rows, type categories, AreaTrigger rules/SmartTrigger");
     }
 
     /// <summary>
@@ -108,6 +109,60 @@ public static class ContentDraftChecks
         draft.Redo();
         draft.Redo();
         Check(draft.MaxReserved("src", InteractionTables.QuestTemplate, "ID") == id, "Quest ID reservation");
+    }
+
+    /// <summary>
+    /// AreaTrigger scope (source_type 2): only On trigger/Then events load, Self and non-creature
+    /// Talk/action-list targets warn, the SmartTrigger script row is offered as a fix (insert, or
+    /// replace a C++ name), and the rule + script commands survive undo/redo and a reopen.
+    /// </summary>
+    static void CheckAreaTrigger(string path, IContentNames names)
+    {
+        const int trigger = 5140;
+        var scope = new SmartScope(trigger, SmartScope.AreaTrigger);
+        Check(scope.Describe("") == "AreaTrigger 5140" && !scope.IsSpawn && scope.IsAreaTrigger, "AreaTrigger scope identity");
+        // The Utgarde Pinnacle row: On trigger -> set data 1 1 on creature spawn 126115 (Svala).
+        var svala = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 45, 10).With("action_param1", 1u).With("action_param2", 1u).With("target_param1", 126115u).With("target_param2", 42u));
+        svala.Row.Validate(InteractionTables.SmartScripts);
+        var clean = SmartCatalog.Check(scope, [svala], names, null, trigger).ToList();
+        Check(clean.All(i => !i.Error && i.Fix == null && !i.Message.Contains("AI is", StringComparison.Ordinal)), "Valid AreaTrigger rule reported: " + string.Join("; ", clean.Select(i => i.Message)));
+        var aggro = new SmartRule(SmartCatalog.NewRow(scope, 1, 4, 11, 7));
+        Check(SmartCatalog.Check(scope, [aggro], names, null, trigger).Any(i => i.Error && i.Message.Contains("On trigger", StringComparison.Ordinal)), "Creature event accepted for an AreaTrigger");
+        var self = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 11, SmartCatalog.SelfTarget));
+        Check(SmartCatalog.Check(scope, [self], names, null, trigger).Any(i => !i.Error && i.Message.Contains("targets Self", StringComparison.Ordinal)), "Self target not warned");
+        var talk = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.Talk, 7));
+        Check(SmartCatalog.Check(scope, [talk], names, null, trigger).Any(i => i.Message.Contains("only speaks", StringComparison.Ordinal)), "Talk on the player not warned");
+        var list = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.RunActionList, 7));
+        Check(SmartCatalog.Check(scope, [list], names, null, trigger).Any(i => i.Message.Contains("action lists", StringComparison.Ordinal)), "Action list on the player not warned");
+        var other = new SmartRule(svala.Row.With("event_param1", 9999u));
+        Check(SmartCatalog.Check(scope, [other], names, null, trigger).Any(i => !i.Error && i.Message.Contains("9999", StringComparison.Ordinal)), "Foreign trigger ID not warned");
+        Check(SmartCatalog.AllowedForAreaTrigger(SmartCatalog.LinkEvent) && !SmartCatalog.AllowedForAreaTrigger(0), "Allowed AreaTrigger events");
+
+        var missing = SmartCatalog.CheckAreaTriggerScript(trigger, null, true).Single();
+        Check(missing.Fix![0].Before == null && missing.Fix[0].After!.T("ScriptName") == AreaTriggerRecord.SmartTrigger && missing.Fix[0].Table == "areatrigger_scripts", "SmartTrigger insert fix");
+        var cpp = Row.Of(("entry", trigger), ("ScriptName", "at_some_cpp_script"));
+        var replace = SmartCatalog.CheckAreaTriggerScript(trigger, cpp, true).Single();
+        Check(!replace.Error && replace.Message.Contains("at_some_cpp_script", StringComparison.Ordinal) && replace.Fix![0].Before == cpp, "C++ script warning");
+        Check(!SmartCatalog.CheckAreaTriggerScript(trigger, cpp.With("ScriptName", AreaTriggerRecord.SmartTrigger), true).Any() && !SmartCatalog.CheckAreaTriggerScript(trigger, null, false).Any(), "SmartTrigger or no rules needs no fix");
+
+        var snapshot = new RowSet();
+        using (var draft = new InteractionDraft(path))
+        {
+            var edits = new List<RowEdit> { new(InteractionTables.SmartScripts.Name, svala.Key, null, svala.Row) };
+            edits.AddRange(missing.Fix);
+            draft.Execute("src", snapshot, "Add rule", edits);
+            var view = draft.Effective("src", snapshot);
+            Check(view.All(InteractionTables.SmartScripts).Count == 1 && view.Get(InteractionTables.AreaTriggerScripts, "5140")?.T("ScriptName") == AreaTriggerRecord.SmartTrigger, "AreaTrigger rule and script drafted");
+            draft.Undo();
+            Check(draft.Effective("src", snapshot).All(InteractionTables.AreaTriggerScripts).Count == 0, "Undo AreaTrigger rule");
+            draft.Redo();
+        }
+
+        using (var reopened = new InteractionDraft(path))
+        {
+            var view = reopened.Effective("src", snapshot);
+            Check(view.Get(InteractionTables.AreaTriggerScripts, "5140") != null && new SmartRule(view.All(InteractionTables.SmartScripts).Single()).TargetParam(1) == 126115, "AreaTrigger draft reopen");
+        }
     }
 
     static void CheckSmart(InteractionDraft draft, IContentNames names)

@@ -216,6 +216,44 @@ reading the streaming paths, not by guessing:
   real multi-worker redesign, which this pass deliberately avoided given the risk to the existing
   decode/upload/cache lifecycle invariants.
 
+## AreaTrigger layer and AreaTrigger SmartAI in the behavior editor — implemented 2026-10-13
+
+- Prior checkpoint: 9a26e99 M2 batch color/UV animation.
+- Scope (user decision): visualize AreaTriggers and link them to the behavior editor; no shape,
+  teleport, quest or tavern editing and no new triggers. The client detects entry from its own
+  AreaTrigger.dbc and sends only the ID; the server re-checks the `areatrigger` row
+  (Player::IsInAreaTriggerRadius) and runs scripts (MiscHandler.cpp HandleAreaTriggerOpcode), so
+  DB-only shape edits would be partly ineffective.
+- AreaTriggerSource: read-only, region-bounded (256 nearest), search before LIMIT, joins
+  areatrigger_scripts/teleport/involvedrelation/tavern and counts source_type 2 rules.
+  AreaTriggerRecord.Contains mirrors the server's sphere distance / Position::IsWithinBox test.
+- AreaTriggerOverlay: Scene layer (off by default) and tab; translucent sphere/rotated box per
+  trigger colored by link (SmartAI, C++ script, teleport, quest, tavern, unlinked), labels within
+  150 yd, an always-visible outline on the selection, read-only inspector (shape, orientation, links,
+  Copy .go, Edit behavior). Picking runs in local unit space and ignores volumes containing the
+  camera so large zone/tavern triggers do not swallow clicks; volumes lose ties to models.
+- Behavior editor: SmartScope.AreaTrigger (2); ReadAreaTriggerBehaviorAsync loads the rules,
+  areatrigger_scripts row and reachable action lists. Only On trigger (46) is offered as an event
+  (Then is still created with "+ Then"); AreaTrigger templates (send data to a creature, nearest
+  creature says a line, cast on the player, nearest creature runs an action list). Checks: events
+  other than 46/61 are errors; foreign trigger IDs, Self targets, Talk and Run action list without a
+  creature target warn (SmartScript.cpp: no owner object). A missing script gets SmartTrigger with
+  the first rule; a C++ ScriptName gets a warning with an explicit switch. The catalog generator
+  gained a curated event 46 label/sentence. The window now renders "Loading…" when opened.
+- Real data: 1,217 triggers (684 spheres, 533 boxes), 75 SmartTrigger, no orphan scripts,
+  teleports or source_type 2 rules. Trigger 5650 (at_q24545_frostmourne_cavern) has 3 SmartAI rows
+  that never run because a C++ script owns it; the editor reports this.
+- Evidence: build 0 warnings; format check; `--draft` (AreaTrigger rules, fixes, undo/redo/reopen),
+  `--areatriggers` (tables, region/order/search/escape/cancel, view transform vs server test on
+  map-575 volumes plus two rotated synthetic boxes, 5140 = "When a player enters the trigger: set
+  data 1 to 1 on the target → creature #126115"), `--content`, graphical `--areatrigger-smoke`,
+  `--visibility-smoke` and `--content-smoke` passed. Screenshots artifacts/areatrigger-preview.png
+  and areatrigger-behavior.png reviewed.
+- Smoke note: the AreaTrigger smoke first waited for terrain to settle after moving the camera in
+  Utgarde Pinnacle, which did not happen within minutes; only the first map load now waits for it.
+- Limits: the overlay shows the database snapshot, not drafted rule counts; client AreaTrigger.dbc
+  volumes are not drawn or compared; GMs need `.debug areatriggers` in game to run trigger scripts.
+
 ## M2 batch color/UV animation, door state clips, untextured chunks — implemented 2026-10-13
 
 - Prior checkpoint: 469f161 SmartAI rule composer.

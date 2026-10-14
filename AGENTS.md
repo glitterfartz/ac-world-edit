@@ -13,7 +13,10 @@ edited in their own local drafts; creature interactions (gossip, quest links, ve
 spell click, npcflag) are previewed in a client-style window and edited in a local interaction
 draft. The quest editor (quest_template/addon/request/offer, starters/enders) and behavior editor
 (SmartAI smart_scripts, AIName, creature_text) record into the same shared content draft, validated
-against server loader rules. The Scene explorer controls layers and SQL visibility.
+against server loader rules. Server AreaTrigger volumes are shown read-only; their SmartAI rules
+(source_type 2) and areatrigger_scripts name are edited in the behavior editor. AreaTrigger shape
+edits are out of scope: the client fires triggers from its own AreaTrigger.dbc. The Scene explorer
+controls layers and SQL visibility.
 Prioritize client visual fidelity and practical rendering performance. Keep unsupported effects
 explicit; do not substitute fabricated animation. Defer source writes/SQL export, GameObject editing,
 new spawns, C++ script and conditions editing and shell comparisons unless the user requests them.

@@ -88,7 +88,7 @@ public static partial class SmartCatalog
         new(43, "SMART_EVENT_TRANSPORT_REMOVE_PLAYER", "Transport remove player", "", "NONE", [], true),
         new(44, "SMART_EVENT_TRANSPORT_RELOCATE", "Transport relocate", "", "PointId", [new("PointId", SmartParamKind.Number)], true),
         new(45, "SMART_EVENT_INSTANCE_PLAYER_ENTER", "Instance player enter", "", "Team (0 any), CooldownMin, CooldownMax", [new("Team (0 any)", SmartParamKind.Number), new("CooldownMin", SmartParamKind.Ms), new("CooldownMax", SmartParamKind.Ms)], true),
-        new(46, "SMART_EVENT_AREATRIGGER_ONTRIGGER", "Areatrigger ontrigger", "", "TriggerId(0 any)", [new("TriggerId(0 any)", SmartParamKind.Number)], true),
+        new(46, "SMART_EVENT_AREATRIGGER_ONTRIGGER", "On trigger (AreaTrigger)", "when a player enters the trigger", "TriggerId(0 any)", [new("Only trigger (0 = any)", SmartParamKind.Number)], true),
         new(47, "SMART_EVENT_QUEST_ACCEPTED", "Quest accepted", "", "none", [], true),
         new(48, "SMART_EVENT_QUEST_OBJ_COMPLETION", "Quest obj completion", "", "none", [], true),
         new(49, "SMART_EVENT_QUEST_COMPLETION", "Quest completion", "", "none", [], true),

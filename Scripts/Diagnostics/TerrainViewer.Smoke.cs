@@ -34,6 +34,7 @@ public partial class TerrainViewer
         graveyardSmoke = OS.GetCmdlineUserArgs().Contains("--graveyard-smoke");
         interactionSmoke = OS.GetCmdlineUserArgs().Contains("--interaction-smoke");
         contentSmoke = OS.GetCmdlineUserArgs().Contains("--content-smoke");
+        areaTriggerSmoke = OS.GetCmdlineUserArgs().Contains("--areatrigger-smoke");
     }
 
     /// <summary>

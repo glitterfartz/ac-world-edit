@@ -15,6 +15,20 @@ public partial class BehaviorEditorWindow
     /// <summary>
     /// Starting points for new rules: (label, event, event params, action, action params, target).
     /// </summary>
+    /// <summary>
+    /// AreaTrigger starting points. "Set data on a creature" is the common pattern for starting a
+    /// boss script's event (e.g. Utgarde Pinnacle 5140 sends data 1 = 1 to Svala); target 10 is a
+    /// creature by spawn GUID, 19 the closest creature of an entry.
+    /// </summary>
+    static readonly (string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target)[] TriggerTemplates =
+    [
+        ("Send data to a creature (start its script event)", SmartCatalog.AreaTriggerEvent, [], 45, [1, 1], 10),
+        ("Make the nearest creature of a kind say a line", SmartCatalog.AreaTriggerEvent, [], 1, [0], 19),
+        ("Cast a spell on the player who entered", SmartCatalog.AreaTriggerEvent, [], 11, [], 7),
+        ("Make the nearest creature of a kind play a scene (action list)", SmartCatalog.AreaTriggerEvent, [], SmartCatalog.RunActionList, [], 19),
+        ("Blank rule", SmartCatalog.AreaTriggerEvent, [], 0, [], 7)
+    ];
+
     static readonly (string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target)[] RuleTemplates =
     [
         ("Say something when it enters combat", 4, [], 1, [0], 1),
@@ -50,6 +64,7 @@ public partial class BehaviorEditorWindow
         bool list = shown.IsActionList;
         string intro = list
             ? "Steps run top to bottom when something runs this list; each step waits its delay after the previous one."
+            : shown.IsAreaTrigger ? "Rules run when a living player enters the trigger (the client reports it, the server re-checks the volume). An AreaTrigger has no object of its own: target the player (invoker) or creatures."
             : shown.IsSpawn ? "Rules for this one spawn. A spawn with its own rules ignores the rules for all spawns of this creature."
             : "Rules for every spawn of this creature. Rules run when their event happens; \"Then\" rules run right after the rule above.";
         var help = ClientStyle.Text(intro, 12, ClientStyle.Faded);
@@ -228,8 +243,10 @@ public partial class BehaviorEditorWindow
     /// Every selectable type of a kind, for dropdowns and search. "Then (linked)" is not offered as
     /// an event: "+ Then" creates linked steps so their link stays consistent.
     /// </summary>
-    static IEnumerable<SmartType> TypesOf(string kind) => kind switch
+    IEnumerable<SmartType> TypesOf(string kind) => kind switch
     {
+        // AreaTrigger scripts load only "On trigger" (and linked "Then") events.
+        "event" when scope is { IsAreaTrigger: true } => SmartCatalog.Events.Where(x => x.Id == SmartCatalog.AreaTriggerEvent),
         "event" => SmartCatalog.Events.Where(x => x.Id != SmartCatalog.LinkEvent),
         "action" => SmartCatalog.Actions,
         _ => SmartCatalog.Targets
@@ -398,7 +415,8 @@ public partial class BehaviorEditorWindow
         };
         var popup = templates.GetPopup();
         popup.AddSeparator("Start from a template");
-        var labels = list ? StepTemplates.Select(t => t.Label) : RuleTemplates.Select(t => t.Label);
+        var rules = shown.IsAreaTrigger ? TriggerTemplates : RuleTemplates;
+        var labels = list ? StepTemplates.Select(t => t.Label) : rules.Select(t => t.Label);
         int index = 0;
         foreach (string label in labels)
         {
@@ -415,7 +433,7 @@ public partial class BehaviorEditorWindow
             }
             else
             {
-                var t = RuleTemplates[id];
+                var t = rules[id];
                 AddRule(shown, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
             }
         };
@@ -704,7 +722,7 @@ public partial class BehaviorEditorWindow
     void AddThen(SmartScope of, SmartRule rule)
     {
         uint id = NextId(of);
-        var then = Template(of, id, SmartCatalog.LinkEvent, [], 0, [], 1).With("link", rule.Link);
+        var then = Template(of, id, SmartCatalog.LinkEvent, [], 0, [], of.IsAreaTrigger ? InvokerTarget : 1).With("link", rule.Link);
         if (Commit("Add a \"Then\" step", Rekey([(rule.Row, rule.Row.With("link", id))]).Append(new RowEdit(InteractionTables.SmartScripts.Name, InteractionTables.SmartScripts.KeyOf(then), null, then)).ToArray()))
         {
             expanded = id;

@@ -44,6 +44,12 @@ if (args.Contains("--placement"))
     return;
 }
 
+if (args.Contains("--areatriggers"))
+{
+    await AreaTriggerChecks.Run();
+    return;
+}
+
 if (args.Contains("--spawns"))
 {
     await SpawnFilterChecks.Run();

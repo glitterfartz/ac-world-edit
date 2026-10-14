@@ -247,7 +247,16 @@ public static class InteractionTables
         ("comment", ColumnKind.Text, 255)
     ]);
 
-    public static readonly TableSchema[] All = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText];
+    /// <summary>
+    /// The script an AreaTrigger runs (ObjectMgr::LoadAreaTriggerScripts): a C++ AreaTriggerScript
+    /// name, or "SmartTrigger" for its smart_scripts rows (source_type 2). One name per trigger.
+    /// </summary>
+    public static readonly TableSchema AreaTriggerScripts = new("areatrigger_scripts", ["entry"], [
+        ("entry", ColumnKind.Int, 0),
+        ("ScriptName", ColumnKind.Text, 64)
+    ]);
+
+    public static readonly TableSchema[] All = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts];
 
     public static TableSchema Find(string name) => All.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");
 }

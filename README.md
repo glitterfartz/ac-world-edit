@@ -247,6 +247,14 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   map and keeping the camera on it while terrain loads) on
   an isolated draft; saves
   `artifacts/content-*.png`.
+- `dotnet run --project Tests/AssetChecks.csproj -- --areatriggers`: live read-only AreaTrigger
+  tables and links, the bounded regional source (order, search, escaping, cancellation), the
+  overlay's view transform against the server's sphere/box membership test, and the SmartAI
+  snapshot of Utgarde Pinnacle 5140.
+- Godot `-- --areatrigger-smoke` (graphical): opens Utgarde Pinnacle, selects trigger 5140 with a
+  viewport click, checks list/inspector and the rendered box against the server test, opens its
+  behavior, adds and undoes a rule on an isolated draft, hides the layer and switches maps; saves
+  `artifacts/areatrigger-*.png`.
 - Godot `-- --skybox-smoke` (graphical): visits Light.dbc regions with skyboxes in Outland,
   Icecrown Citadel and Northrend, four headings each, and fails if the skybox changes more than 1%
   of opaque world pixels (found by rendering over two solid backgrounds; open sky and translucent

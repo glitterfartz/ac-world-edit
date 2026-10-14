@@ -240,7 +240,7 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, objects);
+        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects);
         ui.AddChild(sidebar);
         drafts = ContentDrafts.Open();
         interaction = new InteractionWindow
@@ -274,6 +274,7 @@ public partial class TerrainViewer
         creatures.InteractRequested += interaction.Open;
         creatures.BehaviorRequested += spawn => behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
         interaction.BehaviorRequested += behaviorEditor.Open;
+        areaTriggers.BehaviorRequested += trigger => behaviorEditor.OpenAreaTrigger(trigger.Entry);
         BuildMenus();
         BuildToolbar();
     }
@@ -287,11 +288,16 @@ public partial class TerrainViewer
     BehaviorEditorWindow behaviorEditor = null!;
 
     /// <summary>
-    /// Behavior editor for the selected creature, or its empty hint when nothing is selected.
+    /// Behavior editor for the selected creature or AreaTrigger, or its empty hint when nothing is
+    /// selected.
     /// </summary>
     void OpenBehaviorEditor()
     {
-        if (creatures.SelectedSpawn is { } spawn)
+        if (areaTriggers.SelectedEntry is uint trigger)
+        {
+            behaviorEditor.OpenAreaTrigger(trigger);
+        }
+        else if (creatures.SelectedSpawn is { } spawn)
         {
             behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
         }
@@ -331,11 +337,15 @@ public partial class TerrainViewer
         return strip;
     }
 
-    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection;
+    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || areaTriggers.HasSelection;
 
     void FlyToSelection()
     {
-        if (graveyards.HasSelection)
+        if (areaTriggers.HasSelection)
+        {
+            areaTriggers.FlyToSelection();
+        }
+        else if (graveyards.HasSelection)
         {
             graveyards.FlyToSelection();
         }

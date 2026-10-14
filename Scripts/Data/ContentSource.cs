@@ -160,6 +160,28 @@ public sealed class ContentSource(string configPath)
         }
 
         await LoadDraftKeys(session, rows, draftKeys, t => t == InteractionTables.SmartScripts || t == InteractionTables.CreatureAI || t == InteractionTables.CreatureText, token);
+        await LoadActionLists(session, rows, effective, token);
+        var names = new ContentNames(catalog);
+        var view = effective(rows);
+        await ResolveSmartNames(session, view, names, token);
+        names.Creatures.TryAdd(entry, name);
+        await InteractionSource.Load(session, rows, InteractionTables.CreatureText, "CreatureID=@k0", [entry], token);
+        FillTexts(names, effective(rows), entry);
+        if (guid != 0 && Convert.ToInt64(await InteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
+        {
+            names.Spawns.Add(guid);
+        }
+
+        uint maxQuest = Convert.ToUInt32(await InteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
+        return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, name, entry, script);
+    }
+
+    /// <summary>
+    /// Load every timed action list (source_type 9) reachable through "Run action list" in the
+    /// effective view, a bounded number of hops and lists per hop.
+    /// </summary>
+    static async Task LoadActionLists(WorldReadSession session, RowSet rows, Func<RowSet, RowSet> effective, CancellationToken token)
+    {
         var loadedLists = new HashSet<uint>();
         for (int pass = 0; pass < 6; pass++)
         {
@@ -175,20 +197,33 @@ public sealed class ContentSource(string configPath)
                 await InteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=9", [(int)list], token);
             }
         }
+    }
 
-        var names = new ContentNames(catalog);
-        var view = effective(rows);
-        await ResolveSmartNames(session, view, names, token);
-        names.Creatures.TryAdd(entry, name);
-        await InteractionSource.Load(session, rows, InteractionTables.CreatureText, "CreatureID=@k0", [entry], token);
-        FillTexts(names, effective(rows), entry);
-        if (guid != 0 && Convert.ToInt64(await InteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
+    /// <summary>
+    /// Behavior snapshot for one AreaTrigger: its source_type 2 rules, its areatrigger_scripts row
+    /// (which decides whether the rules run) and reachable action lists. The trigger row must exist,
+    /// as SmartAIMgr skips rules for unknown triggers. Talk texts belong to target creatures and are
+    /// not loaded here.
+    /// </summary>
+    public async Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("smart_scripts.action_type", "areatrigger.entry", "areatrigger_scripts.ScriptName");
+        if (Convert.ToInt64(await InteractionSource.Scalar(session, "SELECT COUNT(*) FROM areatrigger WHERE entry=@k0", [trigger], token)) == 0)
         {
-            names.Spawns.Add(guid);
+            throw new InvalidDataException($"AreaTrigger {trigger} does not exist.");
         }
 
+        var rows = new RowSet();
+        await InteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=2", [(int)trigger], token);
+        await InteractionSource.Load(session, rows, InteractionTables.AreaTriggerScripts, "entry=@k0", [(int)trigger], token);
+        await LoadDraftKeys(session, rows, draftKeys, t => t == InteractionTables.SmartScripts || t == InteractionTables.AreaTriggerScripts, token);
+        await LoadActionLists(session, rows, effective, token);
+        var names = new ContentNames(catalog);
+        await ResolveSmartNames(session, effective(rows), names, token);
+        string script = effective(rows).Get(InteractionTables.AreaTriggerScripts, trigger.ToString(System.Globalization.CultureInfo.InvariantCulture))?.T("ScriptName") ?? "";
         uint maxQuest = Convert.ToUInt32(await InteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
-        return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, name, entry, script);
+        return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, $"AreaTrigger {trigger}", trigger, script);
     }
 
     /// <summary>

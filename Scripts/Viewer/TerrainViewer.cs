@@ -56,6 +56,7 @@ public partial class TerrainViewer : Node3D
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;
+    AreaTriggerOverlay areaTriggers = null!;
     SceneSidebar sidebar = null!;
     ushort? currentMapId;
     /// <summary>
@@ -96,6 +97,9 @@ public partial class TerrainViewer : Node3D
         graveyards = new GraveyardOverlay { ConnectionPath = () => creatures.ConnectionPath, Areas = () => areas, GroundAt = GroundAt };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
+        areaTriggers = new AreaTriggerOverlay { ConnectionPath = () => creatures.ConnectionPath };
+        AddChild(areaTriggers);
+        areaTriggers.FocusRequested += FocusPose;
         BuildUi();
         ConfigureSmokeChecks();
         await LoadArchives();
@@ -285,6 +289,7 @@ public partial class TerrainViewer : Node3D
         creatures.SetRegion(null);
         gameObjects.SetRegion(null);
         graveyards.SetRegion(null);
+        areaTriggers.SetRegion(null);
         interaction?.Reset();
         objects.Clear();
     }
@@ -456,6 +461,7 @@ public partial class TerrainViewer : Node3D
         creatures.SetRegion(spawnRegion);
         gameObjects.SetRegion(spawnRegion);
         graveyards.SetRegion(spawnRegion);
+        areaTriggers.SetRegion(spawnRegion);
     }
 
     /// <summary>
@@ -553,6 +559,7 @@ public partial class TerrainViewer : Node3D
         creatures.Update(camera);
         gameObjects.Update(camera);
         graveyards.Update(camera);
+        areaTriggers.Update(camera);
         interaction.Track(creatures.SelectedSpawn);
         models.Update(camera);
         sidebar.UpdateCounts();
@@ -587,6 +594,11 @@ public partial class TerrainViewer : Node3D
         if (contentSmoke)
         {
             ContentSmoke(delta);
+        }
+
+        if (areaTriggerSmoke)
+        {
+            AreaTriggerSmoke(delta);
         }
     }
 
@@ -632,14 +644,21 @@ public partial class TerrainViewer : Node3D
             {
                 if (!ActiveEditor.BeginDrag(camera, mouse.Position))
                 {
-                    // Nearest ray hit wins across creatures, GameObjects and graveyard icons.
+                    // Nearest ray hit wins across creatures, GameObjects, graveyard icons and
+                    // AreaTrigger volumes; a volume loses ties so models inside it stay clickable.
                     var creatureHit = creatures.FindHit(camera, mouse.Position);
                     var objectHit = gameObjects.FindHit(camera, mouse.Position);
                     var graveyardHit = graveyards.FindHit(camera, mouse.Position);
+                    var triggerHit = areaTriggers.FindHit(camera, mouse.Position);
                     float creatureDistance = creatureHit?.Distance ?? float.MaxValue;
                     float objectDistance = objectHit?.Distance ?? float.MaxValue;
                     float graveyardDistance = graveyardHit?.Distance ?? float.MaxValue;
-                    if (graveyardHit.HasValue && graveyardDistance <= creatureDistance && graveyardDistance <= objectDistance)
+                    float triggerDistance = triggerHit?.Distance ?? float.MaxValue;
+                    if (triggerHit.HasValue && triggerDistance < creatureDistance && triggerDistance < objectDistance && triggerDistance < graveyardDistance)
+                    {
+                        areaTriggers.Select(triggerHit.Value.Entry);
+                    }
+                    else if (graveyardHit.HasValue && graveyardDistance <= creatureDistance && graveyardDistance <= objectDistance)
                     {
                         graveyards.Select(graveyardHit.Value.Id);
                     }

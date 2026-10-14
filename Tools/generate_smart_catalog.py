@@ -56,6 +56,7 @@ EVENTS = {
     57: ("Path paused", "when its path is paused", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
     58: ("Path ended", "when its path ends", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
     59: ("Timed event fires", "when timed event {1} fires", [("Timed event", "Number")]),
+    46: ("On trigger (AreaTrigger)", "when a player enters the trigger", [("Only trigger (0 = any)", "Number")]),
     60: ("Timer (always)", "every {3}–{4} (first after {1}–{2})", [("First after (min)", T), ("First after (max)", T), ("Repeat every (min)", T), ("Repeat every (max)", T)]),
     61: ("Then (linked)", "then", []),
     62: ("Gossip option chosen", "when a player chooses gossip menu {1} option {2}", [("Gossip menu", "Number"), ("Option", "Number")]),

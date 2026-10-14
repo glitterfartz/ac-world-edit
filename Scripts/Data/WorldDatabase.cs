@@ -93,7 +93,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
              'game_graveyard','graveyard_zone','gossip_menu','gossip_menu_option','npc_text','broadcast_text',
              'creature_queststarter','creature_questender','quest_template','npc_vendor','item_template','trainer',
              'trainer_spell','creature_default_trainer','npc_spellclick_spells','smart_scripts','points_of_interest',
-             'quest_template_addon','quest_request_items','quest_offer_reward','creature_text','gameobject_template')
+             'quest_template_addon','quest_request_items','quest_offer_reward','creature_text','gameobject_template',
+             'areatrigger','areatrigger_scripts','areatrigger_teleport','areatrigger_involvedrelation','areatrigger_tavern')
             """);
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))

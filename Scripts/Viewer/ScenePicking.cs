@@ -30,4 +30,23 @@ public static class ScenePicking
 
         return near;
     }
+
+    /// <summary>
+    /// Ray/sphere entry parameter in the units of <paramref name="direction"/> (which need not be
+    /// normalized), 0 when the origin is inside, null on a miss or a sphere behind the ray.
+    /// </summary>
+    public static float? SphereHit(Vector3 center, float radius, Vector3 origin, Vector3 direction)
+    {
+        var offset = origin - center;
+        float a = direction.Dot(direction), b = 2 * offset.Dot(direction), c = offset.Dot(offset) - radius * radius;
+        float discriminant = b * b - 4 * a * c;
+        if (a < 1e-12f || discriminant < 0)
+        {
+            return null;
+        }
+
+        float root = Mathf.Sqrt(discriminant);
+        float near = (-b - root) / (2 * a), far = (-b + root) / (2 * a);
+        return far < 0 ? null : Math.Max(near, 0);
+    }
 }

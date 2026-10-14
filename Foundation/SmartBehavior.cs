@@ -28,15 +28,16 @@ public interface IContentNames
 }
 
 /// <summary>
-/// Which script a rule belongs to: a creature entry (all spawns), one spawn (negative GUID), or a
-/// timed action list (source_type 9) started by "Run action list".
+/// Which script a rule belongs to: a creature entry (all spawns), one spawn (negative GUID), an
+/// AreaTrigger (source_type 2) or a timed action list (source_type 9) started by "Run action list".
 /// </summary>
 public readonly record struct SmartScope(int EntryOrGuid, uint SourceType)
 {
-    public const uint Creature = 0, ActionList = 9;
+    public const uint Creature = 0, AreaTrigger = 2, ActionList = 9;
     public bool IsSpawn => SourceType == Creature && EntryOrGuid < 0;
+    public bool IsAreaTrigger => SourceType == AreaTrigger;
     public bool IsActionList => SourceType == ActionList;
-    public string Describe(string creature) => IsActionList ? $"Action list {EntryOrGuid}" : IsSpawn ? $"This spawn only (#{-EntryOrGuid})" : $"All {creature} spawns";
+    public string Describe(string creature) => IsActionList ? $"Action list {EntryOrGuid}" : IsAreaTrigger ? $"AreaTrigger {EntryOrGuid}" : IsSpawn ? $"This spawn only (#{-EntryOrGuid})" : $"All {creature} spawns";
 }
 
 /// <summary>
@@ -83,6 +84,42 @@ public static partial class SmartCatalog
 
     public const uint AllEventFlags = 0x3FF, AllPhases = 0xFFF;
     public const uint LinkEvent = 61, RunActionList = 80, Talk = 1;
+    public const uint AreaTriggerEvent = 46, SelfTarget = 1;
+
+    /// <summary>
+    /// Events the loader accepts for an AreaTrigger script: On trigger and Then (SmartAIEventMask,
+    /// SmartScriptMgr.h; checked in SmartAIMgr::IsEventValid).
+    /// </summary>
+    public static bool AllowedForAreaTrigger(uint eventType) => eventType is AreaTriggerEvent or LinkEvent;
+
+    /// <summary>
+    /// The script name that makes an AreaTrigger's rules run, with a fix row when it is missing.
+    /// Another name means a C++ script owns the trigger, so its SmartAI rows are ignored; that is a
+    /// deliberate choice and gets a warning only (one ScriptName per trigger).
+    /// </summary>
+    public static IEnumerable<InteractionIssue> CheckAreaTriggerScript(int trigger, Row? script, bool hasRules)
+    {
+        string name = script?.T("ScriptName") ?? "";
+        if (!hasRules || name == AreaTriggerRecord.SmartTrigger)
+        {
+            yield break;
+        }
+
+        if (name.Length == 0)
+        {
+            yield return new(false, "The AreaTrigger has no script, so these rules never run.", [EnableSmartTrigger(trigger, null)]);
+        }
+        else
+        {
+            yield return new(false, $"The AreaTrigger runs the C++ script {name}, so these rules never run.", [EnableSmartTrigger(trigger, script)]);
+        }
+    }
+
+    public static RowEdit EnableSmartTrigger(int trigger, Row? script)
+    {
+        string key = trigger.ToString(CultureInfo.InvariantCulture);
+        return new(InteractionTables.AreaTriggerScripts.Name, key, script, script?.With("ScriptName", AreaTriggerRecord.SmartTrigger) ?? Row.Of(("entry", trigger), ("ScriptName", AreaTriggerRecord.SmartTrigger)));
+    }
 
     // Built lazily: the generated arrays live in the other partial file, and static initializer
     // order across partial files is undefined.
@@ -335,6 +372,34 @@ public static partial class SmartCatalog
                 }
             }
 
+            if (scope.IsAreaTrigger)
+            {
+                if (!AllowedForAreaTrigger(rule.Event))
+                {
+                    yield return new(true, $"{where}: AreaTrigger scripts only accept \"On trigger\" and \"Then\" events; the server skips this rule.");
+                }
+                else if (rule.Event == AreaTriggerEvent && rule.EventParam(1) != 0 && rule.EventParam(1) != (uint)scope.EntryOrGuid)
+                {
+                    yield return new(false, $"{where} only fires for AreaTrigger {rule.EventParam(1)}, not this one ({scope.EntryOrGuid}); use 0 or {scope.EntryOrGuid}.");
+                }
+
+                // An AreaTrigger script has no owner object: Self selects nothing (SmartScript
+                // GetTargets with a null base object), Talk needs a creature target to speak, and
+                // Run action list starts the list on its SmartAI creature/GameObject target.
+                if (rule.Target == SelfTarget)
+                {
+                    yield return new(false, $"{where} targets Self, but an AreaTrigger has no object of its own; pick the invoker or a creature.");
+                }
+                else if (rule.Action == Talk && Target(rule.Target)?.Code is { } targetCode && !targetCode.Contains("CREATURE", StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return new(false, $"{where}: Talk from an AreaTrigger only speaks when the target is a creature.");
+                }
+                else if (rule.Action == RunActionList && Target(rule.Target)?.Code is { } listTarget && !listTarget.Contains("CREATURE", StringComparison.OrdinalIgnoreCase) && !listTarget.Contains("GAMEOBJECT", StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return new(false, $"{where}: an AreaTrigger runs action lists on a SmartAI creature or GameObject target, not the player.");
+                }
+            }
+
             if (rule.Event == LinkEvent && !linkedTo.Contains(rule.Id) && !scope.IsActionList)
             {
                 yield return new(false, $"{where} is a \"Then\" rule that no other rule leads to; it never runs.");
@@ -377,7 +442,7 @@ public static partial class SmartCatalog
             yield return new(true, $"Spawn #{-scope.EntryOrGuid} does not exist; the server skips this script.");
         }
 
-        if (!scope.IsActionList && rules.Count > 0 && creatureAi != null && creatureAi.T("AIName") != "SmartAI")
+        if (!scope.IsActionList && !scope.IsAreaTrigger && rules.Count > 0 && creatureAi != null && creatureAi.T("AIName") != "SmartAI")
         {
             string current = creatureAi.T("AIName");
             yield return new(false, $"The creature's AI is {(current.Length == 0 ? "the default" : current)}, so these rules never run.", [new RowEdit(InteractionTables.CreatureAI.Name, creatureAi["entry"], creatureAi, creatureAi.With("AIName", "SmartAI"))]);

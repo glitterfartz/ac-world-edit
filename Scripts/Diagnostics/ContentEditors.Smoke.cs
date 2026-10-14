@@ -56,7 +56,7 @@ public partial class BehaviorEditorWindow
 
     public void SmokeAddRule(int template)
     {
-        var t = RuleTemplates[template];
+        var t = (scope is { IsAreaTrigger: true } ? TriggerTemplates : RuleTemplates)[template];
         AddRule(scope!.Value, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
     }
 
