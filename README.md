@@ -285,8 +285,8 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
   - `Models/`: M2/WMO model decoding and animation data.
   - `World/`: ADT/WDT terrain, liquids, map metadata, placed world objects and ground probes.
 - `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
-- `Foundation/`: engine-independent coordinates, spawn records, the shared `DraftFile` and durable
-  creature and graveyard drafts.
+- `Foundation/`: engine-independent coordinates, spawn records, the shared `DraftHistory<T>` engine
+  and the durable creature, graveyard and interaction drafts.
 - `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.
 
 The obsolete Phase 0 shell/plugin, synthetic benchmark, generic draft workspace and experimental

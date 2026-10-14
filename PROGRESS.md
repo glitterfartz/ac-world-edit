@@ -11,6 +11,62 @@ Saved checkpoints: e89db16 simplified roadmap; 30b71de read-only creature select
 65bd63a native model/idle/world-object/interior/gizmo implementation;
 ea45d17 native clip previews and validation.
 
+## Simplification pass — 2026-10-13
+
+Audit-driven removal of copy-paste, not a redesign. Base commit 696bd80; nine commits e11c70f..ed357f3.
+Net −434 lines of C# across 69 files (25,715 → 25,281), well below the 1,300–1,600 first estimated:
+the architecture had little speculative layering, and several candidates were not worth their risk.
+
+Done:
+
+- **Draft isolation fix:** the creature and graveyard drafts only isolated four hard-coded smoke
+  flags, so `--content-smoke`, `--reload-smoke` and `--areatrigger-smoke` opened (and locked) the
+  real `user://drafts/*.json`. All three drafts now use `ContentDrafts.LocalPath`.
+- **One draft engine:** `DraftHistory<T>` (lock, checksummed atomic file, recovery header, cursor,
+  undo/redo) replaces three copies and `DraftFile`; each draft keeps its own validation and
+  stale-baseline rules. On-disk JSON shape unchanged (compat test in `GraveyardDraftChecks`).
+  `RowSet.Apply(RowEdit)` replaces three apply loops.
+- **`RegionQuery<T>`** replaces the cancellation/generation/single-slot/debounce pipeline copied in
+  the creature, GameObject, graveyard and AreaTrigger overlays (graveyard and AreaTrigger also now
+  dispose their token on exit).
+- **Viewer wiring:** the DB connection control belongs to `TerrainViewer` (not the creature panel);
+  sidebar selection exclusion is one loop; creature focus uses `WorldPose` (`FocusCreature` removed).
+  Behavior change: sidebar "Apply & refresh" now refreshes graveyards and AreaTriggers too.
+- **`ContentEditorWindow`** base for the interaction, quest and behavior windows (theme, header drag,
+  size pin, placement, hooks, undo/redo button sync, button helpers). The client spell/item catalog
+  loads once per asset store instead of once per window. `InspectorUi.SelectRow` replaces four loops.
+- **Data layer:** `WorldReadSession.AddRegion/AddSearch` replace the region/escaped-LIKE binding
+  blocks (SQL text unchanged); eight unreferenced members removed.
+- **Assets/rendering:** `AssetStore.Maps()` uses `DbcTable`; `LiquidData.Wmo` stamps the liquid kind
+  (the `ModelLibrary` surface-rebuild pass is gone); `ModelLibrary.SurfaceArrays` is shared with
+  terrain liquids; a redundant index copy removed.
+- **Tests/diagnostics:** `Tests/Test.cs` replaces 14 `Check` and 2 `Rejects` copies; smoke dispatch is
+  one `RunSmokeChecks`, flags read once, 27 failure pairs are `SmokeFail`, repeated tile-settled
+  conditions are `TerrainSettled`; smoke-only overlay members live in the Diagnostics partials.
+
+Deliberately not done (risk or value too low): a shared model-batch helper for creatures and
+GameObjects, shared creature/graveyard placement helpers (M8), replacing `InteractionWindow`'s search
+picker with `PickerPopup`, a global shader uniform for the terrain grid, one shared GPU texture cache,
+moving Assets/Data into the Foundation project, a per-overlay `ToView` vector helper, and an overlay
+array in `TerrainViewer` (the four overlays share no interface). Inline `new Button` blocks in
+`InteractionWindow.Edit.cs` were left as is.
+
+Validation: `dotnet build` clean; `dotnet format whitespace` clean; the console checks all pass
+(default asset/model run plus `--draft --placement --areatriggers --spawns --content --interactions
+--graveyards --gameobjects --liquids --models`, DB checks read-only). Headless `--terrain-smoke` and
+`--creature-smoke` pass. Graphical `--water-smoke`, `--water-interior-smoke`, `--reload-smoke` and
+`--visibility-smoke` pass; `--graveyard-smoke` and `--areatrigger-smoke` passed after the
+draft/`RegionQuery` commits.
+
+Not verified: from the viewer-wiring and editor-window commits onward the click-driven graphical smokes
+(`--graveyard-smoke`, `--areatrigger-smoke`, `--interaction-smoke`, `--content-smoke`) fail at their
+first synthetic viewport click ("pick failed" / "short right-click did not open"). They fail identically
+on the original baseline 696bd80, and passed earlier the same day on this code, so this looks like the
+current desktop session (synthetic input) and not the refactor; but it means the sidebar selection
+loop, the three editor windows on the new base class, `SelectRow` and the connection control have only
+been build- and boot-checked, not clicked through. Re-run those four smokes before relying on them.
+`--skybox-smoke` also fails on the baseline (different Icecrown views each run); not a regression.
+
 ## Implemented
 
 - CreatureDisplayInfo/ModelData/Extra and AnimationData DBC lookup; MD20/SKIN geometry, texture
