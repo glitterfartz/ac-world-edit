@@ -240,24 +240,24 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects);
+        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
         drafts = ContentDrafts.Open();
         interaction = new InteractionWindow
         {
-            ConnectionPath = () => creatures.ConnectionPath,
+            ConnectionPath = () => connection.Text,
             Store = () => store,
             Drafts = drafts
         };
         behaviorEditor = new BehaviorEditorWindow
         {
-            ConnectionPath = () => creatures.ConnectionPath,
+            ConnectionPath = () => connection.Text,
             Store = () => store,
             Drafts = drafts
         };
         questEditor = new QuestEditorWindow
         {
-            ConnectionPath = () => creatures.ConnectionPath,
+            ConnectionPath = () => connection.Text,
             Store = () => store,
             Areas = () => areas,
             Drafts = drafts,

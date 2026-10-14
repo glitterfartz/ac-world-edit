@@ -14,11 +14,6 @@ public partial class CreatureOverlay
         var page = InspectorUi.Page("Creatures", out var scroll);
         page.AddChild(InspectorUi.Text("Nearby creatures", 20));
         page.AddChild(InspectorUi.Text("Search filters the scene before the result limit.", 12, true));
-        config = new LineEdit
-        {
-            Text = System.Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath,
-            PlaceholderText = "External worldserver.conf path"
-        };
         filter = new LineEdit
         {
             Name = "CreatureSearch",
@@ -159,7 +154,7 @@ public partial class CreatureOverlay
     {
         if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker))
         {
-            FocusRequested?.Invoke(marker.Spawn with { Pose = PoseOf(marker.Spawn) });
+            FocusRequested?.Invoke(PoseOf(marker.Spawn));
         }
     }
 

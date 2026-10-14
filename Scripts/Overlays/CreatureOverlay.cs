@@ -47,11 +47,9 @@ public partial class CreatureOverlay : Node3D
     };
     ItemList list = null!;
     Label details = null!, status = null!;
-    LineEdit config = null!;
     LineEdit filter = null!;
     Label selectionName = null!, selectionMeta = null!;
-    public LineEdit ConnectionControl => config;
-    public string ConnectionPath => config.Text;
+    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
     public SpawnPreview Preview { get; private set; } = new();
     public bool LayerEnabled { get; private set; } = true;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
@@ -110,7 +108,7 @@ public partial class CreatureOverlay : Node3D
 
     public string QueryStatus => queryStatus;
 
-    public event Action<CreatureSpawn>? FocusRequested;
+    public event Action<WorldPose>? FocusRequested;
     /// <summary>
     /// Open a durable local draft, isolated for movement smoke checks, and attach the gizmo.
     /// Recovery failures preserve the file and disable movement.
@@ -277,7 +275,7 @@ public partial class CreatureOverlay : Node3D
         if (region != null && LayerEnabled && query.WantsStart)
         {
             var next = region;
-            string path = ConnectionPath;
+            string path = ConnectionPath();
             var preview = Preview;
             var point = queryPoint;
             string term = filter.Text;

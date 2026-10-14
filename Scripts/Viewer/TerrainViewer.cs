@@ -53,6 +53,15 @@ public partial class TerrainViewer : Node3D
     List<MapInfo> mapList = [];
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
+    /// <summary>
+    /// External worldserver.conf path shared by every database-backed layer and editor; credentials
+    /// stay in that file.
+    /// </summary>
+    readonly LineEdit connection = new()
+    {
+        Text = System.Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? ACWorldEdit.Data.CreatureSource.DefaultConfigPath,
+        PlaceholderText = "External worldserver.conf path"
+    };
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;
@@ -89,15 +98,15 @@ public partial class TerrainViewer : Node3D
             Models = models
         };
         AddChild(creatures);
-        creatures.FocusRequested += FocusCreature;
+        creatures.FocusRequested += FocusPose;
         creatures.GroundAt = GroundAt;
-        gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => creatures.ConnectionPath };
+        gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => connection.Text };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
-        graveyards = new GraveyardOverlay { ConnectionPath = () => creatures.ConnectionPath, Areas = () => areas, GroundAt = GroundAt };
+        graveyards = new GraveyardOverlay { ConnectionPath = () => connection.Text, Areas = () => areas, GroundAt = GroundAt };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
-        areaTriggers = new AreaTriggerOverlay { ConnectionPath = () => creatures.ConnectionPath };
+        areaTriggers = new AreaTriggerOverlay { ConnectionPath = () => connection.Text };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         BuildUi();
@@ -353,19 +362,15 @@ public partial class TerrainViewer : Node3D
         return (parent != null ? $"{parent} — {zone}" : zone, continent);
     }
     /// <summary>
-    /// Move near the effective draft pose and synchronize mouse-look angles before refreshing the
-    /// region.
-    /// </summary>
-    void FocusCreature(ACWorldEdit.Foundation.CreatureSpawn spawn)
-        => FocusPose(spawn.Pose);
-
-    /// <summary>
     /// True after a deliberate focus (fly to a creature, object or graveyard): the camera sits just
     /// above that target on purpose, so a tile finishing underneath must not lift it away. Cleared
     /// by keyboard movement and teleports, which keep the lift-above-terrain assistance.
     /// </summary>
     bool cameraFocused;
 
+    /// <summary>
+    /// Move near a server pose and synchronize mouse-look angles before refreshing the region.
+    /// </summary>
     void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
     {
         cameraFocused = true;

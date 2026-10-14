@@ -158,7 +158,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            FocusCreature(spawn);
+            FocusPose(spawn.Pose);
             interactionWait = 30;
             return true;
         }),
@@ -176,7 +176,7 @@ public partial class TerrainViewer
         ("right-drag-checked", () =>
         {
             Require(!interaction.IsOpen && Math.Abs(yaw - smokeYaw) > 0.05f, "right-drag opened the window or did not turn the camera");
-            FocusCreature(Farley!);
+            FocusPose(Farley!.Pose);
             interactionWait = 10;
             return true;
         }),

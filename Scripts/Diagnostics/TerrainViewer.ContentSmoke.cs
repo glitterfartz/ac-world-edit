@@ -111,7 +111,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            FocusCreature(spawn);
+            FocusPose(spawn.Pose);
             contentWait = 30;
             return true;
         }),

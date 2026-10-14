@@ -13,6 +13,7 @@ public partial class SceneSidebar : PanelContainer
     readonly GameObjectOverlay gameObjects;
     readonly GraveyardOverlay graveyards;
     readonly AreaTriggerOverlay areaTriggers;
+    readonly LineEdit connectionPath;
     readonly WorldObjectScene scenery;
     TabContainer tabs = null!;
     OptionButton preset = null!, eventMode = null!, difficulty = null!, budget = null!;
@@ -30,8 +31,9 @@ public partial class SceneSidebar : PanelContainer
     public bool DoodadsEnabled { get; private set; } = true;
     public bool WmosEnabled { get; private set; } = true;
 
-    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery)
+    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, LineEdit connectionPath)
     {
+        this.connectionPath = connectionPath;
         this.creatures = creatures;
         this.gameObjects = gameObjects;
         this.graveyards = graveyards;
@@ -64,34 +66,24 @@ public partial class SceneSidebar : PanelContainer
         tabs.AddChild(graveyardPage);
         tabs.AddChild(triggerPage);
         // One selection at a time across kinds, so menus and the gizmo act on a single target.
-        creatures.SelectionChanged += () =>
+        Action[] deselect = [creatures.Deselect, gameObjects.Deselect, graveyards.Deselect, areaTriggers.Deselect];
+        void Exclusive(int kind)
         {
-            gameObjects.Deselect();
-            graveyards.Deselect();
-            areaTriggers.Deselect();
-            tabs.CurrentTab = 1;
-        };
-        gameObjects.SelectionChanged += () =>
-        {
-            creatures.Deselect();
-            graveyards.Deselect();
-            areaTriggers.Deselect();
-            tabs.CurrentTab = 2;
-        };
-        graveyards.SelectionChanged += () =>
-        {
-            creatures.Deselect();
-            gameObjects.Deselect();
-            areaTriggers.Deselect();
-            tabs.CurrentTab = 3;
-        };
-        areaTriggers.SelectionChanged += () =>
-        {
-            creatures.Deselect();
-            gameObjects.Deselect();
-            graveyards.Deselect();
-            tabs.CurrentTab = 4;
-        };
+            for (int i = 0; i < deselect.Length; i++)
+            {
+                if (i != kind)
+                {
+                    deselect[i]();
+                }
+            }
+
+            tabs.CurrentTab = kind + 1;
+        }
+
+        creatures.SelectionChanged += () => Exclusive(0);
+        gameObjects.SelectionChanged += () => Exclusive(1);
+        graveyards.SelectionChanged += () => Exclusive(2);
+        areaTriggers.SelectionChanged += () => Exclusive(3);
     }
 
     public void ShowSceneTab() => tabs.CurrentTab = 0;
@@ -288,11 +280,13 @@ public partial class SceneSidebar : PanelContainer
         connection.AddChild(InspectorUi.Button("Database connection…", () => advanced.Visible = !advanced.Visible));
         connection.AddChild(advanced);
         advanced.AddChild(InspectorUi.Text("External worldserver.conf", 12, true));
-        advanced.AddChild(creatures.ConnectionControl);
+        advanced.AddChild(connectionPath);
         advanced.AddChild(InspectorUi.Button("Apply & refresh", () =>
         {
             creatures.Refresh();
             gameObjects.Refresh();
+            graveyards.Refresh();
+            areaTriggers.Refresh();
         }));
         connection.AddChild(InspectorUi.Text("Read-only connection. Credentials stay in the external file.", 11, true));
         SyncPolicy(new SpawnPreview());
