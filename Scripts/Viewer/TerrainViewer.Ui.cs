@@ -400,6 +400,8 @@ public partial class TerrainViewer
             _ = PromptConnection();
         });
         file.AddSeparator();
+        menu.Command(file, "Pending changes…", OpenPendingChanges);
+        file.AddSeparator();
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
 
         var edit = menu.Menu("Edit");
