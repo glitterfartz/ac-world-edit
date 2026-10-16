@@ -122,5 +122,28 @@ public sealed class ContentDrafts : IDisposable
         }
     }
 
+    /// <summary>
+    /// Discard one row's net change (Pending Changes window); editors refresh through Changed.
+    /// </summary>
+    public bool Revert(string source, RowEdit net)
+    {
+        if (Draft == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            Draft.Revert(source, net);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        Changed?.Invoke(null);
+        return true;
+    }
+
     public void Dispose() => Draft?.Dispose();
 }

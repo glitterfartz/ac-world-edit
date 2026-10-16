@@ -240,6 +240,30 @@ public partial class GraveyardOverlay : IPlacementEditor
         ShowSelection();
     }
 
+    /// <summary>
+    /// Discard one graveyard's net edit (Pending Changes window) as an undoable command.
+    /// </summary>
+    public void Revert(GraveyardEdit net)
+    {
+        gizmo.Finish(false);
+        try
+        {
+            draft?.Revert(net);
+            draftMessage = "Discarded the graveyard edit.";
+        }
+        catch (Exception)
+        {
+            draftMessage = "Could not save graveyard draft history. Previous draft preserved.";
+        }
+
+        foreach (uint id in markers.Keys)
+        {
+            ApplyRecord(id);
+        }
+
+        ShowSelection();
+    }
+
     public void Undo() => History(false);
     public void Redo() => History(true);
 

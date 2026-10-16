@@ -77,6 +77,28 @@ public static class SqlExportChecks
         var empty = SqlExport.Build("db", [], [], []);
         Check(empty.Changes == 0 && empty.Apply.Contains("Nothing to export", StringComparison.Ordinal), "Empty export");
         Check(SqlExport.Quote("a'b") == "'a\\'b'" && SqlExport.Quote("x\0y") == "'x\\0y'", "Quote");
+
+        // Pending changes: per-change discard reverts only that change; exporting clears it.
+        var store = new PendingChanges(Path.Combine(root, "exported.json"));
+        var list = store.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits());
+        Check(list.Count == 5, "Pending list is one entry per creature, graveyard and row; got " + list.Count);
+        Check(list.Select(c => c.Id).Distinct().Count() == list.Count, "Pending ids must be unique");
+        var again = store.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits());
+        Check(list.Select(c => c.Id).SequenceEqual(again.Select(c => c.Id)), "Pending ids must be stable between collections");
+        creatures.Revert(list.First(c => c.Kind == PendingKind.Creature).Move!);
+        Check(creatures.NetMoves().Count == 0 && graveyards.NetEdits().Count == 1 && content.NetEdits().Count == 3, "Discarding a creature leaves graveyards and rows alone");
+        content.Revert("db", list.First(c => c.Row?.Table == "gossip_menu").Row!);
+        var left = content.NetEdits();
+        Check(left.Count == 2 && left.All(r => r.Edit.Table != "gossip_menu") && graveyards.NetEdits().Count == 1, "Discarding one row leaves the other rows and graveyards");
+        graveyards.Revert(graveyards.NetEdits()[0]);
+        var remaining = store.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits());
+        Check(remaining.Count == 2 && remaining.All(c => c.Kind == PendingKind.Row), "Only the untouched rows remain pending");
+        store.MarkExported(remaining);
+        Check(store.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits()).Count == 0, "Exported changes leave the pending list");
+        var reopened = new PendingChanges(Path.Combine(root, "exported.json"));
+        Check(reopened.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits()).Count == 0, "Exported state persists");
+        creatures.Move("db", 86251, home, near);
+        Check(reopened.Collect(creatures.NetMoves(), graveyards.NetEdits(), content.NetEdits()).Count == 1, "A new change after export is pending again");
         File.WriteAllText(Path.Combine(root, "sample-apply.sql"), apply);
         File.WriteAllText(Path.Combine(root, "sample-revert.sql"), revert);
         Console.WriteLine("SQL_EXPORT_CHECKS_PASSED net changes, guards, escaping, column groups, insert/delete/update pairs; samples in " + root);

@@ -5,32 +5,25 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// File > Export SQL: collects the net changes of the creature, graveyard and content drafts and
+/// Pending Changes: lists the net changes of the creature, graveyard and content drafts and
 /// writes a reviewable apply/revert script pair per source database. Export is the only way a draft
-/// leaves the application; nothing here connects to a database, and the drafts are left unchanged so
-/// export can be repeated.
+/// leaves the application; nothing here connects to a database. Exporting does not change the drafts;
+/// it records the changes as exported so they stop counting as unsaved.
 /// </summary>
 public partial class TerrainViewer
 {
     /// <summary>
-    /// One script pair per database source that has net draft changes, ordered by source.
+    /// One script pair per database source for these changes, ordered by source.
     /// </summary>
-    internal List<(string Source, SqlScripts Scripts)> BuildSqlExports()
-    {
-        var creatureMoves = creatures.NetMoves();
-        var graveyardEdits = graveyards.NetEdits();
-        var rowEdits = drafts.Draft?.NetEdits() ?? [];
-        var sources = creatureMoves.Select(m => m.Source)
-            .Concat(graveyardEdits.Select(e => e.Source))
-            .Concat(rowEdits.Select(e => e.Source))
-            .Distinct()
-            .Order(StringComparer.Ordinal);
-        return sources.Select(source => (source, SqlExport.Build(
-            source,
-            creatureMoves.Where(m => m.Source == source),
-            graveyardEdits.Where(e => e.Source == source),
-            rowEdits.Where(e => e.Source == source).Select(e => e.Edit)))).ToList();
-    }
+    internal static List<(string Source, SqlScripts Scripts)> BuildSqlExports(IEnumerable<PendingChange> changes) => changes
+        .GroupBy(c => c.Source)
+        .OrderBy(g => g.Key, StringComparer.Ordinal)
+        .Select(g => (g.Key, SqlExport.Build(
+            g.Key,
+            g.Where(c => c.Move != null).Select(c => c.Move!),
+            g.Where(c => c.Graveyard != null).Select(c => c.Graveyard!),
+            g.Where(c => c.Row != null).Select(c => c.Row!))))
+        .ToList();
 
     /// <summary>
     /// Write each pair as UTF-8 (no BOM) files in a new timestamped folder and return its path.
@@ -51,66 +44,128 @@ public partial class TerrainViewer
         return folder;
     }
 
-    void ExportSql()
+
+    PendingChanges pendingStore = null!;
+    PendingChangesWindow pendingWindow = null!;
+    double pendingPoll;
+    int exportedHidden;
+
+    /// <summary>
+    /// Every net draft change that has not been exported, one entry per discardable unit.
+    /// </summary>
+    List<PendingChange> CollectPending()
     {
-        var exports = BuildSqlExports();
-        if (exports.Count == 0)
+        pendingStore ??= new PendingChanges(ContentDrafts.LocalPath("exported.json"));
+        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? []);
+        return all;
+    }
+
+    /// <summary>
+    /// Re-read the drafts, update the sidebar indicator and, when the window is open, its rows.
+    /// Polled a few times a second because edits arrive from several editors.
+    /// </summary>
+    void RefreshPending()
+    {
+        var changes = CollectPending();
+        sidebar.SetUnsaved(changes.Count);
+        if (pendingWindow.Visible)
         {
-            ShowInfo("Export SQL", "Nothing to export: the local drafts hold no net changes.");
+            int total = creatures.NetMoves().Count + graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0);
+            exportedHidden = total - changes.Count;
+            pendingWindow.Refresh(changes, exportedHidden);
+        }
+    }
+
+    void PollPending(double delta)
+    {
+        pendingPoll += delta;
+        if (pendingPoll >= 0.4)
+        {
+            pendingPoll = 0;
+            RefreshPending();
+        }
+    }
+
+    void OpenPendingChanges()
+    {
+        pendingWindow.Open();
+        RefreshPending();
+    }
+
+    /// <summary>
+    /// Revert one change through the owning editor so markers and inspectors refresh. Only that
+    /// creature, graveyard or row is touched.
+    /// </summary>
+    void DiscardPending(PendingChange change)
+    {
+        switch (change.Kind)
+        {
+            case PendingKind.Creature:
+                creatures.Revert(change.Move!);
+                break;
+            case PendingKind.Graveyard:
+                graveyards.Revert(change.Graveyard!);
+                break;
+            default:
+                drafts.Revert(change.Source, change.Row!);
+                break;
+        }
+    }
+
+    void DiscardAllPending()
+    {
+        var changes = CollectPending();
+        if (changes.Count == 0)
+        {
             return;
         }
 
-        var text = new StringBuilder();
-        foreach (var (source, scripts) in exports)
+        var confirm = new ConfirmationDialog
         {
-            text.Append($"Database {(source.Length > 8 ? source[..8] : source)} · {scripts.Changes} change(s)\n");
-            foreach (string line in scripts.Summary.Take(40))
+            Title = "Discard all",
+            DialogText = $"Discard all {changes.Count} unsaved change(s) and return them to the database values? This only affects local drafts.",
+            OkButtonText = "Discard all"
+        };
+        confirm.Confirmed += () =>
+        {
+            confirm.QueueFree();
+            foreach (var change in changes)
             {
-                text.Append("  • ").Append(line).Append('\n');
+                DiscardPending(change);
             }
 
-            if (scripts.Summary.Count > 40)
-            {
-                text.Append($"  … and {scripts.Summary.Count - 40} more\n");
-            }
+            RefreshPending();
+            pendingWindow.SetStatus("Discarded all unsaved changes.");
+        };
+        confirm.Canceled += confirm.QueueFree;
+        AddChild(confirm);
+        confirm.PopupCentered();
+    }
 
-            text.Append('\n');
+    /// <summary>
+    /// Save scripts for every unsaved change, then mark them exported so the indicator clears. The
+    /// drafts themselves are untouched; nothing connects to a database.
+    /// </summary>
+    void ExportAllPending()
+    {
+        var changes = CollectPending();
+        if (changes.Count == 0)
+        {
+            return;
         }
 
-        text.Append("Saves an apply script and a revert script per database. The viewer never runs them: review, back up, run the apply script yourself, and check that every preflight row reads ok. Rows changed since the draft was made are skipped.");
-        var label = new Label
+        try
         {
-            Text = text.ToString(),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(620, 0)
-        };
-        var scroll = new ScrollContainer
+            string folder = WriteSqlExports(BuildSqlExports(changes));
+            pendingStore.MarkExported(changes);
+            RefreshPending();
+            pendingWindow.SetStatus("Exported.");
+            ShowInfo("Export SQL", $"Saved {changes.Count} change(s) to:\n{folder}\n\nThe viewer never runs these scripts: review, back up, run the apply script yourself, and check that every preflight row reads ok. Rows changed since the draft was made are skipped.");
+            OS.ShellOpen(folder);
+        }
+        catch (Exception)
         {
-            CustomMinimumSize = new Vector2(640, 360)
-        };
-        scroll.AddChild(label);
-        var dialog = new ConfirmationDialog
-        {
-            Title = "Export SQL",
-            OkButtonText = "Save scripts"
-        };
-        dialog.AddChild(scroll);
-        dialog.Confirmed += () =>
-        {
-            dialog.QueueFree();
-            try
-            {
-                string folder = WriteSqlExports(exports);
-                ShowInfo("Export SQL", $"Saved to:\n{folder}");
-                OS.ShellOpen(folder);
-            }
-            catch (Exception)
-            {
-                ShowInfo("Export SQL", "Could not write the scripts. Nothing was changed.");
-            }
-        };
-        dialog.Canceled += dialog.QueueFree;
-        AddChild(dialog);
-        dialog.PopupCentered();
+            pendingWindow.SetStatus("Could not write the scripts. Nothing was changed.");
+        }
     }
 }

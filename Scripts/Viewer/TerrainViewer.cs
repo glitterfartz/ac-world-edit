@@ -563,6 +563,7 @@ public partial class TerrainViewer : Node3D
         interaction.Track(creatures.SelectedSpawn);
         models.Update(camera);
         sidebar.UpdateCounts();
+        PollPending(delta);
         RunSmokeChecks(delta);
     }
 

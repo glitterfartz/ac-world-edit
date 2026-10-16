@@ -72,7 +72,7 @@ history and reject edits that introduce a server loader error. Export joins step
 
 ## 4. Export a reviewed SQL change — implemented; disposable-database proof pending
 
-File > Export SQL writes an apply and a revert script per database from the net creature, graveyard
+The Pending Changes window (opened from the red "Unsaved changes!" sidebar indicator) writes an apply and a revert script per database from the net creature, graveyard
 and content-draft changes. Every statement is guarded by the row's expected current values, with a
 read-only preflight and post-check. Prove application and reversal in an explicitly authorized
 disposable database before trusting export on real data. The application remains export-only and

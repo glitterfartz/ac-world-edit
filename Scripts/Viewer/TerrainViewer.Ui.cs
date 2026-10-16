@@ -270,6 +270,20 @@ public partial class TerrainViewer
         layer.AddChild(interaction);
         layer.AddChild(questEditor);
         layer.AddChild(behaviorEditor);
+        pendingWindow = new PendingChangesWindow
+        {
+            Drafts = drafts
+        };
+        pendingWindow.DiscardRequested += change =>
+        {
+            DiscardPending(change);
+            RefreshPending();
+            pendingWindow.SetStatus("Discarded.");
+        };
+        pendingWindow.ExportAllRequested += ExportAllPending;
+        pendingWindow.DiscardAllRequested += DiscardAllPending;
+        layer.AddChild(pendingWindow);
+        sidebar.ReviewPendingRequested += OpenPendingChanges;
         interaction.SummaryChanged += creatures.SetInteractionSummary;
         interaction.QuestEditorRequested += questEditor.Open;
         creatures.InteractRequested += interaction.Open;
@@ -385,7 +399,6 @@ public partial class TerrainViewer
         {
             _ = PromptConnection();
         });
-        menu.Command(file, "Export SQL…", ExportSql);
         file.AddSeparator();
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
 

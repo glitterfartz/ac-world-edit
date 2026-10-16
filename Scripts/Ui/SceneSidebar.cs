@@ -63,6 +63,23 @@ public partial class SceneSidebar : PanelContainer
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
         root.AddChild(tabs);
+        unsaved = new Button
+        {
+            Name = "UnsavedChanges",
+            Text = "Unsaved changes!  Review",
+            Flat = true,
+            Visible = false,
+            Alignment = HorizontalAlignment.Left,
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
+            MouseDefaultCursorShape = CursorShape.PointingHand,
+            TooltipText = "Open the Pending Changes window."
+        };
+        foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
+        {
+            unsaved.AddThemeColorOverride(state, new Color("ff4040"));
+        }
+
+        unsaved.Pressed += () => ReviewPendingRequested?.Invoke();
         var creaturePage = creatures.BuildPanel();
         var objectPage = gameObjects.BuildPanel();
         var graveyardPage = graveyards.BuildPanel();
@@ -87,10 +104,23 @@ public partial class SceneSidebar : PanelContainer
             tabs.CurrentTab = kind + 1;
         }
 
+        root.AddChild(unsaved);
         creatures.SelectionChanged += () => Exclusive(0);
         gameObjects.SelectionChanged += () => Exclusive(1);
         graveyards.SelectionChanged += () => Exclusive(2);
         areaTriggers.SelectionChanged += () => Exclusive(3);
+    }
+
+    Button unsaved = null!;
+    /// <summary>
+    /// Raised when the red "Unsaved changes!" indicator is clicked.
+    /// </summary>
+    public event Action? ReviewPendingRequested;
+    public bool UnsavedVisible => unsaved.Visible;
+    public void SetUnsaved(int count)
+    {
+        unsaved.Visible = count > 0;
+        unsaved.Text = count > 0 ? $"Unsaved changes! ({count})  Review" : "";
     }
 
     public void ShowSceneTab() => tabs.CurrentTab = 0;

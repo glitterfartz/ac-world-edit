@@ -174,6 +174,13 @@ public sealed class InteractionDraft : IDisposable
         .Where(x => x.Item2.Before != x.Item2.After)
         .ToList();
 
+    /// <summary>
+    /// Discard one net row change as a normal undoable command that restores the row's baseline (its
+    /// absence for an insert). It bypasses Execute's freshness checks on purpose: a stale or
+    /// conflicting row must still be discardable.
+    /// </summary>
+    public void Revert(string source, RowEdit net) => history.Append(new InteractionCommand(source, $"Discard {net.Table} {net.Key}", [new RowEdit(net.Table, net.Key, net.After, net.Before)]));
+
     public void Undo() => history.Undo();
 
     public void Redo() => history.Redo();

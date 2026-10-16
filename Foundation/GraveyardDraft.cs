@@ -163,6 +163,11 @@ public sealed class GraveyardDraft : IDisposable
         .Where(e => e.Before != e.After)
         .ToList();
 
+    /// <summary>
+    /// Discard one net change as a normal undoable command that returns the graveyard to its baseline.
+    /// </summary>
+    public void Revert(GraveyardEdit net) => history.Append(new GraveyardEdit(net.Source, net.Id, net.After, net.Before));
+
     public void Undo() => history.Undo();
 
     public void Redo() => history.Redo();

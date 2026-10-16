@@ -785,7 +785,31 @@ public partial class CreatureOverlay : Node3D
         }
 
         draftMessage = redo ? "Redid last local change." : "Undid last local change.";
+        Resync();
+    }
 
+    /// <summary>
+    /// Discard one creature's net move (Pending Changes window) as an undoable command.
+    /// </summary>
+    public void Revert(CreatureMove net)
+    {
+        gizmo.Finish(false);
+        try
+        {
+            draft?.Revert(net);
+        }
+        catch (Exception)
+        {
+            draftMessage = "Could not save draft history. Previous draft preserved.";
+            return;
+        }
+
+        draftMessage = "Discarded the move; back to the source position.";
+        Resync();
+    }
+
+    void Resync()
+    {
         foreach (var guid in markers.Keys)
         {
             ApplyPose(guid);
