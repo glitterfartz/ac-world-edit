@@ -30,6 +30,7 @@ public partial class CreatureOverlay : IPlacementEditor
     public bool SnapOnDrop { get; set; }
     public bool CanEdit => EditableMarker() != null;
     public bool CanUndo => draft?.CanUndo == true;
+    public IReadOnlyList<CreatureMove> NetMoves() => draft?.NetMoves() ?? [];
     public bool CanRedo => draft?.CanRedo == true;
 
     public GizmoMode Mode

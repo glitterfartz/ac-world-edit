@@ -28,6 +28,7 @@ if (args.Contains("--draft"))
     GraveyardDraftChecks.Run();
     InteractionDraftChecks.Run();
     ContentDraftChecks.Run();
+    SqlExportChecks.Run();
     return;
 }
 

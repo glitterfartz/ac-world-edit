@@ -79,6 +79,17 @@ public sealed class CreatureDraft : IDisposable
         }
     }
 
+    /// <summary>
+    /// Net change per (source, GUID, map) over the applied history: the first command's baseline and
+    /// the last command's result. Moves that return to the baseline are omitted, so undone commands
+    /// and intermediate moves never reach an export.
+    /// </summary>
+    public IReadOnlyList<CreatureMove> NetMoves() => history.State.AppliedEntries()
+        .GroupBy(m => (m.Source, m.Guid, m.Before.Map))
+        .Select(g => new CreatureMove(g.Key.Source, g.Key.Guid, g.First().Before, g.Last().After))
+        .Where(m => m.Before != m.After)
+        .ToList();
+
     public void Undo() => history.Undo();
 
     public void Redo() => history.Redo();

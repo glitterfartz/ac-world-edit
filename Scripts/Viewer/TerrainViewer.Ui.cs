@@ -384,6 +384,7 @@ public partial class TerrainViewer
         {
             _ = PromptConnection();
         });
+        menu.Command(file, "Export SQL…", ExportSql);
         file.AddSeparator();
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
 

@@ -153,6 +153,16 @@ public sealed class GraveyardDraft : IDisposable
         }
     }
 
+    /// <summary>
+    /// Net change per (source, ID, map) over the applied history, omitting edits that return to
+    /// the baseline.
+    /// </summary>
+    public IReadOnlyList<GraveyardEdit> NetEdits() => history.State.AppliedEntries()
+        .GroupBy(e => (e.Source, e.Id, e.Before.Map))
+        .Select(g => new GraveyardEdit(g.Key.Source, g.Key.Id, g.First().Before, g.Last().After))
+        .Where(e => e.Before != e.After)
+        .ToList();
+
     public void Undo() => history.Undo();
 
     public void Redo() => history.Redo();

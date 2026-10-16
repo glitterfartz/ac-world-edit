@@ -70,11 +70,13 @@ sentences with searchable When/Do/On pickers, linked "Then" steps, reordering, a
 speech lines, and enables SmartAI when needed. Both share the interaction draft and its undo
 history and reject edits that introduce a server loader error. Export joins step 4.
 
-## 4. Export a reviewed SQL change — later
+## 4. Export a reviewed SQL change — implemented; disposable-database proof pending
 
-Export bounded forward/reverse SQL with original rows and freshness checks. Prove application
-and reversal in an explicitly authorized disposable database before declaring export ready.
-The application remains export-only and never applies changes to source.
+File > Export SQL writes an apply and a revert script per database from the net creature, graveyard
+and content-draft changes. Every statement is guarded by the row's expected current values, with a
+read-only preflight and post-check. Prove application and reversal in an explicitly authorized
+disposable database before trusting export on real data. The application remains export-only and
+never applies changes to source.
 
 ## Defer
 

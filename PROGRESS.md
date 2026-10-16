@@ -674,3 +674,25 @@ reading the streaming paths, not by guessing:
 - Seen, not fixed: a template sentence read "When its health is 0%–30%%" (doubled percent sign in the
   catalog text); cosmetic.
 - Prior checkpoint: 6b361c2.
+
+## SQL export — 2026-10-16
+
+- File > Export SQL collects the net change of every local draft (creature moves, graveyards, and the
+  shared content draft: interactions, quests, SmartAI, creature_text, areatrigger scripts) and saves
+  `<source>-apply.sql` / `<source>-revert.sql` per database source under `user://exports/<time>/`
+  after a preview dialog. Drafts are untouched, so export can repeat. Nothing connects to a database.
+- Net change = first applied baseline -> last applied value per row, so undone commands, round trips and
+  insert-then-delete cancel. `NetMoves`/`NetEdits` on the three drafts; generator is `Foundation/SqlExport.cs`.
+- Safety: UPDATE/DELETE carry a WHERE guard of the expected current values (floats within 0.0001, text
+  BINARY-compared, NULL as empty); a row changed since the draft was made matches nothing and is skipped.
+  Each script has a read-only preflight (ok/STALE per change) before START TRANSACTION and a post-check after
+  COMMIT. INSERT is unguarded so a duplicate key fails. Only whitelisted columns are written; `creature_ai`
+  maps to `creature_template.AIName`. Revert is the inverse, in reverse order, guarded by the draft values.
+- Validation: `--draft` checks (new `SqlExportChecks`) passed: net collapsing, guards, escaping, column
+  groups, insert/delete/update pairs, LF, one statement per line. Build 0 warnings/errors; whitespace
+  format check passed.
+- Not verified: the scripts were never run against MySQL (no disposable database was authorized), so
+  syntax and the guard behaviour against real FLOAT/NULL columns are unproven. The File menu entry and
+  dialog were not exercised graphically. A guarded statement that matches no row does not fail the script;
+  the preflight/post-check rows are the signal. A source hash, not a name, labels the database.
+- Prior checkpoint: 84a19fd.

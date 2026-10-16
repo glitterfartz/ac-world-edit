@@ -163,6 +163,17 @@ public sealed class InteractionDraft : IDisposable
     /// </summary>
     public uint MaxReserved(string source, TableSchema table, string column) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Where(e => e.Table == table.Name && e.After != null).Select(e => e.After!.U(column)).DefaultIfEmpty(0u).Max();
 
+    /// <summary>
+    /// Net row change per (source, table, key) over the applied history, in first-touched order: the
+    /// first edit's Before and the last edit's After. Rows that end where they began are omitted.
+    /// </summary>
+    public IReadOnlyList<(string Source, RowEdit Edit)> NetEdits() => state.AppliedEntries()
+        .SelectMany(c => c.Edits.Select(e => (c.Source, Edit: e)))
+        .GroupBy(x => (x.Source, x.Edit.Table, x.Edit.Key))
+        .Select(g => (g.Key.Source, new RowEdit(g.Key.Table, g.Key.Key, g.First().Edit.Before, g.Last().Edit.After)))
+        .Where(x => x.Item2.Before != x.Item2.After)
+        .ToList();
+
     public void Undo() => history.Undo();
 
     public void Redo() => history.Redo();

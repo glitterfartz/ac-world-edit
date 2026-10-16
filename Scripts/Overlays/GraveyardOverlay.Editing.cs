@@ -24,6 +24,7 @@ public partial class GraveyardOverlay : IPlacementEditor
     public bool HasSelection => selected.HasValue;
     public bool CanEdit => EditableMarker() != null;
     public bool CanUndo => draft?.CanUndo == true;
+    public IReadOnlyList<GraveyardEdit> NetEdits() => draft?.NetEdits() ?? [];
     public bool CanRedo => draft?.CanRedo == true;
     public bool IsDragging => gizmo.Dragging;
     public bool SupportsRotation => false;
