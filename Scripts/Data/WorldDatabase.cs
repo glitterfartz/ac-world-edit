@@ -75,7 +75,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
             WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN
             ('creature','creature_template','creature_template_model','gameobject','gameobject_template',
              'game_event','game_event_creature','game_event_gameobject','pool_creature','pool_gameobject','conditions',
-             'game_graveyard','graveyard_zone','gossip_menu','gossip_menu_option','npc_text','broadcast_text',
+             'game_graveyard','graveyard_zone','game_tele','gossip_menu','gossip_menu_option','npc_text','broadcast_text',
              'creature_queststarter','creature_questender','quest_template','npc_vendor','item_template','trainer',
              'trainer_spell','creature_default_trainer','npc_spellclick_spells','smart_scripts','points_of_interest',
              'quest_template_addon','quest_request_items','quest_offer_reward','creature_text','gameobject_template',

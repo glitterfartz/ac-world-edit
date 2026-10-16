@@ -696,3 +696,15 @@ reading the streaming paths, not by guessing:
   dialog were not exercised graphically. A guarded statement that matches no row does not fail the script;
   the preflight/post-check rows are the signal. A source hash, not a name, labels the database.
 - Prior checkpoint: 84a19fd.
+
+## Teleport dropdown — 2026-10-16
+
+- A "Teleport" dropdown sits under World and above Nearby tile radius. `game_tele` is read once at startup
+  (and again when the database connection changes) on a worker through `TeleportSource`; selecting a row opens
+  its map if needed, then moves the camera there via `FocusPose` (`TerrainViewer.Teleports.cs`).
+- `game_tele` had to be added to the `WorldReadSession.ReadSchema` table allowlist; without it `Require` failed
+  closed and the dropdown showed "Unavailable".
+- Maps the client lacks report that in the status line instead of moving. Stale loads are dropped by generation.
+- Validation: build 0 warnings/errors, whitespace format passed. Not verified: dropdown contents, cross-map
+  teleport and camera placement were not exercised graphically or against a live database.
+- Prior checkpoint: 96270e3.

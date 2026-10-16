@@ -131,6 +131,7 @@ public partial class TerrainViewer
         };
         open.Pressed += async () => await OpenMap();
         box.AddChild(open);
+        BuildTeleportUi(box);
         var radiusRow = new HBoxContainer();
         box.AddChild(radiusRow);
         radiusRow.AddChild(new Label { Text = "Nearby tile radius" });

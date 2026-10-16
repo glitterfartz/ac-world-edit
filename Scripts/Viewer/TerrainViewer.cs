@@ -106,6 +106,8 @@ public partial class TerrainViewer : Node3D
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         BuildUi();
+        connection.Applied += () => _ = LoadTeleports();
+        _ = LoadTeleports();
         ConfigureSmokeChecks();
         _ = StartupPrompts();
         await LoadArchives();
