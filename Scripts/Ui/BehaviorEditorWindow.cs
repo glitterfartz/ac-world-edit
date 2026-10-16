@@ -34,6 +34,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
     SmartScope? scope;
     uint? expanded;
     VBoxContainer page = null!, issueBox = null!;
+    ScrollContainer scroll = null!;
     HFlowContainer scopes = null!;
     Label title = null!, subtitle = null!, statusLabel = null!;
     Button undo = null!, redo = null!;
@@ -75,7 +76,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         root.AddChild(subtitle);
         scopes = new HFlowContainer();
         root.AddChild(scopes);
-        var scroll = new ScrollContainer
+        scroll = new ScrollContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
@@ -118,10 +119,9 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
             areaTrigger = trigger;
             snapshot = null;
             expanded = null;
-            composing = false;
+            pending = null;
+            pendingError = "";
             scope = entry == 0 ? null : new SmartScope((int)entry, trigger ? SmartScope.AreaTrigger : SmartScope.Creature);
-            composeEvent = trigger ? SmartCatalog.AreaTriggerEvent : 4;
-            composeTarget = trigger ? InvokerTarget : 1;
             status = "";
         }
 
@@ -336,7 +336,8 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
     {
         scope = value;
         expanded = null;
-        composing = false;
+        pending = null;
+        pendingError = "";
         Render();
     }
 

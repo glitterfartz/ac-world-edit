@@ -56,11 +56,15 @@ public partial class BehaviorEditorWindow
 
     public void SmokeAddRule(int template)
     {
-        var t = (scope is { IsAreaTrigger: true } ? TriggerTemplates : RuleTemplates)[template];
-        AddRule(scope!.Value, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
+        StartPending(scope!.Value, TemplatesFor(scope.Value)[template], null);
+        AddPending();
     }
 
-    public void SmokeAddThen(SmartRule rule) => AddThen(scope!.Value, rule);
+    public void SmokeAddThen(SmartRule rule)
+    {
+        StartThen(scope!.Value, rule);
+        AddPending();
+    }
 
     public void SmokeSwap(SmartRule a, SmartRule b) => Swap(scope!.Value, a, b);
 
@@ -68,14 +72,14 @@ public partial class BehaviorEditorWindow
 
     public bool SmokeUpdate(SmartRule rule, string label, params (string Column, object Value)[] values) => Update(rule, label, values);
 
-    public void SmokeChangeType(SmartRule rule, string part, uint id) => ChangeType(rule, part, id);
+    public void SmokeChangeType(SmartRule rule, string part, uint id) => ChangeType(rule, false, part, id);
 
     public Task SmokeCreateActionList(SmartRule rule) => CreateActionList(rule);
 
     public void SmokeHistory(bool forward) => History(forward);
 
     /// <summary>
-    /// Press a page button by node name (e.g. "AddRule", "ComposerAdd").
+    /// Press a page button by node name (e.g. "AddRule", "PendingAdd").
     /// </summary>
     public bool SmokePress(string name)
     {
@@ -84,6 +88,13 @@ public partial class BehaviorEditorWindow
         button?.EmitSignal(BaseButton.SignalName.Pressed);
         return button != null;
     }
+
+    /// <summary>
+    /// A live page control by node name, for real clicks at its screen position.
+    /// </summary>
+    public Control? SmokeControl(string name) => page.FindChildren(name, "Control", true, false).OfType<Control>().FirstOrDefault(Live);
+
+    public IEnumerable<T> SmokeControls<T>() where T : Control => page.FindChildren("*", typeof(T).Name, true, false).OfType<T>().Where(c => Live(c) && c.IsVisibleInTree());
 
     bool Live(Node node)
     {
@@ -98,37 +109,26 @@ public partial class BehaviorEditorWindow
         return true;
     }
 
-    Node? LiveComposer => composerCard != null && IsInstanceValid(composerCard) && !composerCard.IsQueuedForDeletion() ? composerCard : null;
-
-    OptionButton? ComposerChooser(string kind) => LiveComposer?.FindChild("Choose" + char.ToUpperInvariant(kind[0]) + kind[1..], true, false) as OptionButton;
-
     /// <summary>
-    /// Selectable (non-heading) entries in the composer's dropdown for a kind.
+    /// Selectable (non-marker) types the pending card's chooser offers for a kind.
     /// </summary>
-    public int SmokeComposerOptions(string kind) => ComposerChooser(kind) is { } picker ? Enumerable.Range(0, picker.ItemCount).Count(i => !picker.IsItemSeparator(i)) : -1;
+    public int SmokeComposerOptions(string kind) => pending == null ? -1 : TypesOf(kind).Count(t => !SmartCatalog.IsMarker(t));
 
     /// <summary>
-    /// Pick a type in the composer dropdown the way a click does (select + ItemSelected).
+    /// Pick a type on the pending rule the way the chooser's picker does (ChangeType).
     /// </summary>
     public bool SmokeComposerChoose(string kind, uint id)
     {
-        if (ComposerChooser(kind) is not { } picker)
+        if (pending == null || !TypesOf(kind).Any(t => t.Id == id))
         {
             return false;
         }
 
-        int index = Enumerable.Range(0, picker.ItemCount).FirstOrDefault(i => !picker.IsItemSeparator(i) && picker.GetItemMetadata(i).AsInt64() == id, -1);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        picker.Select(index);
-        picker.EmitSignal(OptionButton.SignalName.ItemSelected, index);
+        ChangeType(new SmartRule(pending.Row), true, kind, id);
         return true;
     }
 
-    public string SmokeComposerPreview => (LiveComposer?.FindChild("ComposerPreview", true, false) as Label)?.Text ?? "";
+    public string SmokeComposerPreview => (page.FindChild("PendingPreview", true, false) as Label)?.Text ?? "";
 
     public void SmokeExpand(uint? id)
     {

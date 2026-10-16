@@ -7,56 +7,72 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// Rule cards. A card shows the rule as a sentence; expanding it shows When / Do / On with typed
-/// fields. smart_scripts is keyed by (entryorguid, source_type, id, link), so edits that change id
-/// or link are recorded as delete + insert within one command.
+/// fields. New rules, template starts and "Then" steps open the same editor on a pending row that
+/// is drafted only by its Add button, so creating and editing look and work the same.
+/// smart_scripts is keyed by (entryorguid, source_type, id, link), so edits that change id or link
+/// are recorded as delete + insert within one command.
 /// </summary>
 public partial class BehaviorEditorWindow
 {
     /// <summary>
-    /// Starting points for new rules: (label, event, event params, action, action params, target).
+    /// A starting point for a new rule or step. Zero action parameters stay unset; a Talk group of
+    /// 0 becomes the creature's first text group.
     /// </summary>
+    readonly record struct RuleTemplate(string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target);
+
     /// <summary>
     /// AreaTrigger starting points. "Set data on a creature" is the common pattern for starting a
     /// boss script's event (e.g. Utgarde Pinnacle 5140 sends data 1 = 1 to Svala); target 10 is a
     /// creature by spawn GUID, 19 the closest creature of an entry.
     /// </summary>
-    static readonly (string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target)[] TriggerTemplates =
+    static readonly RuleTemplate[] TriggerTemplates =
     [
-        ("Send data to a creature (start its script event)", SmartCatalog.AreaTriggerEvent, [], 45, [1, 1], 10),
-        ("Make the nearest creature of a kind say a line", SmartCatalog.AreaTriggerEvent, [], 1, [0], 19),
-        ("Cast a spell on the player who entered", SmartCatalog.AreaTriggerEvent, [], 11, [], 7),
-        ("Make the nearest creature of a kind play a scene (action list)", SmartCatalog.AreaTriggerEvent, [], SmartCatalog.RunActionList, [], 19),
-        ("Blank rule", SmartCatalog.AreaTriggerEvent, [], 0, [], 7)
+        new("Send data to a creature (start its script event)", SmartCatalog.AreaTriggerEvent, [], 45, [1, 1], 10),
+        new("Make the nearest creature of a kind say a line", SmartCatalog.AreaTriggerEvent, [], 1, [0], 19),
+        new("Cast a spell on the player who entered", SmartCatalog.AreaTriggerEvent, [], 11, [], InvokerTarget),
+        new("Make the nearest creature of a kind play a scene (action list)", SmartCatalog.AreaTriggerEvent, [], SmartCatalog.RunActionList, [], 19),
+        new("Blank rule", SmartCatalog.AreaTriggerEvent, [], 0, [], InvokerTarget)
     ];
 
-    static readonly (string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target)[] RuleTemplates =
+    static readonly RuleTemplate[] RuleTemplates =
     [
-        ("Say something when it enters combat", 4, [], 1, [0], 1),
-        ("Cast a spell on its victim every few seconds", 0, [2000, 4000, 8000, 12000], 11, [], 2),
-        ("Cast a spell when its health drops below 30%", 2, [0, 30, 0, 0], 11, [], 1),
-        ("Say something when it dies", 6, [], 1, [0], 1),
-        ("Wave back when a player waves", 22, [101, 2000, 2000], 5, [3], 1),
-        ("Play a scene (action list) when a quest is completed", 20, [], SmartCatalog.RunActionList, [], 1),
-        ("Do something every few seconds out of combat", 1, [5000, 10000, 15000, 30000], 5, [], 1),
-        ("Blank rule", 4, [], 0, [], 1)
+        new("Say something when it enters combat", 4, [], 1, [0], 1),
+        new("Cast a spell on its victim every few seconds", 0, [2000, 4000, 8000, 12000], 11, [], 2),
+        new("Cast a spell when its health drops below 30%", 2, [0, 30, 0, 0], 11, [], 1),
+        new("Say something when it dies", 6, [], 1, [0], 1),
+        new("Wave back when a player waves", 22, [101, 2000, 2000], 5, [3], 1),
+        new("Play a scene (action list) when a quest is completed", 20, [], SmartCatalog.RunActionList, [], 1),
+        new("Do something every few seconds out of combat", 1, [5000, 10000, 15000, 30000], 5, [], 1),
+        new("Blank rule", 4, [], 0, [], 1)
     ];
 
-    bool composing;
+    static readonly RuleTemplate[] StepTemplates =
+    [
+        new("Say a line", 0, [], 1, [0], 1),
+        new("Play an emote", 0, [], 5, [], 1),
+        new("Cast a spell", 0, [], 11, [], 1),
+        new("Walk to a position", 0, [], 69, [], 8),
+        new("Blank step", 0, [], 0, [], 1)
+    ];
+
     /// <summary>
-    /// The composer card currently shown (re-created on each render; for diagnostics).
+    /// The rule being created: its row (id assigned on Add), its scope and, for a "Then" step, the
+    /// rule it follows. Nothing is drafted until Add; switching owner discards it.
     /// </summary>
-    PanelContainer? composerCard;
-    uint composeEvent = 4, composeAction = 1, composeTarget = 1;
-    double composeDelay;
+    sealed record PendingRule(SmartScope Scope, Row Row, uint? After);
 
-    static readonly (string Label, uint Action, uint[] ActionParams, uint Target)[] StepTemplates =
-    [
-        ("Say a line", 1, [0], 1),
-        ("Play an emote", 5, [], 1),
-        ("Cast a spell", 11, [], 1),
-        ("Walk to a position", 69, [], 8),
-        ("Blank step", 0, [], 1)
-    ];
+    PendingRule? pending;
+    /// <summary>
+    /// Why the last Add was rejected, shown inside the pending card until it changes.
+    /// </summary>
+    string pendingError = "";
+    /// <summary>
+    /// Card to scroll into view after the next render: a rule id, or uint.MaxValue for the pending card.
+    /// </summary>
+    uint? reveal;
+    const uint PendingCard = uint.MaxValue;
+
+    RuleTemplate[] TemplatesFor(SmartScope shown) => shown.IsActionList ? StepTemplates : shown.IsAreaTrigger ? TriggerTemplates : RuleTemplates;
 
     void RenderRules(SmartScope shown)
     {
@@ -70,6 +86,7 @@ public partial class BehaviorEditorWindow
         var help = ClientStyle.Text(intro, 12, ClientStyle.Faded);
         help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         page.AddChild(help);
+        var shownPending = pending is { } p && p.Scope == shown ? p : null;
         var chains = SmartCatalog.Chains(rules);
         var roots = chains.Select(c => c[0]).ToList();
         foreach (var chain in chains)
@@ -78,33 +95,35 @@ public partial class BehaviorEditorWindow
             {
                 RenderCard(shown, chain[i], i > 0, roots, list);
             }
+
+            if (shownPending?.After is uint after && chain.Any(r => r.Id == after))
+            {
+                RenderPending(shown, shownPending);
+            }
         }
 
-        if (rules.Count == 0)
+        if (rules.Count == 0 && shownPending == null)
         {
             page.AddChild(ClientStyle.Text(list ? "No steps yet." : "No rules yet. Add one below.", 14, ClientStyle.Faded));
         }
 
-        if (composing)
+        // A "Then" step whose rule disappeared (undo, another editor) still shows, so it can be discarded.
+        if (shownPending != null && (shownPending.After == null || !rules.Any(r => r.Id == shownPending.After)))
         {
-            RenderComposer(shown, list);
+            RenderPending(shown, shownPending);
         }
 
         var bottom = new HBoxContainer();
-        if (!composing)
+        if (shownPending == null)
         {
-            var add = ButtonOf(list ? "+ Add step" : "+ Add rule", () =>
-            {
-                composing = true;
-                expanded = null;
-                Render();
-            });
+            var add = ButtonIn(bottom, list ? "+ Add step" : "+ Add rule", () => StartPending(shown, TemplatesFor(shown)[^1], null));
             add.Name = "AddRule";
-            add.TooltipText = "Build a rule from any event, action and target the server supports.";
-            bottom.AddChild(add);
+            add.TooltipText = "Build a new rule from any event, action and target the server supports.";
+            var fromTemplate = ButtonIn(bottom, "+ From template…", () => ChooseTemplate(shown));
+            fromTemplate.Name = "AddFromTemplate";
+            fromTemplate.TooltipText = "Start a new rule from a ready-made example, then adjust it before adding.";
         }
 
-        bottom.AddChild(TemplatesButton(shown, list));
         if (shown.IsSpawn && rules.Count == 0 && RulesOf(effective, EntryScope).Count > 0)
         {
             ButtonIn(bottom, "Copy rules from all spawns", () => CopyScope(EntryScope, shown));
@@ -113,22 +132,34 @@ public partial class BehaviorEditorWindow
         page.AddChild(bottom);
     }
 
-    void RenderCard(SmartScope shown, SmartRule rule, bool linked, List<SmartRule> roots, bool list)
+    static PanelContainer Card(bool linked, bool highlighted, bool isNew)
     {
         var card = new PanelContainer();
         var style = new StyleBoxFlat
         {
-            BgColor = new Color(0.36f, 0.25f, 0.12f, expanded == rule.Id ? 0.16f : 0.08f),
-            BorderColor = new Color(0.36f, 0.25f, 0.12f, 0.5f),
+            BgColor = isNew ? new Color(0.98f, 0.93f, 0.78f, 0.9f) : new Color(0.36f, 0.25f, 0.12f, highlighted ? 0.16f : 0.08f),
+            BorderColor = isNew ? new Color(0.55f, 0.4f, 0.1f) : new Color(0.36f, 0.25f, 0.12f, 0.5f),
             ContentMarginLeft = linked ? 34 : 8,
             ContentMarginRight = 8,
             ContentMarginTop = 4,
             ContentMarginBottom = 4
         };
-        style.SetBorderWidthAll(1);
+        style.SetBorderWidthAll(isNew ? 2 : 1);
         style.SetCornerRadiusAll(4);
         card.AddThemeStyleboxOverride("panel", style);
+        return card;
+    }
+
+    void RenderCard(SmartScope shown, SmartRule rule, bool linked, List<SmartRule> roots, bool list)
+    {
+        var card = Card(linked, expanded == rule.Id, false);
+        card.Name = $"Rule{rule.Id}";
         page.AddChild(card);
+        if (reveal == rule.Id)
+        {
+            RevealLater(card);
+        }
+
         var box = new VBoxContainer();
         card.AddChild(box);
         var header = new HBoxContainer();
@@ -154,51 +185,111 @@ public partial class BehaviorEditorWindow
             upButton.TooltipText = list ? "Run this step earlier" : "Check this rule earlier";
             var downButton = ButtonIn(header, "▼", () => Swap(shown, rule, roots[index + 1]));
             downButton.Disabled = index < 0 || index >= roots.Count - 1;
+            downButton.TooltipText = list ? "Run this step later" : "Check this rule later";
             ButtonIn(header, "Copy", () => Duplicate(shown, rule)).TooltipText = "Duplicate this rule and its \"Then\" steps";
         }
 
-        ButtonIn(header, "+ Then", () => AddThen(shown, rule)).TooltipText = "Add an action that runs right after this one";
-        ButtonIn(header, "Delete", () => Delete(shown, rule));
+        var then = ButtonIn(header, "+ Then", () => StartThen(shown, rule));
+        then.Name = $"Then{rule.Id}";
+        then.TooltipText = "Add an action that runs right after this one";
+        ButtonIn(header, "Delete", () => Delete(shown, rule)).Name = $"Delete{rule.Id}";
         if (expanded == rule.Id)
         {
-            RenderEditor(box, shown, rule, linked);
+            RenderEditor(box, shown, rule, linked, false);
         }
     }
 
-    void RenderEditor(VBoxContainer box, SmartScope shown, SmartRule rule, bool linked)
+    /// <summary>
+    /// The pending rule: same editor as an existing rule, with a live sentence, problems that would
+    /// block Add, and Add / Template / Discard.
+    /// </summary>
+    void RenderPending(SmartScope shown, PendingRule p)
+    {
+        bool linked = p.After != null;
+        var card = Card(linked, true, true);
+        card.Name = "PendingRule";
+        page.AddChild(card);
+        if (reveal == PendingCard)
+        {
+            RevealLater(card);
+        }
+
+        var box = new VBoxContainer();
+        card.AddChild(box);
+        var header = new HBoxContainer();
+        box.AddChild(header);
+        string noun = linked ? "\"Then\" step" : shown.IsActionList ? "step" : "rule";
+        var title = ClientStyle.Text($"New {noun}", 16, ClientStyle.Header);
+        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        header.AddChild(title);
+        if (!linked)
+        {
+            var template = ButtonIn(header, "Template…", () => ChooseTemplate(shown));
+            template.Name = "PendingTemplate";
+            template.TooltipText = "Replace this new rule with a ready-made example";
+        }
+
+        var add = ButtonIn(header, $"Add {noun}", () => AddPending());
+        add.Name = "PendingAdd";
+        ButtonIn(header, "Discard", () =>
+        {
+            pending = null;
+            pendingError = "";
+            Render();
+        }).Name = "PendingDiscard";
+        var rule = new SmartRule(p.Row);
+        var sentence = ClientStyle.Text("Reads: " + (linked ? "↳ " : "") + SmartCatalog.Describe(rule, snapshot!.Names, entry), 14, ClientStyle.Edited);
+        sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        sentence.Name = "PendingPreview";
+        box.AddChild(sentence);
+        foreach (string problem in PendingProblems(p).Prepend(pendingError).Where(m => m.Length > 0).Distinct())
+        {
+            var label = ClientStyle.Text("⛔ " + problem, 12, ClientStyle.Error);
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            label.Name = "PendingProblem";
+            box.AddChild(label);
+        }
+
+        RenderEditor(box, shown, rule, linked, true);
+    }
+
+    void RenderEditor(VBoxContainer box, SmartScope shown, SmartRule rule, bool linked, bool isNew)
     {
         var e = SmartCatalog.Event(rule.Event);
         var a = SmartCatalog.Action(rule.Action);
         var t = SmartCatalog.Target(rule.Target);
+        bool Put(string label, params (string Column, object Value)[] values) => Change(rule, isNew, label, values);
         if (linked)
         {
             box.AddChild(EditorFields.Row("When", ClientStyle.Text("right after the step above", 14)));
         }
         else if (shown.IsActionList && rule.Event is 0 or 1 or 60)
         {
-            box.AddChild(EditorFields.Row("Wait", EditorFields.Decimal(rule.EventParam(1) / 1000.0, seconds =>
+            var wait = EditorFields.Decimal(rule.EventParam(1) / 1000.0, seconds =>
             {
-                uint ms = (uint)Math.Round(Math.Max(0, seconds) * 1000);
-                Update(rule, "Change step delay", ("event_param1", ms), ("event_param2", ms));
-            }, 60), ClientStyle.Tag("seconds after the previous step")));
+                uint ms = (uint)Math.Round(Math.Clamp(seconds, 0, uint.MaxValue / 1000.0) * 1000);
+                Put("Change step delay", ("event_param1", ms), ("event_param2", ms));
+            }, 60);
+            wait.Name = "StepDelay";
+            box.AddChild(EditorFields.Row("Wait", wait, ClientStyle.Tag("seconds after the previous step")));
         }
         else
         {
-            box.AddChild(EditorFields.Row("When", TypeChooser(rule.Event, "event", id => ChangeType(rule, "event", id))));
-            box.AddChild(Parameters(rule, e, "event_param", rule.EventParam, 6));
+            box.AddChild(EditorFields.Row("When", TypeChooser(rule.Event, "event", id => ChangeType(rule, isNew, "event", id))));
+            box.AddChild(Parameters(rule, isNew, e, "event_param", rule.EventParam, 6));
         }
 
-        box.AddChild(EditorFields.Row("Do", TypeChooser(rule.Action, "action", id => ChangeType(rule, "action", id))));
-        box.AddChild(Parameters(rule, a, "action_param", rule.ActionParam, 6));
-        box.AddChild(EditorFields.Row("On", TypeChooser(rule.Target, "target", id => ChangeType(rule, "target", id))));
-        box.AddChild(Parameters(rule, t, "target_param", i => i <= 4 ? rule.TargetParam(i) : 0, 4));
+        box.AddChild(EditorFields.Row("Do", TypeChooser(rule.Action, "action", id => ChangeType(rule, isNew, "action", id))));
+        box.AddChild(Parameters(rule, isNew, a, "action_param", rule.ActionParam, 6));
+        box.AddChild(EditorFields.Row("On", TypeChooser(rule.Target, "target", id => ChangeType(rule, isNew, "target", id))));
+        box.AddChild(Parameters(rule, isNew, t, "target_param", i => i <= 4 ? rule.TargetParam(i) : 0, 4));
         if (t != null && (t.Sentence.Contains("{x}", StringComparison.Ordinal) || t.Help.Contains("xyz", StringComparison.OrdinalIgnoreCase)))
         {
             box.AddChild(EditorFields.Row("Position",
-                ClientStyle.Tag("x"), EditorFields.Decimal(rule.X, v => Update(rule, "Change target position", ("target_x", (float)v)), 80),
-                ClientStyle.Tag("y"), EditorFields.Decimal(rule.Y, v => Update(rule, "Change target position", ("target_y", (float)v)), 80),
-                ClientStyle.Tag("z"), EditorFields.Decimal(rule.Z, v => Update(rule, "Change target position", ("target_z", (float)v)), 70),
-                ClientStyle.Tag("facing"), EditorFields.Decimal(rule.O, v => Update(rule, "Change target facing", ("target_o", (float)v)), 50)));
+                ClientStyle.Tag("x"), EditorFields.Decimal(rule.X, v => Put("Change target position", ("target_x", (float)v)), 80),
+                ClientStyle.Tag("y"), EditorFields.Decimal(rule.Y, v => Put("Change target position", ("target_y", (float)v)), 80),
+                ClientStyle.Tag("z"), EditorFields.Decimal(rule.Z, v => Put("Change target position", ("target_z", (float)v)), 70),
+                ClientStyle.Tag("facing"), EditorFields.Decimal(rule.O, v => Put("Change target facing", ("target_o", (float)v)), 50)));
         }
 
         if (!linked)
@@ -209,18 +300,19 @@ public partial class BehaviorEditorWindow
                 ButtonPressed = (rule.Flags & 1) != 0,
                 TooltipText = "Run once per spawn (until it respawns, or resets unless \"Keep after reset\")."
             };
-            once.Toggled += on => Update(rule, "Change only-once", ("event_flags", on ? rule.Flags | 1 : rule.Flags & ~1u));
-            box.AddChild(EditorFields.Row("Chance", EditorFields.Number(rule.Chance, value => Update(rule, "Change chance", ("event_chance", value)), 50), ClientStyle.Tag("%"), once));
+            once.Toggled += on => Put("Change only-once", ("event_flags", on ? rule.Flags | 1 : rule.Flags & ~1u));
+            box.AddChild(EditorFields.Row("Chance", EditorFields.Number(rule.Chance, value => Put("Change chance", ("event_chance", (uint)Math.Clamp(value, 0, uint.MaxValue))), 50), ClientStyle.Tag("%"), once));
             var phases = Enumerable.Range(1, 12).Select(p => (1u << (p - 1), p.ToString(CultureInfo.InvariantCulture)));
             var phaseRow = EditorFields.Row("Only in phases");
-            phaseRow.AddChild(EditorFields.Flags(phases, rule.Phases, value => Update(rule, "Change phases", ("event_phase_mask", value)), 12));
+            phaseRow.AddChild(EditorFields.Flags(phases, rule.Phases, value => Put("Change phases", ("event_phase_mask", value)), 12));
             phaseRow.AddChild(ClientStyle.Tag(rule.Phases == 0 ? "(none ticked = always)" : ""));
             box.AddChild(phaseRow);
-            box.AddChild(EditorFields.Row("Difficulty & more", EditorFields.Flags(SmartCatalog.EventFlags.Where(f => f.Bit != 1), rule.Flags, value => Update(rule, "Change rule options", ("event_flags", value)), 4)));
+            box.AddChild(EditorFields.Row("Difficulty & more", EditorFields.Flags(SmartCatalog.EventFlags.Where(f => f.Bit != 1), rule.Flags, value => Put("Change rule options", ("event_flags", value)), 4)));
         }
 
-        var comment = EditorFields.Line(rule.Comment, text => Update(rule, "Edit note", ("comment", text)), "Note for other editors", 255);
-        box.AddChild(EditorFields.Row("Note", comment, ButtonOf("Auto", () => Update(rule, "Write note automatically", ("comment", SmartCatalog.AutoComment(rule, snapshot!.CreatureName))))));
+        var comment = EditorFields.Line(rule.Comment, text => Put("Edit note", ("comment", text)), isNew ? "Note for other editors (written automatically if left empty)" : "Note for other editors", 255);
+        comment.Name = "Note";
+        box.AddChild(EditorFields.Row("Note", comment, ButtonOf("Auto", () => Put("Write note automatically", ("comment", SmartCatalog.AutoComment(rule, snapshot!.CreatureName))))));
         foreach (var type in new[] { e, a, t }.Where(x => x is { ParamsKnown: false }))
         {
             var help = ClientStyle.Text($"{type!.Name}: {type.Help}", 11, ClientStyle.Faded);
@@ -230,8 +322,8 @@ public partial class BehaviorEditorWindow
     }
 
     /// <summary>
-    /// Every selectable type of a kind, for dropdowns and search. "Then (linked)" is not offered as
-    /// an event: "+ Then" creates linked steps so their link stays consistent.
+    /// Every selectable type of a kind for the chooser. "Then (linked)" is not offered as an event:
+    /// "+ Then" creates linked steps so their link stays consistent.
     /// </summary>
     IEnumerable<SmartType> TypesOf(string kind) => kind switch
     {
@@ -250,190 +342,153 @@ public partial class BehaviorEditorWindow
     };
 
     /// <summary>
-    /// A dropdown of every type of a kind under category headings (hover shows what it does), plus
-    /// a search button over names, sentences, categories, server codes and IDs.
+    /// One button per field showing the chosen type; it opens a searchable picker of every type of
+    /// the kind, by category (search covers names, sentences, categories, server codes and IDs).
+    /// The picker belongs to the window, not the page, so a re-render cannot close it mid-choice.
     /// </summary>
-    HBoxContainer TypeChooser(uint id, string kind, Action<uint> choose)
+    Button TypeChooser(uint id, string kind, Action<uint> choose)
     {
-        var row = new HBoxContainer();
-        var picker = new OptionButton
+        var type = Lookup(kind, id);
+        var button = new Button
         {
-            FitToLongestItem = false,
+            Text = (type?.Name ?? $"Unknown {kind} {id}") + "  ▾",
             CustomMinimumSize = new(280, 0),
+            Alignment = HorizontalAlignment.Left,
+            TooltipText = type == null ? "Not a type this server knows; choose another." : type.Sentence.Length > 0 ? type.Sentence : type.Help,
             Name = "Choose" + char.ToUpperInvariant(kind[0]) + kind[1..]
         };
-        int selected = -1;
-        if (Lookup(kind, id) == null)
+        if (type == null)
         {
-            picker.AddItem($"Unknown {kind} {id}");
-            picker.SetItemMetadata(0, (long)id);
-            selected = 0;
+            button.AddThemeColorOverride("font_color", ClientStyle.Error);
         }
 
-        foreach (var (category, types) in SmartCatalog.Grouped(TypesOf(kind), kind))
-        {
-            picker.AddSeparator(category);
-            foreach (var type in types)
-            {
-                picker.AddItem(type.Name);
-                int index = picker.ItemCount - 1;
-                picker.SetItemMetadata(index, (long)type.Id);
-                picker.SetItemTooltip(index, type.Sentence.Length > 0 ? type.Sentence : type.Help);
-                if (type.Id == id)
-                {
-                    selected = index;
-                }
-            }
-        }
-
-        picker.Select(selected);
-        picker.ItemSelected += index => choose((uint)picker.GetItemMetadata((int)index).AsInt64());
-        row.AddChild(picker);
         var all = SmartCatalog.Grouped(TypesOf(kind), kind).SelectMany(g => g.Types.Select(t => (g.Category, Type: t))).ToList();
-        var search = ButtonOf("Search…", () => PickerPopup.Show(this, $"Find {kind}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
+        button.Pressed += () => PickerPopup.Show(this, $"Choose {kind}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
             .Where(x => term.Length == 0 || x.Type.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Code.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Sentence.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Category.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
-            .Select(x => ((uint)x.Type.Id, $"{x.Category}: {x.Type.Name}{(x.Type.Sentence.Length > 0 ? " — " + x.Type.Sentence : "")}")).Take(200).ToList()), (picked, _) => choose(picked)));
-        search.TooltipText = $"Search every {kind} by name, description or server code";
-        row.AddChild(search);
-        return row;
+            .Select(x => ((uint)x.Type.Id, $"{x.Category}: {x.Type.Name}{(x.Type.Sentence.Length > 0 ? " — " + x.Type.Sentence : "")}")).ToList()), (picked, _) => choose(picked), current: id, singleClick: true);
+        return button;
     }
 
     /// <summary>
-    /// The new-rule composer: pick When / Do / On from the full lists, read the rule as a sentence,
-    /// then add it (its details open for the parameters). Nothing is drafted until Add.
+    /// Pick a template for a new rule in this scope; it opens (or replaces) the pending card.
     /// </summary>
-    void RenderComposer(SmartScope shown, bool list)
+    void ChooseTemplate(SmartScope shown)
     {
-        var card = new PanelContainer
-        {
-            Name = "Composer"
-        };
-        var style = new StyleBoxFlat
-        {
-            BgColor = new Color(0.98f, 0.93f, 0.78f, 0.9f),
-            BorderColor = new Color(0.55f, 0.4f, 0.1f),
-            ContentMarginLeft = 10,
-            ContentMarginRight = 10,
-            ContentMarginTop = 6,
-            ContentMarginBottom = 6
-        };
-        style.SetBorderWidthAll(2);
-        style.SetCornerRadiusAll(4);
-        card.AddThemeStyleboxOverride("panel", style);
-        page.AddChild(card);
-        composerCard = card;
-        var box = new VBoxContainer();
-        card.AddChild(box);
-        box.AddChild(ClientStyle.Text(list ? "New step" : "New rule", 16, ClientStyle.Header));
-        if (list)
-        {
-            box.AddChild(EditorFields.Row("Wait", EditorFields.Decimal(composeDelay, seconds =>
-            {
-                composeDelay = Math.Max(0, seconds);
-                Render();
-            }, 60), ClientStyle.Tag("seconds after the previous step")));
-        }
-        else
-        {
-            box.AddChild(EditorFields.Row("When", TypeChooser(composeEvent, "event", id =>
-            {
-                composeEvent = id;
-                Render();
-            })));
-        }
-
-        box.AddChild(EditorFields.Row("Do", TypeChooser(composeAction, "action", id =>
-        {
-            composeAction = id;
-            Render();
-        })));
-        box.AddChild(EditorFields.Row("On", TypeChooser(composeTarget, "target", id =>
-        {
-            composeTarget = id;
-            Render();
-        })));
-        var preview = new SmartRule(ComposedRow(shown, list));
-        var sentence = ClientStyle.Text("Reads: " + SmartCatalog.Describe(preview, snapshot!.Names, entry), 14, ClientStyle.Edited);
-        sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        sentence.Name = "ComposerPreview";
-        box.AddChild(sentence);
-        var chosen = new[] { list ? null : SmartCatalog.Event(composeEvent), SmartCatalog.Action(composeAction), SmartCatalog.Target(composeTarget) };
-        foreach (var type in chosen.Where(t => t != null && t.Help.Length > 0 && !t.Help.Equals("NONE", StringComparison.OrdinalIgnoreCase)))
-        {
-            var help = ClientStyle.Text($"{type!.Name}: {type.Help}", 11, ClientStyle.Faded);
-            help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            box.AddChild(help);
-        }
-
-        box.AddChild(ClientStyle.Text("Details such as the spell, text or timing are set after adding.", 11, ClientStyle.Faded));
-        var buttons = new HBoxContainer();
-        var add = ButtonOf(list ? "Add step" : "Add rule", () => AddComposed(shown, list));
-        add.Name = "ComposerAdd";
-        buttons.AddChild(add);
-        buttons.AddChild(ButtonOf("Cancel", () =>
-        {
-            composing = false;
-            Render();
-        }));
-        box.AddChild(buttons);
-    }
-
-    Row ComposedRow(SmartScope shown, bool list)
-    {
-        uint delay = (uint)Math.Round(composeDelay * 1000);
-        return Template(shown, NextId(shown), list ? 0 : composeEvent, list ? [delay, delay] : [], composeAction, [], composeTarget);
-    }
-
-    void AddComposed(SmartScope shown, bool list)
-    {
-        var rule = new SmartRule(ComposedRow(shown, list));
-        composing = false;
-        AddRule(shown, SmartCatalog.Describe(rule, snapshot!.Names, entry), rule.Event, Enumerable.Range(1, 6).Select(rule.EventParam).ToArray(), rule.Action, rule.Action == SmartCatalog.Talk ? [0] : [], rule.Target);
+        var templates = TemplatesFor(shown);
+        PickerPopup.Show(this, shown.IsActionList ? "Start a step from a template" : "Start a rule from a template", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(templates
+            .Select((t, i) => ((uint)i, t.Label)).Where(x => x.Label.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList()), (index, _) => StartPending(shown, templates[(int)index], null), singleClick: true);
     }
 
     /// <summary>
-    /// Ready-made rules, kept apart from Add so it is clear they are starting points.
+    /// Open the pending card for a new rule (or a "Then" step after <paramref name="after"/>).
     /// </summary>
-    MenuButton TemplatesButton(SmartScope shown, bool list)
+    void StartPending(SmartScope shown, RuleTemplate template, uint? after)
     {
-        var templates = new MenuButton
+        var row = Template(shown, NextId(shown), template.Event, template.EventParams, template.Action, template.ActionParams, template.Target);
+        pending = new PendingRule(shown, row.With("comment", ""), after);
+        pendingError = "";
+        expanded = null;
+        reveal = PendingCard;
+        Render();
+    }
+
+    void StartThen(SmartScope shown, SmartRule rule) => StartPending(shown, new("Then", SmartCatalog.LinkEvent, [], 0, [], shown.IsAreaTrigger ? InvokerTarget : SmartCatalog.SelfTarget), rule.Id);
+
+    /// <summary>
+    /// Errors the pending rule would introduce if added now (the same check Commit applies).
+    /// </summary>
+    IEnumerable<string> PendingProblems(PendingRule p)
+    {
+        var (_, edits) = PendingEdits(p);
+        if (edits.Length == 0)
         {
-            Text = "Templates ▾",
-            Flat = false,
-            Name = "Templates",
-            TooltipText = "Start from a ready-made rule, then adjust it."
-        };
-        var popup = templates.GetPopup();
-        popup.AddSeparator("Start from a template");
-        var rules = shown.IsAreaTrigger ? TriggerTemplates : RuleTemplates;
-        var labels = list ? StepTemplates.Select(t => t.Label) : rules.Select(t => t.Label);
-        int index = 0;
-        foreach (string label in labels)
-        {
-            popup.AddItem(label, index++);
+            return [];
         }
 
-        popup.IdPressed += id =>
+        var prospective = effective.Clone();
+        foreach (var edit in edits)
         {
-            composing = false;
-            if (list)
+            prospective.Apply(edit);
+        }
+
+        var before = CheckAll(effective).Where(i => i.Error).Select(i => i.Message).ToHashSet();
+        return CheckAll(prospective).Where(i => i.Error && !before.Contains(i.Message)).Select(i => i.Message).ToList();
+    }
+
+    /// <summary>
+    /// The row and edits that add the pending rule: a fresh id, an automatic note when empty, the
+    /// predecessor re-linked for a "Then" step, and SmartAI/SmartTrigger enabled for a first rule.
+    /// No edits when a "Then" step's rule no longer exists.
+    /// </summary>
+    (Row Row, RowEdit[] Edits) PendingEdits(PendingRule p)
+    {
+        var table = InteractionTables.SmartScripts;
+        uint id = NextId(p.Scope);
+        var row = p.Row.With("id", id).With("link", 0u);
+        if (row.T("comment").Length == 0)
+        {
+            row = row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), snapshot!.CreatureName));
+        }
+
+        if (p.After is uint after)
+        {
+            if (RulesOf(effective, p.Scope).FirstOrDefault(r => r.Id == after) is not { } before)
             {
-                var t = StepTemplates[id];
-                AddRule(shown, t.Label, 0, [], t.Action, t.ActionParams, t.Target);
+                return (row, []);
             }
-            else
-            {
-                var t = rules[id];
-                AddRule(shown, t.Label, t.Event, t.EventParams, t.Action, t.ActionParams, t.Target);
-            }
-        };
-        return templates;
+
+            row = row.With("link", before.Link);
+            return (row, Rekey([(before.Row, before.Row.With("link", id))]).Append(new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray());
+        }
+
+        var edits = new List<RowEdit> { new(table.Name, table.KeyOf(row), null, row) };
+        if (!p.Scope.IsActionList)
+        {
+            edits.AddRange(EnableSmartAiIfDefault());
+        }
+
+        return (row, edits.ToArray());
+    }
+
+    /// <summary>
+    /// Draft the pending rule as one command; on success it becomes a normal, expanded card.
+    /// </summary>
+    SmartRule? AddPending()
+    {
+        if (pending is not { } p || snapshot == null)
+        {
+            return null;
+        }
+
+        var (row, edits) = PendingEdits(p);
+        if (edits.Length == 0)
+        {
+            pendingError = "The rule this step follows no longer exists; discard it or add it to another rule.";
+            Render();
+            return null;
+        }
+
+        var rule = new SmartRule(row);
+        string label = p.After != null ? "Add a \"Then\" step" : $"Add {(p.Scope.IsActionList ? "step" : "rule")}: {SmartCatalog.Describe(rule, snapshot.Names, entry)}";
+        if (!Commit(label, edits))
+        {
+            pendingError = status;
+            Render();
+            return null;
+        }
+
+        pending = null;
+        pendingError = "";
+        expanded = rule.Id;
+        reveal = rule.Id;
+        Render();
+        return rule;
     }
 
     /// <summary>
     /// Labelled fields for a type's parameters; unknown types show raw numbered fields.
     /// </summary>
-    Control Parameters(SmartRule rule, SmartType? type, string prefix, Func<int, uint> value, int max)
+    Control Parameters(SmartRule rule, bool isNew, SmartType? type, string prefix, Func<int, uint> value, int max)
     {
         var flow = new HFlowContainer();
         int count = type == null || !type.ParamsKnown && type.Params.Length == 0 ? 0 : Math.Min(type.Params.Length, max);
@@ -450,7 +505,7 @@ public partial class BehaviorEditorWindow
             var caption = ClientStyle.Tag(param.Kind == SmartParamKind.Ms ? param.Label.Replace(" (ms)", "", StringComparison.Ordinal) : param.Label);
             caption.CustomMinimumSize = new(0, 0);
             field.AddChild(caption);
-            field.AddChild(ParamControl(rule, param, $"{prefix}{i}", value(i)));
+            field.AddChild(ParamControl(rule, isNew, param, $"{prefix}{i}", value(i)));
             flow.AddChild(field);
         }
 
@@ -460,10 +515,10 @@ public partial class BehaviorEditorWindow
         return margin;
     }
 
-    Control ParamControl(SmartRule rule, SmartParam param, string column, uint value)
+    Control ParamControl(SmartRule rule, bool isNew, SmartParam param, string column, uint value)
     {
         string label = $"Change {param.Label.ToLowerInvariant()}";
-        void Put(uint v) => Update(rule, label, (column, v));
+        void Put(uint v) => Change(rule, isNew, label, (column, v));
         HBoxContainer With(Control control, string unit)
         {
             var row = new HBoxContainer();
@@ -479,9 +534,9 @@ public partial class BehaviorEditorWindow
             case SmartParamKind.Ms:
                 return With(EditorFields.Decimal(value / 1000.0, s => Put((uint)Math.Round(Math.Clamp(s, 0, uint.MaxValue / 1000.0) * 1000)), 60), "s");
             case SmartParamKind.Percent:
-                return With(EditorFields.Number(value, v => Put((uint)v), 50), "%");
+                return With(EditorFields.Number(value, v => Put((uint)Math.Clamp(v, 0, uint.MaxValue)), 50), "%");
             case SmartParamKind.Yards:
-                return With(EditorFields.Number(value, v => Put((uint)v), 50), "yd");
+                return With(EditorFields.Number(value, v => Put((uint)Math.Clamp(v, 0, uint.MaxValue)), 50), "yd");
             case SmartParamKind.Bool:
                 var check = new CheckBox
                 {
@@ -496,13 +551,13 @@ public partial class BehaviorEditorWindow
             case SmartParamKind.Emote or SmartParamKind.TextEmote or SmartParamKind.FactionTemplate:
                 var all = (catalog?.All(param.Kind.ToString()) ?? []).Where(x => x.Name.Length > 0).ToList();
                 return EditorFields.Reference(text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
-                    .Where(x => term.Length == 0 || x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Id.ToString(CultureInfo.InvariantCulture) == term.Trim()).OrderBy(x => x.Name.Length).Take(200).ToList()), (id, _) => Put(id)), value == 0 ? null : () => Put(0));
+                    .Where(x => term.Length == 0 || x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Id.ToString(CultureInfo.InvariantCulture) == term.Trim()).OrderBy(x => x.Name.Length).Take(200).ToList()), (id, _) => Put(id), current: value), value == 0 ? null : () => Put(0));
             case SmartParamKind.TextGroup:
                 return TextGroupChoice(value, Put);
             case SmartParamKind.ActionList:
-                return ActionListControl(rule, value, Put);
+                return ActionListControl(rule, isNew, value, Put);
             default:
-                return EditorFields.Number(value, v => Put((uint)v), 70, param.Kind == SmartParamKind.Flags ? "Bit flags; 0x hex accepted" : "");
+                return EditorFields.Number(value, v => Put((uint)Math.Clamp(v, 0, uint.MaxValue)), 70, param.Kind == SmartParamKind.Flags ? "Bit flags; 0x hex accepted" : "");
         }
     }
 
@@ -539,7 +594,7 @@ public partial class BehaviorEditorWindow
 
     static string Shorten(string text) => text.Length > 48 ? text[..45] + "…" : text;
 
-    Control ActionListControl(SmartRule rule, uint value, Action<uint> put)
+    Control ActionListControl(SmartRule rule, bool isNew, uint value, Action<uint> put)
     {
         var row = new HBoxContainer();
         if (value != 0)
@@ -549,10 +604,18 @@ public partial class BehaviorEditorWindow
             row.AddChild(ButtonOf("Open", () => ShowScope(new SmartScope((int)value, SmartScope.ActionList))));
         }
 
-        var create = ButtonOf(value == 0 ? "Create list" : "New list", () => _ = CreateActionList(rule));
-        create.TooltipText = "Create an empty action list with a free ID and run it from this rule.";
+        // A new rule is added first, so the list has a drafted rule to run it.
+        var create = ButtonOf(value == 0 ? "Create list" : "New list", () =>
+        {
+            if ((isNew ? AddPending() : rule) is { } owner)
+            {
+                _ = CreateActionList(owner);
+            }
+        });
+        create.Name = "CreateActionList";
+        create.TooltipText = isNew ? "Add this rule and create an empty action list with a free ID for it to run." : "Create an empty action list with a free ID and run it from this rule.";
         row.AddChild(create);
-        row.AddChild(EditorFields.Number(value, v => put((uint)v), 80, "Or type an existing list ID"));
+        row.AddChild(EditorFields.Number(value, v => put((uint)Math.Clamp(v, 0, uint.MaxValue)), 80, "Or type an existing list ID"));
         return row;
     }
 
@@ -599,6 +662,34 @@ public partial class BehaviorEditorWindow
     }
 
     /// <summary>
+    /// Apply column changes to an existing rule (one draft command) or to the pending rule (in
+    /// memory; re-rendered so its sentence and fields follow).
+    /// </summary>
+    bool Change(SmartRule rule, bool isNew, string label, params (string Column, object Value)[] values)
+    {
+        if (!isNew)
+        {
+            return Update(rule, label, values);
+        }
+
+        if (pending is not { } p)
+        {
+            return false;
+        }
+
+        var row = p.Row;
+        foreach (var (column, value) in values)
+        {
+            row = row.With(column, value);
+        }
+
+        pending = p with { Row = row };
+        pendingError = "";
+        Render();
+        return true;
+    }
+
+    /// <summary>
     /// Change columns of one rule. A change to the key (id/link) becomes delete + insert.
     /// </summary>
     bool Update(SmartRule rule, string label, params (string Column, object Value)[] values)
@@ -639,7 +730,7 @@ public partial class BehaviorEditorWindow
     /// A new event/action/target type resets its parameters (their meaning changes), except timer
     /// events, which share the same four timing fields.
     /// </summary>
-    void ChangeType(SmartRule rule, string part, uint id)
+    void ChangeType(SmartRule rule, bool isNew, string part, uint id)
     {
         var values = new List<(string, object)> { ($"{part}_type", id) };
         bool timers = part == "event" && rule.Event is 0 or 1 or 60 && id is 0 or 1 or 60;
@@ -661,7 +752,7 @@ public partial class BehaviorEditorWindow
             values.Add(("action_param1", FirstTextGroup()));
         }
 
-        Update(rule, $"Change {part}", values.ToArray());
+        Change(rule, isNew, $"Change {part}", values.ToArray());
     }
 
     uint FirstTextGroup() => effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
@@ -687,37 +778,6 @@ public partial class BehaviorEditorWindow
         }
 
         return row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), snapshot!.CreatureName));
-    }
-
-    void AddRule(SmartScope of, string label, uint eventType, uint[] eventParams, uint action, uint[] actionParams, uint target)
-    {
-        uint id = NextId(of);
-        var row = Template(of, id, eventType, eventParams, action, actionParams, target);
-        var edits = new List<RowEdit> { new(InteractionTables.SmartScripts.Name, InteractionTables.SmartScripts.KeyOf(row), null, row) };
-        if (!of.IsActionList)
-        {
-            edits.AddRange(EnableSmartAiIfDefault());
-        }
-
-        if (Commit($"Add rule: {label}", edits.ToArray()))
-        {
-            expanded = id;
-            Render();
-        }
-    }
-
-    /// <summary>
-    /// Insert a linked "Then" rule right after this one, keeping any existing chain behind it.
-    /// </summary>
-    void AddThen(SmartScope of, SmartRule rule)
-    {
-        uint id = NextId(of);
-        var then = Template(of, id, SmartCatalog.LinkEvent, [], 0, [], of.IsAreaTrigger ? InvokerTarget : 1).With("link", rule.Link);
-        if (Commit("Add a \"Then\" step", Rekey([(rule.Row, rule.Row.With("link", id))]).Append(new RowEdit(InteractionTables.SmartScripts.Name, InteractionTables.SmartScripts.KeyOf(then), null, then)).ToArray()))
-        {
-            expanded = id;
-            Render();
-        }
     }
 
     /// <summary>
@@ -749,9 +809,16 @@ public partial class BehaviorEditorWindow
         var map = new Dictionary<uint, uint> { [a.Id] = b.Id, [b.Id] = a.Id };
         var changes = RulesOf(effective, of).Where(r => map.ContainsKey(r.Id) || map.ContainsKey(r.Link))
             .Select(r => (r.Row, r.Row.With("id", map.GetValueOrDefault(r.Id, r.Id)).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, r.Link))));
+        // A pending "Then" step follows its rule to the new id.
+        uint? after = pending?.After is uint id && pending.Scope == of && map.TryGetValue(id, out uint moved) ? moved : pending?.After;
         if (Commit(of.IsActionList ? "Reorder steps" : "Reorder rules", Rekey(changes)))
         {
             expanded = expanded == a.Id ? b.Id : expanded == b.Id ? a.Id : expanded;
+            if (pending != null)
+            {
+                pending = pending with { After = after };
+            }
+
             Render();
         }
     }
@@ -767,16 +834,34 @@ public partial class BehaviorEditorWindow
         var table = InteractionTables.SmartScripts;
         var edits = chain.Select(r => r.Row.With("id", map[r.Id]).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, 0u)))
             .Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray();
-        Commit("Duplicate rule", edits);
+        if (Commit("Duplicate rule", edits))
+        {
+            reveal = next;
+            Render();
+        }
     }
 
     /// <summary>
-    /// Give a spawn its own copy of the entry rules (a spawn with rules ignores the entry's).
+    /// Give a spawn its own copy of the entry rules (a spawn with rules ignores the entry's). Like
+    /// any first rule, this enables SmartAI when the creature uses the default AI.
     /// </summary>
     void CopyScope(SmartScope from, SmartScope to)
     {
         var table = InteractionTables.SmartScripts;
-        var edits = RulesOf(effective, from).Select(r => r.Row.With("entryorguid", to.EntryOrGuid)).Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray();
-        Commit("Copy rules to this spawn", edits);
+        var edits = RulesOf(effective, from).Select(r => r.Row.With("entryorguid", to.EntryOrGuid)).Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row));
+        Commit("Copy rules to this spawn", edits.Concat(EnableSmartAiIfDefault()).ToArray());
+    }
+
+    /// <summary>
+    /// Scroll a card into view once it has been laid out (positions are only valid next frame).
+    /// </summary>
+    async void RevealLater(Control card)
+    {
+        reveal = null;
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        if (IsInstanceValid(card) && card.IsInsideTree() && !card.IsQueuedForDeletion())
+        {
+            scroll.EnsureControlVisible(card);
+        }
     }
 }

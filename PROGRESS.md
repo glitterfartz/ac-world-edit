@@ -660,3 +660,17 @@ reading the streaming paths, not by guessing:
 - Scan of all CreatureDisplayInfo rows: type 6 unresolved went to zero. Remaining unresolved types 1/2/8/11-13
   are mostly displays without an extra row or equipment/cape slots, not addressed. Equipment, helms and
   facial hair are still not composed. Build and `--models` corpus checks pass; not verified graphically.
+
+## SmartAI rule creation: pending-card editor — 2026-10-16
+
+- New rules, template starts and "Then" steps now open the same editor as an existing rule on a pending
+  row (`PendingRule`), drafted only by its Add button; Discard drops it. The old inline composer and its
+  dropdowns are gone. Add errors show inside the card; the card scrolls into view after render.
+  Switching owner or scope discards a pending rule. `PickerPopup` selects/scrolls to the current value
+  and can choose on a single click for short lists.
+- Smoke: `--behavior-smoke` (new, real mouse events through the template picker, Add, blank rule and a
+  focused note field) passed. `--content-smoke` and `--areatrigger-smoke` passed after retargeting their
+  helpers to the pending card. Build 0 warnings/errors; whitespace format check passed.
+- Seen, not fixed: a template sentence read "When its health is 0%–30%%" (doubled percent sign in the
+  catalog text); cosmetic.
+- Prior checkpoint: 6b361c2.

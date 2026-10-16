@@ -35,6 +35,7 @@ public partial class TerrainViewer
         interactionSmoke = flags.Contains("--interaction-smoke");
         contentSmoke = flags.Contains("--content-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
+        behaviorSmoke = flags.Contains("--behavior-smoke");
     }
 
     /// <summary>
@@ -104,6 +105,11 @@ public partial class TerrainViewer
         if (areaTriggerSmoke)
         {
             AreaTriggerSmoke(delta);
+        }
+
+        if (behaviorSmoke)
+        {
+            BehaviorSmoke(delta);
         }
     }
 

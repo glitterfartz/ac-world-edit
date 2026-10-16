@@ -269,13 +269,32 @@ public partial class PickerPopup : PopupPanel
     Func<string, Task<IReadOnlyList<(uint Id, string Name)>>> run = null!;
     Action<uint, string> pick = null!;
     int generation;
+    uint? current;
+    bool singleClick;
 
-    public static PickerPopup Show(Node owner, string title, Func<string, Task<IReadOnlyList<(uint Id, string Name)>>> search, Action<uint, string> picked, string initial = "")
+    /// <summary>
+    /// Open a picker. <paramref name="current"/> is selected and scrolled to when listed;
+    /// <paramref name="singleClick"/> chooses on one click, for short fixed lists such as types.
+    /// </summary>
+    public static PickerPopup Show(Node owner, string title, Func<string, Task<IReadOnlyList<(uint Id, string Name)>>> search, Action<uint, string> picked, string initial = "", uint? current = null, bool singleClick = false)
     {
         var popup = new PickerPopup();
         popup.Build(title);
         popup.run = search;
         popup.pick = picked;
+        popup.current = current;
+        popup.singleClick = singleClick;
+        if (singleClick)
+        {
+            popup.results.ItemClicked += (index, _, button) =>
+            {
+                if (button == (long)MouseButton.Left)
+                {
+                    popup.Choose((int)index);
+                }
+            };
+        }
+
         owner.AddChild(popup);
         popup.PopupCentered(new Vector2I(460, 480));
         popup.search.Text = initial;
@@ -333,9 +352,14 @@ public partial class PickerPopup : PopupPanel
             {
                 results.AddItem($"{name}   ·   {id}");
                 results.SetItemMetadata(results.ItemCount - 1, (long)id);
+                if (id == current)
+                {
+                    results.Select(results.ItemCount - 1);
+                    results.EnsureCurrentIsVisible();
+                }
             }
 
-            status.Text = found.Count == 0 ? "No matches." : $"{found.Count} result(s) · double-click to choose";
+            status.Text = found.Count == 0 ? "No matches." : $"{found.Count} result(s) · {(singleClick ? "click" : "double-click")} to choose";
             ShownTerm = term;
         }
         catch (Exception error)

@@ -227,7 +227,7 @@ public partial class TerrainViewer
         }),
         ("composer-add", () =>
         {
-            Require(behaviorEditor.SmokePress("ComposerAdd"), "no composer Add button");
+            Require(behaviorEditor.SmokePress("PendingAdd"), "no composer Add button");
             var added = behaviorEditor.SmokeRules(FarleyScope).MaxBy(r => r.Id)!;
             Require(behaviorEditor.SmokeRules(FarleyScope).Count == smokeRuleCount + 1 && added.Event == 8 && added.Action == 12 && added.Target == 1, "composed rule not added: " + behaviorEditor.SmokeStatus);
             Screenshot("behavior-composed");
