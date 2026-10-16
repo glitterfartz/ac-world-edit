@@ -12,7 +12,7 @@ The simple roadmap is in [PLAN.md](PLAN.md); current results and limits are in [
 
 ## Scene explorer and existing spawns
 
-Enter the world database host, port, user, password and database name in **Scene → Database connection…** and click **Apply & refresh**. Settings are saved in your user profile (Godot `user://settings.cfg`, password in plain text), never in the project; `ACWORLD_DB_INFO=host;port;user;password;database` overrides them for diagnostics and the `Tests/AssetChecks.csproj` database checks. Queries run in read-only transactions; nothing is written to the world database.
+Enter the world database host, port, user, password and database name in **Scene → Database connection…** and click **Apply & refresh**. Settings are saved in your user profile (Godot `user://settings.cfg`, password in plain text), never in the project; `ACWORLD_DB_INFO=host;port;user;password;database` overrides them for diagnostics and the database tests in `Tests/ACWorldEdit.Tests`. Queries run in read-only transactions; nothing is written to the world database.
 
 The right sidebar has **Scene**, **Creatures** and **GameObjects** tabs. Scene controls visibility
 and loading; entity tabs provide search, a selection list, details and **Fly to selection**.
@@ -194,27 +194,27 @@ are not implemented. Client landmark/heading parity remains unverified for deplo
 
 ## Verification
 
-Run `./Launch-Viewer.ps1 -CheckAssets` for archive, map, terrain, texture, and alpha-map checks. Run `./Launch-Viewer.ps1 -Smoke` for the Godot streaming test.
+Run `dotnet test Tests/ACWorldEdit.Tests` for the unit, draft and SQL-export suite (see [TESTING.md](TESTING.md) for the database, corpus and GdUnit4 runs). `./Launch-Viewer.ps1 -CheckAssets` runs the archive, map, terrain, texture and alpha-map corpus tests. Run `./Launch-Viewer.ps1 -Smoke` for the Godot streaming test.
 
 The smoke test loads nearby tiles, moves to a different neighborhood, checks unloading, and returns to verify revisiting. Running Godot with `-- --terrain-smoke` in graphical mode also saves `artifacts/terrain-preview.png`.
 
 Run Godot with `-- --creature-smoke` for a live read-only database check of selection and cancellation/map switching. It requires the configured world database and the default Azeroth/Kalimdor terrain. Graphical mode saves `artifacts/creature-preview.png`.
 
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --models`: real M2/WMO/texture corpus,
+- xUnit `ModelCorpusTests` (corpus): real M2/WMO/texture corpus,
   native Stand/Walk/Run clips, all interior-only WDT maps and outdoor WMO placement-bound checks.
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --liquids`: native liquid textures,
+- xUnit `LiquidCorpusTests` (corpus): native liquid textures,
   masked/height/depth-only grids, malformed arrays and 49 representative ADTs.
 - Godot `-- --water-smoke` and `-- --water-interior-smoke`: outdoor lake and Blackfathom liquid
   previews, animated screenshots and short warm frame samples in ignored `artifacts/`.
-- `dotnet run --project Tests/AssetChecks.csproj -- --spawns`: live read-only SQL visibility, budgets,
+- xUnit `SpawnFilterDbTests` (database): live read-only SQL visibility, budgets,
   masks, event overrides, search escaping and cancellation checks.
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --gameobjects`: database display paths,
+- xUnit `GameObjectDbTests` (database + corpus): database display paths,
   native M2/WMO geometry, materials and animation palettes.
 - Godot `-- --visibility-smoke`: GameObject model/list selection, layer unloading, the event-31
   mannequin, masks, canceled generations and broad-preview model admission caps.
-- `dotnet run --project Tests/AssetChecks.csproj -- --draft`: draft persistence/conflict/recovery checks,
+- xUnit `Drafts/*` and `SqlExportTests`: draft persistence/conflict/recovery checks,
   including heading-only moves.
-- `dotnet run --project Tests/AssetChecks.csproj -- --placement`: heading normalization, terrain
+- xUnit `PlacementTests`: heading normalization, terrain
   height probes (flat/slope/hole), step-up choice and WMO floor probes without client data.
 - Godot `-- --visual-smoke`: native models, animation menu, gizmo drag/reopen/undo/redo, short warm
   frame timings, map cancellation and a Stockade interior check. Saves native/interior/walk previews
@@ -224,19 +224,19 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   and real Ctrl+Z/Q/W/E key events through the menu and toolbar.
 - Godot `-- --reload-smoke`: interrupt a partially uploaded native model by reloading archives,
   then verify the replacement map/models finish loading.
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --graveyards`: live read-only graveyard
+- xUnit `GraveyardDbTests` (database): live read-only graveyard
   table integrity against AreaTable.dbc, bounded regional reads, search escaping and cancellation.
 - Godot `-- --graveyard-smoke`: live graveyard markers, a real viewport click on an icon, list
   agreement, move/drop/name/link edits with rule rejections, draft reopen, layer hiding and a map
   switch, using an isolated draft. Graphical runs save `artifacts/graveyard-preview.png`.
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --interactions`: client DBC offsets
+- xUnit `InteractionDbTests` (database): client DBC offsets
   (Spell, TaxiNodes, ItemExtendedCost, ItemDisplayInfo) and real Goldshire innkeeper, quest giver,
   vendor and trainer interactions; bounded, escaped searches and cancellation.
 - Godot `-- --interaction-smoke` (graphical): right-drag vs short right-click, gossip/vendor/submenu/
   quest pages, quest editor from a quest and the toolbar, Edit mode (fork, new submenu, greeting,
   vendor add/remove, flag warning fix, undo/redo, reopen) and close on map switch, on isolated
   drafts; saves `artifacts/interaction-*.png`.
-- `dotnet run --project Tests/AssetChecks.csproj -- wow-data --content`: live read-only quest and
+- xUnit `ContentDbTests` (database): live read-only quest and
   behavior snapshots (names, rules as sentences, action lists, speech, free action-list IDs).
 - Godot `-- --content-smoke` (graphical): Behavior editor on Innkeeper Farley (rule, speech line,
   Then step, reorder, action list, undo/redo) and Quest Editor (create, picker objective, story,
@@ -244,7 +244,7 @@ Run Godot with `-- --creature-smoke` for a live read-only database check of sele
   map and keeping the camera on it while terrain loads) on
   an isolated draft; saves
   `artifacts/content-*.png`.
-- `dotnet run --project Tests/AssetChecks.csproj -- --areatriggers`: live read-only AreaTrigger
+- xUnit `AreaTriggerDbTests` (database): live read-only AreaTrigger
   tables and links, the bounded regional source (order, search, escaping, cancellation), the
   overlay's view transform against the server's sphere/box membership test, and the SmartAI
   snapshot of Utgarde Pinnacle 5140.
@@ -275,7 +275,7 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
   inspector UI in a `.Ui` partial.
 - `Scripts/Ui/`: menu bar, toolbar, scene sidebar and entity inspector.
 - `Scripts/Diagnostics/`: opt-in viewer/creature smoke workflows; normal editing does not run them.
-- `Scripts/Assets/`: engine-independent decoders, compiled into `Tests/` as well:
+- `Scripts/Assets/`: engine-independent decoders, compiled into the test project as well:
   - `Archives/`: MPQ reading, the client mount profile and the shared `AssetStore`.
   - `Formats/`: low-level binary readers, chunk streams, DBC tables and BLP textures.
   - `Client/`: DBC-backed creature/GameObject display catalogs and liquid textures.
@@ -284,7 +284,7 @@ Format and engine references: [StormLib](https://github.com/ladislav-zezula/Stor
 - `Scripts/Data/`: shared read-only SQL snapshots and creature/GameObject visibility filtering.
 - `Foundation/`: engine-independent coordinates, spawn records, the shared `DraftHistory<T>` engine
   and the durable creature, graveyard and interaction drafts.
-- `Tests/`: native asset corpus, synthetic format fixtures and draft recovery checks.
+- `Tests/`: the xUnit suite (`ACWorldEdit.Tests`: unit, draft, SQL export, behavior-editor row edits, native asset corpus and read-only database tests) and the GdUnit4 project; see TESTING.md.
 
 The obsolete Phase 0 shell/plugin, synthetic benchmark, generic draft workspace and experimental
 SQL exporter have been removed. Reviewed SQL export remains future work in PLAN.md.

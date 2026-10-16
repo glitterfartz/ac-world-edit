@@ -15,47 +15,6 @@ namespace ACWorldEdit;
 public partial class BehaviorEditorWindow
 {
     /// <summary>
-    /// A starting point for a new rule or step. Zero action parameters stay unset; a Talk group of
-    /// 0 becomes the creature's first text group.
-    /// </summary>
-    readonly record struct RuleTemplate(string Label, uint Event, uint[] EventParams, uint Action, uint[] ActionParams, uint Target);
-
-    /// <summary>
-    /// AreaTrigger starting points. "Set data on a creature" is the common pattern for starting a
-    /// boss script's event (e.g. Utgarde Pinnacle 5140 sends data 1 = 1 to Svala); target 10 is a
-    /// creature by spawn GUID, 19 the closest creature of an entry.
-    /// </summary>
-    static readonly RuleTemplate[] TriggerTemplates =
-    [
-        new("Send data to a creature (start its script event)", SmartCatalog.AreaTriggerEvent, [], 45, [1, 1], 10),
-        new("Make the nearest creature of a kind say a line", SmartCatalog.AreaTriggerEvent, [], 1, [0], 19),
-        new("Cast a spell on the player who entered", SmartCatalog.AreaTriggerEvent, [], 11, [], InvokerTarget),
-        new("Make the nearest creature of a kind play a scene (action list)", SmartCatalog.AreaTriggerEvent, [], SmartCatalog.RunActionList, [], 19),
-        new("Blank rule", SmartCatalog.AreaTriggerEvent, [], 0, [], InvokerTarget)
-    ];
-
-    static readonly RuleTemplate[] RuleTemplates =
-    [
-        new("Say something when it enters combat", 4, [], 1, [0], 1),
-        new("Cast a spell on its victim every few seconds", 0, [2000, 4000, 8000, 12000], 11, [], 2),
-        new("Cast a spell when its health drops below 30%", 2, [0, 30, 0, 0], 11, [], 1),
-        new("Say something when it dies", 6, [], 1, [0], 1),
-        new("Wave back when a player waves", 22, [101, 2000, 2000], 5, [3], 1),
-        new("Play a scene (action list) when a quest is completed", 20, [], SmartCatalog.RunActionList, [], 1),
-        new("Do something every few seconds out of combat", 1, [5000, 10000, 15000, 30000], 5, [], 1),
-        new("Blank rule", 4, [], 0, [], 1)
-    ];
-
-    static readonly RuleTemplate[] StepTemplates =
-    [
-        new("Say a line", 0, [], 1, [0], 1),
-        new("Play an emote", 0, [], 5, [], 1),
-        new("Cast a spell", 0, [], 11, [], 1),
-        new("Walk to a position", 0, [], 69, [], 8),
-        new("Blank step", 0, [], 0, [], 1)
-    ];
-
-    /// <summary>
     /// The rule being created: its row (id assigned on Add), its scope and, for a "Then" step, the
     /// rule it follows. Nothing is drafted until Add; switching owner discards it.
     /// </summary>
@@ -72,7 +31,7 @@ public partial class BehaviorEditorWindow
     uint? reveal;
     const uint PendingCard = uint.MaxValue;
 
-    RuleTemplate[] TemplatesFor(SmartScope shown) => shown.IsActionList ? StepTemplates : shown.IsAreaTrigger ? TriggerTemplates : RuleTemplates;
+    static RuleTemplate[] TemplatesFor(SmartScope shown) => SmartRuleEdits.TemplatesFor(shown);
 
     void RenderRules(SmartScope shown)
     {
@@ -384,7 +343,7 @@ public partial class BehaviorEditorWindow
     /// </summary>
     void StartPending(SmartScope shown, RuleTemplate template, uint? after)
     {
-        var row = Template(shown, NextId(shown), template.Event, template.EventParams, template.Action, template.ActionParams, template.Target);
+        var row = SmartRuleEdits.FromTemplate(effective, shown, entry, snapshot!.CreatureName, template);
         pending = new PendingRule(shown, row.With("comment", ""), after);
         pendingError = "";
         expanded = null;
@@ -392,63 +351,19 @@ public partial class BehaviorEditorWindow
         Render();
     }
 
-    void StartThen(SmartScope shown, SmartRule rule) => StartPending(shown, new("Then", SmartCatalog.LinkEvent, [], 0, [], shown.IsAreaTrigger ? InvokerTarget : SmartCatalog.SelfTarget), rule.Id);
+    void StartThen(SmartScope shown, SmartRule rule) => StartPending(shown, SmartRuleEdits.ThenTemplate(shown), rule.Id);
 
     /// <summary>
     /// Errors the pending rule would introduce if added now (the same check Commit applies).
     /// </summary>
-    IEnumerable<string> PendingProblems(PendingRule p)
-    {
-        var (_, edits) = PendingEdits(p);
-        if (edits.Length == 0)
-        {
-            return [];
-        }
-
-        var prospective = effective.Clone();
-        foreach (var edit in edits)
-        {
-            prospective.Apply(edit);
-        }
-
-        var before = CheckAll(effective).Where(i => i.Error).Select(i => i.Message).ToHashSet();
-        return CheckAll(prospective).Where(i => i.Error && !before.Contains(i.Message)).Select(i => i.Message).ToList();
-    }
+    IEnumerable<string> PendingProblems(PendingRule p) => SmartRuleEdits.NewProblems(effective, PendingEdits(p).Edits, CheckAll);
 
     /// <summary>
     /// The row and edits that add the pending rule: a fresh id, an automatic note when empty, the
     /// predecessor re-linked for a "Then" step, and SmartAI/SmartTrigger enabled for a first rule.
     /// No edits when a "Then" step's rule no longer exists.
     /// </summary>
-    (Row Row, RowEdit[] Edits) PendingEdits(PendingRule p)
-    {
-        var table = InteractionTables.SmartScripts;
-        uint id = NextId(p.Scope);
-        var row = p.Row.With("id", id).With("link", 0u);
-        if (row.T("comment").Length == 0)
-        {
-            row = row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), snapshot!.CreatureName));
-        }
-
-        if (p.After is uint after)
-        {
-            if (RulesOf(effective, p.Scope).FirstOrDefault(r => r.Id == after) is not { } before)
-            {
-                return (row, []);
-            }
-
-            row = row.With("link", before.Link);
-            return (row, Rekey([(before.Row, before.Row.With("link", id))]).Append(new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray());
-        }
-
-        var edits = new List<RowEdit> { new(table.Name, table.KeyOf(row), null, row) };
-        if (!p.Scope.IsActionList)
-        {
-            edits.AddRange(EnableSmartAiIfDefault());
-        }
-
-        return (row, edits.ToArray());
-    }
+    (Row Row, RowEdit[] Edits) PendingEdits(PendingRule p) => SmartRuleEdits.PendingEdits(effective, p.Scope, p.Row, p.After, snapshot!.CreatureName, EnableSmartAiIfDefault);
 
     /// <summary>
     /// Draft the pending rule as one command; on success it becomes a normal, expanded card.
@@ -713,72 +628,13 @@ public partial class BehaviorEditorWindow
     /// Edits replacing rows whose key may change: all deletes first, then all inserts, so swapped
     /// keys never collide inside the command.
     /// </summary>
-    static RowEdit[] Rekey(IEnumerable<(Row Before, Row After)> changes)
-    {
-        var table = InteractionTables.SmartScripts;
-        var list = changes.Where(c => c.Before != c.After).ToList();
-        if (list.All(c => table.KeyOf(c.Before) == table.KeyOf(c.After)))
-        {
-            return list.Select(c => new RowEdit(table.Name, table.KeyOf(c.Before), c.Before, c.After)).ToArray();
-        }
-
-        return list.Select(c => new RowEdit(table.Name, table.KeyOf(c.Before), c.Before, null))
-            .Concat(list.Select(c => new RowEdit(table.Name, table.KeyOf(c.After), null, c.After))).ToArray();
-    }
+    static RowEdit[] Rekey(IEnumerable<(Row Before, Row After)> changes) => SmartRuleEdits.Rekey(changes);
 
     /// <summary>
     /// A new event/action/target type resets its parameters (their meaning changes), except timer
     /// events, which share the same four timing fields.
     /// </summary>
-    void ChangeType(SmartRule rule, bool isNew, string part, uint id)
-    {
-        var values = new List<(string, object)> { ($"{part}_type", id) };
-        bool timers = part == "event" && rule.Event is 0 or 1 or 60 && id is 0 or 1 or 60;
-        if (!timers)
-        {
-            for (int i = 1; i <= (part == "target" ? 4 : 6); i++)
-            {
-                values.Add(($"{part}_param{i}", 0u));
-            }
-        }
-
-        if (part == "target")
-        {
-            values.AddRange([("target_x", 0f), ("target_y", 0f), ("target_z", 0f), ("target_o", 0f)]);
-        }
-
-        if (part == "action" && id == SmartCatalog.Talk)
-        {
-            values.Add(("action_param1", FirstTextGroup()));
-        }
-
-        Change(rule, isNew, $"Change {part}", values.ToArray());
-    }
-
-    uint FirstTextGroup() => effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
-
-    uint NextId(SmartScope of) => RulesOf(effective, of).Select(r => r.Id + 1).DefaultIfEmpty(0u).Max();
-
-    Row Template(SmartScope of, uint id, uint eventType, uint[] eventParams, uint action, uint[] actionParams, uint target)
-    {
-        var row = SmartCatalog.NewRow(of, id, eventType, action, target);
-        for (int i = 0; i < eventParams.Length; i++)
-        {
-            row = row.With($"event_param{i + 1}", eventParams[i]);
-        }
-
-        for (int i = 0; i < actionParams.Length; i++)
-        {
-            row = row.With($"action_param{i + 1}", actionParams[i]);
-        }
-
-        if (action == SmartCatalog.Talk && actionParams.Length > 0 && actionParams[0] == 0)
-        {
-            row = row.With("action_param1", FirstTextGroup());
-        }
-
-        return row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), snapshot!.CreatureName));
-    }
+    void ChangeType(SmartRule rule, bool isNew, string part, uint id) => Change(rule, isNew, $"Change {part}", SmartRuleEdits.ChangeTypeValues(rule, part, id, effective, entry));
 
     /// <summary>
     /// Delete a rule. A root takes its "Then" chain with it (those never run alone); a "Then" step
@@ -786,19 +642,8 @@ public partial class BehaviorEditorWindow
     /// </summary>
     void Delete(SmartScope of, SmartRule rule)
     {
-        var rules = RulesOf(effective, of);
-        var chain = SmartCatalog.Chains(rules).FirstOrDefault(c => c.Any(r => r.Id == rule.Id)) ?? [rule];
-        var table = InteractionTables.SmartScripts;
-        if (chain[0].Id == rule.Id)
-        {
-            Commit(chain.Count > 1 ? $"Delete rule and {chain.Count - 1} \"Then\" step(s)" : "Delete rule", chain.Select(r => new RowEdit(table.Name, r.Key, r.Row, null)).ToArray());
-            return;
-        }
-
-        var before = chain[chain.FindIndex(r => r.Id == rule.Id) - 1];
-        var edits = Rekey([(before.Row, before.Row.With("link", rule.Link))]).ToList();
-        edits.Insert(0, new RowEdit(table.Name, rule.Key, rule.Row, null));
-        Commit("Delete \"Then\" step", edits.ToArray());
+        var (label, edits) = SmartRuleEdits.DeleteEdits(effective, of, rule);
+        Commit(label, edits);
     }
 
     /// <summary>
@@ -806,12 +651,10 @@ public partial class BehaviorEditorWindow
     /// </summary>
     void Swap(SmartScope of, SmartRule a, SmartRule b)
     {
-        var map = new Dictionary<uint, uint> { [a.Id] = b.Id, [b.Id] = a.Id };
-        var changes = RulesOf(effective, of).Where(r => map.ContainsKey(r.Id) || map.ContainsKey(r.Link))
-            .Select(r => (r.Row, r.Row.With("id", map.GetValueOrDefault(r.Id, r.Id)).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, r.Link))));
+        var (map, edits) = SmartRuleEdits.SwapEdits(effective, of, a, b);
         // A pending "Then" step follows its rule to the new id.
         uint? after = pending?.After is uint id && pending.Scope == of && map.TryGetValue(id, out uint moved) ? moved : pending?.After;
-        if (Commit(of.IsActionList ? "Reorder steps" : "Reorder rules", Rekey(changes)))
+        if (Commit(of.IsActionList ? "Reorder steps" : "Reorder rules", edits))
         {
             expanded = expanded == a.Id ? b.Id : expanded == b.Id ? a.Id : expanded;
             if (pending != null)
@@ -828,12 +671,7 @@ public partial class BehaviorEditorWindow
     /// </summary>
     void Duplicate(SmartScope of, SmartRule rule)
     {
-        var chain = SmartCatalog.Chains(RulesOf(effective, of)).First(c => c[0].Id == rule.Id);
-        uint next = NextId(of);
-        var map = chain.Select((r, i) => (r.Id, New: next + (uint)i)).ToDictionary(p => p.Id, p => p.New);
-        var table = InteractionTables.SmartScripts;
-        var edits = chain.Select(r => r.Row.With("id", map[r.Id]).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, 0u)))
-            .Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray();
+        var (next, edits) = SmartRuleEdits.DuplicateEdits(effective, of, rule);
         if (Commit("Duplicate rule", edits))
         {
             reveal = next;
@@ -845,12 +683,7 @@ public partial class BehaviorEditorWindow
     /// Give a spawn its own copy of the entry rules (a spawn with rules ignores the entry's). Like
     /// any first rule, this enables SmartAI when the creature uses the default AI.
     /// </summary>
-    void CopyScope(SmartScope from, SmartScope to)
-    {
-        var table = InteractionTables.SmartScripts;
-        var edits = RulesOf(effective, from).Select(r => r.Row.With("entryorguid", to.EntryOrGuid)).Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row));
-        Commit("Copy rules to this spawn", edits.Concat(EnableSmartAiIfDefault()).ToArray());
-    }
+    void CopyScope(SmartScope from, SmartScope to) => Commit("Copy rules to this spawn", SmartRuleEdits.CopyScopeEdits(effective, from, to, EnableSmartAiIfDefault()));
 
     /// <summary>
     /// Scroll a card into view once it has been laid out (positions are only valid next frame).

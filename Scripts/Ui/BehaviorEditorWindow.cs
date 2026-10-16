@@ -199,14 +199,13 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
     }
 
     /// <summary>SMART_TARGET_ACTION_INVOKER: the player who walked into an AreaTrigger.</summary>
-    const uint InvokerTarget = 7;
+    const uint InvokerTarget = SmartRuleEdits.InvokerTarget;
     SmartScope EntryScope => new((int)entry, areaTrigger ? SmartScope.AreaTrigger : SmartScope.Creature);
     SmartScope SpawnScope => new(-(int)guid, SmartScope.Creature);
     Row? CreatureAi(RowSet rows) => areaTrigger ? null : rows.Get(InteractionTables.CreatureAI, entry.ToString(CultureInfo.InvariantCulture));
     Row? TriggerScript(RowSet rows) => areaTrigger ? rows.Get(InteractionTables.AreaTriggerScripts, entry.ToString(CultureInfo.InvariantCulture)) : null;
 
-    static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => rows.All(InteractionTables.SmartScripts)
-        .Where(r => r.I("entryorguid") == of.EntryOrGuid && r.U("source_type") == of.SourceType).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
+    static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(rows, of);
 
     /// <summary>
     /// The creature's scopes: entry, spawn (when opened from one), then every action list reachable

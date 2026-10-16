@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ACWorldEdit.Tests/**;ACWorldEdit.GdTests/**" />
     <Compile Include="../Scripts/Assets/**/*.cs" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../Scripts/Data/*.cs" Link="Data/%(Filename)%(Extension)" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />

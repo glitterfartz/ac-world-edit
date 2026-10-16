@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default run excludes slow corpus tests and known-bug tests; The command-line filter overrides this. -->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=Corpus&amp;Category!=KnownBug</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

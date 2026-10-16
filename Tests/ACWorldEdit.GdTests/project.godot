@@ -1,0 +1,8 @@
+; Minimal Godot project that hosts the GdUnit4 runtime test runner. It is deliberately separate from
+; the game project (the game excludes Tests/** and ships none of this).
+config_version=5
+
+[application]
+
+config/name="ACWorldEdit.GdTests"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")

@@ -75,9 +75,9 @@ next checkpoint; don't create recursive commit-only updates.
 
 Build/check what changed. For creature overlays, verify real read-only queries, viewport/list
 selection, region/map changes, cancellation/stale results, draft/gizmo history and terrain streaming.
-For native models, run model corpus checks and a graphical visual smoke including interiors. Headless or
+For native models, run the corpus tests (see TESTING.md) and a graphical visual smoke including interiors. Headless or
 synthetic checks do not prove in-game visual parity. For lifecycle changes, run --reload-smoke to
 reload archives during a partial GPU upload. Check formatting with dotnet format whitespace
 ACWorldEdit.csproj --no-restore --verify-no-changes. Documentation changes need link/diff checks.
-For visibility/GameObjects, run the read-only --spawns and native --gameobjects checks plus graphical
+For visibility/GameObjects, run the SpawnFilterDbTests and GameObjectDbTests (see TESTING.md) plus graphical
 --visibility-smoke: real model/list selection, layers, event overrides, masks and broad-preview caps.

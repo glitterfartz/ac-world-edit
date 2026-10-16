@@ -17,7 +17,9 @@ try {
     if ((Get-FileHash -LiteralPath $dllPath).Hash -ne '93321F6F030BE5D7D79EB4CBF433D6EF7E83CE20D47D8963717F207D54AFBE16') {
         throw 'StormLib x64 DLL does not match the verified release extraction'
     }
-    & dotnet run --project Tests/AssetChecks.csproj -p:NuGetAudit=false -- $DataPath $dllPath
+    $env:ACWORLD_DATA_DIR = (Resolve-Path -LiteralPath $DataPath).Path
+    $env:STORMLIB_DLL = $dllPath
+    & dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/corpus.runsettings -p:NuGetAudit=false --filter "FullyQualifiedName~WorldCorpusTests"
     if ($LASTEXITCODE -ne 0) { throw 'StormLib differential check failed' }
 }
 finally { Pop-Location }

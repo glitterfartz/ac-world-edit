@@ -17,7 +17,7 @@ if (-not $env:ALLUSERSPROFILE) { $env:ALLUSERSPROFILE = $env:ProgramData }
 $env:MSBuildEnableWorkloadResolver = 'false'
 if (-not $env:NUGET_PACKAGES) { $env:NUGET_PACKAGES = Join-Path $env:USERPROFILE '.nuget\packages' }
 if ($CheckAssets) {
-    & dotnet run --project Tests/AssetChecks.csproj -p:NuGetAudit=false -- wow-data
+    & dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/corpus.runsettings -p:NuGetAudit=false
     exit $LASTEXITCODE
 }
 if (-not $GodotPath) {

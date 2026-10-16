@@ -26,7 +26,7 @@ Current state only. Update or remove entries as things change; do not append his
 
 ## Open bugs / known issues
 
-- Template sentence shows "When its health is 0%–30%%" (doubled percent in catalog text); cosmetic.
+- Template sentence shows "When its health is 0%–30%%" (doubled percent in catalog text); cosmetic; test KB-001.
 - Discarding a pending row does not check whether other rows refer to it (e.g. a gossip option whose menu was
   discarded).
 - Never run against MySQL: exported SQL syntax and FLOAT/NULL guard behaviour are unproven (no disposable database
@@ -37,8 +37,6 @@ Current state only. Update or remove entries as things change; do not append his
 - Unconfirmed by eye: streaming flicker fix, sky/shadow/zone label, Ruby Sanctum, WMO baked-color 2x factor
   (an assumption), NPC hair textures.
 - Drafts far outside their source query region reappear only when that region is queried; no cross-region index.
-- Click-driven graphical smokes (graveyard, areatrigger, interaction, content) once failed their first synthetic
-  click with no code change; check desktop session (other window, locked display) before suspecting code.
 - Fidelity gaps: equipment/helm/facial hair composition, particles/ribbons, second texture units, portal culling,
   water reflection/refraction/underwater fog, Light.dbc non-default slots and interior light, procedural liquid 100.
 
@@ -50,3 +48,9 @@ Current state only. Update or remove entries as things change; do not append his
 - Step 3 stays open until in-client landmark/heading parity is checked with `.go xyz`; export is not "ready" until a
   disposable-database apply/revert proof exists.
 - Quest/behavior new IDs are claims until export.
+
+## Testing (see TESTING.md)
+
+- xUnit (`Tests/ACWorldEdit.Tests`) and GdUnit4 (`Tests/ACWorldEdit.GdTests`); AssetChecks ported 1:1 (Tests/PARITY.md).
+- Behavior-editor row logic: `Foundation/SmartRuleEdits.cs` (tested). Known-bug tests: see TESTING.md (KB-001..).
+- Untested: UI windows, rendering, ClientLighting math. Exported SQL has never run against MySQL (text tests only).

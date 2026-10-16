@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GODOT_BIN (path to the Godot 4 .NET executable) comes from the environment; it is never hardcoded here. -->
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>1</MaxCpuCount>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+    <TestSessionTimeout>180000</TestSessionTimeout>
+  </RunConfiguration>
+  <GdUnit4>
+    <DisplayName>FullyQualifiedName</DisplayName>
+  </GdUnit4>
+</RunSettings>
