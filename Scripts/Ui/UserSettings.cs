@@ -13,41 +13,11 @@ public static class UserSettings
 {
     const string Path = "user://settings.cfg";
 
-    public static string LoadDataDirectory()
-    {
-        string? env = System.Environment.GetEnvironmentVariable("ACWORLD_DATA_DIR");
-        if (!string.IsNullOrWhiteSpace(env))
-        {
-            return env;
-        }
-
-        return Read("client", "data_dir", "");
-    }
+    public static string LoadDataDirectory() => SettingsResolver.DataDirectory(System.Environment.GetEnvironmentVariable(SettingsResolver.DataVariable), () => Read("client", "data_dir", ""));
 
     public static void SaveDataDirectory(string directory) => Write("client", "data_dir", directory);
 
-    public static DatabaseSettings LoadDatabase()
-    {
-        string? env = System.Environment.GetEnvironmentVariable("ACWORLD_DB_INFO");
-        if (!string.IsNullOrWhiteSpace(env))
-        {
-            try
-            {
-                return DatabaseSettings.Parse(env);
-            }
-            catch (InvalidDataException)
-            {
-            }
-        }
-
-        var empty = DatabaseSettings.Empty;
-        return new DatabaseSettings(
-            Read("database", "host", empty.Host),
-            uint.TryParse(Read("database", "port", ""), out uint port) ? port : empty.Port,
-            Read("database", "user", empty.User),
-            Read("database", "password", empty.Password),
-            Read("database", "name", empty.Database));
-    }
+    public static DatabaseSettings LoadDatabase() => SettingsResolver.Database(System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariable), Read);
 
     public static void SaveDatabase(DatabaseSettings settings)
     {

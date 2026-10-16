@@ -65,8 +65,8 @@ failing) with `ACWE_RUN_KNOWN_BUGS=1`. When the bug is fixed, replace the attrib
 | ID | Test | Finding |
 |---|---|---|
 | KB-001 | `Smart/SmartCatalogTests.PercentParametersAreNotFollowedByLiteralPercent` | Percent parameters already render with `%`, so `SMART_EVENT_HEALTH_PCT` (event 2) and `SMART_EVENT_MANA_PCT` (event 3) sentences show `30%%`. |
-
 | KB-002 | `Smart/SmartBehaviorTests.TimerRangesShareOneUnit` | Timer ranges render each endpoint with its unit (`Every 8 s–12 s in combat`); the `SmartCatalog.Timer` doc comment promises `8–12 s`. Either the sentence or the comment should change. |
+| KB-003 | `Assets/LightBandTests.TicksBeforeTheFirstKeyframeBelongToTheWrapSegment` | A tick earlier than a band's first keyframe returns the last colour instead of blending through the wrap segment, so the colour jumps at the first keyframe. Bands that start at tick 0 are unaffected. |
 
 ## Writing tests
 
@@ -90,13 +90,15 @@ Done:
 - [x] Behavior editor rule logic extracted to Foundation and tested (`SmartRuleEdits`)
 - [x] SmartCatalog invariants; KB-001
 - [x] GdUnit4 on Godot 4.7.1 (ConnectionForm, UserSettings env overrides)
+- [x] DraftHistory, PendingChanges (creature, graveyard and row net-change collapse, discard, exported set)
+- [x] WorldCoordinates round trips, tile/heading, ray hits; GroundProbe edge cases
+- [x] QuestModel.Check and SmartCatalog.Check loader rules; SmartCatalog sentences, chains, timers
+- [x] SpawnPreview filters; InteractionRows / NpcInteraction models and InteractionRules
+- [x] Extracted and tested: `ContentDrafts`, `InteractionEdits`, `PoseText`, `SettingsResolver`, `AreaLookup`, `LightBand`
+- [x] GdUnit4: PendingChangesWindow, PickerPopup
 
-Todo (priority order):
-- [ ] DraftHistory and PendingChanges unit tests beyond the ported draft checks (net-change collapse, discard)
-- [ ] WorldCoordinates heading/position round trips; GroundProbe edge cases
-- [ ] QuestModel validation vs. server loader rules; SmartBehavior `Check` rules
-- [ ] SpawnPreview filter logic; InteractionRows / NpcInteraction models
-- [ ] Extract pure logic from: `Scripts/Ui/ContentDrafts.cs`, `QuestEditorWindow*` validation/format,
-      `InteractionWindow*`, `CreatureOverlay.*` query/selection, `UserSettings` env logic, `ClientLighting` (Light.dbc
-      interpolation), `AreaTable`; then test in Foundation
-- [ ] More GdUnit4 coverage (PendingChangesWindow, pickers)
+Not extracted (nothing static or pure to move without changing behavior; revisit if these windows are refactored):
+- `QuestEditorWindow*`: only static lookup tables (`XpTiers`, `RacePresets`); validation already lives in `QuestModel`.
+- `InteractionWindow*`: remaining code builds controls and commits through the window's own state.
+- `CreatureOverlay.*` query/selection: depends on nodes, async region queries and the camera. Only pose text was extracted.
+- Still no GdUnit4 coverage of the quest, interaction and behavior editor windows.

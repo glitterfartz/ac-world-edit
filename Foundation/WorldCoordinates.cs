@@ -101,3 +101,39 @@ public static class WorldCoordinates
         return distance >= 0 ? distance : null;
     }
 }
+
+/// <summary>
+/// Pose arithmetic for the creature overlay's typed-pose fields, moved out of it with bodies
+/// unchanged: degree/radian conversion matches Godot's Mathf constants, and heading text is the
+/// Details panel format.
+/// </summary>
+public static class PoseText
+{
+    /// <summary>
+    /// Describe a server heading as degrees plus an eight-point compass direction. Server heading 0
+    /// faces +X (north) and increases counterclockwise toward +Y (west).
+    /// </summary>
+    public static string HeadingText(double heading)
+    {
+        double degrees = WorldCoordinates.NormalizeHeading(heading) * (180.0 / Math.PI);
+        string[] points = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"];
+        return FormattableString.Invariant($"{heading:F3} rad · {degrees:F1}° {points[(int)Math.Round(degrees / 45) % 8]}");
+    }
+
+    /// <summary>
+    /// Pose after typing coordinates and a heading in degrees. Fields show rounded text; values that
+    /// still match it keep their exact stored doubles so editing one field cannot rewrite the others
+    /// through rounding. The result is not validated.
+    /// </summary>
+    public static WorldPose Typed(WorldPose pose, double x, double y, double z, double headingDegrees)
+    {
+        static double Keep(double typed, double stored, double tolerance) => Math.Abs(typed - stored) < tolerance ? stored : typed;
+        double heading = WorldCoordinates.NormalizeHeading(headingDegrees * (Math.PI / 180.0));
+        if (Math.Abs(heading - WorldCoordinates.NormalizeHeading(pose.Heading)) < 1e-4)
+        {
+            heading = pose.Heading;
+        }
+
+        return pose with { X = Keep(x, pose.X, 0.5e-4), Y = Keep(y, pose.Y, 0.5e-4), Z = Keep(z, pose.Z, 0.5e-4), Heading = heading };
+    }
+}

@@ -31,7 +31,7 @@ public partial class TerrainViewer
     internal static string WriteSqlExports(IEnumerable<(string Source, SqlScripts Scripts)> exports)
     {
         string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
-        string folder = Path.GetDirectoryName(ContentDrafts.LocalPath($"exports/{stamp}/x"))!;
+        string folder = Path.GetDirectoryName(ContentDraftFiles.LocalPath($"exports/{stamp}/x"))!;
         Directory.CreateDirectory(folder);
         var utf8 = new UTF8Encoding(false);
         foreach (var (source, scripts) in exports)
@@ -55,7 +55,7 @@ public partial class TerrainViewer
     /// </summary>
     List<PendingChange> CollectPending()
     {
-        pendingStore ??= new PendingChanges(ContentDrafts.LocalPath("exported.json"));
+        pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
         var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? []);
         return all;
     }

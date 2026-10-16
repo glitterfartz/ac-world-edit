@@ -115,7 +115,7 @@ public partial class CreatureOverlay : Node3D
     /// </summary>
     public override void _Ready()
     {
-        draftPath = ContentDrafts.LocalPath("creature-positions.json");
+        draftPath = ContentDraftFiles.LocalPath("creature-positions.json");
         try
         {
             draft = new CreatureDraft(draftPath);

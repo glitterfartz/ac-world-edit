@@ -1,7 +1,4 @@
-using Godot;
-using ACWorldEdit.Foundation;
-
-namespace ACWorldEdit;
+namespace ACWorldEdit.Foundation;
 
 /// <summary>
 /// The one local content draft shared by the interaction, quest and behavior editors: a single
@@ -11,7 +8,7 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class ContentDrafts : IDisposable
 {
-    string path = "";
+    readonly string path;
     public InteractionDraft? Draft { get; private set; }
     public string? Error { get; private set; }
     /// <summary>
@@ -20,20 +17,12 @@ public sealed class ContentDrafts : IDisposable
     public event Action<object?>? Changed;
 
     /// <summary>
-    /// Absolute path of a local draft file. Any "*-smoke" run gets a unique throwaway folder under
-    /// artifacts/ so diagnostics never open or lock the user's real drafts.
+    /// Open the draft file at an absolute path; a corrupt or locked file leaves editing disabled.
     /// </summary>
-    public static string LocalPath(string file)
+    public ContentDrafts(string path)
     {
-        bool smoke = OS.GetCmdlineUserArgs().Any(a => a.EndsWith("-smoke", StringComparison.Ordinal));
-        return ProjectSettings.GlobalizePath(smoke ? $"res://artifacts/drafts/{Guid.NewGuid():N}/{file}" : $"user://drafts/{file}");
-    }
-
-    public static ContentDrafts Open()
-    {
-        var drafts = new ContentDrafts { path = LocalPath("interactions.json") };
-        drafts.Reopen();
-        return drafts;
+        this.path = path;
+        Reopen();
     }
 
     /// <summary>

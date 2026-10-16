@@ -2,6 +2,7 @@ using System.Globalization;
 using Godot;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
@@ -103,21 +104,10 @@ public partial class InteractionWindow
         return true;
     }
 
-    static RowEdit Update(TableSchema table, Row before, Row after) => new(table.Name, table.KeyOf(before), before, after);
-    static RowEdit Insert(TableSchema table, Row after) => new(table.Name, table.KeyOf(after), null, after);
-    static RowEdit Delete(TableSchema table, Row before) => new(table.Name, table.KeyOf(before), before, null);
-
     Row TemplateRow => effective.Get(InteractionTables.CreatureTemplate, snapshot!.Entry.ToString(CultureInfo.InvariantCulture))!;
 
     uint NextId(TableSchema table, string column, uint databaseMax) =>
         Math.Max(Math.Max(databaseMax, draft?.MaxReserved(sourceKey, table, column) ?? 0), effective.All(table).Select(r => r.U(column)).DefaultIfEmpty(0u).Max()) + 1;
-
-    static Row NewText(uint id, string text) => Row.Of(("ID", id), ("text0_0", text), ("text0_1", ""), ("BroadcastTextID0", 0), ("Probability0", 1f));
-
-    static Row NewOption(uint menu, uint id, string text, uint type, uint npcFlag, uint icon, uint action) =>
-        Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", 0), ("OptionType", type), ("OptionNpcFlag", npcFlag), ("ActionMenuID", action), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
-
-    static uint ParseUInt(string text) => text.Trim().StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? uint.Parse(text.Trim()[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture) : uint.Parse(text.Trim(), CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Run a parse/build step from a control; bad numbers show a message instead of throwing.

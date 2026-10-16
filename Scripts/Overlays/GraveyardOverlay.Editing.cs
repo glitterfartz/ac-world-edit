@@ -43,7 +43,7 @@ public partial class GraveyardOverlay : IPlacementEditor
     /// </summary>
     void OpenDraft()
     {
-        draftPath = ContentDrafts.LocalPath("graveyards.json");
+        draftPath = ContentDraftFiles.LocalPath("graveyards.json");
         try
         {
             draft = new GraveyardDraft(draftPath);

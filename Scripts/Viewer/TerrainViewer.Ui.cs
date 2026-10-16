@@ -1,5 +1,6 @@
 using Godot;
 using ACWorldEdit.Assets;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -243,7 +244,7 @@ public partial class TerrainViewer
         };
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
-        drafts = ContentDrafts.Open();
+        drafts = ContentDraftFiles.Open();
         interaction = new InteractionWindow
         {
             Connection = () => connection.Settings,

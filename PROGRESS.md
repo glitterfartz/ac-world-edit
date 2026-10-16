@@ -51,6 +51,10 @@ Current state only. Update or remove entries as things change; do not append his
 
 ## Testing (see TESTING.md)
 
-- xUnit (`Tests/ACWorldEdit.Tests`) and GdUnit4 (`Tests/ACWorldEdit.GdTests`); AssetChecks ported 1:1 (Tests/PARITY.md).
-- Behavior-editor row logic: `Foundation/SmartRuleEdits.cs` (tested). Known-bug tests: see TESTING.md (KB-001..).
-- Untested: UI windows, rendering, ClientLighting math. Exported SQL has never run against MySQL (text tests only).
+- xUnit: 413 default tests; GdUnit4: 16 (ConnectionForm, UserSettings, PendingChangesWindow, PickerPopup).
+- Logic extracted from Godot unchanged and tested: Foundation `ContentDrafts`, `InteractionEdits`, `PoseText`;
+  `Scripts/Data/SettingsResolver`; `Scripts/Assets/World/{AreaLookup,LightBand}` (Godot halves are partials in
+  `Scripts/Viewer`). New files lack `.uid` until Godot opens the project.
+- Known-bug tests: KB-001 doubled `%`, KB-002 timer range text, KB-003 LightBand before first keyframe. Light.dbc math is
+  pinned as current behavior, not client-verified.
+- Not verified: graphical smokes and corpus/StormLib (not run), exported SQL on MySQL.

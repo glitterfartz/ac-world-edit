@@ -127,17 +127,7 @@ public partial class CreatureOverlay : IPlacementEditor
         }
 
         gizmo.Finish(false);
-        var pose = PoseOf(marker.Spawn);
-        // Fields show rounded text; values that still match it keep their exact stored doubles so
-        // editing one field cannot rewrite the others through rounding.
-        static double Keep(double typed, double stored, double tolerance) => Math.Abs(typed - stored) < tolerance ? stored : typed;
-        double heading = WorldCoordinates.NormalizeHeading(Mathf.DegToRad(headingDegrees));
-        if (Math.Abs(heading - WorldCoordinates.NormalizeHeading(pose.Heading)) < 1e-4)
-        {
-            heading = pose.Heading;
-        }
-
-        var after = pose with { X = Keep(x, pose.X, 0.5e-4), Y = Keep(y, pose.Y, 0.5e-4), Z = Keep(z, pose.Z, 0.5e-4), Heading = heading };
+        var after = PoseText.Typed(PoseOf(marker.Spawn), x, y, z, headingDegrees);
         try
         {
             after.Validate();
@@ -181,10 +171,5 @@ public partial class CreatureOverlay : IPlacementEditor
     /// Describe a server heading as degrees plus an eight-point compass direction. Server heading 0
     /// faces +X (north) and increases counterclockwise toward +Y (west).
     /// </summary>
-    public static string HeadingText(double heading)
-    {
-        double degrees = Mathf.RadToDeg(WorldCoordinates.NormalizeHeading(heading));
-        string[] points = ["N", "NW", "W", "SW", "S", "SE", "E", "NE"];
-        return FormattableString.Invariant($"{heading:F3} rad · {degrees:F1}° {points[(int)Math.Round(degrees / 45) % 8]}");
-    }
+    public static string HeadingText(double heading) => PoseText.HeadingText(heading);
 }

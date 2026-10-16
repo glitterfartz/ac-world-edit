@@ -2,6 +2,7 @@ using Godot;
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
@@ -291,16 +292,6 @@ public partial class InteractionWindow : ContentEditorWindow
 
     NpcInteraction BuildView(RowSet rows) => NpcInteraction.Build(snapshot!.Entry, snapshot.Guid, snapshot.Name, snapshot.ScriptName, snapshot.AIName, snapshot.SpawnCount, snapshot.Rows, rows, snapshot.Lookup, snapshot.Scripts, snapshot.Conditions);
 
-    static string Summary(NpcInteraction v)
-    {
-        var flags = NpcFlags.Names(v.NpcFlag).ToArray();
-        string scripts = (v.ScriptName.Length > 0 ? $"\nC++ script: {v.ScriptName}" : "") + (v.Scripts.Length > 0 ? $"\nSmartAI interaction events: {v.Scripts.Length}" : "");
-        int edits = v.Menus.Values.Count(m => m.Edited) + v.Vendor.Count(i => i.Edited) + v.Starts.Concat(v.Ends).Count(q => q.Edited);
-        return $"{(flags.Length == 0 ? "No NPC flags" : string.Join(" · ", flags))}\n" +
-               $"Gossip options {v.Menus.Values.Sum(m => m.Options.Length)} · Quests {v.Starts.Length}/{v.Ends.Length} · Vendor {v.Vendor.Length} · Trainer {v.Trainer?.Spells.Length ?? 0}" +
-               scripts + (edits > 0 ? "\nLocal draft changes present." : "") + (v.Issues.Any(i => i.Error) ? $"\n{v.Issues.Count(i => i.Error)} validation error(s)." : "");
-    }
-
     /// <summary>
     /// Rebuild the visible page from the current view. Cheap enough to redo after every change.
     /// </summary>
@@ -520,8 +511,6 @@ public partial class InteractionWindow : ContentEditorWindow
             body.AddChild(back);
         }
     }
-
-    static string OptionTypeName(uint type) => type < NpcFlags.OptionTypes.Length ? NpcFlags.OptionTypes[type] : $"Unknown {type}";
 
     /// <summary>
     /// Do what the client would for an option: open a submenu or the matching service page, or say
