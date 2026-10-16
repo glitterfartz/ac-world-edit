@@ -37,7 +37,7 @@ public partial class TerrainViewer
             MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        dataDirectory = ProjectSettings.GlobalizePath("res://wow-data");
+        dataDirectory = UserSettings.LoadDataDirectory();
         var theme = new Theme();
         theme.DefaultFontSize = 15;
         theme.SetColor("font_color", "Label", new Color("e7eef4"));
@@ -245,19 +245,19 @@ public partial class TerrainViewer
         drafts = ContentDrafts.Open();
         interaction = new InteractionWindow
         {
-            ConnectionPath = () => connection.Text,
+            Connection = () => connection.Settings,
             Store = () => store,
             Drafts = drafts
         };
         behaviorEditor = new BehaviorEditorWindow
         {
-            ConnectionPath = () => connection.Text,
+            Connection = () => connection.Settings,
             Store = () => store,
             Drafts = drafts
         };
         questEditor = new QuestEditorWindow
         {
-            ConnectionPath = () => connection.Text,
+            Connection = () => connection.Settings,
             Store = () => store,
             Areas = () => areas,
             Drafts = drafts,
@@ -382,8 +382,7 @@ public partial class TerrainViewer
         menu.Command(file, "Open selected world", async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
         menu.Command(file, "Database connection…", () =>
         {
-            sidebar.Visible = true;
-            sidebar.ShowConnection();
+            _ = PromptConnection();
         });
         file.AddSeparator();
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
@@ -488,12 +487,13 @@ public partial class TerrainViewer
             FileMode = FileDialog.FileModeEnum.OpenDir,
             Access = FileDialog.AccessEnum.Filesystem,
             Title = "Choose the client Data directory (MPQs)",
-            CurrentDir = dataDirectory,
+            CurrentDir = dataDirectory.Length > 0 ? dataDirectory : System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
             UseNativeDialog = true
         };
         dialog.DirSelected += async directory =>
         {
             dataDirectory = directory;
+            UserSettings.SaveDataDirectory(directory);
             dialog.QueueFree();
             await LoadArchives();
         };
@@ -513,5 +513,50 @@ public partial class TerrainViewer
         dialog.Canceled += dialog.QueueFree;
         AddChild(dialog);
         dialog.PopupCentered();
+    }
+
+    /// <summary>
+    /// Interactive launches only: verify the saved database settings with a real read-only session and
+    /// ask for working ones if they fail, then ask for the client Data folder if none is remembered.
+    /// Smoke runs are non-interactive and skip both prompts.
+    /// </summary>
+    async Task StartupPrompts()
+    {
+        if (!OS.GetCmdlineUserArgs().Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal)))
+        {
+            var saved = connection.Settings;
+            string? error = await Task.Run(() => ACWorldEdit.Data.DatabaseDiagnostics.TestAsync(saved));
+            if (error != null)
+            {
+                await PromptConnection();
+            }
+        }
+
+        if (dataDirectory.Length == 0 && !IsQueuedForDeletion())
+        {
+            ChooseArchives();
+        }
+    }
+
+    /// <summary>
+    /// Show the connection dialog and return when it closes. Settings are adopted only after they
+    /// connect, so cancelling never replaces a working connection.
+    /// </summary>
+    Task PromptConnection()
+    {
+        var closed = new TaskCompletionSource();
+        var dialog = new ConnectionDialog(connection.Settings);
+        dialog.Connected += connection.Adopt;
+        dialog.VisibilityChanged += () =>
+        {
+            if (!dialog.Visible)
+            {
+                closed.TrySetResult();
+                dialog.QueueFree();
+            }
+        };
+        AddChild(dialog);
+        dialog.PopupCentered();
+        return closed.Task;
     }
 }
