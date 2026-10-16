@@ -66,6 +66,8 @@ failing) with `ACWE_RUN_KNOWN_BUGS=1`. When the bug is fixed, replace the attrib
 |---|---|---|
 | KB-001 | `Smart/SmartCatalogTests.PercentParametersAreNotFollowedByLiteralPercent` | Percent parameters already render with `%`, so `SMART_EVENT_HEALTH_PCT` (event 2) and `SMART_EVENT_MANA_PCT` (event 3) sentences show `30%%`. |
 
+| KB-002 | `Smart/SmartBehaviorTests.TimerRangesShareOneUnit` | Timer ranges render each endpoint with its unit (`Every 8 s–12 s in combat`); the `SmartCatalog.Timer` doc comment promises `8–12 s`. Either the sentence or the comment should change. |
+
 ## Writing tests
 
 - New logic that does not need Godot belongs in `Foundation/` so it can be tested here; windows should only render and commit.
