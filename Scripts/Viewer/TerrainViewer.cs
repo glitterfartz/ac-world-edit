@@ -43,7 +43,7 @@ public partial class TerrainViewer : Node3D
     int spawnRegionLoadRadius = -1;
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
-    // MPQ directory chosen through File → Load archives…; defaults to the project's wow-data junction.
+    // Client Data directory (MPQs) chosen through File → Load archives… and remembered per user; empty until chosen.
     string dataDirectory = "";
     Button open = null!;
     Label status = null!, telemetry = null!, zoneLabel = null!, continentLabel = null!;
@@ -54,14 +54,9 @@ public partial class TerrainViewer : Node3D
     TerrainMinimap minimap = null!;
     string message = "Opening archives…";
     /// <summary>
-    /// External worldserver.conf path shared by every database-backed layer and editor; credentials
-    /// stay in that file.
+    /// User-entered world database connection shared by every database-backed layer and editor.
     /// </summary>
-    readonly LineEdit connection = new()
-    {
-        Text = System.Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? ACWorldEdit.Data.CreatureSource.DefaultConfigPath,
-        PlaceholderText = "External worldserver.conf path"
-    };
+    readonly ConnectionForm connection = new();
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;
@@ -95,22 +90,24 @@ public partial class TerrainViewer : Node3D
         AddChild(sky);
         creatures = new CreatureOverlay
         {
-            Models = models
+            Models = models,
+            Connection = () => connection.Settings
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;
         creatures.GroundAt = GroundAt;
-        gameObjects = new GameObjectOverlay { Models = models, ConnectionPath = () => connection.Text };
+        gameObjects = new GameObjectOverlay { Models = models, Connection = () => connection.Settings };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
-        graveyards = new GraveyardOverlay { ConnectionPath = () => connection.Text, Areas = () => areas, GroundAt = GroundAt };
+        graveyards = new GraveyardOverlay { Connection = () => connection.Settings, Areas = () => areas, GroundAt = GroundAt };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
-        areaTriggers = new AreaTriggerOverlay { ConnectionPath = () => connection.Text };
+        areaTriggers = new AreaTriggerOverlay { Connection = () => connection.Settings };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         BuildUi();
         ConfigureSmokeChecks();
+        _ = StartupPrompts();
         await LoadArchives();
     }
 
@@ -120,6 +117,12 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     async Task LoadArchives()
     {
+        if (dataDirectory.Length == 0)
+        {
+            message = "Choose your client Data folder (File → Load archives…).";
+            return;
+        }
+
         if (busy)
         {
             return;

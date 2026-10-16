@@ -1,5 +1,4 @@
 using System.Data;
-using System.Text.RegularExpressions;
 using ACWorldEdit.Foundation;
 using MySqlConnector;
 
@@ -10,29 +9,15 @@ public sealed class WorldDatabase
     readonly string connectionString;
     public string SourceKey { get; }
 
-    public WorldDatabase(string configPath)
+    public WorldDatabase(DatabaseSettings settings)
     {
-        string? info = File.ReadLines(configPath).Select(line => Regex.Match(line, "^\\s*WorldDatabaseInfo\\s*=\\s*\"([^\"]*)\"")).FirstOrDefault(match => match.Success)?.Groups[1].Value;
-        var parts = info?.Split(';');
-        if (parts == null || parts.Length != 5 || !uint.TryParse(parts[1], out uint port))
+        if (!settings.IsComplete)
         {
-            throw new InvalidDataException("Unsupported external world database setting.");
+            throw new InvalidDataException("Enter the world database host, user and database name.");
         }
 
-        connectionString = new MySqlConnectionStringBuilder
-        {
-            Server = parts[0],
-            Port = port,
-            UserID = parts[2],
-            Password = parts[3],
-            Database = parts[4],
-            ConnectionTimeout = 5,
-            DefaultCommandTimeout = 8,
-            PersistSecurityInfo = false,
-            AllowLoadLocalInfile = false,
-            Pooling = false
-        }.ConnectionString;
-        SourceKey = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{parts[0]}:{port}/{parts[4]}")));
+        connectionString = settings.BuildConnectionString();
+        SourceKey = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{settings.Host}:{settings.Port}/{settings.Database}")));
     }
 
     public async Task<WorldReadSession> OpenAsync(CancellationToken token)

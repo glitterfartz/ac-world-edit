@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class ContentEditorWindow : PanelContainer
 {
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public Func<AssetStore?> Store { get; set; } = () => null;
     public ContentDrafts Drafts { get; set; } = null!;
 

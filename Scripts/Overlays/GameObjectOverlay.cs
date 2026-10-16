@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 public partial class GameObjectOverlay : Node3D
 {
     public ModelLibrary Models { get; set; } = null!;
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public SpawnPreview Preview { get; private set; } = new();
     public bool LayerEnabled { get; private set; } = true;
     public IReadOnlyList<GameObjectSpawn> Records => records;
@@ -166,7 +166,8 @@ public partial class GameObjectOverlay : Node3D
             var area = region;
             var preview = Preview;
             var center = point;
-            string term = search.Text, config = ConnectionPath();
+            string term = search.Text;
+            var config = Connection();
             query.Start(token => new GameObjectSource(config).ReadAsync(area, preview, center, term, token));
         }
 

@@ -19,7 +19,7 @@ public partial class GraveyardOverlay : Node3D
     const float LabelHeight = 6.2f;
     static readonly Color AllianceColor = new("4a90ff"), HordeColor = new("e8484a"), NeutralColor = new("c0c4c8"), MixedColor = new("f2f2f2"), UnlinkedColor = new("6b6f75"), SelectedColor = new("ffcf69");
 
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public Func<AreaLookup?> Areas { get; set; } = () => null;
     public bool LayerEnabled { get; private set; } = true;
     public IReadOnlyList<GraveyardSite> Sites => sites;
@@ -147,7 +147,8 @@ public partial class GraveyardOverlay : Node3D
         {
             var area = region;
             var center = point;
-            string term = search.Text, config = ConnectionPath();
+            string term = search.Text;
+            var config = Connection();
             query.Start(token => new GraveyardSource(config).ReadAsync(area, center, term, token));
         }
 

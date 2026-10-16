@@ -18,7 +18,7 @@ public sealed record GraveyardRegionResult(GraveyardSite[] Sites, bool Truncated
 /// limited to the streamed region, ordered nearest-first and bounded; links and healers are fetched
 /// only for the returned IDs inside the same read-only transaction.
 /// </summary>
-public sealed class GraveyardSource(string configPath)
+public sealed class GraveyardSource(DatabaseSettings settings)
 {
     public const int Limit = 128;
     /// <summary>
@@ -26,7 +26,7 @@ public sealed class GraveyardSource(string configPath)
     /// </summary>
     public const double HealerRadius = 40;
     const uint SpiritHealerFlag = 0x4000;
-    readonly WorldDatabase database = new(configPath);
+    readonly WorldDatabase database = new(settings);
 
     public async Task<GraveyardRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token)
     {

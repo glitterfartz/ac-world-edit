@@ -49,7 +49,7 @@ public partial class CreatureOverlay : Node3D
     Label details = null!, status = null!;
     LineEdit filter = null!;
     Label selectionName = null!, selectionMeta = null!;
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public SpawnPreview Preview { get; private set; } = new();
     public bool LayerEnabled { get; private set; } = true;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
@@ -275,7 +275,7 @@ public partial class CreatureOverlay : Node3D
         if (region != null && LayerEnabled && query.WantsStart)
         {
             var next = region;
-            string path = ConnectionPath();
+            var path = Connection();
             var preview = Preview;
             var point = queryPoint;
             string term = filter.Text;

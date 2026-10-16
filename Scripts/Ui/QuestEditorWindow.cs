@@ -170,7 +170,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         UpdateStatus();
         try
         {
-            var found = await new ContentSource(ConnectionPath()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
+            var found = await new ContentSource(Connection()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
             if (current != searchGeneration)
             {
                 return;
@@ -203,7 +203,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         IsLoading = true;
         try
         {
-            var source = new ContentSource(ConnectionPath());
+            var source = new ContentSource(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];
@@ -335,7 +335,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         int current = ++generation;
         try
         {
-            var source = new ContentSource(ConnectionPath());
+            var source = new ContentSource(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             if (draft == null)
@@ -397,7 +397,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
     void Pick(SmartParamKind kind, string heading, Action<uint> apply)
     {
         var names = snapshot?.Names;
-        PickerPopup.Show(this, heading, term => new ContentSource(ConnectionPath()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        PickerPopup.Show(this, heading, term => new ContentSource(Connection()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
         {
             var target = kind switch
             {

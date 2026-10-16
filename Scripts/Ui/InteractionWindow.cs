@@ -239,7 +239,7 @@ public partial class InteractionWindow : ContentEditorWindow
 
         try
         {
-            var source = new InteractionSource(ConnectionPath());
+            var source = new InteractionSource(Connection());
             var cat = await EnsureCatalog();
             if (cat == null && Store() != null)
             {

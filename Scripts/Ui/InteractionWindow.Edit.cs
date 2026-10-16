@@ -351,7 +351,7 @@ public partial class InteractionWindow
         {
             status = $"Checking menu {menu}…";
             Render();
-            if (!await new InteractionSource(ConnectionPath()).MenuExistsAsync(menu, CancellationToken.None))
+            if (!await new InteractionSource(Connection()).MenuExistsAsync(menu, CancellationToken.None))
             {
                 status = $"Not saved: gossip menu {menu} does not exist.";
                 Render();
@@ -447,7 +447,7 @@ public partial class InteractionWindow
 
         SearchPicker("quest", "Find quest by title or ID…", async term =>
         {
-            var found = await new InteractionSource(ConnectionPath()).SearchQuestsAsync(term, CancellationToken.None);
+            var found = await new InteractionSource(Connection()).SearchQuestsAsync(term, CancellationToken.None);
             return found.SelectMany(q => new (string, Action)[]
             {
                 ($"Starts: {q.Title} ({q.Id}, level {q.Level})", () => LinkQuest(InteractionTables.QuestStarter, q)),
@@ -506,7 +506,7 @@ public partial class InteractionWindow
 
         SearchPicker("item", "Find item by name or ID…", async term =>
         {
-            var found = await new InteractionSource(ConnectionPath()).SearchItemsAsync(term, CancellationToken.None);
+            var found = await new InteractionSource(Connection()).SearchItemsAsync(term, CancellationToken.None);
             return found.Select(item => ($"{item.Name} ({item.Id}) · {ClientStyle.Money(item.BuyPrice)}", (Action)(() => AddVendorItem(item)))).ToList();
         });
     }
@@ -615,7 +615,7 @@ public partial class InteractionWindow
     {
         if (!effective.All(InteractionTables.Trainer).Any(r => r.U("Id") == trainer) && !snapshot!.Lookup.TrainerExists(trainer))
         {
-            if (!await new InteractionSource(ConnectionPath()).TrainerExistsAsync(trainer, CancellationToken.None))
+            if (!await new InteractionSource(Connection()).TrainerExistsAsync(trainer, CancellationToken.None))
             {
                 status = $"Not saved: trainer {trainer} does not exist.";
                 Render();
@@ -676,7 +676,7 @@ public partial class InteractionWindow
     {
         if (menu != 0 && !effective.All(InteractionTables.GossipMenu).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
         {
-            if (!await new InteractionSource(ConnectionPath()).MenuExistsAsync(menu, CancellationToken.None))
+            if (!await new InteractionSource(Connection()).MenuExistsAsync(menu, CancellationToken.None))
             {
                 status = $"Not saved: gossip menu {menu} does not exist.";
                 Render();

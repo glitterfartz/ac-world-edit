@@ -35,7 +35,7 @@ public partial class TerrainViewer
         IReadOnlyList<(uint Guid, uint Map, double X, double Y, double Z)> spawns;
         try
         {
-            var source = new ContentSource(connection.Text);
+            var source = new ContentSource(connection.Settings);
             spawns = await Task.Run(() => source.FindSpawnsAsync(entry, CancellationToken.None));
         }
         catch (Exception error)

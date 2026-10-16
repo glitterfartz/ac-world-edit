@@ -7,9 +7,9 @@ using ACWorldEdit.Data;
 public static class Test
 {
     /// <summary>
-    /// External worldserver.conf for the read-only database checks.
+    /// ACWORLD_DB_INFO (host;port;user;password;database) for the read-only database checks.
     /// </summary>
-    public static string Config => Environment.GetEnvironmentVariable("ACWORLD_SERVER_CONFIG") ?? CreatureSource.DefaultConfigPath;
+    public static DatabaseSettings Config => DatabaseSettings.Parse(Environment.GetEnvironmentVariable("ACWORLD_DB_INFO") ?? throw new InvalidOperationException("Set ACWORLD_DB_INFO=host;port;user;password;database for database checks."));
 
     public static void Check(bool condition, string message)
     {

@@ -13,7 +13,7 @@ public partial class SceneSidebar : PanelContainer
     readonly GameObjectOverlay gameObjects;
     readonly GraveyardOverlay graveyards;
     readonly AreaTriggerOverlay areaTriggers;
-    readonly LineEdit connectionPath;
+    readonly ConnectionForm connectionPath;
     readonly WorldObjectScene scenery;
     TabContainer tabs = null!;
     OptionButton preset = null!, eventMode = null!, difficulty = null!, budget = null!;
@@ -31,9 +31,16 @@ public partial class SceneSidebar : PanelContainer
     public bool DoodadsEnabled { get; private set; } = true;
     public bool WmosEnabled { get; private set; } = true;
 
-    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, LineEdit connectionPath)
+    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, ConnectionForm connectionPath)
     {
         this.connectionPath = connectionPath;
+        connectionPath.Applied += () =>
+        {
+            creatures.Refresh();
+            gameObjects.Refresh();
+            graveyards.Refresh();
+            areaTriggers.Refresh();
+        };
         this.creatures = creatures;
         this.gameObjects = gameObjects;
         this.graveyards = graveyards;
@@ -279,16 +286,10 @@ public partial class SceneSidebar : PanelContainer
         };
         connection.AddChild(InspectorUi.Button("Database connection…", () => advanced.Visible = !advanced.Visible));
         connection.AddChild(advanced);
-        advanced.AddChild(InspectorUi.Text("External worldserver.conf", 12, true));
+        advanced.AddChild(InspectorUi.Text("World database (read-only)", 12, true));
         advanced.AddChild(connectionPath);
-        advanced.AddChild(InspectorUi.Button("Apply & refresh", () =>
-        {
-            creatures.Refresh();
-            gameObjects.Refresh();
-            graveyards.Refresh();
-            areaTriggers.Refresh();
-        }));
-        connection.AddChild(InspectorUi.Text("Read-only connection. Credentials stay in the external file.", 11, true));
+        advanced.AddChild(InspectorUi.Button("Apply & refresh", () => _ = connectionPath.ApplyAsync()));
+        connection.AddChild(InspectorUi.Text("Read-only connection. Saved in your user profile, not the repo.", 11, true));
         SyncPolicy(new SpawnPreview());
         UpdateControlState();
         return scroll;

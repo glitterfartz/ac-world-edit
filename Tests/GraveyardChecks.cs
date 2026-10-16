@@ -13,7 +13,7 @@ public static class GraveyardChecks
     public static async Task Run(AssetStore store)
     {
         var areas = new DbcTable(store.Read("DBFilesClient/AreaTable.dbc"));
-        string config = Config;
+        var config = Config;
         var database = new WorldDatabase(config);
         await using (var session = await database.OpenAsync(CancellationToken.None))
         {

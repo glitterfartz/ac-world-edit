@@ -1,6 +1,6 @@
 # ACWorldEdit world viewer
 
-A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs in `wow-data`.
+A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs. On first launch it asks for your client `Data` folder (change it later with **File → Load archives…**); the choice is remembered per user. For diagnostics, `ACWORLD_DATA_DIR` overrides it.
 
 ## Run
 
@@ -12,10 +12,7 @@ The simple roadmap is in [PLAN.md](PLAN.md); current results and limits are in [
 
 ## Scene explorer and existing spawns
 
-The right panel reads `WorldDatabaseInfo` from the external file
-`X:\AzerothCore\azerothcore-wotlk\build\bin\Debug\configs\worldserver.conf`.
-Set `ACWORLD_SERVER_CONFIG` before launching or open **Scene → Database connection…**, change the path and click **Apply & refresh**.
-Credentials stay outside the project. Queries run in read-only transactions; nothing is written to the world database.
+Enter the world database host, port, user, password and database name in **Scene → Database connection…** and click **Apply & refresh**. Settings are saved in your user profile (Godot `user://settings.cfg`, password in plain text), never in the project; `ACWORLD_DB_INFO=host;port;user;password;database` overrides them for diagnostics and the `Tests/AssetChecks.csproj` database checks. Queries run in read-only transactions; nothing is written to the world database.
 
 The right sidebar has **Scene**, **Creatures** and **GameObjects** tabs. Scene controls visibility
 and loading; entity tabs provide search, a selection list, details and **Fly to selection**.

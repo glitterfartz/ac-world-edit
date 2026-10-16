@@ -13,7 +13,7 @@ public static class AreaTriggerChecks
 {
     public static async Task Run()
     {
-        string config = Config;
+        var config = Config;
         var database = new WorldDatabase(config);
         long total, smart;
         await using (var session = await database.OpenAsync(CancellationToken.None))

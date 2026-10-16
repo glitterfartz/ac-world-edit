@@ -27,7 +27,7 @@ public static class SpawnFilterChecks
         {
         }
 
-        string config = Config;
+        var config = Config;
         var source = new CreatureSource(config);
         var region = new CreatureRegion(0, 31, 33, 48, 50);
         var point = new SpawnQueryPoint(-9492.72, 75.6383, 56.1841);

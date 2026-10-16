@@ -34,9 +34,9 @@ public sealed record ContentSnapshot(RowSet Rows, ContentNames Names, string Sou
 /// schemas as drafts; draft-touched rows are loaded too, and references reachable in the effective
 /// view (action lists, linked quests, picked IDs) are resolved to names in the same transaction.
 /// </summary>
-public sealed class ContentSource(string configPath)
+public sealed class ContentSource(DatabaseSettings settings)
 {
-    readonly WorldDatabase database = new(configPath);
+    readonly WorldDatabase database = new(settings);
     public string SourceKey => database.SourceKey;
 
     async Task LoadDraftKeys(WorldReadSession session, RowSet rows, IEnumerable<(TableSchema Table, string Key)> keys, Func<TableSchema, bool> relevant, CancellationToken token)

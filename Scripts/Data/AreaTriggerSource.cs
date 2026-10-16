@@ -10,10 +10,10 @@ public sealed record AreaTriggerRegionResult(AreaTriggerRecord[] Triggers, bool 
 /// streamed region, ordered nearest-first and bounded; search applies before LIMIT. The client's
 /// own AreaTrigger.dbc decides when a trigger fires and is not read here.
 /// </summary>
-public sealed class AreaTriggerSource(string configPath)
+public sealed class AreaTriggerSource(DatabaseSettings settings)
 {
     public const int Limit = 256;
-    readonly WorldDatabase database = new(configPath);
+    readonly WorldDatabase database = new(settings);
     public string SourceKey => database.SourceKey;
 
     public async Task<AreaTriggerRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token)

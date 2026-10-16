@@ -564,7 +564,7 @@ public partial class BehaviorEditorWindow
     void PickNamed(SmartParamKind kind, string caption, Action<uint> apply)
     {
         var names = snapshot?.Names;
-        PickerPopup.Show(this, $"Choose {caption.ToLowerInvariant()}", term => new ContentSource(ConnectionPath()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        PickerPopup.Show(this, $"Choose {caption.ToLowerInvariant()}", term => new ContentSource(Connection()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
         {
             var target = kind switch
             {
@@ -628,7 +628,7 @@ public partial class BehaviorEditorWindow
         try
         {
             int first = (int)Math.Min(entry * 100L, int.MaxValue - 100);
-            var used = await new ContentSource(ConnectionPath()).UsedActionListsAsync(first, first + 99, CancellationToken.None);
+            var used = await new ContentSource(Connection()).UsedActionListsAsync(first, first + 99, CancellationToken.None);
             used.UnionWith(effective.All(InteractionTables.SmartScripts).Where(r => r.U("source_type") == SmartScope.ActionList).Select(r => r.I("entryorguid")));
             used.UnionWith(effective.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).Where(r => r.Action == SmartCatalog.RunActionList).Select(r => (int)r.ActionParam(1)));
             int id = Enumerable.Range(first, 100).FirstOrDefault(i => !used.Contains(i));

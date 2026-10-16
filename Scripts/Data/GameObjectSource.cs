@@ -3,9 +3,9 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 /// <summary>Read-only database GO snapshots. SQL membership, masks and default despawn state precede LIMIT.</summary>
-public sealed class GameObjectSource(string configPath)
+public sealed class GameObjectSource(DatabaseSettings settings)
 {
-    readonly WorldDatabase database = new(configPath);
+    readonly WorldDatabase database = new(settings);
     public async Task<GameObjectRegionResult> ReadAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)
     {
         preview.Validate();

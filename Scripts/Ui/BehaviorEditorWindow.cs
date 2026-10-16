@@ -145,7 +145,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         bool loadTrigger = areaTrigger;
         try
         {
-            var source = new ContentSource(ConnectionPath());
+            var source = new ContentSource(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];

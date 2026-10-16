@@ -12,7 +12,7 @@ public static class ContentChecks
     public static async Task Run(AssetStore store)
     {
         var catalog = InteractionCatalog.Load(store);
-        string config = Config;
+        var config = Config;
         var source = new ContentSource(config);
         var quests = await source.SearchAsync(SmartParamKind.Quest, "Kobold Camp Cleanup", CancellationToken.None);
         Check(quests.Count > 0, "Quest search found nothing");

@@ -5,9 +5,8 @@ namespace ACWorldEdit.Data;
 /// <summary>Bounded SELECT-only creature snapshots; visibility predicates run before nearest-first LIMIT.</summary>
 public sealed class CreatureSource
 {
-    public const string DefaultConfigPath = @"X:\AzerothCore\azerothcore-wotlk\build\bin\Debug\configs\worldserver.conf";
     readonly WorldDatabase database;
-    public CreatureSource(string configPath) => database = new(configPath);
+    public CreatureSource(DatabaseSettings settings) => database = new(settings);
     public Task<CreatureRegionResult> ReadAsync(CreatureRegion region, CancellationToken token) => ReadAsync(region, new SpawnPreview(), null, "", token);
     public async Task<CreatureRegionResult> ReadAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)
     {
@@ -67,9 +66,8 @@ public sealed class CreatureSource
     public static string SafeError(Exception error) => error switch
     {
         SpawnSchemaException schema => schema.Message,
-        MySqlException mysql => $"Database unavailable (MySQL {mysql.Number}). Check connection settings.",
-        IOException => "Cannot read world configuration. Check the connection settings path.",
-        InvalidDataException => "Unsupported database configuration or spawn data.",
+        MySqlException => "Database unavailable. Check Scene → Database connection…",
+        InvalidDataException => "Check the database connection settings, or the spawn data is unsupported.",
         _ => "Could not load spawns. Check the connection and database format."
     };
 }

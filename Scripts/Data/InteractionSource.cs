@@ -59,10 +59,10 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog) : IIntera
 /// the effective (database + draft) view are followed until stable, so new submenus, texts and
 /// trainers created in the draft resolve against the database.
 /// </summary>
-public sealed class InteractionSource(string configPath)
+public sealed class InteractionSource(DatabaseSettings settings)
 {
     public const int MaxRows = 500, MaxSearch = 50;
-    readonly WorldDatabase database = new(configPath);
+    readonly WorldDatabase database = new(settings);
     /// <summary>
     /// Hash of host/port/database (no credentials) identifying drafts made against this source.
     /// </summary>

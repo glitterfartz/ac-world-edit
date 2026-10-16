@@ -23,7 +23,7 @@ public partial class AreaTriggerOverlay : Node3D
         [AreaTriggerKind.Unlinked] = new("8a8f96")
     };
 
-    public Func<string> ConnectionPath { get; set; } = () => CreatureSource.DefaultConfigPath;
+    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     // Off by default: large tavern and zone-line volumes would otherwise cover towns.
     public bool LayerEnabled { get; private set; }
     public uint? SelectedEntry => selected;
@@ -138,7 +138,8 @@ public partial class AreaTriggerOverlay : Node3D
         {
             var area = region;
             var center = point;
-            string term = search.Text, config = ConnectionPath();
+            string term = search.Text;
+            var config = Connection();
             query.Start(token => new AreaTriggerSource(config).ReadAsync(area, center, term, token));
         }
 

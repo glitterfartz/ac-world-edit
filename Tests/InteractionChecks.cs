@@ -19,7 +19,7 @@ public static class InteractionChecks
         Check(catalog.SearchSpells("Fireball").Count > 0 && catalog.SearchSpells("").Count == 0, "Spell search");
         Console.WriteLine("INTERACTION_CATALOG_PASSED spell/taxi/extended-cost/icon offsets");
 
-        string config = Config;
+        var config = Config;
         var database = new WorldDatabase(config);
         var samples = new Dictionary<string, (uint Entry, uint Guid)>();
         await using (var session = await database.OpenAsync(CancellationToken.None))
