@@ -36,7 +36,7 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
         }
 
         int offset = checked((int)LittleEndian.U32(b, 20 + mip * 4)), length = checked((int)LittleEndian.U32(b, 84 + mip * 4));
-        byte[] input = b.AsSpan(offset, length).ToArray();
+        ReadOnlySpan<byte> input = b.AsSpan(offset, length);
         byte[] pixels = new byte[checked(w * h * 4)];
         // Palette RGB is BGRA in the header; alpha follows the index plane and can be
         // absent or packed at 1, 4 or 8 bits per pixel.
@@ -88,6 +88,10 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
                 throw new NotSupportedException("Unsupported BLP DXT alpha encoding");
             }
 
+            // Scratch for one block, reused across the loop (a stackalloc inside it would accumulate).
+            Span<byte> colors = stackalloc byte[16];
+            Span<byte> alpha = stackalloc byte[16];
+            Span<byte> table = stackalloc byte[8];
             int pos = 0;
             for (int y = 0; y < h; y += 4)
             {
@@ -100,19 +104,20 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
 
                     int colorPos = pos + blockSize - 8;
                     ushort c0 = LittleEndian.U16(input, colorPos), c1 = LittleEndian.U16(input, colorPos + 2);
-                    byte[][] colors = [Color565(c0), Color565(c1), new byte[4], new byte[4]];
+                    // Four RGBA palette entries, flat: entry n occupies colors[n * 4 .. n * 4 + 3].
+                    Color565(c0, colors[..4]);
+                    Color565(c1, colors[4..8]);
                     bool four = c0 > c1 || blockSize == 16 || depth == 0;
                     for (int ch = 0; ch < 3; ch++)
                     {
-                        colors[2][ch] = (byte)(four ? (2 * colors[0][ch] + colors[1][ch]) / 3 : (colors[0][ch] + colors[1][ch]) / 2);
-                        colors[3][ch] = (byte)(four ? (colors[0][ch] + 2 * colors[1][ch]) / 3 : 0);
+                        colors[8 + ch] = (byte)(four ? (2 * colors[ch] + colors[4 + ch]) / 3 : (colors[ch] + colors[4 + ch]) / 2);
+                        colors[12 + ch] = (byte)(four ? (colors[ch] + 2 * colors[4 + ch]) / 3 : 0);
                     }
 
-                    colors[2][3] = 255;
-                    colors[3][3] = four ? (byte)255 : (byte)0;
+                    colors[11] = 255;
+                    colors[15] = four ? (byte)255 : (byte)0;
                     uint indices = LittleEndian.U32(input, colorPos + 4);
-                    byte[] alpha = new byte[16];
-                    Array.Fill(alpha, (byte)255);
+                    alpha.Fill(255);
                     if (blockSize == 16 && alphaEncoding == 1)
                     {
                         for (int i = 0; i < 16; i++)
@@ -122,7 +127,6 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
                     }
                     else if (blockSize == 16)
                     {
-                        byte[] table = new byte[8];
                         table[0] = input[pos];
                         table[1] = input[pos + 1];
                         if (table[0] > table[1])
@@ -151,7 +155,7 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
 
                         for (int i = 0; i < 16; i++)
                         {
-                            alpha[i] = table[(bits >> (i * 3)) & 7];
+                            alpha[i] = table[(int)((bits >> (i * 3)) & 7)];
                         }
                     }
 
@@ -164,13 +168,13 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
                         }
 
                         int p = (py * w + px) * 4;
-                        var color = colors[(indices >> (i * 2)) & 3];
+                        int color = (int)((indices >> (i * 2)) & 3) * 4;
                         for (int ch = 0; ch < 3; ch++)
                         {
-                            pixels[p + ch] = color[ch];
+                            pixels[p + ch] = colors[color + ch];
                         }
 
-                        pixels[p + 3] = blockSize == 16 ? alpha[i] : color[3];
+                        pixels[p + 3] = blockSize == 16 ? alpha[i] : colors[color + 3];
                     }
 
                     pos += blockSize;
@@ -189,5 +193,11 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
     /// Expand DXT RGB565 endpoints to byte channels before block interpolation; alpha initially
     /// remains opaque.
     /// </summary>
-    static byte[] Color565(ushort c) => [(byte)(((c >> 11) & 31) * 255 / 31), (byte)(((c >> 5) & 63) * 255 / 63), (byte)((c & 31) * 255 / 31), 255];
+    static void Color565(ushort c, Span<byte> rgba)
+    {
+        rgba[0] = (byte)(((c >> 11) & 31) * 255 / 31);
+        rgba[1] = (byte)(((c >> 5) & 63) * 255 / 63);
+        rgba[2] = (byte)((c & 31) * 255 / 31);
+        rgba[3] = 255;
+    }
 }
