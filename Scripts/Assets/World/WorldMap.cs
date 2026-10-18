@@ -111,7 +111,7 @@ public sealed class WorldMap
     {
         if (Files.TryGetValue(key, out var split))
         {
-            return RetailTerrain.Read(key, files.Read(AssetRef.FromFileId(split.Root)), files.Read(AssetRef.FromFileId(split.Textures)), BigAlpha, split.Objects == 0 ? null : files.Read(AssetRef.FromFileId(split.Objects)));
+            return RetailTerrain.Read(key, files.Read(AssetRef.FromFileId(split.Root)), files.Read(AssetRef.FromFileId(split.Textures)), BigAlpha, split.Objects == 0 ? null : files.Read(AssetRef.FromFileId(split.Objects)), RetailLiquids.For(files));
         }
 
         return new TerrainTile(key, files.Read(TilePath(key)), BigAlpha);

@@ -45,6 +45,23 @@ public sealed partial class LightBand
     }
 
     /// <summary>
+    /// Build a band from retail LightData samples (time in ticks, color packed 0x00RRGGBB). Samples are
+    /// sorted by time; none at all gives the same single white sample as an unused Wrath slot.
+    /// </summary>
+    public static LightBand FromSamples(IEnumerable<(uint Time, uint Packed)> samples)
+    {
+        var ordered = samples.OrderBy(s => s.Time).Take(64).ToArray();
+        if (ordered.Length == 0)
+        {
+            return new([0], [(1f, 1f, 1f)]);
+        }
+
+        return new(
+            ordered.Select(s => s.Time).ToArray(),
+            ordered.Select(s => (((s.Packed >> 16) & 0xFF) / 255f, ((s.Packed >> 8) & 0xFF) / 255f, (s.Packed & 0xFF) / 255f)).ToArray());
+    }
+
+    /// <summary>
     /// Interpolate the cyclic piecewise-linear curve at an arbitrary tick, wrapping the final segment
     /// back to the first sample.
     /// </summary>

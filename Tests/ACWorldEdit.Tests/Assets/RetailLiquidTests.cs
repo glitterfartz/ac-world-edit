@@ -1,0 +1,172 @@
+using ACWorldEdit.Assets;
+using Xunit;
+
+namespace ACWorldEdit.Tests.Assets;
+
+/// <summary>
+/// Retail liquids and light bands without a client: MH2O layers in a split root file, LiquidObject and
+/// vertex-format resolution, the path listfile and retail LightData samples.
+/// </summary>
+public class RetailLiquidTests
+{
+    // Types: 1 = water (material 10, LVF 0), 2 = magma (material 11, LVF 3). Object 100 is magma.
+    static readonly RetailLiquids Tables = RetailLiquids.From(
+        [(1, "XTextures\\river\\lake_a.%d.blp", 0, 10), (2, "XTextures\\lava\\lava.%d.blp", 2, 11)],
+        [(100, 2)],
+        [(10, 0), (11, 3)]);
+
+    /// <summary>2x2 cells (3x3 vertices): heights 10..18, UV pairs (index, 255 - index), depth 0, 127, 255 per row.</summary>
+    static byte[] Format3Vertices()
+    {
+        using var m = new MemoryStream();
+        using var w = new BinaryWriter(m);
+        for (int i = 0; i < 9; i++)
+        {
+            w.Write(10f + i);
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            w.Write((ushort)i);
+            w.Write((ushort)(255 - i));
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            w.Write((byte)(i % 3 * 127));
+        }
+
+        return m.ToArray();
+    }
+
+    static TerrainTile Read(byte[] liquid, RetailLiquids? tables) =>
+        RetailTerrain.Read(new(0, 0), SyntheticSplitTerrain.Root(new() { Liquid = liquid }), SyntheticSplitTerrain.TextureFile(), false, null, tables);
+
+    [Fact]
+    public void RetailFormat3LayerReadsHeightsUvAndDepth()
+    {
+        var tile = Read(SyntheticSplitTerrain.Mh2o(1, 3, 0, 2, 2, Format3Vertices()), Tables);
+
+        var surface = Assert.Single(tile.Liquids);
+        Assert.Equal(1u, surface.LiquidType);
+        Assert.Equal(9, surface.Positions.Length);
+        Assert.Equal(10f, surface.Positions[0].Y);
+        Assert.Equal(18f, surface.Positions[8].Y);
+        Assert.Equal(1 / 255f, surface.Uv[1].X, 4);
+        Assert.Equal(254 / 255f, surface.Uv[1].Y, 4);
+        Assert.Equal(0f, surface.Colors![0].W);
+        Assert.Equal(127 / 255f, surface.Colors[1].W, 4);
+        Assert.Equal(4 * 6, surface.Indices.Length);
+    }
+
+    [Fact]
+    public void LiquidObjectIdSelectsTypeAndVertexFormat()
+    {
+        // 100 is >= 42, so it names a LiquidObject: magma, whose material has LVF 3.
+        var tile = Read(SyntheticSplitTerrain.Mh2o(1, 100, 0, 2, 2, Format3Vertices()), Tables);
+
+        var surface = Assert.Single(tile.Liquids);
+        Assert.Equal(2u, surface.LiquidType);
+        Assert.Equal(18f, surface.Positions[8].Y);
+    }
+
+    [Fact]
+    public void FlatLayerWithoutVertexDataUsesTheStoredLevel()
+    {
+        var tile = Read(SyntheticSplitTerrain.Mh2o(1, 2, 42.5f, 3, 1, null), Tables);
+
+        var surface = Assert.Single(tile.Liquids);
+        Assert.All(surface.Positions, p => Assert.Equal(42.5f, p.Y));
+        Assert.All(surface.Colors!, c => Assert.Equal(1f, c.W));
+    }
+
+    [Fact]
+    public void TileWithoutLiquidTablesHasNoLiquids()
+    {
+        Assert.Empty(Read(SyntheticSplitTerrain.Mh2o(1, 3, 0, 2, 2, Format3Vertices()), null).Liquids);
+    }
+
+    [Fact]
+    public void WrathRejectsTheRetailOnlyFormat()
+    {
+        // The Wrath reader keeps its limit of formats 0-2; format 3 only exists in retail files.
+        var root = SyntheticSplitTerrain.Root(new() { Liquid = SyntheticSplitTerrain.Mh2o(1, 3, 0, 2, 2, Format3Vertices()) });
+        Assert.Throws<InvalidDataException>(() => LiquidData.Terrain(root));
+    }
+
+    [Fact]
+    public void LayerBelowTheObjectRangeKeepsItsTypeAndFormat()
+    {
+        Assert.Equal((1u, 2), Tables.Layer(1, 2));
+        Assert.Equal((2u, 3), Tables.Layer(1, 100));
+        // An object without a row (ocean layers store 42) keeps the layer's type and is depth-only.
+        Assert.Equal((1u, 2), Tables.Layer(1, 999));
+        Assert.Equal((2u, 2), Tables.Layer(2, 42));
+    }
+
+    [Fact]
+    public void TypeLookupExposesPatternAndKind()
+    {
+        Assert.Equal("XTextures\\lava\\lava.%d.blp", Tables.Pattern(2));
+        Assert.Equal(2u, Tables.Kind(2));
+        Assert.Equal(0u, Tables.Kind(77));
+        Assert.Throws<InvalidDataException>(() => Tables.Pattern(77));
+    }
+
+    [Fact]
+    public void ListfileResolvesIgnoringCaseAndSeparators()
+    {
+        string file = Path.Combine(Path.GetTempPath(), "listfile-" + Guid.NewGuid().ToString("N") + ".csv");
+        File.WriteAllLines(file, ["219901;xtextures/river/lake_a.1.blp", "bad line", "x;xtextures/none.blp", "219855;xtextures/ocean/ocean_h.1.blp"]);
+        try
+        {
+            var list = PathListfile.Load(file);
+
+            Assert.Equal(2, list.Count);
+            Assert.Equal(219901u, list.Resolve("XTextures\\river\\Lake_A.1.blp"));
+            Assert.Null(list.Resolve("xtextures/river/lake_a.2.blp"));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void ListfileIsFoundInAnAncestorDataFolder()
+    {
+        Assert.NotNull(PathListfile.Find(AppContext.BaseDirectory));
+        Assert.Null(PathListfile.Find((string?)null));
+    }
+
+    [Fact]
+    public void BundledListfileCoversTheStandardLiquidFrames()
+    {
+        var list = PathListfile.Load(PathListfile.Find(AppContext.BaseDirectory)!);
+
+        Assert.NotNull(list.Resolve("XTextures\\river\\lake_a.1.blp"));
+        Assert.NotNull(list.Resolve("XTextures\\ocean\\ocean_h.30.blp"));
+        Assert.NotNull(list.Resolve("XTextures\\lava\\lava.1.blp"));
+        Assert.NotNull(list.Resolve("XTextures\\slime\\slime.1.blp"));
+    }
+
+    [Fact]
+    public void LightSamplesAreSortedAndInterpolated()
+    {
+        var band = LightBand.FromSamples([(1440, 0x0000FF), (0, 0xFF0000)]);
+
+        var start = band.Rgb(0);
+        var mid = band.Rgb(720);
+        var end = band.Rgb(1440);
+        Assert.Equal((1f, 0f, 0f), start);
+        Assert.Equal(0.5f, mid.R, 3);
+        Assert.Equal(0.5f, mid.B, 3);
+        Assert.Equal((0f, 0f, 1f), end);
+    }
+
+    [Fact]
+    public void NoLightSamplesGiveWhite()
+    {
+        Assert.Equal((1f, 1f, 1f), LightBand.FromSamples([]).Rgb(1000));
+    }
+}

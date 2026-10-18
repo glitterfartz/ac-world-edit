@@ -12,13 +12,17 @@ public sealed class LiquidTextures
 {
     static readonly ConditionalWeakTable<IClientFiles, LiquidTextures> stores = new();
     readonly IClientFiles store;
-    readonly DbcTable types;
+    readonly DbcTable? types;
+    readonly RetailLiquids? retail;
     readonly Dictionary<uint, BlpTexture> atlases = [];
     readonly Dictionary<string, BlpTexture> sequences = new(StringComparer.OrdinalIgnoreCase);
     LiquidTextures(IClientFiles source)
     {
         store = source;
-        types = new(source.Read("DBFilesClient/LiquidType.dbc"));
+        retail = source.Kind == ClientKind.Retail
+            ? RetailLiquids.For(source) ?? throw new InvalidDataException("The retail liquid tables were not loaded for this client.")
+            : null;
+        types = retail == null ? new(source.Read("DBFilesClient/LiquidType.dbc")) : null;
     }
 
     /// <summary>
@@ -29,12 +33,12 @@ public sealed class LiquidTextures
     /// <summary>
     /// Read the client SoundBank category used for water/ocean versus lava/slime preview blending.
     /// </summary>
-    public uint Kind(uint type) => types.U(type, 3);
+    public uint Kind(uint type) => retail?.Kind(type) ?? types!.U(type, 3);
     /// <summary>
     /// Resolve the first native texture slot and normalize separators, retaining printf-style frame
     /// placeholders.
     /// </summary>
-    public string Pattern(uint type) => types.Str(type, 15).Replace('\\', '/');
+    public string Pattern(uint type) => (retail?.Pattern(type) ?? types!.Str(type, 15)).Replace('\\', '/');
     /// <summary>
     /// Decode bounded sequences at up to 128 pixels per frame into a horizontal atlas. A lock
     /// prevents duplicate worker decodes; missing procedural assets fail explicitly.
@@ -75,6 +79,14 @@ public sealed class LiquidTextures
 
             if (frames.Count == 0)
             {
+                // Some retail types name textures the listfile does not know; they draw with the base
+                // liquid of their kind (1 water, 2 ocean, 3 magma, 4 slime) instead of vanishing.
+                uint baseType = Kind(type) + 1;
+                if (retail != null && baseType != type && retail.HasType(baseType))
+                {
+                    return atlases[type] = Decode(baseType);
+                }
+
                 throw new InvalidDataException($"Liquid {type} has no supported native texture sequence: {pattern}");
             }
 

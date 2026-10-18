@@ -11,10 +11,40 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class TerrainViewer
 {
-    bool clientSmoke, clientShot, clientShotMoved, clientShotFramed;
+    bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater;
     int clientShotFrames;
     TileKey? clientShotTile;
     double clientSmokeTime;
+
+    /// <summary>
+    /// World-space center of the vertices of the liquid mesh with the most vertices among the loaded
+    /// tiles (--client-shot-water), or null when none is loaded. Averaging vertices rather than taking
+    /// bounds keeps the target over the water when the batch spans the whole tile.
+    /// </summary>
+    Vector3? LargestLiquid()
+    {
+        Vector3? best = null;
+        int bestCount = 0;
+        foreach (var tile in loaded.Values)
+        {
+            if (tile.GetNodeOrNull<Node3D>("Liquids") is not { } container)
+            {
+                continue;
+            }
+
+            foreach (var mesh in container.GetChildren().OfType<MeshInstance3D>())
+            {
+                var vertices = mesh.Mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+                if (vertices.Length > bestCount)
+                {
+                    bestCount = vertices.Length;
+                    best = mesh.GlobalTransform * (vertices.Aggregate(Vector3.Zero, (a, v) => a + v) / vertices.Length);
+                }
+            }
+        }
+
+        return best;
+    }
 
     void ClientSmoke(double delta)
     {
@@ -87,7 +117,16 @@ public partial class TerrainViewer
             if (!clientShotFramed)
             {
                 clientShotFramed = true;
-                if (objects.ReadyWmoPlacements().Where(w => !w.BoundsMinimum.HasValue || !w.BoundsMaximum.HasValue || (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() < 150).OrderByDescending(w => w.BoundsMinimum.HasValue && w.BoundsMaximum.HasValue ? (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() : 0).FirstOrDefault() is { } building)
+                if (clientShotWater && LargestLiquid() is { } lake)
+                {
+                    GD.Print($"CLIENT_SHOT_WATER center={lake}");
+                    camera.Position = lake + new Vector3(0, 90, 140);
+                    camera.LookAt(lake);
+                    yaw = camera.Rotation.Y;
+                    pitch = camera.Rotation.X;
+                    clientShotFrames = 0;
+                }
+                else if (objects.ReadyWmoPlacements().Where(w => !w.BoundsMinimum.HasValue || !w.BoundsMaximum.HasValue || (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() < 150).OrderByDescending(w => w.BoundsMinimum.HasValue && w.BoundsMaximum.HasValue ? (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() : 0).FirstOrDefault() is { } building)
                 {
                     var at = new Vector3(building.Position.X, building.Position.Y, building.Position.Z);
                     var size = building.BoundsMinimum.HasValue && building.BoundsMaximum.HasValue ? (building.BoundsMaximum.Value - building.BoundsMinimum.Value).Length() : 60;

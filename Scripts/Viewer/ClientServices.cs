@@ -33,7 +33,8 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
 
     /// <summary>
     /// Retail CASC storage. The world database targets a different server version, so database
-    /// features are off; lighting and area names arrive with the retail sky work and stay null.
+    /// features are off. Lighting and liquids are loaded from the DB2 tables; area names are not yet
+    /// and stay null.
     /// </summary>
     public static ClientServices OpenRetail(string directory)
     {
@@ -51,8 +52,16 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
 
         try
         {
-            var maps = new Db2Tables(files, definitions).Maps();
-            return new ClientServices(files, maps, null, null, false, $"RETAIL {files.Build} · {maps.Count} maps");
+            var tables = new Db2Tables(files, definitions);
+            var maps = tables.Maps();
+            // Liquid texture sequences are named by path; the trimmed listfile maps them to FileDataIDs.
+            if (PathListfile.Find(AppContext.BaseDirectory) is { } listfile)
+            {
+                files.PathResolver = PathListfile.Load(listfile).Resolve;
+            }
+
+            RetailLiquids.Register(files, RetailLiquids.Load(tables));
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, false, $"RETAIL {files.Build} · {maps.Count} maps");
         }
         catch
         {

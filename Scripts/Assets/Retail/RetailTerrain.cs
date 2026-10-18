@@ -6,7 +6,8 @@ namespace ACWorldEdit.Assets;
 /// Builds a <see cref="TerrainTile"/> from the split retail ADT files. CPU-only and Godot-free; runs on
 /// a worker. The root file holds geometry, the texture file holds layers and opacity, and both list
 /// their 256 MCNK chunks in the same order (the texture MCNKs carry no index of their own).
-/// Placements come from the optional obj0 file; liquids (MH2O) are not read yet, so the tile reports none.
+/// Placements come from the optional obj0 file; liquids (MH2O in the root file) are read when the
+/// retail liquid tables are supplied.
 /// </summary>
 public static class RetailTerrain
 {
@@ -17,7 +18,7 @@ public static class RetailTerrain
     const uint HasVertexColors = 0x40;
     const int MaxDefinedLayers = 8;
 
-    public static TerrainTile Read(TileKey key, byte[] root, byte[] textures, bool bigAlpha, byte[]? objects = null)
+    public static TerrainTile Read(TileKey key, byte[] root, byte[] textures, bool bigAlpha, byte[]? objects = null, RetailLiquids? liquids = null)
     {
         RequireVersion(root, "root");
         RequireVersion(textures, "texture");
@@ -45,7 +46,9 @@ public static class RetailTerrain
             result.Add(chunk);
         }
 
-        return new TerrainTile(key, result, objects == null ? [] : WorldObjects.Read(objects), []);
+        // Liquids (MH2O) live in the root file. Without the liquid tables the tile simply has none.
+        var surfaces = liquids == null ? [] : LiquidData.Terrain(root, liquids).GroupBy(s => s.LiquidType).Select(LiquidData.Merge).ToList();
+        return new TerrainTile(key, result, objects == null ? [] : WorldObjects.Read(objects), surfaces);
     }
 
     static void RequireVersion(byte[] file, string name)

@@ -59,6 +59,83 @@ public sealed class ClientLighting
     public IEnumerable<LightRegion> ForMap(uint mapId) => Regions.Where(r => r.ContinentId == mapId);
 
     /// <summary>
+    /// Retail Light, LightParams, LightSkybox and LightData DB2 tables resolved the same way as the
+    /// Wrath ones. Light positions are server coordinates in yards (no 1/36 scale); only the first
+    /// (default weather) LightParams slot is read. LightData rows carry one (time, color) sample each
+    /// and are grouped per LightParams. Returns null on any failure.
+    /// </summary>
+    public static ClientLighting? TryLoadRetail(Db2Tables tables)
+    {
+        try
+        {
+            var samples = new Dictionary<uint, List<DBCD.DBCDRow>>();
+            foreach (var row in tables.Table("LightData").Values)
+            {
+                uint id = Convert.ToUInt32(row["LightParamID"]);
+                if (!samples.TryGetValue(id, out var list))
+                {
+                    samples[id] = list = [];
+                }
+
+                list.Add(row);
+            }
+
+            Dictionary<uint, uint> paramSkybox = [];
+            foreach (var row in tables.Table("LightParams").Values)
+            {
+                paramSkybox[(uint)row.ID] = Convert.ToUInt32(row["LightSkyboxID"]);
+            }
+
+            Dictionary<uint, string> skyboxPaths = [];
+            foreach (var row in tables.Table("LightSkybox").Values)
+            {
+                uint fileId = Convert.ToUInt32(row["SkyboxFileDataID"]);
+                if (fileId != 0)
+                {
+                    skyboxPaths[(uint)row.ID] = AssetRef.FromFileId(fileId);
+                }
+            }
+
+            var regions = new List<LightRegion>();
+            foreach (var row in tables.Table("Light").Values)
+            {
+                var coords = ((Array)row["GameCoords"]).Cast<object>().Select(Convert.ToDouble).ToArray();
+                uint paramsId = Convert.ToUInt32(((Array)row["LightParamsID"]).GetValue(0));
+                var view = WorldCoordinates.ToView(new(coords[0], coords[1], coords[2]));
+                regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), new((float)view.X, (float)view.Y, (float)view.Z),
+                    Convert.ToSingle(row["GameFalloffStart"]), Convert.ToSingle(row["GameFalloffEnd"]), paramsId));
+            }
+
+            LightBand Band(List<DBCD.DBCDRow> rows, string column) =>
+                LightBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), unchecked((uint)Convert.ToInt64(r[column])))));
+
+            Dictionary<uint, LightProfile> profiles = [];
+            foreach (uint paramsId in regions.Select(r => r.ParamsId).Distinct())
+            {
+                if (!samples.TryGetValue(paramsId, out var rows))
+                {
+                    continue;
+                }
+
+                profiles[paramsId] = new(
+                    paramSkybox.GetValueOrDefault(paramsId),
+                    Band(rows, "DirectColor"),
+                    Band(rows, "AmbientColor"),
+                    Band(rows, "SkyTopColor"),
+                    Band(rows, "SkySmogColor"),
+                    Band(rows, "SkyFogColor"));
+            }
+
+            return new(regions, profiles, skyboxPaths);
+        }
+        catch (Exception e)
+        {
+            GD.PushWarning("Retail lighting unavailable: " + e.Message);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Parse the four client tables and resolve every region's Default-slot profile/skybox. Returns
     /// null rather than a partially valid table on any malformed/missing archive data.
     /// </summary>

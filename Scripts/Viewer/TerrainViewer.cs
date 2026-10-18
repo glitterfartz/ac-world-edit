@@ -266,11 +266,6 @@ public partial class TerrainViewer : Node3D
             }
 
             message = world.Tiles.Count > 0 ? $"{name} · {world.Tiles.Count} terrain tiles" : $"{name} · interior WMO";
-            if (assets.Kind == ClientKind.Retail)
-            {
-                message += " · retail liquids and sky are not loaded yet";
-            }
-
             if (smoke)
             {
                 smokeOriginal = requested;

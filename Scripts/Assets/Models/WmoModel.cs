@@ -72,10 +72,10 @@ public static class WmoModel
             var sub = Chunks.Read(gb.Bytes, gp.Data + 68, gp.Data + gp.Size).GroupBy(c => c.Tag).ToDictionary(g => g.Key, g => g.First());
             // Group liquid IDs can use legacy numbering. The root flag determines
             // interpretation; a legacy zero derives its category from visible tile flags.
-            if (sub.TryGetValue("MLIQ", out var lq) && AssetRef.IsFileReference(path))
+            // Retail liquid types come from the LiquidType DB2 table; without it the liquid is skipped.
+            if (sub.TryGetValue("MLIQ", out var lq) && store.Kind == ClientKind.Retail && RetailLiquids.For(store) == null)
             {
-                // Liquid types come from LiquidType.dbc, which retail ships as a DB2 table; arrives with the liquid milestone.
-                warnings.Add("Retail WMO liquids are not loaded yet.");
+                warnings.Add("Retail WMO liquids are not loaded: the liquid tables are unavailable.");
             }
             else if (sub.TryGetValue("MLIQ", out lq))
             {

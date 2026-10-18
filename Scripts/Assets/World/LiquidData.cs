@@ -88,7 +88,7 @@ public static class LiquidData
     /// Decode every MH2O layer and its bitmap/height/UV/depth layout; flat oceans retain native
     /// level. Fall back to MCLQ only in chunks not covered by MH2O.
     /// </summary>
-    public static List<ModelSurface> Terrain(byte[] bytes)
+    public static List<ModelSurface> Terrain(byte[] bytes, RetailLiquids? retail = null)
     {
         List<ModelSurface> result = [];
         HashSet<int> covered = [];
@@ -120,11 +120,18 @@ public static class LiquidData
                     int p = offset + layer * 24;
                     uint type = data.H(p);
                     // 0=height floats then depth bytes, 1=height floats then UV pairs,
-                    // 2=depth bytes only with the flat native level. Arrays are planar.
+                    // 2=depth bytes only with the flat native level, 3=heights, UV pairs, then depth
+                    // (retail only). Arrays are planar. Retail may store a LiquidObject ID where
+                    // Wrath stored the format; the object decides type and format.
                     int format = data.H(p + 2);
+                    if (retail != null)
+                    {
+                        (type, format) = retail.Layer(type, (uint)format);
+                    }
+
                     float level = data.F(p + 4);
                     int ox = data.Bytes[p + 12], oy = data.Bytes[p + 13], w = data.Bytes[p + 14], h = data.Bytes[p + 15];
-                    if (w == 0 || h == 0 || ox + w > 8 || oy + h > 8 || format > 2)
+                    if (w == 0 || h == 0 || ox + w > 8 || oy + h > 8 || format > (retail != null ? 3 : 2))
                     {
                         throw new InvalidDataException("Unsupported MH2O vertex grid.");
                     }
@@ -137,21 +144,22 @@ public static class LiquidData
 
                     if (vertex != 0)
                     {
-                        data.Range(vertex, n, format == 0 ? 5 : format == 1 ? 8 : 1);
+                        data.Range(vertex, n, format switch { 0 => 5, 1 => 8, 2 => 1, _ => 9 });
                     }
 
-                    int depth = vertex + (format == 0 ? n * 4 : 0);
+                    bool hasHeights = format != 2, hasUv = format is 1 or 3, hasDepth = format != 1;
+                    int depth = vertex + (hasHeights ? n * 4 : 0) + (format == 3 ? n * 4 : 0);
                     result.Add(Grid(
                         w, h, type,
                         point: (x, y) => new(
                             (chunk % 16 * 8 + ox + x) * Step,
-                            vertex != 0 && format != 2 ? data.F(vertex + (y * (w + 1) + x) * 4) : level,
+                            vertex != 0 && hasHeights ? data.F(vertex + (y * (w + 1) + x) * 4) : level,
                             (chunk / 16 * 8 + oy + y) * Step),
                         visible: (x, y) => mask == 0 ||
                             (data.Bytes[mask + (y * w + x) / 8] & (1 << ((y * w + x) % 8))) != 0,
-                        opacity: (x, y) => vertex != 0 && format != 1
+                        opacity: (x, y) => vertex != 0 && hasDepth
                             ? data.Bytes[depth + y * (w + 1) + x] / 255f : 1,
-                        texcoord: (x, y) => format == 1 && vertex != 0
+                        texcoord: (x, y) => hasUv && vertex != 0
                             ? new(data.H(vertex + n * 4 + (y * (w + 1) + x) * 4) / 255f,
                                 data.H(vertex + n * 4 + (y * (w + 1) + x) * 4 + 2) / 255f)
                             : new((ox + x) / 4f, (oy + y) / 4f)));

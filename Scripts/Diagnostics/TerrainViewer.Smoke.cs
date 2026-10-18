@@ -44,6 +44,8 @@ public partial class TerrainViewer
             clientShotTile = new TileKey(int.Parse(parts[0]), int.Parse(parts[1]));
         }
 
+        clientShotWater = flags.Contains("--client-shot-water");
+        clientShot |= clientShotWater;
         clientSmoke = flags.Contains("--client-smoke") || clientShot;
     }
 

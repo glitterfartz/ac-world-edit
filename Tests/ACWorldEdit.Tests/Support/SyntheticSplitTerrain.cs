@@ -25,6 +25,34 @@ public static class SyntheticSplitTerrain
         /// <summary>Emit empty MCLY chunks, as untextured retail tiles do.</summary>
         public bool NoLayers { get; init; }
         public uint Version { get; init; } = 18;
+
+        /// <summary>MH2O payload for the root file (see <see cref="Mh2o"/>); null emits none.</summary>
+        public byte[]? Liquid { get; init; }
+    }
+
+    /// <summary>
+    /// MH2O payload with one layer in chunk 0: a w-by-h cell grid at the chunk origin, flat level
+    /// <paramref name="level"/>, with the given vertex data (null = no vertex data, all cells visible).
+    /// </summary>
+    public static byte[] Mh2o(ushort type, ushort formatOrObject, float level, int w, int h, byte[]? vertexData)
+    {
+        byte[] data = new byte[3072 + 24 + (vertexData?.Length ?? 0)];
+        BitConverter.GetBytes(3072).CopyTo(data, 0);
+        BitConverter.GetBytes(1).CopyTo(data, 4);
+        int p = 3072;
+        BitConverter.GetBytes(type).CopyTo(data, p);
+        BitConverter.GetBytes(formatOrObject).CopyTo(data, p + 2);
+        BitConverter.GetBytes(level).CopyTo(data, p + 4);
+        BitConverter.GetBytes(level).CopyTo(data, p + 8);
+        data[p + 14] = (byte)w;
+        data[p + 15] = (byte)h;
+        if (vertexData != null)
+        {
+            BitConverter.GetBytes(p + 24).CopyTo(data, p + 20);
+            vertexData.CopyTo(data, p + 24);
+        }
+
+        return data;
     }
 
     static void Chunk(BinaryWriter w, string tag, byte[] payload)
@@ -50,6 +78,11 @@ public static class SyntheticSplitTerrain
         using var w = new BinaryWriter(m);
         Chunk(w, "MVER", BitConverter.GetBytes(options.Version));
         Chunk(w, "MHDR", new byte[64]);
+        if (options.Liquid != null)
+        {
+            Chunk(w, "MH2O", options.Liquid);
+        }
+
         for (int i = 0; i < options.ChunkCount; i++)
         {
             int x = i % 16, y = i / 16;
