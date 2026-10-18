@@ -105,13 +105,7 @@ public partial class AreaTriggerOverlay : Node3D
         if (hard)
         {
             Deselect();
-            foreach (var marker in markers.Values)
-            {
-                marker.Node.Visible = false;
-                marker.Node.QueueFree();
-            }
-
-            markers.Clear();
+            markers.FreeAll(m => m.Node);
             lookup.Clear();
             triggers = [];
             list?.Clear();
@@ -168,20 +162,14 @@ public partial class AreaTriggerOverlay : Node3D
                 Deselect();
             }
 
-            markers[entry].Node.QueueFree();
-            markers.Remove(entry);
+            markers.Free(entry, m => m.Node);
         }
 
         lookup.Clear();
         foreach (var trigger in result.Triggers)
         {
             lookup[trigger.Entry] = trigger;
-            if (markers.TryGetValue(trigger.Entry, out var old))
-            {
-                old.Node.QueueFree();
-                markers.Remove(trigger.Entry);
-            }
-
+            markers.Free(trigger.Entry, m => m.Node);
             AddMarker(trigger);
         }
 

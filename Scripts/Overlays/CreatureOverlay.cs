@@ -191,13 +191,7 @@ public partial class CreatureOverlay : Node3D
             gizmo.Visible = false;
         }
 
-        foreach (var batch in modelBatches.Values)
-        {
-            batch.Node.Visible = false;
-            batch.Node.QueueFree();
-        }
-
-        modelBatches.Clear();
+        modelBatches.FreeAll(b => b.Node);
         appearances.Clear();
         modelUpdate = 0;
         animationListGuid = null;
@@ -206,13 +200,7 @@ public partial class CreatureOverlay : Node3D
             animation.Disabled = true;
         }
 
-        foreach (var marker in markers.Values)
-        {
-            marker.Node.Visible = false;
-            marker.Node.QueueFree();
-        }
-
-        markers.Clear();
+        markers.FreeAll(m => m.Node);
         admitted.Clear();
         records = [];
         pendingMarkers.Clear();
@@ -454,9 +442,7 @@ public partial class CreatureOverlay : Node3D
                 }
             }
 
-            batch.Value.Node.Visible = false;
-            batch.Value.Node.QueueFree();
-            modelBatches.Remove(batch.Key);
+            modelBatches.Free(batch.Key, b => b.Node);
         }
 
         foreach (var group in groups)
@@ -508,10 +494,7 @@ public partial class CreatureOverlay : Node3D
         var incoming = spawns.ToDictionary(s => s.Guid);
         foreach (uint guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
         {
-            var marker = markers[guid];
-            marker.Node.Visible = false;
-            marker.Node.QueueFree();
-            markers.Remove(guid);
+            markers.Free(guid, m => m.Node);
             admitted.Remove(guid);
         }
 

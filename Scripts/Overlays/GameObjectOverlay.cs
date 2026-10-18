@@ -107,39 +107,20 @@ public partial class GameObjectOverlay : Node3D
         if (hard)
         {
             AdmittedObjectCount = 0;
-            foreach (var batch in batches.Values)
-            {
-                batch.Node.Visible = false;
-                batch.Node.QueueFree();
-            }
-
-            foreach (var node in fallbacks.Values)
-            {
-                node.Visible = false;
-                node.QueueFree();
-            }
-
-            foreach (var node in names.Values)
-            {
-                node.Visible = false;
-                node.QueueFree();
-            }
-
-            names.Clear();
-            batches.Clear();
-            fallbacks.Clear();
+            batches.FreeAll(b => b.Node);
+            fallbacks.FreeAll(n => n);
+            names.FreeAll(n => n);
             paths.Clear();
             lookup.Clear();
             records = [];
             list?.Clear();
             Deselect();
             modelUpdate = 0;
-            queryStatus = LayerEnabled ? "Loading nearby objects…" : "GameObject layer hidden";
         }
-        else
-        {
-            queryStatus = LayerEnabled ? (records.Count > 0 ? "Refreshing nearby objects…" : "Loading nearby objects…") : "GameObject layer hidden";
-        }
+
+        queryStatus = !LayerEnabled ? "GameObject layer hidden"
+            : !hard && records.Count > 0 ? "Refreshing nearby objects…"
+            : "Loading nearby objects…";
     }
 
     public void Update(Camera3D camera)
@@ -260,9 +241,7 @@ public partial class GameObjectOverlay : Node3D
                 continue;
             }
 
-            pair.Value.Node.Visible = false;
-            pair.Value.Node.QueueFree();
-            batches.Remove(pair.Key);
+            batches.Free(pair.Key, b => b.Node);
         }
 
         foreach (var pair in groups)
@@ -285,9 +264,7 @@ public partial class GameObjectOverlay : Node3D
         {
             if (!missing.Contains(pair.Key))
             {
-                pair.Value.Visible = false;
-                pair.Value.QueueFree();
-                fallbacks.Remove(pair.Key);
+                fallbacks.Free(pair.Key, n => n);
             }
         }
 
@@ -316,9 +293,7 @@ public partial class GameObjectOverlay : Node3D
         {
             if (!namedGuids.Contains(pair.Key))
             {
-                pair.Value.Visible = false;
-                pair.Value.QueueFree();
-                names.Remove(pair.Key);
+                names.Free(pair.Key, n => n);
             }
         }
 

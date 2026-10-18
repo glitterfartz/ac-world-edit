@@ -114,13 +114,7 @@ public partial class GraveyardOverlay : Node3D
         if (hard)
         {
             Deselect();
-            foreach (var marker in markers.Values)
-            {
-                marker.Node.Visible = false;
-                marker.Node.QueueFree();
-            }
-
-            markers.Clear();
+            markers.FreeAll(m => m.Node);
             lookup.Clear();
             sites = [];
             list?.Clear();
@@ -179,8 +173,7 @@ public partial class GraveyardOverlay : Node3D
                 Deselect();
             }
 
-            markers[id].Node.QueueFree();
-            markers.Remove(id);
+            markers.Free(id, m => m.Node);
         }
 
         lookup.Clear();

@@ -109,16 +109,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// </summary>
     public void Clear()
     {
-        foreach (var b in batches.Values)
-        {
-            if (GodotObject.IsInstanceValid(b.Node))
-            {
-                b.Node.Visible = false;
-                b.Node.QueueFree();
-            }
-        }
-
-        batches.Clear();
+        batches.FreeAll(b => b.Node);
         tiles.Clear();
         owner.Clear();
         globals = [];
@@ -191,9 +182,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
                 continue;
             }
 
-            pair.Value.Node.Visible = false;
-            pair.Value.Node.QueueFree();
-            batches.Remove(pair.Key);
+            batches.Free(pair.Key, b => b.Node);
         }
 
         foreach (var pair in desired)
