@@ -811,30 +811,12 @@ public partial class CreatureOverlay : Node3D
             return null;
         }
 
-        Vector3 origin = camera.ProjectRayOrigin(screen), direction = camera.ProjectRayNormal(screen);
-        uint? nearest = null;
-        float distance = float.MaxValue;
+        var ray = PickRay.From(camera, screen);
+        Vector3 origin = ray.Origin, direction = ray.Direction;
         var modelGuids = new HashSet<uint>();
-        foreach (var batch in modelBatches.Values)
-        {
-            if (!batch.Node.ModelReady)
-            {
-                continue;
-            }
-
-            for (int i = 0; i < batch.Guids.Length; i++)
-            {
-                uint guid = batch.Guids[i];
-                modelGuids.Add(guid);
-                var inverse = batch.Node.Transforms![i].AffineInverse();
-                float? hit = ScenePicking.BoxHit(batch.Node.Bounds, inverse * origin, inverse.Basis * direction);
-                if (hit.HasValue && hit.Value < distance && hit.Value < camera.Far)
-                {
-                    nearest = guid;
-                    distance = hit.Value;
-                }
-            }
-        }
+        var model = ScenePicking.NearestInBatches(ray, modelBatches.Values, modelGuids);
+        uint? nearest = model?.Guid;
+        float distance = model?.Distance ?? float.MaxValue;
 
         foreach (var marker in markers.Values)
         {

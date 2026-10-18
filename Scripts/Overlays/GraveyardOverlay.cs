@@ -334,8 +334,8 @@ public partial class GraveyardOverlay : Node3D
             return null;
         }
 
-        var origin = camera.ProjectRayOrigin(screen);
-        var direction = camera.ProjectRayNormal(screen);
+        var ray = PickRay.From(camera, screen);
+        var (origin, direction) = (ray.Origin, ray.Direction);
         (uint Id, float Distance)? best = null;
         foreach (var (id, marker) in markers)
         {

@@ -345,8 +345,8 @@ public partial class AreaTriggerOverlay : Node3D
             return null;
         }
 
-        var origin = camera.ProjectRayOrigin(screen);
-        var direction = camera.ProjectRayNormal(screen);
+        var ray = PickRay.From(camera, screen);
+        var (origin, direction) = (ray.Origin, ray.Direction);
         (uint Entry, float Distance)? best = null;
         foreach (var (entry, marker) in markers)
         {

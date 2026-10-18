@@ -389,28 +389,11 @@ public partial class GameObjectOverlay : Node3D
             return null;
         }
 
-        var origin = camera.ProjectRayOrigin(screen);
-        var direction = camera.ProjectRayNormal(screen);
-        uint? nearest = null;
-        float distance = float.MaxValue;
-        foreach (var batch in batches.Values)
-        {
-            if (!batch.Node.ModelReady)
-            {
-                continue;
-            }
-
-            for (int i = 0; i < batch.Guids.Length; i++)
-            {
-                var inverse = batch.Node.Transforms![i].AffineInverse();
-                var hit = ScenePicking.BoxHit(batch.Node.Bounds, inverse * origin, inverse.Basis * direction);
-                if (hit.HasValue && hit.Value < distance && hit.Value < camera.Far)
-                {
-                    nearest = batch.Guids[i];
-                    distance = hit.Value;
-                }
-            }
-        }
+        var ray = PickRay.From(camera, screen);
+        var (origin, direction) = (ray.Origin, ray.Direction);
+        var model = ScenePicking.NearestInBatches(ray, batches.Values);
+        uint? nearest = model?.Guid;
+        float distance = model?.Distance ?? float.MaxValue;
 
         foreach (var pair in fallbacks)
         {
