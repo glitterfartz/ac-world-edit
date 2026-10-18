@@ -4,14 +4,15 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Opt-in check that the selected client profile opens: it waits for the client services and the
-/// default map's WDT, prints one summary line and exits. It needs no rendering and no database, so
-/// it runs headless: <c>--headless -- --client-smoke</c> with ACWORLD_CLIENT_PROFILE and the
-/// profile's folder variable set. It proves loading, not visual output.
+/// Opt-in check that the selected client profile opens: it waits for the client services, the
+/// default map's WDT and, for a terrain map, its first streamed tile, prints one summary line and
+/// exits. It needs no database, so it runs headless: <c>--headless -- --client-smoke</c> with
+/// ACWORLD_CLIENT_PROFILE and the profile's folder variable set. It proves loading, not visual output.
 /// </summary>
 public partial class TerrainViewer
 {
-    bool clientSmoke;
+    bool clientSmoke, clientShot;
+    int clientShotFrames;
     double clientSmokeTime;
 
     void ClientSmoke(double delta)
@@ -59,6 +60,18 @@ public partial class TerrainViewer
             }
 
             return;
+        }
+
+        // --client-shot additionally waits for the visible terrain to finish, lets a few frames render and
+        // saves artifacts/client-shot.png for inspection. It needs a real window (not --headless).
+        if (clientShot && DisplayServer.GetName() != "headless")
+        {
+            if (!TerrainSettled || clientShotFrames++ < 30)
+            {
+                return;
+            }
+
+            GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot.png"));
         }
 
         GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} build={store.Build} maps={mapList.Count} map={mapList[Math.Max(maps.Selected, 0)].Directory} tiles={world.Tiles.Count} streamed={loaded.Count} textures={renderer.TextureCount} globalWmos={world.GlobalObjects.Count} database={databaseEnabled} catalogs={models.Catalog != null} message=\"{message}\"");

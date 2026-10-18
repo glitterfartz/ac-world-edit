@@ -101,17 +101,23 @@ public class SplitTerrainTests
     }
 
     [Fact]
-    public void MissingMdidFailsClosed()
+    public void LayersWithoutAnMdidListFailClosed()
     {
         Assert.Throws<InvalidDataException>(() => Read(new SyntheticSplitTerrain.Options { SkipMdid = true }));
     }
 
     [Fact]
-    public void LayerPointingAtAZeroFileIdFailsOnlyWhenUsed()
+    public void UntexturedTilesWithEmptyMdidAndLayersAreValid()
     {
-        Assert.NotEmpty(Read(new SyntheticSplitTerrain.Options { Textures = [1000, 0] }).Chunks);
+        var tile = Read(new SyntheticSplitTerrain.Options { Textures = [], NoLayers = true });
+        Assert.All(tile.Chunks, c => Assert.Empty(c.Layers));
+    }
+
+    [Fact]
+    public void LayerPointingAtAZeroFileIdKeepsAnEmptyName()
+    {
         var options = new SyntheticSplitTerrain.Options { Textures = [1000, 0], LayerAlpha = new byte[4096] };
-        Assert.Throws<InvalidDataException>(() => Read(options));
+        Assert.Equal("", Read(options).Chunks[0].Layers[1].Texture);
     }
 
     [Fact]

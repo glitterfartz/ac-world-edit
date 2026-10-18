@@ -27,6 +27,7 @@ public partial class TerrainViewer : Node3D
     // CPU height copies for ground snapping; same lifetime as the loaded tile node.
     readonly Dictionary<TileKey, TerrainHeights> terrainHeights = [];
     readonly HashSet<TileKey> failed = [];
+    readonly HashSet<string> reportedNotices = [];
     readonly HashSet<TileKey> wanted = [];
     Task<PreparedTile>? pending;
     TileKey? pendingKey;
@@ -87,7 +88,7 @@ public partial class TerrainViewer : Node3D
     /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
     /// generations cannot be published.
     /// </summary>
-    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors);
+    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices);
     /// <summary>
     /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
     /// archives.
@@ -317,6 +318,7 @@ public partial class TerrainViewer : Node3D
         building = null;
         buildIndex = 0;
         failed.Clear();
+        reportedNotices.Clear();
         wanted.Clear();
         world = null;
         currentMapId = null;
@@ -506,15 +508,22 @@ public partial class TerrainViewer : Node3D
         var tile = map.ReadTile(assets, key);
         var decoded = new Dictionary<string, BlpTexture>(StringComparer.OrdinalIgnoreCase);
         List<string> errors = [];
+        List<string> notices = [];
         int overLayered = tile.Chunks.Count(c => c.DroppedLayers > 0);
         if (overLayered > 0)
         {
-            errors.Add($"{key}: {overLayered} chunks define more than 4 texture layers; the extra layers are not drawn.");
+            notices.Add("Some chunks define more than 4 texture layers; the extra layers are not drawn.");
         }
 
         foreach (string path in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             token.ThrowIfCancellationRequested();
+            if (path.Length == 0)
+            {
+                notices.Add("Some terrain layers name FileDataID 0; they are drawn with the fallback texture.");
+                continue;
+            }
+
             try
             {
                 decoded[path] = BlpTexture.Decode(assets.Read(path));
@@ -544,7 +553,7 @@ public partial class TerrainViewer : Node3D
             }
         }
 
-        return new(version, tile, decoded, errors);
+        return new(version, tile, decoded, errors, notices);
     }
 
     /// <summary>
@@ -875,6 +884,15 @@ public partial class TerrainViewer : Node3D
                         foreach (string e in result.Errors)
                         {
                             GD.PushWarning(e);
+                        }
+                    }
+
+                    // Per-map limitations repeat on every tile, so each is reported once per map.
+                    foreach (string notice in result.Notices)
+                    {
+                        if (reportedNotices.Add(notice))
+                        {
+                            GD.PushWarning(notice);
                         }
                     }
                 }

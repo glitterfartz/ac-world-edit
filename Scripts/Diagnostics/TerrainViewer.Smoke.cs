@@ -36,7 +36,8 @@ public partial class TerrainViewer
         contentSmoke = flags.Contains("--content-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
-        clientSmoke = flags.Contains("--client-smoke");
+        clientShot = flags.Contains("--client-shot");
+        clientSmoke = flags.Contains("--client-smoke") || clientShot;
     }
 
     /// <summary>

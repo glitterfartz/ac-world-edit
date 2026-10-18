@@ -224,7 +224,8 @@ public sealed class TerrainTile
     /// <summary>
     /// Decode MCLY layer records and their MCAL opacity into <paramref name="chunk"/>. The texture names
     /// are whatever identifies a texture for the client (paths for Wrath, FileDataID references for
-    /// retail); an empty name marks an unusable slot and fails only when a layer refers to it.
+    /// retail); an empty name marks an unusable slot (FileDataID 0): the layer is kept so the caller can
+    /// report it and the renderer shows its fallback texture.
     /// Wrath allows four layers; retail files may define up to eight, of which the shader blends the
     /// first four and the rest are counted in <see cref="TerrainChunk.DroppedLayers"/>.
     /// </summary>
@@ -243,7 +244,7 @@ public sealed class TerrainTile
         for (int i = 0; i < count; i++)
         {
             int p = i * 16, texture = checked((int)MpqArchive.U(layers, p));
-            if (texture >= textures.Count || textures[texture].Length == 0)
+            if (texture >= textures.Count)
             {
                 throw new InvalidDataException("Bad terrain texture index");
             }

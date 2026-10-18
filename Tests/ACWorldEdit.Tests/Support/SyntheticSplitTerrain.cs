@@ -21,6 +21,9 @@ public static class SyntheticSplitTerrain
         /// <summary>Additional layers after the blended one, each reusing the same alpha map and texture index.</summary>
         public int ExtraLayers { get; init; }
         public bool SkipMdid { get; init; }
+
+        /// <summary>Emit empty MCLY chunks, as untextured retail tiles do.</summary>
+        public bool NoLayers { get; init; }
         public uint Version { get; init; } = 18;
     }
 
@@ -102,7 +105,7 @@ public static class SyntheticSplitTerrain
         {
             using var body = new MemoryStream();
             using var f = new BinaryWriter(body);
-            int layerCount = options.LayerAlpha == null ? 1 : 2 + options.ExtraLayers;
+            int layerCount = options.NoLayers ? 0 : options.LayerAlpha == null ? 1 : 2 + options.ExtraLayers;
             byte[] layers = new byte[layerCount * 16];
             for (int layer = 1; layer < layerCount; layer++)
             {
@@ -111,7 +114,7 @@ public static class SyntheticSplitTerrain
             }
 
             f.Write(Sub("MCLY", layers));
-            if (options.LayerAlpha != null)
+            if (options.LayerAlpha != null && layerCount > 0)
             {
                 f.Write(Sub("MCAL", options.LayerAlpha));
             }

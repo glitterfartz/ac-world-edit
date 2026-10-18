@@ -98,6 +98,97 @@ public class RetailCorpusTests
     }
 
     [RetailClientFact]
+    public void EveryMapWdtParsesAndOneTilePerTerrainMapDecodes()
+    {
+        var failures = new SortedDictionary<string, List<string>>();
+        void Fail(string kind, string map)
+        {
+            if (!failures.TryGetValue(kind, out var list))
+            {
+                failures[kind] = list = [];
+            }
+
+            list.Add(map);
+        }
+
+        int terrainMaps = 0, checkedLayers = 0;
+        foreach (var info in RetailData.Tables.Maps().Where(m => m.WdtFileId != 0))
+        {
+            WorldMap map;
+            try
+            {
+                map = new WorldMap(info.Directory, RetailData.Files.Read(AssetRef.FromFileId(info.WdtFileId)));
+            }
+            catch (Exception e)
+            {
+                // Known gap until the retail WMO milestone: global-WMO placements use FileDataIDs, not MWMO names.
+                Fail(e.GetType().Name + ": " + e.Message, info.Directory);
+                continue;
+            }
+
+            if (map.Tiles.Count == 0)
+            {
+                continue;
+            }
+
+            terrainMaps++;
+            var key = map.Tiles.OrderBy(k => k.X * 64 + k.Y).ElementAt(map.Tiles.Count / 2);
+            try
+            {
+                var tile = map.ReadTile(RetailData.Files, key);
+                foreach (string texture in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Where(t => t.Length > 0).Distinct())
+                {
+                    BlpTexture.Decode(RetailData.Files.Read(texture));
+                }
+
+                checkedLayers += CheckUncompressedAlphaSpans(map, key);
+            }
+            catch (Exception e)
+            {
+                Fail("tile " + e.GetType().Name + ": " + e.Message, info.Directory);
+            }
+        }
+
+        Assert.True(terrainMaps > 20, $"only {terrainMaps} terrain maps");
+        // Only maps whose sole content is a global WMO (placed by FileDataID) are an accepted gap until the WMO milestone.
+        var unexpected = failures.Where(f => !f.Key.Contains("placement", StringComparison.OrdinalIgnoreCase) && !f.Key.Contains("neither terrain nor a global WMO", StringComparison.Ordinal)).ToList();
+        Assert.True(unexpected.Count == 0, string.Join("; ", unexpected.Select(f => $"{f.Key}: {string.Join(",", f.Value)}")));
+        Assert.True(checkedLayers > 0, "no uncompressed alpha layer was checked");
+    }
+
+    /// <summary>
+    /// The map's BigAlpha flag decides 4096- versus 2048-byte uncompressed alpha; the span between a
+    /// layer's offset and the next layer (or the end of MCAL) must agree. Returns layers checked.
+    /// </summary>
+    static int CheckUncompressedAlphaSpans(WorldMap map, TileKey key)
+    {
+        var bytes = RetailData.Files.Read(AssetRef.FromFileId(map.Files[key].Textures));
+        int checkedLayers = 0;
+        foreach (var chunk in Chunks.Read(bytes).Where(c => c.Tag == "MCNK"))
+        {
+            var subs = Chunks.Read(bytes, chunk.Data, chunk.Data + chunk.Size).ToList();
+            var layers = subs.First(s => s.Tag == "MCLY");
+            var alpha = subs.FirstOrDefault(s => s.Tag == "MCAL");
+            int count = layers.Size / 16;
+            for (int i = 1; i < count; i++)
+            {
+                uint flags = MpqArchive.U(bytes, layers.Data + i * 16 + 4);
+                if ((flags & 0x100) == 0 || (flags & 0x200) != 0)
+                {
+                    continue;
+                }
+
+                int offset = (int)MpqArchive.U(bytes, layers.Data + i * 16 + 8);
+                int next = i + 1 < count ? (int)MpqArchive.U(bytes, layers.Data + (i + 1) * 16 + 8) : alpha.Size;
+                Assert.True(next - offset == (map.BigAlpha ? 4096 : 2048), $"{map.Name} {key}: uncompressed alpha span {next - offset} with BigAlpha={map.BigAlpha}");
+                checkedLayers++;
+            }
+        }
+
+        return checkedLayers;
+    }
+
+    [RetailClientFact]
     public void ElwynnChunksSitAtTheirServerPositions()
     {
         // Chunk (x, y) of tile (tx, ty) starts at world (17066.67 - 533.33*ty - 33.33*y, 17066.67 - 533.33*tx - 33.33*x).

@@ -60,14 +60,15 @@ public static class RetailTerrain
 
     /// <summary>
     /// MDID lists the diffuse texture FileDataID for each MCLY texture index. A zero entry is an unused
-    /// slot and stays empty so only a layer that refers to it fails.
+    /// slot and stays empty; a layer that refers to it keeps the empty name. Untextured tiles (empty
+    /// MDID and empty MCLY) are valid; a layer index beyond the list still fails.
     /// </summary>
     static string[] TextureNames(byte[] textures)
     {
         var mdid = Chunks.Read(textures).FirstOrDefault(c => c.Tag == "MDID");
-        if (mdid.Size == 0 || mdid.Size % 4 != 0)
+        if (mdid.Size % 4 != 0)
         {
-            throw new InvalidDataException("Missing or malformed MDID");
+            throw new InvalidDataException("Malformed MDID");
         }
 
         var names = new string[mdid.Size / 4];
