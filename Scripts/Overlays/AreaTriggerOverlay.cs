@@ -10,8 +10,13 @@ namespace ACWorldEdit;
 /// selection. Shapes mirror Player::IsInAreaTriggerRadius; the client's own AreaTrigger.dbc (which
 /// decides when the trigger fires) is not shown. Hidden layers stop queries and free volumes.
 /// </summary>
-public partial class AreaTriggerOverlay : Node3D
+public partial class AreaTriggerOverlay : RegionOverlay
 {
+    // Off by default: large tavern and zone-line volumes would otherwise cover towns.
+    public AreaTriggerOverlay() : base(false, "AreaTrigger layer hidden")
+    {
+    }
+
     const float LabelDistance = 150;
     static readonly Dictionary<AreaTriggerKind, Color> KindColors = new()
     {
@@ -23,14 +28,10 @@ public partial class AreaTriggerOverlay : Node3D
         [AreaTriggerKind.Unlinked] = new("8a8f96")
     };
 
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
-    // Off by default: large tavern and zone-line volumes would otherwise cover towns.
-    public bool LayerEnabled { get; private set; }
     public uint? SelectedEntry => selected;
     public bool HasSelection => selected.HasValue;
     public IReadOnlyList<AreaTriggerRecord> Triggers => triggers;
     public bool IsLoading => query.IsLoading;
-    public string QueryStatus => queryStatus;
     public event Action? SelectionChanged;
     public event Action<WorldPose>? FocusRequested;
     /// <summary>Open the behavior editor on this trigger's SmartAI rules.</summary>
@@ -45,10 +46,7 @@ public partial class AreaTriggerOverlay : Node3D
     AreaTriggerRecord[] triggers = [];
     MeshInstance3D? outline;
     uint? selected;
-    CreatureRegion? region;
-    SpawnQueryPoint? point;
     readonly RegionQuery<AreaTriggerRegionResult> query = new();
-    string queryStatus = "AreaTrigger layer hidden";
     string message = "";
 
     StandardMaterial3D Fill(AreaTriggerKind kind)
@@ -71,35 +69,13 @@ public partial class AreaTriggerOverlay : Node3D
         return material;
     }
 
-    public void SetRegion(CreatureRegion? value)
+    protected override void OnRegionChanged(bool mapChanged)
     {
-        if (region == value)
-        {
-            return;
-        }
-
-        bool mapChanged = region?.Map != value?.Map;
-        region = value;
         point = null;
         Restart(mapChanged);
     }
 
-    public void SetLayerEnabled(bool value)
-    {
-        if (LayerEnabled != value)
-        {
-            LayerEnabled = value;
-            Restart(true);
-        }
-    }
-
-    public void Refresh() => Restart(true);
-
-    /// <summary>
-    /// Cancel and reissue the query. A hard restart (map, layer or search change) frees every volume
-    /// and the selection; a region step keeps the display until the new result arrives.
-    /// </summary>
-    void Restart(bool hard)
+    protected override void Restart(bool hard)
     {
         query.Restart();
         if (hard)

@@ -8,12 +8,14 @@ namespace ACWorldEdit;
 /// Bounded read-only GO projection. Only admitted nearby objects request native meshes; all SQL
 /// records remain detached, and switching filters/layers cancels obsolete generations.
 /// </summary>
-public partial class GameObjectOverlay : Node3D
+public partial class GameObjectOverlay : RegionOverlay
 {
+    public GameObjectOverlay() : base(true, "Waiting for a world…")
+    {
+    }
+
     public ModelLibrary Models { get; set; } = null!;
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public SpawnPreview Preview { get; private set; } = new();
-    public bool LayerEnabled { get; private set; } = true;
     public IReadOnlyList<GameObjectSpawn> Records => records;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
     public uint? SelectedGuid => selected;
@@ -39,15 +41,12 @@ public partial class GameObjectOverlay : Node3D
     };
     Label3D selectionLabel = null!;
     uint? selected;
-    CreatureRegion? region;
-    SpawnQueryPoint? point;
     readonly RegionQuery<GameObjectRegionResult> query = new();
     long modelUpdate;
     ItemList list = null!;
     LineEdit search = null!;
     Label status = null!, title = null!, identity = null!, details = null!;
     Button fly = null!;
-    string queryStatus = "Waiting for a world…";
     public override void _Ready()
     {
         selectionLabel = new Label3D
@@ -60,20 +59,14 @@ public partial class GameObjectOverlay : Node3D
         AddChild(selectionLabel);
     }
 
-    public void SetRegion(CreatureRegion? value)
+    protected override void OnRegionChanged(bool mapChanged)
     {
-        if (region == value)
-        {
-            return;
-        }
-
-        if (region?.Map != value?.Map)
+        if (mapChanged)
         {
             point = null;
         }
 
-        region = value;
-        Restart();
+        Restart(true);
     }
 
     public void SetPreview(SpawnPreview value)
@@ -83,16 +76,6 @@ public partial class GameObjectOverlay : Node3D
         Restart();
     }
 
-    public void SetLayerEnabled(bool value)
-    {
-        if (LayerEnabled != value)
-        {
-            LayerEnabled = value;
-            Restart();
-        }
-    }
-
-    public void Refresh() => Restart();
     /// <summary>
     /// Cancel and reissue the query. `hard` wipes every native model/fallback/label and the record
     /// cache (used for an explicit filter/map/layer change); the routine camera-driven requery in
@@ -101,7 +84,7 @@ public partial class GameObjectOverlay : Node3D
     /// this, flying triggered a visible "clear and reload" every time the quantized query center
     /// shifted, even though almost the same objects were still in range.
     /// </summary>
-    void Restart(bool hard = true)
+    protected override void Restart(bool hard = true)
     {
         query.Restart();
         if (hard)

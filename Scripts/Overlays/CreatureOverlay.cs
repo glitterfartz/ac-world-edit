@@ -8,8 +8,12 @@ namespace ACWorldEdit;
 /// Transient scene/list projection of bounded database records. CreatureDraft owns durable moves
 /// and ModelLibrary shared resources; unloading markers never changes rows.
 /// </summary>
-public partial class CreatureOverlay : Node3D
+public partial class CreatureOverlay : RegionOverlay
 {
+    public CreatureOverlay() : base(true, "Waiting for an outdoor map.")
+    {
+    }
+
     public ModelLibrary? Models { get; set; }
 
     readonly Dictionary<uint, CreatureAppearance?> appearances = [];
@@ -49,30 +53,16 @@ public partial class CreatureOverlay : Node3D
     Label details = null!, status = null!;
     LineEdit filter = null!;
     Label selectionName = null!, selectionMeta = null!;
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public SpawnPreview Preview { get; private set; } = new();
-    public bool LayerEnabled { get; private set; } = true;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
 
     public event Action? SelectionChanged;
-    SpawnQueryPoint? queryPoint;
     readonly HashSet<uint> admitted = [];
     public void SetPreview(SpawnPreview preview)
     {
         preview.Validate();
         Preview = preview;
-        Restart(false);
-    }
-
-    public void SetLayerEnabled(bool value)
-    {
-        if (LayerEnabled == value)
-        {
-            return;
-        }
-
-        LayerEnabled = value;
-        Restart(false);
+        Restart(true);
     }
 
     public void Deselect()
@@ -93,7 +83,6 @@ public partial class CreatureOverlay : Node3D
         ShowPose(null);
     }
 
-    CreatureRegion? region;
     // The query may finish after cancellation; RegionQuery publishes only the current generation
     // and keeps at most one database query active.
     readonly RegionQuery<CreatureRegionResult> query = new();
@@ -101,12 +90,9 @@ public partial class CreatureOverlay : Node3D
     uint? selectedGuid;
     List<CreatureSpawn> pendingMarkers = [];
     bool truncated;
-    string queryStatus = "Waiting for an outdoor map.";
     public uint? SelectedGuid => selectedGuid;
     public IReadOnlyList<CreatureSpawn> Records => records;
     public bool IsLoading => query.IsLoading || pendingMarkers.Count > 0;
-
-    public string QueryStatus => queryStatus;
 
     public event Action<WorldPose>? FocusRequested;
     /// <summary>
@@ -134,35 +120,28 @@ public partial class CreatureOverlay : Node3D
     /// Restart on region changes while retaining same-map selection. Map changes clear
     /// source-specific selection.
     /// </summary>
-    public void SetRegion(CreatureRegion? next)
+    protected override void OnRegionChanged(bool mapChanged)
     {
-        if (region == next)
-        {
-            return;
-        }
-
-        bool preserveSelection = next != null && next.Map == region?.Map;
-        region = next;
+        bool preserveSelection = region != null && !mapChanged;
         if (!preserveSelection)
         {
-            queryPoint = null;
+            point = null;
         }
 
-        Restart(preserveSelection);
+        Restart(!preserveSelection);
     }
 
-    /// <summary>
-    /// Invalidate the snapshot and request fresh data through normal cancellation.
-    /// </summary>
-    public void Refresh() => Restart();
+    /// <summary>A refresh keeps the markers until the new result is diffed in.</summary>
+    protected override bool RefreshIsHard => false;
+
     /// <summary>
     /// Advance generation and cancel the query, awaiting its completion before starting another.
-    /// Bound concurrency and reject stale results.
+    /// Bound concurrency and reject stale results. A soft restart keeps the selection and markers.
     /// </summary>
-    void Restart(bool preserveSelection = true)
+    protected override void Restart(bool hard)
     {
         query.Restart();
-        if (preserveSelection)
+        if (!hard)
         {
             // Same region (routine camera movement, search/filter tweaks): cancel and reissue the
             // query but leave every current marker/model exactly as it is. ReconcileSpawns() diffs
@@ -246,17 +225,17 @@ public partial class CreatureOverlay : Node3D
         if (LayerEnabled && region != null)
         {
             var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
-            var point = SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
-            if (point != queryPoint)
+            var next = SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            if (point != next)
             {
-                queryPoint = point;
-                Restart(true);
+                point = next;
+                Restart(false);
             }
         }
 
         if (query.TakeSettledSearch())
         {
-            Restart(false);
+            Restart(true);
         }
 
         query.Poll(Publish, error => queryStatus = error);
@@ -265,9 +244,9 @@ public partial class CreatureOverlay : Node3D
             var next = region;
             var path = Connection();
             var preview = Preview;
-            var point = queryPoint;
+            var center = point;
             string term = filter.Text;
-            query.Start(token => new CreatureSource(path).ReadAsync(next, preview, point, term, token));
+            query.Start(token => new CreatureSource(path).ReadAsync(next, preview, center, term, token));
         }
 
         if (pendingMarkers.Count > 0)

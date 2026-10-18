@@ -10,8 +10,12 @@ namespace ACWorldEdit;
 /// a faction-colored ground ring and a name label per graveyard. Source rows stay detached and
 /// read-only; GraveyardDraft owns durable local edits. Hidden layers stop queries and free markers.
 /// </summary>
-public partial class GraveyardOverlay : Node3D
+public partial class GraveyardOverlay : RegionOverlay
 {
+    public GraveyardOverlay() : base(true, "Waiting for a world…")
+    {
+    }
+
     /// <summary>
     /// Icon height above the graveyard point, in yards.
     /// </summary>
@@ -19,12 +23,9 @@ public partial class GraveyardOverlay : Node3D
     const float LabelHeight = 6.2f;
     static readonly Color AllianceColor = new("4a90ff"), HordeColor = new("e8484a"), NeutralColor = new("c0c4c8"), MixedColor = new("f2f2f2"), UnlinkedColor = new("6b6f75"), SelectedColor = new("ffcf69");
 
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
     public Func<AreaLookup?> Areas { get; set; } = () => null;
-    public bool LayerEnabled { get; private set; } = true;
     public IReadOnlyList<GraveyardSite> Sites => sites;
     public bool IsLoading => query.IsLoading;
-    public string QueryStatus => queryStatus;
     public event Action? SelectionChanged;
     public event Action<WorldPose>? FocusRequested;
 
@@ -33,10 +34,7 @@ public partial class GraveyardOverlay : Node3D
     IReadOnlyList<GraveyardSite> sites = [];
     ImageTexture icon = null!;
     uint? selected;
-    CreatureRegion? region;
-    SpawnQueryPoint? point;
     readonly RegionQuery<GraveyardRegionResult> query = new();
-    string queryStatus = "Waiting for a world…";
     string sourceKey = "";
 
     public override void _Ready()
@@ -79,36 +77,14 @@ public partial class GraveyardOverlay : Node3D
         return ImageTexture.CreateFromImage(image);
     }
 
-    public void SetRegion(CreatureRegion? value)
+    protected override void OnRegionChanged(bool mapChanged)
     {
-        if (region == value)
-        {
-            return;
-        }
-
-        bool mapChanged = region?.Map != value?.Map;
-        region = value;
         // Re-center nearest-first ordering on the camera at the next update.
         point = null;
         Restart(mapChanged);
     }
 
-    public void SetLayerEnabled(bool value)
-    {
-        if (LayerEnabled != value)
-        {
-            LayerEnabled = value;
-            Restart(true);
-        }
-    }
-
-    public void Refresh() => Restart(true);
-
-    /// <summary>
-    /// Cancel and reissue the query. A hard restart (map, layer or search change) frees every marker
-    /// and selection; a region step keeps the display until the new result arrives.
-    /// </summary>
-    void Restart(bool hard)
+    protected override void Restart(bool hard)
     {
         query.Restart();
         if (hard)
