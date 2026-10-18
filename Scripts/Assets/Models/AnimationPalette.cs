@@ -17,12 +17,14 @@ public sealed record AnimationPalette(int Width, int Height, byte[] Pixels, floa
         int bones = Math.Max(1, model.Bones.Length);
         int frames = model.Duration > 0 && model.Bones.Length > 0 ? Math.Clamp((int)(model.Duration / 1000f * 30) + 1, 2, 601) : 1;
         float[] pixels = new float[checked(bones * 16 * frames)];
+        Matrix4x4[] matrices = new Matrix4x4[bones];
+        byte[] state = new byte[bones];
+        float time = 0;
         for (int frame = 0; frame < frames; frame++)
         {
             token.ThrowIfCancellationRequested();
-            float time = frames == 1 ? 0 : frame * model.Duration / (float)(frames - 1);
-            Matrix4x4[] matrices = new Matrix4x4[bones];
-            byte[] state = new byte[bones];
+            time = frames == 1 ? 0 : frame * model.Duration / (float)(frames - 1);
+            Array.Clear(state);
             // 0=unvisited, 1=on recursion stack, 2=complete. Parent order in the native
             // file is not guaranteed, so recursive memoization also detects cycles.
             Matrix4x4 Bone(int i)
@@ -54,8 +56,11 @@ public sealed record AnimationPalette(int Width, int Height, byte[] Pixels, floa
                 int p = (frame * bones + i) * 16;
                 // System.Numerics uses row-vector matrices. The shader loads these rows
                 // as GLSL columns, giving the transpose needed for column-vector skinning.
-                float[] values = [m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24, m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44];
-                values.CopyTo(pixels, p);
+                Span<float> values = pixels.AsSpan(p, 16);
+                values[0] = m.M11; values[1] = m.M12; values[2] = m.M13; values[3] = m.M14;
+                values[4] = m.M21; values[5] = m.M22; values[6] = m.M23; values[7] = m.M24;
+                values[8] = m.M31; values[9] = m.M32; values[10] = m.M33; values[11] = m.M34;
+                values[12] = m.M41; values[13] = m.M42; values[14] = m.M43; values[15] = m.M44;
             }
         }
 
