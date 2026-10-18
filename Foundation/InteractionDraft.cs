@@ -125,14 +125,17 @@ public sealed class InteractionDraft : IDisposable
     /// </summary>
     public void Execute(string source, RowSet snapshot, string label, IEnumerable<RowEdit> edits)
     {
-        if (Conflicts(source, snapshot).Count > 0)
+        var incoming = edits.ToList();
+        var touched = incoming.Select(e => (e.Table, e.Key)).ToHashSet();
+        var stale = Conflicts(source, snapshot).Where(touched.Contains).ToList();
+        if (stale.Count > 0)
         {
-            throw new InvalidDataException("Source rows changed since this draft; review conflicts before editing.");
+            throw new InvalidDataException($"Source rows changed since this draft; review conflicts before editing ({string.Join(", ", stale.Select(c => $"{c.Table} {c.Key}"))}).");
         }
 
         var effective = Effective(source, snapshot);
         var kept = new List<RowEdit>();
-        foreach (var edit in edits)
+        foreach (var edit in incoming)
         {
             ValidateEdit(edit);
             var schema = InteractionTables.Find(edit.Table);

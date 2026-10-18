@@ -109,7 +109,9 @@ public class InteractionDraftTests
             var conflicts = draft.Conflicts("db", changed);
             Check(conflicts.Contains(("npc_text", "60")) && conflicts.Contains(("gossip_menu", "51|61")), "Conflict detection");
             Check(draft.Effective("db", changed).Get(InteractionTables.NpcText, "60")!.T("text0_0") == "Changed in DB", "Conflicting rows keep database value");
-            Rejects(() => draft.Execute("db", changed, "blocked", [new("creature_template", "42", template, template.With("subname", "x"))]), "Edit over conflicts accepted");
+            Rejects(() => draft.Execute("db", changed, "blocked", [new("npc_text", "60", text.With("text0_0", "Changed in DB"), text.With("text0_0", "x"))]), "Edit over a conflicting row accepted");
+            // Conflicts elsewhere do not block an unrelated row (other editors' stale rows must not stop a SmartAI save).
+            draft.Execute("db", changed, "unrelated", [new("creature_template", "42", template, template.With("subname", "x"))]);
         }
 
         Console.WriteLine("INTERACTION_DRAFT_CHECKS_PASSED command/submenu/greeting/vendor/quest-fix/rules/whitelist/key/stale/undo/redo/reopen/conflicts/broadcast/render");
