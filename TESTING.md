@@ -96,6 +96,7 @@ Done:
 - [x] SpawnPreview filters; InteractionRows / NpcInteraction models and InteractionRules
 - [x] Extracted and tested: `ContentDrafts`, `InteractionEdits`, `PoseText`, `SettingsResolver`, `AreaLookup`, `LightBand`
 - [x] GdUnit4: PendingChangesWindow, PickerPopup
+- [x] AssetRef FileDataID reference strings; MPQ store refuses them (`AssetRefTests`, the store check is Corpus)
 
 Not extracted (nothing static or pure to move without changing behavior; revisit if these windows are refactored):
 - `QuestEditorWindow*`: only static lookup tables (`XpTiers`, `RacePresets`); validation already lives in `QuestModel`.

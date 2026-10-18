@@ -160,11 +160,11 @@ public static class ClientStyle
 /// Client BLP icon textures keyed by path. Requests decode on a worker; finished images become
 /// textures on the main thread. Cleared when the asset store changes.
 /// </summary>
-public sealed class ClientIcons(Func<AssetStore?> store)
+public sealed class ClientIcons(Func<IClientFiles?> store)
 {
     readonly Dictionary<string, Texture2D?> ready = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, Task<BlpTexture?>> pending = new(StringComparer.OrdinalIgnoreCase);
-    AssetStore? owner;
+    IClientFiles? owner;
 
     /// <summary>
     /// Texture for a client path, or null while loading or when missing. Call again after

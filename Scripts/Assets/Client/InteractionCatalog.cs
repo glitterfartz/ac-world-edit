@@ -32,7 +32,7 @@ public sealed class InteractionCatalog
         }
     }
 
-    public static InteractionCatalog Load(AssetStore store) => new(
+    public static InteractionCatalog Load(IClientFiles store) => new(
         new DbcTable(store.Read("DBFilesClient/Spell.dbc")),
         new DbcTable(store.Read("DBFilesClient/TaxiNodes.dbc")),
         new DbcTable(store.Read("DBFilesClient/ItemExtendedCost.dbc")),

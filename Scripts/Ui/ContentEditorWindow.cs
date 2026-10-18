@@ -14,12 +14,12 @@ namespace ACWorldEdit;
 public partial class ContentEditorWindow : PanelContainer
 {
     public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
-    public Func<AssetStore?> Store { get; set; } = () => null;
+    public Func<IClientFiles?> Store { get; set; } = () => null;
     public ContentDrafts Drafts { get; set; } = null!;
 
     // One catalog per loaded asset store, shared by every editor window (reloading archives gives
     // the store a new identity). A failed load degrades to null: names and icons are then limited.
-    static AssetStore? catalogStore;
+    static IClientFiles? catalogStore;
     static Task<InteractionCatalog?>? catalogLoad;
     protected InteractionCatalog? catalog;
     Vector2? dragOffset;

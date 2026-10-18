@@ -13,7 +13,7 @@ public static class M2Model
     /// Read the model/first skin, choose a native sequence, resolve texture replacements and compact
     /// referenced vertices. Preserve bone lookup chains and winding across the viewer basis.
     /// </summary>
-    public static ModelData Read(AssetStore store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1)
+    public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1)
     {
         path = BinaryAsset.ModelPath(path);
         var b = new BinaryAsset(store.Read(path));

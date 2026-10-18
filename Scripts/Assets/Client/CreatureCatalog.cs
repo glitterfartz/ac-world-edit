@@ -15,7 +15,7 @@ public sealed record CreatureAppearance(string Path, string[] Textures, float Sc
 /// </summary>
 public sealed class CreatureCatalog
 {
-    readonly AssetStore store;
+    readonly IClientFiles store;
     readonly DbcTable displays, models, extras, sections;
     // Key: race, sex, CharSections type, variation, color. Value: CharSections row id.
     readonly Dictionary<(uint, uint, uint, uint, uint), uint> sectionRows = [];
@@ -27,7 +27,7 @@ public sealed class CreatureCatalog
     /// Load client lookup tables once per store on a decode worker; animation IDs/names populate the
     /// selected preview menu.
     /// </summary>
-    public CreatureCatalog(AssetStore store)
+    public CreatureCatalog(IClientFiles store)
     {
         this.store = store;
         displays = new(store.Read("DBFilesClient/CreatureDisplayInfo.dbc"));

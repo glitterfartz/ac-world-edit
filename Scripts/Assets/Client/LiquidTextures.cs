@@ -10,12 +10,12 @@ namespace ACWorldEdit.Assets;
 /// </summary>
 public sealed class LiquidTextures
 {
-    static readonly ConditionalWeakTable<AssetStore, LiquidTextures> stores = new();
-    readonly AssetStore store;
+    static readonly ConditionalWeakTable<IClientFiles, LiquidTextures> stores = new();
+    readonly IClientFiles store;
     readonly DbcTable types;
     readonly Dictionary<uint, BlpTexture> atlases = [];
     readonly Dictionary<string, BlpTexture> sequences = new(StringComparer.OrdinalIgnoreCase);
-    LiquidTextures(AssetStore source)
+    LiquidTextures(IClientFiles source)
     {
         store = source;
         types = new(source.Read("DBFilesClient/LiquidType.dbc"));
@@ -25,7 +25,7 @@ public sealed class LiquidTextures
     /// Get the catalog for exactly this client store. Catalogs hold decoded bytes and allocate no
     /// Godot resources.
     /// </summary>
-    public static LiquidTextures For(AssetStore store) => stores.GetValue(store, s => new(s));
+    public static LiquidTextures For(IClientFiles store) => stores.GetValue(store, s => new(s));
     /// <summary>
     /// Read the client SoundBank category used for water/ocean versus lava/slime preview blending.
     /// </summary>

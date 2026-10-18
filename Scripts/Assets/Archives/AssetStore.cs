@@ -12,11 +12,13 @@ public sealed record MapInfo(int Id, string Directory, string Name);
 /// archive readers seek mutable streams; detached decoded bytes can safely cross worker
 /// boundaries.
 /// </summary>
-public sealed class AssetStore : IDisposable
+public sealed class AssetStore : IClientFiles
 {
     readonly List<MpqArchive> archives = [];
     readonly object gate = new();
     public int ArchiveCount => archives.Count;
+    public ClientKind Kind => ClientKind.Wrath335;
+    public string Build { get; }
 
     /// <summary>
     /// Mount only the configured archive list. Failure closes every archive already opened; the
@@ -38,6 +40,7 @@ public sealed class AssetStore : IDisposable
         }
 
         var paths = profile.Resolve(directory);
+        Build = profile.Build;
         try
         {
             foreach (var path in paths)
@@ -63,6 +66,11 @@ public sealed class AssetStore : IDisposable
     /// </summary>
     public byte[] Read(string path)
     {
+        if (AssetRef.IsFileReference(path))
+        {
+            throw new NotSupportedException("MPQ clients address files by path, not FileDataID: " + path);
+        }
+
         lock (gate)
         {
             for (int i = archives.Count - 1; i >= 0; i--)
@@ -83,6 +91,11 @@ public sealed class AssetStore : IDisposable
     /// </summary>
     public bool Exists(string path)
     {
+        if (AssetRef.IsFileReference(path))
+        {
+            return false;
+        }
+
         lock (gate)
         {
             return archives.Any(a => a.Contains(path));
@@ -94,6 +107,11 @@ public sealed class AssetStore : IDisposable
     /// </summary>
     public string Source(string path)
     {
+        if (AssetRef.IsFileReference(path))
+        {
+            return "missing";
+        }
+
         lock (gate)
         {
             return archives.LastOrDefault(a => a.Contains(path))?.Path ?? "missing";

@@ -62,7 +62,7 @@ public sealed class ClientLighting
     /// Parse the four client tables and resolve every region's Default-slot profile/skybox. Returns
     /// null rather than a partially valid table on any malformed/missing archive data.
     /// </summary>
-    public static ClientLighting? TryLoad(AssetStore store)
+    public static ClientLighting? TryLoad(IClientFiles store)
     {
         try
         {

@@ -65,7 +65,7 @@ public sealed class ModelLibrary
     readonly Shader baseShader = GD.Load<Shader>("res://Shaders/model.gdshader");
     readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
     readonly ImageTexture fallback;
-    AssetStore? store;
+    IClientFiles? store;
     CancellationTokenSource cancellation = new();
     // A variant progresses through exactly one decode slot, one upload slot, then
     // the shared ready cache. Partial GPU resources are never bound to scene instances.
@@ -114,7 +114,7 @@ public sealed class ModelLibrary
     /// Cancel/await the old worker before releasing client resources and loading the next catalog.
     /// The caller may dispose old MPQs only after this completes.
     /// </summary>
-    public async Task SetStore(AssetStore? next)
+    public async Task SetStore(IClientFiles? next)
     {
         cancellation.Cancel();
         if (pending != null)
@@ -667,7 +667,7 @@ public sealed class ModelLibrary
     /// Worker-only native parse, texture/atlas decode and animation sampling. Texture failures
     /// retain warnings/fallbacks; all Godot resource creation is deferred to Update.
     /// </summary>
-    Entry DecodeModel(ModelKey key, AssetStore source, CancellationToken token)
+    Entry DecodeModel(ModelKey key, IClientFiles source, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         var data = key.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase)

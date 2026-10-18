@@ -12,7 +12,7 @@ public static class WmoModel
     /// Read bounded groups, adjust winding, decode liquids and compact compatible materials. Default
     /// doodad set zero is always included; repeated set entries are deduplicated.
     /// </summary>
-    public static ModelData Read(AssetStore store, string path, ushort doodadSet = 0, CancellationToken token = default)
+    public static ModelData Read(IClientFiles store, string path, ushort doodadSet = 0, CancellationToken token = default)
     {
         var bytes = store.Read(path);
         var b = new BinaryAsset(bytes);

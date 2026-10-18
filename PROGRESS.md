@@ -2,6 +2,31 @@
 
 Current state only. Update or remove entries as things change; do not append history (git has it).
 
+## Multi-client support (retail first) - milestones 0-1 done (spike; IClientFiles refactor), 2 next
+
+- Plan: `~/.claude/plans/let-s-begin-to-plan-quizzical-pike.md` (AssetRef/IClientFiles refactor, Retail CASC backend,
+  explicit profile picker, DB off in Retail).
+- Milestone 1 (refactor, Wrath unchanged): `IClientFiles` (Kind/Build/Read/Exists/Source) is implemented by `AssetStore`
+  and replaces it in the readers, catalogs and `ModelLibrary`. A FileDataID is carried in the existing path strings as
+  `fdid:123` (`AssetRef`), so ModelKey/TerrainLayer/WorldObject/ModelSurface are unchanged; the MPQ store refuses it.
+  `ClientServices` is deferred to milestone 2, where a second bundle makes it worth having. Default xUnit and the
+  corpus run pass; `--reload-smoke` and any graphical smoke were not run.
+- Confirmed on `X:\Games\World of Warcraft` (12.1.5.70448) with a throwaway net8 console (scratchpad, not in repo):
+  - CascLib.dll (TCWorldEdit's) opens the install. Every path lookup failed (err 2), so Retail is FDID-only.
+  - DBCD 2.3.1 (net8.0) loads Map, AreaTable, Light, LightData, LightParams, LightSkybox, LiquidType, LiquidMaterial,
+    LiquidObject for 70448. Pinned TCWorldEdit defs cover Map; the other eight came from WoWDBDefs master b9a63096.
+  - DB2 FDIDs (found by layout-hash scan): Map 1349477, AreaTable 1353545, Light 1375579, LightData 1375580,
+    LightParams 1334669, LightSkybox 1308501, LiquidType 1371380, LiquidMaterial 1132538, LiquidObject 1308058.
+  - Azeroth WDT 775971: MVER/MPHD/MAIN/MAID; a MAID entry is 8 FDIDs (root, obj0, obj1, tex0, lod, +3 map textures).
+    Tile root = MH2O + MCNK(header + MCVT/MCNR/MCSE), tex0 = MDID/MHID/MAMP + MCNK(MCLY/MCAL), obj0 = MDDF/MODF.
+    MDDF flag 0x40 and MODF flag 0x8 (FDID) were set. ADT/WDT tags are byte-reversed, M2 chunk tags are not.
+  - M2 is MD21 (v272) wrapping MD20; vertices/textures/render flags/bones/sequences counts sit at the Wrath offsets.
+  - WMO root has GFID and MODI and no MOTX.
+- New problem: Retail `LiquidType.Texture` holds texture path strings, which cannot be resolved without a listfile.
+  Needs a decision (optional cached community listfile vs. hand-mapped FDIDs) before retail liquids.
+- Retail sky data differs: Light has one `LightParamsID`; `LightData` holds the per-time colors directly.
+- Not checked: CascLib inside the Godot host; M2 SFID/TXID/AFID contents and skins; WMO groups; MH2O; anything visual.
+
 ## Behavior editor (SmartAI, AIName, creature_text, areatrigger_scripts)
 
 - Opens from inspector Behavior…, the interaction window, quest givers and the toolbar/menu. Scopes: creature
@@ -51,7 +76,7 @@ Current state only. Update or remove entries as things change; do not append his
 
 ## Testing (see TESTING.md)
 
-- xUnit: 413 default tests; GdUnit4: 16 (ConnectionForm, UserSettings, PendingChangesWindow, PickerPopup).
+- xUnit: 425 default tests; GdUnit4: 16 (ConnectionForm, UserSettings, PendingChangesWindow, PickerPopup).
 - Logic extracted from Godot unchanged and tested: Foundation `ContentDrafts`, `InteractionEdits`, `PoseText`;
   `Scripts/Data/SettingsResolver`; `Scripts/Assets/World/{AreaLookup,LightBand}` (Godot halves are partials in
   `Scripts/Viewer`). New files lack `.uid` until Godot opens the project.

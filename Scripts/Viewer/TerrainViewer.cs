@@ -478,7 +478,7 @@ public partial class TerrainViewer : Node3D
     /// Worker-only tile/texture decode with cancellation checks. Carry decode errors to the main
     /// thread for explicit warnings.
     /// </summary>
-    PreparedTile Prepare(AssetStore assets, WorldMap map, TileKey key, int version, CancellationToken token)
+    PreparedTile Prepare(IClientFiles assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         var tile = new TerrainTile(key, assets.Read(map.TilePath(key)), map.BigAlpha);
@@ -825,7 +825,7 @@ public partial class TerrainViewer : Node3D
     /// budget and schedule the nearest missing tile. Explicit map/store arguments preserve a stable
     /// non-null worker source.
     /// </summary>
-    void UpdateTerrainStreaming(WorldMap activeWorld, AssetStore activeAssets)
+    void UpdateTerrainStreaming(WorldMap activeWorld, IClientFiles activeAssets)
     {
         UpdateWanted();
         if (pending is { IsCompleted: true })
