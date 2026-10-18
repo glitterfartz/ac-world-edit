@@ -120,7 +120,7 @@ public sealed class ModelLibrary
     /// Cancel/await the old worker before releasing client resources and loading the next catalog.
     /// The caller may dispose old MPQs only after this completes.
     /// </summary>
-    public async Task SetStore(IClientFiles? next)
+    public async Task SetStore(IClientFiles? next, CreatureCatalog? creatures = null, GameObjectCatalog? gameObjects = null)
     {
         cancellation.Cancel();
         if (pending != null)
@@ -167,11 +167,8 @@ public sealed class ModelLibrary
         textures.Clear();
         failed.Clear();
         store = next;
-        // The creature and GameObject catalogs read 3.3.5 DBC tables; other clients have no
-        // database-backed spawns to display, so they run without catalogs.
-        bool wrath = next is { Kind: ClientKind.Wrath335 };
-        Catalog = wrath ? await Task.Run(() => new CreatureCatalog(next!)) : null;
-        GameObjects = wrath ? await Task.Run(() => new GameObjectCatalog(next!)) : null;
+        Catalog = creatures;
+        GameObjects = gameObjects;
     }
 
     /// <summary>

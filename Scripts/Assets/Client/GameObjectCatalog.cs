@@ -11,6 +11,6 @@ public sealed class GameObjectCatalog(IClientFiles store)
             throw new InvalidDataException("This GameObject display has no client model.");
         }
 
-        return AssetRef.IsWmo(path) ? path : BinaryAsset.ModelPath(path);
+        return BinaryAsset.ModelPath(path);
     }
 }

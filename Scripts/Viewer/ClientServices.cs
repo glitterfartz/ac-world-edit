@@ -5,10 +5,10 @@ namespace ACWorldEdit;
 /// <summary>
 /// Everything the viewer needs from one opened client, chosen once at load time so no parser has to
 /// branch on the client version. Lighting and area names are null where a client family does not
-/// provide them yet; DatabaseEnabled is false when the world database cannot describe that client.
+/// provide them yet; the creature and GameObject catalogs read 3.3.5 DBC tables and are null for clients without database-backed spawns; DatabaseEnabled is false when the world database cannot describe that client.
 /// Open runs on a worker: it reads archives and tables but creates no Godot resources.
 /// </summary>
-public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description)
+public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, CreatureCatalog? Creatures = null, GameObjectCatalog? GameObjects = null)
 {
     public static ClientServices Open(ClientKind kind, string directory, string? listfile = null) =>
         kind == ClientKind.Retail ? OpenRetail(directory, listfile) : OpenWrath(directory);
@@ -22,7 +22,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         try
         {
             var maps = store.Maps();
-            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoad(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps");
+            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoad(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
         }
         catch
         {

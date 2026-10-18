@@ -45,17 +45,17 @@ public partial class TerrainViewer : Node3D
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
     // Active client profile and one remembered folder per profile (chosen in File → Load client…); empty until chosen.
-    ClientKind profile = ClientKind.Wrath335;
+    ClientProfile profile = ClientProfile.For(ClientKind.Wrath335);
     string wrathDirectory = "", retailDirectory = "";
     // False when the open client cannot be described by the world database (Retail): database layers,
     // teleports and the content editors stay off instead of querying a mismatched server.
     bool databaseEnabled = true;
     string dataDirectory
     {
-        get => profile == ClientKind.Retail ? retailDirectory : wrathDirectory;
+        get => profile.Kind == ClientKind.Retail ? retailDirectory : wrathDirectory;
         set
         {
-            if (profile == ClientKind.Retail)
+            if (profile.Kind == ClientKind.Retail)
             {
                 retailDirectory = value;
             }
@@ -172,9 +172,10 @@ public partial class TerrainViewer : Node3D
 
         await models.SetStore(null);
         old?.Dispose();
-        message = profile == ClientKind.Retail ? "Reading CASC storage and map list…" : "Reading MPQ tables and map list…";
+        message = profile.LoadingMessage;
         string path = dataDirectory;
-        var kind = profile;
+        var chosen = profile;
+        var kind = chosen.Kind;
         string listfile = UserSettings.ListfilePath();
         try
         {
@@ -187,7 +188,7 @@ public partial class TerrainViewer : Node3D
             ApplyClientProfile(result.Description);
             maps.Clear();
             int selected = 0;
-            await models.SetStore(store);
+            await models.SetStore(store, result.Creatures, result.GameObjects);
             for (int i = 0; i < mapList.Count; i++)
             {
                 maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})");
@@ -211,7 +212,7 @@ public partial class TerrainViewer : Node3D
             busy = false;
         }
 
-        if (store != null && kind == ClientKind.Retail)
+        if (store != null && chosen.OffersListfile)
         {
             OfferListfile();
         }

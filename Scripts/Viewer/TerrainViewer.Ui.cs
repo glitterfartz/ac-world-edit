@@ -38,10 +38,10 @@ public partial class TerrainViewer
             MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        profile = UserSettings.LoadProfile();
+        profile = ClientProfile.For(UserSettings.LoadProfile());
         wrathDirectory = UserSettings.LoadDataDirectory();
         retailDirectory = UserSettings.LoadRetailDirectory();
-        databaseEnabled = profile != ClientKind.Retail;
+        databaseEnabled = profile.SupportsDatabase;
         var theme = new Theme();
         theme.DefaultFontSize = 15;
         theme.SetColor("font_color", "Label", new Color("e7eef4"));
@@ -92,7 +92,7 @@ public partial class TerrainViewer
         box.AddChild(title);
         clientLabel = new Label
         {
-            Text = "WORLD VIEWER  /  " + (profile == ClientKind.Retail ? "RETAIL" : "WRATH 3.3.5")
+            Text = "WORLD VIEWER  /  " + profile.Title
         };
         clientLabel.AddThemeColorOverride("font_color", new Color("5bd8c2"));
         clientLabel.AddThemeFontSizeOverride("font_size", 12);
@@ -508,10 +508,10 @@ public partial class TerrainViewer
     /// </summary>
     void ChooseClient()
     {
-        var dialog = new ClientPickerDialog(profile, kind => kind == ClientKind.Retail ? retailDirectory : wrathDirectory);
+        var dialog = new ClientPickerDialog(profile.Kind, kind => kind == ClientKind.Retail ? retailDirectory : wrathDirectory);
         dialog.Chosen += async (kind, directory) =>
         {
-            profile = kind;
+            profile = ClientProfile.For(kind);
             dataDirectory = directory;
             UserSettings.SaveProfile(kind);
             if (kind == ClientKind.Retail)
@@ -562,7 +562,7 @@ public partial class TerrainViewer
     /// </summary>
     async Task StartupPrompts()
     {
-        if (databaseEnabled && !OS.GetCmdlineUserArgs().Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal)))
+        if (databaseEnabled && !anySmoke)
         {
             var saved = connection.Settings;
             string? error = await Task.Run(() => ACWorldEdit.Data.DatabaseDiagnostics.TestAsync(saved));

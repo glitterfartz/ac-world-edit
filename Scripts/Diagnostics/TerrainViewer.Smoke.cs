@@ -12,6 +12,8 @@ public partial class TerrainViewer
     double waterTime, waterReady;
     readonly List<double> waterFrames = [];
     bool reloadSmoke;
+    // Set once from the command line; interactive-only startup prompts check it.
+    bool anySmoke;
     bool LocatePending => pendingLocate != null;
     int reloadStage;
     double reloadTime;
@@ -22,6 +24,7 @@ public partial class TerrainViewer
     void ConfigureSmokeChecks()
     {
         var flags = OS.GetCmdlineUserArgs().ToHashSet();
+        anySmoke = flags.Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal));
         waterInterior = flags.Contains("--water-interior-smoke");
         waterSmoke = flags.Contains("--water-smoke") || waterInterior;
         smoke = flags.Contains("--terrain-smoke");

@@ -1,3 +1,4 @@
+using System.Threading;
 using Godot;
 using ACWorldEdit.Assets;
 
@@ -61,14 +62,25 @@ public partial class TerrainViewer
         AddChild(dialog);
         dialog.PopupCentered();
         // Progress callbacks arrive on pool threads; touch the UI only through deferred calls.
-        var progress = new Progress<(long Read, long Total)>(p => Callable.From(() =>
+        long shownMegabytes = -1;
+        var progress = new Progress<(long Read, long Total)>(p =>
         {
-            if (IsInstanceValid(bar))
+            // The label shows whole megabytes, so reads inside the same one need no deferred call.
+            long megabytes = p.Read / 1048576;
+            if (Interlocked.Exchange(ref shownMegabytes, megabytes) == megabytes)
             {
-                bar.Value = p.Total > 0 ? (double)p.Read / p.Total : 0;
-                label.Text = p.Total > 0 ? $"{p.Read / 1048576} / {p.Total / 1048576} MB" : $"{p.Read / 1048576} MB";
+                return;
             }
-        }).CallDeferred());
+
+            Callable.From(() =>
+            {
+                if (IsInstanceValid(bar))
+                {
+                    bar.Value = p.Total > 0 ? (double)p.Read / p.Total : 0;
+                    label.Text = p.Total > 0 ? $"{megabytes} / {p.Total / 1048576} MB" : $"{megabytes} MB";
+                }
+            }).CallDeferred();
+        });
         string destination = UserSettings.ListfilePath();
         string? error = null;
         try
@@ -93,7 +105,7 @@ public partial class TerrainViewer
         }
 
         message = "Listfile updated.";
-        if (profile == ClientKind.Retail)
+        if (profile.OffersListfile)
         {
             await LoadClient();
         }
