@@ -13,6 +13,13 @@ public sealed class TeleportSource(DatabaseSettings settings)
 {
     readonly WorldDatabase database = new(settings);
 
+    /// <summary>A random location on the given map, or null when the table has none there.</summary>
+    public static TeleportLocation? PickOnMap(IReadOnlyList<TeleportLocation> rows, ushort map, Random random)
+    {
+        var onMap = rows.Where(r => r.Map == map).ToArray();
+        return onMap.Length == 0 ? null : onMap[random.Next(onMap.Length)];
+    }
+
     public async Task<TeleportLocation[]> ReadAsync(CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);

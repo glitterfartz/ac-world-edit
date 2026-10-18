@@ -70,6 +70,31 @@ public partial class TerrainViewer
         teleports.TooltipText = failure.Length > 0 ? failure : "Jump to a location from the game_tele table";
     }
 
+    /// <summary>
+    /// A random game_tele location on Eastern Kingdoms (map 0) to open instead of the default tile.
+    /// Null without a usable database connection, so the default location is used.
+    /// </summary>
+    async Task<TeleportLocation?> PickStartLocation()
+    {
+        if (!databaseEnabled)
+        {
+            return null;
+        }
+
+        var settings = connection.Settings;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var rows = await Task.Run(() => new TeleportSource(settings).ReadAsync(timeout.Token), timeout.Token);
+            return TeleportSource.PickOnMap(rows, 0, Random.Shared);
+        }
+        catch (Exception error)
+        {
+            GD.Print("Start location: game_tele unavailable, using the default (" + CreatureSource.SafeError(error) + ")");
+            return null;
+        }
+    }
+
     async Task TeleportTo(int index)
     {
         teleports.Select(0);

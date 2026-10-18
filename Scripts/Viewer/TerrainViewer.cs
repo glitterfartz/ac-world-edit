@@ -1,5 +1,7 @@
 using Godot;
 using ACWorldEdit.Assets;
+using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -219,7 +221,25 @@ public partial class TerrainViewer : Node3D
 
         if (store != null && mapList.Count > 0)
         {
+            // Eastern Kingdoms opens at a random game_tele spot when the database is reachable.
+            TeleportLocation? start = null;
+            if (!anySmoke && maps.Selected >= 0 && mapList[maps.Selected].Id == 0)
+            {
+                start = await PickStartLocation();
+                if (start != null)
+                {
+                    var view = WorldCoordinates.ToView(new(start.X, start.Y, start.Z));
+                    tileX.Value = Math.Clamp((int)Math.Floor(view.X / TerrainTile.Size + 32), 0, 63);
+                    tileY.Value = Math.Clamp((int)Math.Floor(view.Z / TerrainTile.Size + 32), 0, 63);
+                }
+            }
+
             await OpenMap();
+            if (start != null && currentMapId == start.Map)
+            {
+                FocusPose(new WorldPose(start.Map, start.X, start.Y, start.Z, start.Orientation));
+                message = $"Started at {start.Name}.";
+            }
         }
     }
 
