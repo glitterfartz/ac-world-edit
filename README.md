@@ -1,6 +1,8 @@
 # ACWorldEdit world viewer
 
-A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs. On first launch it asks for your client `Data` folder (change it later with **File → Load archives…**); the choice is remembered per user. For diagnostics, `ACWORLD_DATA_DIR` overrides it.
+A C# / Godot 4.7.1 .NET viewer for the Wrath 3.3.5 MPQs, with early support for a retail client. On first launch it asks which client to open (**File → Load client…**): Wrath 3.3.5 (its `Data` folder) or Retail (the World of Warcraft install folder holding `.build.info`). Each profile remembers its own folder per user. For diagnostics, `ACWORLD_CLIENT_PROFILE` (`wrath` or `retail`), `ACWORLD_DATA_DIR` and `ACWORLD_RETAIL_DIR` override the saved choices.
+
+The Retail profile currently opens the client read-only and lists its maps; terrain, buildings, liquids and sky are not loaded yet, and database layers and editors are off because the world database does not describe a retail client. It needs `CascLib.dll` in `native/win-x64` (see `Tools/Get-CascLib.ps1`) and the table definitions in `Data/definitions`.
 
 ## Run
 
@@ -153,7 +155,7 @@ Layer and SQL visibility stay in the Scene explorer.
 - Click land in the minimap to jump. Mint tiles are loaded; white marks the camera.
 - Nearby tile radius defaults to **1**, loading up to a 3×3 neighborhood. Increase for a wider view or use 0 for one tile.
 - **View → Terrain cell borders** shows the 16×16 terrain chunks in each tile.
-- **File → Load archives…** chooses another client Data directory and reopens the asset source.
+- **File → Load client…** chooses the client profile and folder and reopens the asset source.
 
 ## Implementation
 

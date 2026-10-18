@@ -1,0 +1,63 @@
+using ACWorldEdit.Assets;
+
+namespace ACWorldEdit;
+
+/// <summary>
+/// Everything the viewer needs from one opened client, chosen once at load time so no parser has to
+/// branch on the client version. Lighting and area names are null where a client family does not
+/// provide them yet; DatabaseEnabled is false when the world database cannot describe that client.
+/// Open runs on a worker: it reads archives and tables but creates no Godot resources.
+/// </summary>
+public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description)
+{
+    public static ClientServices Open(ClientKind kind, string directory) =>
+        kind == ClientKind.Retail ? OpenRetail(directory) : OpenWrath(directory);
+
+    /// <summary>
+    /// Stock 3.3.5.12340 MPQs. Failure disposes the partly opened store.
+    /// </summary>
+    public static ClientServices OpenWrath(string directory)
+    {
+        var store = new AssetStore(ClientFolder.Resolve(ClientKind.Wrath335, directory));
+        try
+        {
+            var maps = store.Maps();
+            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoad(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps");
+        }
+        catch
+        {
+            store.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Retail CASC storage. The world database targets a different server version, so database
+    /// features are off; lighting and area names arrive with the retail sky work and stay null.
+    /// </summary>
+    public static ClientServices OpenRetail(string directory)
+    {
+        string definitions = Db2Tables.FindDefinitions(System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory)
+            ?? throw new FileNotFoundException("Retail table definitions (Data/definitions) were not found next to the game.");
+        CascFiles files;
+        try
+        {
+            files = new CascFiles(directory);
+        }
+        catch (DllNotFoundException)
+        {
+            throw new FileNotFoundException("CascLib.dll was not found; see Tools/Get-CascLib.ps1. The Wrath profile does not need it.");
+        }
+
+        try
+        {
+            var maps = new Db2Tables(files, definitions).Maps();
+            return new ClientServices(files, maps, null, null, false, $"RETAIL {files.Build} · {maps.Count} maps");
+        }
+        catch
+        {
+            files.Dispose();
+            throw;
+        }
+    }
+}

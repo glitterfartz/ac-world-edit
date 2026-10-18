@@ -36,6 +36,7 @@ public partial class TerrainViewer
         contentSmoke = flags.Contains("--content-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
+        clientSmoke = flags.Contains("--client-smoke");
     }
 
     /// <summary>
@@ -111,6 +112,11 @@ public partial class TerrainViewer
         {
             BehaviorSmoke(delta);
         }
+
+        if (clientSmoke)
+        {
+            ClientSmoke(delta);
+        }
     }
 
     /// <summary>
@@ -155,7 +161,7 @@ public partial class TerrainViewer
 
             reloadStage = 1;
             GD.Print($"RELOAD_SMOKE_INTERRUPTED_PARTIAL_UPLOAD textures={models.TextureCount}");
-            _ = LoadArchives();
+            _ = LoadClient();
             return;
         }
 

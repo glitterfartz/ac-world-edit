@@ -158,8 +158,11 @@ public sealed class ModelLibrary
         textures.Clear();
         failed.Clear();
         store = next;
-        Catalog = next == null ? null : await Task.Run(() => new CreatureCatalog(next));
-        GameObjects = next == null ? null : await Task.Run(() => new GameObjectCatalog(next));
+        // The creature and GameObject catalogs read 3.3.5 DBC tables; other clients have no
+        // database-backed spawns to display, so they run without catalogs.
+        bool wrath = next is { Kind: ClientKind.Wrath335 };
+        Catalog = wrath ? await Task.Run(() => new CreatureCatalog(next!)) : null;
+        GameObjects = wrath ? await Task.Run(() => new GameObjectCatalog(next!)) : null;
     }
 
     /// <summary>

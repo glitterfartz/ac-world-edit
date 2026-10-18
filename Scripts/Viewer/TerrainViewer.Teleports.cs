@@ -28,6 +28,17 @@ public partial class TerrainViewer
     async Task LoadTeleports()
     {
         int current = ++teleportGeneration;
+        if (!databaseEnabled)
+        {
+            teleportList = [];
+            teleports.Clear();
+            teleports.AddItem("Unavailable");
+            teleports.Select(0);
+            teleports.Disabled = true;
+            teleports.TooltipText = "Teleports come from the world database, which is not used with this client.";
+            return;
+        }
+
         var settings = connection.Settings;
         TeleportLocation[] rows;
         string failure = "";

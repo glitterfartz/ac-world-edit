@@ -135,6 +135,26 @@ public partial class SceneSidebar : PanelContainer
         sceneScroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, connectionDetails);
     }
 
+    Label databaseNote = null!;
+
+    /// <summary>
+    /// Disable the layers that read the world database (creatures, GameObjects, graveyards,
+    /// AreaTriggers) while the open client has no matching database, and say why. Scenery and
+    /// building layers are unaffected.
+    /// </summary>
+    public void SetDatabaseAvailable(bool available)
+    {
+        foreach (string key in new[] { "creatures", "gameobjects", "graveyards", "areatriggers" })
+        {
+            if (FindChild(key, true, false) is CheckButton toggle)
+            {
+                toggle.Disabled = !available;
+            }
+        }
+
+        databaseNote.Visible = !available;
+    }
+
     VBoxContainer connectionDetails = null!;
     ScrollContainer sceneScroll = null!;
     Control BuildScenePage()
@@ -157,6 +177,9 @@ public partial class SceneSidebar : PanelContainer
         Layer(layers, "Graveyards", "graveyards", graveyards.SetLayerEnabled);
         Layer(layers, "AreaTriggers", "areatriggers", areaTriggers.SetLayerEnabled, areaTriggers.LayerEnabled);
         layers.AddChild(InspectorUi.Text("Hidden layers stop queuing models and spawn queries.", 11, true));
+        databaseNote = InspectorUi.Text("Database layers are off for this client; the world database does not describe it.", 11, true);
+        databaseNote.Visible = false;
+        layers.AddChild(databaseNote);
         var preview = InspectorUi.Card(page, "Visibility preview");
         preset = new OptionButton
         {

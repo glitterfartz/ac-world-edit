@@ -1,3 +1,4 @@
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using Xunit;
 
@@ -87,5 +88,43 @@ public class SettingsResolverTests
     {
         Assert.Equal("ACWORLD_DATA_DIR", SettingsResolver.DataVariable);
         Assert.Equal("ACWORLD_DB_INFO", SettingsResolver.DatabaseVariable);
+        Assert.Equal("ACWORLD_RETAIL_DIR", SettingsResolver.RetailVariable);
+        Assert.Equal("ACWORLD_CLIENT_PROFILE", SettingsResolver.ProfileVariable);
+    }
+    [Theory]
+    [InlineData("retail", ClientKind.Retail)]
+    [InlineData(" Retail ", ClientKind.Retail)]
+    [InlineData("RETAIL", ClientKind.Retail)]
+    [InlineData("wrath", ClientKind.Wrath335)]
+    [InlineData("", ClientKind.Wrath335)]
+    [InlineData("garbage", ClientKind.Wrath335)]
+    [InlineData(null, ClientKind.Wrath335)]
+    public void ProfileNamesParseAndDamagedValuesFallBackToWrath(string? value, ClientKind expected)
+    {
+        Assert.Equal(expected, SettingsResolver.ParseProfile(value));
+    }
+
+    [Fact]
+    public void ProfileEnvironmentWinsOverSavedAndIsRoundTripped()
+    {
+        bool read = false;
+        Assert.Equal(ClientKind.Retail, SettingsResolver.Profile("retail", () =>
+        {
+            read = true;
+            return "wrath";
+        }));
+        Assert.False(read);
+        Assert.Equal(ClientKind.Retail, SettingsResolver.Profile(null, () => "retail"));
+        Assert.Equal(ClientKind.Wrath335, SettingsResolver.Profile("  ", () => ""));
+        Assert.Equal("retail", SettingsResolver.ProfileName(ClientKind.Retail));
+        Assert.Equal("wrath", SettingsResolver.ProfileName(ClientKind.Wrath335));
+        Assert.Equal(ClientKind.Retail, SettingsResolver.ParseProfile(SettingsResolver.ProfileName(ClientKind.Retail)));
+    }
+
+    [Fact]
+    public void RetailDirectoryFollowsTheSameEnvironmentRule()
+    {
+        Assert.Equal("env", SettingsResolver.RetailDirectory("env", () => "saved"));
+        Assert.Equal("saved", SettingsResolver.RetailDirectory(" ", () => "saved"));
     }
 }

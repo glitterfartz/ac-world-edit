@@ -46,6 +46,7 @@ then narrow with `--filter`. Categories (xUnit traits): `Corpus`, `Db`, `KnownBu
   "ACWORLD_DB_INFO not set; skipping read-only database test" (or "... is invalid ...") otherwise. Nothing is committed;
   the variable is the same one the app honors.
 - **Client data**: `wow-data` (nearest ancestor of the test binaries) or `ACWORLD_DATA_DIR`. `[ClientDataFact]` tests skip otherwise.
+- **Retail client**: `ACWORLD_RETAIL_DIR` (the install folder holding `.build.info`), plus `CascLib.dll` (in `native/win-x64`, see `Tools/Get-CascLib.ps1`) and `Data/definitions`. `[RetailClientFact]` tests (`RetailCorpusTests`, Corpus category) skip with a reason otherwise and only read the install.
 - **StormLib byte differential**: `./Tests/Run-StormLibChecks.ps1` downloads the pinned DLL, sets `STORMLIB_DLL` and runs
   `WorldCorpusTests`, comparing every asset read with StormLib. Passed after the port (6 tests, ~48 s).
 
@@ -97,6 +98,8 @@ Done:
 - [x] Extracted and tested: `ContentDrafts`, `InteractionEdits`, `PoseText`, `SettingsResolver`, `AreaLookup`, `LightBand`
 - [x] GdUnit4: PendingChangesWindow, PickerPopup
 - [x] AssetRef FileDataID reference strings; MPQ store refuses them (`AssetRefTests`, the store check is Corpus)
+- [x] Retail: install detection, CascLib/definition search helpers, client folder checks, profile settings (synthetic); retail CASC/DB2/map list/WDT against a real install (`RetailCorpusTests`, needs `ACWORLD_RETAIL_DIR`)
+- [x] GdUnit4: ClientPickerDialog
 
 Not extracted (nothing static or pure to move without changing behavior; revisit if these windows are refactored):
 - `QuestEditorWindow*`: only static lookup tables (`XpTiers`, `RacePresets`); validation already lives in `QuestModel`.

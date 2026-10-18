@@ -38,7 +38,10 @@ public partial class TerrainViewer
             MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        dataDirectory = UserSettings.LoadDataDirectory();
+        profile = UserSettings.LoadProfile();
+        wrathDirectory = UserSettings.LoadDataDirectory();
+        retailDirectory = UserSettings.LoadRetailDirectory();
+        databaseEnabled = profile != ClientKind.Retail;
         var theme = new Theme();
         theme.DefaultFontSize = 15;
         theme.SetColor("font_color", "Label", new Color("e7eef4"));
@@ -87,13 +90,13 @@ public partial class TerrainViewer
         };
         title.AddThemeFontSizeOverride("font_size", 24);
         box.AddChild(title);
-        var subtitle = new Label
+        clientLabel = new Label
         {
-            Text = "WORLD VIEWER  /  WRATH 3.3.5"
+            Text = "WORLD VIEWER  /  " + (profile == ClientKind.Retail ? "RETAIL" : "WRATH 3.3.5")
         };
-        subtitle.AddThemeColorOverride("font_color", new Color("5bd8c2"));
-        subtitle.AddThemeFontSizeOverride("font_size", 12);
-        box.AddChild(subtitle);
+        clientLabel.AddThemeColorOverride("font_color", new Color("5bd8c2"));
+        clientLabel.AddThemeFontSizeOverride("font_size", 12);
+        box.AddChild(clientLabel);
         box.AddChild(new HSeparator());
         box.AddChild(new Label { Text = "World" });
         maps = new OptionButton();
@@ -394,7 +397,7 @@ public partial class TerrainViewer
         const Key ctrl = (Key)KeyModifierMask.MaskCtrl;
         const Key shift = (Key)KeyModifierMask.MaskShift;
         var file = menu.Menu("File");
-        menu.Command(file, "Load archives…", ChooseArchives, () => !busy);
+        menu.Command(file, "Load client…", ChooseClient, () => !busy);
         menu.Command(file, "Open selected world", async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
         menu.Command(file, "Database connection…", () =>
         {
@@ -415,8 +418,8 @@ public partial class TerrainViewer
 
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
-        menu.Command(view, "Quest editor", () => questEditor.Open(0));
-        menu.Command(view, "Behavior editor (selected creature)", OpenBehaviorEditor);
+        menu.Command(view, "Quest editor", () => questEditor.Open(0), () => databaseEnabled);
+        menu.Command(view, "Behavior editor (selected creature)", OpenBehaviorEditor, () => databaseEnabled);
         menu.Command(view, "Scene explorer", () =>
         {
             sidebar.Visible = true;
@@ -433,7 +436,7 @@ public partial class TerrainViewer
 
         var help = menu.Menu("Help");
         menu.Command(help, "Controls…", () => ShowInfo("Controls", ControlsText));
-        menu.Command(help, "About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore (Wrath 3.3.5a).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."));
+        menu.Command(help, "About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore. Clients: Wrath 3.3.5a (with the world database) and Retail (viewing only, no database yet).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."));
     }
 
     const string ControlsText = """
@@ -491,33 +494,50 @@ public partial class TerrainViewer
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
         toolbar.Separator();
-        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0));
-        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor);
+        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => databaseEnabled);
+        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => databaseEnabled);
+    }
+
+    Label clientLabel = null!;
+
+    /// <summary>
+    /// Pick the client profile and folder; loading reuses the normal client lifecycle and
+    /// cancellation. Each profile remembers its own folder, and the chosen profile is remembered too.
+    /// </summary>
+    void ChooseClient()
+    {
+        var dialog = new ClientPickerDialog(profile, kind => kind == ClientKind.Retail ? retailDirectory : wrathDirectory);
+        dialog.Chosen += async (kind, directory) =>
+        {
+            profile = kind;
+            dataDirectory = directory;
+            UserSettings.SaveProfile(kind);
+            if (kind == ClientKind.Retail)
+            {
+                UserSettings.SaveRetailDirectory(directory);
+            }
+            else
+            {
+                UserSettings.SaveDataDirectory(directory);
+            }
+
+            await LoadClient();
+        };
+        dialog.Confirmed += dialog.QueueFree;
+        dialog.Canceled += dialog.QueueFree;
+        AddChild(dialog);
+        dialog.PopupCentered();
     }
 
     /// <summary>
-    /// Pick a client data directory; loading reuses the normal archive lifecycle and cancellation.
+    /// Reflect the opened client in the UI: the title line, whether database layers and editors are
+    /// available, and the teleport list (which reads the database).
     /// </summary>
-    void ChooseArchives()
+    void ApplyClientProfile(string description)
     {
-        var dialog = new FileDialog
-        {
-            FileMode = FileDialog.FileModeEnum.OpenDir,
-            Access = FileDialog.AccessEnum.Filesystem,
-            Title = "Choose the client Data directory (MPQs)",
-            CurrentDir = dataDirectory.Length > 0 ? dataDirectory : System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
-            UseNativeDialog = true
-        };
-        dialog.DirSelected += async directory =>
-        {
-            dataDirectory = directory;
-            UserSettings.SaveDataDirectory(directory);
-            dialog.QueueFree();
-            await LoadArchives();
-        };
-        dialog.Canceled += dialog.QueueFree;
-        AddChild(dialog);
-        dialog.PopupCentered(new Vector2I(760, 520));
+        clientLabel.Text = "WORLD VIEWER  /  " + description.Split(" · ")[0];
+        sidebar.SetDatabaseAvailable(databaseEnabled);
+        _ = LoadTeleports();
     }
 
     void ShowInfo(string title, string text)
@@ -540,7 +560,7 @@ public partial class TerrainViewer
     /// </summary>
     async Task StartupPrompts()
     {
-        if (!OS.GetCmdlineUserArgs().Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal)))
+        if (databaseEnabled && !OS.GetCmdlineUserArgs().Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal)))
         {
             var saved = connection.Settings;
             string? error = await Task.Run(() => ACWorldEdit.Data.DatabaseDiagnostics.TestAsync(saved));
@@ -552,7 +572,7 @@ public partial class TerrainViewer
 
         if (dataDirectory.Length == 0 && !IsQueuedForDeletion())
         {
-            ChooseArchives();
+            ChooseClient();
         }
     }
 

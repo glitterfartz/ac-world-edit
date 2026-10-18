@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class TerrainViewer : Node3D
 {
-    AssetStore? store;
+    IClientFiles? store;
     WorldMap? world;
     TerrainRenderer renderer = null!;
     ModelLibrary models = null!;
@@ -43,8 +43,28 @@ public partial class TerrainViewer : Node3D
     int spawnRegionLoadRadius = -1;
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
-    // Client Data directory (MPQs) chosen through File → Load archives… and remembered per user; empty until chosen.
-    string dataDirectory = "";
+    // Active client profile and one remembered folder per profile (chosen in File → Load client…); empty until chosen.
+    ClientKind profile = ClientKind.Wrath335;
+    string wrathDirectory = "", retailDirectory = "";
+    // False when the open client cannot be described by the world database (Retail): database layers,
+    // teleports and the content editors stay off instead of querying a mismatched server.
+    bool databaseEnabled = true;
+    string dataDirectory
+    {
+        get => profile == ClientKind.Retail ? retailDirectory : wrathDirectory;
+        set
+        {
+            if (profile == ClientKind.Retail)
+            {
+                retailDirectory = value;
+            }
+            else
+            {
+                wrathDirectory = value;
+            }
+        }
+    }
+
     Button open = null!;
     Label status = null!, telemetry = null!, zoneLabel = null!, continentLabel = null!;
     Slider timeOfDay = null!;
@@ -52,7 +72,7 @@ public partial class TerrainViewer : Node3D
     Button playTime = null!;
     List<MapInfo> mapList = [];
     TerrainMinimap minimap = null!;
-    string message = "Opening archives…";
+    string message = "Opening client…";
     /// <summary>
     /// User-entered world database connection shared by every database-backed layer and editor.
     /// </summary>
@@ -110,18 +130,19 @@ public partial class TerrainViewer : Node3D
         _ = LoadTeleports();
         ConfigureSmokeChecks();
         _ = StartupPrompts();
-        await LoadArchives();
+        await LoadClient();
     }
 
     /// <summary>
-    /// Cancel/await terrain and model readers before replacing the client store. Dispose old MPQs
-    /// only when no worker can still read them.
+    /// Cancel/await terrain and model readers before replacing the client store. Dispose the old
+    /// files only when no worker can still read them. The client services (files, map list, lighting,
+    /// areas) are built on a worker for the selected profile.
     /// </summary>
-    async Task LoadArchives()
+    async Task LoadClient()
     {
         if (dataDirectory.Length == 0)
         {
-            message = "Choose your client Data folder (File → Load archives…).";
+            message = "Choose your client folder (File → Load client…).";
             return;
         }
 
@@ -150,46 +171,37 @@ public partial class TerrainViewer : Node3D
 
         await models.SetStore(null);
         old?.Dispose();
-        message = "Reading MPQ tables and map list…";
+        message = profile == ClientKind.Retail ? "Reading CASC storage and map list…" : "Reading MPQ tables and map list…";
         string path = dataDirectory;
+        var kind = profile;
         try
         {
-            var result = await Task.Run(() =>
-            {
-                var s = new AssetStore(path);
-                try
-                {
-                    return (Store: s, Maps: s.Maps(), Lighting: ClientLighting.TryLoad(s), Areas: AreaLookup.TryLoad(s));
-                }
-                catch
-                {
-                    s.Dispose();
-                    throw;
-                }
-            });
-            store = result.Store;
+            var result = await Task.Run(() => ClientServices.Open(kind, path));
+            store = result.Files;
             mapList = result.Maps;
             lighting = result.Lighting;
             areas = result.Areas;
+            databaseEnabled = result.DatabaseEnabled;
+            ApplyClientProfile(result.Description);
             maps.Clear();
             int selected = 0;
             await models.SetStore(store);
             for (int i = 0; i < mapList.Count; i++)
             {
                 maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})");
-                if (mapList[i].Directory == (waterInterior ? "Blackfathom" : "Azeroth"))
+                if (mapList[i].Directory.Equals(waterInterior ? "Blackfathom" : "Azeroth", StringComparison.OrdinalIgnoreCase))
                 {
                     selected = i;
                 }
             }
 
             maps.Select(selected);
-            message = $"{store.ArchiveCount} archives · {mapList.Count} maps";
+            message = result.Description;
             open.Disabled = mapList.Count == 0;
         }
         catch (Exception e)
         {
-            message = "Archive error: " + e.Message;
+            message = "Client error: " + e.Message;
             GD.PushError(message);
         }
         finally
@@ -222,7 +234,10 @@ public partial class TerrainViewer : Node3D
         string name = mapList[maps.Selected].Directory;
         try
         {
-            world = await Task.Run(() => new WorldMap(name, assets.Read($"World/Maps/{name}/{name}.wdt")));
+            var info = mapList[maps.Selected];
+            // Retail names the WDT by FileDataID; MPQ clients by path.
+            string wdtPath = info.WdtFileId != 0 ? AssetRef.FromFileId(info.WdtFileId) : $"World/Maps/{name}/{name}.wdt";
+            world = await Task.Run(() => new WorldMap(name, assets.Read(wdtPath)));
             currentMapId = checked((ushort)mapList[maps.Selected].Id);
             sky.SetMap(lighting, currentMapId, world.Tiles.Count == 0);
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
@@ -250,6 +265,11 @@ public partial class TerrainViewer : Node3D
             }
 
             message = world.Tiles.Count > 0 ? $"{name} · {world.Tiles.Count} terrain tiles" : $"{name} · interior WMO";
+            if (assets.Kind == ClientKind.Retail)
+            {
+                message += " · retail terrain, buildings and liquids are not loaded yet";
+            }
+
             if (smoke)
             {
                 smokeOriginal = requested;
@@ -468,10 +488,12 @@ public partial class TerrainViewer : Node3D
             spawnRegionCenter = null;
         }
 
-        creatures.SetRegion(spawnRegion);
-        gameObjects.SetRegion(spawnRegion);
-        graveyards.SetRegion(spawnRegion);
-        areaTriggers.SetRegion(spawnRegion);
+        // Without a matching database no layer may query, whatever its toggle says.
+        var queryRegion = databaseEnabled ? spawnRegion : null;
+        creatures.SetRegion(queryRegion);
+        gameObjects.SetRegion(queryRegion);
+        graveyards.SetRegion(queryRegion);
+        areaTriggers.SetRegion(queryRegion);
     }
 
     /// <summary>
@@ -530,7 +552,8 @@ public partial class TerrainViewer : Node3D
             MoveCamera(delta);
         }
 
-        if (!busy && world != null && store != null)
+        // Retail ADTs are split files addressed by FileDataID; their reader arrives with the retail terrain work.
+        if (!busy && world != null && store is { Kind: ClientKind.Wrath335 })
         {
             UpdateTerrainStreaming(world, store);
         }
