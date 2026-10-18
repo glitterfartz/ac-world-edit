@@ -4,7 +4,8 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Listfile download UI and logic. The listfile is a community-maintained mapping of file data IDs to paths, which the retail client uses for many interior and texture files.
+/// Listfile download UI and logic. The community listfile maps FileDataIDs to paths, which the
+/// retail client needs for files named by path (garrison interiors, WMO and liquid textures).
 /// </summary>
 public partial class TerrainViewer
 {
