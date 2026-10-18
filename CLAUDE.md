@@ -63,3 +63,13 @@ Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` path
 - Feature implementations should be followed up by tests, but don't write tests for trivial getters/setters or Godot UI wiring. Tests should be fast and deterministic; slow corpus tests are opt-in via `--settings corpus.runsettings`.
 - For large features, don't implement tests ahead of the feature; implement the feature first, then add tests. Tests should be written to verify the feature works as intended, not to drive the implementation.
 - If a feature requires a visual change you must inspect in Godot to verify them.
+
+## Commit messages
+
+- Subject: `type(scope): summary`, scope optional. Types: `feat` (new user-visible capability), `fix` (wrong behavior corrected), `perf`, `refactor` (no behavior change), `test`, `docs`, `build` (csproj, global.json, NuGet, launcher), `chore` (repo hygiene, .gitignore, moving or deleting files), `style` (formatting only).
+- Scopes follow the code layout: `assets`, `archives`, `formats`, `models`, `world`, `retail`, `client`, `data`, `foundation`, `viewer`, `rendering`, `overlays`, `ui`, `diagnostics`, `tests`, `docs`.
+- Summary: imperative mood ("add", "fix", "remove"), lowercase after the colon, no trailing period, 72 characters or fewer.
+- Body (when the change needs explaining): blank line, then wrapped prose at 72 columns. Say what changed and why, and any constraint a reader needs. Do not list file names the diff already shows.
+- One logical change per commit. If a commit mixes unrelated work, split it.
+- Never use placeholders such as "WIP", "misc", "updates", "fixes", or stray symbols.
+- A commit that already carries a `Co-Authored-By:` trailer keeps it when amended.
