@@ -3,10 +3,10 @@ using System.Text;
 namespace ACWorldEdit.Assets;
 
 /// <summary>
-/// Client Map.dbc identity and display name. Directory selects WDT/ADT asset paths; Id is the
-/// server database map ID.
+/// Client Map identity and display name. Directory selects WDT/ADT asset paths; Id is the server
+/// database map ID. WdtFileId is the WDT's FileDataID on a retail client and 0 on MPQ clients.
 /// </summary>
-public sealed record MapInfo(int Id, string Directory, string Name);
+public sealed record MapInfo(int Id, string Directory, string Name, uint WdtFileId = 0);
 /// <summary>
 /// Read-only mounted MPQ set with explicit stock-client precedence. Reads share a lock because
 /// archive readers seek mutable streams; detached decoded bytes can safely cross worker

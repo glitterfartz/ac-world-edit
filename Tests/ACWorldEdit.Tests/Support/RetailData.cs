@@ -1,0 +1,59 @@
+using ACWorldEdit.Assets;
+using Xunit;
+
+namespace ACWorldEdit.Tests.Support;
+
+/// <summary>
+/// Optional retail client for the RetailClient tests: ACWORLD_RETAIL_DIR names the install root (the
+/// folder holding .build.info). The install is only read; nothing is written to it. Tests skip with a
+/// reason when the variable, CascLib.dll or the definitions are missing.
+/// </summary>
+public static class RetailEnvironment
+{
+    public const string Variable = "ACWORLD_RETAIL_DIR";
+
+    public static string? Directory()
+    {
+        string? configured = Environment.GetEnvironmentVariable(Variable);
+        return !string.IsNullOrWhiteSpace(configured) && System.IO.Directory.Exists(configured) ? configured : null;
+    }
+
+    public static string? DefinitionsDirectory() => Db2Tables.FindDefinitions(Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory);
+
+    public static bool CascLibPresent() => CascNative.Candidates(Environment.GetEnvironmentVariable("ACWORLD_CASCLIB"), AppContext.BaseDirectory).Any(File.Exists);
+
+    public static string? Skip()
+    {
+        if (Directory() == null)
+        {
+            return "ACWORLD_RETAIL_DIR not set (or missing); skipping retail client test";
+        }
+
+        if (!CascLibPresent())
+        {
+            return "CascLib.dll not found (run Tools/Get-CascLib.ps1); skipping retail client test";
+        }
+
+        return DefinitionsDirectory() == null ? "Data/definitions not found; skipping retail client test" : null;
+    }
+}
+
+/// <summary>Opened once and shared by the retail tests.</summary>
+public static class RetailData
+{
+    static readonly Lazy<CascFiles> files = new(() => new CascFiles(RetailEnvironment.Directory()!));
+    static readonly Lazy<Db2Tables> tables = new(() => new Db2Tables(Files, RetailEnvironment.DefinitionsDirectory()!));
+
+    public static CascFiles Files => files.Value;
+
+    public static Db2Tables Tables => tables.Value;
+}
+
+/// <summary>Fact that skips unless a retail client, CascLib.dll and the definitions are available.</summary>
+public sealed class RetailClientFactAttribute : FactAttribute
+{
+    public RetailClientFactAttribute()
+    {
+        Skip = RetailEnvironment.Skip();
+    }
+}
