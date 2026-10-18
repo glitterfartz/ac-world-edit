@@ -12,6 +12,8 @@ public sealed class ContentNames(InteractionCatalog? catalog) : IContentNames
     public readonly Dictionary<uint, string> Creatures = [], GameObjects = [], Quests = [], Items = [];
     public readonly Dictionary<(uint Entry, uint Group), string> Texts = [];
     public readonly HashSet<uint> Spawns = [];
+    /// <summary>broadcast_text ID to its text, for the speech lines that link one.</summary>
+    public readonly Dictionary<uint, string> Broadcasts = [];
     public InteractionCatalog? Catalog => catalog;
 
     public string? Spell(uint id) => catalog?.SpellName(id) ?? (catalog == null ? $"spell {id}" : null);
@@ -167,6 +169,7 @@ public sealed class ContentSource(DatabaseSettings settings)
         names.Creatures.TryAdd(entry, name);
         await InteractionSource.Load(session, rows, InteractionTables.CreatureText, "CreatureID=@k0", [entry], token);
         FillTexts(names, effective(rows), entry);
+        await ReadBroadcasts(session, effective(rows), entry, names, token);
         if (guid != 0 && Convert.ToInt64(await InteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
         {
             names.Spawns.Add(guid);
@@ -310,6 +313,43 @@ public sealed class ContentSource(DatabaseSettings settings)
         }
 
         await ResolveNames(session, names, creatures, objects, items, quests, token);
+    }
+
+    static async Task ReadBroadcasts(WorldReadSession session, RowSet view, uint entry, ContentNames names, CancellationToken token)
+    {
+        var ids = view.All(InteractionTables.CreatureText).Where(r => r.U("CreatureID") == entry).Select(r => r.I("BroadcastTextId")).Where(id => id > 0).Select(id => (uint)id).Distinct().ToArray();
+        if (ids.Length == 0 || !session.Has("broadcast_text.ID"))
+        {
+            return;
+        }
+
+        await using var command = session.Command("");
+        command.CommandText = $"SELECT ID,COALESCE(MaleText,''),COALESCE(FemaleText,'') FROM broadcast_text WHERE ID IN ({InteractionSource.InList(command, ids, "b")})";
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            string male = reader.GetString(1), female = reader.GetString(2);
+            names.Broadcasts[reader.GetUInt32(0)] = male.Length > 0 ? male : female;
+        }
+    }
+
+    /// <summary>
+    /// Bounded picker search over broadcast_text by ID or by (escaped LIKE) male or female text.
+    /// </summary>
+    public async Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("broadcast_text.ID", "broadcast_text.MaleText", "broadcast_text.FemaleText");
+        await using var command = session.Command($"SELECT ID,CASE WHEN COALESCE(MaleText,'')<>'' THEN MaleText ELSE COALESCE(FemaleText,'') END FROM broadcast_text WHERE (MaleText LIKE @s ESCAPE '=' OR FemaleText LIKE @s ESCAPE '=') OR ID=@id ORDER BY ID=@id DESC, CHAR_LENGTH(COALESCE(MaleText,'')), ID LIMIT {InteractionSource.MaxSearch}");
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
+        List<(uint, string)> results = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            results.Add((Convert.ToUInt32(reader.GetValue(0)), reader.GetString(1)));
+        }
+
+        return results;
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Godot;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -42,7 +43,7 @@ public partial class BehaviorEditorWindow
             page.AddChild(ClientStyle.Text("This creature has no lines yet.", 14, ClientStyle.Faded));
         }
 
-        uint nextGroup = lines.Select(t => t.U("GroupID") + 1).DefaultIfEmpty(0u).Max();
+        uint nextGroup = SpeechEdits.NextGroup(effective, entry);
         var add = ButtonOf("+ New group", () => AddLine(nextGroup));
         add.Name = "AddSpeechGroup";
         page.AddChild(add);
@@ -54,21 +55,9 @@ public partial class BehaviorEditorWindow
         bool edited = snapshot!.Rows.Get(table, table.KeyOf(line)) != line;
         void Put(string label, params (string Column, object Value)[] values)
         {
-            var current = effective.Get(table, table.KeyOf(line));
-            if (current == null)
+            if (SpeechEdits.Change(effective, line, values) is { } edit)
             {
-                return;
-            }
-
-            var after = current;
-            foreach (var (column, value) in values)
-            {
-                after = after.With(column, value);
-            }
-
-            if (after != current)
-            {
-                Commit(label, new RowEdit(table.Name, table.KeyOf(current), current, after));
+                Commit(label, edit);
             }
         }
 
@@ -78,7 +67,7 @@ public partial class BehaviorEditorWindow
             text.AddThemeColorOverride("font_color", ClientStyle.Edited);
         }
 
-        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", new RowEdit(table.Name, table.KeyOf(line), line, null)))));
+        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(effective.Get(table, table.KeyOf(line)) ?? line)))));
         var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
         page.AddChild(EditorFields.Row("",
             EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value))),
@@ -86,19 +75,36 @@ public partial class BehaviorEditorWindow
             ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value))),
             ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50), ClientStyle.Tag("%"),
             ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)))));
-        if (line.I("BroadcastTextId") != 0)
+        int broadcast = line.I("BroadcastTextId");
+        string shown = broadcast <= 0 ? "none (the line's own text is used)"
+            : snapshot!.Names.Broadcasts.TryGetValue((uint)broadcast, out var preview) ? $"#{broadcast}: {Shorten(preview)}" : $"#{broadcast}";
+        var reference = EditorFields.Reference(shown, () => ChooseBroadcast(line, id => Put("Link broadcast text", ("BroadcastTextId", (int)id))), broadcast > 0 ? () => Put("Unlink broadcast text", ("BroadcastTextId", 0)) : null);
+        reference.Name = "BroadcastReference";
+        page.AddChild(EditorFields.Row("Broadcast text", reference));
+        if (broadcast > 0)
         {
-            page.AddChild(EditorFields.Row("", ClientStyle.Text($"Uses broadcast text #{line.I("BroadcastTextId")}: the server shows that (localized) text instead of this one.", 11, ClientStyle.Warning),
-                ButtonOf("Use my text", () => Put("Unlink broadcast text", ("BroadcastTextId", 0)))));
+            page.AddChild(EditorFields.Row("", ClientStyle.Text("The server shows this (localized) text instead of the line above.", 11, ClientStyle.Warning)));
         }
+    }
+
+    void ChooseBroadcast(Row line, Action<uint> choose)
+    {
+        var source = new ContentSource(Connection());
+        PickerPopup.Show(this, "Choose broadcast text", async term =>
+        {
+            var found = await source.SearchBroadcastAsync(term, CancellationToken.None);
+            foreach (var (id, name) in found)
+            {
+                snapshot!.Names.Broadcasts[id] = name;
+            }
+
+            return found.Select(f => (f.Id, $"{f.Id}: {Shorten(f.Name)}")).ToList();
+        }, (id, _) => choose(id), current: (uint)Math.Max(0, line.I("BroadcastTextId")));
     }
 
     void AddLine(uint group)
     {
-        var table = InteractionTables.CreatureText;
-        uint id = effective.All(table).Where(t => t.U("CreatureID") == entry && t.U("GroupID") == group).Select(t => t.U("ID") + 1).DefaultIfEmpty(0u).Max();
-        var row = Row.Of(("CreatureID", entry), ("GroupID", group), ("ID", id), ("Text", ""), ("Type", 12u), ("Language", 0), ("Probability", 100f), ("Emote", 0u),
-            ("Duration", 0u), ("Sound", 0u), ("BroadcastTextId", 0), ("TextRange", 0u), ("comment", snapshot!.CreatureName));
-        Commit(id == 0 ? $"Add speech group {group}" : $"Add line to group {group}", new RowEdit(table.Name, table.KeyOf(row), null, row));
+        var (label, edit) = SpeechEdits.NewLine(effective, entry, group, snapshot!.CreatureName);
+        Commit(label, edit);
     }
 }
