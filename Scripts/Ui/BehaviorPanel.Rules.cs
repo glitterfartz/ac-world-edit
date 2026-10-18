@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 /// smart_scripts is keyed by (entryorguid, source_type, id, link), so edits that change id or link
 /// are recorded as delete + insert within one command.
 /// </summary>
-public partial class BehaviorEditorWindow
+public partial class BehaviorPanel
 {
     /// <summary>
     /// The rule being created: its row (id assigned on Add), its scope and, for a "Then" step, the
@@ -96,8 +96,8 @@ public partial class BehaviorEditorWindow
         var card = new PanelContainer();
         var style = new StyleBoxFlat
         {
-            BgColor = isNew ? new Color(0.98f, 0.93f, 0.78f, 0.9f) : new Color(0.36f, 0.25f, 0.12f, highlighted ? 0.16f : 0.08f),
-            BorderColor = isNew ? new Color(0.55f, 0.4f, 0.1f) : new Color(0.36f, 0.25f, 0.12f, 0.5f),
+            BgColor = isNew ? new Color("1d3a36") : new Color(highlighted ? "1d303e" : "14212b"),
+            BorderColor = isNew ? InspectorUi.Accent : new Color("27404f"),
             ContentMarginLeft = linked ? 34 : 8,
             ContentMarginRight = 8,
             ContentMarginTop = 4,
@@ -125,7 +125,7 @@ public partial class BehaviorEditorWindow
         box.AddChild(header);
         bool edited = snapshot!.Rows.Get(InteractionTables.SmartScripts, rule.Key) != rule.Row;
         string sentence = (linked ? "↳ " : "") + SmartCatalog.Describe(rule, snapshot.Names, entry);
-        var label = ClientStyle.Text(sentence, 14, edited ? ClientStyle.Edited : ClientStyle.Ink);
+        var label = ClientStyle.Text(sentence, 14, edited ? ClientStyle.Edited : ClientStyle.Body);
         label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.TooltipText = $"Rule {rule.Id}{(rule.Comment.Length > 0 ? " · " + rule.Comment : "")}{(edited ? " · edited in draft" : "")}";

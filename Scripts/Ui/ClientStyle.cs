@@ -4,18 +4,22 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Client-style look for interaction and quest windows: parchment body, dark-brown frame and text,
-/// WoW quality colors and gold/silver/copper money. Icons are read from the mounted client
-/// (Interface/*.blp) and cached; decoding runs on a worker, textures are created on the main thread.
+/// Look shared by the draft-backed editor windows (matching the dark editor panels), plus the
+/// client-flavoured bits their previews need: WoW item quality colors, gold/silver/copper money and
+/// client icons. Icons are read from the mounted client (Interface/*.blp) and cached; decoding runs
+/// on a worker, textures are created on the main thread.
 /// </summary>
 public static class ClientStyle
 {
-    public static readonly Color Parchment = new("efe0b9"), Ink = new("2b1a0a"), Frame = new("4a3018"), Header = new("1f140a"), Gold = new("ffd100"), Faded = new("7a6650"), Edited = new("1e6b2e"), Error = new("a01818"), Warning = new("8a5a00");
+    public static readonly Color Body = new("e7eef4"), Header = new("ffffff"), Gold = new("ffd100"), Faded = InspectorUi.Muted, Edited = new("6fe08a"), Error = new("ff7a7a"), Warning = new("f0b44c");
+
+    /// <summary>Background of the highlighted (hovered or selected) list entry; text on it must stay readable.</summary>
+    public static readonly Color Highlight = new("28544f");
 
     /// <summary>
-    /// Item quality colors (0 poor .. 7 heirloom), as the client draws names.
+    /// Item quality colors (0 poor .. 7 heirloom), as the client draws names, brightened for a dark background.
     /// </summary>
-    static readonly Color[] Qualities = [new("6b6b6b"), new("2b1a0a"), new("1e8a00"), new("0060c8"), new("8a2be2"), new("c86400"), new("b8a060"), new("b8a060")];
+    static readonly Color[] Qualities = [new("9d9d9d"), new("ffffff"), new("1eff00"), new("4aa3ff"), new("c06bff"), new("ff8000"), new("e6cc80"), new("e6cc80")];
     public static Color Quality(int quality) => Qualities[Math.Clamp(quality, 0, Qualities.Length - 1)];
 
     public static Theme Theme()
@@ -24,82 +28,77 @@ public static class ClientStyle
         {
             DefaultFontSize = 15
         };
-        theme.SetColor("font_color", "Label", Ink);
-        theme.SetColor("font_color", "Button", Ink);
-        theme.SetColor("font_hover_color", "Button", new("6a2c00"));
-        theme.SetColor("font_pressed_color", "Button", new("6a2c00"));
-        theme.SetColor("font_disabled_color", "Button", Faded);
-        theme.SetColor("font_color", "CheckBox", Ink);
-        theme.SetColor("font_color", "LineEdit", Ink);
-        theme.SetColor("font_color", "TextEdit", Ink);
-        theme.SetColor("font_placeholder_color", "LineEdit", Faded);
-        theme.SetColor("font_placeholder_color", "TextEdit", Faded);
-        theme.SetColor("font_color", "OptionButton", Ink);
-        theme.SetColor("font_color", "ItemList", Ink);
-        StyleBoxFlat Box(Color background, int border = 0) => new()
+        StyleBoxFlat Box(string background, int border = 0, string? borderColor = null) => new()
         {
-            BgColor = background,
-            BorderColor = Frame,
+            BgColor = new(background),
+            BorderColor = new(borderColor ?? "3a5668"),
             BorderWidthBottom = border,
             BorderWidthTop = border,
             BorderWidthLeft = border,
             BorderWidthRight = border,
-            CornerRadiusTopLeft = 3,
-            CornerRadiusTopRight = 3,
-            CornerRadiusBottomLeft = 3,
-            CornerRadiusBottomRight = 3,
-            ContentMarginLeft = 6,
-            ContentMarginRight = 6,
-            ContentMarginTop = 3,
-            ContentMarginBottom = 3
+            CornerRadiusTopLeft = 5,
+            CornerRadiusTopRight = 5,
+            CornerRadiusBottomLeft = 5,
+            CornerRadiusBottomRight = 5,
+            ContentMarginLeft = 8,
+            ContentMarginRight = 8,
+            ContentMarginTop = 4,
+            ContentMarginBottom = 4
         };
-        // Same padding in every state, or toggled buttons draw wider than their layout slot.
-        theme.SetStylebox("normal", "Button", new StyleBoxEmpty { ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 3, ContentMarginBottom = 3 });
-        theme.SetStylebox("hover", "Button", Box(new("e2cb93")));
-        theme.SetStylebox("pressed", "Button", Box(new("d6bb7a")));
-        theme.SetStylebox("disabled", "Button", new StyleBoxEmpty { ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 3, ContentMarginBottom = 3 });
-        theme.SetStylebox("focus", "Button", new StyleBoxEmpty());
-        foreach (string control in new[] { "LineEdit", "TextEdit", "OptionButton", "ItemList", "SpinBox" })
+        foreach (string control in new[] { "Label", "Button", "CheckBox", "LineEdit", "TextEdit", "OptionButton", "ItemList" })
         {
-            theme.SetStylebox("normal", control, Box(new("fbf3dc"), 1));
-            theme.SetStylebox("panel", control, Box(new("fbf3dc"), 1));
-            theme.SetStylebox("focus", control, Box(new("fffaea"), 1));
-            theme.SetStylebox("read_only", control, Box(new("e9dab0"), 1));
+            theme.SetColor("font_color", control, Body);
         }
 
-        theme.SetStylebox("hover", "OptionButton", Box(new("fffaea"), 1));
-        theme.SetStylebox("pressed", "OptionButton", Box(new("fffaea"), 1));
-        // Godot's default highlight text is near-white; keep every state dark on the light boxes.
+        theme.SetColor("font_placeholder_color", "LineEdit", Faded);
+        theme.SetColor("font_placeholder_color", "TextEdit", Faded);
+        theme.SetColor("font_disabled_color", "Button", new("637a89"));
+        theme.SetStylebox("normal", "Button", Box("1d303e"));
+        theme.SetStylebox("hover", "Button", Box("294657"));
+        theme.SetStylebox("pressed", "Button", Box("28544f"));
+        theme.SetStylebox("disabled", "Button", Box("17252e"));
+        theme.SetStylebox("focus", "Button", new StyleBoxEmpty());
+        foreach (string control in new[] { "LineEdit", "TextEdit", "SpinBox" })
+        {
+            theme.SetStylebox("normal", control, Box("111e29", 1));
+            theme.SetStylebox("focus", control, Box("111e29", 1, "5bd8c2"));
+            theme.SetStylebox("read_only", control, Box("17252e", 1));
+        }
+
+        theme.SetStylebox("panel", "ItemList", Box("111e29", 1));
+        theme.SetStylebox("focus", "ItemList", new StyleBoxEmpty());
+        foreach (string state in new[] { "normal", "hover", "pressed", "hover_pressed" })
+        {
+            theme.SetStylebox(state, "OptionButton", Box(state == "normal" ? "1d303e" : "294657", 1));
+        }
+
+        theme.SetStylebox("focus", "OptionButton", Box("1d303e", 1, "5bd8c2"));
         foreach (string state in new[] { "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color" })
         {
-            theme.SetColor(state, "OptionButton", Ink);
+            theme.SetColor(state, "OptionButton", Body);
         }
 
-        theme.SetStylebox("hover_pressed", "OptionButton", Box(new("fffaea"), 1));
         foreach (string state in new[] { "font_selected_color", "font_hovered_color", "font_hovered_selected_color" })
         {
-            theme.SetColor(state, "ItemList", Ink);
+            theme.SetColor(state, "ItemList", Header);
         }
 
-        theme.SetStylebox("selected", "ItemList", Box(Highlight));
-        theme.SetStylebox("selected_focus", "ItemList", Box(Highlight));
-        theme.SetStylebox("hovered", "ItemList", Box(new("efe0b9")));
-        theme.SetStylebox("hovered_selected", "ItemList", Box(Highlight));
-        theme.SetStylebox("hovered_selected_focus", "ItemList", Box(Highlight));
+        theme.SetStylebox("selected", "ItemList", Box("28544f"));
+        theme.SetStylebox("selected_focus", "ItemList", Box("28544f"));
+        theme.SetStylebox("hovered", "ItemList", Box("1d303e"));
+        theme.SetStylebox("hovered_selected", "ItemList", Box("28544f"));
+        theme.SetStylebox("hovered_selected_focus", "ItemList", Box("28544f"));
         // The dropdown list of an OptionButton is a PopupMenu.
-        theme.SetStylebox("panel", "PopupMenu", Box(new("fbf3dc"), 1));
-        theme.SetStylebox("hover", "PopupMenu", Box(Highlight));
+        theme.SetStylebox("panel", "PopupMenu", Box("111e29", 1));
+        theme.SetStylebox("hover", "PopupMenu", Box("28544f"));
         foreach (string state in new[] { "font_color", "font_hover_color", "font_accent_color", "font_separator_color" })
         {
-            theme.SetColor(state, "PopupMenu", Ink);
+            theme.SetColor(state, "PopupMenu", Body);
         }
 
         theme.SetColor("font_disabled_color", "PopupMenu", Faded);
         return theme;
     }
-
-    /// <summary>Background of the highlighted (hovered or selected) list entry; <see cref="Ink"/> text on it must stay readable.</summary>
-    public static readonly Color Highlight = new("e2cb93");
 
     /// <summary>WCAG contrast ratio (1..21) between two colors.</summary>
     public static double Contrast(Color a, Color b)
@@ -115,24 +114,24 @@ public static class ClientStyle
     }
 
     /// <summary>
-    /// Parchment panel with a dark frame, as the client's gossip/merchant frames.
+    /// Floating editor window panel: the same dark rounded box as the main UI panels.
     /// </summary>
     public static StyleBoxFlat Panel() => new()
     {
-        BgColor = Parchment,
-        BorderColor = Frame,
-        BorderWidthBottom = 4,
-        BorderWidthTop = 4,
-        BorderWidthLeft = 4,
-        BorderWidthRight = 4,
-        CornerRadiusTopLeft = 6,
-        CornerRadiusTopRight = 6,
-        CornerRadiusBottomLeft = 6,
-        CornerRadiusBottomRight = 6,
-        ContentMarginLeft = 14,
-        ContentMarginRight = 14,
-        ContentMarginTop = 10,
-        ContentMarginBottom = 12,
+        BgColor = new(0.055f, 0.08f, 0.11f, 0.97f),
+        BorderColor = new("27404f"),
+        BorderWidthBottom = 1,
+        BorderWidthTop = 1,
+        BorderWidthLeft = 1,
+        BorderWidthRight = 1,
+        CornerRadiusTopLeft = 12,
+        CornerRadiusTopRight = 12,
+        CornerRadiusBottomLeft = 12,
+        CornerRadiusBottomRight = 12,
+        ContentMarginLeft = 16,
+        ContentMarginRight = 16,
+        ContentMarginTop = 12,
+        ContentMarginBottom = 14,
         ShadowColor = new(0, 0, 0, 0.45f),
         ShadowSize = 10
     };
@@ -146,7 +145,7 @@ public static class ClientStyle
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color ?? Ink);
+        label.AddThemeColorOverride("font_color", color ?? Body);
         return label;
     }
 

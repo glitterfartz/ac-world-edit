@@ -7,16 +7,18 @@ namespace ACWorldEdit;
 /// Opt-in helpers for --interaction-smoke. They act through the window's real controls (emitting
 /// button, checkbox and line-edit signals) rather than calling commands directly.
 /// </summary>
-public partial class InteractionWindow
+public partial class CreaturePropertiesWindow
 {
-    public string SmokeStatus => status;
-    public uint SmokeCurrentMenu => view == null ? 0 : CurrentMenu(view);
-    public bool SmokeOnVendorPage => page == Page.Vendor;
-    public bool SmokeOnQuestDetail => page == Page.QuestDetail;
-    public uint SmokeQuestDetail => questDetail;
-    public bool SmokeLoaded => view != null && snapshot != null;
+    public string SmokeStatus => Context.Status;
+    public uint SmokeCurrentMenu => (Section("gossip") as GossipSection)?.SmokeCurrentMenu ?? 0;
+    public bool SmokeOnVendorPage => active?.Id == "vendor";
+    public bool SmokeOnQuestDetail => active?.Id == "quests" && SmokeQuestDetail != 0;
+    public uint SmokeQuestDetail => (Section("quests") as QuestsSection)?.SmokeQuestDetail ?? 0;
+    public bool SmokeLoaded => Context.View != null && Context.Snapshot != null;
+    NpcInteraction? view => Context.View;
+    Node body => (Node?)active ?? this;
 
-    IEnumerable<T> Live<T>(Node root) where T : Node => root.FindChildren("*", typeof(T).Name, true, false).OfType<T>().Where(n => !n.IsQueuedForDeletion() && !IsDying(n));
+    IEnumerable<T> Live<T>(Node root) where T : Node => root.FindChildren("*", typeof(T).Name, true, false).OfType<T>().Where(n => !n.IsQueuedForDeletion() && !IsDying(n) && (n is not CanvasItem item || item.IsVisibleInTree()));
 
     static bool IsDying(Node node)
     {
@@ -33,12 +35,12 @@ public partial class InteractionWindow
 
     public void SmokeShow(string name)
     {
-        Navigate(Enum.Parse<Page>(name));
+        ShowSection(name.ToLowerInvariant(), null);
     }
 
     public void SmokeSetEditing(bool value)
     {
-        editToggle.ButtonPressed = value;
+        Context.Editing = value;
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ public partial class InteractionWindow
     /// </summary>
     public bool SmokeFollow(uint? type)
     {
-        if (view == null || !view.Menus.TryGetValue(CurrentMenu(view), out var menu))
+        if (view == null || !view.Menus.TryGetValue(SmokeCurrentMenu, out var menu))
         {
             return false;
         }
@@ -125,8 +127,7 @@ public partial class InteractionWindow
     /// </summary>
     public void SmokeReopenDraft()
     {
-        Drafts.Reopen();
-        Rebuild();
+        Context.ReopenDraft();
     }
 
     /// <summary>

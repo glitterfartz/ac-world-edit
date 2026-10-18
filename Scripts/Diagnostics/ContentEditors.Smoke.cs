@@ -7,19 +7,13 @@ namespace ACWorldEdit;
 /// Opt-in helpers for --content-smoke and --interaction-smoke. They call the same private paths the
 /// editors' buttons and pickers use, so validation, drafting and re-rendering are the real ones.
 /// </summary>
-public partial class QuestEditorWindow
+public partial class QuestPanel
 {
     public string SmokeStatus => status;
     public RowSet SmokeEffective => effective;
     public Row? SmokeQuest => Quest;
     public IReadOnlyList<InteractionIssue> SmokeIssues => issues;
     public bool SmokeEditingEnabled => Drafts.Draft != null && Quest != null;
-
-    public void SmokeSearch(string term)
-    {
-        search.Text = term;
-        _ = Search();
-    }
 
     public bool SmokeSet(TableSchema table, string label, params (string Column, object Value)[] values) => Set(table, label, values);
 
@@ -42,7 +36,28 @@ public partial class QuestEditorWindow
     public PickerPopup? SmokePicker => GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
 }
 
-public partial class BehaviorEditorWindow
+public partial class QuestEditorWindow
+{
+    public string SmokeStatus => Panel.SmokeStatus;
+    public RowSet SmokeEffective => Panel.SmokeEffective;
+    public Row? SmokeQuest => Panel.SmokeQuest;
+    public IReadOnlyList<InteractionIssue> SmokeIssues => Panel.SmokeIssues;
+    public bool SmokeEditingEnabled => Panel.SmokeEditingEnabled;
+    public bool SmokeSet(TableSchema table, string label, params (string Column, object Value)[] values) => Panel.SmokeSet(table, label, values);
+    public bool SmokeCommit(string label, params RowEdit[] edits) => Panel.SmokeCommit(label, edits);
+    public void SmokeHistory(bool forward) => Panel.SmokeHistory(forward);
+    public bool SmokePress(string text) => Panel.SmokePress(text);
+    public string? SmokeObjectiveName(int slot) => Panel.SmokeObjectiveName(slot);
+    public PickerPopup? SmokePicker => Panel.SmokePicker;
+
+    public void SmokeSearch(string term)
+    {
+        search.Text = term;
+        _ = Search();
+    }
+}
+
+public partial class BehaviorPanel
 {
     public string SmokeStatus => status;
     public RowSet SmokeEffective => effective;

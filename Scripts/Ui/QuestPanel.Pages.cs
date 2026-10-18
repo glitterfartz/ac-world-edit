@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// page re-renders from the draft afterwards, so what is shown is always what is drafted. Column
 /// names stay out of the UI: captions describe what the player experiences.
 /// </summary>
-public partial class QuestEditorWindow
+public partial class QuestPanel
 {
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
     static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (QuestModel.AllianceRaces, "Alliance only"), (QuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
@@ -302,7 +302,7 @@ public partial class QuestEditorWindow
         int prev = addon.I("PrevQuestID");
         uint next = addon.U("NextQuestID");
         string Arrow(uint id) => id == 0 ? "—" : Named(SmartParamKind.Quest, id);
-        var chain = ClientStyle.Text($"{Arrow((uint)Math.Abs(prev))}   →   {q.T("LogTitle")}   →   {Arrow(next != 0 ? next : q.U("RewardNextQuest"))}", 15, ClientStyle.Ink);
+        var chain = ClientStyle.Text($"{Arrow((uint)Math.Abs(prev))}   →   {q.T("LogTitle")}   →   {Arrow(next != 0 ? next : q.U("RewardNextQuest"))}", 15, ClientStyle.Body);
         chain.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         page.AddChild(chain);
         Heading("Before this quest");
@@ -378,7 +378,7 @@ public partial class QuestEditorWindow
         var offer = RowOf(InteractionTables.QuestOfferReward);
         void Text(string text, int size = 14, Color? color = null)
         {
-            var label = ClientStyle.Text(NpcInteraction.Render(text), size, color ?? ClientStyle.Ink);
+            var label = ClientStyle.Text(NpcInteraction.Render(text), size, color ?? ClientStyle.Body);
             label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             page.AddChild(label);
         }

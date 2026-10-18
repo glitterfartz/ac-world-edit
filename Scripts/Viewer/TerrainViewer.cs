@@ -354,7 +354,7 @@ public partial class TerrainViewer : Node3D
         gameObjects.SetRegion(null);
         graveyards.SetRegion(null);
         areaTriggers.SetRegion(null);
-        interaction?.Reset();
+        creatureProps?.Reset();
         objects.Clear();
     }
 
@@ -647,7 +647,7 @@ public partial class TerrainViewer : Node3D
         gameObjects.Update(camera);
         graveyards.Update(camera);
         areaTriggers.Update(camera);
-        interaction.Track(creatures.SelectedSpawn);
+        creatureProps.Track(creatures.SelectedSpawn);
         models.Update(camera);
         sidebar.UpdateCounts();
         PollPending(delta);
@@ -745,7 +745,7 @@ public partial class TerrainViewer : Node3D
                         creatures.Select(hit.Guid);
                         if (creatures.SelectedSpawn is { } spawn)
                         {
-                            interaction.Open(spawn);
+                            creatureProps.Open(spawn, "gossip");
                         }
                     }
                 }

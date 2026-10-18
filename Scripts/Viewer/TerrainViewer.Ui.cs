@@ -249,13 +249,16 @@ public partial class TerrainViewer
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
         drafts = ContentDraftFiles.Open();
-        interaction = new InteractionWindow
+        creatureProps = new CreaturePropertiesWindow
         {
             Connection = () => connection.Settings,
             Store = () => store,
-            Drafts = drafts
+            Areas = () => areas,
+            Drafts = drafts,
+            FlyToEntry = LocateCreature,
+            BehaviorForEntryRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
-        behaviorEditor = new BehaviorEditorWindow
+        areaBehavior = new BehaviorEditorWindow
         {
             Connection = () => connection.Settings,
             Store = () => store,
@@ -268,13 +271,12 @@ public partial class TerrainViewer
             Areas = () => areas,
             Drafts = drafts,
             FlyToEntry = LocateCreature,
-            BehaviorRequested = entry => behaviorEditor.Open(entry, 0)
+            BehaviorRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
-        behaviorEditor.QuestEditorRequested = questEditor.Open;
         // Floating windows sit on the UI layer above the panels.
-        layer.AddChild(interaction);
+        layer.AddChild(creatureProps);
         layer.AddChild(questEditor);
-        layer.AddChild(behaviorEditor);
+        layer.AddChild(areaBehavior);
         pendingWindow = new PendingChangesWindow
         {
             Drafts = drafts
@@ -289,41 +291,40 @@ public partial class TerrainViewer
         pendingWindow.DiscardAllRequested += DiscardAllPending;
         layer.AddChild(pendingWindow);
         sidebar.ReviewPendingRequested += OpenPendingChanges;
-        interaction.SummaryChanged += creatures.SetInteractionSummary;
-        interaction.QuestEditorRequested += questEditor.Open;
-        creatures.InteractRequested += interaction.Open;
-        creatures.BehaviorRequested += spawn => behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
-        interaction.BehaviorRequested += behaviorEditor.Open;
-        areaTriggers.BehaviorRequested += trigger => behaviorEditor.OpenAreaTrigger(trigger.Entry);
+        creatureProps.SummaryChanged += creatures.SetInteractionSummary;
+        creatureProps.QuestEditorRequested += questEditor.Open;
+        creatures.PropertiesRequested += spawn => creatureProps.Open(spawn);
+        areaTriggers.BehaviorRequested += trigger => areaBehavior.OpenAreaTrigger(trigger.Entry);
         BuildMenus();
         BuildToolbar();
     }
 
-    InteractionWindow interaction = null!;
+    CreaturePropertiesWindow creatureProps = null!;
     /// <summary>
-    /// The shared local content draft for interaction, quest and behavior editing.
+    /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
     ContentDrafts drafts = null!;
     QuestEditorWindow questEditor = null!;
-    BehaviorEditorWindow behaviorEditor = null!;
+    /// <summary>AreaTrigger rules have no creature, so they keep a window of their own.</summary>
+    BehaviorEditorWindow areaBehavior = null!;
 
     /// <summary>
-    /// Behavior editor for the selected creature or AreaTrigger, or its empty hint when nothing is
-    /// selected.
+    /// Behavior of the selected AreaTrigger or creature; with nothing selected the creature window
+    /// opens with its empty hint.
     /// </summary>
     void OpenBehaviorEditor()
     {
         if (areaTriggers.SelectedEntry is uint trigger)
         {
-            behaviorEditor.OpenAreaTrigger(trigger);
+            areaBehavior.OpenAreaTrigger(trigger);
         }
         else if (creatures.SelectedSpawn is { } spawn)
         {
-            behaviorEditor.Open(spawn.TemplateId, spawn.Guid);
+            creatureProps.Open(spawn, "behavior");
         }
         else
         {
-            behaviorEditor.Open(0, 0);
+            creatureProps.Open(null, "behavior");
         }
     }
 
@@ -400,7 +401,7 @@ public partial class TerrainViewer
         var file = menu.Menu("File");
         menu.Command(file, "Load client…", ChooseClient, () => !busy);
         menu.Command(file, "Update listfile…", () => _ = UpdateListfile(), () => !busy && listfileDownload == null);
-        menu.Command(file, "Open selected world",async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
+        menu.Command(file, "Open selected world", async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
         menu.Command(file, "Database connection…", () =>
         {
             _ = PromptConnection();
@@ -421,7 +422,7 @@ public partial class TerrainViewer
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
         menu.Command(view, "Quest editor", () => questEditor.Open(0), () => databaseEnabled);
-        menu.Command(view, "Behavior editor (selected creature)", OpenBehaviorEditor, () => databaseEnabled);
+        menu.Command(view, "Creature behavior (selected)", OpenBehaviorEditor, () => databaseEnabled);
         menu.Command(view, "Scene explorer", () =>
         {
             sidebar.Visible = true;

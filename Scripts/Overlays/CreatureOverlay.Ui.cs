@@ -5,7 +5,7 @@ namespace ACWorldEdit;
 /// <summary>Focused entity page; scene visibility and external connection settings live on the Scene tab.</summary>
 public partial class CreatureOverlay
 {
-    Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!, interact = null!, behavior = null!;
+    Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!, properties = null!;
     Label interactionSummary = null!;
     // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
     readonly LineEdit[] poseFields = new LineEdit[4];
@@ -55,41 +55,27 @@ public partial class CreatureOverlay
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
         copyGo.TooltipText = "Copy a GM teleport (.go xyz X Y Z map heading) to compare this pose in the client";
-        card.AddChild(InspectorUi.Text("Move (W) drags colored axes; Rotate (E) drags the yellow ring. Changes save to your local draft.", 12, true));
+        card.AddChild(InspectorUi.Text("Move (W) drags colored axes; Rotate (E) drags the yellow ring..", 12, true));
         var interactions = InspectorUi.Card(page, "Interactions");
         interactionSummary = InspectorUi.Text("Select a creature to see its interactions.", 12, true);
         interactions.AddChild(interactionSummary);
-        interact = InspectorUi.Button("Interact…", () =>
+        properties = InspectorUi.Button("Properties…", () =>
         {
             if (SelectedSpawn is { } spawn)
             {
-                InteractRequested?.Invoke(spawn);
+                PropertiesRequested?.Invoke(spawn);
             }
         });
-        behavior = InspectorUi.Button("Behavior…", () =>
-        {
-            if (SelectedSpawn is { } spawn)
-            {
-                BehaviorRequested?.Invoke(spawn);
-            }
-        });
-        behavior.TooltipText = "Edit this creature's SmartAI rules and speech";
-        var buttons = new HBoxContainer();
-        buttons.AddChild(interact);
-        buttons.AddChild(behavior);
-        interactions.AddChild(buttons);
+        properties.TooltipText = "Gossip, quests, vendor, trainer, behavior and speech of this creature";
+        interactions.AddChild(properties);
         interactions.AddChild(InspectorUi.Text("Or right-click the creature without dragging.", 11, true));
         return scroll;
     }
 
     /// <summary>
-    /// Open the interaction window for a creature (viewport short right-click or Interact…).
+    /// Open the creature properties window for a creature (viewport short right-click or Properties…).
     /// </summary>
-    public event Action<Foundation.CreatureSpawn>? InteractRequested;
-    /// <summary>
-    /// Open the behavior editor for the selected creature.
-    /// </summary>
-    public event Action<Foundation.CreatureSpawn>? BehaviorRequested;
+    public event Action<Foundation.CreatureSpawn>? PropertiesRequested;
 
     public void SetInteractionSummary(string text) => interactionSummary.Text = text;
 
@@ -142,8 +128,7 @@ public partial class CreatureOverlay
         drop.Disabled = !editable || GroundAt == null;
         reset.Disabled = !editable;
         copyGo.Disabled = !selectedGuid.HasValue;
-        interact.Disabled = !selectedGuid.HasValue;
-        behavior.Disabled = !selectedGuid.HasValue;
+        properties.Disabled = !selectedGuid.HasValue;
         fly.Disabled = !LayerEnabled || !selectedGuid.HasValue || !markers.ContainsKey(selectedGuid.Value);
         undo.Disabled = draft == null || !draft.CanUndo;
         redo.Disabled = draft == null || !draft.CanRedo;

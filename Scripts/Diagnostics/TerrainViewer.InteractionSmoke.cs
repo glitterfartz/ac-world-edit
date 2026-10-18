@@ -30,9 +30,9 @@ public partial class TerrainViewer
 
         // Fail fast with the stuck step's name rather than waiting on a long global timeout.
         interactionRun.Advance(delta, interactionSteps, !busy && world != null,
-            () => $"status={interaction.SmokeStatus}", SmokeFail, () => GetTree().Quit(),
-            timeoutWhere: () => $"status={interaction.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}",
-            waiting: () => $"status='{interaction.SmokeStatus}' questEditor='{questEditor.SmokeStatus}' quest={questEditor.QuestId}/{smokeQuest}");
+            () => $"status={creatureProps.SmokeStatus}", SmokeFail, () => GetTree().Quit(),
+            timeoutWhere: () => $"status={creatureProps.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}",
+            waiting: () => $"status='{creatureProps.SmokeStatus}' questEditor='{questEditor.SmokeStatus}' quest={questEditor.QuestId}/{smokeQuest}");
     }
 
     static void Require(bool condition, string message)
@@ -130,7 +130,7 @@ public partial class TerrainViewer
         }),
         ("right-drag-checked", () =>
         {
-            Require(!interaction.IsOpen && Math.Abs(yaw - smokeYaw) > 0.05f, "right-drag opened the window or did not turn the camera");
+            Require(!creatureProps.IsOpen && Math.Abs(yaw - smokeYaw) > 0.05f, "right-drag opened the window or did not turn the camera");
             FocusPose(Farley!.Pose);
             interactionRun.Wait = 10;
             return true;
@@ -143,13 +143,13 @@ public partial class TerrainViewer
         }),
         ("window-open", () =>
         {
-            Require(interaction.IsOpen && interaction.Entry == SmokeInnkeeper && creatures.SelectedGuid == Farley!.Guid, "short right-click did not open Farley's window");
-            if (!interaction.SmokeLoaded)
+            Require(creatureProps.IsOpen && creatureProps.Entry == SmokeInnkeeper && creatures.SelectedGuid == Farley!.Guid, "short right-click did not open Farley's window");
+            if (!creatureProps.SmokeLoaded)
             {
                 return false;
             }
 
-            var v = interaction.View!;
+            var v = creatureProps.View!;
             Require(v.Menus.Count > 0 && v.Menus[v.GossipMenuId].Options.Length > 0, "no gossip options");
             smokeRootMenu = v.GossipMenuId;
             GD.Print($"INTERACTION_SMOKE_VIEW '{v.Name}' menus={v.Menus.Count} options={v.Menus.Values.Sum(m => m.Options.Length)} vendor={v.Vendor.Length} starts={v.Starts.Length} ends={v.Ends.Length}");
@@ -158,14 +158,14 @@ public partial class TerrainViewer
         }),
         ("vendor-page", () =>
         {
-            interaction.SmokeShow("Gossip");
-            Require(interaction.SmokeFollow(3), "no vendor option to follow");
-            Require(interaction.SmokeOnVendorPage, "vendor option did not open the vendor page");
+            creatureProps.SmokeShow("Gossip");
+            Require(creatureProps.SmokeFollow(3), "no vendor option to follow");
+            Require(creatureProps.SmokeOnVendorPage, "vendor option did not open the vendor page");
             return true;
         }),
         ("vendor-icons", () =>
         {
-            if (interaction.SmokeIconsShown == 0)
+            if (creatureProps.SmokeIconsShown == 0)
             {
                 return false;
             }
@@ -175,11 +175,11 @@ public partial class TerrainViewer
         }),
         ("submenu-and-back", () =>
         {
-            interaction.SmokeShow("Gossip");
-            if (interaction.SmokeFollow(null))
+            creatureProps.SmokeShow("Gossip");
+            if (creatureProps.SmokeFollow(null))
             {
-                Require(interaction.SmokeCurrentMenu != smokeRootMenu, "submenu did not open");
-                Require(interaction.SmokePress("◂ Back") && interaction.SmokeCurrentMenu == smokeRootMenu, "back did not return to the root menu");
+                Require(creatureProps.SmokeCurrentMenu != smokeRootMenu, "submenu did not open");
+                Require(creatureProps.SmokePress("◂ Back") && creatureProps.SmokeCurrentMenu == smokeRootMenu, "back did not return to the root menu");
             }
             else
             {
@@ -190,19 +190,49 @@ public partial class TerrainViewer
         }),
         ("quest-detail", () =>
         {
-            interaction.SmokeShow("Quests");
-            var quest = interaction.View!.Starts.Concat(interaction.View.Ends).First(q => q.Info != null);
+            creatureProps.SmokeShow("Quests");
+            var quest = creatureProps.View!.Starts.Concat(creatureProps.View.Ends).First(q => q.Info != null);
             // Full button text: a title prefix can match another quest listed earlier on the page.
-            Require(interaction.SmokePress($"{quest.Info!.Title} ({quest.Info.Level})"), "quest button missing");
-            Require(interaction.SmokeOnQuestDetail, "quest detail did not open");
-            smokeQuest = interaction.SmokeQuestDetail;
+            Require(creatureProps.SmokePress($"{quest.Info!.Title} ({quest.Info.Level})"), "quest button missing");
+            Require(creatureProps.SmokeOnQuestDetail, "quest detail did not open");
+            smokeQuest = creatureProps.SmokeQuestDetail;
+            return true;
+        }),
+        ("quest-detail-loaded", () =>
+        {
+            // The embedded quest editor loads its rows on a worker before it has anything to show.
+            var panel = creatureProps.Context.Quest;
+            if (panel.IsLoading || panel.QuestId != smokeQuest || !panel.HasQuest)
+            {
+                return false;
+            }
+
             Screenshot("quest");
+            return true;
+        }),
+        ("behavior-section", () =>
+        {
+            creatureProps.SmokeShow("Behavior");
+            var panel = creatureProps.Context.Behavior;
+            if (panel.IsLoading || panel.OwnerId != SmokeInnkeeper || panel.Scope == null)
+            {
+                return false;
+            }
+
+            Screenshot("behavior");
+            return true;
+        }),
+        ("speech-section", () =>
+        {
+            creatureProps.SmokeShow("Speech");
+            Require(creatureProps.Context.Behavior.Scope == null, "speech section did not show the speech page");
+            Screenshot("speech");
+            creatureProps.ShowSection("quests", smokeQuest);
             return true;
         }),
         ("open-quest-editor", () =>
         {
-            Require(interaction.Size.X <= 480, "preview window grew wider than its client size: " + interaction.SmokeWidest());
-            return interaction.SmokePress("Open in Quest Editor");
+            return creatureProps.SmokePress("Open in Quest window");
         }),
         ("quest-editor-from-quest", () => questEditor.Visible && questEditor.QuestId == smokeQuest),
         ("quest-editor-from-toolbar", () =>
@@ -233,66 +263,66 @@ public partial class TerrainViewer
         }),
         ("edit-add-submenu", () =>
         {
-            interaction.SmokeSetEditing(true);
-            interaction.SmokeShow("Gossip");
-            int before = interaction.View!.Menus[smokeRootMenu].Options.Length;
-            if (interaction.View.Menus[smokeRootMenu].SharedBy > 1)
+            creatureProps.SmokeSetEditing(true);
+            creatureProps.SmokeShow("Gossip");
+            int before = creatureProps.View!.Menus[smokeRootMenu].Options.Length;
+            if (creatureProps.View.Menus[smokeRootMenu].SharedBy > 1)
             {
-                Require(interaction.SmokePress("Make a copy for this NPC") && interaction.View.GossipMenuId != smokeRootMenu, "fork did not repoint the NPC");
-                GD.Print($"INTERACTION_SMOKE_FORK {smokeRootMenu} -> {interaction.View.GossipMenuId}");
-                smokeRootMenu = interaction.View.GossipMenuId;
+                Require(creatureProps.SmokePress("Make a copy for this NPC") && creatureProps.View.GossipMenuId != smokeRootMenu, "fork did not repoint the NPC");
+                GD.Print($"INTERACTION_SMOKE_FORK {smokeRootMenu} -> {creatureProps.View.GossipMenuId}");
+                smokeRootMenu = creatureProps.View.GossipMenuId;
             }
 
-            Require(interaction.SmokePress("+ Add option → new submenu"), "add submenu button missing");
-            var menu = interaction.View!.Menus[smokeRootMenu];
-            Require(menu.Options.Length == before + 1 && menu.Options[^1].ActionMenu != 0 && interaction.View.Menus.ContainsKey(menu.Options[^1].ActionMenu), "new option with submenu missing");
+            Require(creatureProps.SmokePress("+ Add option → new submenu"), "add submenu button missing");
+            var menu = creatureProps.View!.Menus[smokeRootMenu];
+            Require(menu.Options.Length == before + 1 && menu.Options[^1].ActionMenu != 0 && creatureProps.View.Menus.ContainsKey(menu.Options[^1].ActionMenu), "new option with submenu missing");
             Screenshot("edit-gossip");
             return true;
         }),
         ("edit-greeting", () =>
         {
-            Require(interaction.SmokeSetGreeting("Smoke greeting, $N."), "greeting editor missing");
-            var text = interaction.View!.Menus[smokeRootMenu].Texts[0];
+            Require(creatureProps.SmokeSetGreeting("Smoke greeting, $N."), "greeting editor missing");
+            var text = creatureProps.View!.Menus[smokeRootMenu].Texts[0];
             Require(text.Male == "Smoke greeting, $N." && !text.FromBroadcast && text.Edited, "greeting edit not applied");
             return true;
         }),
         ("edit-vendor-search", () =>
         {
-            interaction.SmokeShow("Vendor");
-            Require(interaction.SmokeSearch("item", "Linen Cloth"), "item search box missing");
+            creatureProps.SmokeShow("Vendor");
+            Require(creatureProps.SmokeSearch("item", "Linen Cloth"), "item search box missing");
             return true;
         }),
         ("edit-vendor-add", () =>
         {
-            if (!interaction.SmokeStatus.Contains("result(s)", StringComparison.Ordinal))
+            if (!creatureProps.SmokeStatus.Contains("result(s)", StringComparison.Ordinal))
             {
                 return false;
             }
 
-            Require(interaction.SmokePress("+ Linen Cloth (2589)"), "Linen Cloth result missing");
-            Require(interaction.View!.Vendor.Any(i => i.Item == 2589 && i.Edited), "vendor item not added");
+            Require(creatureProps.SmokePress("+ Linen Cloth (2589)"), "Linen Cloth result missing");
+            Require(creatureProps.View!.Vendor.Any(i => i.Item == 2589 && i.Edited), "vendor item not added");
             Screenshot("edit-vendor");
             return true;
         }),
         ("edit-vendor-remove", () =>
         {
-            Require(interaction.SmokeRemoveVendorItem(2589) && interaction.View!.Vendor.All(i => i.Item != 2589), "vendor item not removed");
+            Require(creatureProps.SmokeRemoveVendorItem(2589) && creatureProps.View!.Vendor.All(i => i.Item != 2589), "vendor item not removed");
             return true;
         }),
         ("edit-flag-warning-fix", () =>
         {
-            interaction.SmokeShow("Info");
-            Require(interaction.SmokeToggleFlag("Quest giver", false), "quest giver checkbox missing");
-            Require(interaction.View!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
-            Require(interaction.SmokePress("Fix") && (interaction.View.NpcFlag & NpcFlags.QuestGiver) != 0, "fix did not restore the flag");
+            creatureProps.SmokeShow("Info");
+            Require(creatureProps.SmokeToggleFlag("Quest giver", false), "quest giver checkbox missing");
+            Require(creatureProps.View!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
+            Require(creatureProps.SmokePress("Fix") && (creatureProps.View.NpcFlag & NpcFlags.QuestGiver) != 0, "fix did not restore the flag");
             return true;
         }),
         ("edit-undo-redo-reopen", () =>
         {
-            Require(interaction.SmokePress("Undo") && (interaction.View!.NpcFlag & NpcFlags.QuestGiver) == 0, "undo did not revert the fix");
-            Require(interaction.SmokePress("Redo") && (interaction.View!.NpcFlag & NpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
-            interaction.SmokeReopenDraft();
-            var menu = interaction.View!.Menus[smokeRootMenu];
+            Require(creatureProps.SmokePress("Undo") && (creatureProps.View!.NpcFlag & NpcFlags.QuestGiver) == 0, "undo did not revert the fix");
+            Require(creatureProps.SmokePress("Redo") && (creatureProps.View!.NpcFlag & NpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
+            creatureProps.SmokeReopenDraft();
+            var menu = creatureProps.View!.Menus[smokeRootMenu];
             Require(menu.Options[^1].ActionMenu != 0 && menu.Texts[0].Male == "Smoke greeting, $N.", "edits lost after reopening the draft");
             Screenshot("edit-info");
             return true;
@@ -310,8 +340,8 @@ public partial class TerrainViewer
                 return false;
             }
 
-            GD.Print($"INTERACTION_SMOKE_FPS editWindow={interaction.IsOpen && interaction.Editing} fps={Engine.GetFramesPerSecond()}");
-            interaction.CloseWindow();
+            GD.Print($"INTERACTION_SMOKE_FPS editWindow={creatureProps.IsOpen && creatureProps.Editing} fps={Engine.GetFramesPerSecond()}");
+            creatureProps.CloseWindow();
             return true;
         }),
         ("settled-frame-rate-closed", () =>
@@ -322,7 +352,7 @@ public partial class TerrainViewer
             }
 
             GD.Print($"INTERACTION_SMOKE_FPS windowClosed fps={Engine.GetFramesPerSecond()}");
-            interaction.Open(Farley!);
+            creatureProps.Open(Farley!, "gossip");
             return true;
         }),
         ("map-switch-closes", () =>
@@ -340,7 +370,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            Require(!interaction.IsOpen, "window stayed open after a map switch");
+            Require(!creatureProps.IsOpen, "window stayed open after a map switch");
             return true;
         })
     ];

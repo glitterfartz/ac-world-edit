@@ -184,23 +184,30 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 | Client picker | `Ui/ClientPickerDialog.cs` | Profile and folder selection |
 | Connection | `Ui/ConnectionForm.cs` | Database settings; tested on a worker before saving |
 | Sidebar | `Ui/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
-| Editor base | `Ui/ContentEditorWindow.cs` | Shared header, undo and redo, and draft hooks for the content editors |
-| Interaction | `Ui/InteractionWindow.cs`, `.Edit.cs` | Client-style NPC window (gossip, quests, vendor, trainer); edit mode commits row edits |
-| Quest editor | `Ui/QuestEditorWindow.cs`, `.Pages.cs` | `quest_template` and related tables, with `QuestModel.Check` |
-| Behavior editor | `Ui/BehaviorEditorWindow.cs`, `.Rules.cs`, `.Speech.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes |
+| Editor base | `Ui/ContentEditorWindow.cs`, `Ui/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
+| Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
+| Quest editor | `Ui/QuestEditorWindow.cs` (search and frame), `Ui/QuestPanel.cs`, `.Pages.cs` | `quest_template` and related tables, with `QuestModel.Check`; the panel is also embedded in the creature window |
+| Behavior panel | `Ui/BehaviorPanel.cs`, `.Rules.cs`, `.Speech.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window |
+| AreaTrigger behavior | `Ui/BehaviorEditorWindow.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature |
 | Pending changes | `Ui/PendingChangesWindow.cs` | Lists pending changes; the viewer performs discard and export |
 | Menus and toolbar | `Ui/EditorMenu.cs`, `Ui/EditorToolbar.cs` | Callback-driven menus and mode buttons |
 | Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |
-| Client styling | `Ui/ClientStyle.cs` | Parchment theme, quality colours, gossip icons |
+| Client styling | `Ui/ClientStyle.cs` | Dark editor-window theme, quality colours, gossip icons |
+
+### Creature properties window
+
+`CreaturePropertiesWindow` is only the frame: header (name, Edit toggle, Undo/Redo), the section picker (`ItemList`) and a status line. The data lives in `CreatureContext` (the selected spawn, the interaction rows merged with the draft, the connection and draft hooks, commit and ID helpers). Each page is a `CreatureSection` (Gossip, Quests, Vendor, Trainer, Behavior, Speech, Info).
+
+To add a section: derive from `CreatureSection` (or `InteractionSection` for pages that draw `NpcInteraction`), implement `Id`, `Title` and `Refresh`, and add one factory to `CreatureSectionRegistry`. Sections with their own data keep it in a `ContentPanel` (as Behavior and Quests do); the context creates and shares those panels. `ctx.ShowSection(id, argument)` navigates between sections.
 
 Cross-window wiring is set up in `BuildUi`:
 
-- creature interact and behavior requests open the interaction and behavior editors;
-- interaction and behavior editors open the quest editor;
+- the creature inspector's Properties button, a short right-click and the Behavior menu entries open the creature window on a section;
+- the creature window and quest givers open the standalone quest editor, and the quest editor's giver cards open the creature window on its Behavior section;
 - the interaction summary updates the creature inspector;
 - the sidebar's review button opens the pending-changes window.
 
-All three content editors share one `ContentDrafts` instance and resync through its `Changed` event.
+Every content editor shares one `ContentDrafts` instance and resyncs through its `Changed` event.
 
 ## Diagnostics
 

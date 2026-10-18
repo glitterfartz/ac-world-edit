@@ -82,7 +82,15 @@ public partial class ContentEditorWindow : PanelContainer
 
     protected async Task<InteractionCatalog?> EnsureCatalog()
     {
-        var store = Store();
+        catalog = await LoadCatalog(Store());
+        return catalog;
+    }
+
+    /// <summary>
+    /// The client catalog for a store, loaded once per store; null without a store or when it fails.
+    /// </summary>
+    public static async Task<InteractionCatalog?> LoadCatalog(IClientFiles? store)
+    {
         if (store == null)
         {
             return null;
@@ -104,11 +112,10 @@ public partial class ContentEditorWindow : PanelContainer
             });
         }
 
-        catalog = await catalogLoad!;
-        return catalog;
+        return await catalogLoad!;
     }
 
-    protected static Button ButtonOf(string text, Action action)
+    public static Button ButtonOf(string text, Action action)
     {
         var button = new Button
         {
@@ -118,7 +125,7 @@ public partial class ContentEditorWindow : PanelContainer
         return button;
     }
 
-    protected static Button ButtonIn(Container parent, string text, Action action)
+    public static Button ButtonIn(Container parent, string text, Action action)
     {
         var button = ButtonOf(text, action);
         parent.AddChild(button);

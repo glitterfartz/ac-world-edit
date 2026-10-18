@@ -88,7 +88,7 @@ public partial class TerrainViewer
     [
         ("open", () =>
         {
-            behaviorEditor.Open(SmokeInnkeeper, 0);
+            creatureProps.OpenEntry(SmokeInnkeeper, "Innkeeper Farley", "behavior");
             return true;
         }),
         ("loaded", () =>

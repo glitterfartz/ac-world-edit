@@ -6,7 +6,7 @@ using static GdUnit4.Assertions;
 namespace ACWorldEdit.GdTests;
 
 /// <summary>
-/// The editor theme keeps highlighted and hovered entries readable: dark text on a light highlight.
+/// The editor theme keeps highlighted and hovered entries readable: light text on a dark highlight.
 /// </summary>
 [TestSuite]
 [RequireGodotRuntime]

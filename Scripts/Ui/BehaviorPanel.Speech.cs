@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// a group, weighted by chance). Rules follow CreatureTextMgr::LoadCreatureTexts: a valid
 /// BroadcastTextId replaces the line's own text, so such lines show that clearly.
 /// </summary>
-public partial class BehaviorEditorWindow
+public partial class BehaviorPanel
 {
     /// <summary>
     /// ChatMsg values creatures use (SharedDefines.h).

@@ -135,25 +135,25 @@ public partial class TerrainViewer
                 }
             case 4:
                 {
-                    if (behaviorEditor.IsLoading || !behaviorEditor.IsAreaTrigger || behaviorEditor.Entry != SmokeTrigger || behaviorEditor.SmokeScriptName != AreaTriggerRecord.SmartTrigger)
+                    if (areaBehavior.Panel.IsLoading || !areaBehavior.Panel.IsAreaTrigger || areaBehavior.Panel.Entry != SmokeTrigger || areaBehavior.Panel.SmokeScriptName != AreaTriggerRecord.SmartTrigger)
                     {
                         return;
                     }
 
-                    var rules = behaviorEditor.SmokeRules(scope);
-                    if (rules.Count != 1 || !behaviorEditor.SmokeDescribe(rules[0]).Contains("enters the trigger", StringComparison.Ordinal) || behaviorEditor.Issues.Any(i => i.Error))
+                    var rules = areaBehavior.Panel.SmokeRules(scope);
+                    if (rules.Count != 1 || !areaBehavior.Panel.SmokeDescribe(rules[0]).Contains("enters the trigger", StringComparison.Ordinal) || areaBehavior.Panel.Issues.Any(i => i.Error))
                     {
-                        SmokeFail("AREATRIGGER", $"behavior rules={rules.Count} issues={string.Join("; ", behaviorEditor.Issues.Select(i => i.Message))}");
+                        SmokeFail("AREATRIGGER", $"behavior rules={rules.Count} issues={string.Join("; ", areaBehavior.Panel.Issues.Select(i => i.Message))}");
                         return;
                     }
 
-                    GD.Print("AREATRIGGER_SMOKE_BEHAVIOR " + behaviorEditor.SmokeDescribe(rules[0]));
+                    GD.Print("AREATRIGGER_SMOKE_BEHAVIOR " + areaBehavior.Panel.SmokeDescribe(rules[0]));
                     // "Cast a spell on the player who entered" from the AreaTrigger templates.
-                    behaviorEditor.SmokeAddRule(2);
-                    var added = behaviorEditor.SmokeRules(scope);
+                    areaBehavior.Panel.SmokeAddRule(2);
+                    var added = areaBehavior.Panel.SmokeRules(scope);
                     if (added.Count != 2 || added.Any(r => r.Event != SmartCatalog.AreaTriggerEvent) || added.Last().Target != 7)
                     {
-                        SmokeFail("AREATRIGGER", $"template rule not drafted: {behaviorEditor.SmokeStatus}");
+                        SmokeFail("AREATRIGGER", $"template rule not drafted: {areaBehavior.Panel.SmokeStatus}");
                         return;
                     }
 
@@ -170,25 +170,25 @@ public partial class TerrainViewer
                         GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/areatrigger-behavior.png"));
                     }
 
-                    behaviorEditor.SmokeHistory(false);
+                    areaBehavior.Panel.SmokeHistory(false);
                     areaTriggerUndone = true;
                     areaTriggerWait = 5;
                     return;
                 }
 
-                if (behaviorEditor.IsLoading)
+                if (areaBehavior.Panel.IsLoading)
                 {
                     return;
                 }
 
-                if (behaviorEditor.SmokeRules(scope).Count != 1)
+                if (areaBehavior.Panel.SmokeRules(scope).Count != 1)
                 {
                     SmokeFail("AREATRIGGER", "undo did not remove the drafted rule");
                     return;
                 }
 
                 GD.Print("AREATRIGGER_SMOKE_DRAFT_PASSED template rule added and undone in the isolated content draft");
-                behaviorEditor.Visible = false;
+                areaBehavior.Visible = false;
                 areaTriggers.SetLayerEnabled(false);
                 areaTriggerStage = 6;
                 areaTriggerWait = 10;
