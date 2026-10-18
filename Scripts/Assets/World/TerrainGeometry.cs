@@ -9,8 +9,9 @@ namespace ACWorldEdit.Assets;
 public sealed record TerrainGeometry(Vector3[] Vertices, int[] Indices)
 {
     /// <summary>
-    /// Emit four triangles around each inner vertex and skip each native 2-by-2 cell hole block.
-    /// Heights are relative to the chunk elevation.
+    /// Emit four triangles around each inner vertex and skip native hole cells (a coarse Wrath hole
+    /// covers a 2-by-2 block of cells, retail can hole single cells). Heights are relative to the
+    /// chunk elevation.
     /// </summary>
     public static TerrainGeometry Build(TerrainChunk chunk)
     {
@@ -26,11 +27,12 @@ public sealed record TerrainGeometry(Vector3[] Vertices, int[] Indices)
         }
 
         List<int> indices = [];
+        ulong holes = chunk.CellHoles;
         for (int y = 0; y < 8; y++)
         {
             for (int x = 0; x < 8; x++)
             {
-                if ((chunk.Holes & (1u << (y / 2 * 4 + x / 2))) != 0)
+                if ((holes & (1UL << (y * 8 + x))) != 0)
                 {
                     continue;
                 }

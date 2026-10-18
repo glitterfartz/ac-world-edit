@@ -49,7 +49,19 @@ public partial class TerrainViewer
             return;
         }
 
-        GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} build={store.Build} maps={mapList.Count} map={mapList[Math.Max(maps.Selected, 0)].Directory} tiles={world.Tiles.Count} globalWmos={world.GlobalObjects.Count} database={databaseEnabled} catalogs={models.Catalog != null} message=\"{message}\"");
+        // A terrain map must also stream its first tile (worker decode plus main-thread upload); the
+        // dummy headless renderer accepts the uploads, so this exercises the whole path but not the output.
+        if (world.Tiles.Count > 0 && loaded.Count == 0)
+        {
+            if (message.StartsWith("Tile error", StringComparison.Ordinal) || message.StartsWith("Render error", StringComparison.Ordinal))
+            {
+                SmokeFail("CLIENT_SMOKE_TILE_FAILED " + message);
+            }
+
+            return;
+        }
+
+        GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} build={store.Build} maps={mapList.Count} map={mapList[Math.Max(maps.Selected, 0)].Directory} tiles={world.Tiles.Count} streamed={loaded.Count} textures={renderer.TextureCount} globalWmos={world.GlobalObjects.Count} database={databaseEnabled} catalogs={models.Catalog != null} message=\"{message}\"");
         GetTree().Quit();
     }
 }

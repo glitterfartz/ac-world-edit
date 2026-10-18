@@ -2,23 +2,31 @@
 
 Current state only. Update or remove entries as things change; do not append history (git has it).
 
-## Multi-client support (retail first) - milestones 0-2 done, 3 (retail terrain) next
+## Multi-client support (retail first) - milestones 0-3 done, 4 (retail WMO and M2) next
 
 - Plan: `~/.claude/plans/let-s-begin-to-plan-quizzical-pike.md`. Wrath behavior is meant to be unchanged.
 - Done: `IClientFiles` (implemented by `AssetStore` and `CascFiles`); FileDataIDs travel in the existing path strings as
   `fdid:123` (`AssetRef`). Retail: `CascFiles` (CascLib, read-only, by FileDataID), `Db2Tables` (DBCD + pinned WoWDBDefs in
   `Data/definitions`, rev in `revision.txt`), map list from `Map.WdtFileDataID`. `File -> Load client...` picks Wrath or
   Retail and remembers a folder per profile; Retail runs with the database off (no queries, teleports, editors or DB layers).
-- Verified: default xUnit and Wrath corpus pass; `RetailCorpusTests` pass against `X:\Games\World of Warcraft` (12.1.5.70448);
-  headless `--client-smoke` opens Retail (CascLib loads inside Godot; 972 maps; Azeroth WDT parses, 1176 tiles) and Wrath
-  (106 maps, 687 tiles); Wrath `--terrain-smoke` passes; GdUnit4 picker tests pass.
-- Retail opens a map but shows nothing yet: terrain, buildings, liquids and sky come in milestones 3-5. `RetailKeys` (TACT
-  key recovery) is deferred; the DB2s read so far need no extra keys.
+- Verified: default xUnit passes; `RetailCorpusTests` (11) pass against `X:\Games\World of Warcraft` (12.1.5.70448), incl.
+  sampled Azeroth tiles decoding with every terrain BLP; headless `--client-smoke` opens Retail (972 maps, Azeroth 1176 tiles)
+  and now streams the first tile through the real renderer (7 textures). Once in 3 runs the process printed a .NET fatal
+  error from a Godot finalizer at shutdown after the OK line (exit code 0 on the other two); not investigated.
+  Wrath data (the `wow-data` junction) was not found this session, so the Wrath corpus, Wrath smokes and StormLib
+  differential were not re-run after the TerrainTile refactor; only the synthetic Wrath tile tests cover it.
+- Retail terrain (milestone 3): `WorldMap` reads MAID into `Files` (root/tex0/obj0 FileDataIDs, `ReadTile` picks the format);
+  `RetailTerrain` builds `TerrainTile` from root + tex0 through the Wrath alpha/layer code (`TerrainTile.AddLayers`).
+  Root MCNK sub-chunk offsets are zero, so sub-chunks are walked after the 128-byte header; tex0 MCNKs have no header and pair
+  with root MCNKs by order. High-res holes (flag 0x10000) are per-cell (`TerrainChunk.CellHoles`; Wrath holes expand into it).
+  Retail uncompressed alpha is always 4096 bytes (WDT flag 0x80 treated like 0x4). Chunks may define up to 8 layers; only
+  the first 4 are drawn (`DroppedLayers`, logged per tile). Not read yet: obj0 placements (milestone 4), MH2O liquids (5).
+  The viewer streams retail tiles with the existing renderer. `RetailKeys` (TACT key recovery) is deferred.
 - Retail facts: FDID-only (every path lookup failed); DB2 FDIDs are in `Db2Tables.FileIds`; a MAID WDT entry is 8
   FileDataIDs; tile = root + tex0 + obj0 files; M2 is MD21 (v272) around MD20 at the Wrath header offsets; WMO root has GFID
   and MODI, no MOTX. Sky: `Light` has one `LightParamsID`, `LightData` holds per-time colors.
 - `LiquidType.Texture` holds path strings; resolving them needs the community listfile (download design in the plan, milestone 5).
-- Not verified: anything visual; `--reload-smoke`; the picker dialog by eye; CascLib built from source (the DLL is copied from
+- Not verified: anything visual (retail terrain blending, 5+ layer chunks, hole placement); `--reload-smoke`; the picker dialog by eye; CascLib built from source (the DLL is copied from
   TCWorldEdit; `Tools/Get-CascLib.ps1` only copies it); M2 SFID/TXID/AFID contents, WMO groups, MH2O.
 
 ## Behavior editor (SmartAI, AIName, creature_text, areatrigger_scripts)
@@ -70,7 +78,7 @@ Current state only. Update or remove entries as things change; do not append his
 
 ## Testing (see TESTING.md)
 
-- xUnit: 452 default tests (+8 Retail corpus tests that need ACWORLD_RETAIL_DIR); GdUnit4: 19 (ConnectionForm, UserSettings, PendingChangesWindow, PickerPopup, ClientPickerDialog).
+- xUnit: 471 default tests (+11 Retail corpus tests that need ACWORLD_RETAIL_DIR); GdUnit4: 19 (ConnectionForm, UserSettings, PendingChangesWindow, PickerPopup, ClientPickerDialog).
 - Logic extracted from Godot unchanged and tested: Foundation `ContentDrafts`, `InteractionEdits`, `PoseText`;
   `Scripts/Data/SettingsResolver`; `Scripts/Assets/World/{AreaLookup,LightBand}` (Godot halves are partials in
   `Scripts/Viewer`). New files lack `.uid` until Godot opens the project.

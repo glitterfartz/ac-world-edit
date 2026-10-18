@@ -20,12 +20,48 @@ public sealed class TerrainChunk
 {
     public int X, Y;
     public uint Flags, Holes, AreaId;
+
+    /// <summary>
+    /// Per-cell hole mask of the 8-by-8 cells, bit y * 8 + x. Null for the 4-by-4 <see cref="Holes"/>
+    /// form (Wrath); retail chunks flagged 0x10000 store this mask directly.
+    /// </summary>
+    public ulong? HighHoles;
+
+    /// <summary>
+    /// Hole mask in the 8-by-8 cell form regardless of how the client stored it; a coarse hole covers
+    /// its 2-by-2 block of cells.
+    /// </summary>
+    public ulong CellHoles => HighHoles ?? ExpandHoles(Holes);
+
+    static ulong ExpandHoles(uint coarse)
+    {
+        ulong cells = 0;
+        for (int y = 0; y < 8; y++)
+        {
+            for (int x = 0; x < 8; x++)
+            {
+                if ((coarse & (1u << (y / 2 * 4 + x / 2))) != 0)
+                {
+                    cells |= 1UL << (y * 8 + x);
+                }
+            }
+        }
+
+        return cells;
+    }
+
     public float Height;
     public float ServerX, ServerY;
     public float[] Heights = new float[145];
     public sbyte[]? Normals;
     public byte[]? Colors, Shadow;
     public List<TerrainLayer> Layers = [];
+
+    /// <summary>
+    /// Layers the file defines beyond the four the terrain shader blends; they are not drawn.
+    /// Only retail files (up to eight layers) produce this.
+    /// </summary>
+    public int DroppedLayers;
 }
 
 /// <summary>
@@ -40,6 +76,23 @@ public sealed class TerrainTile
     public List<TerrainChunk> Chunks { get; } = [];
     public List<WorldObject> Objects { get; }
     public List<ModelSurface> Liquids { get; }
+
+    /// <summary>
+    /// Assemble a tile whose chunks, placements and liquids another reader already decoded (the
+    /// split retail files). Requires the same complete 256-chunk grid as the Wrath reader.
+    /// </summary>
+    internal TerrainTile(TileKey key, List<TerrainChunk> chunks, List<WorldObject> objects, List<ModelSurface> liquids)
+    {
+        if (chunks.Count != 256)
+        {
+            throw new InvalidDataException($"Expected 256 MCNK chunks, found {chunks.Count}");
+        }
+
+        Key = key;
+        Chunks = chunks;
+        Objects = objects;
+        Liquids = liquids;
+    }
 
     /// <summary>
     /// Read MCNK fields and relative subchunk offsets, preserve holes/materials and batch liquid
@@ -154,28 +207,7 @@ public sealed class TerrainTile
                 chunk.Shadow = shadow;
             }
 
-            var layers = Sub(28, "MCLY");
-            var alpha = Sub(36, "MCAL", true);
-            int count = layers.Length / 16;
-            // Shipped ADTs contain untextured chunks with an empty MCLY (for example
-            // ChamberOfAspectsRed_30_25); they still carry heights and render untextured.
-            if (count > 4 || layers.Length % 16 != 0)
-            {
-                throw new InvalidDataException("Invalid terrain layer count");
-            }
-
-            for (int i = 0; i < count; i++)
-            {
-                int p = i * 16, texture = checked((int)MpqArchive.U(layers, p));
-                if (texture >= textures.Length)
-                {
-                    throw new InvalidDataException("Bad terrain texture index");
-                }
-
-                uint flags = MpqArchive.U(layers, p + 4);
-                byte[] map = i == 0 ? [] : DecodeAlpha(alpha, (int)MpqArchive.U(layers, p + 8), flags, bigAlpha, (chunk.Flags & 0x8000) == 0);
-                chunk.Layers.Add(new(textures[texture], map));
-            }
+            AddLayers(chunk, Sub(28, "MCLY"), Sub(36, "MCAL", true), textures, bigAlpha);
 
             Chunks.Add(chunk);
         }
@@ -186,6 +218,39 @@ public sealed class TerrainTile
         if (Chunks.Count != 256)
         {
             throw new InvalidDataException($"Expected 256 MCNK chunks, found {Chunks.Count}");
+        }
+    }
+
+    /// <summary>
+    /// Decode MCLY layer records and their MCAL opacity into <paramref name="chunk"/>. The texture names
+    /// are whatever identifies a texture for the client (paths for Wrath, FileDataID references for
+    /// retail); an empty name marks an unusable slot and fails only when a layer refers to it.
+    /// Wrath allows four layers; retail files may define up to eight, of which the shader blends the
+    /// first four and the rest are counted in <see cref="TerrainChunk.DroppedLayers"/>.
+    /// </summary>
+    internal static void AddLayers(TerrainChunk chunk, byte[] layers, byte[] alpha, IReadOnlyList<string> textures, bool bigAlpha, int maxDefined = 4)
+    {
+        int count = layers.Length / 16;
+        // Shipped ADTs contain untextured chunks with an empty MCLY (for example
+        // ChamberOfAspectsRed_30_25); they still carry heights and render untextured.
+        if (count > maxDefined || layers.Length % 16 != 0)
+        {
+            throw new InvalidDataException("Invalid terrain layer count");
+        }
+
+        chunk.DroppedLayers = Math.Max(0, count - 4);
+        count -= chunk.DroppedLayers;
+        for (int i = 0; i < count; i++)
+        {
+            int p = i * 16, texture = checked((int)MpqArchive.U(layers, p));
+            if (texture >= textures.Count || textures[texture].Length == 0)
+            {
+                throw new InvalidDataException("Bad terrain texture index");
+            }
+
+            uint flags = MpqArchive.U(layers, p + 4);
+            byte[] map = i == 0 ? [] : DecodeAlpha(alpha, (int)MpqArchive.U(layers, p + 8), flags, bigAlpha, (chunk.Flags & 0x8000) == 0);
+            chunk.Layers.Add(new(textures[texture], map));
         }
     }
 

@@ -54,6 +54,64 @@ public class RetailCorpusTests
         Assert.Contains(new TileKey(32, 48), map.Tiles);
     }
 
+    static WorldMap Azeroth()
+    {
+        var azeroth = RetailData.Tables.Maps().Single(m => m.Directory.Equals("azeroth", StringComparison.OrdinalIgnoreCase));
+        return new WorldMap(azeroth.Directory, RetailData.Files.Read(AssetRef.FromFileId(azeroth.WdtFileId)));
+    }
+
+    [RetailClientFact]
+    public void AzerothWdtListsSplitTileFiles()
+    {
+        var map = Azeroth();
+        Assert.True(map.IsSplit);
+        Assert.True(map.BigAlpha);
+        Assert.Equal(map.Tiles.Count, map.Files.Count);
+        Assert.All(map.Files.Values, f => Assert.True(RetailData.Files.Exists(AssetRef.FromFileId(f.Root)) && RetailData.Files.Exists(AssetRef.FromFileId(f.Textures))));
+    }
+
+    [RetailClientFact]
+    public void SampledAzerothTilesDecodeWithTexturesAndAlpha()
+    {
+        var map = Azeroth();
+        // Elwynn plus a spread of other tiles, so both compressed and uncompressed alpha and varying MDID sizes occur.
+        var keys = new[] { new TileKey(32, 48) }.Concat(map.Tiles.OrderBy(k => k.X * 64 + k.Y).Where((_, i) => i % 97 == 0)).Distinct().ToList();
+        Assert.True(keys.Count >= 8);
+        foreach (var key in keys)
+        {
+            var tile = map.ReadTile(RetailData.Files, key);
+            Assert.Equal(256, tile.Chunks.Count);
+            Assert.All(tile.Chunks, c => Assert.True(float.IsFinite(c.Height) && c.Heights.All(float.IsFinite), $"{key} chunk {c.X},{c.Y}"));
+            Assert.Contains(tile.Chunks, c => c.Layers.Count > 0);
+            foreach (var layer in tile.Chunks.SelectMany(c => c.Layers).Skip(1).Where(l => l.Alpha.Length > 0).Take(50))
+            {
+                Assert.Equal(4096, layer.Alpha.Length);
+            }
+
+            foreach (string texture in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct())
+            {
+                Assert.True(AssetRef.TryParse(texture, out _), texture);
+                var blp = BlpTexture.Decode(RetailData.Files.Read(texture));
+                Assert.True(blp.Width > 0 && blp.Height > 0, texture);
+            }
+        }
+    }
+
+    [RetailClientFact]
+    public void ElwynnChunksSitAtTheirServerPositions()
+    {
+        // Chunk (x, y) of tile (tx, ty) starts at world (17066.67 - 533.33*ty - 33.33*y, 17066.67 - 533.33*tx - 33.33*x).
+        var tile = Azeroth().ReadTile(RetailData.Files, new(32, 48));
+        double Tile = 1600.0 / 3.0, Chunk = Tile / 16, Origin = 32 * Tile;
+        foreach (var c in tile.Chunks.Where(c => (c.X + c.Y) % 5 == 0))
+        {
+            Assert.InRange(c.ServerX, Origin - (48 + 1) * Tile + 1, Origin - 48 * Tile + 1);
+            Assert.InRange(c.ServerY, Origin - (32 + 1) * Tile + 1, Origin - 32 * Tile + 1);
+            Assert.Equal(Origin - 48 * Tile - c.Y * Chunk, c.ServerX, 0.5);
+            Assert.Equal(Origin - 32 * Tile - c.X * Chunk, c.ServerY, 0.5);
+        }
+    }
+
     [RetailClientFact]
     public void PathsFailClosedWithoutAResolver()
     {

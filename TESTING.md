@@ -98,7 +98,7 @@ Done:
 - [x] Extracted and tested: `ContentDrafts`, `InteractionEdits`, `PoseText`, `SettingsResolver`, `AreaLookup`, `LightBand`
 - [x] GdUnit4: PendingChangesWindow, PickerPopup
 - [x] AssetRef FileDataID reference strings; MPQ store refuses them (`AssetRefTests`, the store check is Corpus)
-- [x] Retail: install detection, CascLib/definition search helpers, client folder checks, profile settings (synthetic); retail CASC/DB2/map list/WDT against a real install (`RetailCorpusTests`, needs `ACWORLD_RETAIL_DIR`)
+- [x] Retail: install detection, CascLib/definition search helpers, client folder checks, profile settings (synthetic); retail CASC/DB2/map list/WDT/MAID tiles/split-ADT terrain against a real install (`RetailCorpusTests`, needs `ACWORLD_RETAIL_DIR`); split ADT/MAID/high-res-hole readers over synthetic files (`SplitTerrainTests`)
 - [x] GdUnit4: ClientPickerDialog
 
 Not extracted (nothing static or pure to move without changing behavior; revisit if these windows are refactored):

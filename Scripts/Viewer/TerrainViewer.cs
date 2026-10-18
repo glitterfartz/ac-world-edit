@@ -267,7 +267,7 @@ public partial class TerrainViewer : Node3D
             message = world.Tiles.Count > 0 ? $"{name} · {world.Tiles.Count} terrain tiles" : $"{name} · interior WMO";
             if (assets.Kind == ClientKind.Retail)
             {
-                message += " · retail terrain, buildings and liquids are not loaded yet";
+                message += " · retail buildings, doodads, liquids and sky are not loaded yet";
             }
 
             if (smoke)
@@ -503,9 +503,15 @@ public partial class TerrainViewer : Node3D
     PreparedTile Prepare(IClientFiles assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        var tile = new TerrainTile(key, assets.Read(map.TilePath(key)), map.BigAlpha);
+        var tile = map.ReadTile(assets, key);
         var decoded = new Dictionary<string, BlpTexture>(StringComparer.OrdinalIgnoreCase);
         List<string> errors = [];
+        int overLayered = tile.Chunks.Count(c => c.DroppedLayers > 0);
+        if (overLayered > 0)
+        {
+            errors.Add($"{key}: {overLayered} chunks define more than 4 texture layers; the extra layers are not drawn.");
+        }
+
         foreach (string path in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             token.ThrowIfCancellationRequested();
@@ -552,8 +558,7 @@ public partial class TerrainViewer : Node3D
             MoveCamera(delta);
         }
 
-        // Retail ADTs are split files addressed by FileDataID; their reader arrives with the retail terrain work.
-        if (!busy && world != null && store is { Kind: ClientKind.Wrath335 })
+        if (!busy && world != null && store != null)
         {
             UpdateTerrainStreaming(world, store);
         }

@@ -12,7 +12,7 @@ public sealed class TerrainHeights
     const int Samples = 145;
     readonly float[] heights = new float[256 * Samples];
     readonly float[] elevation = new float[256];
-    readonly uint[] holes = new uint[256];
+    readonly ulong[] holes = new ulong[256];
     readonly bool[] present = new bool[256];
 
     public TerrainHeights(TerrainTile tile)
@@ -22,12 +22,12 @@ public sealed class TerrainHeights
             int index = chunk.Y * 16 + chunk.X;
             Array.Copy(chunk.Heights, 0, heights, index * Samples, Samples);
             elevation[index] = chunk.Height;
-            holes[index] = chunk.Holes;
+            holes[index] = chunk.CellHoles;
             present[index] = true;
         }
     }
 
-    public long Bytes => heights.Length * sizeof(float) + elevation.Length * sizeof(float) + holes.Length * sizeof(uint) + present.Length;
+    public long Bytes => heights.Length * sizeof(float) + elevation.Length * sizeof(float) + holes.Length * sizeof(ulong) + present.Length;
 
     /// <summary>
     /// Return the terrain height at a tile-local X/Z point, or null outside the tile, in a missing
@@ -54,7 +54,7 @@ public sealed class TerrainHeights
             X = cx,
             Y = cy,
             Height = elevation[index],
-            Holes = holes[index]
+            HighHoles = holes[index]
         };
         Array.Copy(heights, index * Samples, chunk.Heights, 0, Samples);
         var geometry = TerrainGeometry.Build(chunk);
