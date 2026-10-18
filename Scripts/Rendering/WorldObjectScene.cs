@@ -8,24 +8,18 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
 {
-    readonly Dictionary<TileKey, List<WorldObject>> tiles = [];
+    // Which tile owns each deduplicated object, and what each batch holds. A border-straddling object
+    // can be referenced by several neighbouring tiles; see PlacementOwnership for the sticky rule.
+    readonly PlacementOwnership ownership = new();
     readonly Dictionary<(TileKey Tile, ModelKey Model), (ModelInstance Node, WorldObject[] Items)> batches = [];
-    // A border-straddling object can be referenced by more than one neighboring tile. Sticky
-    // ownership keeps it on whichever tile already owns it (while that tile stays loaded) so an
-    // unrelated tile streaming in/out elsewhere cannot reassign it and force a visible rebuild.
-    readonly Dictionary<(bool IsWmo, uint Id), TileKey> owner = [];
-    WorldObject[] globals = [];
-    public int ObjectCount { get; private set; }
-    public int DoodadCount { get; private set; }
-    public int WmoCount { get; private set; }
+    public int ObjectCount => ownership.ObjectCount;
+    public int DoodadCount => ownership.DoodadCount;
+    public int WmoCount => ownership.WmoCount;
 
-    bool showDoodads = true, showWmos = true;
     public void SetLayers(bool doodads, bool wmos)
     {
-        showDoodads = doodads;
-        showWmos = wmos;
         library.SetDoodadsVisible(doodads);
-        Reconcile();
+        Apply(ownership.SetLayers(doodads, wmos));
     }
 
     /// <summary>
@@ -33,8 +27,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// </summary>
     public void SetTile(TileKey key, List<WorldObject> items)
     {
-        tiles[key] = items;
-        Reconcile();
+        Apply(ownership.SetTile(key, items));
     }
 
     /// <summary>
@@ -42,10 +35,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// </summary>
     public void RemoveTile(TileKey key)
     {
-        if (tiles.Remove(key))
-        {
-            Reconcile();
-        }
+        Apply(ownership.RemoveTile(key));
     }
 
     /// <summary>
@@ -53,8 +43,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// </summary>
     public void SetGlobals(List<WorldObject> items)
     {
-        globals = items.ToArray();
-        Reconcile();
+        Apply(ownership.SetGlobals(items));
     }
 
     /// <summary>
@@ -110,91 +99,28 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     public void Clear()
     {
         batches.FreeAll(b => b.Node);
-        tiles.Clear();
-        owner.Clear();
-        globals = [];
-        ObjectCount = 0;
-        DoodadCount = WmoCount = 0;
+        ownership.Clear();
     }
 
     /// <summary>
-    /// Pick sticky owners for duplicate/border-shared IDs and retain unchanged batches. An object
-    /// keeps its current owner tile as long as that tile stays loaded, so one tile streaming in or
-    /// out elsewhere cannot reassign a shared object and force an unrelated batch to rebuild.
+    /// Rebuild exactly the batches whose membership changed; every other batch node stays as is.
     /// ModelLibrary attaches embedded doodads after each WMO becomes ready.
     /// </summary>
-    void Reconcile()
+    void Apply(IReadOnlyList<PlacementBatch> changed)
     {
-        var candidates = new Dictionary<(bool IsWmo, uint Id), List<(TileKey Tile, WorldObject Item)>>();
-        void Collect(TileKey tile, IEnumerable<WorldObject> items)
+        foreach (var batch in changed)
         {
-            foreach (var item in items)
+            var key = (batch.Tile, new ModelKey(batch.Path, DoodadSet: batch.DoodadSet));
+            if (batches.ContainsKey(key))
             {
-                if (item.IsWmo ? !showWmos : !showDoodads)
-                {
-                    continue;
-                }
-
-                var id = (item.IsWmo, item.Id);
-                if (!candidates.TryGetValue(id, out var list))
-                {
-                    candidates[id] = list = [];
-                }
-
-                list.Add((tile, item));
-            }
-        }
-
-        Collect(new(-1, -1), globals);
-        foreach (var tile in tiles)
-        {
-            Collect(tile.Key, tile.Value);
-        }
-
-        var desired = new Dictionary<(TileKey Tile, ModelKey Model), List<WorldObject>>();
-        foreach (var (id, options) in candidates)
-        {
-            var chosen = owner.TryGetValue(id, out var prior) ? options.FirstOrDefault(o => o.Tile == prior) : default;
-            if (chosen.Item == null)
-            {
-                chosen = options.OrderBy(o => o.Tile.X).ThenBy(o => o.Tile.Y).First();
+                batches.Free(key, b => b.Node);
             }
 
-            owner[id] = chosen.Tile;
-            var key = (chosen.Tile, new ModelKey(chosen.Item.Path, DoodadSet: chosen.Item.DoodadSet));
-            if (!desired.TryGetValue(key, out var list))
+            var items = ownership.Items(batch);
+            if (items.Length > 0)
             {
-                desired[key] = list = [];
-            }
-
-            list.Add(chosen.Item);
-        }
-
-        foreach (var id in owner.Keys.Except(candidates.Keys).ToArray())
-        {
-            owner.Remove(id);
-        }
-
-        foreach (var pair in batches.ToArray())
-        {
-            if (desired.TryGetValue(pair.Key, out var items) && items.SequenceEqual(pair.Value.Items))
-            {
-                continue;
-            }
-
-            batches.Free(pair.Key, b => b.Node);
-        }
-
-        foreach (var pair in desired)
-        {
-            if (!batches.ContainsKey(pair.Key))
-            {
-                batches[pair.Key] = (library.Attach(root, pair.Key.Model, pair.Value.Select(ModelLibrary.Placement).ToArray()), pair.Value.ToArray());
+                batches[key] = (library.Attach(root, key.Item2, items.Select(ModelLibrary.Placement).ToArray()), items);
             }
         }
-
-        ObjectCount = candidates.Count;
-        DoodadCount = candidates.Keys.Count(id => !id.IsWmo);
-        WmoCount = candidates.Keys.Count(id => id.IsWmo);
     }
 }
