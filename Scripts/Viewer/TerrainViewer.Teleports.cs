@@ -71,7 +71,7 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// A random game_tele location on Eastern Kingdoms (map 0) to open instead of the default tile.
+    /// A random game_tele location on any map this client has, to open instead of the default tile.
     /// Null without a usable database connection, so the default location is used.
     /// </summary>
     async Task<TeleportLocation?> PickStartLocation()
@@ -86,7 +86,8 @@ public partial class TerrainViewer
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var rows = await Task.Run(() => new TeleportSource(settings).ReadAsync(timeout.Token), timeout.Token);
-            return TeleportSource.PickOnMap(rows, 0, Random.Shared);
+            var available = mapList.Select(m => (ushort)m.Id).ToHashSet();
+            return TeleportSource.Pick(rows, available, Random.Shared);
         }
         catch (Exception error)
         {

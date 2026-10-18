@@ -221,13 +221,14 @@ public partial class TerrainViewer : Node3D
 
         if (store != null && mapList.Count > 0)
         {
-            // Eastern Kingdoms opens at a random game_tele spot when the database is reachable.
+            // Opens at a random game_tele spot (any map) when the database is reachable.
             TeleportLocation? start = null;
-            if (!anySmoke && maps.Selected >= 0 && mapList[maps.Selected].Id == 0)
+            if (!anySmoke)
             {
                 start = await PickStartLocation();
                 if (start != null)
                 {
+                    maps.Select(mapList.FindIndex(m => m.Id == start.Map));
                     var view = WorldCoordinates.ToView(new(start.X, start.Y, start.Z));
                     tileX.Value = Math.Clamp((int)Math.Floor(view.X / TerrainTile.Size + 32), 0, 63);
                     tileY.Value = Math.Clamp((int)Math.Floor(view.Z / TerrainTile.Size + 32), 0, 63);
