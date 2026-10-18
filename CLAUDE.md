@@ -66,6 +66,8 @@ Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` path
 - For large features, don't implement tests ahead of the feature; implement the feature first, then add tests. Tests should be written to verify the feature works as intended, not to drive the implementation.
 - If a feature requires a visual change you must inspect in Godot to verify them.
 
+- Don't add UI text, tooltips or status messages saying that changes are a "local draft" or that the "database is unchanged" / "source is unchanged". That is the app's basic premise; users know it. Write status messages about what happened ("Saved.", "Moved graveyard.") and only mention drafts or the database when the distinction matters to a decision or an error.
+
 ## Commit messages
 
 - Subject: `type(scope): summary`, scope optional. Types: `feat` (new user-visible capability), `fix` (wrong behavior corrected), `perf`, `refactor` (no behavior change), `test`, `docs`, `build` (csproj, global.json, NuGet, launcher), `chore` (repo hygiene, .gitignore, moving or deleting files), `style` (formatting only).

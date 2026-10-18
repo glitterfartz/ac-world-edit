@@ -95,7 +95,7 @@ public partial class CreatureOverlay : IPlacementEditor
         }
 
         // View Y is server Z, so the probe height commits directly.
-        Commit(marker.Spawn, pose with { Z = height }, "Dropped to ground; saved local draft.");
+        Commit(marker.Spawn, pose with { Z = height }, "Dropped to ground.");
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public partial class CreatureOverlay : IPlacementEditor
         if (EditableMarker() is { } marker)
         {
             gizmo.Finish(false);
-            Commit(marker.Spawn, marker.Spawn.Pose, "Reset to source pose; saved local draft.");
+            Commit(marker.Spawn, marker.Spawn.Pose, "Reset to source pose.");
         }
     }
 
@@ -139,7 +139,7 @@ public partial class CreatureOverlay : IPlacementEditor
             return;
         }
 
-        Commit(marker.Spawn, after, "Saved typed pose to local draft.");
+        Commit(marker.Spawn, after, "Saved typed pose.");
     }
 
     /// <summary>

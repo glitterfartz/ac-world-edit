@@ -57,7 +57,7 @@ public partial class SceneSidebar : PanelContainer
         root.AddThemeConstantOverride("separation", 12);
         AddChild(root);
         root.AddChild(InspectorUi.Text("Scene explorer", 23));
-        root.AddChild(InspectorUi.Text("VISIBILITY  /  SELECTION  /  LOCAL DRAFTS", 10, true));
+        root.AddChild(InspectorUi.Text("VISIBILITY  /  SELECTION", 10, true));
         tabs = new TabContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill

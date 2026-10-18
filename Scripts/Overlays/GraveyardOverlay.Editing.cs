@@ -12,7 +12,7 @@ public partial class GraveyardOverlay : IPlacementEditor
 {
     GraveyardDraft? draft;
     string draftPath = "";
-    string draftMessage = "Local draft only; source database is unchanged.";
+    string draftMessage = "";
     TransformGizmo gizmo = null!;
 
     /// <summary>
@@ -122,14 +122,14 @@ public partial class GraveyardOverlay : IPlacementEditor
         }
 
         var position = edit.Position;
-        string success = "Moved graveyard; saved local draft.";
+        string success = "Moved graveyard.";
         if (SnapOnDrop)
         {
             var ground = GroundAt?.Invoke(position) ?? new GroundHit(null, "Ground probe unavailable.");
             if (ground.Height is float height)
             {
                 position.Y = height;
-                success = "Moved graveyard and snapped to ground; saved local draft.";
+                success = "Moved graveyard and snapped to ground.";
             }
             else
             {
@@ -170,14 +170,14 @@ public partial class GraveyardOverlay : IPlacementEditor
             return;
         }
 
-        Commit(r => r with { Z = height }, "Dropped graveyard to ground; saved local draft.");
+        Commit(r => r with { Z = height }, "Dropped graveyard to ground.");
     }
 
     public void ResetToSource()
     {
         if (EditableMarker() is { } editing)
         {
-            Commit(_ => editing.Site.Record, "Reset to source graveyard; saved local draft.");
+            Commit(_ => editing.Site.Record, "Reset to source graveyard.");
         }
     }
 
@@ -188,17 +188,17 @@ public partial class GraveyardOverlay : IPlacementEditor
             X = Math.Abs(x - r.X) < 0.5e-4 ? r.X : x,
             Y = Math.Abs(y - r.Y) < 0.5e-4 ? r.Y : y,
             Z = Math.Abs(z - r.Z) < 0.5e-4 ? r.Z : z
-        }, "Saved typed position to local draft.");
+        }, "Saved typed position.");
 
-    public void SetComment(string comment) => Commit(r => r with { Comment = comment.Trim() }, "Saved graveyard name to local draft.");
+    public void SetComment(string comment) => Commit(r => r with { Comment = comment.Trim() }, "Saved graveyard name.");
 
-    public void AddLink(uint zone, ushort faction) => Commit(r => r with { Links = [.. r.Links, new GraveyardLink(zone, faction, ZoneName(zone))] }, $"Linked zone {zone}; saved local draft.");
+    public void AddLink(uint zone, ushort faction) => Commit(r => r with { Links = [.. r.Links, new GraveyardLink(zone, faction, ZoneName(zone))] }, $"Linked zone {zone}.");
 
-    public void RemoveLink(uint zone) => Commit(r => r with { Links = r.Links.Where(l => l.GhostZone != zone).ToArray() }, $"Removed zone {zone} link; saved local draft.");
+    public void RemoveLink(uint zone) => Commit(r => r with { Links = r.Links.Where(l => l.GhostZone != zone).ToArray() }, $"Removed zone {zone} link.");
 
-    public void SetLinkFaction(uint zone, ushort faction) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Faction = faction } : l).ToArray() }, $"Changed zone {zone} faction; saved local draft.");
+    public void SetLinkFaction(uint zone, ushort faction) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Faction = faction } : l).ToArray() }, $"Changed zone {zone} faction.");
 
-    public void SetLinkComment(uint zone, string comment) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Comment = comment.Trim() } : l).ToArray() }, $"Changed zone {zone} comment; saved local draft.");
+    public void SetLinkComment(uint zone, string comment) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Comment = comment.Trim() } : l).ToArray() }, $"Changed zone {zone} comment.");
 
     string ZoneName(uint zone)
     {

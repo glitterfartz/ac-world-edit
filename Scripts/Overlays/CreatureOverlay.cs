@@ -24,7 +24,7 @@ public partial class CreatureOverlay : RegionOverlay
     CreatureDraft? draft;
     string draftPath = "";
     string sourceKey = "";
-    string draftMessage = "Local draft only; source database is unchanged.";
+    string draftMessage = "";
     TransformGizmo gizmo = null!;
     OptionButton animation = null!;
     ushort previewAnimation;
@@ -637,7 +637,7 @@ public partial class CreatureOverlay : RegionOverlay
 
         var before = PoseOf(marker.Spawn);
         var after = before;
-        string success = "Saved local draft; source unchanged.";
+        string success = "Saved.";
         if (edit.Moved)
         {
             var position = edit.Position;
@@ -647,11 +647,11 @@ public partial class CreatureOverlay : RegionOverlay
                 if (ground.Height is float height)
                 {
                     position.Y = height;
-                    success = "Saved local draft; snapped to ground.";
+                    success = "Saved; snapped to ground.";
                 }
                 else
                 {
-                    success = "Saved local draft; not snapped: " + ground.Message;
+                    success = "Saved; not snapped: " + ground.Message;
                 }
             }
 

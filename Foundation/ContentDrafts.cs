@@ -80,7 +80,7 @@ public sealed class ContentDrafts : IDisposable
         }
 
         Changed?.Invoke(sender);
-        return (true, $"Saved \"{label}\" to the local draft.");
+        return (true, $"Saved \"{label}\".");
     }
 
     public string History(object? sender, bool redo)
