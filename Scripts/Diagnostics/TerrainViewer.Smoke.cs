@@ -64,6 +64,11 @@ public partial class TerrainViewer
     }
 
     /// <summary>
+    /// <see cref="SmokeFail(string)"/> with the workflow's standard <c>TAG_SMOKE_FAILED</c> prefix.
+    /// </summary>
+    void SmokeFail(string tag, string detail) => SmokeFail($"{tag}_SMOKE_FAILED {detail}");
+
+    /// <summary>
     /// Advance every enabled smoke workflow once per frame, after the viewer's own per-frame updates.
     /// </summary>
     void RunSmokeChecks(double delta)

@@ -18,18 +18,13 @@ public partial class TerrainViewer
     int areaTriggerStage, areaTriggerWait;
     double areaTriggerTime;
 
-    void AreaTriggerSmokeFail(string message)
-    {
-        SmokeFail("AREATRIGGER_SMOKE_FAILED " + message);
-    }
-
     void AreaTriggerSmoke(double delta)
     {
         areaTriggerTime += delta;
         bool settled = !busy && world != null && TerrainSettled;
         if (areaTriggerTime > 180)
         {
-            AreaTriggerSmokeFail($"timeout stage={areaTriggerStage} busy={busy} tiles={loaded.Count}/{wanted.Count} failed={failed.Count} tileWorker={pending != null || building != null} query={areaTriggers.QueryStatus} {message}");
+            SmokeFail("AREATRIGGER", $"timeout stage={areaTriggerStage} busy={busy} tiles={loaded.Count}/{wanted.Count} failed={failed.Count} tileWorker={pending != null || building != null} query={areaTriggers.QueryStatus} {message}");
             return;
         }
 
@@ -99,13 +94,13 @@ public partial class TerrainViewer
                 {
                     if (areaTriggers.SelectedEntry != SmokeTrigger || areaTriggers.SmokeListSelection != SmokeTrigger || creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || !areaTriggers.SmokeHasOutline)
                     {
-                        AreaTriggerSmokeFail($"pick selected={areaTriggers.SelectedEntry} list={areaTriggers.SmokeListSelection} outline={areaTriggers.SmokeHasOutline}");
+                        SmokeFail("AREATRIGGER", $"pick selected={areaTriggers.SelectedEntry} list={areaTriggers.SmokeListSelection} outline={areaTriggers.SmokeHasOutline}");
                         return;
                     }
 
                     if (!areaTriggers.SmokeDetails.Contains("SmartTrigger", StringComparison.Ordinal))
                     {
-                        AreaTriggerSmokeFail("inspector does not show the SmartTrigger link: " + areaTriggers.SmokeDetails);
+                        SmokeFail("AREATRIGGER", "inspector does not show the SmartTrigger link: " + areaTriggers.SmokeDetails);
                         return;
                     }
 
@@ -121,7 +116,7 @@ public partial class TerrainViewer
                             var server = WorldCoordinates.ToServer(new(world.X, world.Y, world.Z));
                             if (record.Contains(server) != inside)
                             {
-                                AreaTriggerSmokeFail($"rendered volume disagrees with the server test at {direction}*{factor}");
+                                SmokeFail("AREATRIGGER", $"rendered volume disagrees with the server test at {direction}*{factor}");
                                 return;
                             }
                         }
@@ -148,7 +143,7 @@ public partial class TerrainViewer
                     var rules = behaviorEditor.SmokeRules(scope);
                     if (rules.Count != 1 || !behaviorEditor.SmokeDescribe(rules[0]).Contains("enters the trigger", StringComparison.Ordinal) || behaviorEditor.Issues.Any(i => i.Error))
                     {
-                        AreaTriggerSmokeFail($"behavior rules={rules.Count} issues={string.Join("; ", behaviorEditor.Issues.Select(i => i.Message))}");
+                        SmokeFail("AREATRIGGER", $"behavior rules={rules.Count} issues={string.Join("; ", behaviorEditor.Issues.Select(i => i.Message))}");
                         return;
                     }
 
@@ -158,7 +153,7 @@ public partial class TerrainViewer
                     var added = behaviorEditor.SmokeRules(scope);
                     if (added.Count != 2 || added.Any(r => r.Event != SmartCatalog.AreaTriggerEvent) || added.Last().Target != 7)
                     {
-                        AreaTriggerSmokeFail($"template rule not drafted: {behaviorEditor.SmokeStatus}");
+                        SmokeFail("AREATRIGGER", $"template rule not drafted: {behaviorEditor.SmokeStatus}");
                         return;
                     }
 
@@ -188,7 +183,7 @@ public partial class TerrainViewer
 
                 if (behaviorEditor.SmokeRules(scope).Count != 1)
                 {
-                    AreaTriggerSmokeFail("undo did not remove the drafted rule");
+                    SmokeFail("AREATRIGGER", "undo did not remove the drafted rule");
                     return;
                 }
 
@@ -201,7 +196,7 @@ public partial class TerrainViewer
             case 6:
                 if (areaTriggers.SmokeVisibleVolumes != 0 || areaTriggers.Triggers.Count != 0 || areaTriggers.IsLoading || areaTriggers.HasSelection)
                 {
-                    AreaTriggerSmokeFail("hidden layer kept volumes, selection or queries");
+                    SmokeFail("AREATRIGGER", "hidden layer kept volumes, selection or queries");
                     return;
                 }
 
@@ -222,7 +217,7 @@ public partial class TerrainViewer
 
                 if (areaTriggers.Triggers.Any(t => t.Map != 1))
                 {
-                    AreaTriggerSmokeFail("stale triggers from the previous map");
+                    SmokeFail("AREATRIGGER", "stale triggers from the previous map");
                     return;
                 }
 
