@@ -28,6 +28,32 @@ public interface IContentNames
 }
 
 /// <summary>
+/// Name lookup by parameter kind, for the kinds that reference a named database row.
+/// </summary>
+public static class ContentNamesExtensions
+{
+    /// <summary>True for the kinds <see cref="TryName"/> can look up.</summary>
+    public static bool IsNamedReference(SmartParamKind kind) =>
+        kind is SmartParamKind.Spell or SmartParamKind.Creature or SmartParamKind.GameObject or SmartParamKind.Quest or SmartParamKind.Item;
+
+    /// <summary>False when the kind is not a named reference or the ID has no known name.</summary>
+    public static bool TryName(this IContentNames names, SmartParamKind kind, uint id, out string name)
+    {
+        string? found = kind switch
+        {
+            SmartParamKind.Spell => names.Spell(id),
+            SmartParamKind.Creature => names.Creature(id),
+            SmartParamKind.GameObject => names.GameObject(id),
+            SmartParamKind.Quest => names.Quest(id),
+            SmartParamKind.Item => names.Item(id),
+            _ => null
+        };
+        name = found ?? "";
+        return found != null;
+    }
+}
+
+/// <summary>
 /// Which script a rule belongs to: a creature entry (all spawns), one spawn (negative GUID), an
 /// AreaTrigger (source_type 2) or a timed action list (source_type 9) started by "Run action list".
 /// </summary>
@@ -415,16 +441,8 @@ public static partial class SmartCatalog
                         continue;
                     }
 
-                    bool missing = type.Params[i - 1].Kind switch
-                    {
-                        SmartParamKind.Spell => names.Spell(value) == null,
-                        SmartParamKind.Creature => names.Creature(value) == null,
-                        SmartParamKind.GameObject => names.GameObject(value) == null,
-                        SmartParamKind.Quest => names.Quest(value) == null,
-                        SmartParamKind.Item => names.Item(value) == null,
-                        _ => false
-                    };
-                    if (missing)
+                    var kind = type.Params[i - 1].Kind;
+                    if (ContentNamesExtensions.IsNamedReference(kind) && !names.TryName(kind, value, out _))
                     {
                         yield return new(true, $"{where}: {label} {type.Params[i - 1].Label.ToLowerInvariant()} {value} does not exist.");
                     }

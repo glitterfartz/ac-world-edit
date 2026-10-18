@@ -40,19 +40,10 @@ public partial class QuestEditorWindow
             return empty;
         }
 
-        var names = snapshot!.Names;
-        string? name = kind switch
-        {
-            SmartParamKind.Creature => names.Creature(id),
-            SmartParamKind.GameObject => names.GameObject(id),
-            SmartParamKind.Item => names.Item(id),
-            SmartParamKind.Quest => names.Quest(id),
-            _ => names.Spell(id)
-        };
-        return name == null ? $"Missing #{id}" : $"{name}  ·  {id}";
+        return snapshot!.Names.TryName(kind, id, out string name) ? $"{name}  ·  {id}" : $"Missing #{id}";
     }
 
-    bool Missing(SmartParamKind kind, uint id) => id != 0 && Named(kind, id).StartsWith("Missing", StringComparison.Ordinal);
+    bool Missing(SmartParamKind kind, uint id) => id != 0 && !snapshot!.Names.TryName(kind, id, out _);
 
     /// <summary>
     /// A reference column edited through a picker, with a clear button.
@@ -75,13 +66,15 @@ public partial class QuestEditorWindow
             ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "0 = solo"));
         Add("Availability", EditorFields.Choice(QuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
         uint zone = q.I("QuestSortID") > 0 ? (uint)q.I("QuestSortID") : 0;
+        var areas = Areas();
+        bool zoneMissing = zone != 0 && areas?.Contains(zone) != true;
         string zoneText = q.I("QuestSortID") switch
         {
             0 => "No zone",
             < 0 => $"Quest log category {-q.I("QuestSortID")}",
-            _ => Areas()?.Contains(zone) == true ? Areas()!.Describe(zone).Zone : $"Missing zone #{zone}"
+            _ => zoneMissing ? $"Missing zone #{zone}" : areas!.Describe(zone).Zone
         };
-        Add("Quest log zone", EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneText.StartsWith("Missing", StringComparison.Ordinal)));
+        Add("Quest log zone", EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing));
 
         Heading("Levels", "Quest level sets XP and the con colour; −1 scales with the player. Players outside required…maximum cannot accept it.");
         Add("Quest level", UNumber(Template, "QuestLevel", "Change quest level", 60),

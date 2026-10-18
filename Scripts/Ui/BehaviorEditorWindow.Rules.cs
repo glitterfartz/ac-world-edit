@@ -460,9 +460,9 @@ public partial class BehaviorEditorWindow
                 check.Toggled += on => Put(on ? 1u : 0u);
                 return check;
             case SmartParamKind.Spell:
-                return EditorFields.Reference(value == 0 ? "None" : text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult(catalog?.SearchSpells(term) ?? []), (id, _) => Put(id)), value == 0 ? null : () => Put(0), value != 0 && names.Spell(value) == null);
+                return EditorFields.Reference(value == 0 ? "None" : text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult(catalog?.SearchSpells(term) ?? []), (id, _) => Put(id)), value == 0 ? null : () => Put(0), value != 0 && !names.TryName(param.Kind, value, out _));
             case SmartParamKind.Creature or SmartParamKind.GameObject or SmartParamKind.Quest or SmartParamKind.Item:
-                return EditorFields.Reference(value == 0 ? "None" : text, () => PickNamed(param.Kind, param.Label, Put), value == 0 ? null : () => Put(0), value != 0 && text.StartsWith(param.Kind.ToString().ToLowerInvariant(), StringComparison.Ordinal));
+                return EditorFields.Reference(value == 0 ? "None" : text, () => PickNamed(param.Kind, param.Label, Put), value == 0 ? null : () => Put(0), value != 0 && !names.TryName(param.Kind, value, out _));
             case SmartParamKind.Emote or SmartParamKind.TextEmote or SmartParamKind.FactionTemplate:
                 var all = (catalog?.All(param.Kind.ToString()) ?? []).Where(x => x.Name.Length > 0).ToList();
                 return EditorFields.Reference(text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all

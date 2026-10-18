@@ -42,6 +42,29 @@ public class SmartBehaviorTests
     static void AssertIssue(List<InteractionIssue> issues, bool error, string fragment) =>
         Assert.Contains(issues, i => i.Error == error && i.Message.Contains(fragment, StringComparison.Ordinal));
 
+    [Theory]
+    [InlineData(SmartParamKind.Spell, 133u, "Fireball")]
+    [InlineData(SmartParamKind.Creature, 6u, "Kobold Vermin")]
+    [InlineData(SmartParamKind.GameObject, 50u, "Chest")]
+    [InlineData(SmartParamKind.Quest, 7u, "Known quest")]
+    [InlineData(SmartParamKind.Item, 2589u, "Linen Cloth")]
+    public void TryNameFindsTheNameForEachNamedKind(SmartParamKind kind, uint id, string expected)
+    {
+        Assert.True(Lookup.TryName(kind, id, out string name));
+        Assert.Equal(expected, name);
+        Assert.False(Lookup.TryName(kind, 999999, out _));
+    }
+
+    [Theory]
+    [InlineData(SmartParamKind.Percent)]
+    [InlineData(SmartParamKind.Emote)]
+    [InlineData(SmartParamKind.FactionTemplate)]
+    public void TryNameRejectsKindsThatAreNotNamedReferences(SmartParamKind kind)
+    {
+        Assert.False(ContentNamesExtensions.IsNamedReference(kind));
+        Assert.False(Lookup.TryName(kind, 3, out _));
+    }
+
     static Row Ai(string name) => Row.Of(("entry", 42u), ("AIName", name));
 
     static SmartType FirstWith(IEnumerable<SmartType> types, SmartParamKind kind) =>
