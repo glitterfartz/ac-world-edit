@@ -24,7 +24,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
     ContentSnapshot? snapshot;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
-    string sourceKey = "", status = "";
+    string sourceKey = "";
     int generation;
     uint entry, guid;
     bool areaTrigger;
@@ -51,13 +51,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
 
     public override void _Ready()
     {
-        Drafts.Changed += sender =>
-        {
-            if (sender != this && entry != 0 && Visible)
-            {
-                _ = Load();
-            }
-        };
+        ReloadOnForeignChange(() => entry != 0 && Visible, () => _ = Load());
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
@@ -295,28 +289,18 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
             return false;
         }
 
-        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot.Rows, effective, label, edits, rows => CheckAll(rows).ToList());
-        status = message;
-        if (ok)
-        {
-            Rebuild();
-        }
-        else
-        {
-            UpdateStatus();
-        }
-
-        return ok;
+        return CommitEdits(sourceKey, snapshot.Rows, effective, label, edits, rows => CheckAll(rows).ToList(), Rebuild, UpdateStatus);
     }
 
     void History(bool forward)
     {
-        status = Drafts.History(this, forward);
-        Rebuild();
-        if (entry != 0)
+        ApplyHistory(forward, Rebuild, () =>
         {
-            _ = Load();
-        }
+            if (entry != 0)
+            {
+                _ = Load();
+            }
+        });
     }
 
     void UpdateStatus()

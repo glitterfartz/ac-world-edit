@@ -17,6 +17,9 @@ public partial class ContentEditorWindow : PanelContainer
     public Func<IClientFiles?> Store { get; set; } = () => null;
     public ContentDrafts Drafts { get; set; } = null!;
 
+    /// <summary>The window's status line text; each window shows it in its own label.</summary>
+    protected string status = "";
+
     // One catalog per loaded asset store, shared by every editor window (reloading archives gives
     // the store a new identity). A failed load degrades to null: names and icons are then limited.
     static IClientFiles? catalogStore;
@@ -121,6 +124,41 @@ public partial class ContentEditorWindow : PanelContainer
         parent.AddChild(button);
         return button;
     }
+
+    /// <summary>
+    /// Record one validated command through <see cref="Drafts"/>, put its message in the status
+    /// line, and run the matching callback.
+    /// </summary>
+    protected bool CommitEdits(string sourceKey, RowSet snapshot, RowSet effective, string label, IReadOnlyList<RowEdit> edits,
+        Func<RowSet, IEnumerable<InteractionIssue>> check, Action onOk, Action onFail)
+    {
+        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot, effective, label, edits, check);
+        status = message;
+        (ok ? onOk : onFail)();
+        return ok;
+    }
+
+    /// <summary>
+    /// Undo or redo through <see cref="Drafts"/>, then redraw and let the window reload its rows.
+    /// </summary>
+    protected void ApplyHistory(bool forward, Action rebuild, Action reload)
+    {
+        status = Drafts.History(this, forward);
+        rebuild();
+        reload();
+    }
+
+    /// <summary>
+    /// Run <paramref name="reload"/> when another editor changes the draft while this window is
+    /// showing something that can be reloaded.
+    /// </summary>
+    protected void ReloadOnForeignChange(Func<bool> hasTarget, Action reload) => Drafts.Changed += sender =>
+    {
+        if (sender != this && hasTarget())
+        {
+            reload();
+        }
+    };
 
     /// <summary>
     /// Enable and label the header Undo/Redo buttons from the shared draft history.

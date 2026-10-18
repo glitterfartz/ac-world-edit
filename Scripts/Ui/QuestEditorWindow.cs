@@ -40,7 +40,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
     ContentSnapshot? snapshot;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
-    string sourceKey = "", status = "";
+    string sourceKey = "";
     int generation, searchGeneration;
     Tab tab;
     LineEdit search = null!;
@@ -60,13 +60,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
 
     public override void _Ready()
     {
-        Drafts.Changed += sender =>
-        {
-            if (sender != this && QuestId.HasValue && Visible)
-            {
-                _ = Load(QuestId.Value);
-            }
-        };
+        ReloadOnForeignChange(() => QuestId.HasValue && Visible, () => _ = Load(QuestId!.Value));
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
@@ -282,18 +276,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         }
 
         var names = snapshot.Names;
-        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot.Rows, effective, label, edits, rows => QuestModel.Check(id, rows, names, ZoneExists));
-        status = message;
-        if (ok)
-        {
-            Rebuild();
-        }
-        else
-        {
-            UpdateStatus();
-        }
-
-        return ok;
+        return CommitEdits(sourceKey, snapshot.Rows, effective, label, edits, rows => QuestModel.Check(id, rows, names, ZoneExists), Rebuild, UpdateStatus);
     }
 
     /// <summary>
@@ -318,12 +301,13 @@ public partial class QuestEditorWindow : ContentEditorWindow
 
     void History(bool forward)
     {
-        status = Drafts.History(this, forward);
-        Rebuild();
-        if (QuestId is uint id)
+        ApplyHistory(forward, Rebuild, () =>
         {
-            _ = Load(id);
-        }
+            if (QuestId is uint id)
+            {
+                _ = Load(id);
+            }
+        });
     }
 
     /// <summary>

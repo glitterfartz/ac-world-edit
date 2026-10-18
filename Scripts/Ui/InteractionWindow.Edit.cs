@@ -27,13 +27,7 @@ public partial class InteractionWindow
     void WatchDrafts()
     {
         status = Drafts.Error ?? "";
-        Drafts.Changed += sender =>
-        {
-            if (sender != this && target != null)
-            {
-                _ = Reload();
-            }
-        };
+        ReloadOnForeignChange(() => target != null, () => _ = Reload());
     }
 
     void BuildEditToggle(HBoxContainer header)
@@ -75,9 +69,7 @@ public partial class InteractionWindow
 
     void History(bool forward)
     {
-        status = Drafts.History(this, forward);
-        Rebuild();
-        _ = Reload();
+        ApplyHistory(forward, Rebuild, () => _ = Reload());
     }
 
     /// <summary>
@@ -91,17 +83,11 @@ public partial class InteractionWindow
             return false;
         }
 
-        var (ok, message) = Drafts.Commit(this, sourceKey, snapshot.Rows, effective, label, edits.ToArray(), rows => BuildView(rows).Issues);
-        status = message;
-        if (!ok)
+        return CommitEdits(sourceKey, snapshot.Rows, effective, label, edits.ToArray(), rows => BuildView(rows).Issues, () =>
         {
-            Render();
-            return false;
-        }
-
-        Rebuild();
-        _ = Reload();
-        return true;
+            Rebuild();
+            _ = Reload();
+        }, Render);
     }
 
     Row TemplateRow => effective.Get(InteractionTables.CreatureTemplate, snapshot!.Entry.ToString(CultureInfo.InvariantCulture))!;

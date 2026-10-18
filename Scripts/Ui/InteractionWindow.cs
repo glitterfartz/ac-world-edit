@@ -46,7 +46,6 @@ public partial class InteractionWindow : ContentEditorWindow
     string sourceKey = "";
     int generation;
     CancellationTokenSource cancellation = new();
-    string status = "";
     Page page;
     readonly Stack<uint> menus = new();
     uint questDetail;
