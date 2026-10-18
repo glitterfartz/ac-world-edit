@@ -99,4 +99,15 @@ public class ContentDbTests
 
         Console.WriteLine("CONTENT_CHECKS_PASSED quest snapshot/names/rules, behavior snapshot/action lists/sentences/speech/list IDs");
     }
+
+    [DbFact]
+    public async Task BroadcastSearchFindsByIdAndText()
+    {
+        var source = new ContentSource(Config);
+        var any = await source.SearchBroadcastAsync("the", CancellationToken.None);
+        Assert.NotEmpty(any);
+        var byId = await source.SearchBroadcastAsync(any[0].Id.ToString(), CancellationToken.None);
+        Assert.Equal(any[0].Id, byId[0].Id);
+        Assert.True(any.Count <= InteractionSource.MaxSearch);
+    }
 }
