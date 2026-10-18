@@ -51,6 +51,9 @@ public sealed record SpawnPreview
         }
     }
 
+    // MatchesMasks and MatchesEvents are the executable spec of the SQL built in WorldReadSession
+    // (Spatial for masks, Restrictions for events). Production filtering happens in SQL; unit tests
+    // pin these rules and the Db tests use them as an oracle for the query results.
     public bool MatchesMasks(uint phase, uint spawn) =>
         !RespectMasks || ((phase & PhaseMask) != 0 && (spawn & SpawnMask) != 0);
 

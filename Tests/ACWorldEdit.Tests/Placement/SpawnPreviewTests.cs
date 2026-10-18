@@ -1,4 +1,6 @@
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using MySqlConnector;
 using Xunit;
 
 /// <summary>
@@ -183,5 +185,16 @@ public class SpawnPreviewTests
             new SpawnVisibility([5, 9], 3, true, "npc_script", true, true).Description);
         Assert.Equal("Pool 3", new SpawnVisibility([], 3, false, "", false).Description);
         Assert.Equal("Script-bound (runtime unknown)", new SpawnVisibility([], 0, false, "x", false).Description);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SpatialSqlFiltersMasksOnlyWhenRespected(bool respect)
+    {
+        using var command = new MySqlCommand();
+        string where = WorldReadSession.Spatial(command, new CreatureRegion(0, 30, 31, 30, 31), null, new SpawnPreview { RespectMasks = respect }, "c", "", "c.id");
+        Assert.Equal(respect, where.Contains("c.phaseMask & @phase", StringComparison.Ordinal));
+        Assert.Equal(respect, where.Contains("c.spawnMask & @spawn", StringComparison.Ordinal));
     }
 }
