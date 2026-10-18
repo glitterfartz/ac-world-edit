@@ -32,15 +32,23 @@ public sealed class InteractionCatalog
         }
     }
 
-    public static InteractionCatalog Load(IClientFiles store) => new(
-        new DbcTable(store.Read("DBFilesClient/Spell.dbc")),
-        new DbcTable(store.Read("DBFilesClient/TaxiNodes.dbc")),
-        new DbcTable(store.Read("DBFilesClient/ItemExtendedCost.dbc")),
-        new DbcTable(store.Read("DBFilesClient/ItemDisplayInfo.dbc")),
-        new DbcTable(store.Read("DBFilesClient/Emotes.dbc")),
-        new DbcTable(store.Read("DBFilesClient/EmotesText.dbc")),
-        new DbcTable(store.Read("DBFilesClient/Faction.dbc")),
-        new DbcTable(store.Read("DBFilesClient/FactionTemplate.dbc")));
+    public static InteractionCatalog Load(IClientFiles store)
+    {
+        // Spell.dbc dominates; the tables are independent, so read and parse them concurrently.
+        string[] names = ["Spell", "TaxiNodes", "ItemExtendedCost", "ItemDisplayInfo", "Emotes", "EmotesText", "Faction", "FactionTemplate"];
+        var tables = new DbcTable[names.Length];
+        try
+        {
+            Parallel.For(0, names.Length, i => tables[i] = new DbcTable(store.Read($"DBFilesClient/{names[i]}.dbc")));
+        }
+        catch (AggregateException e)
+        {
+            // Surface the real failure (e.g. a missing DBC), as the sequential reads did.
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
+        }
+
+        return new(tables[0], tables[1], tables[2], tables[3], tables[4], tables[5], tables[6], tables[7]);
+    }
 
     /// <summary>
     /// Readable animation emote: "ONESHOT_WAVE(DNR)" becomes "wave".

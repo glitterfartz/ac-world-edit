@@ -7,13 +7,15 @@ namespace ACWorldEdit.Assets;
 
 /// <summary>
 /// Classic MPQ v0/v1 reader with no write API. It supports stock Wrath compression/encryption,
-/// bounded decompression and explicit rejection of unsupported incremental patches. AssetStore
-/// serializes stream access.
+/// bounded decompression and explicit rejection of unsupported incremental patches. Reads use
+/// positional I/O and keep no per-read state, so they are safe from any number of threads until
+/// the archive is disposed.
 /// </summary>
 public sealed class MpqArchive : IDisposable
 {
     static readonly uint[] Crypt = BuildCrypt();
     readonly FileStream file;
+    readonly Microsoft.Win32.SafeHandles.SafeFileHandle handle;
     readonly long origin;
     readonly byte[] hashes, blocks;
     readonly int sectorSize;
@@ -27,6 +29,7 @@ public sealed class MpqArchive : IDisposable
     {
         Path = path;
         file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        handle = file.SafeFileHandle;
         try
         {
             byte[] h = new byte[32];
@@ -78,12 +81,13 @@ public sealed class MpqArchive : IDisposable
         }
     }
 
-    public bool Contains(string name) => Find(name) >= 0;
+    public bool Contains(string name) => Find(new MpqPath(name)) >= 0;
+    public bool Contains(MpqPath name) => Find(name) >= 0;
     /// <summary>
     /// Probe Blizzard path hashes. Empty entries terminate the probe; deleted entries are skipped,
     /// and a neutral-locale match wins over locale fallback.
     /// </summary>
-    int Find(string name)
+    int Find(MpqPath name)
     {
         int n = hashes.Length / 16;
         if (n == 0)
@@ -91,8 +95,8 @@ public sealed class MpqArchive : IDisposable
             return -1;
         }
 
-        uint a = Hash(name, 1), b = Hash(name, 2);
-        int start = (int)(Hash(name, 0) % n), fallback = -1;
+        uint a = name.NameA, b = name.NameB;
+        int start = (int)(name.Start % n), fallback = -1;
         for (int i = 0; i < n; i++)
         {
             int p = ((start + i) % n) * 16;
@@ -127,9 +131,12 @@ public sealed class MpqArchive : IDisposable
     /// Validate file flags/size and decode single-unit or sector storage with the appropriate
     /// encryption keys. Missing entries return null so mount lookup can continue.
     /// </summary>
-    public byte[]? Read(string name)
+    public byte[]? Read(string name) => Read(new MpqPath(name));
+
+    public byte[]? Read(MpqPath path)
     {
-        int index = Find(name);
+        string name = path.Name;
+        int index = Find(path);
         if (index < 0)
         {
             return null;
@@ -164,7 +171,7 @@ public sealed class MpqArchive : IDisposable
         }
 
         bool encrypted = (flags & 0x10000) != 0;
-        uint key = Hash(name.Replace('/', '\\').Split('\\')[^1], 3);
+        uint key = path.FileKey;
         if ((flags & 0x20000) != 0)
         {
             key = unchecked((key + pos) ^ size);
@@ -177,7 +184,7 @@ public sealed class MpqArchive : IDisposable
                 Decrypt(raw, key);
             }
 
-            return Unpack(raw, (int)size, flags);
+            return Unpack(raw, 0, raw.Length, (int)size, flags);
         }
 
         int count = ((int)size + sectorSize - 1) / sectorSize;
@@ -187,19 +194,19 @@ public sealed class MpqArchive : IDisposable
             for (int i = 0; i < count; i++)
             {
                 int len = Math.Min(sectorSize, (int)size - i * sectorSize);
-                byte[] sector = raw.AsSpan(i * sectorSize, len).ToArray();
+                var sector = raw.AsSpan(i * sectorSize, len);
                 if (encrypted)
                 {
                     Decrypt(sector, key + (uint)i);
                 }
 
-                sector.CopyTo(output, i * sectorSize);
+                sector.CopyTo(output.AsSpan(i * sectorSize));
             }
         }
         else
         {
             int tableSize = (count + 1 + ((flags & 0x04000000) != 0 ? 1 : 0)) * 4;
-            byte[] table = raw.AsSpan(0, tableSize).ToArray();
+            var table = raw.AsSpan(0, tableSize);
             if (encrypted)
             {
                 Decrypt(table, key - 1);
@@ -213,13 +220,12 @@ public sealed class MpqArchive : IDisposable
                     throw new InvalidDataException("Invalid MPQ sector offsets");
                 }
 
-                byte[] sector = raw.AsSpan(begin, end - begin).ToArray();
                 if (encrypted)
                 {
-                    Decrypt(sector, key + (uint)i);
+                    Decrypt(raw.AsSpan(begin, end - begin), key + (uint)i);
                 }
 
-                Unpack(sector, Math.Min(sectorSize, (int)size - i * sectorSize), flags).CopyTo(output, i * sectorSize);
+                Unpack(raw, begin, end - begin, Math.Min(sectorSize, (int)size - i * sectorSize), flags).CopyTo(output, i * sectorSize);
             }
         }
 
@@ -230,20 +236,20 @@ public sealed class MpqArchive : IDisposable
     /// Apply supported decompressors in reverse packing order and require the exact output length.
     /// Uncompressed sectors need no compression mask.
     /// </summary>
-    static byte[] Unpack(byte[] raw, int expected, uint flags)
+    static byte[] Unpack(byte[] raw, int offset, int length, int expected, uint flags)
     {
-        if (raw.Length == expected)
+        if (length == expected)
         {
-            return raw;
+            return offset == 0 && length == raw.Length ? raw : raw.AsSpan(offset, length).ToArray();
         }
 
-        if ((flags & 0x200) == 0 || raw.Length == 0)
+        if ((flags & 0x200) == 0 || length == 0)
         {
             throw new NotSupportedException("MPQ implode compression is not supported");
         }
 
-        byte mask = raw[0];
-        byte[] result = raw[1..];
+        byte mask = raw[offset];
+        byte[] result = raw[(offset + 1)..(offset + length)];
         if ((mask & ~0x12) != 0 || mask == 0)
         {
             throw new NotSupportedException($"MPQ compression mask 0x{mask:X2}");
@@ -292,14 +298,22 @@ public sealed class MpqArchive : IDisposable
     }
 
     /// <summary>
-    /// Seek/read exactly from this stream. This helper is not thread-safe outside AssetStore
-    /// serialization.
+    /// Read exactly at an absolute offset without touching the stream position.
     /// </summary>
     byte[] ReadAt(long pos, int size)
     {
         byte[] data = new byte[size];
-        file.Position = pos;
-        file.ReadExactly(data);
+        for (int done = 0; done < size;)
+        {
+            int n = RandomAccess.Read(handle, data.AsSpan(done), pos + done);
+            if (n == 0)
+            {
+                throw new EndOfStreamException();
+            }
+
+            done += n;
+        }
+
         return data;
     }
 
@@ -328,7 +342,7 @@ public sealed class MpqArchive : IDisposable
     /// Hash uppercase backslash paths using a selected MPQ variant. File encryption hashes the
     /// filename; archive lookup hashes the complete path.
     /// </summary>
-    static uint Hash(string name, int type)
+    internal static uint Hash(string name, int type)
     {
         uint a = 0x7FED7FED, b = 0xEEEEEEEE;
         foreach (char c in name.Replace('/', '\\').ToUpperInvariant())
@@ -349,18 +363,42 @@ public sealed class MpqArchive : IDisposable
     /// Decrypt little-endian words with native rolling-key arithmetic. Trailing bytes smaller than a
     /// word are retained by the format.
     /// </summary>
-    static void Decrypt(byte[] bytes, uint key)
+    static void Decrypt(Span<byte> bytes, uint key)
     {
         uint seed = 0xEEEEEEEE;
         for (int i = 0; i + 4 <= bytes.Length; i += 4)
         {
             seed = unchecked(seed + Crypt[0x400 + (key & 255)]);
             uint value = LittleEndian.U32(bytes, i) ^ unchecked(key + seed);
-            BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(i), value);
+            BinaryPrimitives.WriteUInt32LittleEndian(bytes[i..], value);
             key = unchecked(((~key << 21) + 0x11111111) | (key >> 11));
             seed = unchecked(value + seed + (seed << 5) + 3);
         }
     }
 
     public void Dispose() => file.Dispose();
+}
+
+/// <summary>
+/// An asset path with its MPQ hashes computed once, so a lookup across every mounted archive
+/// normalizes and hashes the name a single time. The file-key hash is deferred to the archive that
+/// actually holds the file.
+/// </summary>
+public readonly struct MpqPath
+{
+    public string Name { get; }
+    internal uint Start { get; }
+    internal uint NameA { get; }
+    internal uint NameB { get; }
+
+    public MpqPath(string name)
+    {
+        Name = name;
+        Start = MpqArchive.Hash(name, 0);
+        NameA = MpqArchive.Hash(name, 1);
+        NameB = MpqArchive.Hash(name, 2);
+    }
+
+    /// <summary>Encryption keys derive from the file name alone, without its directories.</summary>
+    internal uint FileKey => MpqArchive.Hash(Name.Replace('/', '\\').Split('\\')[^1], 3);
 }

@@ -8,14 +8,14 @@ namespace ACWorldEdit.Assets;
 /// </summary>
 public sealed record MapInfo(int Id, string Directory, string Name, uint WdtFileId = 0);
 /// <summary>
-/// Read-only mounted MPQ set with explicit stock-client precedence. Reads share a lock because
-/// archive readers seek mutable streams; detached decoded bytes can safely cross worker
-/// boundaries.
+/// Read-only mounted MPQ set with explicit stock-client precedence. Archive reads are positional
+/// and run concurrently; a reader/writer lock only keeps <see cref="Dispose"/> from closing a
+/// stream mid-read. Detached decoded bytes can safely cross worker boundaries.
 /// </summary>
 public sealed class AssetStore : IClientFiles
 {
     readonly List<MpqArchive> archives = [];
-    readonly object gate = new();
+    readonly ReaderWriterLockSlim gate = new();
     public int ArchiveCount => archives.Count;
     public ClientKind Kind => ClientKind.Wrath335;
     public string Build { get; }
@@ -71,16 +71,22 @@ public sealed class AssetStore : IClientFiles
             throw new NotSupportedException("MPQ clients address files by path, not FileDataID: " + path);
         }
 
-        lock (gate)
+        var key = new MpqPath(path);
+        gate.EnterReadLock();
+        try
         {
             for (int i = archives.Count - 1; i >= 0; i--)
             {
-                var bytes = archives[i].Read(path);
+                var bytes = archives[i].Read(key);
                 if (bytes != null)
                 {
                     return bytes;
                 }
             }
+        }
+        finally
+        {
+            gate.ExitReadLock();
         }
 
         throw new FileNotFoundException("Asset not found: " + path);
@@ -96,9 +102,15 @@ public sealed class AssetStore : IClientFiles
             return false;
         }
 
-        lock (gate)
+        var key = new MpqPath(path);
+        gate.EnterReadLock();
+        try
         {
-            return archives.Any(a => a.Contains(path));
+            return archives.Any(a => a.Contains(key));
+        }
+        finally
+        {
+            gate.ExitReadLock();
         }
     }
 
@@ -112,9 +124,15 @@ public sealed class AssetStore : IClientFiles
             return "missing";
         }
 
-        lock (gate)
+        var key = new MpqPath(path);
+        gate.EnterReadLock();
+        try
         {
-            return archives.LastOrDefault(a => a.Contains(path))?.Path ?? "missing";
+            return archives.LastOrDefault(a => a.Contains(key))?.Path ?? "missing";
+        }
+        finally
+        {
+            gate.ExitReadLock();
         }
     }
 
@@ -151,7 +169,8 @@ public sealed class AssetStore : IClientFiles
     /// </summary>
     public void Dispose()
     {
-        lock (gate)
+        gate.EnterWriteLock();
+        try
         {
             foreach (var a in archives)
             {
@@ -159,6 +178,10 @@ public sealed class AssetStore : IClientFiles
             }
 
             archives.Clear();
+        }
+        finally
+        {
+            gate.ExitWriteLock();
         }
     }
 }
