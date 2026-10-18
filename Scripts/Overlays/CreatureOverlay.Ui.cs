@@ -12,43 +12,17 @@ public partial class CreatureOverlay
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("Creatures", out var scroll);
-        page.AddChild(InspectorUi.Text("Nearby creatures", 20));
-        page.AddChild(InspectorUi.Text("Search filters the scene before the result limit.", 12, true));
-        filter = new LineEdit
-        {
-            Name = "CreatureSearch",
-            PlaceholderText = "Name, GUID or template…",
-            ClearButtonEnabled = true,
-            MaxLength = 80
-        };
-        page.AddChild(filter);
-        filter.TextChanged += _ =>
-        {
-            PopulateList();
-            query.MarkSearchChanged();
-        };
-        list = new ItemList
-        {
-            CustomMinimumSize = new(0, 255),
-            ClipContents = true,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
-        };
-        list.AddThemeFontSizeOverride("font_size", 14);
-        page.AddChild(list);
-        list.ItemSelected += index => Select(uint.Parse(list.GetItemMetadata((int)index).AsString()));
-        status = InspectorUi.Text("Waiting for a world…", 12, true);
-        page.AddChild(status);
-        var actions = new HBoxContainer();
-        page.AddChild(actions);
-        actions.AddChild(InspectorUi.Button("Refresh", Refresh));
-        fly = InspectorUi.Button("Fly to selection", FlyToSelection);
-        fly.Disabled = true;
-        actions.AddChild(fly);
-        var card = InspectorUi.Card(page, "Selection");
-        selectionName = InspectorUi.Text("Select a creature", 19);
-        card.AddChild(selectionName);
-        selectionMeta = InspectorUi.Text("Click a model or choose one above", 12, true);
-        card.AddChild(selectionMeta);
+        (filter, list, status, fly) = InspectorUi.ListSection(page, "Nearby creatures", "Search filters the scene before the result limit.",
+            "Name, GUID or template…", "Waiting for a world…", Select, Refresh, FlyToSelection,
+            () =>
+            {
+                PopulateList();
+                query.MarkSearchChanged();
+            }, 255, listFontSize: 14, searchName: "CreatureSearch", flyDisabled: true, clipList: true);
+        var selection = InspectorUi.SelectionCard(page, "Select a creature", "Click a model or choose one above");
+        var card = selection.Box;
+        selectionName = selection.Title;
+        selectionMeta = selection.Identity;
         details = InspectorUi.Text("Selection details appear here.", 13, true);
         card.AddChild(details);
         card.AddChild(new HSeparator());

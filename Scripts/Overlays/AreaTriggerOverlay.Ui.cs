@@ -18,39 +18,12 @@ public partial class AreaTriggerOverlay
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("AreaTriggers", out var scroll);
-        page.AddChild(InspectorUi.Text("AreaTriggers", 20));
-        page.AddChild(InspectorUi.Text("Server areatrigger volumes in the streamed region. Turn the layer on in Scene.", 12, true));
-        search = new LineEdit
-        {
-            PlaceholderText = "ID, script, teleport or tavern name…",
-            ClearButtonEnabled = true,
-            MaxLength = 80
-        };
-        search.TextChanged += _ =>
-        {
-            query.MarkSearchChanged();
-        };
-        page.AddChild(search);
-        list = new ItemList
-        {
-            CustomMinimumSize = new(0, 170),
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
-        };
-        list.ItemSelected += index => Select(uint.Parse(list.GetItemMetadata((int)index).AsString(), CultureInfo.InvariantCulture));
-        page.AddChild(list);
-        status = InspectorUi.Text(queryStatus, 12, true);
-        page.AddChild(status);
-        var row = new HBoxContainer();
-        page.AddChild(row);
-        row.AddChild(InspectorUi.Button("Refresh", Refresh));
-        fly = InspectorUi.Button("Fly to selection", FlyToSelection);
-        row.AddChild(fly);
-
-        var card = InspectorUi.Card(page, "Selection");
-        title = InspectorUi.Text("Select an AreaTrigger", 19);
-        card.AddChild(title);
-        identity = InspectorUi.Text("Click a volume or choose one above", 12, true);
-        card.AddChild(identity);
+        (search, list, status, fly) = InspectorUi.ListSection(page, "AreaTriggers", "Server areatrigger volumes in the streamed region. Turn the layer on in Scene.",
+            "ID, script, teleport or tavern name…", queryStatus, Select, Refresh, FlyToSelection, query.MarkSearchChanged, 170);
+        var selection = InspectorUi.SelectionCard(page, "Select an AreaTrigger", "Click a volume or choose one above");
+        var card = selection.Box;
+        title = selection.Title;
+        identity = selection.Identity;
         var actions = new HBoxContainer();
         card.AddChild(actions);
         behavior = InspectorUi.Button("Edit behavior", () =>

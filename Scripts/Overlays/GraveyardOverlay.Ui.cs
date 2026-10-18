@@ -22,39 +22,12 @@ public partial class GraveyardOverlay
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("Graveyards", out var scroll);
-        page.AddChild(InspectorUi.Text("Graveyards", 20));
-        page.AddChild(InspectorUi.Text("game_graveyard + graveyard_zone in the streamed region.", 12, true));
-        search = new LineEdit
-        {
-            PlaceholderText = "Name or ID…",
-            ClearButtonEnabled = true,
-            MaxLength = 80
-        };
-        search.TextChanged += _ =>
-        {
-            query.MarkSearchChanged();
-        };
-        page.AddChild(search);
-        list = new ItemList
-        {
-            CustomMinimumSize = new(0, 170),
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
-        };
-        list.ItemSelected += index => Select(uint.Parse(list.GetItemMetadata((int)index).AsString(), CultureInfo.InvariantCulture));
-        page.AddChild(list);
-        status = InspectorUi.Text("Waiting for a world…", 12, true);
-        page.AddChild(status);
-        var row = new HBoxContainer();
-        page.AddChild(row);
-        row.AddChild(InspectorUi.Button("Refresh", Refresh));
-        fly = InspectorUi.Button("Fly to selection", FlyToSelection);
-        row.AddChild(fly);
-
-        var card = InspectorUi.Card(page, "Selection");
-        title = InspectorUi.Text("Select a graveyard", 19);
-        card.AddChild(title);
-        identity = InspectorUi.Text("Click an icon or choose one above", 12, true);
-        card.AddChild(identity);
+        (search, list, status, fly) = InspectorUi.ListSection(page, "Graveyards", "game_graveyard + graveyard_zone in the streamed region.",
+            "Name or ID…", "Waiting for a world…", Select, Refresh, FlyToSelection, query.MarkSearchChanged, 170);
+        var selection = InspectorUi.SelectionCard(page, "Select a graveyard", "Click an icon or choose one above");
+        var card = selection.Box;
+        title = selection.Title;
+        identity = selection.Identity;
         var grid = new GridContainer
         {
             Columns = 4

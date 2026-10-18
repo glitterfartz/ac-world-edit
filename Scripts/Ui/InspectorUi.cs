@@ -1,6 +1,13 @@
 using Godot;
 
 namespace ACWorldEdit;
+
+/// <summary>Controls of an entity list section: search box, result list, status line and the fly-to button.</summary>
+public sealed record ListParts(LineEdit Search, ItemList List, Label Status, Button Fly);
+
+/// <summary>The "Selection" card: its container plus the title and identity lines.</summary>
+public sealed record SelectionParts(VBoxContainer Box, Label Title, Label Identity);
+
 /// <summary>Small shared UI primitives keep scene/entity pages consistent without a framework.</summary>
 public static class InspectorUi
 {
@@ -121,6 +128,69 @@ public static class InspectorUi
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// Heading, search box, entity list (rows carry the ID as string metadata), status line and the
+    /// Refresh / Fly to selection row, shared by every overlay page.
+    /// </summary>
+    public static ListParts ListSection(VBoxContainer page, string heading, string subtitle, string placeholder, string initialStatus,
+        Action<uint> select, Action refresh, Action fly, Action searchChanged, int listHeight,
+        int? listFontSize = null, string? listName = null, string? searchName = null, bool flyDisabled = false, bool clipList = false)
+    {
+        page.AddChild(Text(heading, 20));
+        page.AddChild(Text(subtitle, 12, true));
+        var search = new LineEdit
+        {
+            PlaceholderText = placeholder,
+            ClearButtonEnabled = true,
+            MaxLength = 80
+        };
+        if (searchName != null)
+        {
+            search.Name = searchName;
+        }
+
+        page.AddChild(search);
+        search.TextChanged += _ => searchChanged();
+        var list = new ItemList
+        {
+            CustomMinimumSize = new(0, listHeight),
+            ClipContents = clipList,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
+        };
+        if (listName != null)
+        {
+            list.Name = listName;
+        }
+
+        if (listFontSize is int size)
+        {
+            list.AddThemeFontSizeOverride("font_size", size);
+        }
+
+        page.AddChild(list);
+        list.ItemSelected += index => select(uint.Parse(list.GetItemMetadata((int)index).AsString(), System.Globalization.CultureInfo.InvariantCulture));
+        var status = Text(initialStatus, 12, true);
+        page.AddChild(status);
+        var row = new HBoxContainer();
+        page.AddChild(row);
+        row.AddChild(Button("Refresh", refresh));
+        var flyButton = Button("Fly to selection", fly);
+        flyButton.Disabled = flyDisabled;
+        row.AddChild(flyButton);
+        return new(search, list, status, flyButton);
+    }
+
+    /// <summary>The "Selection" card with its title line and a muted identity/hint line.</summary>
+    public static SelectionParts SelectionCard(VBoxContainer page, string emptyTitle, string emptyIdentity)
+    {
+        var box = Card(page, "Selection");
+        var title = Text(emptyTitle, 19);
+        box.AddChild(title);
+        var identity = Text(emptyIdentity, 12, true);
+        box.AddChild(identity);
+        return new(box, title, identity);
     }
 
     public static Button Button(string text, Action action)
