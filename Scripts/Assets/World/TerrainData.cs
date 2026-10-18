@@ -104,7 +104,7 @@ public sealed class TerrainTile
         Objects = WorldObjects.Read(b);
         var top = Assets.Chunks.Read(b).ToList();
         var version = top.FirstOrDefault(c => c.Tag == "MVER");
-        if (version.Size != 4 || MpqArchive.U(b, version.Data) != 18)
+        if (version.Size != 4 || LittleEndian.U32(b, version.Data) != 18)
         {
             throw new NotSupportedException("Expected ADT version 18");
         }
@@ -122,15 +122,15 @@ public sealed class TerrainTile
             int h = c.Data;
             var chunk = new TerrainChunk
             {
-                Flags = MpqArchive.U(b, h),
-                X = (int)MpqArchive.U(b, h + 4),
-                Y = (int)MpqArchive.U(b, h + 8),
-                Holes = MpqArchive.U(b, h + 60) & 0xFFFF,
-                AreaId = MpqArchive.U(b, h + 52),
-                Height = Assets.Chunks.F(b, h + 112)
+                Flags = LittleEndian.U32(b, h),
+                X = (int)LittleEndian.U32(b, h + 4),
+                Y = (int)LittleEndian.U32(b, h + 8),
+                Holes = LittleEndian.U32(b, h + 60) & 0xFFFF,
+                AreaId = LittleEndian.U32(b, h + 52),
+                Height = Assets.LittleEndian.F32(b, h + 112)
             };
-            chunk.ServerX = Assets.Chunks.F(b, h + 104);
-            chunk.ServerY = Assets.Chunks.F(b, h + 108);
+            chunk.ServerX = Assets.LittleEndian.F32(b, h + 104);
+            chunk.ServerY = Assets.LittleEndian.F32(b, h + 108);
             if (chunk.X is < 0 or > 15 || chunk.Y is < 0 or > 15)
             {
                 throw new InvalidDataException("MCNK index out of range");
@@ -145,7 +145,7 @@ public sealed class TerrainTile
             // boundary stays authoritative even when a nested size header is unreliable.
             byte[] Sub(int field, string tag, bool optional = false)
             {
-                int offset = checked((int)MpqArchive.U(b, h + field));
+                int offset = checked((int)LittleEndian.U32(b, h + field));
                 if (offset == 0 && optional)
                 {
                     return [];
@@ -157,17 +157,17 @@ public sealed class TerrainTile
                     throw new InvalidDataException("Bad " + tag + " offset");
                 }
 
-                string actual = new string(Encoding.ASCII.GetString(b, p, 4).Reverse().ToArray());
-                int size = checked((int)MpqArchive.U(b, p + 4));
+                string actual = ACWorldEdit.Assets.Chunks.Tag(b, p);
+                int size = checked((int)LittleEndian.U32(b, p + 4));
                 // Wrath sometimes leaves the MCAL/MCSH subheader size zero; MCNK carries the authoritative size including its header.
                 if (tag == "MCAL")
                 {
-                    size = checked((int)MpqArchive.U(b, h + 40)) - 8;
+                    size = checked((int)LittleEndian.U32(b, h + 40)) - 8;
                 }
 
                 if (tag == "MCSH")
                 {
-                    size = checked((int)MpqArchive.U(b, h + 48)) - 8;
+                    size = checked((int)LittleEndian.U32(b, h + 48)) - 8;
                 }
 
                 if (actual != tag || size < 0 || size > h + c.Size - p - 8)
@@ -186,7 +186,7 @@ public sealed class TerrainTile
 
             for (int i = 0; i < 145; i++)
             {
-                chunk.Heights[i] = Assets.Chunks.F(heights, i * 4);
+                chunk.Heights[i] = Assets.LittleEndian.F32(heights, i * 4);
             }
 
             var normals = Sub(24, "MCNR", true);
@@ -243,14 +243,14 @@ public sealed class TerrainTile
         count -= chunk.DroppedLayers;
         for (int i = 0; i < count; i++)
         {
-            int p = i * 16, texture = checked((int)MpqArchive.U(layers, p));
+            int p = i * 16, texture = checked((int)LittleEndian.U32(layers, p));
             if (texture >= textures.Count)
             {
                 throw new InvalidDataException("Bad terrain texture index");
             }
 
-            uint flags = MpqArchive.U(layers, p + 4);
-            byte[] map = i == 0 ? [] : DecodeAlpha(alpha, (int)MpqArchive.U(layers, p + 8), flags, bigAlpha, (chunk.Flags & 0x8000) == 0);
+            uint flags = LittleEndian.U32(layers, p + 4);
+            byte[] map = i == 0 ? [] : DecodeAlpha(alpha, (int)LittleEndian.U32(layers, p + 8), flags, bigAlpha, (chunk.Flags & 0x8000) == 0);
             chunk.Layers.Add(new(textures[texture], map));
         }
     }

@@ -19,7 +19,7 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
         }
 
         int encoding = b[8], depth = b[9], alphaEncoding = b[10];
-        int w = checked((int)MpqArchive.U(b, 12)), h = checked((int)MpqArchive.U(b, 16));
+        int w = checked((int)LittleEndian.U32(b, 12)), h = checked((int)LittleEndian.U32(b, 16));
         if (w is < 1 or > 8192 || h is < 1 or > 8192)
         {
             throw new InvalidDataException("Invalid BLP dimensions");
@@ -28,14 +28,14 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
         // Select a smaller native mip when requested; do not resample source pixels.
         // Zero keeps full model resolution, and missing smaller mips stop the search.
         int mip = 0;
-        while (maximumDimension > 0 && Math.Max(w, h) > maximumDimension && mip < 15 && MpqArchive.U(b, 20 + (mip + 1) * 4) != 0)
+        while (maximumDimension > 0 && Math.Max(w, h) > maximumDimension && mip < 15 && LittleEndian.U32(b, 20 + (mip + 1) * 4) != 0)
         {
             mip++;
             w = Math.Max(1, w / 2);
             h = Math.Max(1, h / 2);
         }
 
-        int offset = checked((int)MpqArchive.U(b, 20 + mip * 4)), length = checked((int)MpqArchive.U(b, 84 + mip * 4));
+        int offset = checked((int)LittleEndian.U32(b, 20 + mip * 4)), length = checked((int)LittleEndian.U32(b, 84 + mip * 4));
         byte[] input = b.AsSpan(offset, length).ToArray();
         byte[] pixels = new byte[checked(w * h * 4)];
         // Palette RGB is BGRA in the header; alpha follows the index plane and can be
@@ -99,7 +99,7 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
                     }
 
                     int colorPos = pos + blockSize - 8;
-                    ushort c0 = BitConverter.ToUInt16(input, colorPos), c1 = BitConverter.ToUInt16(input, colorPos + 2);
+                    ushort c0 = LittleEndian.U16(input, colorPos), c1 = LittleEndian.U16(input, colorPos + 2);
                     byte[][] colors = [Color565(c0), Color565(c1), new byte[4], new byte[4]];
                     bool four = c0 > c1 || blockSize == 16 || depth == 0;
                     for (int ch = 0; ch < 3; ch++)
@@ -110,7 +110,7 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
 
                     colors[2][3] = 255;
                     colors[3][3] = four ? (byte)255 : (byte)0;
-                    uint indices = MpqArchive.U(input, colorPos + 4);
+                    uint indices = LittleEndian.U32(input, colorPos + 4);
                     byte[] alpha = new byte[16];
                     Array.Fill(alpha, (byte)255);
                     if (blockSize == 16 && alphaEncoding == 1)

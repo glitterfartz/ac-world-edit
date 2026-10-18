@@ -45,7 +45,7 @@ public sealed class WorldMap
         {
             if (c.Tag == "MPHD")
             {
-                flags = MpqArchive.U(data, c.Data);
+                flags = LittleEndian.U32(data, c.Data);
                 BigAlpha = (flags & 4) != 0;
             }
 
@@ -60,7 +60,7 @@ public sealed class WorldMap
                 {
                     for (int x = 0; x < 64; x++)
                     {
-                        if ((MpqArchive.U(data, c.Data + (y * 64 + x) * 8) & 1) != 0)
+                        if ((LittleEndian.U32(data, c.Data + (y * 64 + x) * 8) & 1) != 0)
                         {
                             Tiles.Add(new(x, y));
                         }
@@ -84,7 +84,7 @@ public sealed class WorldMap
             foreach (var key in Tiles.ToList())
             {
                 int p = maid.Data + (key.Y * 64 + key.X) * 32;
-                var files = new TileFiles(MpqArchive.U(data, p), MpqArchive.U(data, p + 12), MpqArchive.U(data, p + 4));
+                var files = new TileFiles(LittleEndian.U32(data, p), LittleEndian.U32(data, p + 12), LittleEndian.U32(data, p + 4));
                 if (files.Root == 0 || files.Textures == 0)
                 {
                     Tiles.Remove(key);

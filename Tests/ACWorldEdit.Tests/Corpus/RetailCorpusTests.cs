@@ -172,14 +172,14 @@ public class RetailCorpusTests
             int count = layers.Size / 16;
             for (int i = 1; i < count; i++)
             {
-                uint flags = MpqArchive.U(bytes, layers.Data + i * 16 + 4);
+                uint flags = LittleEndian.U32(bytes, layers.Data + i * 16 + 4);
                 if ((flags & 0x100) == 0 || (flags & 0x200) != 0)
                 {
                     continue;
                 }
 
-                int offset = (int)MpqArchive.U(bytes, layers.Data + i * 16 + 8);
-                int next = i + 1 < count ? (int)MpqArchive.U(bytes, layers.Data + (i + 1) * 16 + 8) : alpha.Size;
+                int offset = (int)LittleEndian.U32(bytes, layers.Data + i * 16 + 8);
+                int next = i + 1 < count ? (int)LittleEndian.U32(bytes, layers.Data + (i + 1) * 16 + 8) : alpha.Size;
                 Assert.True(next - offset == (map.BigAlpha ? 4096 : 2048), $"{map.Name} {key}: uncompressed alpha span {next - offset} with BigAlpha={map.BigAlpha}");
                 checkedLayers++;
             }

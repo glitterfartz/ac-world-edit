@@ -381,30 +381,21 @@ public static class M2Model
     {
         byte[]? model = null;
         uint[] skins = [], textures = [];
-        for (int p = 0; p + 8 <= file.Length;)
+        foreach (var chunk in Chunks.Read(file, reversed: false))
         {
-            string tag = Encoding.ASCII.GetString(file, p, 4);
-            int size = checked((int)MpqArchive.U(file, p + 4));
-            if (size < 0 || size > file.Length - p - 8)
-            {
-                throw new InvalidDataException("Invalid " + tag + " chunk size.");
-            }
-
-            uint[] Ids(int count) => Enumerable.Range(0, count).Select(i => MpqArchive.U(file, p + 8 + i * 4)).ToArray();
-            switch (tag)
+            uint[] Ids() => Enumerable.Range(0, chunk.Size / 4).Select(i => LittleEndian.U32(file, chunk.Data + i * 4)).ToArray();
+            switch (chunk.Tag)
             {
                 case "MD21":
-                    model = file.AsSpan(p + 8, size).ToArray();
+                    model = file.AsSpan(chunk.Data, chunk.Size).ToArray();
                     break;
                 case "SFID":
-                    skins = Ids(size / 4);
+                    skins = Ids();
                     break;
                 case "TXID":
-                    textures = Ids(size / 4);
+                    textures = Ids();
                     break;
             }
-
-            p += 8 + size;
         }
 
         return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures);

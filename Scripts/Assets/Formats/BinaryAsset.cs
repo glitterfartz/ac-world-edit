@@ -30,7 +30,7 @@ public sealed class BinaryAsset(byte[] bytes)
     public uint U(int p)
     {
         Range(p, 4);
-        return BitConverter.ToUInt32(bytes, p);
+        return LittleEndian.U32(bytes, p);
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public sealed class BinaryAsset(byte[] bytes)
     public ushort H(int p)
     {
         Range(p, 2);
-        return BitConverter.ToUInt16(bytes, p);
+        return LittleEndian.U16(bytes, p);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public sealed class BinaryAsset(byte[] bytes)
     public float F(int p)
     {
         Range(p, 4);
-        float v = BitConverter.ToSingle(bytes, p);
+        float v = LittleEndian.F32(bytes, p);
         if (!float.IsFinite(v))
         {
             throw new InvalidDataException("Non-finite model value.");

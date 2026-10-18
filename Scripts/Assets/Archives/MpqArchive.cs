@@ -39,7 +39,7 @@ public sealed class MpqArchive : IDisposable
 
                 file.Position = origin;
                 file.ReadExactly(h);
-                if (U(h, 0) == 0x1A51504D)
+                if (LittleEndian.U32(h, 0) == 0x1A51504D)
                 {
                     break;
                 }
@@ -52,7 +52,7 @@ public sealed class MpqArchive : IDisposable
             }
 
             sectorSize = 512 << BinaryPrimitives.ReadUInt16LittleEndian(h.AsSpan(14));
-            long hashPos = U(h, 16), blockPos = U(h, 20);
+            long hashPos = LittleEndian.U32(h, 16), blockPos = LittleEndian.U32(h, 20);
             if (version == 1)
             {
                 byte[] ext = new byte[12];
@@ -66,8 +66,8 @@ public sealed class MpqArchive : IDisposable
                 blockPos |= (long)BinaryPrimitives.ReadUInt16LittleEndian(ext.AsSpan(10)) << 32;
             }
 
-            hashes = ReadAt(origin + hashPos, checked((int)U(h, 24) * 16));
-            blocks = ReadAt(origin + blockPos, checked((int)U(h, 28) * 16));
+            hashes = ReadAt(origin + hashPos, checked((int)LittleEndian.U32(h, 24) * 16));
+            blocks = ReadAt(origin + blockPos, checked((int)LittleEndian.U32(h, 28) * 16));
             Decrypt(hashes, Hash("(hash table)", 3));
             Decrypt(blocks, Hash("(block table)", 3));
         }
@@ -96,13 +96,13 @@ public sealed class MpqArchive : IDisposable
         for (int i = 0; i < n; i++)
         {
             int p = ((start + i) % n) * 16;
-            uint index = U(hashes, p + 12);
+            uint index = LittleEndian.U32(hashes, p + 12);
             if (index == uint.MaxValue)
             {
                 break;
             }
 
-            if (index == 0xFFFFFFFE || U(hashes, p) != a || U(hashes, p + 4) != b)
+            if (index == 0xFFFFFFFE || LittleEndian.U32(hashes, p) != a || LittleEndian.U32(hashes, p + 4) != b)
             {
                 continue;
             }
@@ -136,7 +136,7 @@ public sealed class MpqArchive : IDisposable
         }
 
         int p = index * 16;
-        uint pos = U(blocks, p), packed = U(blocks, p + 4), size = U(blocks, p + 8), flags = U(blocks, p + 12);
+        uint pos = LittleEndian.U32(blocks, p), packed = LittleEndian.U32(blocks, p + 4), size = LittleEndian.U32(blocks, p + 8), flags = LittleEndian.U32(blocks, p + 12);
         if ((flags & 0x80000000) == 0)
         {
             return null;
@@ -207,7 +207,7 @@ public sealed class MpqArchive : IDisposable
 
             for (int i = 0; i < count; i++)
             {
-                int begin = checked((int)U(table, i * 4)), end = checked((int)U(table, (i + 1) * 4));
+                int begin = checked((int)LittleEndian.U32(table, i * 4)), end = checked((int)LittleEndian.U32(table, (i + 1) * 4));
                 if (begin < tableSize || end < begin || end > raw.Length)
                 {
                     throw new InvalidDataException("Invalid MPQ sector offsets");
@@ -304,11 +304,6 @@ public sealed class MpqArchive : IDisposable
     }
 
     /// <summary>
-    /// Read a little-endian unsigned 32-bit integer (uint32) from a raw byte array. Out-of-range
-    /// offsets throw <see cref="ArgumentOutOfRangeException"/>.
-    /// </summary>
-    public static uint U(byte[] data, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(offset, 4));
-    /// <summary>
     /// Build the deterministic MPQ lookup tables used for path hashes and rolling-key decryption.
     /// </summary>
     static uint[] BuildCrypt()
@@ -360,7 +355,7 @@ public sealed class MpqArchive : IDisposable
         for (int i = 0; i + 4 <= bytes.Length; i += 4)
         {
             seed = unchecked(seed + Crypt[0x400 + (key & 255)]);
-            uint value = U(bytes, i) ^ unchecked(key + seed);
+            uint value = LittleEndian.U32(bytes, i) ^ unchecked(key + seed);
             BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(i), value);
             key = unchecked(((~key << 21) + 0x11111111) | (key >> 11));
             seed = unchecked(value + seed + (seed << 5) + 3);

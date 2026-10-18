@@ -13,11 +13,18 @@ public readonly record struct ChunkHeader(string Tag, int Start, int Data, int S
 /// </summary>
 public static class Chunks
 {
+    /// <summary>Decode the FourCC at <paramref name="p"/>; <paramref name="reversed"/> undoes the native byte order.</summary>
+    public static string Tag(byte[] b, int p, bool reversed = true)
+    {
+        string tag = Encoding.ASCII.GetString(b, p, 4);
+        return reversed ? new string(tag.Reverse().ToArray()) : tag;
+    }
+
     /// <summary>
-    /// Read reversed FourCC headers and require each payload to fit its enclosing stream before
+    /// Read reversed FourCC headers (or native-order ones when <c>reversed</c> is false, as in M2 MD21 files) and require each payload to fit its enclosing stream before
     /// advancing.
     /// </summary>
-    public static IEnumerable<ChunkHeader> Read(byte[] b, int start = 0, int? end = null)
+    public static IEnumerable<ChunkHeader> Read(byte[] b, int start = 0, int? end = null, bool reversed = true)
     {
         int limit = end ?? b.Length;
         for (int p = start; p < limit;)
@@ -27,9 +34,8 @@ public static class Chunks
                 throw new InvalidDataException("Truncated chunk header");
             }
 
-            string tag = Encoding.ASCII.GetString(b, p, 4);
-            tag = new string(tag.Reverse().ToArray());
-            int size = checked((int)MpqArchive.U(b, p + 4));
+            string tag = Tag(b, p, reversed);
+            int size = checked((int)LittleEndian.U32(b, p + 4));
             if (size > limit - p - 8)
             {
                 throw new InvalidDataException("Invalid " + tag + " chunk size");
@@ -39,10 +45,4 @@ public static class Chunks
             p += size + 8;
         }
     }
-
-    /// <summary>
-    /// Read a raw 32-bit float from a chunk payload. Unlike <see cref="BinaryAsset.F"/>, this does
-    /// not reject non-finite values; callers own the payload bounds.
-    /// </summary>
-    public static float F(byte[] b, int p) => BitConverter.ToSingle(b, p);
 }

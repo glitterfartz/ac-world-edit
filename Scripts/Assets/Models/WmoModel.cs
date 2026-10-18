@@ -120,7 +120,7 @@ public static class WmoModel
                 {
                     // Some stock groups (Horde barracks) contain NaN UVs. Keep their valid
                     // geometry visible and isolate those undefined texels instead of losing the WMO.
-                    float u = BitConverter.ToSingle(gb.Bytes, uv.Data + i * 8), v = BitConverter.ToSingle(gb.Bytes, uv.Data + i * 8 + 4);
+                    float u = LittleEndian.F32(gb.Bytes, uv.Data + i * 8), v = LittleEndian.F32(gb.Bytes, uv.Data + i * 8 + 4);
                     if (!float.IsFinite(u) || !float.IsFinite(v))
                     {
                         u = v = 0;

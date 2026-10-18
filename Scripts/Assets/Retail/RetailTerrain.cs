@@ -54,7 +54,7 @@ public static class RetailTerrain
     static void RequireVersion(byte[] file, string name)
     {
         var version = Chunks.Read(file).FirstOrDefault(c => c.Tag == "MVER");
-        if (version.Size != 4 || MpqArchive.U(file, version.Data) != 18)
+        if (version.Size != 4 || LittleEndian.U32(file, version.Data) != 18)
         {
             throw new NotSupportedException($"Expected ADT version 18 in the {name} file");
         }
@@ -76,7 +76,7 @@ public static class RetailTerrain
         var names = new string[mdid.Size / 4];
         for (int i = 0; i < names.Length; i++)
         {
-            uint id = MpqArchive.U(textures, mdid.Data + i * 4);
+            uint id = LittleEndian.U32(textures, mdid.Data + i * 4);
             names[i] = id == 0 ? "" : AssetRef.FromFileId(id);
         }
 
@@ -93,14 +93,14 @@ public static class RetailTerrain
         int h = c.Data;
         var chunk = new TerrainChunk
         {
-            Flags = MpqArchive.U(b, h),
-            X = (int)MpqArchive.U(b, h + 4),
-            Y = (int)MpqArchive.U(b, h + 8),
-            AreaId = MpqArchive.U(b, h + 52),
-            Holes = MpqArchive.U(b, h + 60) & 0xFFFF,
-            ServerX = Chunks.F(b, h + 104),
-            ServerY = Chunks.F(b, h + 108),
-            Height = Chunks.F(b, h + 112)
+            Flags = LittleEndian.U32(b, h),
+            X = (int)LittleEndian.U32(b, h + 4),
+            Y = (int)LittleEndian.U32(b, h + 8),
+            AreaId = LittleEndian.U32(b, h + 52),
+            Holes = LittleEndian.U32(b, h + 60) & 0xFFFF,
+            ServerX = LittleEndian.F32(b, h + 104),
+            ServerY = LittleEndian.F32(b, h + 108),
+            Height = LittleEndian.F32(b, h + 112)
         };
         if (chunk.X is < 0 or > 15 || chunk.Y is < 0 or > 15)
         {
@@ -122,7 +122,7 @@ public static class RetailTerrain
 
         for (int i = 0; i < 145; i++)
         {
-            chunk.Heights[i] = Chunks.F(heights, i * 4);
+            chunk.Heights[i] = LittleEndian.F32(heights, i * 4);
         }
 
         // The stored payload is padded past the 435 normals the grid needs.
