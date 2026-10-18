@@ -88,7 +88,7 @@ public partial class TerrainViewer : Node3D
     /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
     /// generations cannot be published.
     /// </summary>
-    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices);
+    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices, TerrainRenderer.PreparedChunk?[] Chunks);
     /// <summary>
     /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
     /// archives.
@@ -515,22 +515,36 @@ public partial class TerrainViewer : Node3D
             notices.Add("Some chunks define more than 4 texture layers; the extra layers are not drawn.");
         }
 
-        foreach (string path in tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase))
+        var layerPaths = tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (layerPaths.Contains(""))
         {
-            token.ThrowIfCancellationRequested();
-            if (path.Length == 0)
-            {
-                notices.Add("Some terrain layers name FileDataID 0; they are drawn with the fallback texture.");
-                continue;
-            }
+            notices.Add("Some terrain layers name FileDataID 0; they are drawn with the fallback texture.");
+            layerPaths.Remove("");
+        }
 
+        // Each BLP is read and decoded independently; MPQ reads run concurrently, and CASC serializes
+        // the read itself but still overlaps the decode.
+        var results = new (BlpTexture? Texture, string? Error)[layerPaths.Count];
+        Parallel.For(0, layerPaths.Count, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = Math.Max(1, Math.Min(4, System.Environment.ProcessorCount / 2)) }, i =>
+        {
             try
             {
-                decoded[path] = BlpTexture.Decode(assets.Read(path));
+                results[i] = (BlpTexture.Decode(assets.Read(layerPaths[i])), null);
             }
             catch (Exception e)
             {
-                errors.Add(path + ": " + e.Message);
+                results[i] = (null, layerPaths[i] + ": " + e.Message);
+            }
+        });
+        for (int i = 0; i < layerPaths.Count; i++)
+        {
+            if (results[i].Texture != null)
+            {
+                decoded[layerPaths[i]] = results[i].Texture!;
+            }
+            else
+            {
+                errors.Add(results[i].Error!);
             }
         }
 
@@ -553,7 +567,10 @@ public partial class TerrainViewer : Node3D
             }
         }
 
-        return new(version, tile, decoded, errors, notices);
+        token.ThrowIfCancellationRequested();
+        var chunks = new TerrainRenderer.PreparedChunk?[tile.Chunks.Count];
+        Parallel.For(0, chunks.Length, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = Math.Max(1, Math.Min(4, System.Environment.ProcessorCount / 2)) }, i => chunks[i] = TerrainRenderer.PrepareChunk(tile.Chunks[i]));
+        return new(version, tile, decoded, errors, notices, chunks);
     }
 
     /// <summary>
@@ -928,7 +945,10 @@ public partial class TerrainViewer : Node3D
                 {
                     if (buildIndex < building.Tile.Chunks.Count)
                     {
-                        renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], building.Textures, activeWorld.BigAlpha);
+                        if (building.Chunks[buildIndex] is { } prepared)
+                        {
+                            renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], prepared, building.Textures, activeWorld.BigAlpha);
+                        }
                     }
                     else
                     {

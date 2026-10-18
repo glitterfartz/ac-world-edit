@@ -63,13 +63,16 @@ public sealed class TerrainRenderer
         Position = new Vector3((key.X - 32) * TerrainTile.Size, 0, (key.Y - 32) * TerrainTile.Size)
     };
     /// <summary>
-    /// Upload native topology/normals/tint and four layers with packed opacity and shadow masks.
-    /// Chunk materials share reference-counted base textures.
+    /// Everything about a chunk that needs no GPU object: shaded vertex arrays plus the packed blend
+    /// and shadow masks. Pure CPU work, so it runs on the tile worker; AddChunk only uploads it.
     /// </summary>
-    public void AddChunk(Node3D parent, TerrainChunk c, Dictionary<string, BlpTexture> decoded, bool bigAlpha)
+    public sealed record PreparedChunk(Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Color[] Colors, int[] Indices, byte[] Alpha, byte[] Shadow);
+
+    /// <summary>Build the render arrays for one chunk; null when the chunk is entirely holes.</summary>
+    public static PreparedChunk? PrepareChunk(TerrainChunk c)
     {
         var geometry = TerrainGeometry.Build(c);
-        var vertices = geometry.Vertices.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
+        var vertices = ModelLibrary.Convert(geometry.Vertices, v => new Vector3(v.X, v.Y, v.Z));
         var uv = new Vector2[145];
         var colors = new Color[145];
         int p = 0;
@@ -88,7 +91,7 @@ public sealed class TerrainRenderer
         var indices = geometry.Indices;
         if (indices.Length == 0)
         {
-            return;
+            return null;
         }
 
         var normals = new Vector3[145];
@@ -111,6 +114,34 @@ public sealed class TerrainRenderer
             }
         }
 
+        byte[] alpha = new byte[4096 * 3];
+        for (int layer = 1; layer < c.Layers.Count; layer++)
+        {
+            for (int i = 0; i < 4096; i++)
+            {
+                alpha[i * 3 + layer - 1] = c.Layers[layer].Alpha[i];
+            }
+        }
+
+        byte[] shadow = new byte[4096];
+        if (c.Shadow != null)
+        {
+            for (int i = 0; i < shadow.Length; i++)
+            {
+                shadow[i] = (byte)(((c.Shadow[i / 8] >> (i & 7)) & 1) * 255);
+            }
+        }
+
+        return new(vertices, normals, uv, colors, indices, alpha, shadow);
+    }
+
+    /// <summary>
+    /// Upload native topology/normals/tint and four layers with packed opacity and shadow masks.
+    /// Chunk materials share reference-counted base textures.
+    /// </summary>
+    public void AddChunk(Node3D parent, TerrainChunk c, PreparedChunk prepared, Dictionary<string, BlpTexture> decoded, bool bigAlpha)
+    {
+        var (vertices, normals, uv, colors, indices, alpha, shadow) = prepared;
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
         arrays[(int)Mesh.ArrayType.Vertex] = vertices;
@@ -143,26 +174,8 @@ public sealed class TerrainRenderer
             material.SetShaderParameter("layer" + i, texture);
         }
 
-        byte[] alpha = new byte[4096 * 3];
-        for (int layer = 1; layer < c.Layers.Count; layer++)
-        {
-            for (int i = 0; i < 4096; i++)
-            {
-                alpha[i * 3 + layer - 1] = c.Layers[layer].Alpha[i];
-            }
-        }
-
         using var alphaImage = Image.CreateFromData(64, 64, false, Image.Format.Rgb8, alpha);
         material.SetShaderParameter("blend_map", ImageTexture.CreateFromImage(alphaImage));
-        byte[] shadow = new byte[4096];
-        if (c.Shadow != null)
-        {
-            for (int i = 0; i < shadow.Length; i++)
-            {
-                shadow[i] = (byte)(((c.Shadow[i / 8] >> (i & 7)) & 1) * 255);
-            }
-        }
-
         using var shadowImage = Image.CreateFromData(64, 64, false, Image.Format.R8, shadow);
         material.SetShaderParameter("shadow_map", ImageTexture.CreateFromImage(shadowImage));
         material.SetShaderParameter("big_alpha", bigAlpha);

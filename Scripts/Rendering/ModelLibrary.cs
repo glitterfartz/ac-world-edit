@@ -14,7 +14,7 @@ public sealed record ModelKey(string Path, string Texture1 = "", string Texture2
 /// </summary>
 public sealed class ModelLibrary
 {
-    sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
+    internal sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
     {
         public ModelData Data = data;
         public AnimationPalette Palette = palette;
@@ -63,6 +63,11 @@ public sealed class ModelLibrary
     readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<ModelKey> failed = [];
     readonly List<ModelInstance> instances = [];
+    // Instances not yet bound to a cache entry, so the per-frame scans skip the (usually far larger)
+    // built population. Attach adds to it; Update rebuilds it while pruning freed nodes.
+    readonly List<ModelInstance> unbuilt = [];
+    // Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
+    readonly Dictionary<ModelKey, int> liveKeys = [];
     readonly Shader baseShader = GD.Load<Shader>("res://Shaders/model.gdshader");
     readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
     readonly ImageTexture fallback;
@@ -96,10 +101,10 @@ public sealed class ModelLibrary
     /// </summary>
     public bool HasPartialUpload => building != null && building.Surface > 0;
     public int TextureCount => textures.Count;
-    public int ActiveFailedModels => instances.Count(i => failed.Contains(i.Key));
+    public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
     public long CachedBytes => cachedBytes;
     public double UploadMilliseconds { get; private set; }
-    public bool Busy => pending != null || building != null || instances.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
+    public bool Busy => pending != null || building != null || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public CreatureCatalog? Catalog { get; private set; }
     public GameObjectCatalog? GameObjects { get; private set; }
 
@@ -150,6 +155,8 @@ public sealed class ModelLibrary
         }
 
         instances.Clear();
+        unbuilt.Clear();
+        liveKeys.Clear();
         foreach (var e in cache.Values)
         {
             DisposeEntry(e);
@@ -180,6 +187,8 @@ public sealed class ModelLibrary
         };
         parent.AddChild(node);
         instances.Add(node);
+        unbuilt.Add(node);
+        liveKeys[key] = liveKeys.GetValueOrDefault(key) + 1;
         return node;
     }
 
@@ -195,16 +204,37 @@ public sealed class ModelLibrary
     {
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = surface.Positions.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
-        arrays[(int)Mesh.ArrayType.Normal] = surface.Normals.Select(v => new Vector3(v.X, v.Y, v.Z)).ToArray();
-        arrays[(int)Mesh.ArrayType.TexUV] = surface.Uv.Select(v => new Vector2(v.X, v.Y)).ToArray();
+        arrays[(int)Mesh.ArrayType.Vertex] = Convert(surface.Positions, v => new Vector3(v.X, v.Y, v.Z));
+        arrays[(int)Mesh.ArrayType.Normal] = Convert(surface.Normals, v => new Vector3(v.X, v.Y, v.Z));
+        arrays[(int)Mesh.ArrayType.TexUV] = Convert(surface.Uv, v => new Vector2(v.X, v.Y));
         arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
         if (surface.Colors != null)
         {
-            arrays[(int)Mesh.ArrayType.Color] = surface.Colors.Select(v => new Color(v.X, v.Y, v.Z, v.W)).ToArray();
+            arrays[(int)Mesh.ArrayType.Color] = Convert(surface.Colors, v => new Color(v.X, v.Y, v.Z, v.W));
         }
 
         return arrays;
+    }
+
+    /// <summary>
+    /// Convert a numerics vertex array to its Godot counterpart. In single-precision builds the two
+    /// have identical layouts (X, Y, Z[, W] floats), so the array is block-copied; a double-precision
+    /// engine build falls back to converting element by element.
+    /// </summary>
+    public static TTo[] Convert<TFrom, TTo>(TFrom[] source, Func<TFrom, TTo> convert) where TFrom : unmanaged where TTo : unmanaged
+    {
+        if (System.Runtime.CompilerServices.Unsafe.SizeOf<TFrom>() == System.Runtime.CompilerServices.Unsafe.SizeOf<TTo>())
+        {
+            return System.Runtime.InteropServices.MemoryMarshal.Cast<TFrom, TTo>(source).ToArray();
+        }
+
+        var result = new TTo[source.Length];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = convert(source[i]);
+        }
+
+        return result;
     }
 
     public static Transform3D Placement(WorldObject item)
@@ -223,13 +253,59 @@ public sealed class ModelLibrary
     {
         var start = System.Diagnostics.Stopwatch.GetTimestamp();
         tick++;
-        instances.RemoveAll(i => !GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion());
+        PruneInstances();
         ConsumeDecodedModel();
         UploadPendingModel();
         BindReadyInstances(start);
         ScheduleModelDecode(camera);
         EvictDormantModels();
         UploadMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+    }
+
+    /// <summary>
+    /// One pass over every instance: drop freed nodes (keeping the per-key counts in step), refresh the
+    /// recency of built instances through their cached entry, and collect the ones still waiting.
+    /// </summary>
+    void PruneInstances()
+    {
+        unbuilt.Clear();
+        int kept = 0;
+        for (int n = 0; n < instances.Count; n++)
+        {
+            var i = instances[n];
+            if (!GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion())
+            {
+                if (liveKeys.TryGetValue(i.Key, out int count))
+                {
+                    if (count <= 1)
+                    {
+                        liveKeys.Remove(i.Key);
+                    }
+                    else
+                    {
+                        liveKeys[i.Key] = count - 1;
+                    }
+                }
+
+                continue;
+            }
+
+            if (i.Built)
+            {
+                if (i.Resolved != null)
+                {
+                    i.Resolved.LastUsed = tick;
+                }
+            }
+            else
+            {
+                unbuilt.Add(i);
+            }
+
+            instances[kept++] = i;
+        }
+
+        instances.RemoveRange(kept, instances.Count - kept);
     }
 
     /// <summary>
@@ -275,6 +351,7 @@ public sealed class ModelLibrary
         }
 
         AttachDoodads(node, entry);
+        node.Resolved = entry;
         node.Built = true;
     }
 
@@ -554,7 +631,7 @@ public sealed class ModelLibrary
         // the entry unpublished, so a reload can be timed against a guaranteed partial upload.
         if (building != null && buildingKey != null)
         {
-            if (!instances.Any(i => i.Key == buildingKey))
+            if (!liveKeys.ContainsKey(buildingKey))
             {
                 DisposeEntry(building);
                 building = null;
@@ -609,8 +686,16 @@ public sealed class ModelLibrary
         // WMO attachment can enqueue embedded doodads. Iterate a snapshot so those
         // new requests enter the next frame rather than mutating this enumeration.
         int attached = 0;
-        foreach (var i in instances.ToArray())
+        // Only unbuilt instances can need binding (built ones were refreshed in PruneInstances). Embedded
+        // doodads attached while binding land in `unbuilt` too, so cap the walk at the count on entry.
+        for (int n = 0, count = unbuilt.Count; n < count; n++)
         {
+            var i = unbuilt[n];
+            if (!GodotObject.IsInstanceValid(i) || i.Built)
+            {
+                continue;
+            }
+
             if (cache.TryGetValue(i.Key, out var e))
             {
                 e.LastUsed = tick;
@@ -631,7 +716,24 @@ public sealed class ModelLibrary
     {
         if (store != null && pending == null && building == null)
         {
-            var next = instances.Where(i => !i.Built && !cache.ContainsKey(i.Key) && !failed.Contains(i.Key)).OrderBy(i => i.GlobalPosition.DistanceSquaredTo(camera.GlobalPosition)).FirstOrDefault();
+            ModelInstance? next = null;
+            float nearest = float.MaxValue;
+            var eye = camera.GlobalPosition;
+            foreach (var i in unbuilt)
+            {
+                if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key))
+                {
+                    continue;
+                }
+
+                float distance = i.GlobalPosition.DistanceSquaredTo(eye);
+                if (next == null || distance < nearest)
+                {
+                    next = i;
+                    nearest = distance;
+                }
+            }
+
             if (next != null)
             {
                 var key = next.Key;
@@ -663,7 +765,7 @@ public sealed class ModelLibrary
                 break;
             }
 
-            if (instances.Any(i => i.Key == pair.Key))
+            if (liveKeys.ContainsKey(pair.Key))
             {
                 continue;
             }

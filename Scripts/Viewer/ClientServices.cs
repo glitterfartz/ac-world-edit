@@ -52,13 +52,17 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
 
         try
         {
+            // The listfile holds millions of entries and parses independently of the DB2 tables, so
+            // it loads alongside the map table; the resolver is installed only afterwards because
+            // the liquid tables resolve texture paths through it.
+            var listing = listfile != null && File.Exists(listfile) ? Task.Run(() => PathListfile.Load(listfile)) : null;
             var tables = new Db2Tables(files, definitions);
             var maps = tables.Maps();
             // Paths (old-style placements, WMO textures and groups, liquid texture sequences) map to
             // FileDataIDs through the downloaded community listfile; without it they stay unreadable.
-            if (listfile != null && File.Exists(listfile))
+            if (listing != null)
             {
-                files.PathResolver = PathListfile.Load(listfile).Resolve;
+                files.PathResolver = listing.GetAwaiter().GetResult().Resolve;
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
@@ -66,6 +70,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         }
         catch
         {
+            // An in-flight listfile load only reads its own file, so it can finish unobserved.
             files.Dispose();
             throw;
         }
