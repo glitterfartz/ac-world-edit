@@ -110,8 +110,7 @@ public partial class GameObjectOverlay : RegionOverlay
     {
         if (LayerEnabled && region != null)
         {
-            var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
-            var next = SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            var next = ViewSpace.QueryPointAt(camera.Position, region.Map);
             if (point != next)
             {
                 point = next;
@@ -300,11 +299,7 @@ public partial class GameObjectOverlay : RegionOverlay
         }
     }
 
-    public static Vector3 ViewPosition(GameObjectSpawn spawn)
-    {
-        var point = WorldCoordinates.ToView(new(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z));
-        return new((float)point.X, (float)point.Y, (float)point.Z);
-    }
+    public static Vector3 ViewPosition(GameObjectSpawn spawn) => ViewSpace.ToView(spawn.Pose.X, spawn.Pose.Y, spawn.Pose.Z);
 
     public static Transform3D ModelTransform(GameObjectSpawn spawn)
     {

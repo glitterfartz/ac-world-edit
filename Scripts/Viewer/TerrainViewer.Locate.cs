@@ -54,7 +54,7 @@ public partial class TerrainViewer
             return spawns.Count == 0 ? $"{name} has no spawns in the database." : $"{name} only spawns on maps this client does not have.";
         }
 
-        var here = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
+        var here = ViewSpace.ToServer(camera.Position);
         var target = available
             .OrderBy(s => s.Map == currentMapId ? 0 : 1)
             .ThenBy(s => s.Map == currentMapId ? Math.Pow(s.X - here.X, 2) + Math.Pow(s.Y - here.Y, 2) : 0)

@@ -94,8 +94,7 @@ public partial class AreaTriggerOverlay : RegionOverlay
     {
         if (LayerEnabled && region != null)
         {
-            var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
-            point ??= SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            point ??= ViewSpace.QueryPointAt(camera.Position, region.Map);
         }
 
         if (query.TakeSettledSearch())
@@ -201,11 +200,7 @@ public partial class AreaTriggerOverlay : RegionOverlay
         return trigger.IsSphere ? Vector3.One * Size(trigger.Radius * 2) : new(Size(trigger.Width), Size(trigger.Height), Size(trigger.Length));
     }
 
-    public static Vector3 ViewPosition(AreaTriggerRecord trigger)
-    {
-        var p = WorldCoordinates.ToView(new(trigger.X, trigger.Y, trigger.Z));
-        return new((float)p.X, (float)p.Y, (float)p.Z);
-    }
+    public static Vector3 ViewPosition(AreaTriggerRecord trigger) => ViewSpace.ToView(trigger.X, trigger.Y, trigger.Z);
 
     static string LabelText(AreaTriggerRecord trigger) => $"AreaTrigger {trigger.Entry}\n{Summary(trigger)}";
 
@@ -359,7 +354,7 @@ public partial class AreaTriggerOverlay : RegionOverlay
     /// `.debug areatriggers` enabled (MiscHandler.cpp HandleAreaTriggerOpcode).
     /// </summary>
     public string? GoCommand() => selected is uint entry && lookup.TryGetValue(entry, out var t)
-        ? FormattableString.Invariant($".go xyz {t.X:0.###} {t.Y:0.###} {t.Z:0.###} {t.Map}")
+        ? PoseText.GoCommand(t.Map, t.X, t.Y, t.Z)
         : null;
 
     public override void _ExitTree() => query.Dispose();

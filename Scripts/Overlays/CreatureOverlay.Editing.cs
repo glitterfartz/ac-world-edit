@@ -154,7 +154,7 @@ public partial class CreatureOverlay : IPlacementEditor
         }
 
         var pose = PoseOf(marker.Spawn);
-        return FormattableString.Invariant($".go xyz {pose.X:F4} {pose.Y:F4} {pose.Z:F4} {pose.Map} {pose.Heading:F4}");
+        return PoseText.GoCommand(pose.Map, pose.X, pose.Y, pose.Z, pose.Heading);
     }
 
     public void CopyGoCommand()

@@ -121,6 +121,13 @@ public static class PoseText
     }
 
     /// <summary>
+    /// GM teleport for checking a position in the client: `.go xyz X Y Z MAP`, plus the orientation
+    /// when a heading is given.
+    /// </summary>
+    public static string GoCommand(int map, double x, double y, double z, double? heading = null) =>
+        FormattableString.Invariant($".go xyz {x:F4} {y:F4} {z:F4} {map}") + (heading is { } h ? FormattableString.Invariant($" {h:F4}") : "");
+
+    /// <summary>
     /// Pose after typing coordinates and a heading in degrees. Fields show rounded text; values that
     /// still match it keep their exact stored doubles so editing one field cannot rewrite the others
     /// through rounding. The result is not validated.

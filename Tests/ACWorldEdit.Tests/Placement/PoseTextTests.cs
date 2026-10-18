@@ -20,6 +20,13 @@ public class PoseTextTests
     }
 
     [Fact]
+    public void GoCommandFormatsFourDecimalsAndOptionalHeading()
+    {
+        Assert.Equal(".go xyz -8949.9500 -132.4930 83.5312 0", PoseText.GoCommand(0, -8949.95, -132.493, 83.5312));
+        Assert.Equal(".go xyz 1.0000 2.5000 3.0000 530 1.5708", PoseText.GoCommand(530, 1, 2.5, 3, Math.PI / 2));
+    }
+
+    [Fact]
     public void HeadingTextWrapsNegativeAndLargeHeadingsButEchoesTheRawRadians()
     {
         Assert.Equal("-1.571 rad · 270.0° E", PoseText.HeadingText(-Math.PI / 2));

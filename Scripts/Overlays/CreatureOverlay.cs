@@ -224,8 +224,7 @@ public partial class CreatureOverlay : RegionOverlay
     {
         if (LayerEnabled && region != null)
         {
-            var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
-            var next = SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            var next = ViewSpace.QueryPointAt(camera.Position, region.Map);
             if (point != next)
             {
                 point = next;
@@ -499,11 +498,10 @@ public partial class CreatureOverlay : RegionOverlay
     void AddMarker(CreatureSpawn spawn)
     {
         var pose = PoseOf(spawn);
-        var position = WorldCoordinates.ToView(new(pose.X, pose.Y, pose.Z));
         var node = new Node3D
         {
             Name = "Creature_" + spawn.Guid,
-            Position = new((float)position.X, (float)position.Y, (float)position.Z),
+            Position = ViewPosition(pose),
             Rotation = new(0, (float)pose.Heading, 0)
         };
         var body = new MeshInstance3D
@@ -643,7 +641,7 @@ public partial class CreatureOverlay : RegionOverlay
             }
 
             var startView = ViewPosition(before);
-            var server = WorldCoordinates.ToServer(new(position.X, position.Y, position.Z));
+            var server = ViewSpace.ToServer(position);
             // View X = -server Y, view Y = server Z, view Z = -server X.
             after = before with
             {
@@ -716,11 +714,7 @@ public partial class CreatureOverlay : RegionOverlay
         }
     }
 
-    static Vector3 ViewPosition(WorldPose pose)
-    {
-        var p = WorldCoordinates.ToView(new(pose.X, pose.Y, pose.Z));
-        return new((float)p.X, (float)p.Y, (float)p.Z);
-    }
+    static Vector3 ViewPosition(WorldPose pose) => ViewSpace.ToView(pose.X, pose.Y, pose.Z);
 
     /// <summary>
     /// Cancel the active preview, persist undo/redo and reconcile marker/native poses from

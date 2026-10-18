@@ -101,8 +101,7 @@ public sealed class ClientLighting
             {
                 var coords = ((Array)row["GameCoords"]).Cast<object>().Select(Convert.ToDouble).ToArray();
                 uint paramsId = Convert.ToUInt32(((Array)row["LightParamsID"]).GetValue(0));
-                var view = WorldCoordinates.ToView(new(coords[0], coords[1], coords[2]));
-                regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), new((float)view.X, (float)view.Y, (float)view.Z),
+                regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), ViewSpace.ToView(coords[0], coords[1], coords[2]),
                     Convert.ToSingle(row["GameFalloffStart"]), Convert.ToSingle(row["GameFalloffEnd"]), paramsId));
             }
 

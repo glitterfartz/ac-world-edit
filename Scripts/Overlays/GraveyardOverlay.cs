@@ -103,8 +103,7 @@ public partial class GraveyardOverlay : RegionOverlay
     {
         if (LayerEnabled && region != null)
         {
-            var server = WorldCoordinates.ToServer(new(camera.Position.X, camera.Position.Y, camera.Position.Z));
-            point ??= SpawnQueryPoint.FromPose(new(region.Map, server.X, server.Y, server.Z, 0));
+            point ??= ViewSpace.QueryPointAt(camera.Position, region.Map);
         }
 
         if (query.TakeSettledSearch())
@@ -253,11 +252,7 @@ public partial class GraveyardOverlay : RegionOverlay
         };
     }
 
-    static Vector3 ViewPosition(GraveyardRecord record)
-    {
-        var p = WorldCoordinates.ToView(new(record.X, record.Y, record.Z));
-        return new((float)p.X, (float)p.Y, (float)p.Z);
-    }
+    static Vector3 ViewPosition(GraveyardRecord record) => ViewSpace.ToView(record.X, record.Y, record.Z);
 
     public void Select(uint id)
     {

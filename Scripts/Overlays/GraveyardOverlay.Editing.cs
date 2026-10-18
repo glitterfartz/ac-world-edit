@@ -139,7 +139,7 @@ public partial class GraveyardOverlay : IPlacementEditor
 
         var before = RecordOf(editing.Site);
         var start = ViewPosition(before);
-        var server = WorldCoordinates.ToServer(new(position.X, position.Y, position.Z));
+        var server = ViewSpace.ToServer(position);
         // View X = -server Y, view Y = server Z, view Z = -server X.
         Commit(r => r with
         {
@@ -271,7 +271,7 @@ public partial class GraveyardOverlay : IPlacementEditor
     /// GM teleport for checking the effective position in the client: `.go xyz X Y Z MAP`.
     /// </summary>
     public string? GoCommand() => selected.HasValue && lookup.TryGetValue(selected.Value, out var site)
-        ? FormattableString.Invariant($".go xyz {RecordOf(site).X:F4} {RecordOf(site).Y:F4} {RecordOf(site).Z:F4} {site.Record.Map}")
+        ? PoseText.GoCommand(site.Record.Map, RecordOf(site).X, RecordOf(site).Y, RecordOf(site).Z)
         : null;
 
     public void CopyGoCommand()

@@ -402,8 +402,7 @@ public partial class TerrainViewer : Node3D
     void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
     {
         cameraFocused = true;
-        var point = ACWorldEdit.Foundation.WorldCoordinates.ToView(new(pose.X, pose.Y, pose.Z));
-        var position = new Vector3((float)point.X, (float)point.Y, (float)point.Z);
+        var position = ViewSpace.ToView(pose);
         camera.Position = position + new Vector3(0, 8, 15);
         camera.LookAt(position + Vector3.Up);
         yaw = camera.Rotation.Y;
