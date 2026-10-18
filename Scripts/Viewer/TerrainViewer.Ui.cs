@@ -101,7 +101,6 @@ public partial class TerrainViewer
         box.AddChild(new Label { Text = "World" });
         // Map names can be long; clip them instead of letting the button and its dropdown grow.
         maps = new OptionButton { ClipText = true, FitToLongestItem = false, CustomMinimumSize = new Vector2(220, 0), TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
-        maps.GetPopup().MaxSize = new Vector2I(320, 600);
         box.AddChild(maps);
         maps.ItemSelected += id =>
         {
@@ -159,7 +158,7 @@ public partial class TerrainViewer
         box.AddChild(timeRow);
         playTime = new Button
         {
-            Text = "⏸",
+            Text = sky.Playing ? "⏸" : "▶",
             CustomMinimumSize = new Vector2(32, 0),
             TooltipText = "Pause/resume the day-night cycle"
         };

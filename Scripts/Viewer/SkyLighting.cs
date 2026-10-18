@@ -24,7 +24,7 @@ public sealed partial class SkyLighting : Node3D
     bool interior;
 
     public double TimeOfDayHours { get; private set; } = 9;
-    public bool Playing { get; set; } = true;
+    public bool Playing { get; set; } = false;
     public float Speed { get; set; } = 1;
 
     public string? SkyboxPath => skyboxPath;
