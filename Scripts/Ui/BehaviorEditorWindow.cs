@@ -88,7 +88,6 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         statusLabel = ClientStyle.Text("", 12, ClientStyle.Warning);
         statusLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         root.AddChild(statusLabel);
-        root.AddChild(ClientStyle.Text("Local content draft · database unchanged · C++ scripts and live state are not simulated", 11, ClientStyle.Faded));
         Render();
     }
 
@@ -154,7 +153,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
 
             sourceKey = source.SourceKey;
             snapshot = result;
-            if (draft != null && draft.Conflicts(sourceKey, result.Rows).Count > 0)
+            if (draft != null && draft.Conflicts(sourceKey, result.Rows).Any(c => c.Table is "smart_scripts" or "creature_ai" or "creature_text" or "areatrigger_scripts"))
             {
                 status = "Some draft rows changed in the database since you edited them; undo or re-edit them.";
             }
@@ -421,16 +420,16 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         if (areaTrigger)
         {
             string name = TriggerScript(effective)?.T("ScriptName") ?? "";
-            string runs = name == AreaTriggerRecord.SmartTrigger ? "SmartTrigger: the rules below run when a living player enters"
-                : name.Length == 0 ? "no script: the rules below do not run until SmartTrigger is set" : $"C++ script {name}: the rules below are ignored";
-            subtitle.Text = $"AreaTrigger {entry} · Script: {runs}. GMs only run AreaTrigger scripts with .debug areatriggers.";
+            string runs = name == AreaTriggerRecord.SmartTrigger ? ""
+                : name.Length == 0 ? " · no script: the rules below do not run until SmartTrigger is set" : $" · C++ script {name}: the rules below are ignored";
+            subtitle.Text = $"AreaTrigger {entry}{runs}";
             return;
         }
 
         string ai = CreatureAi(effective)?.T("AIName") ?? "";
-        string brain = snapshot!.ScriptName.Length > 0 ? $"C++ script {snapshot.ScriptName} (SmartAI rules below are ignored by the server)"
-            : ai == "SmartAI" ? "SmartAI: the rules below run" : ai.Length == 0 ? "default AI: rules below do not run until SmartAI is enabled" : $"{ai}: rules below do not run";
-        subtitle.Text = $"Entry {entry}{(guid != 0 ? $" · spawn #{guid}" : "")} · Brain: {brain}";
+        string warning = snapshot!.ScriptName.Length > 0 ? $" · C++ script {snapshot.ScriptName} (SmartAI rules below are ignored by the server)"
+            : ai == "SmartAI" ? "" : ai.Length == 0 ? " · default AI: rules below do not run until SmartAI is enabled" : $" · {ai}: rules below do not run";
+        subtitle.Text = $"Entry {entry}{(guid != 0 ? $" · spawn #{guid}" : "")}{warning}";
     }
 
     /// <summary>

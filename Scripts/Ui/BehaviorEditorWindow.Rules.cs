@@ -388,6 +388,7 @@ public partial class BehaviorEditorWindow
         if (!Commit(label, edits))
         {
             pendingError = status;
+            status = "";
             Render();
             return null;
         }

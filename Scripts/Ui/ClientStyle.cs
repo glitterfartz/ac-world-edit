@@ -69,7 +69,49 @@ public static class ClientStyle
 
         theme.SetStylebox("hover", "OptionButton", Box(new("fffaea"), 1));
         theme.SetStylebox("pressed", "OptionButton", Box(new("fffaea"), 1));
+        // Godot's default highlight text is near-white; keep every state dark on the light boxes.
+        foreach (string state in new[] { "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color" })
+        {
+            theme.SetColor(state, "OptionButton", Ink);
+        }
+
+        theme.SetStylebox("hover_pressed", "OptionButton", Box(new("fffaea"), 1));
+        foreach (string state in new[] { "font_selected_color", "font_hovered_color", "font_hovered_selected_color" })
+        {
+            theme.SetColor(state, "ItemList", Ink);
+        }
+
+        theme.SetStylebox("selected", "ItemList", Box(Highlight));
+        theme.SetStylebox("selected_focus", "ItemList", Box(Highlight));
+        theme.SetStylebox("hovered", "ItemList", Box(new("efe0b9")));
+        theme.SetStylebox("hovered_selected", "ItemList", Box(Highlight));
+        theme.SetStylebox("hovered_selected_focus", "ItemList", Box(Highlight));
+        // The dropdown list of an OptionButton is a PopupMenu.
+        theme.SetStylebox("panel", "PopupMenu", Box(new("fbf3dc"), 1));
+        theme.SetStylebox("hover", "PopupMenu", Box(Highlight));
+        foreach (string state in new[] { "font_color", "font_hover_color", "font_accent_color", "font_separator_color" })
+        {
+            theme.SetColor(state, "PopupMenu", Ink);
+        }
+
+        theme.SetColor("font_disabled_color", "PopupMenu", Faded);
         return theme;
+    }
+
+    /// <summary>Background of the highlighted (hovered or selected) list entry; <see cref="Ink"/> text on it must stay readable.</summary>
+    public static readonly Color Highlight = new("e2cb93");
+
+    /// <summary>WCAG contrast ratio (1..21) between two colors.</summary>
+    public static double Contrast(Color a, Color b)
+    {
+        static double Lum(Color c)
+        {
+            static double Lin(float v) => v <= 0.04045f ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4);
+            return 0.2126 * Lin(c.R) + 0.7152 * Lin(c.G) + 0.0722 * Lin(c.B);
+        }
+
+        double la = Lum(a), lb = Lum(b);
+        return (Math.Max(la, lb) + 0.05) / (Math.Min(la, lb) + 0.05);
     }
 
     /// <summary>
