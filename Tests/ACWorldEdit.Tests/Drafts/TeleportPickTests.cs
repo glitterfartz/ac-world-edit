@@ -29,6 +29,12 @@ public class TeleportPickTests
     }
 
     [Fact]
+    public void ContinentsAreTheFourWrathWorldMaps()
+    {
+        Assert.Equal(new ushort[] { 0, 1, 530, 571 }, TeleportSource.Continents.OrderBy(i => i));
+    }
+
+    [Fact]
     public void NullWhenNoRowIsOnAvailableMaps()
     {
         Assert.Null(TeleportSource.Pick([], Maps(0), new Random(1)));

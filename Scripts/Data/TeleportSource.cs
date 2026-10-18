@@ -13,6 +13,9 @@ public sealed class TeleportSource(DatabaseSettings settings)
 {
     readonly WorldDatabase database = new(settings);
 
+    /// <summary>The Wrath world continents: Eastern Kingdoms, Kalimdor, Outland, Northrend.</summary>
+    public static readonly IReadOnlySet<ushort> Continents = new HashSet<ushort> { 0, 1, 530, 571 };
+
     /// <summary>A random location on any of the given maps, or null when the table has none there.</summary>
     public static TeleportLocation? Pick(IReadOnlyList<TeleportLocation> rows, IReadOnlySet<ushort> maps, Random random)
     {
