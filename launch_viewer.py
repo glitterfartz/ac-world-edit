@@ -10,28 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 
-def shortcut_target(lnk):
-    """Resolve a Windows .lnk through WScript.Shell; empty string when unavailable."""
-    try:
-        script = f"(New-Object -ComObject WScript.Shell).CreateShortcut('{lnk}').TargetPath"
-        out = subprocess.run(['powershell', '-NoProfile', '-Command', script], capture_output=True, text=True)
-        return out.stdout.strip()
-    except OSError:
-        return ''
-
-
 def find_godot():
-    if os.environ.get('GODOT_BIN'):
-        return os.environ['GODOT_BIN']
-    lnk = ROOT / 'Godot 4.7.lnk'
-    if lnk.is_file():
-        target = shortcut_target(lnk)
-        if target and Path(target).is_file():
-            return target
-    local = Path(r'X:\Godot-4.7\Godot_v4.7.1-stable_mono_win64.exe')
-    if local.is_file():
-        return str(local)
-    found = shutil.which('godot')
+    """GODOT_BIN, else `godot` on PATH."""
+    found = os.environ.get('GODOT_BIN') or shutil.which('godot')
     if not found:
         sys.exit('Godot not found: pass --godot-path, set GODOT_BIN, or put godot on PATH.')
     return found
@@ -52,13 +33,9 @@ def main():
     env['LOCALAPPDATA'] = str(build_env / 'local')
     for key in ('APPDATA', 'LOCALAPPDATA'):
         Path(env[key]).mkdir(parents=True, exist_ok=True)
-    env.setdefault('ProgramFiles', r'C:\Program Files')
-    env.setdefault('ProgramFiles(x86)', r'C:\Program Files (x86)')
-    env.setdefault('ProgramData', r'C:\ProgramData')
-    env.setdefault('ALLUSERSPROFILE', env['ProgramData'])
     env['MSBuildEnableWorkloadResolver'] = 'false'
     if not env.get('NUGET_PACKAGES'):
-        env['NUGET_PACKAGES'] = str(Path(env.get('USERPROFILE', Path.home())) / '.nuget' / 'packages')
+        env['NUGET_PACKAGES'] = str(Path.home() / '.nuget' / 'packages')
 
     if args.check_assets:
         return subprocess.call(['dotnet', 'test', 'Tests/ACWorldEdit.Tests', '--settings',

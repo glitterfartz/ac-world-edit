@@ -17,7 +17,7 @@ Legacy bodies were ported unchanged (same `Check` assertions, same queries) and 
 | default: Map.dbc, WDT corpus (105 terrain + 1 unsupported) | Corpus/WorldCorpusTests.MapsAndWdtCorpus | Corpus, ClientData |
 | default: per-continent tile, 256 MCNK anchors, textures | WorldCorpusTests.ContinentTileAndTextures (4 theory rows) | Corpus, ClientData |
 | default: backup archive not mounted | WorldCorpusTests.BackupArchivesNotMounted | Corpus, ClientData |
-| default: StormLib byte differential (2nd arg) | WorldCorpusTests via `STORMLIB_DLL` env (see Run-StormLibChecks.py) | Corpus, optional |
+| default: StormLib byte differential (2nd arg) | WorldCorpusTests via `STORMLIB_DLL` env (see run_stormlib_checks.py) | Corpus, optional |
 | `--models` ModelChecks (+ native clips, placement bounds, material animation) | Corpus/ModelCorpusTests.Passes | Corpus, ClientData |
 | `--liquids` LiquidChecks | Corpus/LiquidCorpusTests.Passes | Corpus, ClientData |
 | `--gameobjects` | Db/GameObjectDbTests.Passes | Corpus, Db, ClientData |

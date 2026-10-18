@@ -13,7 +13,7 @@
     <ProjectReference Include="Foundation/ACWorldEdit.Foundation.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT, see Tools/Get-CascLib.py). -->
+    <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT, see Tools/get_casclib.py). -->
     <None Include="Data/definitions/*" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="native/win-x64/CascLib.dll" Link="CascLib.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.dll')" />
   </ItemGroup>

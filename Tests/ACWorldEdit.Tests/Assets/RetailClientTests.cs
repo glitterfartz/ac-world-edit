@@ -69,8 +69,9 @@ public class RetailClientTests : IDisposable
     [Fact]
     public void NativeCandidatesPreferTheOverrideThenTheBaseDirectory()
     {
-        string[] found = CascNative.Candidates("X:/custom/CascLib.dll", Path.Combine(root, "bin")).ToArray();
-        Assert.Equal("X:/custom/CascLib.dll", found[0]);
+        string overridePath = Path.Combine(root, "custom", "CascLib.dll");
+        string[] found = CascNative.Candidates(overridePath, Path.Combine(root, "bin")).ToArray();
+        Assert.Equal(overridePath, found[0]);
         Assert.Equal(Path.Combine(root, "bin", "CascLib.dll"), found[1]);
         Assert.Contains(Path.Combine(root, "bin", "native", "win-x64", "CascLib.dll"), found);
         Assert.Contains(Path.Combine(root, "native", "win-x64", "CascLib.dll"), found);

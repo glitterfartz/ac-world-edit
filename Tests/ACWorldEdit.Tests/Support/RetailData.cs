@@ -31,7 +31,7 @@ public static class RetailEnvironment
 
         if (!CascLibPresent())
         {
-            return "CascLib.dll not found (run Tools/Get-CascLib.py); skipping retail client test";
+            return "CascLib.dll not found (run Tools/get_casclib.py); skipping retail client test";
         }
 
         return DefinitionsDirectory() == null ? "Data/definitions not found; skipping retail client test" : null;

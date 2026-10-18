@@ -8,12 +8,12 @@ ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor for 
 
 ## Commands
 
-Shell is PowerShell on Windows. SDK is pinned in `global.json`; Godot is located via the `Godot 4.7.lnk` shortcut, `X:\Godot-4.7\...`, or `godot` on PATH.
+Shell is PowerShell on Windows. SDK is pinned in `global.json`; Godot is located via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH (no machine-specific paths are hardcoded).
 
 ```powershell
-python Launch-Viewer.py                   # dotnet build ACWorldEdit.csproj, then launch the viewer
-python Launch-Viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
-python Launch-Viewer.py --check-assets    # run the corpus test set (needs real client data)
+python launch_viewer.py                   # dotnet build ACWorldEdit.csproj, then launch the viewer
+python launch_viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
+python launch_viewer.py --check-assets    # run the corpus test set (needs real client data)
 
 dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false                          # default fast suite
 dotnet test Tests/ACWorldEdit.Tests --filter "FullyQualifiedName~SplitTerrainTests"   # one class
@@ -30,7 +30,7 @@ Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smok
 
 - `ACWORLD_DB_INFO` = `host;port;user;password;database` — required by `Tests/.../Db/*` tests.
 - `ACWORLD_DATA_DIR` (3.3.5 client data), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE` — client data for `ClientData`/`Corpus` tests.
-- `ACWORLD_CASCLIB` (path to `CascLib.dll`; fetch with `Tools/Get-CascLib.py` into `native/win-x64/`), `ACWORLD_DBD_DIR` (WoWDBDefs; defaults to `Data/definitions`).
+- `ACWORLD_CASCLIB` (path to `CascLib.dll`; fetch with `Tools/get_casclib.py` into `native/win-x64/`), `ACWORLD_DBD_DIR` (WoWDBDefs; defaults to `Data/definitions`).
 
 ## Architecture
 
