@@ -68,8 +68,6 @@ public partial class BehaviorEditorWindow
 
     public void SmokeSwap(SmartRule a, SmartRule b) => Swap(scope!.Value, a, b);
 
-    public void SmokeDelete(SmartRule rule) => Delete(scope!.Value, rule);
-
     public bool SmokeUpdate(SmartRule rule, string label, params (string Column, object Value)[] values) => Update(rule, label, values);
 
     public void SmokeChangeType(SmartRule rule, string part, uint id) => ChangeType(rule, false, part, id);

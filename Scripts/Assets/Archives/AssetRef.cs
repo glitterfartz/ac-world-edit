@@ -52,4 +52,9 @@ public static class AssetRef
     /// can refuse them instead of treating them as a missing path.
     /// </summary>
     public static bool IsFileReference(string reference) => reference.StartsWith(Prefix, StringComparison.Ordinal);
+
+    /// <summary>
+    /// True when a path or reference names a WMO root file, including <c>fdid:N.wmo</c> references.
+    /// </summary>
+    public static bool IsWmo(string reference) => reference.EndsWith(WmoSuffix, StringComparison.OrdinalIgnoreCase);
 }

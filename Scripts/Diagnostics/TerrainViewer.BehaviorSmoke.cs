@@ -124,12 +124,6 @@ public partial class TerrainViewer
         return true;
     }
 
-    static void PressKey(Key key)
-    {
-        Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
-        Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = false });
-    }
-
     SmartScope BehaviorScope => behaviorEditor.Scope!.Value;
 
     List<(string, Func<bool>)> BehaviorSteps() =>

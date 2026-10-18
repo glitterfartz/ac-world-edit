@@ -648,6 +648,11 @@ public sealed class ModelLibrary
     {
         // Bound retained cache to 256 MiB; in-use resources remain alive, dormant resources evict first.
         long bytes = CachedBytes;
+        if (bytes <= 256L * 1024 * 1024)
+        {
+            return;
+        }
+
         foreach (var pair in cache.OrderBy(p => p.Value.LastUsed).ToArray())
         {
             if (bytes <= 256L * 1024 * 1024)
@@ -673,7 +678,7 @@ public sealed class ModelLibrary
     Entry DecodeModel(ModelKey key, IClientFiles source, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        var data = key.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase)
+        var data = AssetRef.IsWmo(key.Path)
             ? WmoModel.Read(source, key.Path, key.DoodadSet, token)
             : M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3],
                 key.Baked.Length == 0 ? null : key.Baked, token, key.Animation, key.Hair.Length == 0 ? null : key.Hair, key.Fur.Length == 0 ? null : key.Fur, key.HairGeoset);

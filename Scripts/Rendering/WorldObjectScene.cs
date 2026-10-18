@@ -69,7 +69,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
         var probe = new System.Numerics.Vector3(point.X, point.Y, point.Z);
         foreach (var ((_, model), (_, items)) in batches)
         {
-            if (!model.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase))
+            if (!AssetRef.IsWmo(model.Path))
             {
                 continue;
             }
@@ -100,7 +100,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// Bound WMO placements whose geometry is decoded, for opt-in ground-probe smoke checks.
     /// </summary>
     public IEnumerable<WorldObject> ReadyWmoPlacements() => batches
-        .Where(pair => pair.Key.Model.Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase) && library.ReadyData(pair.Key.Model) != null)
+        .Where(pair => AssetRef.IsWmo(pair.Key.Model.Path) && library.ReadyData(pair.Key.Model) != null)
         .SelectMany(pair => pair.Value.Items);
 
     /// <summary>

@@ -166,10 +166,4 @@ public partial class CreatureOverlay : IPlacementEditor
             Select(selectedGuid!.Value);
         }
     }
-
-    /// <summary>
-    /// Describe a server heading as degrees plus an eight-point compass direction. Server heading 0
-    /// faces +X (north) and increases counterclockwise toward +Y (west).
-    /// </summary>
-    public static string HeadingText(double heading) => PoseText.HeadingText(heading);
 }

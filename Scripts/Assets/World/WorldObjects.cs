@@ -8,7 +8,7 @@ namespace ACWorldEdit.Assets;
 /// </summary>
 public sealed record WorldObject(uint Id, string Path, Vector3 Position, Vector3 Rotation, float Scale, ushort DoodadSet, bool Global = false, Vector3? BoundsMinimum = null, Vector3? BoundsMaximum = null)
 {
-    public bool IsWmo => Path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase);
+    public bool IsWmo => AssetRef.IsWmo(Path);
 }
 
 /// <summary>

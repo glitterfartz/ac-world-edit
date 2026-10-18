@@ -25,7 +25,6 @@
     ]
   },
   "enabledPlugins": {
-    "csharp-lsp@claude-plugins-official": true,
     "claude-md-management@anthropic-plugin-directory": true,
     "code-simplifier@anthropic-plugin-directory": true,
     "feature-dev@anthropic-plugin-directory": true

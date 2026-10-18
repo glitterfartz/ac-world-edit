@@ -124,17 +124,6 @@ public partial class SceneSidebar : PanelContainer
     }
 
     public void ShowSceneTab() => tabs.CurrentTab = 0;
-    /// <summary>
-    /// Open the Scene tab with the database connection settings expanded and scrolled into view
-    /// (File → Database connection…).
-    /// </summary>
-    public void ShowConnection()
-    {
-        ShowSceneTab();
-        connectionDetails.Visible = true;
-        sceneScroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, connectionDetails);
-    }
-
     Label databaseNote = null!;
 
     /// <summary>

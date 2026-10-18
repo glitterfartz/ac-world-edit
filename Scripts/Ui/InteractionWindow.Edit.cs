@@ -748,9 +748,4 @@ public partial class InteractionWindow
             body.AddChild(result);
         }
     }
-
-    /// <summary>
-    /// Run a picker search programmatically (smoke checks use the same path as the Search button).
-    /// </summary>
-    public IReadOnlyList<(string Label, Action Pick)> SearchResults(string kind) => searches.GetValueOrDefault(kind, ("", [])).Results;
 }
