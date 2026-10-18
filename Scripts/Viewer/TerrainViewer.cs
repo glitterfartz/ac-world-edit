@@ -76,6 +76,10 @@ public partial class TerrainViewer : Node3D
     List<MapInfo> mapList = [];
     TerrainMinimap minimap = null!;
     string message = "Opening client…";
+    // The "Started at" note clears itself after a few seconds unless something else replaced it.
+    string startMessage = "";
+    ulong startMessageShown;
+    const ulong StartMessageMs = 6000;
     /// <summary>
     /// User-entered world database connection shared by every database-backed layer and editor.
     /// </summary>
@@ -239,7 +243,8 @@ public partial class TerrainViewer : Node3D
             if (start != null && currentMapId == start.Map)
             {
                 FocusPose(new WorldPose(start.Map, start.X, start.Y, start.Z, start.Orientation));
-                message = $"Started at {start.Name}.";
+                message = startMessage = $"Started at {start.Name}.";
+                startMessageShown = Time.GetTicksMsec();
             }
         }
     }
@@ -612,6 +617,16 @@ public partial class TerrainViewer : Node3D
         }
 
         UpdatePendingLocate(delta);
+
+        if (startMessage.Length > 0 && Time.GetTicksMsec() - startMessageShown > StartMessageMs)
+        {
+            if (message == startMessage)
+            {
+                message = "";
+            }
+
+            startMessage = "";
+        }
 
         status.Text = message;
         menu.Refresh();

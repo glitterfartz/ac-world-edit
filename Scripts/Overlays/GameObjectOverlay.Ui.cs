@@ -22,7 +22,6 @@ public partial class GameObjectOverlay
         details = InspectorUi.Text("Selection details appear here.", 13, true);
         card.AddChild(details);
         card.AddChild(new HSeparator());
-        card.AddChild(InspectorUi.Text("Object previews are read-only. Open/close and script behavior are not simulated.", 12, true));
         return scroll;
     }
 
