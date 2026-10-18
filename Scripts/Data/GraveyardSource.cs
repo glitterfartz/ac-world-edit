@@ -89,11 +89,7 @@ public sealed class GraveyardSource(DatabaseSettings settings)
     static async Task<Dictionary<uint, List<GraveyardLink>>> ReadLinks(WorldReadSession session, IEnumerable<uint> ids, CancellationToken token)
     {
         await using var command = session.Command("");
-        string list = string.Join(',', ids.Select((id, i) =>
-        {
-            command.Parameters.AddWithValue($"@id{i}", id);
-            return $"@id{i}";
-        }));
+        string list = WorldReadSession.InList(command, ids, "id");
         command.CommandText = $"SELECT ID,GhostZone,Faction,COALESCE(Comment,'') FROM graveyard_zone WHERE ID IN ({list}) ORDER BY ID,GhostZone";
         var links = new Dictionary<uint, List<GraveyardLink>>();
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);

@@ -57,6 +57,20 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
     readonly HashSet<string> columns = new(StringComparer.OrdinalIgnoreCase);
     public bool Has(string field) => columns.Contains(field);
     public MySqlCommand Command(string sql) => new(sql, connection, transaction);
+
+    /// <summary>
+    /// Bind distinct values as @prefix0.. parameters and return the comma-separated names for an
+    /// IN (...) list. An empty list yields NULL, because IN (NULL) matches nothing.
+    /// </summary>
+    public static string InList<T>(MySqlCommand command, IEnumerable<T> values, string prefix, int limit = int.MaxValue)
+    {
+        var names = values.Distinct().Take(limit).Select((value, i) =>
+        {
+            command.Parameters.AddWithValue($"@{prefix}{i}", value);
+            return $"@{prefix}{i}";
+        }).ToArray();
+        return names.Length == 0 ? "NULL" : string.Join(',', names);
+    }
     public void Require(params string[] fields)
     {
         foreach (string field in fields)
@@ -162,26 +176,13 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         if (preview.Events != EventPreviewMode.All)
         {
             var active = (preview.Events == EventPreviewMode.Selected ? preview.ActiveEvents : preview.Events == EventPreviewMode.Scheduled ? events.Where(e => e.Scheduled).Select(e => e.Id) : []).Distinct().ToArray();
-            string positive = Parameters(command, active, "event");
-            string negative = Parameters(command, active.Select(e => -e), "negativeEvent");
+            string positive = InList(command, active, "event");
+            string negative = InList(command, active.Select(e => -e), "negativeEvent");
             filters.Add($"(NOT EXISTS(SELECT 1 FROM {eventTable} ev WHERE ev.guid={alias}.guid AND ev.eventEntry>0) OR EXISTS(SELECT 1 FROM {eventTable} ev WHERE ev.guid={alias}.guid AND ev.eventEntry IN ({positive})))");
             filters.Add($"NOT EXISTS(SELECT 1 FROM {eventTable} ev WHERE ev.guid={alias}.guid AND ev.eventEntry IN ({negative}))");
         }
 
         return (eventIds, pool, conditional, filters.Count > 0 ? string.Join(" AND ", filters) : "1=1");
-    }
-
-    static string Parameters(MySqlCommand command, IEnumerable<int> values, string prefix)
-    {
-        List<string> names = [];
-        foreach (int value in values)
-        {
-            string name = "@" + prefix + names.Count;
-            names.Add(name);
-            command.Parameters.AddWithValue(name, value);
-        }
-
-        return names.Count == 0 ? "0" : string.Join(",", names);
     }
 
     /// <summary>

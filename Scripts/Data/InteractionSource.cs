@@ -218,15 +218,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
         return await command.ExecuteScalarAsync(token).ConfigureAwait(false);
     }
 
-    internal static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix)
-    {
-        var list = ids.Distinct().Take(MaxRows).Select((id, i) =>
-        {
-            command.Parameters.AddWithValue($"@{prefix}{i}", id);
-            return $"@{prefix}{i}";
-        }).ToArray();
-        return list.Length == 0 ? "NULL" : string.Join(',', list);
-    }
+    internal static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix) => WorldReadSession.InList(command, ids, prefix, MaxRows);
 
     async Task ReadLookups(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
     {
