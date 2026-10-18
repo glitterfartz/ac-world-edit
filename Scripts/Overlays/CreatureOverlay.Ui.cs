@@ -47,42 +47,14 @@ public partial class CreatureOverlay
         history.AddChild(redo);
         card.AddChild(new HSeparator());
         card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
-        var grid = new GridContainer
+        EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], poseFields, SubmitPose);
+        foreach (var field in poseFields)
         {
-            Columns = 4
-        };
-        card.AddChild(grid);
-        string[] names = ["X", "Y", "Z", "Heading°"];
-        for (int i = 0; i < 4; i++)
-        {
-            // Plain non-wrapping labels: wrapped text has no minimum width inside a grid cell.
-            var label = new Label
-            {
-                Text = names[i],
-                Modulate = InspectorUi.Muted
-            };
-            label.AddThemeFontSizeOverride("font_size", 12);
-            grid.AddChild(label);
-            poseFields[i] = new LineEdit
-            {
-                Editable = false,
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                CustomMinimumSize = new(70, 0),
-                SelectAllOnFocus = true
-            };
-            poseFields[i].TextSubmitted += _ => SubmitPose();
-            grid.AddChild(poseFields[i]);
+            field.Editable = false;
         }
 
-        var placement = new HBoxContainer();
-        card.AddChild(placement);
-        drop = InspectorUi.Button("Drop to ground", DropToGround);
-        reset = InspectorUi.Button("Reset to source", ResetToSource);
-        copyGo = InspectorUi.Button("Copy .go", CopyGoCommand);
+        (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
         copyGo.TooltipText = "Copy a GM teleport (.go xyz X Y Z map heading) to compare this pose in the client";
-        placement.AddChild(drop);
-        placement.AddChild(reset);
-        placement.AddChild(copyGo);
         card.AddChild(InspectorUi.Text("Move (W) drags colored axes; Rotate (E) drags the yellow ring. Changes save to your local draft.", 12, true));
         var interactions = InspectorUi.Card(page, "Interactions");
         interactionSummary = InspectorUi.Text("Select a creature to see its interactions.", 12, true);
@@ -137,19 +109,15 @@ public partial class CreatureOverlay
     /// </summary>
     void SubmitPose()
     {
-        var values = new double[4];
-        for (int i = 0; i < 4; i++)
+        if (!EditorFields.TryParseAll(poseFields, out var values))
         {
-            if (!double.TryParse(poseFields[i].Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out values[i]))
+            draftMessage = "Pose fields must be numbers (use . for decimals).";
+            if (selectedGuid.HasValue)
             {
-                draftMessage = "Pose fields must be numbers (use . for decimals).";
-                if (selectedGuid.HasValue)
-                {
-                    Select(selectedGuid.Value);
-                }
-
-                return;
+                Select(selectedGuid.Value);
             }
+
+            return;
         }
 
         SetPose(values[0], values[1], values[2], values[3]);

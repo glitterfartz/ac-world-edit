@@ -12,6 +12,53 @@ public static class EditorFields
 {
     public static Action<string> Error { get; set; } = _ => { };
 
+    /// <summary>
+    /// A label/entry grid (four columns wide) for typed coordinates, filling <paramref name="fields"/>.
+    /// Enter in any entry calls <paramref name="submit"/>.
+    /// </summary>
+    public static void CoordinateGrid(Container card, string[] names, LineEdit[] fields, Action submit)
+    {
+        var grid = new GridContainer
+        {
+            Columns = 4
+        };
+        card.AddChild(grid);
+        for (int i = 0; i < names.Length; i++)
+        {
+            // Plain non-wrapping labels: wrapped text has no minimum width inside a grid cell.
+            var label = new Label
+            {
+                Text = names[i],
+                Modulate = InspectorUi.Muted
+            };
+            label.AddThemeFontSizeOverride("font_size", 12);
+            grid.AddChild(label);
+            fields[i] = new LineEdit
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                CustomMinimumSize = new(70, 0),
+                SelectAllOnFocus = true
+            };
+            fields[i].TextSubmitted += _ => submit();
+            grid.AddChild(fields[i]);
+        }
+    }
+
+    /// <summary>Parse every entry as an invariant-culture number; false if any is not one.</summary>
+    public static bool TryParseAll(LineEdit[] fields, out double[] values)
+    {
+        values = new double[fields.Length];
+        for (int i = 0; i < fields.Length; i++)
+        {
+            if (!double.TryParse(fields[i].Text, NumberStyles.Float, CultureInfo.InvariantCulture, out values[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     static void CommitOnLeave(LineEdit edit, string original, Action<string> commit)
     {
         void Done(string text)

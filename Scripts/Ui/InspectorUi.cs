@@ -193,6 +193,22 @@ public static class InspectorUi
         return new(box, title, identity);
     }
 
+    /// <summary>
+    /// The "Drop to ground / Reset to source / Copy .go" row for a placement editor.
+    /// </summary>
+    public static (Button Drop, Button Reset, Button CopyGo) PlacementButtons(Container card, IPlacementEditor editor)
+    {
+        var row = new HBoxContainer();
+        card.AddChild(row);
+        var drop = Button("Drop to ground", editor.DropToGround);
+        var reset = Button("Reset to source", editor.ResetToSource);
+        var copyGo = Button("Copy .go", editor.CopyGoCommand);
+        row.AddChild(drop);
+        row.AddChild(reset);
+        row.AddChild(copyGo);
+        return (drop, reset, copyGo);
+    }
+
     public static Button Button(string text, Action action)
     {
         var button = new Button

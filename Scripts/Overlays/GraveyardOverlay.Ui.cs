@@ -28,30 +28,7 @@ public partial class GraveyardOverlay
         var card = selection.Box;
         title = selection.Title;
         identity = selection.Identity;
-        var grid = new GridContainer
-        {
-            Columns = 4
-        };
-        card.AddChild(grid);
-        string[] axes = ["X", "Y", "Z"];
-        for (int i = 0; i < 3; i++)
-        {
-            var label = new Label
-            {
-                Text = axes[i],
-                Modulate = InspectorUi.Muted
-            };
-            label.AddThemeFontSizeOverride("font_size", 12);
-            grid.AddChild(label);
-            position[i] = new LineEdit
-            {
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                CustomMinimumSize = new(70, 0),
-                SelectAllOnFocus = true
-            };
-            position[i].TextSubmitted += _ => SubmitPosition();
-            grid.AddChild(position[i]);
-        }
+        EditorFields.CoordinateGrid(card, ["X", "Y", "Z"], position, SubmitPosition);
 
         card.AddChild(InspectorUi.Text("Name (game_graveyard.Comment)", 12, true));
         comment = new LineEdit
@@ -61,14 +38,7 @@ public partial class GraveyardOverlay
         };
         comment.TextSubmitted += text => SetComment(text);
         card.AddChild(comment);
-        var actions = new HBoxContainer();
-        card.AddChild(actions);
-        drop = InspectorUi.Button("Drop to ground", DropToGround);
-        reset = InspectorUi.Button("Reset to source", ResetToSource);
-        copyGo = InspectorUi.Button("Copy .go", CopyGoCommand);
-        actions.AddChild(drop);
-        actions.AddChild(reset);
-        actions.AddChild(copyGo);
+        (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
         var history = new HBoxContainer();
         card.AddChild(history);
         undo = InspectorUi.Button("Undo", Undo);
@@ -166,15 +136,11 @@ public partial class GraveyardOverlay
 
     void SubmitPosition()
     {
-        var values = new double[3];
-        for (int i = 0; i < 3; i++)
+        if (!EditorFields.TryParseAll(position, out var values))
         {
-            if (!double.TryParse(position[i].Text, NumberStyles.Float, CultureInfo.InvariantCulture, out values[i]))
-            {
-                draftMessage = "Position fields must be numbers (use . for decimals).";
-                ShowSelection();
-                return;
-            }
+            draftMessage = "Position fields must be numbers (use . for decimals).";
+            ShowSelection();
+            return;
         }
 
         SetPosition(values[0], values[1], values[2]);
