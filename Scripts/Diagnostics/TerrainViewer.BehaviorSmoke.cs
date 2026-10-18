@@ -10,16 +10,13 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool behaviorSmoke;
-    int behaviorStep, behaviorWait;
-    double behaviorTime, behaviorStepTime;
+    readonly SmokeSteps behaviorRun = new("BEHAVIOR", 40, 240, 4);
     List<(string Name, Func<bool> Step)>? behaviorSteps;
     int behaviorRuleCount;
 
     void BehaviorSmoke(double delta)
     {
         shotPrefix = "behavior";
-        behaviorTime += delta;
-        behaviorStepTime += delta;
         behaviorSteps ??= BehaviorSteps();
         TakeScreenshot();
         if (shot != null)
@@ -27,46 +24,7 @@ public partial class TerrainViewer
             return;
         }
 
-        string Where() => $"status='{behaviorEditor.SmokeStatus}' scope={behaviorEditor.Scope}";
-        if (behaviorStepTime > 40 || behaviorTime > 240)
-        {
-            SmokeFail($"BEHAVIOR_SMOKE_TIMEOUT step={behaviorSteps[Math.Min(behaviorStep, behaviorSteps.Count - 1)].Name} {Where()}");
-            return;
-        }
-
-        if (behaviorWait > 0)
-        {
-            behaviorWait--;
-            return;
-        }
-
-        if (busy || world == null)
-        {
-            return;
-        }
-
-        if (behaviorStep >= behaviorSteps.Count)
-        {
-            GD.Print("BEHAVIOR_SMOKE_PASSED");
-            GetTree().Quit();
-            return;
-        }
-
-        var (name, step) = behaviorSteps[behaviorStep];
-        try
-        {
-            if (step())
-            {
-                GD.Print($"BEHAVIOR_SMOKE_STEP {name} {Where()}");
-                behaviorStep++;
-                behaviorStepTime = 0;
-                behaviorWait = 4;
-            }
-        }
-        catch (Exception error)
-        {
-            SmokeFail($"BEHAVIOR_SMOKE_FAILED {name}: {error.Message} {Where()}");
-        }
+        behaviorRun.Advance(delta, behaviorSteps, !busy && world != null, () => $"status='{behaviorEditor.SmokeStatus}' scope={behaviorEditor.Scope}", SmokeFail, () => GetTree().Quit());
     }
 
     /// <summary>

@@ -16,8 +16,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool contentSmoke;
-    int contentStep, contentWait;
-    double contentTime, contentStepTime;
+    readonly SmokeSteps contentRun = new("CONTENT", 60, 360, 3);
     List<(string Name, Func<bool> Step)>? contentSteps;
     uint smokeTalkRule, smokeGroup, smokeNewQuest;
     int smokeRuleCount;
@@ -27,8 +26,6 @@ public partial class TerrainViewer
     void ContentSmoke(double delta)
     {
         shotPrefix = "content";
-        contentTime += delta;
-        contentStepTime += delta;
         contentSteps ??= ContentSteps();
         TakeScreenshot();
         if (shot != null)
@@ -37,50 +34,7 @@ public partial class TerrainViewer
         }
 
         string Where() => $"behavior='{behaviorEditor.SmokeStatus}' quest='{questEditor.SmokeStatus}' questId={questEditor.QuestId}";
-        if (contentStepTime > 60 || contentTime > 360)
-        {
-            SmokeFail($"CONTENT_SMOKE_TIMEOUT step={contentSteps[Math.Min(contentStep, contentSteps.Count - 1)].Name} {Where()}");
-            return;
-        }
-
-        if (contentWait > 0)
-        {
-            contentWait--;
-            return;
-        }
-
-        if (busy || world == null)
-        {
-            return;
-        }
-
-        if (contentStep >= contentSteps.Count)
-        {
-            GD.Print("CONTENT_SMOKE_PASSED");
-            GetTree().Quit();
-            return;
-        }
-
-        var (name, step) = contentSteps[contentStep];
-        if ((int)(contentStepTime / 5) != (int)((contentStepTime - delta) / 5))
-        {
-            GD.Print($"CONTENT_SMOKE_WAITING {name} {contentStepTime:F0}s {Where()}");
-        }
-
-        try
-        {
-            if (step())
-            {
-                GD.Print("CONTENT_SMOKE_STEP " + name);
-                contentStep++;
-                contentStepTime = 0;
-                contentWait = 3;
-            }
-        }
-        catch (Exception error)
-        {
-            SmokeFail($"CONTENT_SMOKE_FAILED {name}: {error.Message} {Where()}");
-        }
+        contentRun.Advance(delta, contentSteps, !busy && world != null, Where, SmokeFail, () => GetTree().Quit(), waiting: Where);
     }
 
     SmartScope FarleyScope => new((int)SmokeInnkeeper, SmartScope.Creature);
@@ -110,7 +64,7 @@ public partial class TerrainViewer
             }
 
             FocusPose(spawn.Pose);
-            contentWait = 30;
+            contentRun.Wait = 30;
             return true;
         }),
         ("select-farley", () =>

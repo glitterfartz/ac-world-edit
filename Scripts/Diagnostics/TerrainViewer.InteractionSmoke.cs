@@ -14,16 +14,13 @@ public partial class TerrainViewer
 {
     const uint SmokeInnkeeper = 295;
     bool interactionSmoke;
-    int interactionStep, interactionWait;
-    double interactionTime, interactionStepTime;
+    readonly SmokeSteps interactionRun = new("INTERACTION", 60, 300, 3);
     float smokeYaw;
     uint smokeRootMenu, smokeQuest;
     List<(string Name, Func<bool> Step)>? interactionSteps;
 
     void InteractionSmoke(double delta)
     {
-        interactionTime += delta;
-        interactionStepTime += delta;
         interactionSteps ??= InteractionSteps();
         TakeScreenshot();
         if (shot != null)
@@ -32,50 +29,10 @@ public partial class TerrainViewer
         }
 
         // Fail fast with the stuck step's name rather than waiting on a long global timeout.
-        if (interactionStepTime > 60 || interactionTime > 300)
-        {
-            SmokeFail($"INTERACTION_SMOKE_TIMEOUT step={interactionSteps[Math.Min(interactionStep, interactionSteps.Count - 1)].Name} status={interaction.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}");
-            return;
-        }
-
-        if (interactionWait > 0)
-        {
-            interactionWait--;
-            return;
-        }
-
-        if (busy || world == null)
-        {
-            return;
-        }
-
-        if (interactionStep >= interactionSteps.Count)
-        {
-            GD.Print("INTERACTION_SMOKE_PASSED");
-            GetTree().Quit();
-            return;
-        }
-
-        var (name, step) = interactionSteps[interactionStep];
-        if ((int)(interactionStepTime / 5) != (int)((interactionStepTime - delta) / 5))
-        {
-            GD.Print($"INTERACTION_SMOKE_WAITING {name} {interactionStepTime:F0}s status='{interaction.SmokeStatus}' questEditor='{questEditor.SmokeStatus}' quest={questEditor.QuestId}/{smokeQuest}");
-        }
-
-        try
-        {
-            if (step())
-            {
-                GD.Print("INTERACTION_SMOKE_STEP " + name);
-                interactionStep++;
-                interactionStepTime = 0;
-                interactionWait = 3;
-            }
-        }
-        catch (Exception error)
-        {
-            SmokeFail($"INTERACTION_SMOKE_FAILED {name}: {error.Message} status={interaction.SmokeStatus}");
-        }
+        interactionRun.Advance(delta, interactionSteps, !busy && world != null,
+            () => $"status={interaction.SmokeStatus}", SmokeFail, () => GetTree().Quit(),
+            timeoutWhere: () => $"status={interaction.SmokeStatus} questEditor='{questEditor.SmokeStatus}' visible={questEditor.Visible} quest={questEditor.QuestId} creatures={creatures.Records.Count} loading={creatures.IsLoading}",
+            waiting: () => $"status='{interaction.SmokeStatus}' questEditor='{questEditor.SmokeStatus}' quest={questEditor.QuestId}/{smokeQuest}");
     }
 
     static void Require(bool condition, string message)
@@ -157,7 +114,7 @@ public partial class TerrainViewer
             }
 
             FocusPose(spawn.Pose);
-            interactionWait = 30;
+            interactionRun.Wait = 30;
             return true;
         }),
         ("right-drag-only-looks", () =>
@@ -175,7 +132,7 @@ public partial class TerrainViewer
         {
             Require(!interaction.IsOpen && Math.Abs(yaw - smokeYaw) > 0.05f, "right-drag opened the window or did not turn the camera");
             FocusPose(Farley!.Pose);
-            interactionWait = 10;
+            interactionRun.Wait = 10;
             return true;
         }),
         ("short-right-click", () =>
@@ -348,7 +305,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            if (interactionStepTime < 4)
+            if (interactionRun.StepTime < 4)
             {
                 return false;
             }
@@ -359,7 +316,7 @@ public partial class TerrainViewer
         }),
         ("settled-frame-rate-closed", () =>
         {
-            if (interactionStepTime < 4)
+            if (interactionRun.StepTime < 4)
             {
                 return false;
             }
