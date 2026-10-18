@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace ACWorldEdit.Assets;
@@ -16,8 +18,27 @@ public static class Chunks
     /// <summary>Decode the FourCC at <paramref name="p"/>; <paramref name="reversed"/> undoes the native byte order.</summary>
     public static string Tag(byte[] b, int p, bool reversed = true)
     {
-        string tag = Encoding.ASCII.GetString(b, p, 4);
-        return reversed ? new string(tag.Reverse().ToArray()) : tag;
+        // Tags repeat thousands of times per tile (every MCNK sub-chunk), so each distinct four-byte
+        // pattern is decoded once and the string is shared.
+        uint raw = LittleEndian.U32(b, p);
+        return reversed ? ReversedTags.GetOrAdd(raw, DecodeReversed) : NativeTags.GetOrAdd(raw, DecodeNative);
+    }
+
+    static readonly ConcurrentDictionary<uint, string> ReversedTags = new();
+    static readonly ConcurrentDictionary<uint, string> NativeTags = new();
+
+    static string DecodeNative(uint raw)
+    {
+        Span<byte> bytes = stackalloc byte[4];
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes, raw);
+        return Encoding.ASCII.GetString(bytes);
+    }
+
+    static string DecodeReversed(uint raw)
+    {
+        Span<byte> bytes = stackalloc byte[4];
+        BinaryPrimitives.WriteUInt32BigEndian(bytes, raw);
+        return Encoding.ASCII.GetString(bytes);
     }
 
     /// <summary>

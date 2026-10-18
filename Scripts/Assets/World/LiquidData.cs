@@ -88,11 +88,11 @@ public static class LiquidData
     /// Decode every MH2O layer and its bitmap/height/UV/depth layout; flat oceans retain native
     /// level. Fall back to MCLQ only in chunks not covered by MH2O.
     /// </summary>
-    public static List<ModelSurface> Terrain(byte[] bytes, RetailLiquids? retail = null)
+    public static List<ModelSurface> Terrain(byte[] bytes, RetailLiquids? retail = null, IReadOnlyList<ChunkHeader>? shared = null)
     {
         List<ModelSurface> result = [];
         HashSet<int> covered = [];
-        var top = Chunks.Read(bytes).ToArray();
+        var top = shared ?? Chunks.Read(bytes).ToArray();
         var h2o = top.FirstOrDefault(c => c.Tag == "MH2O");
         if (h2o.Size > 0)
         {

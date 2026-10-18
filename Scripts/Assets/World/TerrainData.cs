@@ -101,8 +101,8 @@ public sealed class TerrainTile
     public TerrainTile(TileKey key, byte[] b, bool bigAlpha)
     {
         Key = key;
-        Objects = WorldObjects.Read(b);
         var top = Assets.Chunks.Read(b).ToList();
+        Objects = WorldObjects.Read(b, top: top);
         var version = top.FirstOrDefault(c => c.Tag == "MVER");
         if (version.Size != 4 || LittleEndian.U32(b, version.Data) != 18)
         {
@@ -214,7 +214,7 @@ public sealed class TerrainTile
 
         // Batch only within this tile/type so streaming keeps ownership simple and
         // transparent surfaces do not create a draw call for every 8-by-8 liquid grid.
-        Liquids = LiquidData.Terrain(b).GroupBy(s => s.LiquidType).Select(LiquidData.Merge).ToList();
+        Liquids = LiquidData.Terrain(b, shared: top).GroupBy(s => s.LiquidType).Select(LiquidData.Merge).ToList();
         if (Chunks.Count != 256)
         {
             throw new InvalidDataException($"Expected 256 MCNK chunks, found {Chunks.Count}");

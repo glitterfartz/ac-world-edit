@@ -21,10 +21,10 @@ public static class WorldObjects
     /// Resolve names, map raw ADT positions around the tile-32 origin, retain doodad-set IDs and
     /// keep MODF bounds for validation.
     /// </summary>
-    public static List<WorldObject> Read(byte[] bytes, bool global = false)
+    public static List<WorldObject> Read(byte[] bytes, bool global = false, IReadOnlyList<ChunkHeader>? top = null)
     {
         var b = new BinaryAsset(bytes);
-        var chunks = Chunks.Read(bytes).ToList();
+        var chunks = top ?? Chunks.Read(bytes).ToList();
         List<WorldObject> result = [];
         void Placements(string names, string offsets, string placements, int stride)
         {

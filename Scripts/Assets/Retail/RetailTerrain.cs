@@ -20,11 +20,13 @@ public static class RetailTerrain
 
     public static TerrainTile Read(TileKey key, byte[] root, byte[] textures, bool bigAlpha, byte[]? objects = null, RetailLiquids? liquids = null)
     {
-        RequireVersion(root, "root");
-        RequireVersion(textures, "texture");
-        var textureIds = TextureNames(textures);
-        var rootChunks = Chunks.Read(root).Where(c => c.Tag == "MCNK").ToList();
-        var textureChunks = Chunks.Read(textures).Where(c => c.Tag == "MCNK").ToList();
+        var rootTop = Chunks.Read(root).ToList();
+        var textureTop = Chunks.Read(textures).ToList();
+        RequireVersion(root, rootTop, "root");
+        RequireVersion(textures, textureTop, "texture");
+        var textureIds = TextureNames(textures, textureTop);
+        var rootChunks = rootTop.Where(c => c.Tag == "MCNK").ToList();
+        var textureChunks = textureTop.Where(c => c.Tag == "MCNK").ToList();
         if (rootChunks.Count != 256 || textureChunks.Count != 256)
         {
             throw new InvalidDataException($"Expected 256 MCNK chunks in each file, found {rootChunks.Count} and {textureChunks.Count}");
@@ -47,13 +49,13 @@ public static class RetailTerrain
         }
 
         // Liquids (MH2O) live in the root file. Without the liquid tables the tile simply has none.
-        var surfaces = liquids == null ? [] : LiquidData.Terrain(root, liquids).GroupBy(s => s.LiquidType).Select(LiquidData.Merge).ToList();
+        var surfaces = liquids == null ? [] : LiquidData.Terrain(root, liquids, rootTop).GroupBy(s => s.LiquidType).Select(LiquidData.Merge).ToList();
         return new TerrainTile(key, result, objects == null ? [] : WorldObjects.Read(objects), surfaces);
     }
 
-    static void RequireVersion(byte[] file, string name)
+    static void RequireVersion(byte[] file, List<ChunkHeader> top, string name)
     {
-        var version = Chunks.Read(file).FirstOrDefault(c => c.Tag == "MVER");
+        var version = top.FirstOrDefault(c => c.Tag == "MVER");
         if (version.Size != 4 || LittleEndian.U32(file, version.Data) != 18)
         {
             throw new NotSupportedException($"Expected ADT version 18 in the {name} file");
@@ -65,9 +67,9 @@ public static class RetailTerrain
     /// slot and stays empty; a layer that refers to it keeps the empty name. Untextured tiles (empty
     /// MDID and empty MCLY) are valid; a layer index beyond the list still fails.
     /// </summary>
-    static string[] TextureNames(byte[] textures)
+    static string[] TextureNames(byte[] textures, List<ChunkHeader> top)
     {
-        var mdid = Chunks.Read(textures).FirstOrDefault(c => c.Tag == "MDID");
+        var mdid = top.FirstOrDefault(c => c.Tag == "MDID");
         if (mdid.Size % 4 != 0)
         {
             throw new InvalidDataException("Malformed MDID");
