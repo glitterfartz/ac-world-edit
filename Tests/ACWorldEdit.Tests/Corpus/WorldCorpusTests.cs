@@ -9,7 +9,7 @@ namespace ACWorldEdit.Tests.Corpus;
 
 /// <summary>
 /// Real WDT/ADT/BLP corpus (ported from the legacy Program.cs). When STORMLIB_DLL points at the
-/// pinned StormLib x64 DLL (see Tests/Run-StormLibChecks.ps1) every asset read is also compared
+/// pinned StormLib x64 DLL (see Tests/Run-StormLibChecks.py) every asset read is also compared
 /// byte for byte against it.
 /// </summary>
 [Trait("Category", "Corpus")]

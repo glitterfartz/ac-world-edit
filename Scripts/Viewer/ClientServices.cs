@@ -47,7 +47,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         }
         catch (DllNotFoundException)
         {
-            throw new FileNotFoundException("CascLib.dll was not found; see Tools/Get-CascLib.ps1. The Wrath profile does not need it.");
+            throw new FileNotFoundException("CascLib.dll was not found; see Tools/Get-CascLib.py. The Wrath profile does not need it.");
         }
 
         try

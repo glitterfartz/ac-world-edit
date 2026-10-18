@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_readonly.ps1\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_readonly.py\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_cs.ps1\"",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_cs.py\"",
             "timeout": 100
           }
         ]
