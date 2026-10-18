@@ -11,8 +11,13 @@ public class RetailLiquidCorpusTests
 {
     static RetailLiquidCorpusTests()
     {
+        if (ListfileEnvironment.Skip() != null)
+        {
+            return;
+        }
+
         var files = RetailData.Files;
-        files.PathResolver ??= PathListfile.Load(PathListfile.Find(AppContext.BaseDirectory)!).Resolve;
+        files.PathResolver ??= PathListfile.Load(ListfileEnvironment.Path()!).Resolve;
         RetailLiquids.Register(files, RetailLiquids.Load(RetailData.Tables));
     }
 
@@ -22,7 +27,7 @@ public class RetailLiquidCorpusTests
         return new WorldMap(azeroth.Directory, RetailData.Files.Read(AssetRef.FromFileId(azeroth.WdtFileId)));
     }
 
-    [RetailClientFact]
+    [RetailListfileFact]
     public void AzerothTilesDecodeLiquidsWithKnownTypes()
     {
         var map = Azeroth();
@@ -45,7 +50,7 @@ public class RetailLiquidCorpusTests
         Assert.NotEmpty(types);
     }
 
-    [RetailClientFact]
+    [RetailListfileFact]
     public void EveryContinentSampleDecodesAndEveryFoundTypeHasATextureSequence()
     {
         var failures = new List<string>();
@@ -96,7 +101,7 @@ public class RetailLiquidCorpusTests
         Assert.True(failures.Count == 0, string.Join("\n", failures.Take(15)));
     }
 
-    [RetailClientFact]
+    [RetailListfileFact]
     public void WmoLiquidGroupsResolveToKnownTypesWithTextures()
     {
         var map = Azeroth();
@@ -129,7 +134,7 @@ public class RetailLiquidCorpusTests
         Assert.True(surfaces > 0, "no WMO liquid surfaces found in " + paths.Count + " WMOs");
     }
 
-    [RetailClientFact]
+    [RetailListfileFact]
     public void EveryLiquidTypeInTheSampleHasATextureSequence()
     {
         var map = Azeroth();

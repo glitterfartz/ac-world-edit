@@ -22,6 +22,14 @@ public static class UserSettings
 
     public static void SaveRetailDirectory(string directory) => Write("client", "retail_dir", directory);
 
+    /// <summary>Community listfile location (user://, or ACWORLD_LISTFILE); the file may not exist yet.</summary>
+    public static string ListfilePath() => ListfileStore.PathIn(ProjectSettings.GlobalizePath("user://"), System.Environment.GetEnvironmentVariable(ListfileStore.Variable));
+
+    /// <summary>Whether the first-run download prompt was already answered, so declining is not nagged again.</summary>
+    public static bool ListfilePrompted() => Read("client", "listfile_prompted", "") == "1";
+
+    public static void SaveListfilePrompted() => Write("client", "listfile_prompted", "1");
+
     public static ClientKind LoadProfile() => SettingsResolver.Profile(System.Environment.GetEnvironmentVariable(SettingsResolver.ProfileVariable), () => Read("client", "profile", ""));
 
     public static void SaveProfile(ClientKind kind) => Write("client", "profile", SettingsResolver.ProfileName(kind));

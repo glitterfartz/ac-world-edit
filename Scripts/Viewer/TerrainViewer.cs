@@ -175,9 +175,10 @@ public partial class TerrainViewer : Node3D
         message = profile == ClientKind.Retail ? "Reading CASC storage and map list…" : "Reading MPQ tables and map list…";
         string path = dataDirectory;
         var kind = profile;
+        string listfile = UserSettings.ListfilePath();
         try
         {
-            var result = await Task.Run(() => ClientServices.Open(kind, path));
+            var result = await Task.Run(() => ClientServices.Open(kind, path, listfile));
             store = result.Files;
             mapList = result.Maps;
             lighting = result.Lighting;
@@ -208,6 +209,11 @@ public partial class TerrainViewer : Node3D
         finally
         {
             busy = false;
+        }
+
+        if (store != null && kind == ClientKind.Retail)
+        {
+            OfferListfile();
         }
 
         if (store != null && mapList.Count > 0)

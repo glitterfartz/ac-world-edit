@@ -15,7 +15,6 @@
   <ItemGroup>
     <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT, see Tools/Get-CascLib.ps1). -->
     <None Include="Data/definitions/*" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="Data/liquid-listfile.csv" Link="liquid-listfile.csv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="native/win-x64/CascLib.dll" Link="CascLib.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.dll')" />
   </ItemGroup>
 </Project>

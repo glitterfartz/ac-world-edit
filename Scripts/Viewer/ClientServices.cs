@@ -10,8 +10,8 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description)
 {
-    public static ClientServices Open(ClientKind kind, string directory) =>
-        kind == ClientKind.Retail ? OpenRetail(directory) : OpenWrath(directory);
+    public static ClientServices Open(ClientKind kind, string directory, string? listfile = null) =>
+        kind == ClientKind.Retail ? OpenRetail(directory, listfile) : OpenWrath(directory);
 
     /// <summary>
     /// Stock 3.3.5.12340 MPQs. Failure disposes the partly opened store.
@@ -36,7 +36,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
     /// features are off. Lighting and liquids are loaded from the DB2 tables; area names are not yet
     /// and stay null.
     /// </summary>
-    public static ClientServices OpenRetail(string directory)
+    public static ClientServices OpenRetail(string directory, string? listfile = null)
     {
         string definitions = Db2Tables.FindDefinitions(System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory)
             ?? throw new FileNotFoundException("Retail table definitions (Data/definitions) were not found next to the game.");
@@ -54,8 +54,9 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         {
             var tables = new Db2Tables(files, definitions);
             var maps = tables.Maps();
-            // Liquid texture sequences are named by path; the trimmed listfile maps them to FileDataIDs.
-            if (PathListfile.Find(AppContext.BaseDirectory) is { } listfile)
+            // Paths (old-style placements, WMO textures and groups, liquid texture sequences) map to
+            // FileDataIDs through the downloaded community listfile; without it they stay unreadable.
+            if (listfile != null && File.Exists(listfile))
             {
                 files.PathResolver = PathListfile.Load(listfile).Resolve;
             }

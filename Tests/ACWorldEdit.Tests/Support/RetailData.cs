@@ -38,6 +38,31 @@ public static class RetailEnvironment
     }
 }
 
+/// <summary>
+/// The downloaded community listfile: ACWORLD_LISTFILE, else the viewer's user-data copy (File →
+/// Update listfile…). Null when neither exists.
+/// </summary>
+public static class ListfileEnvironment
+{
+    public static string? Path()
+    {
+        string appData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "ACWorldEdit");
+        string path = ListfileStore.PathIn(appData, Environment.GetEnvironmentVariable(ListfileStore.Variable));
+        return File.Exists(path) ? path : null;
+    }
+
+    public static string? Skip() => RetailEnvironment.Skip() ?? (Path() == null ? "community listfile not downloaded (File → Update listfile… or ACWORLD_LISTFILE); skipping" : null);
+}
+
+/// <summary>Fact that also needs the downloaded community listfile.</summary>
+public sealed class RetailListfileFactAttribute : FactAttribute
+{
+    public RetailListfileFactAttribute()
+    {
+        Skip = ListfileEnvironment.Skip();
+    }
+}
+
 /// <summary>Opened once and shared by the retail tests.</summary>
 public static class RetailData
 {

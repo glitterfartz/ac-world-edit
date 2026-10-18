@@ -133,24 +133,6 @@ public class RetailLiquidTests
     }
 
     [Fact]
-    public void ListfileIsFoundInAnAncestorDataFolder()
-    {
-        Assert.NotNull(PathListfile.Find(AppContext.BaseDirectory));
-        Assert.Null(PathListfile.Find((string?)null));
-    }
-
-    [Fact]
-    public void BundledListfileCoversTheStandardLiquidFrames()
-    {
-        var list = PathListfile.Load(PathListfile.Find(AppContext.BaseDirectory)!);
-
-        Assert.NotNull(list.Resolve("XTextures\\river\\lake_a.1.blp"));
-        Assert.NotNull(list.Resolve("XTextures\\ocean\\ocean_h.30.blp"));
-        Assert.NotNull(list.Resolve("XTextures\\lava\\lava.1.blp"));
-        Assert.NotNull(list.Resolve("XTextures\\slime\\slime.1.blp"));
-    }
-
-    [Fact]
     public void LightSamplesAreSortedAndInterpolated()
     {
         var band = LightBand.FromSamples([(1440, 0x0000FF), (0, 0xFF0000)]);

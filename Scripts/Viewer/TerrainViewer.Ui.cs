@@ -399,7 +399,8 @@ public partial class TerrainViewer
         const Key shift = (Key)KeyModifierMask.MaskShift;
         var file = menu.Menu("File");
         menu.Command(file, "Load client…", ChooseClient, () => !busy);
-        menu.Command(file, "Open selected world", async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
+        menu.Command(file, "Update listfile…", () => _ = UpdateListfile(), () => !busy && listfileDownload == null);
+        menu.Command(file, "Open selected world",async () => await OpenMap(), () => !busy && store != null && maps.Selected >= 0);
         menu.Command(file, "Database connection…", () =>
         {
             _ = PromptConnection();
