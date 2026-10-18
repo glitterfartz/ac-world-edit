@@ -7,6 +7,8 @@ namespace ACWorldEdit.Data;
 public sealed class WorldDatabase
 {
     readonly string connectionString;
+    // Column list read once per WorldDatabase; a settings change builds a new instance.
+    string[]? schema;
     public string SourceKey { get; }
 
     public WorldDatabase(DatabaseSettings settings)
@@ -30,7 +32,16 @@ public sealed class WorldDatabase
             var session = new WorldReadSession(connection, transaction);
             try
             {
-                await session.ReadSchema(token).ConfigureAwait(false);
+                if (schema == null)
+                {
+                    await session.ReadSchema(token).ConfigureAwait(false);
+                    schema = session.Columns;
+                }
+                else
+                {
+                    session.LoadSchema(schema);
+                }
+
                 return session;
             }
             catch
@@ -56,6 +67,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
 {
     readonly HashSet<string> columns = new(StringComparer.OrdinalIgnoreCase);
     public bool Has(string field) => columns.Contains(field);
+    public string[] Columns => columns.ToArray();
+    public void LoadSchema(IEnumerable<string> known) => columns.UnionWith(known);
     public MySqlCommand Command(string sql) => new(sql, connection, transaction);
 
     /// <summary>

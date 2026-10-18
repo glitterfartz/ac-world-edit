@@ -177,7 +177,14 @@ public partial class GameObjectOverlay : RegionOverlay
     /// <summary>128 default native instances, nearest first. Unadmitted records create no nodes or model requests.</summary>
     void Reconcile(Camera3D camera)
     {
-        var admitted = records.Where(s => selected == s.Guid || ViewPosition(s).DistanceSquaredTo(camera.Position) <= Preview.ViewDistance * Preview.ViewDistance).OrderBy(s => selected == s.Guid ? 0 : 1).ThenBy(s => ViewPosition(s).DistanceSquaredTo(camera.Position)).Take(Preview.ModelLimit).ToArray();
+        float viewDistanceSquared = Preview.ViewDistance * Preview.ViewDistance;
+        var admitted = records
+            .Select(s => (Spawn: s, Distance: ViewPosition(s).DistanceSquaredTo(camera.Position)))
+            .Where(c => selected == c.Spawn.Guid || c.Distance <= viewDistanceSquared)
+            .OrderBy(c => selected == c.Spawn.Guid ? 0 : 1).ThenBy(c => c.Distance)
+            .Take(Preview.ModelLimit)
+            .Select(c => c.Spawn)
+            .ToArray();
         AdmittedObjectCount = admitted.Length;
         Dictionary<ModelKey, List<uint>> groups = [];
         HashSet<uint> missing = [];

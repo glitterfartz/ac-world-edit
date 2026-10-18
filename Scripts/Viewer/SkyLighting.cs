@@ -20,6 +20,7 @@ public sealed partial class SkyLighting : Node3D
     ModelInstance? skyboxInstance;
     string? skyboxPath;
     ClientLighting? table;
+    LightRegion[] mapRegions = [];
     uint? mapId;
     bool interior;
 
@@ -87,6 +88,7 @@ public sealed partial class SkyLighting : Node3D
         table = lightTable;
         mapId = activeMapId;
         interior = isInterior;
+        mapRegions = table != null && activeMapId != null ? table.ForMap(activeMapId.Value).ToArray() : [];
         if (interior || table == null)
         {
             environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
@@ -118,7 +120,7 @@ public sealed partial class SkyLighting : Node3D
         LightRegion? best = null;
         float bestWeight = 0;
         float bestFalloffEnd = float.MaxValue;
-        foreach (var region in table.ForMap(mapId.Value))
+        foreach (var region in mapRegions)
         {
             if (region.IsDefault)
             {

@@ -26,7 +26,7 @@ public sealed class ModelLibrary
         public ImageTexture? MaterialTexture;
         public int Surface;
         public long LastUsed;
-        public long Bytes => Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length + Decoded.Values.Sum(t => (long)t.Rgba.Length);
+        public readonly long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
         /// <summary>
@@ -59,6 +59,7 @@ public sealed class ModelLibrary
     }
 
     readonly Dictionary<ModelKey, Entry> cache = [];
+    long cachedBytes;
     readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<ModelKey> failed = [];
     readonly List<ModelInstance> instances = [];
@@ -96,7 +97,7 @@ public sealed class ModelLibrary
     public bool HasPartialUpload => building != null && building.Surface > 0;
     public int TextureCount => textures.Count;
     public int ActiveFailedModels => instances.Count(i => failed.Contains(i.Key));
-    public long CachedBytes => cache.Values.Sum(e => e.Bytes);
+    public long CachedBytes => cachedBytes;
     public double UploadMilliseconds { get; private set; }
     public bool Busy => pending != null || building != null || instances.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public CreatureCatalog? Catalog { get; private set; }
@@ -155,6 +156,7 @@ public sealed class ModelLibrary
         }
 
         cache.Clear();
+        cachedBytes = 0;
         textures.Clear();
         failed.Clear();
         store = next;
@@ -584,6 +586,7 @@ public sealed class ModelLibrary
                 if (building.Surface == building.Data.Surfaces.Length && !HoldPartialUploads)
                 {
                     cache[buildingKey] = building;
+                    cachedBytes += building.Bytes;
                     building.LastUsed = tick;
                     foreach (string warning in building.Data.Warnings)
                     {
@@ -666,6 +669,7 @@ public sealed class ModelLibrary
             }
 
             bytes -= pair.Value.Bytes;
+            cachedBytes -= pair.Value.Bytes;
             cache.Remove(pair.Key);
             DisposeEntry(pair.Value);
         }

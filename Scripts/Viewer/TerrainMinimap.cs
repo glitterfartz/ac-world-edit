@@ -15,12 +15,35 @@ public partial class TerrainMinimap : Control
     public Vector3 CameraPosition;
     public event Action<TileKey>? Jump;
     const float Cell = 2.5f;
+    static readonly StyleBoxFlat Background = new() { BgColor = new Color(0.04f, 0.07f, 0.1f, 0.9f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 };
+
+    /// <summary>
+    /// Publish the viewer state and redraw only when something the map shows has changed.
+    /// </summary>
+    public void Sync(WorldMap? world, IEnumerable<TileKey> loaded, TileKey current, Vector3 cameraPosition)
+    {
+        bool changed = !ReferenceEquals(World, world) || Current != current || CameraPosition != cameraPosition;
+        World = world;
+        Current = current;
+        CameraPosition = cameraPosition;
+        if (!Loaded.SetEquals(loaded))
+        {
+            Loaded = loaded.ToHashSet();
+            changed = true;
+        }
+
+        if (changed)
+        {
+            QueueRedraw();
+        }
+    }
+
     /// <summary>
     /// Draw available/loaded tiles and project the current camera onto the map grid.
     /// </summary>
     public override void _Draw()
     {
-        DrawStyleBox(new StyleBoxFlat { BgColor = new Color(0.04f, 0.07f, 0.1f, 0.9f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 }, new Rect2(0, 0, 180, 180));
+        DrawStyleBox(Background, new Rect2(0, 0, 180, 180));
         if (World == null)
         {
             return;

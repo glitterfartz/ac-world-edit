@@ -588,11 +588,7 @@ public partial class TerrainViewer : Node3D
         var current = CameraTile();
         int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
         telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
-        minimap.World = world;
-        minimap.Loaded = loaded.Keys.ToHashSet();
-        minimap.Current = current;
-        minimap.CameraPosition = camera.Position;
-        minimap.QueueRedraw();
+        minimap.Sync(world, loaded.Keys, current, camera.Position);
         creatures.Update(camera);
         gameObjects.Update(camera);
         graveyards.Update(camera);
@@ -983,7 +979,18 @@ public partial class TerrainViewer : Node3D
         if (pending == null && building == null)
         {
             var center = CameraTile();
-            var next = wanted.Where(k => !loaded.ContainsKey(k) && !failed.Contains(k)).OrderBy(k => (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y)).Select(k => (TileKey?)k).FirstOrDefault();
+            TileKey? next = null;
+            int nearest = int.MaxValue;
+            foreach (var k in wanted)
+            {
+                int distance = (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y);
+                if (distance < nearest && !loaded.ContainsKey(k) && !failed.Contains(k))
+                {
+                    nearest = distance;
+                    next = k;
+                }
+            }
+
             if (next.HasValue)
             {
                 var key = next.Value;

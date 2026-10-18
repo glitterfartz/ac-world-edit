@@ -336,9 +336,18 @@ public partial class CreatureOverlay : RegionOverlay
         foreach (var marker in markers.Values)
         {
             bool nearby = LayerEnabled && admitted.Contains(marker.Spawn.Guid);
-            marker.Node.Visible = nearby;
+            if (marker.Node.Visible != nearby)
+            {
+                marker.Node.Visible = nearby;
+            }
+
             bool showName = nearby && Preview.ShowNames && visibleNames < 64 && camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < 80 * 80;
-            marker.Label.Visible = selectedGuid == marker.Spawn.Guid || showName;
+            bool labelVisible = selectedGuid == marker.Spawn.Guid || showName;
+            if (marker.Label.Visible != labelVisible)
+            {
+                marker.Label.Visible = labelVisible;
+            }
+
             if (showName)
             {
                 visibleNames++;
@@ -363,7 +372,13 @@ public partial class CreatureOverlay : RegionOverlay
 
         var groups = new Dictionary<ModelKey, List<uint>>();
         admitted.Clear();
-        var candidates = markers.Values.Where(m => selectedGuid == m.Spawn.Guid || camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition) <= Preview.ViewDistance * Preview.ViewDistance).OrderBy(m => selectedGuid == m.Spawn.Guid ? 0 : 1).ThenBy(m => camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition)).Take(Preview.ModelLimit);
+        float viewDistanceSquared = Preview.ViewDistance * Preview.ViewDistance;
+        var candidates = markers.Values
+            .Select(m => (Marker: m, Distance: camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition)))
+            .Where(c => selectedGuid == c.Marker.Spawn.Guid || c.Distance <= viewDistanceSquared)
+            .OrderBy(c => selectedGuid == c.Marker.Spawn.Guid ? 0 : 1).ThenBy(c => c.Distance)
+            .Take(Preview.ModelLimit)
+            .Select(c => c.Marker);
         foreach (var marker in candidates)
         {
             admitted.Add(marker.Spawn.Guid);
