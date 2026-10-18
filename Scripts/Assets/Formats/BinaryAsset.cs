@@ -112,5 +112,5 @@ public sealed class BinaryAsset(byte[] bytes)
     /// Normalize client separators and legacy .mdx names to the .m2 asset path used by the Wrath
     /// reader.
     /// </summary>
-    public static string ModelPath(string path) => System.IO.Path.ChangeExtension(path.Replace('\\', '/'), ".m2");
+    public static string ModelPath(string path) => AssetRef.IsFileReference(path) ? path : System.IO.Path.ChangeExtension(path.Replace('\\', '/'), ".m2");
 }

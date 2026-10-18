@@ -32,13 +32,35 @@ public static class WmoModel
         }
 
         var materials = root["MOMT"];
-        var names = root["MOTX"];
+        // Retail roots carry no MOTX: material textures, group files (GFID) and doodad files (MODI) are
+        // FileDataIDs instead of names.
+        root.TryGetValue("MOTX", out var names);
+        uint[] groupIds = FileIds(b, root, "GFID"), doodadIds = FileIds(b, root, "MODI");
         List<ModelSurface> surfaces = [];
         List<string> warnings = [];
         for (int group = 0; group < groups; group++)
         {
             token.ThrowIfCancellationRequested();
-            string file = path[..^4] + $"_{group:D3}.wmo";
+            string file;
+            if (AssetRef.IsFileReference(path))
+            {
+                if (group >= groupIds.Length)
+                {
+                    throw new InvalidDataException("WMO lists fewer group files than its header declares.");
+                }
+
+                if (groupIds[group] == 0)
+                {
+                    continue;
+                }
+
+                file = AssetRef.FromFileId(groupIds[group]);
+            }
+            else
+            {
+                file = path[..^4] + $"_{group:D3}.wmo";
+            }
+
             var gb = new BinaryAsset(store.Read(file));
             var top = Chunks.Read(gb.Bytes).ToList();
             var gp = top.First(c => c.Tag == "MOGP");
@@ -50,7 +72,12 @@ public static class WmoModel
             var sub = Chunks.Read(gb.Bytes, gp.Data + 68, gp.Data + gp.Size).GroupBy(c => c.Tag).ToDictionary(g => g.Key, g => g.First());
             // Group liquid IDs can use legacy numbering. The root flag determines
             // interpretation; a legacy zero derives its category from visible tile flags.
-            if (sub.TryGetValue("MLIQ", out var lq))
+            if (sub.TryGetValue("MLIQ", out var lq) && AssetRef.IsFileReference(path))
+            {
+                // Liquid types come from LiquidType.dbc, which retail ships as a DB2 table; arrives with the liquid milestone.
+                warnings.Add("Retail WMO liquids are not loaded yet.");
+            }
+            else if (sub.TryGetValue("MLIQ", out lq))
             {
                 uint type = LiquidData.WmoType(gb.U(gp.Data + 52), b.U(header.Data + 60), gb.U(gp.Data + 8));
                 if (type == 0)
@@ -119,10 +146,21 @@ public static class WmoModel
                 }
 
                 int m = materials.Data + mat * 64;
-                int texOffset = b.I(m + 12);
-                if (texOffset >= names.Size)
+                string texture;
+                if (names.Size == 0)
                 {
-                    throw new InvalidDataException("Invalid WMO texture offset.");
+                    uint fileId = b.U(m + 12);
+                    texture = fileId == 0 ? "" : AssetRef.FromFileId(fileId);
+                }
+                else
+                {
+                    int texOffset = b.I(m + 12);
+                    if (texOffset < 0 || texOffset >= names.Size)
+                    {
+                        throw new InvalidDataException("Invalid WMO texture offset.");
+                    }
+
+                    texture = b.Str(names.Data + texOffset).Replace('\\', '/');
                 }
 
                 int[] indices = new int[count];
@@ -140,7 +178,7 @@ public static class WmoModel
                     (indices[j + 1], indices[j + 2]) = (indices[j + 2], indices[j + 1]);
                 }
 
-                surfaces.Add(new(positions, normals, uvs, indices, b.Str(names.Data + texOffset).Replace('\\', '/'), b.I(m + 8), (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode));
+                surfaces.Add(new(positions, normals, uvs, indices, texture, b.I(m + 8), (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode));
                 if (b.U(m + 4) != 0)
                 {
                     warnings.Add($"WMO shader {b.U(m + 4)} uses base-texture preview.");
@@ -149,7 +187,7 @@ public static class WmoModel
         }
 
         List<ModelDoodad> doodads = [];
-        if (root.TryGetValue("MODD", out var dd) && root.TryGetValue("MODN", out var dn) && root.TryGetValue("MODS", out var sets))
+        if (root.TryGetValue("MODD", out var dd) && root.TryGetValue("MODS", out var sets) && (root.ContainsKey("MODN") || doodadIds.Length > 0))
         {
             var included = new HashSet<int>();
             foreach (int set in new[]
@@ -179,13 +217,34 @@ public static class WmoModel
             foreach (int i in included)
             {
                 int p = dd.Data + i * 40, name = (int)(b.U(p) & 0xffffff);
-                if (name >= dn.Size)
+                string doodadPath;
+                if (root.TryGetValue("MODN", out var dn))
                 {
-                    throw new InvalidDataException("Bad WMO doodad name.");
+                    if (name >= dn.Size)
+                    {
+                        throw new InvalidDataException("Bad WMO doodad name.");
+                    }
+
+                    doodadPath = BinaryAsset.ModelPath(b.Str(dn.Data + name));
+                }
+                else
+                {
+                    // MODI lists a FileDataID per doodad; the name field indexes it.
+                    if (name >= doodadIds.Length)
+                    {
+                        throw new InvalidDataException("Bad WMO doodad file index.");
+                    }
+
+                    if (doodadIds[name] == 0)
+                    {
+                        continue;
+                    }
+
+                    doodadPath = AssetRef.FromFileId(doodadIds[name]);
                 }
 
                 var q = new Quaternion(b.F(p + 16), b.F(p + 20), b.F(p + 24), b.F(p + 28));
-                doodads.Add(new(BinaryAsset.ModelPath(b.Str(dn.Data + name)), BinaryAsset.View(b.V(p + 4)), BinaryAsset.View(q), b.F(p + 32)));
+                doodads.Add(new(doodadPath, BinaryAsset.View(b.V(p + 4)), BinaryAsset.View(q), b.F(p + 32)));
             }
         }
 
@@ -221,4 +280,10 @@ public static class WmoModel
         }).ToArray();
         return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
     }
+
+    /// <summary>
+    /// Read a root chunk that is a plain list of FileDataIDs; absent means an empty list.
+    /// </summary>
+    static uint[] FileIds(BinaryAsset b, Dictionary<string, ChunkHeader> root, string tag) =>
+        root.TryGetValue(tag, out var chunk) ? Enumerable.Range(0, chunk.Size / 4).Select(i => b.U(chunk.Data + i * 4)).ToArray() : [];
 }

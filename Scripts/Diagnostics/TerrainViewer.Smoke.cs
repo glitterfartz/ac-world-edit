@@ -37,6 +37,13 @@ public partial class TerrainViewer
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
         clientShot = flags.Contains("--client-shot");
+        if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-tile=", StringComparison.Ordinal)) is { } tileFlag)
+        {
+            clientShot = true;
+            var parts = tileFlag["--client-shot-tile=".Length..].Split(',');
+            clientShotTile = new TileKey(int.Parse(parts[0]), int.Parse(parts[1]));
+        }
+
         clientSmoke = flags.Contains("--client-smoke") || clientShot;
     }
 

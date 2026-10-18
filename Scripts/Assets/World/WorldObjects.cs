@@ -36,38 +36,55 @@ public static class WorldObjects
 
             var table = chunks.FirstOrDefault(c => c.Tag == names);
             var ids = chunks.FirstOrDefault(c => c.Tag == offsets);
-            if (defs.Size % stride != 0 || table.Size == 0)
+            if (defs.Size % stride != 0)
             {
                 throw new InvalidDataException("Invalid world placement chunks.");
             }
 
+            bool wmo = stride == 64;
             for (int i = 0; i < defs.Size / stride; i++)
             {
                 int p = defs.Data + i * stride;
                 int name = b.I(p), offset;
-                if (global)
+                // Legion+ files may name a model by FileDataID (flag 0x40 on MDDF, 0x8 on MODF) and then
+                // carry no name tables at all.
+                bool fileId = (b.H(wmo ? p + 56 : p + 34) & (wmo ? 0x8 : 0x40)) != 0;
+                string path;
+                if (fileId)
                 {
-                    offset = 0;
+                    path = AssetRef.FromFileId((uint)name, wmo);
                 }
                 else
                 {
-                    if (name >= ids.Size / 4)
+                    if (table.Size == 0)
                     {
-                        throw new InvalidDataException("Invalid placement name index.");
+                        throw new InvalidDataException("Invalid world placement chunks.");
                     }
 
-                    offset = b.I(ids.Data + name * 4);
-                }
+                    if (global)
+                    {
+                        offset = 0;
+                    }
+                    else
+                    {
+                        if (name < 0 || name >= ids.Size / 4)
+                        {
+                            throw new InvalidDataException("Invalid placement name index.");
+                        }
 
-                if (offset < 0 || offset >= table.Size)
-                {
-                    throw new InvalidDataException("Invalid placement name offset.");
-                }
+                        offset = b.I(ids.Data + name * 4);
+                    }
 
-                string path = b.Str(table.Data + offset);
-                if (stride == 36)
-                {
-                    path = BinaryAsset.ModelPath(path);
+                    if (offset < 0 || offset >= table.Size)
+                    {
+                        throw new InvalidDataException("Invalid placement name offset.");
+                    }
+
+                    path = b.Str(table.Data + offset);
+                    if (!wmo)
+                    {
+                        path = BinaryAsset.ModelPath(path);
+                    }
                 }
 
                 var pos = b.V(p + 8);
@@ -79,7 +96,7 @@ public static class WorldObjects
                 }
 
                 pos -= new Vector3(origin, 0, origin);
-                result.Add(new(b.U(p + 4), path, pos, b.V(p + 20), stride == 36 ? b.H(p + 32) / 1024f : 1, stride == 64 ? b.H(p + 58) : (ushort)0, global, stride == 64 ? b.V(p + 32) - new Vector3(origin, 0, origin) : null, stride == 64 ? b.V(p + 44) - new Vector3(origin, 0, origin) : null));
+                result.Add(new(b.U(p + 4), path, pos, b.V(p + 20), stride == 36 ? b.H(p + 32) / 1024f : ((b.H(p + 56) & 0x4) != 0 ? b.H(p + 62) / 1024f : 1), stride == 64 ? b.H(p + 58) : (ushort)0, global, stride == 64 ? b.V(p + 32) - new Vector3(origin, 0, origin) : null, stride == 64 ? b.V(p + 44) - new Vector3(origin, 0, origin) : null));
             }
         }
 

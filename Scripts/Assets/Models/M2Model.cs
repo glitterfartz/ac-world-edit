@@ -16,11 +16,22 @@ public static class M2Model
     public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1)
     {
         path = BinaryAsset.ModelPath(path);
-        var b = new BinaryAsset(store.Read(path));
-        b.Range(0, 304);
-        if (Encoding.ASCII.GetString(b.Bytes, 0, 4) != "MD20" || b.U(4) != 264)
+        var file = store.Read(path);
+        // Legion+ files are chunked: an MD21 chunk holds the classic MD20 block (its offsets are relative to it),
+        // SFID names the skin files and TXID the textures by FileDataID. Wrath files are the bare MD20.
+        bool chunked = file.Length >= 4 && Encoding.ASCII.GetString(file, 0, 4) == "MD21";
+        uint[] skinIds = [], textureIds = [];
+        if (chunked)
         {
-            throw new NotSupportedException("Expected Wrath MD20 version 264.");
+            (file, skinIds, textureIds) = SplitChunked(file);
+        }
+
+        var b = new BinaryAsset(file);
+        b.Range(0, 304);
+        uint version = b.U(4);
+        if (Encoding.ASCII.GetString(b.Bytes, 0, 4) != "MD20" || (chunked ? version < 272 : version != 264))
+        {
+            throw new NotSupportedException(chunked ? "Expected MD20 version 272 or later inside the MD21 chunk." : "Expected Wrath MD20 version 264.");
         }
 
         // MD20 descriptors store count/byte-offset pairs. Vertex/bone/sequence records are
@@ -66,7 +77,13 @@ public static class M2Model
             }
         }
 
-        if (sequenceIndex < 0 && bones.Count > 0)
+        // Chunked models keep their animation data in per-sequence .anim files named by AFID; retail
+        // scenery is drawn in its reference pose for now.
+        if (chunked)
+        {
+            sequenceIndex = -1;
+        }
+        else if (sequenceIndex < 0 && bones.Count > 0)
         {
             warnings.Add($"Native animation {animationId} unavailable; showing reference pose.");
         }
@@ -202,7 +219,8 @@ public static class M2Model
 
         // SKIN triangle entries index a skin lookup table, not the MD20 vertex array
         // directly. Compact each batch after following both indirections.
-        var skin = new BinaryAsset(store.Read(path[..^3] + "00.skin"));
+        string skinPath = chunked ? (skinIds.Length > 0 && skinIds[0] != 0 ? AssetRef.FromFileId(skinIds[0]) : throw new InvalidDataException("Model lists no skin file.")) : path[..^3] + "00.skin";
+        var skin = new BinaryAsset(store.Read(skinPath));
         skin.Range(0, 48);
         if (Encoding.ASCII.GetString(skin.Bytes, 0, 4) != "SKIN")
         {
@@ -251,6 +269,10 @@ public static class M2Model
             if (type == 0 && b.U(t + 8) != 0)
             {
                 texture = b.Str(b.I(t + 12));
+            }
+            else if (type == 0 && tex < textureIds.Length && textureIds[tex] != 0)
+            {
+                texture = AssetRef.FromFileId(textureIds[tex]);
             }
             else if (type == 1 && baked != null)
             {
@@ -349,5 +371,42 @@ public static class M2Model
         }
 
         return new(surfaces.ToArray(), skeleton, duration, [], warnings.Distinct().ToArray(), available);
+    }
+
+    /// <summary>
+    /// Split an MD21 container into its MD20 block and the SFID/TXID file lists. Chunk tags are stored
+    /// unreversed in these files; unknown chunks are skipped.
+    /// </summary>
+    static (byte[] Model, uint[] Skins, uint[] Textures) SplitChunked(byte[] file)
+    {
+        byte[]? model = null;
+        uint[] skins = [], textures = [];
+        for (int p = 0; p + 8 <= file.Length;)
+        {
+            string tag = Encoding.ASCII.GetString(file, p, 4);
+            int size = checked((int)MpqArchive.U(file, p + 4));
+            if (size < 0 || size > file.Length - p - 8)
+            {
+                throw new InvalidDataException("Invalid " + tag + " chunk size.");
+            }
+
+            uint[] Ids(int count) => Enumerable.Range(0, count).Select(i => MpqArchive.U(file, p + 8 + i * 4)).ToArray();
+            switch (tag)
+            {
+                case "MD21":
+                    model = file.AsSpan(p + 8, size).ToArray();
+                    break;
+                case "SFID":
+                    skins = Ids(size / 4);
+                    break;
+                case "TXID":
+                    textures = Ids(size / 4);
+                    break;
+            }
+
+            p += 8 + size;
+        }
+
+        return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures);
     }
 }

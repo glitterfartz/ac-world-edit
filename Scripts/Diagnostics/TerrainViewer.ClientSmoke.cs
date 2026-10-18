@@ -11,8 +11,9 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class TerrainViewer
 {
-    bool clientSmoke, clientShot;
+    bool clientSmoke, clientShot, clientShotMoved, clientShotFramed;
     int clientShotFrames;
+    TileKey? clientShotTile;
     double clientSmokeTime;
 
     void ClientSmoke(double delta)
@@ -20,7 +21,7 @@ public partial class TerrainViewer
         clientSmokeTime += delta;
         if (clientSmokeTime > 180)
         {
-            SmokeFail("CLIENT_SMOKE_TIMEOUT " + message);
+            SmokeFail($"CLIENT_SMOKE_TIMEOUT settled={TerrainSettled} loaded={loaded.Count}/{wanted.Count} modelsBusy={models.Busy} {message}");
             return;
         }
 
@@ -66,8 +67,50 @@ public partial class TerrainViewer
         // saves artifacts/client-shot.png for inspection. It needs a real window (not --headless).
         if (clientShot && DisplayServer.GetName() != "headless")
         {
-            if (!TerrainSettled || clientShotFrames++ < 30)
+            // --client-shot-tile=X,Y moves the camera over that tile first, then waits for it to finish.
+            if (!clientShotMoved)
             {
+                clientShotMoved = true;
+                if (clientShotTile is { } target)
+                {
+                    Teleport(target);
+                    return;
+                }
+            }
+
+            if (pending != null || building != null || !wanted.All(loaded.ContainsKey) || models.Busy || clientShotFrames++ < 120)
+            {
+                return;
+            }
+
+            // Frame the largest decoded building close up, and hide the interface so it does not cover the scene.
+            if (!clientShotFramed)
+            {
+                clientShotFramed = true;
+                if (objects.ReadyWmoPlacements().Where(w => !w.BoundsMinimum.HasValue || !w.BoundsMaximum.HasValue || (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() < 150).OrderByDescending(w => w.BoundsMinimum.HasValue && w.BoundsMaximum.HasValue ? (w.BoundsMaximum.Value - w.BoundsMinimum.Value).Length() : 0).FirstOrDefault() is { } building)
+                {
+                    var at = new Vector3(building.Position.X, building.Position.Y, building.Position.Z);
+                    var size = building.BoundsMinimum.HasValue && building.BoundsMaximum.HasValue ? (building.BoundsMaximum.Value - building.BoundsMinimum.Value).Length() : 60;
+                    var center = building.BoundsMinimum.HasValue && building.BoundsMaximum.HasValue ? (building.BoundsMaximum.Value + building.BoundsMinimum.Value) / 2 : building.Position;
+                    var target = new Vector3(center.X, center.Y, center.Z);
+                    GD.Print($"CLIENT_SHOT_BUILDING {building.Path} id={building.Id} size={size:F0} at={at}");
+                    camera.Position = target + new Vector3(0, size * 0.5f, size * 1.1f);
+                    camera.LookAt(target);
+                    yaw = camera.Rotation.Y;
+                    pitch = camera.Rotation.X;
+                    clientShotFrames = 0;
+                }
+
+                foreach (var item in GetChildren().OfType<CanvasItem>())
+                {
+                    item.Visible = false;
+                }
+
+                foreach (var layer in GetChildren().OfType<CanvasLayer>())
+                {
+                    layer.Visible = false;
+                }
+
                 return;
             }
 

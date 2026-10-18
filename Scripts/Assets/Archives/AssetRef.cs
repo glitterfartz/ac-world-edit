@@ -11,16 +11,22 @@ public static class AssetRef
     const string Prefix = "fdid:";
 
     /// <summary>
+    /// Suffix that marks a reference as a WMO root file, so the extension checks that tell buildings
+    /// from doodads work on references too.
+    /// </summary>
+    const string WmoSuffix = ".wmo";
+
+    /// <summary>
     /// Build the reference string for a FileDataID. Zero means "no file" and is rejected.
     /// </summary>
-    public static string FromFileId(uint fileId)
+    public static string FromFileId(uint fileId, bool wmo = false)
     {
         if (fileId == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(fileId), "FileDataID 0 is not a file.");
         }
 
-        return Prefix + fileId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return Prefix + fileId.ToString(System.Globalization.CultureInfo.InvariantCulture) + (wmo ? WmoSuffix : "");
     }
 
     /// <summary>
@@ -30,8 +36,14 @@ public static class AssetRef
     public static bool TryParse(string reference, out uint fileId)
     {
         fileId = 0;
+        var digits = reference.AsSpan();
+        if (digits.EndsWith(WmoSuffix, StringComparison.Ordinal))
+        {
+            digits = digits[..^WmoSuffix.Length];
+        }
+
         return reference.StartsWith(Prefix, StringComparison.Ordinal)
-            && uint.TryParse(reference.AsSpan(Prefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out fileId)
+            && uint.TryParse(digits.Length >= Prefix.Length ? digits[Prefix.Length..] : default, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out fileId)
             && fileId != 0;
     }
 
