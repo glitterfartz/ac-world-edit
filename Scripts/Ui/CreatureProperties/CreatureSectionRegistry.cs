@@ -14,6 +14,7 @@ public static class CreatureSectionRegistry
         ctx => new TrainerSection(ctx),
         ctx => new BehaviorSection(ctx),
         ctx => new SpeechSection(ctx),
+        ctx => new StatsSection(ctx),
         ctx => new InfoSection(ctx)
     ];
 

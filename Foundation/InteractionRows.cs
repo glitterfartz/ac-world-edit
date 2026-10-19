@@ -47,6 +47,12 @@ public static class InteractionTables
     /// </summary>
     public static readonly TableSchema CreatureAI = new("creature_ai", ["entry"], [("entry", ColumnKind.UInt, 0), ("AIName", ColumnKind.Text, 64)], "creature_template");
 
+    /// <summary>
+    /// creature_template level, class and stat scaling as its own column group, so editing stats only
+    /// updates these columns. The base values they scale come from creature_classlevelstats.
+    /// </summary>
+    public static readonly TableSchema CreatureStats = new("creature_stats", ["entry"], [("entry", ColumnKind.UInt, 0), ("minlevel", ColumnKind.UInt, 0), ("maxlevel", ColumnKind.UInt, 0), ("exp", ColumnKind.UInt, 0), ("unit_class", ColumnKind.UInt, 0), ("HealthModifier", ColumnKind.Float, 0), ("ManaModifier", ColumnKind.Float, 0), ("ArmorModifier", ColumnKind.Float, 0), ("DamageModifier", ColumnKind.Float, 0)], "creature_template");
+
     // Quest tables: every column except VerifiedBuild (build stamp, never edited).
     public static readonly TableSchema QuestTemplate = new("quest_template", ["ID"], [
         ("ID", ColumnKind.UInt, 0),
@@ -255,7 +261,7 @@ public static class InteractionTables
         ("ScriptName", ColumnKind.Text, 64)
     ]);
 
-    public static readonly TableSchema[] All = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts];
+    public static readonly TableSchema[] All = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts];
 
     public static TableSchema Find(string name) => All.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");
 }

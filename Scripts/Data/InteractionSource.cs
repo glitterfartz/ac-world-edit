@@ -25,6 +25,12 @@ public sealed class InteractionSnapshot(uint entry, uint guid, string name, stri
 }
 
 /// <summary>
+/// One creature_classlevelstats row. Health and damage have one value per expansion tier (the
+/// creature_template.exp column picks it).
+/// </summary>
+public sealed record ClassLevelStats(uint Level, uint Class, uint[] BaseHealth, uint BaseMana, uint BaseArmor, uint AttackPower, uint RangedAttackPower, float[] DamageBase, int Strength, int Agility, int Stamina, int Intellect, int Spirit);
+
+/// <summary>
 /// IInteractionLookup backed by data read in the same snapshot transaction plus the client catalog.
 /// </summary>
 public sealed class InteractionLookupData(InteractionCatalog? catalog) : IInteractionLookup
@@ -36,6 +42,8 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog) : IIntera
     public readonly Dictionary<uint, List<Row>> ReferenceVendors = [];
     public readonly Dictionary<uint, int> MenuUserCounts = [], TextUserCounts = [], TrainerUserCounts = [];
     public uint MaxMenuId, MaxTextId, MaxTrainerId;
+    /// <summary>creature_classlevelstats keyed by (class, level).</summary>
+    public readonly Dictionary<(uint Class, uint Level), ClassLevelStats> ClassLevelStats = [];
     public InteractionCatalog? Catalog => catalog;
 
     public ItemInfo? Item(uint id) => Items.GetValueOrDefault(id);
@@ -71,6 +79,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
     static readonly string[] RequiredColumns =
     [
         "creature_template.npcflag", "creature_template.gossip_menu_id", "creature_template.subname",
+        "creature_template.minlevel", "creature_template.unit_class", "creature_template.HealthModifier", "creature_classlevelstats.basehp0",
         "gossip_menu.MenuID", "gossip_menu.TextID", "npc_text.text0_0", "npc_text.BroadcastTextID0",
         "gossip_menu_option.OptionType", "gossip_menu_option.ActionMenuID", "creature_queststarter.quest", "creature_questender.quest",
         "npc_vendor.ExtendedCost", "creature_default_trainer.TrainerId", "trainer_spell.SpellId", "npc_spellclick_spells.spell_id",
@@ -98,6 +107,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
             aiName = reader.GetString(6);
         }
 
+        await Load(session, rows, InteractionTables.CreatureStats, "entry=@k0", [entry], token);
         await Load(session, rows, InteractionTables.QuestStarter, "id=@k0", [entry], token);
         await Load(session, rows, InteractionTables.QuestEnder, "id=@k0", [entry], token);
         await Load(session, rows, InteractionTables.Vendor, "entry=@k0", [entry], token);
@@ -222,6 +232,26 @@ public sealed class InteractionSource(DatabaseSettings settings)
 
     async Task ReadLookups(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
     {
+        // The base values are tiny (4 classes x ~83 levels), so read them all; the edited level or
+        // class then resolves without another query.
+        await using (var command = session.Command("SELECT level,class,basehp0,basehp1,basehp2,basemana,basearmor,attackpower,rangedattackpower,damage_base,damage_exp1,damage_exp2,Strength,Agility,Stamina,Intellect,Spirit FROM creature_classlevelstats LIMIT 2000"))
+        {
+            await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var s = new ClassLevelStats(
+                    Convert.ToUInt32(reader.GetValue(0), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(1), CultureInfo.InvariantCulture),
+                    [Convert.ToUInt32(reader.GetValue(2), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(3), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(4), CultureInfo.InvariantCulture)],
+                    Convert.ToUInt32(reader.GetValue(5), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
+                    Convert.ToUInt32(reader.GetValue(7), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(8), CultureInfo.InvariantCulture),
+                    [Convert.ToSingle(reader.GetValue(9), CultureInfo.InvariantCulture), Convert.ToSingle(reader.GetValue(10), CultureInfo.InvariantCulture), Convert.ToSingle(reader.GetValue(11), CultureInfo.InvariantCulture)],
+                    Convert.ToInt32(reader.GetValue(12), CultureInfo.InvariantCulture), Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture),
+                    Convert.ToInt32(reader.GetValue(14), CultureInfo.InvariantCulture), Convert.ToInt32(reader.GetValue(15), CultureInfo.InvariantCulture),
+                    Convert.ToInt32(reader.GetValue(16), CultureInfo.InvariantCulture));
+                lookup.ClassLevelStats[(s.Class, s.Level)] = s;
+            }
+        }
+
         // Reference vendor lists (negative items), one level deep like the view.
         var references = view.All(InteractionTables.Vendor).Where(r => r.I("item") < 0).Select(r => (uint)-r.I("item")).Distinct().ToArray();
         foreach (uint reference in references)
