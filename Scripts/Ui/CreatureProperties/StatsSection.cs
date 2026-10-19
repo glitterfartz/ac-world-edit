@@ -18,6 +18,7 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
 
     public override string Id => "stats";
     public override string Title => "Class / Level / Stats";
+    public override string IconPath => "Interface/Icons/INV_Sword_04.blp";
 
     protected override void Populate(NpcInteraction v)
     {

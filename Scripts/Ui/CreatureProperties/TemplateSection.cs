@@ -119,6 +119,7 @@ public sealed partial class TemplateSection(CreatureContext ctx) : InteractionSe
 
     public override string Id => "template";
     public override string Title => "Template";
+    public override string IconPath => "Interface/Icons/INV_Misc_Book_09.blp";
 
     protected override void Populate(NpcInteraction v)
     {

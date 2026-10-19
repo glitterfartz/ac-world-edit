@@ -11,6 +11,7 @@ public sealed partial class BehaviorSection(CreatureContext ctx) : CreatureSecti
 {
     public override string Id => "behavior";
     public override string Title => "Behavior";
+    public override string IconPath => "Interface/Icons/INV_Misc_Gear_01.blp";
     public override bool ScrollsItself => true;
 
     public override void OnShown(object? argument)
@@ -43,6 +44,7 @@ public sealed partial class SpeechSection(CreatureContext ctx) : CreatureSection
 {
     public override string Id => "speech";
     public override string Title => "Speech";
+    public override string IconPath => "Interface/Icons/INV_Misc_Note_01.blp";
     public override bool ScrollsItself => true;
 
     public override void OnShown(object? argument)

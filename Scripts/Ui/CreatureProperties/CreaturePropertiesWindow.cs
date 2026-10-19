@@ -121,6 +121,7 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         {
             Name = "SectionPicker",
             CustomMinimumSize = new(210, 0),
+            FixedIconSize = new(18, 18),
             SizeFlagsVertical = SizeFlags.ExpandFill,
             AllowReselect = true,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
@@ -287,6 +288,11 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         {
             var section = sections[i];
             picker.SetItemText(i, section.Badge.Length > 0 ? $"{section.Title}  ·  {section.Badge}" : section.Title);
+            if (section.IconPath.Length > 0)
+            {
+                picker.SetItemIcon(i, Context.Icons.Get(section.IconPath));
+            }
+
             picker.SetItemCustomFgColor(i, section.HasContent ? ClientStyle.Body : ClientStyle.Faded);
             if (section == active)
             {

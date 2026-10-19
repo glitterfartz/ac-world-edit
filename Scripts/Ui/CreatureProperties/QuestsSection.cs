@@ -10,6 +10,7 @@ public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSect
 {
     public override string Id => "quests";
     public override string Title => "Quests";
+    public override string IconPath => ClientStyle.AvailableQuestIcon;
     public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
     public override string Badge => Ctx.View is { } v && v.Starts.Length + v.Ends.Length > 0 ? (v.Starts.Length + v.Ends.Length).ToString() : "";
     public override bool ScrollsItself => true;

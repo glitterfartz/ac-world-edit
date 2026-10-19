@@ -10,6 +10,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
 {
     public override string Id => "gossip";
     public override string Title => "Gossip";
+    public override string IconPath => ClientStyle.GossipIcon(0);
     public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & NpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 

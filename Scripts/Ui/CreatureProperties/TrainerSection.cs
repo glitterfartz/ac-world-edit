@@ -10,6 +10,7 @@ public sealed partial class TrainerSection(CreatureContext ctx) : InteractionSec
 {
     public override string Id => "trainer";
     public override string Title => "Trainer";
+    public override string IconPath => ClientStyle.GossipIcon(3);
     public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Trainer != null);
 
     protected override void Populate(NpcInteraction v)

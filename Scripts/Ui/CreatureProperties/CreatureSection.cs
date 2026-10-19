@@ -25,6 +25,9 @@ public abstract partial class CreatureSection : VBoxContainer
     /// <summary>Caption in the section picker.</summary>
     public abstract string Title { get; }
 
+    /// <summary>Client icon shown beside the title in the picker (empty for none).</summary>
+    public virtual string IconPath => "";
+
     /// <summary>Picker suffix such as a count (empty for none).</summary>
     public virtual string Badge => "";
 

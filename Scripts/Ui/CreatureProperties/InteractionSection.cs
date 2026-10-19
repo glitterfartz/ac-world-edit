@@ -58,9 +58,15 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
 
     protected static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
-    protected HBoxContainer IconRow(string iconPath, Control content, int size = 16)
+    protected HBoxContainer IconRow(string iconPath, Control content, int size = 16, Tooltip? tooltip = null)
     {
-        var row = new HBoxContainer();
+        var row = new TooltipRow();
+        if (tooltip != null)
+        {
+            row.Source = () => tooltip;
+            row.TooltipText = "Details";
+        }
+
         row.AddThemeConstantOverride("separation", 6);
         row.AddChild(new TextureRect
         {
@@ -77,7 +83,7 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
     /// <summary>
     /// Search box with result buttons that survive re-renders; searches are bounded and read-only.
     /// </summary>
-    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run)
+    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null)
     {
         var current = searches.GetValueOrDefault(kind, ("", []));
         var row = new HBoxContainer();
@@ -118,12 +124,25 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
         row.AddChild(go);
         foreach (var (label, pick) in current.Results)
         {
-            var result = new Button
+            var result = new TooltipButton
             {
                 Text = "+ " + label,
                 Alignment = HorizontalAlignment.Left
             };
+            if (tooltipFor?.Invoke(label) is { } tip)
+            {
+                result.Source = () => tip;
+                result.TooltipText = label;
+            }
+
             result.Pressed += pick;
+            if (iconFor?.Invoke(label) is { } path)
+            {
+                result.Icon = icons.Get(path) ?? icons.Get(ClientStyle.MissingIcon);
+                result.ExpandIcon = true;
+                result.AddThemeConstantOverride("icon_max_width", 24);
+            }
+
             body.AddChild(result);
         }
     }

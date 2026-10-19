@@ -36,6 +36,8 @@ public sealed record ClassLevelStats(uint Level, uint Class, uint[] BaseHealth, 
 public sealed class InteractionLookupData(InteractionCatalog? catalog) : IInteractionLookup
 {
     public readonly Dictionary<uint, ItemInfo> Items = [];
+    /// <summary>Tooltip fields of the same items.</summary>
+    public readonly Dictionary<uint, ItemDetails> ItemDetails = [];
     public readonly Dictionary<uint, QuestInfo> Quests = [];
     public readonly Dictionary<uint, (string, string)> Broadcasts = [];
     public readonly HashSet<uint> Pois = [], Menus = [], Texts = [], Trainers = [];
@@ -267,11 +269,13 @@ public sealed class InteractionSource(DatabaseSettings settings)
             .Concat(lookup.ReferenceVendors.Values.SelectMany(l => l).Where(r => r.I("item") > 0).Select(r => (uint)r.I("item")));
         await using (var command = session.Command(""))
         {
-            command.CommandText = $"SELECT entry,name,Quality,BuyPrice,displayid FROM item_template WHERE entry IN ({InList(command, items, "i")})";
+            command.CommandText = $"SELECT {ItemColumns} FROM item_template WHERE entry IN ({InList(command, items, "i")})";
             await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                lookup.Items[reader.GetUInt32(0)] = new ItemInfo(reader.GetUInt32(0), reader.GetString(1), Convert.ToInt32(reader.GetValue(2)), Convert.ToInt64(reader.GetValue(3)), reader.GetUInt32(4));
+                var details = ReadItem(reader);
+                lookup.Items[details.Info.Id] = details.Info;
+                lookup.ItemDetails[details.Info.Id] = details;
             }
         }
 
@@ -440,19 +444,40 @@ public sealed class InteractionSource(DatabaseSettings settings)
         return Convert.ToInt64(await Scalar(session, "SELECT COUNT(*) FROM trainer WHERE Id=@k0", [trainerId], token)) > 0;
     }
 
+    /// <summary>Columns of <see cref="ReadItem"/>, in order.</summary>
+    static readonly string ItemColumns = "entry,name,Quality,BuyPrice,displayid,class,subclass,InventoryType,bonding,Flags,ItemLevel,RequiredLevel,maxcount,AllowableClass,AllowableRace,ContainerSlots,"
+        + string.Join(",", Enumerable.Range(1, 10).Select(i => $"stat_type{i},stat_value{i}"))
+        + ",dmg_min1,dmg_max1,dmg_type1,dmg_min2,dmg_max2,dmg_type2,delay,armor,block,holy_res,fire_res,nature_res,frost_res,shadow_res,arcane_res,MaxDurability,socketColor_1,socketColor_2,socketColor_3,COALESCE(description,''),SellPrice";
+
+    static ItemDetails ReadItem(System.Data.Common.DbDataReader reader)
+    {
+        uint U(int i) => Convert.ToUInt32(reader.GetValue(i));
+        int I(int i) => Convert.ToInt32(reader.GetValue(i));
+        float F(int i) => Convert.ToSingle(reader.GetValue(i));
+        var info = new ItemInfo(U(0), reader.GetString(1), I(2), Convert.ToInt64(reader.GetValue(3)), U(4));
+        var stats = Enumerable.Range(0, 10).Select(i => (U(16 + i * 2), I(17 + i * 2))).ToArray();
+        return new ItemDetails(info, U(5), U(6), U(7), U(8), U(9), U(10), U(11), U(12), I(13), I(14), U(15), stats,
+            [(F(36), F(37), U(38)), (F(39), F(40), U(41))], U(42), U(43), U(44),
+            Enumerable.Range(45, 6).Select(I).ToArray(), U(51), [U(52), U(53), U(54)], reader.GetString(55), Convert.ToInt64(reader.GetValue(56)));
+    }
+
     /// <summary>
     /// Bounded picker searches (escaped LIKE, parameterized).
     /// </summary>
-    public async Task<IReadOnlyList<ItemInfo>> SearchItemsAsync(string term, CancellationToken token)
+    public async Task<IReadOnlyList<ItemInfo>> SearchItemsAsync(string term, CancellationToken token) =>
+        (await SearchItemDetailsAsync(term, token)).Select(item => item.Info).ToList();
+
+    /// <summary>The same search as <see cref="SearchItemsAsync"/>, with the template fields a tooltip shows.</summary>
+    public async Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        await using var command = session.Command($"SELECT entry,name,Quality,BuyPrice,displayid FROM item_template WHERE name LIKE @s ESCAPE '=' OR entry=@id ORDER BY entry=@id DESC, CHAR_LENGTH(name), entry LIMIT {MaxSearch}");
+        await using var command = session.Command($"SELECT {ItemColumns} FROM item_template WHERE name LIKE @s ESCAPE '=' OR entry=@id ORDER BY entry=@id DESC, CHAR_LENGTH(name), entry LIMIT {MaxSearch}");
         WorldReadSession.AddSearch(command, term, "@s", "@id");
-        List<ItemInfo> items = [];
+        List<ItemDetails> items = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            items.Add(new ItemInfo(reader.GetUInt32(0), reader.GetString(1), Convert.ToInt32(reader.GetValue(2)), Convert.ToInt64(reader.GetValue(3)), reader.GetUInt32(4)));
+            items.Add(ReadItem(reader));
         }
 
         return items;
