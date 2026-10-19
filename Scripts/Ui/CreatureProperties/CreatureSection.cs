@@ -34,9 +34,6 @@ public abstract partial class CreatureSection : VBoxContainer
     /// </summary>
     public virtual bool HasContent => true;
 
-    /// <summary>The Edit toggle in the window header applies to this section (preview vs editors).</summary>
-    public virtual bool UsesEditMode => false;
-
     /// <summary>
     /// The section fills the window height and scrolls its own content, instead of the window
     /// scrolling it.

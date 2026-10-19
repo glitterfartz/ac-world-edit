@@ -80,6 +80,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
     [
         "creature_template.npcflag", "creature_template.gossip_menu_id", "creature_template.subname",
         "creature_template.minlevel", "creature_template.unit_class", "creature_template.HealthModifier", "creature_classlevelstats.basehp0",
+        "creature_template.faction", "creature_template.speed_run", "creature_template.lootid", "creature_template.flags_extra", "creature_template.CreatureImmunitiesId",
         "gossip_menu.MenuID", "gossip_menu.TextID", "npc_text.text0_0", "npc_text.BroadcastTextID0",
         "gossip_menu_option.OptionType", "gossip_menu_option.ActionMenuID", "creature_queststarter.quest", "creature_questender.quest",
         "npc_vendor.ExtendedCost", "creature_default_trainer.TrainerId", "trainer_spell.SpellId", "npc_spellclick_spells.spell_id",
@@ -108,6 +109,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
         }
 
         await Load(session, rows, InteractionTables.CreatureStats, "entry=@k0", [entry], token);
+        await Load(session, rows, InteractionTables.CreatureDetails, "entry=@k0", [entry], token);
         await Load(session, rows, InteractionTables.QuestStarter, "id=@k0", [entry], token);
         await Load(session, rows, InteractionTables.QuestEnder, "id=@k0", [entry], token);
         await Load(session, rows, InteractionTables.Vendor, "entry=@k0", [entry], token);

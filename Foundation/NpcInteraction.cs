@@ -117,6 +117,12 @@ public sealed record NpcInteraction(
     {
         bool Edited(TableSchema table, Row row) => snapshot.Get(table, table.KeyOf(row)) != row;
         var template = rows.Get(InteractionTables.CreatureTemplate, entry.ToString()) ?? throw new InvalidDataException($"Creature template {entry} is missing.");
+        if (rows.Get(InteractionTables.CreatureDetails, entry.ToString()) is { } details)
+        {
+            name = details.T("name");
+            scriptName = details.T("ScriptName");
+        }
+
         uint flags = template.U("npcflag");
         var menus = new Dictionary<uint, MenuView>();
         var queue = new Queue<uint>();

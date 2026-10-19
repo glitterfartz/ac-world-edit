@@ -38,11 +38,6 @@ public partial class CreaturePropertiesWindow
         ShowSection(name.ToLowerInvariant(), null);
     }
 
-    public void SmokeSetEditing(bool value)
-    {
-        Context.Editing = value;
-    }
-
     /// <summary>
     /// Press the first enabled live button whose text starts with the prefix.
     /// </summary>

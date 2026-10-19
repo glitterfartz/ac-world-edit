@@ -7,7 +7,7 @@ namespace ACWorldEdit;
 /// <summary>
 /// Everything editable about the selected creature in one window: a section picker on the left
 /// (<see cref="CreatureSectionRegistry"/>) and the chosen section on the right. The window is only
-/// the frame - header, Undo/Redo, Edit toggle, status - while the data lives in
+/// the frame - header, Undo/Redo, status - while the data lives in
 /// <see cref="CreatureContext"/> and the pages in <see cref="CreatureSection"/> classes.
 /// </summary>
 public partial class CreaturePropertiesWindow : ContentEditorWindow
@@ -26,14 +26,13 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
     CreatureSpawn? lastSelection;
     ItemList picker = null!;
     Label title = null!, subtitle = null!, statusLabel = null!;
-    Button editToggle = null!, undo = null!, redo = null!;
+    Button undo = null!, redo = null!;
     ScrollContainer scroll = null!;
     VBoxContainer scrollHost = null!, directHost = null!;
 
     public bool IsOpen => Visible;
     public uint? Entry => Context?.Target?.TemplateId;
     public NpcInteraction? View => Context?.View;
-    public bool Editing => Context?.Editing ?? false;
     public string ActiveSection => active?.Id ?? "";
     public IReadOnlyList<CreatureSection> Sections => sections;
     public event Action<string>? SummaryChanged;
@@ -108,14 +107,6 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         subtitle = ClientStyle.Text("", 13, ClientStyle.Faded);
         subtitle.MouseFilter = MouseFilterEnum.Ignore;
         titles.AddChild(subtitle);
-        editToggle = new Button
-        {
-            Text = "Edit",
-            ToggleMode = true,
-            TooltipText = "Edit these records."
-        };
-        editToggle.Toggled += value => Context.Editing = value;
-        header.AddChild(editToggle);
         undo = ButtonIn(header, "Undo", () => History(false));
         redo = ButtonIn(header, "Redo", () => History(true));
         ButtonIn(header, "✕", CloseWindow).TooltipText = "Close (Esc)";
@@ -129,7 +120,7 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         picker = new ItemList
         {
             Name = "SectionPicker",
-            CustomMinimumSize = new(150, 0),
+            CustomMinimumSize = new(210, 0),
             SizeFlagsVertical = SizeFlags.ExpandFill,
             AllowReselect = true,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
@@ -303,9 +294,6 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
             }
         }
 
-        editToggle.Visible = active?.UsesEditMode == true;
-        editToggle.Disabled = Context.Draft == null;
-        editToggle.SetPressedNoSignal(Context.Editing);
         SyncHistory();
     }
 

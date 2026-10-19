@@ -32,7 +32,7 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
         uint minLevel = stats.U("minlevel"), maxLevel = stats.U("maxlevel"), tier = Math.Min(stats.U("exp"), 2), unitClass = stats.U("unit_class");
 
         body.AddChild(ClientStyle.Text("Class and level", 16, ClientStyle.Header));
-        if (editing)
+        if (editable)
         {
             body.AddChild(ClientStyle.Text($"These apply to all {v.SpawnCount} spawn(s) of this creature.", 11, ClientStyle.Warning));
         }
@@ -46,13 +46,13 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
 
         string className = Classes.FirstOrDefault(c => c.Id == unitClass).Name ?? $"Unknown ({unitClass})";
         Field(grid, "Class", "Decides which row of the class stats table supplies base health, mana, armor and attributes. Only Warrior (no mana), Paladin (health and mana), Rogue (no mana, more damage) and Mage (low health, lots of mana) exist for creatures.",
-            editing ? ClassPicker(stats, unitClass) : ClientStyle.Text(className, 14));
+            editable ? ClassPicker(stats, unitClass) : ClientStyle.Text(className, 14));
         Field(grid, "Lowest level", "The level range is rolled when the creature spawns. Each spawn gets a random level from the lowest to the highest value. Set both equal for a fixed level.",
-            editing ? Number(stats, "minlevel", minLevel, "Lowest level") : ClientStyle.Text(minLevel.ToString(CultureInfo.InvariantCulture), 14));
+            editable ? Number(stats, "minlevel", minLevel, "Lowest level") : ClientStyle.Text(minLevel.ToString(CultureInfo.InvariantCulture), 14));
         Field(grid, "Highest level", "Upper end of the level range. Level 63 is the top of Classic-era scaling and 80 the cap in Wrath; values above 80 only work if the class stats table has rows for them.",
-            editing ? Number(stats, "maxlevel", maxLevel, "Highest level") : ClientStyle.Text(maxLevel.ToString(CultureInfo.InvariantCulture), 14));
+            editable ? Number(stats, "maxlevel", maxLevel, "Highest level") : ClientStyle.Text(maxLevel.ToString(CultureInfo.InvariantCulture), 14));
         Field(grid, "Expansion tier", "Picks which health and damage column of the class stats table is used, so the same level can be tuned for Classic, Burning Crusade or Wrath content. Level 1-60 content normally uses Classic, outland content Burning Crusade, Northrend content Wrath.",
-            editing ? TierPicker(stats, tier) : ClientStyle.Text(Tiers[tier], 14));
+            editable ? TierPicker(stats, tier) : ClientStyle.Text(Tiers[tier], 14));
 
         body.AddChild(ClientStyle.Text("Stat multipliers", 16, ClientStyle.Header));
         body.AddChild(ClientStyle.Text("Each multiplies the base value for the creature's level and class. 1 keeps the table value, 2 doubles it.", 12, ClientStyle.Faded));
@@ -63,13 +63,13 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
         scales.AddThemeConstantOverride("h_separation", 10);
         body.AddChild(scales);
         Field(scales, "Health multiplier", "Scales the creature's maximum health. Bosses and elites usually use values well above 1.",
-            editing ? Decimal(stats, "HealthModifier", "Health multiplier") : ClientStyle.Text(Shown(stats.F("HealthModifier")), 14));
+            editable ? Decimal(stats, "HealthModifier", "Health multiplier") : ClientStyle.Text(Shown(stats.F("HealthModifier")), 14));
         Field(scales, "Mana multiplier", "Scales the creature's maximum mana. It has no effect on classes that have no mana.",
-            editing ? Decimal(stats, "ManaModifier", "Mana multiplier") : ClientStyle.Text(Shown(stats.F("ManaModifier")), 14));
+            editable ? Decimal(stats, "ManaModifier", "Mana multiplier") : ClientStyle.Text(Shown(stats.F("ManaModifier")), 14));
         Field(scales, "Armor multiplier", "Scales the creature's armor, which reduces the physical damage it takes.",
-            editing ? Decimal(stats, "ArmorModifier", "Armor multiplier") : ClientStyle.Text(Shown(stats.F("ArmorModifier")), 14));
+            editable ? Decimal(stats, "ArmorModifier", "Armor multiplier") : ClientStyle.Text(Shown(stats.F("ArmorModifier")), 14));
         Field(scales, "Damage multiplier", "Scales the damage of the creature's melee and ranged attacks.",
-            editing ? Decimal(stats, "DamageModifier", "Damage multiplier") : ClientStyle.Text(Shown(stats.F("DamageModifier")), 14));
+            editable ? Decimal(stats, "DamageModifier", "Damage multiplier") : ClientStyle.Text(Shown(stats.F("DamageModifier")), 14));
 
         RenderResult(lookup, stats, minLevel, maxLevel, tier, unitClass);
     }
@@ -114,15 +114,6 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
             table.AddChild(ClientStyle.Text(Shown(value(low)), 14));
             table.AddChild(ClientStyle.Text(Shown(value(high)), 14));
         }
-    }
-
-    /// <summary>A field label that shows the explanation on hover.</summary>
-    static Label Caption(string name, string tip)
-    {
-        var label = ClientStyle.Tag(name);
-        label.TooltipText = tip;
-        label.MouseFilter = MouseFilterEnum.Stop;
-        return label;
     }
 
     static void Field(GridContainer grid, string name, string tip, Control editor)
@@ -213,6 +204,4 @@ public sealed partial class StatsSection(CreatureContext ctx) : InteractionSecti
         });
         return edit;
     }
-
-    static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 }

@@ -31,7 +31,7 @@ public class CreaturePropertiesWindowTests
         var window = Spawn();
         var picker = (ItemList)window.FindChild("SectionPicker", true, false)!;
         AssertThat(picker.ItemCount).IsEqual(CreatureSectionRegistry.Factories.Count);
-        AssertThat(window.Sections.Select(s => s.Id).ToArray()).IsEqual(new[] { "gossip", "quests", "vendor", "trainer", "behavior", "speech", "info" });
+        AssertThat(window.Sections.Select(s => s.Id).ToArray()).IsEqual(new[] { "behavior", "stats", "gossip", "quests", "speech", "template", "trainer", "vendor" });
         AssertThat(window.ActiveSection).IsEqual(CreaturePropertiesWindow.DefaultSection);
     }
 

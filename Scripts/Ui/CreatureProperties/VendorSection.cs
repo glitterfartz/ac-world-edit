@@ -11,7 +11,7 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
     public override string Id => "vendor";
     public override string Title => "Vendor";
     public override string Badge => Ctx.View is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString() : "";
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editing || v.Vendor.Length > 0);
+    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Vendor.Length > 0);
     const int VendorPageSize = 10;
     int vendorPage;
 
@@ -24,7 +24,7 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
 
     void RenderVendor(NpcInteraction v)
     {
-        if (editing)
+        if (editable)
         {
             RenderVendorEditor(v);
             return;

@@ -10,7 +10,7 @@ public sealed partial class TrainerSection(CreatureContext ctx) : InteractionSec
 {
     public override string Id => "trainer";
     public override string Title => "Trainer";
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editing || v.Trainer != null);
+    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Trainer != null);
 
     protected override void Populate(NpcInteraction v)
     {
@@ -31,7 +31,7 @@ public sealed partial class TrainerSection(CreatureContext ctx) : InteractionSec
             }
 
             body.AddChild(ClientStyle.Text($"Trainer {trainer.Id} · type {trainer.Type} · requirement {trainer.Requirement}{(trainer.SharedBy > 1 ? $" · shared by {trainer.SharedBy} creatures" : "")}", 12, trainer.SharedBy > 1 ? ClientStyle.Warning : ClientStyle.Faded));
-            if (!editing)
+            if (!editable)
             {
                 foreach (var spell in trainer.Spells)
                 {
@@ -40,7 +40,7 @@ public sealed partial class TrainerSection(CreatureContext ctx) : InteractionSec
             }
         }
 
-        if (editing)
+        if (editable)
         {
             RenderTrainerEditor(v);
         }

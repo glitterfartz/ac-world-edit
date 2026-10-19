@@ -14,7 +14,7 @@ namespace ACWorldEdit;
 public abstract partial class InteractionSection(CreatureContext ctx) : CreatureSection(ctx)
 {
     protected virtual VBoxContainer body => this;
-    protected bool editing => Ctx.Editing;
+    protected bool editable => Ctx.Editable;
     protected string status { get => Ctx.Status; set => Ctx.Status = value; }
     protected CreatureSpawn? target => Ctx.Target;
     protected InteractionSnapshot? snapshot => Ctx.Snapshot;
@@ -24,8 +24,6 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
     protected InteractionDraft? draft => Ctx.Draft;
     protected Row TemplateRow => Ctx.TemplateRow;
     protected readonly Dictionary<string, (string Term, List<(string Label, Action Pick)> Results)> searches = [];
-
-    public override bool UsesEditMode => true;
 
     protected Func<DatabaseSettings> Connection => Ctx.Connection;
     protected void Render() => Ctx.Redraw();
@@ -48,6 +46,17 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
             body.AddChild(ClientStyle.Text(Ctx.Target != null ? "Loading…" : "Select a creature in the world.", 15, ClientStyle.Faded));
         }
     }
+
+    /// <summary>A field label that shows the explanation on hover.</summary>
+    protected static Label Caption(string name, string tip)
+    {
+        var label = ClientStyle.Tag(name);
+        label.TooltipText = tip;
+        label.MouseFilter = MouseFilterEnum.Stop;
+        return label;
+    }
+
+    protected static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
     protected HBoxContainer IconRow(string iconPath, Control content, int size = 16)
     {

@@ -7,7 +7,7 @@ namespace ACWorldEdit;
 /// <summary>
 /// Opt-in --interaction-smoke (graphical): Innkeeper Farley in Goldshire through real input and
 /// controls. A right-drag must only turn the camera; a short right-click opens the window; gossip,
-/// vendor (with client icons), submenu, quests, quest editor and Edit mode are exercised on an
+/// vendor (with client icons), submenu, quests, quest editor and editing are exercised on an
 /// isolated draft; a map switch closes the window. Saves artifacts/interaction-*.png.
 /// </summary>
 public partial class TerrainViewer
@@ -263,7 +263,6 @@ public partial class TerrainViewer
         }),
         ("edit-add-submenu", () =>
         {
-            creatureProps.SmokeSetEditing(true);
             creatureProps.SmokeShow("Gossip");
             int before = creatureProps.View!.Menus[smokeRootMenu].Options.Length;
             if (creatureProps.View.Menus[smokeRootMenu].SharedBy > 1)
@@ -311,7 +310,7 @@ public partial class TerrainViewer
         }),
         ("edit-flag-warning-fix", () =>
         {
-            creatureProps.SmokeShow("Info");
+            creatureProps.SmokeShow("Template");
             Require(creatureProps.SmokeToggleFlag("Quest giver", false), "quest giver checkbox missing");
             Require(creatureProps.View!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
             Require(creatureProps.SmokePress("Fix") && (creatureProps.View.NpcFlag & NpcFlags.QuestGiver) != 0, "fix did not restore the flag");
@@ -340,7 +339,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            GD.Print($"INTERACTION_SMOKE_FPS editWindow={creatureProps.IsOpen && creatureProps.Editing} fps={Engine.GetFramesPerSecond()}");
+            GD.Print($"INTERACTION_SMOKE_FPS editWindow={creatureProps.IsOpen} fps={Engine.GetFramesPerSecond()}");
             creatureProps.CloseWindow();
             return true;
         }),

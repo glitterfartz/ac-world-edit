@@ -10,7 +10,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
 {
     public override string Id => "gossip";
     public override string Title => "Gossip";
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editing || v.Menus.Count > 0 || (v.NpcFlag & NpcFlags.Gossip) != 0);
+    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & NpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 
     protected override void Populate(NpcInteraction v)
@@ -33,7 +33,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         if (!v.Menus.TryGetValue(menuId, out var menu))
         {
             body.AddChild(ClientStyle.Text(menuId == 0 ? "This creature has no gossip menu; the client opens its default greeting or the first service directly." : $"Gossip menu {menuId} could not be loaded.", 15, ClientStyle.Faded));
-            if (editing)
+            if (editable)
             {
                 RenderCreateMenu(v);
             }
@@ -44,7 +44,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         if (menu.SharedBy > 1)
         {
             body.AddChild(ClientStyle.Text($"Menu {menu.MenuId} is shared by {menu.SharedBy} creatures: edits apply to all of them.", 12, ClientStyle.Warning));
-            if (editing)
+            if (editable)
             {
                 RenderForkMenu(v, menu);
             }
@@ -57,7 +57,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
                 body.AddChild(ClientStyle.Text($"Text {text.TextId} · chance {text.Probability:0.##} · chosen by conditions or chance", 11, ClientStyle.Faded));
             }
 
-            if (editing)
+            if (editable)
             {
                 RenderTextEditor(text);
             }
@@ -68,22 +68,9 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         }
 
         body.AddChild(new HSeparator());
-        if (menus.Count == 0 && (v.NpcFlag & NpcFlags.QuestGiver) != 0)
-        {
-            foreach (var quest in v.Starts)
-            {
-                body.AddChild(QuestButton(quest, ClientStyle.AvailableQuestIcon));
-            }
-
-            foreach (var quest in v.Ends)
-            {
-                body.AddChild(QuestButton(quest, ClientStyle.ActiveQuestIcon));
-            }
-        }
-
         foreach (var option in menu.Options)
         {
-            if (editing)
+            if (editable)
             {
                 RenderOptionEditor(v, menu, option);
                 continue;
@@ -106,7 +93,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
             body.AddChild(IconRow(ClientStyle.GossipIcon(option.Icon), button));
         }
 
-        if (editing)
+        if (editable)
         {
             RenderAddOption(v, menu);
         }
@@ -167,25 +154,6 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         }
 
         Render();
-    }
-
-    Control QuestButton(QuestLinkView quest, string icon)
-    {
-        var button = new Button
-        {
-            Text = quest.Info != null ? $"{quest.Info.Title} ({quest.Info.Level})" : $"Quest {quest.Quest} (missing)",
-            Alignment = HorizontalAlignment.Left
-        };
-        if (quest.Edited)
-        {
-            button.AddThemeColorOverride("font_color", ClientStyle.Edited);
-        }
-
-        button.Pressed += () =>
-        {
-            Ctx.ShowSection("quests", quest.Quest);
-        };
-        return IconRow(icon, button);
     }
 
     void RenderCreateMenu(NpcInteraction v)

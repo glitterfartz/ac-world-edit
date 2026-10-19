@@ -81,21 +81,9 @@ public sealed class CreatureContext
 
     /// <summary>The window's status line; sections set it and call <see cref="Redraw"/>.</summary>
     public string Status { get; set; } = "";
-    bool editing;
 
-    /// <summary>
-    /// Edit mode of the interaction sections: they show editors instead of the client-style preview.
-    /// Only possible while a content draft is open.
-    /// </summary>
-    public bool Editing
-    {
-        get => editing;
-        set
-        {
-            editing = value && Draft != null;
-            Redraw();
-        }
-    }
+    /// <summary>The sections show editors whenever a content draft is open; otherwise they are read-only.</summary>
+    public bool Editable => Draft != null;
 
     /// <summary>Data, status or mode changed: sections and the window frame redraw.</summary>
     public event Action? Changed;

@@ -163,6 +163,17 @@ public class InteractionRowsTests
     }
 
     [Fact]
+    public void CreatureTemplateColumnGroupsDoNotOverlap()
+    {
+        var groups = InteractionTables.All.Where(t => t.SqlName == "creature_template").ToArray();
+        Assert.Contains(InteractionTables.CreatureDetails, groups);
+
+        var columns = groups.SelectMany(t => t.Columns.Select(c => c.Name).Where(n => n != "entry")).ToArray();
+        Assert.Equal(columns.Length, columns.Distinct().Count());
+        Assert.DoesNotContain("VerifiedBuild", columns);
+    }
+
+    [Fact]
     public void RowSetSetGetRemoveAndAll()
     {
         var rows = new RowSet();
