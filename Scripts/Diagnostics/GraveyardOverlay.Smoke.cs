@@ -112,9 +112,13 @@ public partial class GraveyardOverlay
 
         // Server rules: a duplicate zone and an unknown AreaTable ID must be refused unchanged.
         var beforeInvalid = Current(id);
+        string? said = null;
+        var report = Report;
+        Report = m => said = m;
         AddLink(zone, GraveyardLink.Neutral);
         AddLink(9999999, GraveyardLink.Neutral);
-        if (Current(id) != beforeInvalid || !draftMessage.StartsWith("Not saved", StringComparison.Ordinal))
+        Report = report;
+        if (Current(id) != beforeInvalid || said?.StartsWith("Not saved", StringComparison.Ordinal) != true)
         {
             return Fail("invalid link accepted");
         }

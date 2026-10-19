@@ -77,6 +77,11 @@ public sealed class DraftHistory<T> : IDisposable
     /// </summary>
     public void Append(T entry) => Save(new(1, State.AppliedEntries().Append(entry).ToArray(), State.Cursor + 1));
 
+    /// <summary>
+    /// Drop every entry, undo and redo included.
+    /// </summary>
+    public void Clear() => Save(new(1, [], 0));
+
     public void Undo()
     {
         if (CanUndo)

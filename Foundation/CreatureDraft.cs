@@ -94,6 +94,8 @@ public sealed class CreatureDraft : IDisposable
     /// Discard one net change as a normal undoable command that returns the creature to its baseline.
     /// Other creatures' history is untouched.
     /// </summary>
+    public void Clear() => history.Clear();
+
     public void Revert(CreatureMove net) => history.Append(new CreatureMove(net.Source, net.Guid, net.After, net.Before));
 
     public void Undo() => history.Undo();

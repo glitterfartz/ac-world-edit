@@ -43,6 +43,27 @@ public partial class EditorMenu : MenuBar
     }
 
     /// <summary>
+    /// Add a submenu to a menu; fill it with Command/Check like a top-level menu.
+    /// </summary>
+    public PopupMenu Submenu(PopupMenu parent, string title)
+    {
+        var sub = new PopupMenu
+        {
+            Name = title
+        };
+        parent.AddChild(sub);
+        parent.AddSubmenuNodeItem(title, sub);
+        sub.IdPressed += id =>
+        {
+            if (items.TryGetValue((sub, id), out var item))
+            {
+                item.Action();
+            }
+        };
+        return sub;
+    }
+
+    /// <summary>
     /// Add a command. Accelerator uses Godot key-with-modifier encoding, e.g.
     /// KeyModifierMask.MaskCtrl | Key.Z.
     /// </summary>

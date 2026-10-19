@@ -143,6 +143,34 @@ public partial class TerrainViewer
     }
 
     /// <summary>
+    /// Wipe the saved editing state: every draft change with its undo history, and the record of
+    /// which changes were exported.
+    /// </summary>
+    void ClearCache()
+    {
+        var confirm = new ConfirmationDialog
+        {
+            Title = "Clear cache",
+            DialogText = "Clear all saved edits, undo history and the exported-changes record? Unexported changes are lost.",
+            OkButtonText = "Clear cache"
+        };
+        confirm.Confirmed += () =>
+        {
+            confirm.QueueFree();
+            creatures.ClearDraft();
+            graveyards.ClearDraft();
+            drafts.Clear();
+            pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
+            pendingStore.ClearExported();
+            RefreshPending();
+            pendingWindow.SetStatus("Cache cleared.");
+        };
+        confirm.Canceled += confirm.QueueFree;
+        AddChild(confirm);
+        confirm.PopupCentered();
+    }
+
+    /// <summary>
     /// Save scripts for every unsaved change, then mark them exported so the indicator clears. The
     /// drafts themselves are untouched; nothing connects to a database.
     /// </summary>

@@ -134,5 +134,28 @@ public sealed class ContentDrafts : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Drop the whole draft history; editors refresh through Changed.
+    /// </summary>
+    public bool Clear()
+    {
+        if (Draft == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            Draft.Clear();
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        Changed?.Invoke(null);
+        return true;
+    }
+
     public void Dispose() => Draft?.Dispose();
 }

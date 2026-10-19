@@ -12,7 +12,10 @@ public partial class GraveyardOverlay : IPlacementEditor
 {
     GraveyardDraft? draft;
     string draftPath = "";
-    string draftMessage = "";
+    /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
+    public Action<string>? Report { get; set; }
+
+    void Say(string message) => Report?.Invoke(message);
     TransformGizmo gizmo = null!;
 
     /// <summary>
@@ -50,7 +53,7 @@ public partial class GraveyardOverlay : IPlacementEditor
         }
         catch (Exception)
         {
-            draftMessage = "Cannot open graveyard draft. Editing disabled; existing file preserved.";
+            Say("Cannot open graveyard draft. Editing disabled; existing file preserved.");
         }
 
         gizmo = new TransformGizmo();
@@ -89,15 +92,15 @@ public partial class GraveyardOverlay : IPlacementEditor
         try
         {
             draft!.Edit(sourceKey, editing.Site.Record, after, ZoneValidator());
-            draftMessage = success;
+            Say(success);
         }
         catch (InvalidDataException error)
         {
-            draftMessage = "Not saved: " + error.Message;
+            Say("Not saved: " + error.Message);
         }
         catch (Exception)
         {
-            draftMessage = "Could not save graveyard draft. Previous draft preserved.";
+            Say("Could not save graveyard draft. Previous draft preserved.");
         }
 
         ApplyRecord(editing.Site.Record.Id);
@@ -165,7 +168,7 @@ public partial class GraveyardOverlay : IPlacementEditor
         LastGround = ground;
         if (ground.Height is not float height)
         {
-            draftMessage = "Not dropped: " + ground.Message;
+            Say("Not dropped: " + ground.Message);
             ShowSelection();
             return;
         }
@@ -225,11 +228,11 @@ public partial class GraveyardOverlay : IPlacementEditor
                 draft?.Undo();
             }
 
-            draftMessage = redo ? "Redid last graveyard change." : "Undid last graveyard change.";
+            Say(redo ? "Redid last graveyard change." : "Undid last graveyard change.");
         }
         catch (Exception)
         {
-            draftMessage = "Could not save graveyard draft history. Previous draft preserved.";
+            Say("Could not save graveyard draft history. Previous draft preserved.");
         }
 
         foreach (uint id in markers.Keys)
@@ -249,11 +252,35 @@ public partial class GraveyardOverlay : IPlacementEditor
         try
         {
             draft?.Revert(net);
-            draftMessage = "Discarded the graveyard edit.";
+            Say("Discarded the graveyard edit.");
         }
         catch (Exception)
         {
-            draftMessage = "Could not save graveyard draft history. Previous draft preserved.";
+            Say("Could not save graveyard draft history. Previous draft preserved.");
+        }
+
+        foreach (uint id in markers.Keys)
+        {
+            ApplyRecord(id);
+        }
+
+        ShowSelection();
+    }
+
+    /// <summary>
+    /// Drop all saved graveyard edits and their undo history.
+    /// </summary>
+    public void ClearDraft()
+    {
+        gizmo.Finish(false);
+        try
+        {
+            draft?.Clear();
+            Say("Cleared the draft history.");
+        }
+        catch (Exception)
+        {
+            Say("Could not clear the draft history.");
         }
 
         foreach (uint id in markers.Keys)
@@ -279,7 +306,7 @@ public partial class GraveyardOverlay : IPlacementEditor
         if (GoCommand() is { } command)
         {
             DisplayServer.ClipboardSet(command);
-            draftMessage = "Copied " + command;
+            Say("Copied " + command);
             ShowSelection();
         }
     }

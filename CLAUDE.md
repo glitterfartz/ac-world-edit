@@ -68,6 +68,8 @@ Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` path
 
 - Don't add UI text, tooltips or status messages saying that changes are a "local draft" or that the "database is unchanged" / "source is unchanged". That is the app's basic premise; users know it. Write status messages about what happened ("Saved.", "Moved graveyard.") and only mention drafts or the database when the distinction matters to a decision or an error.
 
+- Don't put status or feedback messages in Scene Explorer windows or the overlay inspectors (selection details, query-status labels). Post them to the status bar along the bottom of the screen (`StatusBar`, fed by `StatusLog`; overlays report through their `Report` callback). The newest message shows on the right of the bar and clicking it opens the message history.
+
 ## Commit messages
 
 - Subject: `type(scope): summary`, scope optional. Types: `feat` (new user-visible capability), `fix` (wrong behavior corrected), `perf`, `refactor` (no behavior change), `test`, `docs`, `build` (csproj, global.json, NuGet, launcher), `chore` (repo hygiene, .gitignore, moving or deleting files), `style` (formatting only).

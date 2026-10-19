@@ -47,6 +47,11 @@ public static class UserSettings
         file.Save(Path);
     }
 
+    /// <summary>Saved UI scale in percent (100 when unset or out of range).</summary>
+    public static int LoadUiScale() => int.TryParse(Read("ui", "scale_percent", "100"), out int percent) && percent is >= 50 and <= 300 ? percent : 100;
+
+    public static void SaveUiScale(int percent) => Write("ui", "scale_percent", percent.ToString());
+
     static ConfigFile Open()
     {
         var file = new ConfigFile();

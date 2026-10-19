@@ -24,7 +24,10 @@ public partial class CreatureOverlay : RegionOverlay
     CreatureDraft? draft;
     string draftPath = "";
     string sourceKey = "";
-    string draftMessage = "";
+    /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
+    public Action<string>? Report { get; set; }
+
+    void Say(string message) => Report?.Invoke(message);
     TransformGizmo gizmo = null!;
     OptionButton animation = null!;
     ushort previewAnimation;
@@ -108,7 +111,7 @@ public partial class CreatureOverlay : RegionOverlay
         }
         catch (Exception)
         {
-            draftMessage = "Cannot open local draft. Movement disabled; existing file preserved.";
+            Say("Cannot open local draft. Movement disabled; existing file preserved.");
         }
 
         gizmo = new TransformGizmo();
@@ -592,7 +595,7 @@ public partial class CreatureOverlay : RegionOverlay
         var pose = PoseOf(spawn);
         selectionName.Text = spawn.Name;
         selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
-        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : draftMessage)}");
+        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
         ShowPose(pose);
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid);
@@ -694,11 +697,11 @@ public partial class CreatureOverlay : RegionOverlay
         try
         {
             draft.Move(sourceKey, spawn.Guid, spawn.Pose, after);
-            draftMessage = success;
+            Say(success);
         }
         catch (Exception)
         {
-            draftMessage = "Could not save change or source changed. Previous draft preserved.";
+            Say("Could not save change or source changed. Previous draft preserved.");
         }
 
         ApplyPose(spawn.Guid);
@@ -751,11 +754,11 @@ public partial class CreatureOverlay : RegionOverlay
         }
         catch (Exception)
         {
-            draftMessage = "Could not save draft history. Previous draft preserved.";
+            Say("Could not save draft history. Previous draft preserved.");
             return;
         }
 
-        draftMessage = redo ? "Redid last local change." : "Undid last local change.";
+        Say(redo ? "Redid last local change." : "Undid last local change.");
         Resync();
     }
 
@@ -771,11 +774,31 @@ public partial class CreatureOverlay : RegionOverlay
         }
         catch (Exception)
         {
-            draftMessage = "Could not save draft history. Previous draft preserved.";
+            Say("Could not save draft history. Previous draft preserved.");
             return;
         }
 
-        draftMessage = "Discarded the move; back to the source position.";
+        Say("Discarded the move; back to the source position.");
+        Resync();
+    }
+
+    /// <summary>
+    /// Drop all saved moves and their undo history; every creature returns to its source position.
+    /// </summary>
+    public void ClearDraft()
+    {
+        gizmo.Finish(false);
+        try
+        {
+            draft?.Clear();
+        }
+        catch (Exception)
+        {
+            Say("Could not clear the draft history.");
+            return;
+        }
+
+        Say("Cleared the draft history.");
         Resync();
     }
 

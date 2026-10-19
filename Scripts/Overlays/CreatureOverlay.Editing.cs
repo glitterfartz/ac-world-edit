@@ -89,7 +89,7 @@ public partial class CreatureOverlay : IPlacementEditor
         LastGround = ground;
         if (ground.Height is not float height)
         {
-            draftMessage = "Not dropped: " + ground.Message;
+            Say("Not dropped: " + ground.Message);
             Select(marker.Spawn.Guid);
             return;
         }
@@ -134,7 +134,7 @@ public partial class CreatureOverlay : IPlacementEditor
         }
         catch (ArgumentException)
         {
-            draftMessage = "Coordinates must be finite numbers.";
+            Say("Coordinates must be finite numbers.");
             Select(marker.Spawn.Guid);
             return;
         }
@@ -162,7 +162,7 @@ public partial class CreatureOverlay : IPlacementEditor
         if (GoCommand() is { } command)
         {
             DisplayServer.ClipboardSet(command);
-            draftMessage = "Copied " + command;
+            Say("Copied " + command);
             Select(selectedGuid!.Value);
         }
     }

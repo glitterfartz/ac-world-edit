@@ -69,13 +69,15 @@ public partial class TerrainViewer : Node3D
     }
 
     Button open = null!;
-    Label status = null!, telemetry = null!, zoneLabel = null!, continentLabel = null!;
+    Label status = null!, zoneLabel = null!, continentLabel = null!;
     Slider timeOfDay = null!;
     Label timeOfDayLabel = null!;
     Button playTime = null!;
     List<MapInfo> mapList = [];
     TerrainMinimap minimap = null!;
     string message = "Opening client…";
+    readonly StatusLog statusLog = new();
+    StatusBar statusBar = null!;
     // The "Started at" note clears itself after a few seconds unless something else replaced it.
     string startMessage = "";
     ulong startMessageShown;
@@ -118,7 +120,8 @@ public partial class TerrainViewer : Node3D
         creatures = new CreatureOverlay
         {
             Models = models,
-            Connection = () => connection.Settings
+            Connection = () => connection.Settings,
+            Report = statusLog.Post
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;
@@ -126,7 +129,7 @@ public partial class TerrainViewer : Node3D
         gameObjects = new GameObjectOverlay { Models = models, Connection = () => connection.Settings };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
-        graveyards = new GraveyardOverlay { Connection = () => connection.Settings, Areas = () => areas, GroundAt = GroundAt };
+        graveyards = new GraveyardOverlay { Connection = () => connection.Settings, Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
         areaTriggers = new AreaTriggerOverlay { Connection = () => connection.Settings };
@@ -641,7 +644,7 @@ public partial class TerrainViewer : Node3D
         continentLabel.Text = continent;
         var current = CameraTile();
         int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
-        telemetry.Text = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
+        statusBar.Telemetry = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.Sync(world, loaded.Keys, current, camera.Position);
         creatures.Update(camera);
         gameObjects.Update(camera);

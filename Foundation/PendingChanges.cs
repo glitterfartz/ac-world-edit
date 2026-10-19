@@ -81,6 +81,22 @@ public sealed class PendingChanges
     static string Fingerprint(string source, SqlScripts scripts) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source + "\n" + scripts.Apply)));
 
     /// <summary>
+    /// Forget which changes were exported and delete the saved list.
+    /// </summary>
+    public void ClearExported()
+    {
+        exported.Clear();
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception)
+        {
+            // A list that cannot be deleted only means old fingerprints come back next session.
+        }
+    }
+
+    /// <summary>
     /// Record these changes as exported and save the list.
     /// </summary>
     public void MarkExported(IEnumerable<PendingChange> changes)

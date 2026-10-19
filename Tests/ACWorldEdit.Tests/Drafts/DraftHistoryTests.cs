@@ -32,6 +32,24 @@ public class DraftHistoryTests
     }
 
     [Fact]
+    public void ClearDropsHistoryAndPersists()
+    {
+        string path = TempPath();
+        using (var history = new DraftHistory<string>(path, "test", e => e))
+        {
+            history.Append("a");
+            history.Append("b");
+            history.Undo();
+            history.Clear();
+            Assert.False(history.CanUndo);
+            Assert.False(history.CanRedo);
+        }
+
+        using var reopened = new DraftHistory<string>(path, "test", e => e);
+        Assert.Empty(reopened.State.History);
+    }
+
+    [Fact]
     public void AppendAfterUndoDiscardsRedoBranch()
     {
         using var history = new DraftHistory<string>(TempPath(), "test", e => e);

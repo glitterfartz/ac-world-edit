@@ -138,7 +138,7 @@ public partial class GraveyardOverlay
     {
         if (!EditorFields.TryParseAll(position, out var values))
         {
-            draftMessage = "Position fields must be numbers (use . for decimals).";
+            Say("Position fields must be numbers (use . for decimals).");
             ShowSelection();
             return;
         }
@@ -161,7 +161,7 @@ public partial class GraveyardOverlay
         {
             title.Text = "Select a graveyard";
             identity.Text = "Click an icon or choose one above";
-            details.Text = draft == null ? draftMessage : "Selection details appear here.";
+            details.Text = "Selection details appear here.";
             comment.Text = "";
             foreach (var field in position)
             {
@@ -228,7 +228,7 @@ public partial class GraveyardOverlay
             ? $"No spirit healer within {Data.GraveyardSource.HealerRadius:0} yd."
             : "Spirit healers (separate creature spawns, not moved with the graveyard): " + string.Join(", ", site.Healers.Select(h => $"{h.Name} #{h.Guid}"));
         string conflict = draft?.Conflict(sourceKey, site.Record) == true ? "Source graveyard changed since this draft; draft requires review.\n" : "";
-        details.Text = $"{conflict}{draftMessage}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";
+        details.Text = $"{conflict}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";
         InspectorUi.SelectRow(list, record.Id);
 
         if (zoneResults.ItemCount == 0)

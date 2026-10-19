@@ -54,8 +54,6 @@ public partial class CreatureOverlay
         }
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
-        copyGo.TooltipText = "Copy a GM teleport (.go xyz X Y Z map heading) to compare this pose in the client";
-        card.AddChild(InspectorUi.Text("Move (W) drags colored axes; Rotate (E) drags the yellow ring..", 12, true));
         var interactions = InspectorUi.Card(page, "Interactions");
         interactionSummary = InspectorUi.Text("Select a creature to see its interactions.", 12, true);
         interactions.AddChild(interactionSummary);
@@ -68,7 +66,7 @@ public partial class CreatureOverlay
         });
         properties.TooltipText = "Gossip, quests, vendor, trainer, behavior and speech of this creature";
         interactions.AddChild(properties);
-        interactions.AddChild(InspectorUi.Text("Or right-click the creature without dragging.", 11, true));
+        interactions.AddChild(InspectorUi.Text("Or right-click the creature.", 11, true));
         return scroll;
     }
 
@@ -97,7 +95,7 @@ public partial class CreatureOverlay
     {
         if (!EditorFields.TryParseAll(poseFields, out var values))
         {
-            draftMessage = "Pose fields must be numbers (use . for decimals).";
+            Say("Pose fields must be numbers (use . for decimals).");
             if (selectedGuid.HasValue)
             {
                 Select(selectedGuid.Value);
