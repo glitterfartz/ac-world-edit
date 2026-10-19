@@ -147,9 +147,12 @@ public partial class BehaviorPanel : ContentPanel
 
             sourceKey = source.SourceKey;
             snapshot = result;
-            if (draft != null && draft.Conflicts(sourceKey, result.Rows).Any(c => c.Table is "smart_scripts" or "creature_ai" or "creature_text" or "areatrigger_scripts"))
+            var stale = draft?.Conflicts(sourceKey, result.Rows).Where(c => loadTrigger ? c.Table is "smart_scripts" or "areatrigger_scripts" : c.Table is "smart_scripts" or "creature_ai" or "creature_text").ToList() ?? [];
+            if (stale.Count > 0)
             {
-                status = "Some draft rows changed in the database since you edited them; undo or re-edit them.";
+                string rows = string.Join(", ", stale.Take(3).Select(c => $"{c.Table} {c.Key}"));
+                GD.Print($"[draft conflict] {string.Join("; ", stale.Select(c => $"{c.Table} {c.Key}"))}");
+                status = $"Some draft rows changed in the database since you edited them ({rows}{(stale.Count > 3 ? ", …" : "")}); undo or re-edit them.";
             }
 
             Rebuild();

@@ -73,11 +73,14 @@ public sealed class InteractionDraft : IDisposable
 
     static IReadOnlyList<(string Table, string Key)> Conflicts(DraftSnapshot<InteractionCommand> state, string source, RowSet snapshot)
     {
+        var edits = Applied(state, source).SelectMany(c => c.Edits).ToList();
+        var latest = edits.GroupBy(e => (e.Table, e.Key)).ToDictionary(g => g.Key, g => g.Last().After);
         var seen = new HashSet<(string, string)>();
         List<(string, string)> conflicts = [];
-        foreach (var edit in Applied(state, source).SelectMany(c => c.Edits))
+        foreach (var edit in edits)
         {
-            if (seen.Add((edit.Table, edit.Key)) && snapshot.Get(InteractionTables.Find(edit.Table), edit.Key) != edit.Before)
+            // A row already equal to the draft's final value was applied to the database, so it is not stale.
+            if (seen.Add((edit.Table, edit.Key)) && snapshot.Get(InteractionTables.Find(edit.Table), edit.Key) is var current && current != edit.Before && current != latest[(edit.Table, edit.Key)])
             {
                 conflicts.Add((edit.Table, edit.Key));
             }
@@ -182,6 +185,8 @@ public sealed class InteractionDraft : IDisposable
     /// absence for an insert). It bypasses Execute's freshness checks on purpose: a stale or
     /// conflicting row must still be discardable.
     /// </summary>
+    public void Clear() => history.Clear();
+
     public void Revert(string source, RowEdit net) => history.Append(new InteractionCommand(source, $"Discard {net.Table} {net.Key}", [new RowEdit(net.Table, net.Key, net.After, net.Before)]));
 
     public void Undo() => history.Undo();

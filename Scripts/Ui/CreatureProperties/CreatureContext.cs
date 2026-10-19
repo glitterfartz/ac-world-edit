@@ -215,7 +215,13 @@ public sealed class CreatureContext
             }
 
             Snapshot = result;
-            Status = Draft != null && Draft.Conflicts(SourceKey, result.Rows).Count > 0 ? "Some draft rows changed in the database since they were edited; those rows show database values." : "";
+            var stale = Draft?.Conflicts(SourceKey, result.Rows).Where(c => c.Table is not ("smart_scripts" or "creature_ai" or "creature_text" or "areatrigger_scripts")).ToList() ?? [];
+            if (stale.Count > 0)
+            {
+                GD.Print($"[draft conflict] {string.Join("; ", stale.Select(c => $"{c.Table} {c.Key}"))}");
+            }
+
+            Status = stale.Count > 0 ? $"Some draft rows changed in the database since they were edited ({string.Join(", ", stale.Take(3).Select(c => $"{c.Table} {c.Key}"))}{(stale.Count > 3 ? ", …" : "")}); those rows show database values." : "";
             Rebuild();
         }
         catch (OperationCanceledException)

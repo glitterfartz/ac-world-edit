@@ -102,12 +102,13 @@ public class InteractionDraftTests
             view = View(snapshot, draft.Effective("db", snapshot));
             Check(view.Starts.Length == 1 && view.Vendor[0].Item == 2589 && view.Menus.ContainsKey(51), "Reopen");
 
-            // Database changed under the draft: the edited text and a reserved ID now exist.
+            // Database changed under the draft: the edited text changed and a drafted menu row was already applied.
             var changed = snapshot.Clone();
             changed.Set(InteractionTables.NpcText, text.With("text0_0", "Changed in DB"));
             changed.Set(InteractionTables.GossipMenu, Row.Of(("MenuID", 51u), ("TextID", 61u)));
             var conflicts = draft.Conflicts("db", changed);
-            Check(conflicts.Contains(("npc_text", "60")) && conflicts.Contains(("gossip_menu", "51|61")), "Conflict detection");
+            Check(conflicts.Contains(("npc_text", "60")), "Conflict detection");
+            Check(!conflicts.Contains(("gossip_menu", "51|61")), "A row already holding the drafted value is not a conflict");
             Check(draft.Effective("db", changed).Get(InteractionTables.NpcText, "60")!.T("text0_0") == "Changed in DB", "Conflicting rows keep database value");
             Rejects(() => draft.Execute("db", changed, "blocked", [new("npc_text", "60", text.With("text0_0", "Changed in DB"), text.With("text0_0", "x"))]), "Edit over a conflicting row accepted");
             // Conflicts elsewhere do not block an unrelated row (other editors' stale rows must not stop a SmartAI save).
