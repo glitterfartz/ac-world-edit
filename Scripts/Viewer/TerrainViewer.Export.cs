@@ -47,6 +47,7 @@ public partial class TerrainViewer
 
     PendingChanges pendingStore = null!;
     PendingChangesWindow pendingWindow = null!;
+    SqlPreviewWindow sqlPreview = null!;
     double pendingPoll;
     int exportedHidden;
 
@@ -168,6 +169,15 @@ public partial class TerrainViewer
         confirm.Canceled += confirm.QueueFree;
         AddChild(confirm);
         confirm.PopupCentered();
+    }
+
+    /// <summary>
+    /// Show the scripts an export of the current unsaved changes would write, without saving anything.
+    /// </summary>
+    void PreviewPendingSql()
+    {
+        var changes = CollectPending();
+        sqlPreview.Open(BuildSqlExports(changes));
     }
 
     /// <summary>

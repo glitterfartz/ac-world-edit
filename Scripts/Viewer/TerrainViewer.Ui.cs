@@ -270,6 +270,9 @@ public partial class TerrainViewer
             RefreshPending();
             pendingWindow.SetStatus("Discarded.");
         };
+        sqlPreview = new SqlPreviewWindow();
+        layer.AddChild(sqlPreview);
+        pendingWindow.PreviewSqlRequested += PreviewPendingSql;
         pendingWindow.ExportAllRequested += ExportAllPending;
         pendingWindow.DiscardAllRequested += DiscardAllPending;
         layer.AddChild(pendingWindow);

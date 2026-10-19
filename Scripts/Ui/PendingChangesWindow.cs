@@ -11,11 +11,12 @@ namespace ACWorldEdit;
 public partial class PendingChangesWindow : ContentEditorWindow
 {
     public event Action<PendingChange>? DiscardRequested;
+    public event Action? PreviewSqlRequested;
     public event Action? ExportAllRequested;
     public event Action? DiscardAllRequested;
     VBoxContainer list = null!;
     Label summary = null!, status = null!;
-    Button exportAll = null!, discardAll = null!;
+    Button previewSql = null!, exportAll = null!, discardAll = null!;
 
     protected override Vector2 TargetSize => new(760, 520);
 
@@ -53,6 +54,8 @@ public partial class PendingChangesWindow : ContentEditorWindow
         scroll.AddChild(list);
         var footer = new HBoxContainer();
         root.AddChild(footer);
+        previewSql = ButtonIn(footer, "Preview SQL…", () => PreviewSqlRequested?.Invoke());
+        previewSql.TooltipText = "Show the apply and revert scripts an export would write.";
         exportAll = ButtonIn(footer, "Export All…", () => ExportAllRequested?.Invoke());
         exportAll.TooltipText = "Save an apply script and a revert script for every pending change.";
         discardAll = ButtonIn(footer, "Discard All…", () => DiscardAllRequested?.Invoke());
@@ -88,6 +91,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
         summary.Text = changes.Count == 0
             ? "No unsaved changes." + hidden
             : $"{changes.Count} unsaved change(s). Drafts are kept between sessions. Discard reverts only that one change." + hidden;
+        previewSql.Disabled = changes.Count == 0;
         exportAll.Disabled = changes.Count == 0;
         discardAll.Disabled = changes.Count == 0;
         foreach (var change in changes)
