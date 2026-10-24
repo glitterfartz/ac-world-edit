@@ -9,6 +9,15 @@
             "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_readonly.py\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_generated.py\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -22,11 +31,23 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/build_check.py\"",
+            "timeout": 300
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
     "claude-md-management@anthropic-plugin-directory": true,
     "code-simplifier@anthropic-plugin-directory": true,
-    "feature-dev@anthropic-plugin-directory": true
+    "feature-dev@anthropic-plugin-directory": true,
+    "csharp-lsp@claude-plugins-official": true
   }
 }
