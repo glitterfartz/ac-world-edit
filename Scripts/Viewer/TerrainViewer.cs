@@ -129,7 +129,7 @@ public partial class TerrainViewer : Node3D
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;
         creatures.GroundAt = GroundAt;
-        gameObjects = new GameObjectOverlay { Models = models, Connection = () => DatabaseConnection() };
+        gameObjects = new GameObjectOverlay { Models = models, Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
         graveyards = new GraveyardOverlay { Connection = () => DatabaseConnection(), Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
@@ -808,6 +808,7 @@ public partial class TerrainViewer : Node3D
             capture = false;
             Input.MouseMode = Input.MouseModeEnum.Visible;
             creatures?.EndDrag(false);
+            gameObjects?.EndDrag(false);
             graveyards?.EndDrag(false);
             waypoints?.EndDrag(false);
         }
@@ -820,7 +821,7 @@ public partial class TerrainViewer : Node3D
     (Vector2 Position, ulong Ticks, float Yaw, float Pitch)? rightPress;
     float rightMotion;
 
-    IPlacementEditor ActiveEditor => waypoints != null && waypoints.HasSelection ? waypoints : graveyards != null && graveyards.HasSelection ? graveyards : creatures;
+    IPlacementEditor ActiveEditor => waypoints != null && waypoints.HasSelection ? waypoints : graveyards != null && graveyards.HasSelection ? graveyards : gameObjects != null && gameObjects.HasSelection ? gameObjects : creatures;
 
     /// <summary>
     /// Keep flight keys away from shortcuts, and own an active drag through release/Escape even
@@ -837,7 +838,7 @@ public partial class TerrainViewer : Node3D
             return;
         }
 
-        if (creatures == null || graveyards == null || waypoints == null || !ActiveEditor.IsDragging)
+        if (creatures == null || gameObjects == null || graveyards == null || waypoints == null || !ActiveEditor.IsDragging)
         {
             return;
         }

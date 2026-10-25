@@ -24,7 +24,9 @@ public partial class TerrainViewer
             g.Where(c => c.Graveyard != null).Select(c => c.Graveyard!),
             g.Where(c => c.Row != null).Select(c => c.Row!),
             null,
-            g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!))))
+            g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!),
+            null,
+            g.Where(c => c.GameObject != null).Select(c => c.GameObject!))))
         .ToList();
 
     /// <summary>
@@ -59,7 +61,7 @@ public partial class TerrainViewer
     List<PendingChange> CollectPending()
     {
         pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
-        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits());
+        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), gameObjects.NetMoves());
         return all;
     }
 
@@ -73,7 +75,7 @@ public partial class TerrainViewer
         sidebar.SetUnsaved(changes.Count);
         if (pendingWindow.Visible)
         {
-            int total = creatures.NetMoves().Count + graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0) + waypoints.NetEdits().Count;
+            int total = creatures.NetMoves().Count + gameObjects.NetMoves().Count + graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0) + waypoints.NetEdits().Count;
             exportedHidden = total - changes.Count;
             pendingWindow.Refresh(changes, exportedHidden);
         }
@@ -105,6 +107,9 @@ public partial class TerrainViewer
         {
             case PendingKind.Creature:
                 creatures.Revert(change.Move!);
+                break;
+            case PendingKind.GameObject:
+                gameObjects.Revert(change.GameObject!);
                 break;
             case PendingKind.Graveyard:
                 graveyards.Revert(change.Graveyard!);
@@ -164,6 +169,7 @@ public partial class TerrainViewer
         {
             confirm.QueueFree();
             creatures.ClearDraft();
+            gameObjects.ClearDraft();
             graveyards.ClearDraft();
             waypoints.ClearDraft();
             drafts.Clear();

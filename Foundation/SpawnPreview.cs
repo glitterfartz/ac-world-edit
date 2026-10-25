@@ -135,6 +135,10 @@ public sealed record SpawnPhasing(string Difficulties, uint PhaseId, uint PhaseG
         PhaseGroup != 0 ? $"Phase group {PhaseGroup}" : "",
         PhaseUseFlags != 0 ? $"Phase flags 0x{PhaseUseFlags:X}" : ""
     }.Where(s => s.Length > 0));
+
+    /// <summary>The scope line of an inspector: TrinityCore difficulty and phase, or the AzerothCore masks.</summary>
+    public static string Describe(SpawnPhasing? phasing, uint phaseMask, uint spawnMask) =>
+        phasing is { } p ? p.Description : $"Phase 0x{phaseMask:X} · Difficulty 0x{spawnMask:X}";
 }
 
 public sealed record GameObjectRegionResult(IReadOnlyList<GameObjectSpawn> Spawns, bool Truncated,

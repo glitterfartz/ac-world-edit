@@ -47,6 +47,8 @@ public sealed class AcGameObjectSource(WorldDatabase database)
             }
 
             var rotation = new Quaternion(reader.GetFloat(12), reader.GetFloat(13), reader.GetFloat(14), reader.GetFloat(15));
+            // The columns as stored, for drafts and exports; a non-finite row cannot be edited faithfully.
+            var stored = float.IsFinite(rotation.LengthSquared()) ? rotation : Quaternion.Zero;
             if (!float.IsFinite(rotation.LengthSquared()))
             {
                 rotation = Quaternion.Identity;
@@ -61,7 +63,7 @@ public sealed class AcGameObjectSource(WorldDatabase database)
             }
 
             var visibility = new SpawnVisibility(WorldReadSession.EventIds(reader.GetString(18)), reader.GetUInt32(19), reader.GetBoolean(20), reader.GetString(21), reader.GetBoolean(22), reader.GetBoolean(23));
-            spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), scale, rotation, reader.GetInt32(16), reader.GetInt32(17), visibility));
+            spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), scale, rotation, reader.GetInt32(16), reader.GetInt32(17), visibility, null, stored));
         }
 
         return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey);

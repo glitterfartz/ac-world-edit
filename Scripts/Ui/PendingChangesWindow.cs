@@ -101,6 +101,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
             row.AddChild(ClientStyle.Tag(change.Kind switch
             {
                 PendingKind.Creature => "CREATURE",
+                PendingKind.GameObject => "GAMEOBJECT",
                 PendingKind.Graveyard => "GRAVEYARD",
                 PendingKind.Waypoint => "WAYPOINT",
                 _ => "ROW"

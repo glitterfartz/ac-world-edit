@@ -595,7 +595,7 @@ public partial class CreatureOverlay : RegionOverlay
         var pose = PoseOf(spawn);
         selectionName.Text = spawn.Name;
         selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
-        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
+        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
         ShowPose(pose);
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid);

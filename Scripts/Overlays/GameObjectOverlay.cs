@@ -57,6 +57,7 @@ public partial class GameObjectOverlay : RegionOverlay
             Visible = false
         };
         AddChild(selectionLabel);
+        OpenDraft();
     }
 
     protected override void OnRegionChanged(bool mapChanged)
@@ -143,10 +144,14 @@ public partial class GameObjectOverlay : RegionOverlay
         status.Text = queryStatus;
         fly.Disabled = !selected.HasValue || !lookup.ContainsKey(selected.Value);
         selectionLabel.Visible = LayerEnabled && selected.HasValue && lookup.ContainsKey(selected.Value);
+        UpdateInspectorActions();
+        var editing = EditableSpawn();
+        gizmo.Update(camera, editing is { } spawn ? ViewPosition(spawn) : null, editing is { } e ? (float)e.Pose.Heading : 0);
     }
 
     void Publish(GameObjectRegionResult result)
     {
+        sourceKey = result.SourceKey;
         var incoming = result.Spawns.ToDictionary(s => s.Guid);
         // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
         // their native model/fallback/label on its next tick without needing a full wipe.
@@ -179,7 +184,7 @@ public partial class GameObjectOverlay : RegionOverlay
     {
         float viewDistanceSquared = Preview.ViewDistance * Preview.ViewDistance;
         var admitted = records
-            .Select(s => (Spawn: s, Distance: ViewPosition(s).DistanceSquaredTo(camera.Position)))
+            .Select(s => (Spawn: s, Distance: ViewPosition(Effective(s)).DistanceSquaredTo(camera.Position)))
             .Where(c => selected == c.Spawn.Guid || c.Distance <= viewDistanceSquared)
             .OrderBy(c => selected == c.Spawn.Guid ? 0 : 1).ThenBy(c => c.Distance)
             .Take(Preview.ModelLimit)
@@ -237,7 +242,7 @@ public partial class GameObjectOverlay : RegionOverlay
         {
             if (!batches.ContainsKey(pair.Key))
             {
-                batches[pair.Key] = (Models.Attach(this, pair.Key, pair.Value.Select(guid => ModelTransform(lookup[guid])).ToArray()), pair.Value.ToArray());
+                batches[pair.Key] = (Models.Attach(this, pair.Key, pair.Value.Select(guid => ModelTransform(Effective(lookup[guid]))).ToArray()), pair.Value.ToArray());
             }
 
             if (!batches[pair.Key].Node.ModelReady)
@@ -268,7 +273,7 @@ public partial class GameObjectOverlay : RegionOverlay
             {
                 Mesh = fallbackMesh,
                 MaterialOverride = fallbackMaterial,
-                Position = ViewPosition(lookup[guid]) + Vector3.Up * 0.5f,
+                Position = ViewPosition(Effective(lookup[guid])) + Vector3.Up * 0.5f,
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
             };
             AddChild(node);
@@ -276,7 +281,7 @@ public partial class GameObjectOverlay : RegionOverlay
         }
 
         // Labels are optional and cost more draw calls than instanced meshes. Bound them separately.
-        var named = Preview.ShowNames ? admitted.Where(s => s.Guid != selected && ViewPosition(s).DistanceSquaredTo(camera.Position) < 80 * 80).Take(64).ToArray() : [];
+        var named = Preview.ShowNames ? admitted.Where(s => s.Guid != selected && ViewPosition(Effective(s)).DistanceSquaredTo(camera.Position) < 80 * 80).Take(64).ToArray() : [];
         var namedGuids = named.Select(s => s.Guid).ToHashSet();
         foreach (var pair in names.ToArray())
         {
@@ -296,7 +301,7 @@ public partial class GameObjectOverlay : RegionOverlay
             var label = new Label3D
             {
                 Text = spawn.Name,
-                Position = ViewPosition(spawn) + Vector3.Up * 2,
+                Position = ViewPosition(Effective(spawn)) + Vector3.Up * 2,
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                 FontSize = 28,
                 PixelSize = 0.014f
@@ -331,7 +336,7 @@ public partial class GameObjectOverlay : RegionOverlay
 
     public void Select(ulong guid)
     {
-        if (!LayerEnabled || !lookup.TryGetValue(guid, out var spawn))
+        if (!LayerEnabled || !lookup.ContainsKey(guid))
         {
             return;
         }
@@ -339,17 +344,33 @@ public partial class GameObjectOverlay : RegionOverlay
         selected = guid;
         modelUpdate = 0;
         SelectionChanged?.Invoke();
-        title.Text = spawn.Name;
-        identity.Text = $"GUID {guid}   /   Template {spawn.TemplateId}";
-        details.Text = FormattableString.Invariant($"Map {spawn.Pose.Map} · Display {spawn.DisplayId} · Type {spawn.Type}\nX {spawn.Pose.X:F2}    Y {spawn.Pose.Y:F2}    Z {spawn.Pose.Z:F2}\nScale {spawn.Scale:F2} · DB state {spawn.State}\nPhase 0x{spawn.PhaseMask:X} · Difficulty 0x{spawn.SpawnMask:X}\n{spawn.Visibility.Description}");
-        selectionLabel.Text = spawn.Name;
-        selectionLabel.Position = ViewPosition(spawn) + Vector3.Up * 2;
+        ShowSelection();
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid, reveal: false);
     }
 
+    /// <summary>Fill the inspector from the selected spawn's effective (draft) placement.</summary>
+    void ShowSelection()
+    {
+        if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var source))
+        {
+            return;
+        }
+
+        var spawn = Effective(source);
+        title.Text = spawn.Name;
+        identity.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
+        string conflict = draft?.Conflict(sourceKey, spawn.Guid, GameObjectPlacement.From(source)) == true ? "\nSource placement changed; draft requires review." : "";
+        details.Text = FormattableString.Invariant($"Map {spawn.Pose.Map} · Display {spawn.DisplayId} · Type {spawn.Type}\nX {spawn.Pose.X:F2}    Y {spawn.Pose.Y:F2}    Z {spawn.Pose.Z:F2}\nHeading {PoseText.HeadingText(spawn.Pose.Heading)}\nScale {spawn.Scale:F2} · DB state {spawn.State}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility.Description}{conflict}");
+        selectionLabel.Text = spawn.Name;
+        selectionLabel.Position = ViewPosition(spawn) + Vector3.Up * 2;
+        ShowPose(spawn.Pose);
+    }
+
     public void Deselect()
     {
+        // Cancel while the selection still exists so an unfinished move restores its placement.
+        gizmo?.Finish(false);
         selected = null;
         list?.DeselectAll();
         if (selectionLabel != null)
@@ -362,6 +383,7 @@ public partial class GameObjectOverlay : RegionOverlay
             title.Text = "Select a GameObject";
             identity.Text = "Click a model or choose one above";
             details.Text = "Selection details appear here.";
+            ShowPose(null);
         }
     }
 
@@ -393,5 +415,9 @@ public partial class GameObjectOverlay : RegionOverlay
         return nearest.HasValue ? (nearest.Value, distance) : null;
     }
 
-    public override void _ExitTree() => query.Dispose();
+    public override void _ExitTree()
+    {
+        query.Dispose();
+        draft?.Dispose();
+    }
 }

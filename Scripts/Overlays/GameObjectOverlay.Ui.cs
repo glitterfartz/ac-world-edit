@@ -1,10 +1,15 @@
 using Godot;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
 /// <summary>Read-only GameObject inspector; filtering/source settings live on the shared Scene page.</summary>
 public partial class GameObjectOverlay
 {
+    Button undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!;
+    // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
+    readonly LineEdit[] poseFields = new LineEdit[4];
+
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("GameObjects", out var scroll);
@@ -22,17 +27,66 @@ public partial class GameObjectOverlay
         details = InspectorUi.Text("Selection details appear here.", 13, true);
         card.AddChild(details);
         card.AddChild(new HSeparator());
+        var history = new HBoxContainer();
+        card.AddChild(history);
+        undo = InspectorUi.Button("Undo move", () => History(false));
+        redo = InspectorUi.Button("Redo move", () => History(true));
+        history.AddChild(undo);
+        history.AddChild(redo);
+        card.AddChild(new HSeparator());
+        card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
+        EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], poseFields, SubmitPose);
+        foreach (var field in poseFields)
+        {
+            field.Editable = false;
+        }
+
+        (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
         return scroll;
     }
 
+    /// <summary>Parse the four pose fields with invariant culture and commit them as one draft command.</summary>
+    void SubmitPose()
+    {
+        if (!EditorFields.TryParseAll(poseFields, out var values))
+        {
+            Say("Pose fields must be numbers (use . for decimals).");
+            ShowSelection();
+            return;
+        }
+
+        SetPose(values[0], values[1], values[2], values[3]);
+    }
+
+    /// <summary>Show the effective pose in the entry fields; editing is enabled only with a writable draft.</summary>
+    void ShowPose(WorldPose? pose)
+    {
+        double[] values = pose == null ? [] : [pose.X, pose.Y, pose.Z, Mathf.RadToDeg(WorldCoordinates.NormalizeHeading(pose.Heading))];
+        for (int i = 0; i < 4; i++)
+        {
+            poseFields[i].Text = pose == null ? "" : values[i].ToString(i == 3 ? "F2" : "F4", System.Globalization.CultureInfo.InvariantCulture);
+            poseFields[i].Editable = pose != null && draft != null;
+        }
+    }
+
+    void UpdateInspectorActions()
+    {
+        bool editable = CanEdit;
+        drop.Disabled = !editable || GroundAt == null;
+        reset.Disabled = !editable;
+        copyGo.Disabled = !selected.HasValue;
+        undo.Disabled = draft == null || !draft.CanUndo;
+        redo.Disabled = draft == null || !draft.CanRedo;
+    }
+
     /// <summary>
-    /// Move the camera near the selected GameObject's source pose.
+    /// Move the camera near the selected GameObject's effective (draft) pose.
     /// </summary>
     public void FlyToSelection()
     {
         if (selected.HasValue && lookup.TryGetValue(selected.Value, out var item))
         {
-            FocusRequested?.Invoke(item.Pose);
+            FocusRequested?.Invoke(PlacementOf(item).Pose);
         }
     }
 }

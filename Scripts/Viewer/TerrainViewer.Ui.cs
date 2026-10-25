@@ -347,6 +347,7 @@ public partial class TerrainViewer
     void SetMode(GizmoMode mode)
     {
         creatures.Mode = mode;
+        gameObjects.Mode = mode;
         graveyards.Mode = mode;
         waypoints.Mode = mode;
     }
@@ -360,7 +361,7 @@ public partial class TerrainViewer
         var modes = new ButtonGroup();
         toolbar.Mode("Select", "Pick only; hide handles", modes, () => SetMode(GizmoMode.Select), () => creatures.Mode == GizmoMode.Select, EditorToolbar.Shortcut(Key.Q));
         toolbar.Mode("Move", "Drag colored axes to move", modes, () => SetMode(GizmoMode.Move), () => creatures.Mode == GizmoMode.Move, EditorToolbar.Shortcut(Key.W));
-        toolbar.Mode("Rotate", "Drag the yellow ring to change heading (creatures only)", modes, () => SetMode(GizmoMode.Rotate), () => creatures.Mode == GizmoMode.Rotate, EditorToolbar.Shortcut(Key.E), () => ActiveEditor.SupportsRotation);
+        toolbar.Mode("Rotate", "Drag the yellow ring to change heading (not for graveyards or waypoints)", modes, () => SetMode(GizmoMode.Rotate), () => creatures.Mode == GizmoMode.Rotate, EditorToolbar.Shortcut(Key.E), () => ActiveEditor.SupportsRotation);
         toolbar.Separator();
         toolbar.Action("Undo", "Undo the last local change for the selected kind (Ctrl+Z)", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging);
         toolbar.Action("Redo", "Redo (Ctrl+Y)", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, EditorToolbar.Shortcut(Key.Z, ctrl: true, shift: true));
@@ -369,6 +370,7 @@ public partial class TerrainViewer
         toolbar.Toggle("Snap on drop", "Snap to the ground when you release a move drag", value =>
         {
             creatures.SnapOnDrop = value;
+            gameObjects.SnapOnDrop = value;
             graveyards.SnapOnDrop = value;
             waypoints.SnapOnDrop = value;
         }, () => creatures.SnapOnDrop);
@@ -384,7 +386,11 @@ public partial class TerrainViewer
             step.AddItem(degrees == 0 ? "Free" : $"{degrees:0}°");
         }
 
-        step.ItemSelected += index => creatures.RotationStep = Mathf.DegToRad(steps[index]);
+        step.ItemSelected += index =>
+        {
+            creatures.RotationStep = Mathf.DegToRad(steps[index]);
+            gameObjects.RotationStep = Mathf.DegToRad(steps[index]);
+        };
         toolbar.AddChild(step);
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
