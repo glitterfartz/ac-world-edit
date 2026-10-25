@@ -26,6 +26,13 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 - TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit only the template page (`CreatureContext.TcTemplateEditable`); the other TC sections stay read-only.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
+## Where work stopped
+
+- Last commit `e411d39`: the Template page is drawn from `CreaturePage` descriptors by `PageRenderer` for both dialects. The TC page was checked visually (`--client-shot-overlays`, retail profile); the AC page was not.
+- `--interaction-smoke` fails at "window-open" (short right-click does not open Farley's window), also before the descriptor change; cause not investigated. Until it passes, check the AC Template page by hand.
+- Next: build the item-list descriptor (source table, parent filter column, per-item fields, add/remove) and move vendor onto it first, then gossip, trainer and quests. Then TC vendor editing.
+- Uncommitted: only Godot `.uid` files.
+
 ## Foundation and design
 
 | Feature | Status | Notes |
