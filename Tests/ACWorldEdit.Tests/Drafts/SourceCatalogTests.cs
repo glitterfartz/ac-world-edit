@@ -4,7 +4,8 @@ using Xunit;
 namespace ACWorldEdit.Tests.Drafts;
 
 /// <summary>
-/// The content draft validates each source's rows against that source's table catalog.
+/// The content draft validates each source's rows against that source's table catalog, and 64-bit
+/// columns (TrinityCore bigints) validate and export as unquoted numbers.
 /// </summary>
 public class SourceCatalogTests
 {
@@ -56,5 +57,34 @@ public class SourceCatalogTests
         Assert.ThrowsAny<Exception>(() => new InteractionDraft(path, _ => TcSchema.Instance.Tables));
         using var reopened = new InteractionDraft(path, CatalogFor);
         Assert.Single(reopened.NetEdits());
+    }
+
+    static readonly TableSchema Wide = new("wide", ["guid"], [("guid", ColumnKind.ULong, 0), ("money", ColumnKind.Long, 0)]);
+
+    [Fact]
+    public void SixtyFourBitColumnsValidateAtTheirFullRange()
+    {
+        Row.Of(("guid", ulong.MaxValue), ("money", long.MinValue)).Validate(Wide);
+        Assert.Throws<InvalidDataException>(() => Row.Of(("guid", -1L), ("money", 0L)).Validate(Wide));
+        Assert.Throws<InvalidDataException>(() => Row.Of(("guid", 1u), ("money", "1.5")).Validate(Wide));
+        Assert.Equal(ulong.MaxValue, Row.Of(("guid", ulong.MaxValue)).UL("guid"));
+    }
+
+    sealed class WideSchema : IWorldSchema, ITableCatalog
+    {
+        public WorldDialect Dialect => WorldDialect.TrinityCore;
+        public ITableCatalog Tables => this;
+        public ISqlDialect Sql => TcSqlDialect.Instance;
+        public IReadOnlyList<TableSchema> All => [Wide];
+        public TableSchema Find(string name) => name == Wide.Name ? Wide : throw new InvalidDataException(name);
+    }
+
+    [Fact]
+    public void SixtyFourBitColumnsExportAsPlainNumbers()
+    {
+        var before = Row.Of(("guid", 5_000_000_000ul), ("money", -5_000_000_000L));
+        var edit = new RowEdit("wide", "5000000000", before, before.With("money", 7_000_000_000L));
+        var scripts = SqlExport.Build("src", [], [], [edit], new DateTime(2026, 1, 1), null, new WideSchema());
+        Assert.Contains("UPDATE `wide` SET `money` = 7000000000 WHERE `guid` = 5000000000 AND `money` = -5000000000;", scripts.Apply);
     }
 }

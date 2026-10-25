@@ -2,12 +2,18 @@ using System.Globalization;
 
 namespace ACWorldEdit.Foundation;
 
+/// <summary>
+/// How a column's value is validated and written. Long and ULong are 64-bit (TrinityCore's bigint
+/// guids, npcflag and money columns); new kinds are appended so existing values keep their numbers.
+/// </summary>
 public enum ColumnKind
 {
     Int,
     UInt,
     Float,
-    Text
+    Text,
+    Long,
+    ULong
 }
 
 /// <summary>
@@ -374,6 +380,7 @@ public sealed class Row : IEquatable<Row>
     public uint U(string column) => uint.Parse(this[column], CultureInfo.InvariantCulture);
     public int I(string column) => int.Parse(this[column], CultureInfo.InvariantCulture);
     public long L(string column) => long.Parse(this[column], CultureInfo.InvariantCulture);
+    public ulong UL(string column) => ulong.Parse(this[column], CultureInfo.InvariantCulture);
     public float F(string column) => float.Parse(this[column], CultureInfo.InvariantCulture);
     public string T(string column) => this[column];
 
@@ -414,6 +421,8 @@ public sealed class Row : IEquatable<Row>
             {
                 ColumnKind.Int => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _),
                 ColumnKind.UInt => uint.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out _),
+                ColumnKind.Long => long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _),
+                ColumnKind.ULong => ulong.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out _),
                 ColumnKind.Float => float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float f) && float.IsFinite(f),
                 _ => max == 0 || value.Length <= max
             };

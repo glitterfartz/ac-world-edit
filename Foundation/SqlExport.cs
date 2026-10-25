@@ -191,6 +191,8 @@ public static class SqlExport
     {
         ColumnKind.Int => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
         ColumnKind.UInt => uint.Parse(value, NumberStyles.None, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
+        ColumnKind.Long => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
+        ColumnKind.ULong => ulong.Parse(value, NumberStyles.None, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
         ColumnKind.Float => float.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture),
         _ => Quote(value)
     };
