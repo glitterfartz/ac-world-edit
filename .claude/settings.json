@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -45,13 +49,9 @@
     ]
   },
   "enabledPlugins": {
-    "claude-md-management@anthropic-plugin-directory": true,
-    "code-simplifier@anthropic-plugin-directory": true,
-    "feature-dev@anthropic-plugin-directory": true,
+    "claude-md-management@anthropic-plugin-directory": false,
+    "code-simplifier@anthropic-plugin-directory": false,
+    "feature-dev@anthropic-plugin-directory": false,
     "csharp-lsp@claude-plugins-official": true
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   }
 }
