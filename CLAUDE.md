@@ -66,6 +66,7 @@ Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` path
 ## Rules
 
 - `NEEDED-TESTS.md` lists tests deferred while implementing retail loading; add them once the feature works and remove the entry when its test exists.
+- `TODO.md` lists unfinished features, known gaps and the TrinityCore database target/phases; update it when work lands or a new gap is found.
 - Feature implementations should be followed up by tests, but don't write tests for trivial getters/setters or Godot UI wiring. Tests should be fast and deterministic; slow corpus tests are opt-in via `--settings corpus.runsettings`.
 - For large features, don't implement tests ahead of the feature; implement the feature first, then add tests. Tests should be written to verify the feature works as intended, not to drive the implementation.
 - If a feature requires a visual change you must inspect in Godot to verify them.
