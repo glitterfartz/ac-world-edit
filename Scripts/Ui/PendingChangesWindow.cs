@@ -102,6 +102,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
             {
                 PendingKind.Creature => "CREATURE",
                 PendingKind.Graveyard => "GRAVEYARD",
+                PendingKind.Waypoint => "WAYPOINT",
                 _ => "ROW"
             }));
             var text = ClientStyle.Text(change.Label, 13);

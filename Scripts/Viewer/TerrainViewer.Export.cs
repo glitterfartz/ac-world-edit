@@ -22,7 +22,9 @@ public partial class TerrainViewer
             g.Key,
             g.Where(c => c.Move != null).Select(c => c.Move!),
             g.Where(c => c.Graveyard != null).Select(c => c.Graveyard!),
-            g.Where(c => c.Row != null).Select(c => c.Row!))))
+            g.Where(c => c.Row != null).Select(c => c.Row!),
+            null,
+            g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!))))
         .ToList();
 
     /// <summary>
@@ -57,7 +59,7 @@ public partial class TerrainViewer
     List<PendingChange> CollectPending()
     {
         pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
-        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? []);
+        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits());
         return all;
     }
 
@@ -71,7 +73,7 @@ public partial class TerrainViewer
         sidebar.SetUnsaved(changes.Count);
         if (pendingWindow.Visible)
         {
-            int total = creatures.NetMoves().Count + graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0);
+            int total = creatures.NetMoves().Count + graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0) + waypoints.NetEdits().Count;
             exportedHidden = total - changes.Count;
             pendingWindow.Refresh(changes, exportedHidden);
         }
@@ -106,6 +108,9 @@ public partial class TerrainViewer
                 break;
             case PendingKind.Graveyard:
                 graveyards.Revert(change.Graveyard!);
+                break;
+            case PendingKind.Waypoint:
+                waypoints.Revert(change.Waypoint!);
                 break;
             default:
                 drafts.Revert(change.Source, change.Row!);
@@ -160,6 +165,7 @@ public partial class TerrainViewer
             confirm.QueueFree();
             creatures.ClearDraft();
             graveyards.ClearDraft();
+            waypoints.ClearDraft();
             drafts.Clear();
             pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
             pendingStore.ClearExported();

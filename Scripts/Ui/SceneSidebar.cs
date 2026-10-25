@@ -12,6 +12,7 @@ public partial class SceneSidebar : PanelContainer
     readonly CreatureOverlay creatures;
     readonly GameObjectOverlay gameObjects;
     readonly GraveyardOverlay graveyards;
+    readonly WaypointOverlay waypoints;
     readonly AreaTriggerOverlay areaTriggers;
     readonly ConnectionForm connectionPath;
     readonly WorldObjectScene scenery;
@@ -31,7 +32,7 @@ public partial class SceneSidebar : PanelContainer
     public bool DoodadsEnabled { get; private set; } = true;
     public bool WmosEnabled { get; private set; } = true;
 
-    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, ConnectionForm connectionPath)
+    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, WaypointOverlay waypoints, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, ConnectionForm connectionPath)
     {
         this.connectionPath = connectionPath;
         connectionPath.Applied += () =>
@@ -39,11 +40,13 @@ public partial class SceneSidebar : PanelContainer
             creatures.Refresh();
             gameObjects.Refresh();
             graveyards.Refresh();
+            waypoints.Refresh();
             areaTriggers.Refresh();
         };
         this.creatures = creatures;
         this.gameObjects = gameObjects;
         this.graveyards = graveyards;
+        this.waypoints = waypoints;
         this.areaTriggers = areaTriggers;
         this.scenery = scenery;
         AnchorLeft = AnchorRight = AnchorBottom = 1;
@@ -84,13 +87,15 @@ public partial class SceneSidebar : PanelContainer
         var objectPage = gameObjects.BuildPanel();
         var graveyardPage = graveyards.BuildPanel();
         var triggerPage = areaTriggers.BuildPanel();
+        var waypointPage = waypoints.BuildPanel();
         tabs.AddChild(BuildScenePage());
         tabs.AddChild(creaturePage);
         tabs.AddChild(objectPage);
         tabs.AddChild(graveyardPage);
         tabs.AddChild(triggerPage);
+        tabs.AddChild(waypointPage);
         // One selection at a time across kinds, so menus and the gizmo act on a single target.
-        Action[] deselect = [creatures.Deselect, gameObjects.Deselect, graveyards.Deselect, areaTriggers.Deselect];
+        Action[] deselect = [creatures.Deselect, gameObjects.Deselect, graveyards.Deselect, areaTriggers.Deselect, waypoints.Deselect];
         void Exclusive(int kind)
         {
             for (int i = 0; i < deselect.Length; i++)
@@ -109,6 +114,7 @@ public partial class SceneSidebar : PanelContainer
         gameObjects.SelectionChanged += () => Exclusive(1);
         graveyards.SelectionChanged += () => Exclusive(2);
         areaTriggers.SelectionChanged += () => Exclusive(3);
+        waypoints.SelectionChanged += () => Exclusive(4);
     }
 
     Button unsaved = null!;
@@ -133,7 +139,7 @@ public partial class SceneSidebar : PanelContainer
     /// </summary>
     public void SetDatabaseAvailable(bool available)
     {
-        foreach (string key in new[] { "creatures", "gameobjects", "graveyards", "areatriggers" })
+        foreach (string key in new[] { "creatures", "gameobjects", "graveyards", "areatriggers", "waypoints" })
         {
             if (FindChild(key, true, false) is CheckButton toggle)
             {
@@ -165,6 +171,7 @@ public partial class SceneSidebar : PanelContainer
         Layer(layers, "GameObjects", "gameobjects", gameObjects.SetLayerEnabled);
         Layer(layers, "Graveyards", "graveyards", graveyards.SetLayerEnabled);
         Layer(layers, "AreaTriggers", "areatriggers", areaTriggers.SetLayerEnabled, areaTriggers.LayerEnabled);
+        Layer(layers, "Waypoints", "waypoints", waypoints.SetLayerEnabled);
         layers.AddChild(InspectorUi.Text("Hidden layers stop queuing models and spawn queries.", 11, true));
         databaseNote = InspectorUi.Text("Database layers are off for this client; the world database does not describe it.", 11, true);
         databaseNote.Visible = false;
@@ -500,6 +507,8 @@ public partial class SceneSidebar : PanelContainer
         counts["graveyards"].TooltipText = graveyards.QueryStatus;
         counts["areatriggers"].Text = areaTriggers.Triggers.Count.ToString("N0");
         counts["areatriggers"].TooltipText = areaTriggers.QueryStatus;
+        counts["waypoints"].Text = waypoints.Paths.Count.ToString("N0");
+        counts["waypoints"].TooltipText = waypoints.QueryStatus;
         counts["creatures"].TooltipText = $"{creatures.Records.Count} SQL matches · {creatures.AdmittedCreatureCount} admitted · {creatures.ModelCreatureCount} native models ready";
         counts["gameobjects"].TooltipText = $"{gameObjects.Records.Count} SQL matches · {gameObjects.AdmittedObjectCount} admitted · {gameObjects.ModelObjectCount} native models ready";
         var catalog = creatures.EventCatalog.Length > 0 ? creatures.EventCatalog : gameObjects.EventCatalog;

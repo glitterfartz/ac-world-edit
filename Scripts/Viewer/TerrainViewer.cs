@@ -89,6 +89,7 @@ public partial class TerrainViewer : Node3D
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;
+    WaypointOverlay waypoints = null!;
     AreaTriggerOverlay areaTriggers = null!;
     SceneSidebar sidebar = null!;
     ushort? currentMapId;
@@ -132,6 +133,9 @@ public partial class TerrainViewer : Node3D
         graveyards = new GraveyardOverlay { Connection = () => connection.Settings, Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
+        waypoints = new WaypointOverlay { Connection = () => connection.Settings, GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
+        AddChild(waypoints);
+        waypoints.FocusRequested += FocusPose;
         areaTriggers = new AreaTriggerOverlay { Connection = () => connection.Settings };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
@@ -356,6 +360,7 @@ public partial class TerrainViewer : Node3D
         creatures.SetRegion(null);
         gameObjects.SetRegion(null);
         graveyards.SetRegion(null);
+        waypoints.SetRegion(null);
         areaTriggers.SetRegion(null);
         creatureProps?.Reset();
         objects.Clear();
@@ -525,6 +530,7 @@ public partial class TerrainViewer : Node3D
         creatures.SetRegion(queryRegion);
         gameObjects.SetRegion(queryRegion);
         graveyards.SetRegion(queryRegion);
+        waypoints.SetRegion(queryRegion);
         areaTriggers.SetRegion(queryRegion);
     }
 
@@ -649,6 +655,7 @@ public partial class TerrainViewer : Node3D
         creatures.Update(camera);
         gameObjects.Update(camera);
         graveyards.Update(camera);
+        waypoints.Update(camera);
         areaTriggers.Update(camera);
         creatureProps.Track(creatures.SelectedSpawn);
         models.Update(camera);
@@ -705,11 +712,17 @@ public partial class TerrainViewer : Node3D
                     var objectHit = gameObjects.FindHit(camera, mouse.Position);
                     var graveyardHit = graveyards.FindHit(camera, mouse.Position);
                     var triggerHit = areaTriggers.FindHit(camera, mouse.Position);
+                    var waypointHit = waypoints.FindHit(camera, mouse.Position);
                     float creatureDistance = creatureHit?.Distance ?? float.MaxValue;
                     float objectDistance = objectHit?.Distance ?? float.MaxValue;
                     float graveyardDistance = graveyardHit?.Distance ?? float.MaxValue;
                     float triggerDistance = triggerHit?.Distance ?? float.MaxValue;
-                    if (triggerHit.HasValue && triggerDistance < creatureDistance && triggerDistance < objectDistance && triggerDistance < graveyardDistance)
+                    float waypointDistance = waypointHit?.Distance ?? float.MaxValue;
+                    if (waypointHit.HasValue && waypointDistance <= creatureDistance && waypointDistance <= objectDistance && waypointDistance <= graveyardDistance && waypointDistance <= triggerDistance)
+                    {
+                        waypoints.Select(waypointHit.Value.Path, waypointHit.Value.Point);
+                    }
+                    else if (triggerHit.HasValue && triggerDistance < creatureDistance && triggerDistance < objectDistance && triggerDistance < graveyardDistance)
                     {
                         areaTriggers.Select(triggerHit.Value.Entry);
                     }
@@ -794,6 +807,7 @@ public partial class TerrainViewer : Node3D
             Input.MouseMode = Input.MouseModeEnum.Visible;
             creatures?.EndDrag(false);
             graveyards?.EndDrag(false);
+            waypoints?.EndDrag(false);
         }
     }
 
@@ -804,7 +818,7 @@ public partial class TerrainViewer : Node3D
     (Vector2 Position, ulong Ticks, float Yaw, float Pitch)? rightPress;
     float rightMotion;
 
-    IPlacementEditor ActiveEditor => graveyards != null && graveyards.HasSelection ? graveyards : creatures;
+    IPlacementEditor ActiveEditor => waypoints != null && waypoints.HasSelection ? waypoints : graveyards != null && graveyards.HasSelection ? graveyards : creatures;
 
     /// <summary>
     /// Keep flight keys away from shortcuts, and own an active drag through release/Escape even
@@ -821,7 +835,7 @@ public partial class TerrainViewer : Node3D
             return;
         }
 
-        if (creatures == null || graveyards == null || !ActiveEditor.IsDragging)
+        if (creatures == null || graveyards == null || waypoints == null || !ActiveEditor.IsDragging)
         {
             return;
         }

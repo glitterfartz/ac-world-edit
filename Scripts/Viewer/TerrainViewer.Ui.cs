@@ -229,7 +229,7 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, areaTriggers, objects, connection);
+        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, waypoints, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
         drafts = ContentDraftFiles.Open();
         creatureProps = new CreaturePropertiesWindow
@@ -314,13 +314,17 @@ public partial class TerrainViewer
         }
     }
 
-    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || areaTriggers.HasSelection;
+    bool HasSelection => creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || waypoints.HasSelection || areaTriggers.HasSelection;
 
     void FlyToSelection()
     {
         if (areaTriggers.HasSelection)
         {
             areaTriggers.FlyToSelection();
+        }
+        else if (waypoints.HasSelection)
+        {
+            waypoints.FlyToSelection();
         }
         else if (graveyards.HasSelection)
         {
@@ -343,6 +347,7 @@ public partial class TerrainViewer
     {
         creatures.Mode = mode;
         graveyards.Mode = mode;
+        waypoints.Mode = mode;
     }
 
     /// <summary>
@@ -364,6 +369,7 @@ public partial class TerrainViewer
         {
             creatures.SnapOnDrop = value;
             graveyards.SnapOnDrop = value;
+            waypoints.SnapOnDrop = value;
         }, () => creatures.SnapOnDrop);
         toolbar.AddChild(new Label { Text = "Rotation step", Modulate = new Color("aabac8") });
         var step = new OptionButton

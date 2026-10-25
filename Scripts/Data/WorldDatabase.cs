@@ -106,7 +106,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
              'creature_queststarter','creature_questender','quest_template','npc_vendor','item_template','trainer',
              'trainer_spell','creature_default_trainer','npc_spellclick_spells','smart_scripts','points_of_interest',
              'quest_template_addon','quest_request_items','quest_offer_reward','creature_text','creature_classlevelstats','gameobject_template',
-             'areatrigger','areatrigger_scripts','areatrigger_teleport','areatrigger_involvedrelation','areatrigger_tavern')
+             'areatrigger','areatrigger_scripts','areatrigger_teleport','areatrigger_involvedrelation','areatrigger_tavern',
+             'creature_addon','creature_template_addon','waypoint_data')
             """);
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
