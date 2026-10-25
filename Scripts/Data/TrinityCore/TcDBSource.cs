@@ -27,7 +27,7 @@ public sealed class TcDBSource : IDBSource
         teleports = new(database);
     }
 
-    public IWorldSchema Schema => throw Unsupported("The table catalog");
+    public IWorldSchema Schema => TcSchema.Instance;
     public string SourceKey => database.SourceKey;
 
     static DatabaseFeatureException Unsupported(string what) => new($"{what} is not available for the TrinityCore world database yet.");

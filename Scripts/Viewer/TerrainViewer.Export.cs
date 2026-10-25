@@ -13,9 +13,10 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     /// <summary>
-    /// One script pair per database source for these changes, ordered by source.
+    /// One script pair per database source for these changes, ordered by source, each written in
+    /// that source's dialect.
     /// </summary>
-    internal static List<(string Source, SqlScripts Scripts)> BuildSqlExports(IEnumerable<PendingChange> changes) => changes
+    internal static List<(string Source, SqlScripts Scripts)> BuildSqlExports(IEnumerable<PendingChange> changes, Func<string, IWorldSchema> schemaFor) => changes
         .GroupBy(c => c.Source)
         .OrderBy(g => g.Key, StringComparer.Ordinal)
         .Select(g => (g.Key, SqlExport.Build(
@@ -25,7 +26,7 @@ public partial class TerrainViewer
             g.Where(c => c.Row != null).Select(c => c.Row!),
             null,
             g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!),
-            null,
+            schemaFor(g.Key),
             g.Where(c => c.GameObject != null).Select(c => c.GameObject!))))
         .ToList();
 
@@ -50,6 +51,7 @@ public partial class TerrainViewer
 
 
     PendingChanges pendingStore = null!;
+    SourceDialects sourceDialects = null!;
     PendingChangesWindow pendingWindow = null!;
     SqlPreviewWindow sqlPreview = null!;
     double pendingPoll;
@@ -61,8 +63,23 @@ public partial class TerrainViewer
     List<PendingChange> CollectPending()
     {
         pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
-        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), gameObjects.NetMoves());
+        RememberSourceDialect();
+        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), gameObjects.NetMoves(), sourceDialects.SchemaFor);
         return all;
+    }
+
+    /// <summary>
+    /// Note the open database's dialect under its source key, so its drafts keep exporting in that
+    /// dialect after the connection or the client changes.
+    /// </summary>
+    void RememberSourceDialect()
+    {
+        sourceDialects ??= new SourceDialects(ContentDraftFiles.LocalPath("sources.json"));
+        var connection = DatabaseConnection();
+        if (connection.World.IsComplete)
+        {
+            sourceDialects.Remember(new Data.WorldDatabase(connection).SourceKey, connection.Dialect);
+        }
     }
 
     /// <summary>
@@ -189,7 +206,7 @@ public partial class TerrainViewer
     void PreviewPendingSql()
     {
         var changes = CollectPending();
-        sqlPreview.Open(BuildSqlExports(changes));
+        sqlPreview.Open(BuildSqlExports(changes, sourceDialects.SchemaFor));
     }
 
     /// <summary>
@@ -206,7 +223,7 @@ public partial class TerrainViewer
 
         try
         {
-            string folder = WriteSqlExports(BuildSqlExports(changes));
+            string folder = WriteSqlExports(BuildSqlExports(changes, sourceDialects.SchemaFor));
             pendingStore.MarkExported(changes);
             RefreshPending();
             pendingWindow.SetStatus("Exported.");

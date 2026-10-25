@@ -56,37 +56,39 @@ public sealed class PendingChanges
 
     /// <summary>
     /// Every net change not yet exported, in creature, GameObject, graveyard, row, waypoint order.
+    /// Each change is fingerprinted with its source's schema (AzerothCore when none is given).
     /// </summary>
-    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null, IEnumerable<GameObjectMove>? gameObjects = null)
+    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null, IEnumerable<GameObjectMove>? gameObjects = null, Func<string, IWorldSchema>? schemaFor = null)
     {
+        IWorldSchema? Schema(string source) => schemaFor?.Invoke(source);
         var all = new List<PendingChange>();
         foreach (var move in moves.OrderBy(m => m.Guid))
         {
-            var scripts = SqlExport.Build(move.Source, [move], [], [], FixedStamp);
+            var scripts = SqlExport.Build(move.Source, [move], [], [], FixedStamp, null, Schema(move.Source));
             all.Add(new(Fingerprint(move.Source, scripts), PendingKind.Creature, move.Source, string.Join("; ", scripts.Summary), move, null, null));
         }
 
         foreach (var move in (gameObjects ?? []).OrderBy(m => m.Guid))
         {
-            var scripts = SqlExport.Build(move.Source, [], [], [], FixedStamp, null, null, [move]);
+            var scripts = SqlExport.Build(move.Source, [], [], [], FixedStamp, null, Schema(move.Source), [move]);
             all.Add(new(Fingerprint(move.Source, scripts), PendingKind.GameObject, move.Source, string.Join("; ", scripts.Summary), null, null, null, null, move));
         }
 
         foreach (var edit in graveyards.OrderBy(e => e.Id))
         {
-            var scripts = SqlExport.Build(edit.Source, [], [edit], [], FixedStamp);
+            var scripts = SqlExport.Build(edit.Source, [], [edit], [], FixedStamp, null, Schema(edit.Source));
             all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Graveyard, edit.Source, string.Join("; ", scripts.Summary), null, edit, null));
         }
 
         foreach (var (source, edit) in rows)
         {
-            var scripts = SqlExport.Build(source, [], [], [edit], FixedStamp);
+            var scripts = SqlExport.Build(source, [], [], [edit], FixedStamp, null, Schema(source));
             all.Add(new(Fingerprint(source, scripts), PendingKind.Row, source, string.Join("; ", scripts.Summary), null, null, edit));
         }
 
         foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
         {
-            var scripts = SqlExport.Build(edit.Source, [], [], [], FixedStamp, [edit]);
+            var scripts = SqlExport.Build(edit.Source, [], [], [], FixedStamp, [edit], Schema(edit.Source));
             all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Waypoint, edit.Source, string.Join("; ", scripts.Summary), null, null, null, edit));
         }
 
