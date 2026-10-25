@@ -81,7 +81,7 @@ Goal: an `IDBSource` abstraction with an AzerothCore and a TrinityCore implement
 - Tests: `SettingsResolverTests`, `DatabaseSettingsTests`, and a TC `DbFact` variant (`TcDbFact`) that skips without `ACWORLD_TC_DB_INFO`.
 
 **Phase 3: retail client catalogs (prerequisite for drawing spawns)**
-- Vendor the WoWDBDefs `.dbd` files at the pinned revision (`Data/definitions/revision.txt`):
+- The WoWDBDefs `.dbd` files come from the `Data/WoWDBDefs` submodule (pinned commit); the tables to use are:
   - CreatureDisplayInfo, CreatureModelData, CreatureDisplayInfoExtra if needed
   - GameObjectDisplayInfo
   - AreaTrigger, AreaTriggerActionSet

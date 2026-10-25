@@ -58,5 +58,5 @@ The default settings exclude the `Corpus` (needs client data) and `KnownBug` cat
 | `ACWORLD_RETAIL_DIR`     | Retail client directory, for `ClientData`/`Corpus` tests                                                   |
 | `ACWORLD_CLIENT_PROFILE` | Client profile selection for `ClientData`/`Corpus` tests                                                   |
 | `ACWORLD_CASCLIB`        | Path to `CascLib.dll`; fetch it with `python Tools/get_casclib.py` into `native/win-x64/`                  |
-| `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/definitions`                                                        |
+| `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions`                                                  |
 | `ACWORLD_LISTFILE`       | Override for the community listfile location (default `user://community-listfile.csv`)                     |

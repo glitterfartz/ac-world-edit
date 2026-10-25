@@ -30,7 +30,7 @@ Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smok
 
 - `ACWORLD_DB_INFO` = `host;port;user;password;database` — required by `Tests/.../Db/*` tests.
 - `ACWORLD_DATA_DIR` (3.3.5 client data), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE` — client data for `ClientData`/`Corpus` tests.
-- `ACWORLD_CASCLIB` (path to `CascLib.dll`; fetch with `Tools/get_casclib.py` into `native/win-x64/`), `ACWORLD_DBD_DIR` (WoWDBDefs; defaults to `Data/definitions`).
+- `ACWORLD_CASCLIB` (path to `CascLib.dll`; fetch with `Tools/get_casclib.py` into `native/win-x64/`), `ACWORLD_DBD_DIR` (WoWDBDefs; defaults to the `Data/WoWDBDefs` submodule (`git submodule update --init`)).
 
 ## Architecture
 

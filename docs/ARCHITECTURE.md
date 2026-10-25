@@ -67,7 +67,7 @@ flowchart TB
     subgraph External["External dependencies"]
         direction LR
         godot["Godot 4.7 engine"]
-        dbcd["DBCD + WoWDBDefs<br/>Data/definitions"]
+        dbcd["DBCD + WoWDBDefs<br/>Data/WoWDBDefs"]
         sharpzip["SharpZipLib"]
         mysql["MySqlConnector"]
         casc["CascLib.dll (native)"]
@@ -150,7 +150,7 @@ A client folder is opened by `ClientServices`, which wires an `IClientFiles` sou
 | `Shaders/` | `terrain.gdshader`, `liquid.gdshader`, `model.gdshader` |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
 | `Tools/` | `generate_smart_catalog.py`, `get_casclib.py` |
-| `Data/definitions/` | WoWDBDefs `.dbd` layouts, pinned revision |
+| `Data/WoWDBDefs/` | WoWDBDefs git submodule (`.dbd` layouts), pinned by the submodule commit |
 | `launch_viewer.py` | Build and launch helper, `--smoke` and `--check-assets` modes |
 
 Generated or local-only folders (`artifacts/`, `native/`, `.build-env/`, `bin/`, `obj/`, `wow-data/`) are not part of the architecture.

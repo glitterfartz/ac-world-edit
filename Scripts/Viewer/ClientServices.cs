@@ -39,7 +39,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
     public static ClientServices OpenRetail(string directory, string? listfile = null)
     {
         string definitions = Db2Tables.FindDefinitions(System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory)
-            ?? throw new FileNotFoundException("Retail table definitions (Data/definitions) were not found next to the game.");
+            ?? throw new FileNotFoundException("Retail table definitions (Data/WoWDBDefs) were not found next to the game.");
         CascFiles files;
         try
         {

@@ -100,7 +100,7 @@ public class RetailClientTests : IDisposable
         File.WriteAllText(Path.Combine(beside, "Map.dbd"), "COLUMNS");
         Assert.Equal(beside, Db2Tables.FindDefinitions(null, Path.Combine(root, "bin", "deeper")));
 
-        string repo = Path.Combine(root, "repo", "Data", "definitions");
+        string repo = Path.Combine(root, "repo", "Data", "WoWDBDefs", "definitions");
         Directory.CreateDirectory(repo);
         File.WriteAllText(Path.Combine(repo, "Map.dbd"), "COLUMNS");
         Assert.Equal(repo, Db2Tables.FindDefinitions(null, Path.Combine(root, "repo", "Tests", "bin")));

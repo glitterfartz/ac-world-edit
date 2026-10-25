@@ -5,7 +5,7 @@ namespace ACWorldEdit.Assets;
 
 /// <summary>
 /// Retail client tables (DB2/WDC5) read through DBCD with WoWDBDefs layouts. Column names and types
-/// come from the definitions in Data/definitions (CC BY-SA 4.0, unmodified, pinned in revision.txt),
+/// come from the definitions in the Data/WoWDBDefs submodule (CC BY-SA 4.0, unmodified, pinned by its commit),
 /// never from guesses: a table or build the definitions do not describe fails with a clear message.
 /// Tables are loaded on first use and cached; the instance is not thread-safe.
 /// </summary>
@@ -44,7 +44,7 @@ public sealed class Db2Tables
 
     /// <summary>
     /// Find the definitions folder: ACWORLD_DBD_DIR, then a definitions folder beside the assembly,
-    /// then Data/definitions in the nearest ancestor (the repo during development).
+    /// then Data/WoWDBDefs/definitions in the nearest ancestor (the repo during development).
     /// </summary>
     public static string? FindDefinitions(string? overridePath, params string?[] directories)
     {
@@ -63,7 +63,7 @@ public sealed class Db2Tables
                     return beside;
                 }
 
-                string repo = Path.Combine(current.FullName, "Data", "definitions");
+                string repo = Path.Combine(current.FullName, "Data", "WoWDBDefs", "definitions");
                 if (File.Exists(Path.Combine(repo, "Map.dbd")))
                 {
                     return repo;
