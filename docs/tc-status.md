@@ -9,7 +9,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
-| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor and gossip descriptors are built for both dialects; trainer and quests are next |
+| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor, gossip, trainer and quest-link descriptors are built for both dialects; legacy stats/schema extraction remains |
 | 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
@@ -28,12 +28,14 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ## Where work stopped
 
-- Added `GossipPageSpec` / `IWorldSchema.GossipPage` with dialect-specific menu text links, option lists and greeting tables. Both gossip option pages use `PageRenderer.RenderItems`; its optional field controls preserve AC icons, literal-text/broadcast behavior and submenu validation, and an after-item callback keeps navigation and reordering. AC retains greeting editing, shared-menu copying and the compact read-only preview; TC remains read-only, including all root menus, submenus, broadcast variants and trainer bindings.
-- Gossip option fields now include the catalog's point-of-interest and confirmation settings. AC's existing catalog still omits `BoxBroadcastTextID` (present in the official schema docs); the migration does not add it.
-- `GossipPageTests` covers complete defaults, parent selection, ordering, atomic broadcast override clearing, grouped reordering, undo/redo and SQL export. List ordering now supports full unsigned 32-bit gossip IDs as well as signed vendor slots. Build passed; default suite: 680 passed, 4 skipped.
-- Both dialects passed the Godot overlay screenshot workflow and gossip visual inspection (`artifacts/gossip-wrath.png`, `artifacts/gossip-retail.png`). The workflow also captured Template and vendor pages.
-- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. Use `--client-shot --client-shot-overlays` to open the window directly for screenshot checks.
-- Next: move trainer and quests onto item-list descriptors. Then enable TC vendor editing, including item search and validation.
+- Added `TrainerPageSpec` / `IWorldSchema.TrainerPage` for trainer storage, creature bindings and spell lists. AC and TC spell fields use `PageRenderer.RenderItems`; AC retains trainer assignment/creation, shared-trainer copying and spell search, and now exposes catalog skill requirements alongside cost and level. TC retains all default/gossip-bound trainers, missing-trainer reporting and prerequisite abilities, all read-only.
+- Added `QuestLinksPageSpec` / `IWorldSchema.QuestLinksPage` for creature starter/ender lists. Its `SetRoles` groups giver/ender changes, retaining existing rows. AC retains combined quest icons, role menus, search and embedded quest editing; TC uses the shared list renderer for separate read-only starter/ender lists. The TC quest-content editor remains Phase 7.
+- Added the dialect naming/layout rule to `CLAUDE.md`. All creature-property adapters now use `Ac` / `Tc` class and file prefixes under `AzerothCore/` / `TrinityCore/`; shared context, registry, base section and renderer remain common. Existing Godot UID companions moved with the scripts. `AcSpeechSection` now has its own file.
+- `CreatureServicePageTests` covers complete spell defaults, requirements, parent selection/order, distinct TC menu/option bindings, grouped quest roles, undo/redo and SQL export. Build passed; default suite: 685 passed, 4 skipped.
+- The official AC trainer wiki now lists `ReqAbility1-3`, but the existing AC catalog/read path omits them; this migration preserves that subset. Trainer/spell build metadata and TC quest-link `VerifiedBuild` also remain outside the read catalogs. The previously noted AC gossip `BoxBroadcastTextID` gap remains.
+- Extended `--client-shot --client-shot-overlays` to capture populated trainer and quest pages using Smith Argus (514) and Marshal Dughan (240), after the existing Farley gossip/Template/vendor captures. Both dialects passed the workflow and visual inspection (`artifacts/services-wrath-trainer.png`, `artifacts/services-wrath-quests.png`, `artifacts/services-retail-trainer.png`, `artifacts/services-retail-quests.png`).
+- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. The overlay screenshot workflow opens the windows directly.
+- Next: enable TC vendor editing, including item search and validation; continue remaining Phase 6 editors and legacy schema extraction.
 - Changes are uncommitted.
 
 ## Foundation and design
@@ -96,7 +98,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Area-trigger links (teleport, scripts, quest, tavern, SmartAI type 2) | done | |
 | Server-spawned `areatrigger` overlay | not started | |
 | Creature and GameObject move export | done | Same statements as AC with `ulong` guids. |
-| Overlay smoke (`--client-shot-overlays`) | done | Checks either dialect's creature pages and saves gossip, Template and vendor screenshots (`client-shot-creature-*.png`), along with overlays and editable graveyards. |
+| Overlay smoke (`--client-shot-overlays`) | done | Checks either dialect's creature pages and saves gossip, Template, vendor, trainer and quest screenshots (`client-shot-creature-*.png`), along with overlays and editable graveyards. |
 
 ## Graveyard editing (plan Phase 5)
 
@@ -119,9 +121,9 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
 | Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
-| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests` and `GossipPageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. Trainer and quests still need migration. |
+| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests`, `GossipPageTests` and `CreatureServicePageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. `TrainerPageSpec` covers trainer storage, bindings and spell fields; `QuestLinksPageSpec` covers starter/ender lists and grouped role edits. AC keeps specialized quest icons and navigation; TC remains read-only. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
-| `StatsSection` via ContentTuning | not started | Phase 6. |
+| `AcStatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |
 | Section registry and sections take field groups from the schema | not started | Phase 6. |
 | Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | not started | Phase 7. Editor gated off in TC. |

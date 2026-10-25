@@ -6,7 +6,7 @@ using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
-public sealed partial class GossipSection(CreatureContext ctx) : InteractionSection(ctx)
+public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
     public override string Id => "gossip";
     public override string Title => "Gossip";

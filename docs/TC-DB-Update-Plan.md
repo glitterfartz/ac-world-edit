@@ -13,10 +13,10 @@ Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`.
 
 - **Dialect-native rows.** Read-only overlay results are shared records translated by each dialect. Editing stays on the generic path, `RowEdit(Table, Key, Before, After)` → `SqlExport`, with each dialect's own table catalog, so structural differences (`quest_objectives` 1:N rows, `creature_template_difficulty`, `creature_template_gossip`) round-trip without a lossy neutral model. Editors switch descriptors (field groups, enums, catalogs), not data models.
 - **`IWorldSchema` grows per phase.** Today it has `Tables` and `Sql`. Phases 6–8 add `NpcSchema` (npc flags, gossip option kinds), `CreatureSchema` (ranks/classification, flag tables), `QuestSchema` and `SmartCatalog Smart`. The AzerothCore statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
-- **Creature pages are descriptors, not per-dialect classes.** A page is an ordered list of groups; a group is fields bound to one row (template or selected difficulty) or an item list (source table, parent filter column, per-item fields, nested lists, add/remove). Each dialect fills the descriptor in (tables, fields, enums, flag lists); one renderer draws it. Custom slots cover what is not declarative (subname, gossip-menu check, spell clicks, validation fixes). The Template page is done; item lists come next.
+- **Creature pages are descriptors, not per-dialect classes.** A page is an ordered list of groups; a group is fields bound to one row (template or selected difficulty) or an item list (source table, parent filter column, per-item fields, nested lists, add/remove). Each dialect fills the descriptor in (tables, fields, enums, flag lists); one renderer draws it. Custom slots cover what is not declarative (subname, gossip-menu check, spell clicks, validation fixes). Template, vendor, gossip, trainer and creature quest-link descriptors are built; the remaining TC interaction editors still need enabling, validation and search. Dialect-specific section adapters use `Ac` / `Tc` prefixes in `AzerothCore/` / `TrinityCore/` directories; shared descriptors and renderers stay common.
 - **Editors read the dialect only through `IDBSource.Schema`:**
   - `CreatureSectionRegistry` filters sections by schema support.
-  - `TemplateSection`, `StatsSection`, `GossipSection`, `TrainerSection` and `VendorSection` take their field groups and enums from the schema.
+  - `AcTemplateSection`, `AcStatsSection`, `AcGossipSection`, `AcTrainerSection` and `AcVendorSection` take their field groups and enums from the schema.
   - `QuestPanel.Pages` builds pages from `QuestSchema`. TC adds an Objectives page and drops `RequiredNpcOrGo`/`RequiredItem`.
   - `BehaviorPanel.Rules` uses `Schema.Smart`.
 
@@ -24,7 +24,7 @@ Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`.
 
 **Phase 6: creature properties (TC)** (read side done; see `tc-status.md`)
 - `TcTables` catalog: `creature_template` (TC columns); `creature_template_difficulty` (levels via ContentTuningID, Health/Mana/Armor/DamageModifier, loot IDs, gold, TypeFlags, StaticFlags; needs a difficulty choice, not only `DifficultyID=0`); `creature_template_gossip` (1:N menus); `creature_trainer` (bound to a gossip option); `gossip_menu_option` (GossipOptionID, OptionNpc, Language, Flags, GossipNpcOptionID, SpellID, OverrideIconID); `npc_text` (BroadcastTextID0-7, Probability0-7); `npc_vendor` (+type in the key, BonusListIDs, PlayerConditionID, IgnoreFiltering); quest starter/ender links; `npc_spellclick_spells`.
-- TC `NpcSchema`/`CreatureSchema`: 64-bit `npcflag`, Classification, `unit_flags3`, the TC OptionNpc enum. `StatsSection` uses ContentTuning instead of minlevel/maxlevel; `creature_classlevelstats` has only basemana/attackpower/rangedattackpower.
+- TC `NpcSchema`/`CreatureSchema`: 64-bit `npcflag`, Classification, `unit_flags3`, the TC OptionNpc enum. The TC stats page uses ContentTuning instead of minlevel/maxlevel; `creature_classlevelstats` has only basemana/attackpower/rangedattackpower.
 - Vendor search and item tooltips use ItemSparse (DB2 plus `hotfixes.item_sparse`) instead of `item_template`.
 - Tests: TcDb Goldshire innkeeper, vendor and trainer; `TcTables` catalog unit tests.
 

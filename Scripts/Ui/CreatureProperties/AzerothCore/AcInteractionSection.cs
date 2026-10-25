@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 /// Shared plumbing of the sections that draw the NPC interaction rows (gossip, quests, vendor,
 /// trainer, info): names for the context state, icon rows and the search-and-pick control.
 /// </summary>
-public abstract partial class InteractionSection(CreatureContext ctx) : CreatureSection(ctx)
+public abstract partial class AcInteractionSection(CreatureContext ctx) : CreatureSection(ctx)
 {
     protected virtual VBoxContainer body => this;
     protected bool editable => Ctx.Editable;

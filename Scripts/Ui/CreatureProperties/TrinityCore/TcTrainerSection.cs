@@ -35,26 +35,13 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
 
             Facts([("Type", trainer.Type.ToString(CultureInfo.InvariantCulture)), ("Greeting", trainer.Greeting.Length > 0 ? trainer.Greeting : "None")], block);
             Line($"{trainer.Spells.Length} spell(s)", ClientStyle.Header, 13, block);
-            foreach (var spell in trainer.Spells)
-            {
-                var requirements = new List<string> { ClientStyle.Money(spell.MoneyCost) };
-                if (spell.ReqLevel != 0)
+            new PageRenderer(Ctx).RenderItems(block, Ctx.Schema.TrainerPage.Spells, Ctx.Effective, trainer.TrainerId, false,
+                row =>
                 {
-                    requirements.Add($"level {spell.ReqLevel}");
-                }
-
-                if (spell.ReqSkillLine != 0)
-                {
-                    requirements.Add($"skill {spell.ReqSkillLine} at {spell.ReqSkillRank}");
-                }
-
-                if (spell.ReqAbilities.Length > 0)
-                {
-                    requirements.Add("needs " + string.Join(", ", spell.ReqAbilities));
-                }
-
-                Line($"{spell.Name ?? "Spell"} ({spell.SpellId}) · {string.Join(" · ", requirements)}", spell.Name == null ? ClientStyle.Faded : ClientStyle.Body, 12, block);
-            }
+                    var spell = trainer.Spells.First(s => s.SpellId == row.U("SpellId"));
+                    return ClientStyle.Text($"{spell.Name ?? "Spell"} ({spell.SpellId}) · {ClientStyle.Money(spell.MoneyCost)}", 13,
+                        spell.Name == null ? ClientStyle.Faded : ClientStyle.Body);
+                });
         }
     }
 }

@@ -4,7 +4,7 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
-public sealed partial class VendorSection(CreatureContext ctx) : InteractionSection(ctx)
+public sealed partial class AcVendorSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
     public override string Id => "vendor";
     public override string Title => "Vendor";

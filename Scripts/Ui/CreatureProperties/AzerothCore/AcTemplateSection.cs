@@ -11,12 +11,12 @@ namespace ACWorldEdit;
 /// NPC flags and spell clicks that decide how players interact with it. Every editable template
 /// column lives here or on the Class / Level / Stats page, under plain-language labels.
 /// </summary>
-public sealed partial class TemplateSection : InteractionSection
+public sealed partial class AcTemplateSection : AcInteractionSection
 {
     readonly PageRenderer renderer;
     GridContainer grid = null!;
 
-    public TemplateSection(CreatureContext ctx) : base(ctx)
+    public AcTemplateSection(CreatureContext ctx) : base(ctx)
     {
         renderer = new PageRenderer(ctx);
     }

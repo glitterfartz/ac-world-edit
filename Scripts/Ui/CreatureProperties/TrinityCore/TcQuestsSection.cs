@@ -13,7 +13,7 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
 
     protected override void Populate(TcCreatureView v)
     {
-        void List(string title, TcQuestLink[] quests)
+        void List(string title, ItemListSpec spec, TcQuestLink[] quests)
         {
             Heading($"{title} ({quests.Length})");
             var block = Block();
@@ -22,13 +22,17 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
                 Line("None.", ClientStyle.Faded, 12, block);
             }
 
-            foreach (var quest in quests)
-            {
-                Line($"{quest.Title ?? "Missing quest"} ({quest.Quest.ToString(CultureInfo.InvariantCulture)})", quest.Title == null ? ClientStyle.Error : ClientStyle.Gold, 13, block);
-            }
+            new PageRenderer(Ctx).RenderItems(block, spec, Ctx.Effective, v.Entry, false,
+                row =>
+                {
+                    uint id = row.U("quest");
+                    var quest = quests.First(q => q.Quest == id);
+                    return ClientStyle.Text($"{quest.Title ?? "Missing quest"} ({id.ToString(CultureInfo.InvariantCulture)})",
+                        13, quest.Title == null ? ClientStyle.Error : ClientStyle.Gold);
+                });
         }
 
-        List("Starts", v.Starts);
-        List("Ends", v.Ends);
+        List("Starts", Ctx.Schema.QuestLinksPage.Starts, v.Starts);
+        List("Ends", Ctx.Schema.QuestLinksPage.Ends, v.Ends);
     }
 }

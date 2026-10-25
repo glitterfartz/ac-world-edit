@@ -2,7 +2,7 @@
 
 ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor. It renders WoW client data (3.3.5 MPQ or retail CASC) and overlays world-database content: AzerothCore for the 3.3.5 client, TrinityCore master (`world` plus `hotfixes`) for retail. Edits are staged as drafts and exported as SQL; the database connection is read-only.
 
-> **Overhaul in progress: TrinityCore backend** (branch `trinity-master`; remaining plan in `docs/TC-DB-Update-Plan.md`, status in `docs/tc-status.md`). Phases 1–5 are done, Phase 6 (creature properties) edits only the template page for TrinityCore so far; shared Template, vendor and gossip descriptors exist for both dialects. Phases 7–9 (quests, SmartAI, waypoints) are not started and their editors are off for TrinityCore.
+> **Overhaul in progress: TrinityCore backend** (branch `trinity-master`; remaining plan in `docs/TC-DB-Update-Plan.md`, status in `docs/tc-status.md`). Phases 1–5 are done, Phase 6 (creature properties) edits only the template page for TrinityCore so far; shared Template, vendor, gossip, trainer and quest-link descriptors exist for both dialects. Phases 7–9 (quests, SmartAI, waypoints) are not started and their editors are off for TrinityCore.
 > - New database code goes through one interface: reads through `DBSource.Open(...)` → `IDBSource`, schema knowledge through `IDBSource.Schema` (`IWorldSchema`; Foundation code uses `WorldSchemas.For(dialect)`). Don't construct `Ac*Source`/`Tc*Source` outside `Scripts/Data` or add uses of the AzerothCore-only statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`); add missing descriptors to `IWorldSchema`.
 > - Legacy forms still in the code are listed under "Coexisting forms" in `docs/tc-status.md`; don't build on them.
 
@@ -61,6 +61,7 @@ Environment variables for tests and tools:
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
 - For world-database tables or columns, check the official schema docs (linked above), not only the live database or memory. Record AC/TC differences that affect the editors in `docs/DB-DIFFERENCES.md`.
 - `azerothcore-wotlk` and `wow-data` are read-only reference and must never be modified (enforced by `.claude/hooks/block_readonly.py`).
+- Dialect-specific classes must use the `Ac` prefix for AzerothCore and `Tc` for TrinityCore, including file names. Keep them in corresponding `AzerothCore/` and `TrinityCore/` directories under their feature or layer. Shared interfaces, descriptors, context and renderers stay unprefixed in the common directory. When working in a feature, rename and move legacy dialect-specific classes to follow this convention; update references and move Godot `.cs.uid` companions with their scripts.
 - Follow features with tests, written after the feature works (not test-first for large features). Skip trivial getters/setters and Godot UI wiring. Keep tests fast and deterministic; slow corpus tests are opt-in.
 - Inspect visual changes in Godot before calling them done.
 - UI and status text says what happened ("Saved.", "Moved graveyard."). Don't say changes are a "local draft" or that the "database/source is unchanged"; mention drafts or the database only when it matters to a decision or an error.

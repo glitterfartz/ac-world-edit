@@ -51,7 +51,7 @@ public partial class TerrainViewer
 
     /// <summary>
     /// The last --client-shot-overlays step: open the creature window on Innkeeper Farley, check that
-    /// it lists the selected dialect's pages and loaded his read model, and save the gossip, template and vendor
+    /// it lists the selected dialect's pages and loaded his read model, and save the gossip, template, vendor, trainer and quest
     /// pages (artifacts/client-shot-creature-*.png).
     /// </summary>
     void ClientShotCreature()
@@ -110,7 +110,7 @@ public partial class TerrainViewer
                 clientShotFrames = 0;
                 clientShotCreatureStage = 4;
                 return;
-            default:
+            case 4:
                 if (clientShotFrames++ < 30)
                 {
                     return;
@@ -118,10 +118,57 @@ public partial class TerrainViewer
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
                 GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
+                OpenShotCreature(514, "trainer", 5); // Smith Argus, Goldshire's blacksmith trainer.
+                return;
+            case 5:
+                if (!ShotCreatureReady(514)) return;
+                bool hasSpells = creatureProps.Context.View?.Trainer?.Spells.Length > 0 || creatureProps.Context.TcView?.Trainers.Any(t => t.Spells.Length > 0) == true;
+                if (!hasSpells)
+                {
+                    SmokeFail("CLIENT_SHOT_TRAINER_EMPTY Smith Argus has no trainer spells");
+                    return;
+                }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-trainer.png"));
+                OpenShotCreature(240, "quests", 6); // Marshal Dughan, a quest giver in Goldshire.
+                return;
+            default:
+                if (!ShotCreatureReady(240)) return;
+                int quests = creatureProps.Context.View is { } ac ? ac.Starts.Length + ac.Ends.Length
+                    : creatureProps.Context.TcView is { } tc ? tc.Starts.Length + tc.Ends.Length : 0;
+                if (quests == 0)
+                {
+                    SmokeFail("CLIENT_SHOT_QUESTS_EMPTY Marshal Dughan has no quest links");
+                    return;
+                }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-quests.png"));
+                GD.Print($"CLIENT_SHOT_SERVICES trainer=514 quests=240 links={quests}");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();
                 return;
         }
+    }
+
+    void OpenShotCreature(uint entry, string section, int stage)
+    {
+        if (creatures.Records.FirstOrDefault(s => s.TemplateId == entry) is not { } spawn)
+        {
+            SmokeFail($"CLIENT_SHOT_CREATURE_MISSING no spawn of creature {entry} near Goldshire");
+            return;
+        }
+        creatures.Select(spawn.Guid);
+        creatureProps.Open(spawn, section);
+        clientShotFrames = 0;
+        clientShotCreatureStage = stage;
+    }
+
+    bool ShotCreatureReady(uint entry)
+    {
+        if (creatureProps.Context.View?.Entry != entry && creatureProps.Context.TcView?.Entry != entry)
+        {
+            if (clientShotFrames++ > 600) SmokeFail("CLIENT_SHOT_CREATURE_NOT_LOADED " + creatureProps.Context.Status);
+            return false;
+        }
+        return clientShotFrames++ >= 60;
     }
 
     void ClientSmoke(double delta)

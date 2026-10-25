@@ -39,6 +39,9 @@ public interface IWorldSchema
 
     /// <summary>Gossip menus, option fields and greeting storage.</summary>
     GossipPageSpec GossipPage { get; }
+
+    TrainerPageSpec TrainerPage { get; }
+    QuestLinksPageSpec QuestLinksPage { get; }
 }
 
 /// <summary>The schema object of each dialect.</summary>
@@ -62,6 +65,8 @@ public sealed class AcSchema : IWorldSchema
     public CreaturePage TemplatePage => AcCreaturePage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.AzerothCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.AzerothCore;
+    public TrainerPageSpec TrainerPage => Foundation.TrainerPage.AzerothCore;
+    public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.AzerothCore;
 }
 
 /// <summary>
@@ -77,4 +82,6 @@ public sealed class TcSchema : IWorldSchema
     public CreaturePage TemplatePage => TcCreaturePage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
+    public TrainerPageSpec TrainerPage => Foundation.TrainerPage.TrinityCore;
+    public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.TrinityCore;
 }

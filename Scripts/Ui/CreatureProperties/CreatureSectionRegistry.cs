@@ -10,14 +10,14 @@ public static class CreatureSectionRegistry
 {
     public static IReadOnlyList<Func<CreatureContext, CreatureSection>> Factories { get; } =
     [
-        ctx => new BehaviorSection(ctx),
-        ctx => new StatsSection(ctx),
-        ctx => new GossipSection(ctx),
-        ctx => new QuestsSection(ctx),
-        ctx => new SpeechSection(ctx),
-        ctx => new TemplateSection(ctx),
-        ctx => new TrainerSection(ctx),
-        ctx => new VendorSection(ctx),
+        ctx => new AcBehaviorSection(ctx),
+        ctx => new AcStatsSection(ctx),
+        ctx => new AcGossipSection(ctx),
+        ctx => new AcQuestsSection(ctx),
+        ctx => new AcSpeechSection(ctx),
+        ctx => new AcTemplateSection(ctx),
+        ctx => new AcTrainerSection(ctx),
+        ctx => new AcVendorSection(ctx),
         ctx => new TcGossipSection(ctx),
         ctx => new TcQuestsSection(ctx),
         ctx => new TcTemplateSection(ctx),

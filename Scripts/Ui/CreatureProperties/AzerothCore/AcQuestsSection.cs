@@ -2,11 +2,10 @@ using System.Globalization;
 using Godot;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
-using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
-public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSection(ctx)
+public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
     public override string Id => "quests";
     public override string Title => "Quests";
@@ -92,6 +91,8 @@ public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSect
         questDetail = 0;
         openedQuest = 0;
     }
+
+    QuestLinksPageSpec Page => Ctx.Schema.QuestLinksPage;
 
     void RenderQuests(NpcInteraction v)
     {
@@ -180,25 +181,14 @@ public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSect
         popup.AddItem("Unlink", 2);
         popup.IdPressed += id =>
         {
-            var starter = effective.Get(InteractionTables.QuestStarter, $"{v.Entry}|{quest.Quest}");
-            var ender = effective.Get(InteractionTables.QuestEnder, $"{v.Entry}|{quest.Quest}");
-            var edits = new List<RowEdit>();
-            string label;
-            switch (id)
+            string label = id switch { 0 => gives ? "Stop giving" : "Give", 1 => takes ? "Stop accepting" : "Accept", _ => "Unlink" };
+            var (nextGives, nextTakes) = id switch
             {
-                case 0:
-                    label = gives ? "Stop giving" : "Give";
-                    edits.Add(gives ? Delete(InteractionTables.QuestStarter, starter!) : Insert(InteractionTables.QuestStarter, Row.Of(("id", v.Entry), ("quest", quest.Quest))));
-                    break;
-                case 1:
-                    label = takes ? "Stop accepting" : "Accept";
-                    edits.Add(takes ? Delete(InteractionTables.QuestEnder, ender!) : Insert(InteractionTables.QuestEnder, Row.Of(("id", v.Entry), ("quest", quest.Quest))));
-                    break;
-                default:
-                    label = "Unlink";
-                    edits.AddRange(new[] { (InteractionTables.QuestStarter, starter), (InteractionTables.QuestEnder, ender) }.Where(e => e.Item2 != null).Select(e => Delete(e.Item1, e.Item2!)));
-                    break;
-            }
+                0 => (!gives, takes),
+                1 => (gives, !takes),
+                _ => (false, false)
+            };
+            var edits = Page.SetRoles(effective, v.Entry, quest.Quest, nextGives, nextTakes);
 
             Commit($"{label} quest {quest.Quest}", edits);
         };
@@ -284,16 +274,12 @@ public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSect
         };
         link.Pressed += () =>
         {
-            var edits = new List<RowEdit>();
-            foreach (var (table, wanted) in new[] { (InteractionTables.QuestStarter, giver.ButtonPressed), (InteractionTables.QuestEnder, ender.ButtonPressed) })
-            {
-                if (wanted && effective.Get(table, $"{v.Entry}|{quest.Id}") == null)
-                {
-                    edits.Add(Insert(table, Row.Of(("id", v.Entry), ("quest", quest.Id))));
-                }
-            }
+            // Linking adds selected roles without removing any role already assigned.
+            bool Has(ItemListSpec spec) => spec.Select(effective, v.Entry).Any(r => r.U("quest") == quest.Id);
+            var edits = Page.SetRoles(effective, v.Entry, quest.Id,
+                giver.ButtonPressed || Has(Page.Starts), ender.ButtonPressed || Has(Page.Ends));
 
-            if (edits.Count == 0)
+            if (edits.Length == 0)
             {
                 status = giver.ButtonPressed || ender.ButtonPressed ? $"{quest.Title} is already linked that way." : "Tick Giver, Ender or both.";
                 Render();

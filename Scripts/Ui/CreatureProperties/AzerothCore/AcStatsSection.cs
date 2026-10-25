@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 /// armor and damage from the base values in creature_classlevelstats for its level and class, scaled
 /// by the multipliers on the creature template; this page shows both and the result.
 /// </summary>
-public sealed partial class StatsSection(CreatureContext ctx) : InteractionSection(ctx)
+public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
     static readonly (uint Id, string Name)[] Classes = [(1, "Warrior"), (2, "Paladin"), (4, "Rogue"), (8, "Mage")];
     static readonly string[] Tiers = ["Classic", "Burning Crusade", "Wrath of the Lich King"];
