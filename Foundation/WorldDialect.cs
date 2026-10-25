@@ -1,0 +1,38 @@
+namespace ACWorldEdit.Foundation;
+
+/// <summary>
+/// Which emulator's world database schema is read and exported to. The dialect follows the client
+/// kind: Wrath 3.3.5 uses AzerothCore, retail uses TrinityCore.
+/// </summary>
+public enum WorldDialect
+{
+    AzerothCore,
+    TrinityCore
+}
+
+/// <summary>The editable tables of one dialect.</summary>
+public interface ITableCatalog
+{
+    IReadOnlyList<TableSchema> All { get; }
+
+    /// <summary>The table with this draft name; throws <see cref="InvalidDataException"/> when it is not editable.</summary>
+    TableSchema Find(string name);
+}
+
+/// <summary>
+/// Everything the editors need to know about one dialect's world schema. Later phases add the
+/// quest, creature, NPC and SmartAI descriptors here.
+/// </summary>
+public interface IWorldSchema
+{
+    WorldDialect Dialect { get; }
+    ITableCatalog Tables { get; }
+}
+
+/// <summary>The AzerothCore 3.3.5 world schema. SmartCatalog and QuestModel remain its static data.</summary>
+public sealed class AcSchema : IWorldSchema
+{
+    public static readonly AcSchema Instance = new();
+    public WorldDialect Dialect => WorldDialect.AzerothCore;
+    public ITableCatalog Tables => AcTables.Instance;
+}

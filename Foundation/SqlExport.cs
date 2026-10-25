@@ -33,7 +33,7 @@ public static class SqlExport
     /// Build the scripts for one database source. Creature moves, graveyards and interaction rows
     /// may each be empty.
     /// </summary>
-    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null)
+    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, ITableCatalog? tables = null)
     {
         var steps = new List<Step>();
         foreach (var move in creatures.OrderBy(m => m.Guid))
@@ -48,7 +48,7 @@ public static class SqlExport
 
         foreach (var edit in rows)
         {
-            steps.Add(Row(edit));
+            steps.Add(Row(edit, tables ?? AcTables.Instance));
         }
 
         foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
@@ -223,9 +223,9 @@ public static class SqlExport
 
     // ---- content rows ----------------------------------------------------------------------
 
-    static Step Row(RowEdit edit)
+    static Step Row(RowEdit edit, ITableCatalog tables)
     {
-        var schema = InteractionTables.Find(edit.Table);
+        var schema = tables.Find(edit.Table);
         string table = Ident(schema.SqlName);
         string keyOf(Row r) => string.Join(" AND ", schema.Key.Select(k => Eq(schema, k, r[k])));
         string all(Row r) => string.Join(" AND ", schema.Columns.Select(c => Eq(schema, c.Name, r[c.Name])));

@@ -25,11 +25,13 @@ public sealed record TableSchema(string Name, string[] Key, (string Name, Column
 }
 
 /// <summary>
-/// The interaction tables, with primary keys from the AzerothCore base schema. Text limits follow
-/// the column types (varchar/text); 0 means unbounded text.
+/// The AzerothCore interaction tables, with primary keys from the AzerothCore base schema. Text
+/// limits follow the column types (varchar/text); 0 means unbounded text.
 /// </summary>
-public static class InteractionTables
+public sealed class AcTables : ITableCatalog
 {
+    public static readonly AcTables Instance = new();
+
     public static readonly TableSchema CreatureTemplate = new("creature_template", ["entry"], [("entry", ColumnKind.UInt, 0), ("npcflag", ColumnKind.UInt, 0), ("gossip_menu_id", ColumnKind.UInt, 0), ("subname", ColumnKind.Text, 100)]);
     public static readonly TableSchema GossipMenu = new("gossip_menu", ["MenuID", "TextID"], [("MenuID", ColumnKind.UInt, 0), ("TextID", ColumnKind.UInt, 0)]);
     public static readonly TableSchema NpcText = new("npc_text", ["ID"], [("ID", ColumnKind.UInt, 0), ("text0_0", ColumnKind.Text, 0), ("text0_1", ColumnKind.Text, 0), ("BroadcastTextID0", ColumnKind.Int, 0), ("Probability0", ColumnKind.Float, 0)]);
@@ -310,9 +312,42 @@ public static class InteractionTables
         ("ScriptName", ColumnKind.Text, 64)
     ]);
 
-    public static readonly TableSchema[] All = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts];
+    public static readonly TableSchema[] Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts];
 
-    public static TableSchema Find(string name) => All.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");
+    IReadOnlyList<TableSchema> ITableCatalog.All => Tables;
+    TableSchema ITableCatalog.Find(string name) => Tables.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");
+}
+
+/// <summary>
+/// The AzerothCore tables as statics, so existing code keeps compiling. Dialect-aware code takes an
+/// <see cref="ITableCatalog"/> instead.
+/// </summary>
+public static class InteractionTables
+{
+    public static readonly TableSchema CreatureTemplate = AcTables.CreatureTemplate;
+    public static readonly TableSchema GossipMenu = AcTables.GossipMenu;
+    public static readonly TableSchema NpcText = AcTables.NpcText;
+    public static readonly TableSchema GossipOption = AcTables.GossipOption;
+    public static readonly TableSchema QuestStarter = AcTables.QuestStarter;
+    public static readonly TableSchema QuestEnder = AcTables.QuestEnder;
+    public static readonly TableSchema Vendor = AcTables.Vendor;
+    public static readonly TableSchema DefaultTrainer = AcTables.DefaultTrainer;
+    public static readonly TableSchema Trainer = AcTables.Trainer;
+    public static readonly TableSchema TrainerSpell = AcTables.TrainerSpell;
+    public static readonly TableSchema SpellClick = AcTables.SpellClick;
+    public static readonly TableSchema CreatureAI = AcTables.CreatureAI;
+    public static readonly TableSchema CreatureStats = AcTables.CreatureStats;
+    public static readonly TableSchema CreatureDetails = AcTables.CreatureDetails;
+    public static readonly TableSchema QuestTemplate = AcTables.QuestTemplate;
+    public static readonly TableSchema QuestAddon = AcTables.QuestAddon;
+    public static readonly TableSchema QuestRequestItems = AcTables.QuestRequestItems;
+    public static readonly TableSchema QuestOfferReward = AcTables.QuestOfferReward;
+    public static readonly TableSchema SmartScripts = AcTables.SmartScripts;
+    public static readonly TableSchema CreatureText = AcTables.CreatureText;
+    public static readonly TableSchema AreaTriggerScripts = AcTables.AreaTriggerScripts;
+    public static readonly TableSchema[] All = AcTables.Tables;
+
+    public static TableSchema Find(string name) => ((ITableCatalog)AcTables.Instance).Find(name);
 }
 
 /// <summary>
@@ -410,9 +445,9 @@ public sealed class RowSet
     /// <summary>
     /// Layer one edit on top: delete when After is null, otherwise insert or replace.
     /// </summary>
-    public void Apply(RowEdit edit)
+    public void Apply(RowEdit edit, ITableCatalog? tables = null)
     {
-        var table = InteractionTables.Find(edit.Table);
+        var table = (tables ?? AcTables.Instance).Find(edit.Table);
         if (edit.After == null)
         {
             Remove(table, edit.Key);
