@@ -404,6 +404,11 @@ public partial class TerrainViewer
         var dialog = new ClientPickerDialog(profile.Kind, kind => kind == ClientKind.Retail ? retailDirectory : wrathDirectory);
         dialog.Chosen += async (kind, directory) =>
         {
+            if (kind != profile.Kind && !await ConfirmDiscardDrafts(kind))
+            {
+                return;
+            }
+
             profile = ClientProfile.For(kind);
             dataDirectory = directory;
             UserSettings.SaveProfile(kind);
@@ -423,6 +428,48 @@ public partial class TerrainViewer
         dialog.Canceled += dialog.QueueFree;
         AddChild(dialog);
         dialog.PopupCentered();
+    }
+
+    /// <summary>
+    /// Draft edits belong to the open client's database, so switching profile drops them. Ask first
+    /// when there are any; false means the user kept them and the switch should not happen.
+    /// </summary>
+    async Task<bool> ConfirmDiscardDrafts(ClientKind target)
+    {
+        var changes = CollectPending();
+        if (changes.Count == 0)
+        {
+            return true;
+        }
+
+        // The picker is still closing; a popup opened in the same frame is hidden with it.
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var answer = new TaskCompletionSource<bool>();
+        var ask = new ConfirmationDialog
+        {
+            Title = "Unsaved changes",
+            OkButtonText = "Discard and switch",
+            CancelButtonText = "Keep editing",
+            DialogText = $"You have {changes.Count} unsaved change(s). Switching to the {(target == ClientKind.Retail ? "retail" : "Wrath 3.3.5")} client discards them. Discard and switch?"
+        };
+        ask.Confirmed += () => answer.TrySetResult(true);
+        ask.Canceled += () => answer.TrySetResult(false);
+        ask.Confirmed += ask.QueueFree;
+        ask.Canceled += ask.QueueFree;
+        AddChild(ask);
+        ask.PopupCentered(new Vector2I(420, 0));
+        if (!await answer.Task)
+        {
+            return false;
+        }
+
+        foreach (var change in changes)
+        {
+            DiscardPending(change);
+        }
+
+        RefreshPending();
+        return true;
     }
 
     /// <summary>
