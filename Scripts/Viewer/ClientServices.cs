@@ -5,10 +5,10 @@ namespace ACWorldEdit;
 /// <summary>
 /// Everything the viewer needs from one opened client, chosen once at load time so no parser has to
 /// branch on the client version. Lighting and area names are null where a client family does not
-/// provide them yet; the creature and GameObject catalogs read DBC (Wrath) or DB2 (retail) display tables; DatabaseEnabled is false when the world database cannot describe that client.
+/// provide them yet; the creature and GameObject catalogs read DBC (Wrath) or DB2 (retail) display tables; Lookup serves the DB2 reference data (trigger volumes, texts, item and spell names) a retail world database lacks; DatabaseEnabled is false when the world database cannot describe that client.
 /// Open runs on a worker: it reads archives and tables but creates no Godot resources.
 /// </summary>
-public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, ICreatureCatalog? Creatures = null, IGameObjectCatalog? GameObjects = null)
+public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, ICreatureCatalog? Creatures = null, IGameObjectCatalog? GameObjects = null, IClientLookup? Lookup = null)
 {
     public static ClientServices Open(ClientKind kind, string directory, string? listfile = null) =>
         kind == ClientKind.Retail ? OpenRetail(directory, listfile) : OpenWrath(directory);
@@ -66,7 +66,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, false, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables), new RetailGameObjectCatalog(tables));
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, false, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables));
         }
         catch
         {
