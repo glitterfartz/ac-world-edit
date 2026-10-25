@@ -7,7 +7,8 @@ namespace ACWorldEdit.Assets;
 /// Retail client tables (DB2/WDC5) read through DBCD with WoWDBDefs layouts. Column names and types
 /// come from the definitions in the Data/WoWDBDefs submodule (CC BY-SA 4.0, unmodified, pinned by its commit),
 /// never from guesses: a table or build the definitions do not describe fails with a clear message.
-/// Tables are loaded on first use and cached; the instance is not thread-safe.
+/// Tables are loaded on first use and cached. Table may be called from any thread (loads are
+/// serialised); a loaded table is read-only.
 /// </summary>
 public sealed class Db2Tables
 {
@@ -101,25 +102,28 @@ public sealed class Db2Tables
     /// </summary>
     public IDBCDStorage Table(string name)
     {
-        if (tables.TryGetValue(name, out var cached))
+        lock (tables)
         {
-            return cached;
-        }
+            if (tables.TryGetValue(name, out var cached))
+            {
+                return cached;
+            }
 
-        if (!FileIds.ContainsKey(name))
-        {
-            throw new ArgumentException("Unknown client table: " + name);
-        }
+            if (!FileIds.ContainsKey(name))
+            {
+                throw new ArgumentException("Unknown client table: " + name);
+            }
 
-        try
-        {
-            var table = database.Load(name, Build, Locale.EnUS);
-            tables[name] = table;
-            return table;
-        }
-        catch (Exception e) when (e is not IOException and not OperationCanceledException)
-        {
-            throw new InvalidDataException($"Table {name} cannot be read for build {Build}: {e.Message}", e);
+            try
+            {
+                var table = database.Load(name, Build, Locale.EnUS);
+                tables[name] = table;
+                return table;
+            }
+            catch (Exception e) when (e is not IOException and not OperationCanceledException)
+            {
+                throw new InvalidDataException($"Table {name} cannot be read for build {Build}: {e.Message}", e);
+            }
         }
     }
 
