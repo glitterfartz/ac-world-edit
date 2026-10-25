@@ -10,15 +10,17 @@ public enum PendingKind
 {
     Creature,
     Graveyard,
-    Row
+    Row,
+    Waypoint
 }
 
 /// <summary>
-/// One discardable unit of unsaved work: a creature's net move, a graveyard's net edit or one
-/// content row's net edit. Id fingerprints the generated apply statements (not the timestamp), so
-/// the same net change keeps its Id across sessions and a changed one gets a new Id.
+/// One discardable unit of unsaved work: a creature's net move, a graveyard's net edit, one
+/// content row's net edit or one waypoint's net move. Id fingerprints the generated apply statements
+/// (not the timestamp), so the same net change keeps its Id across sessions and a changed one gets
+/// a new Id.
 /// </summary>
-public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, CreatureMove? Move, GraveyardEdit? Graveyard, RowEdit? Row);
+public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, CreatureMove? Move, GraveyardEdit? Graveyard, RowEdit? Row, WaypointEdit? Waypoint = null);
 
 /// <summary>
 /// Lists the net draft changes as individual pending changes and remembers which were exported.
@@ -52,9 +54,9 @@ public sealed class PendingChanges
     }
 
     /// <summary>
-    /// Every net change not yet exported, in creature, graveyard, row order.
+    /// Every net change not yet exported, in creature, graveyard, row, waypoint order.
     /// </summary>
-    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows)
+    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null)
     {
         var all = new List<PendingChange>();
         foreach (var move in moves.OrderBy(m => m.Guid))
@@ -73,6 +75,12 @@ public sealed class PendingChanges
         {
             var scripts = SqlExport.Build(source, [], [], [edit], FixedStamp);
             all.Add(new(Fingerprint(source, scripts), PendingKind.Row, source, string.Join("; ", scripts.Summary), null, null, edit));
+        }
+
+        foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
+        {
+            var scripts = SqlExport.Build(edit.Source, [], [], [], FixedStamp, [edit]);
+            all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Waypoint, edit.Source, string.Join("; ", scripts.Summary), null, null, null, edit));
         }
 
         return all.Where(c => !exported.Contains(c.Id)).ToList();

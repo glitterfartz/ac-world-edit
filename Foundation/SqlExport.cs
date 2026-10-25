@@ -33,7 +33,7 @@ public static class SqlExport
     /// Build the scripts for one database source. Creature moves, graveyards and interaction rows
     /// may each be empty.
     /// </summary>
-    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null)
+    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null)
     {
         var steps = new List<Step>();
         foreach (var move in creatures.OrderBy(m => m.Guid))
@@ -49,6 +49,11 @@ public static class SqlExport
         foreach (var edit in rows)
         {
             steps.Add(Row(edit));
+        }
+
+        foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
+        {
+            steps.Add(Waypoint(edit));
         }
 
         var summary = steps.Select(s => s.Label).ToList();
@@ -165,6 +170,55 @@ public static class SqlExport
                 yield return new(label, $"UPDATE `graveyard_zone` SET {set(next)} WHERE {full(old)};", $"UPDATE `graveyard_zone` SET {set(old)} WHERE {full(next)};", Check(label, "graveyard_zone", full(old)), Check(label, "graveyard_zone", full(next)));
             }
         }
+    }
+
+    // ---- waypoint --------------------------------------------------------------------------
+
+    /// <summary>
+    /// Only the columns that changed are set and guarded (a position change sets all three
+    /// coordinates), so edits to other columns made since the draft do not block the script. An
+    /// edit that only moves a point reads and exports exactly as it did before properties were
+    /// editable, which keeps already-exported moves recognizable.
+    /// </summary>
+    static Step Waypoint(WaypointEdit edit)
+    {
+        var (before, after) = edit.Resolve(edit.BeforeProps ?? default);
+        bool propsKnown = edit.BeforeProps != null && edit.AfterProps != null;
+        var changes = new List<(string Label, Func<WaypointState, string> Guard, Func<WaypointState, string> Set)>();
+        if (before.Position != after.Position)
+        {
+            changes.Add((FormattableString.Invariant($"({before.Position.X:0.###}, {before.Position.Y:0.###}, {before.Position.Z:0.###}) -> ({after.Position.X:0.###}, {after.Position.Y:0.###}, {after.Position.Z:0.###})"),
+                s => $"{Near("position_x", s.Position.X)} AND {Near("position_y", s.Position.Y)} AND {Near("position_z", s.Position.Z)}",
+                s => $"`position_x` = {Num(s.Position.X)}, `position_y` = {Num(s.Position.Y)}, `position_z` = {Num(s.Position.Z)}"));
+        }
+
+        if (propsKnown)
+        {
+            void Column<T>(string name, string column, Func<WaypointProps, T> value, Func<WaypointProps, string> guard, Func<WaypointProps, string> literal)
+            {
+                if (!EqualityComparer<T>.Default.Equals(value(before.Props), value(after.Props)))
+                {
+                    changes.Add((FormattableString.Invariant($"{name} {value(before.Props)} -> {value(after.Props)}"), s => guard(s.Props), s => $"{Ident(column)} = {literal(s.Props)}"));
+                }
+            }
+
+            Column("facing", "orientation", p => p.Orientation, p => p.Orientation is double o ? Near("orientation", o) : "`orientation` IS NULL", p => p.Orientation is double o ? Num(o) : "NULL");
+            Column("velocity", "velocity", p => p.Velocity, p => Near("velocity", p.Velocity), p => Num(p.Velocity));
+            Column("delay", "delay", p => p.Delay, p => $"`delay` = {p.Delay}", p => p.Delay.ToString(CultureInfo.InvariantCulture));
+            Column("smooth", "smoothTransition", p => p.Smooth, p => $"`smoothTransition` = {(p.Smooth ? 1 : 0)}", p => p.Smooth ? "1" : "0");
+            Column("move type", "move_type", p => p.MoveType, p => $"`move_type` = {p.MoveType}", p => p.MoveType.ToString(CultureInfo.InvariantCulture));
+            Column("action", "action", p => p.Action, p => $"`action` = {p.Action}", p => p.Action.ToString(CultureInfo.InvariantCulture));
+            Column("action chance", "action_chance", p => p.ActionChance, p => $"`action_chance` = {p.ActionChance}", p => p.ActionChance.ToString(CultureInfo.InvariantCulture));
+        }
+
+        string key = $"`id` = {edit.Path} AND `point` = {edit.Point}";
+        string where(WaypointState s) => string.Join(" AND ", changes.Select(c => c.Guard(s)).Prepend(key));
+        string set(WaypointState s) => string.Join(", ", changes.Select(c => c.Set(s)));
+        string label = $"waypoint path {edit.Path} point {edit.Point}: {string.Join("; ", changes.Select(c => c.Label))}";
+        return new(label,
+            $"UPDATE `waypoint_data` SET {set(after)} WHERE {where(before)};",
+            $"UPDATE `waypoint_data` SET {set(before)} WHERE {where(after)};",
+            Check(label, "waypoint_data", where(before)), Check(label, "waypoint_data", where(after)));
     }
 
     // ---- content rows ----------------------------------------------------------------------
