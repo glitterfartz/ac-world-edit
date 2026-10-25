@@ -4,6 +4,10 @@ ACWorldEdit edits against the AzerothCore (3.3.5) world schema for Wrath clients
 
 Findings compare `acore_world` with the TrinityCore master `world` schema (TDB 1210.26091) plus its `hotfixes` database. Add to this document whenever a new difference affects the editors.
 
+Schema references for column meanings, flags and enums:
+- AzerothCore world: https://www.azerothcore.org/wiki/database-world
+- TrinityCore master world: https://trinitycore.info/database/master/world/home
+
 ## Table sets
 - There are 157 AC-only tables. Most are `*_dbc` mirrors, which TC replaces with client DB2 plus `hotfixes`. The rest:
   - Items and text: `item_template(_locale)`, `broadcast_text(_locale)`, `npc_text_locale`, `acore_string`.

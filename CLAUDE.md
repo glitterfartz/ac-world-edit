@@ -56,6 +56,7 @@ Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smok
 
 - Don't put architecture descriptions (assembly/folder structure, class responsibilities, data flow, file-format details, feature internals) in this file. Add or update them in `docs/ARCHITECTURE.md` or the matching `docs/architecture/*.md` page instead, and keep those docs current when the code changes. This file holds only commands, workflow notes and rules.
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them directly without a Godot reference.
+- When working with world-database tables or columns, check the official schema docs, not only the live database or memory: AzerothCore at https://www.azerothcore.org/wiki/database-world and TrinityCore (master) at https://trinitycore.info/database/master/world/home. Record any AC/TC difference that affects the editors in `docs/DB-DIFFERENCES.md`.
 - Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` paths must never be modified (enforced by `.claude/hooks/block_readonly.py`).
 - `NEEDED-TESTS.md` lists tests deferred while implementing retail loading; add them once the feature works and remove the entry when its test exists.
 - `docs/tc-status.md` tracks the TrinityCore database work (plan status, gaps, work in progress) and the project's other unfinished features and known gaps; update it when work lands or a new gap is found.
