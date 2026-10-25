@@ -98,6 +98,25 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         return new InteractionSnapshot(entry, guid, template.T("name"), template.T("ScriptName"), template.T("AIName"), spawns, rows, [], new(), lookup, database.SourceKey);
     }
 
+    /// <summary>Exact-ID lookup for editable broadcast references, hotfixes before client DB2.</summary>
+    public async Task<IReadOnlyList<(uint Id, string Name)>> FindBroadcastAsync(string term, CancellationToken token)
+    {
+        if (!uint.TryParse(term, out uint id))
+            throw new DatabaseFeatureException("TrinityCore broadcast lookup requires an exact ID.");
+        var texts = await hotfixes.ReadBroadcastTextsAsync(new[] { id }, token).ConfigureAwait(false);
+        if (texts.TryGetValue(id, out var text)) return new[] { (id, text.Male) };
+        if (client?.BroadcastText(id) is { } male) return new[] { (id, male) };
+        return Array.Empty<(uint, string)>();
+    }
+
+    public async Task<bool> MenuExistsAsync(uint menu, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        return Convert.ToInt32(await AcInteractionSource.Scalar(session,
+            "SELECT EXISTS(SELECT 1 FROM gossip_menu WHERE MenuID=@k0) OR EXISTS(SELECT 1 FROM gossip_menu_option WHERE MenuID=@k0)",
+            new object[] { menu }, token), CultureInfo.InvariantCulture) != 0;
+    }
+
     static async Task ReadQuestTitles(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
     {
         var quests = view.All(TcTables.QuestStarter).Concat(view.All(TcTables.QuestEnder)).Select(r => r.U("quest")).Distinct().ToArray();

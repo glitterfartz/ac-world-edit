@@ -23,6 +23,21 @@ public class TrinityReadDbTests
     static IDBSource Open(IClientLookup? lookup = null) => DBSource.Open(Environments.TrinityConnection()!, lookup);
 
     [TcDbFact]
+    public async Task GossipReferenceChecksResolveMenusAndExactBroadcastIds()
+    {
+        var source = Open();
+        var snapshot = await source.ReadInteractionAsync(295, 0, [], rows => rows, null, CancellationToken.None);
+        uint menu = snapshot.Rows.All(source.Schema.GossipPage.Options.Table).Select(r => r.U("MenuID")).First();
+        Assert.True(await source.MenuExistsAsync(menu, CancellationToken.None));
+        Assert.False(await source.MenuExistsAsync(uint.MaxValue, CancellationToken.None));
+        uint broadcast = snapshot.Rows.All(source.Schema.GossipPage.TextTable)
+            .SelectMany(r => Enumerable.Range(0, 8).Select(i => r.U($"BroadcastTextID{i}"))).First(id => id != 0);
+        var match = await source.SearchBroadcastAsync(broadcast.ToString(System.Globalization.CultureInfo.InvariantCulture), CancellationToken.None);
+        Assert.Equal(broadcast, Assert.Single(match).Id);
+        Assert.Empty(await source.SearchBroadcastAsync(uint.MaxValue.ToString(), CancellationToken.None));
+    }
+
+    [TcDbFact]
     public async Task CreaturesNearGoldshireCarryTheirDifficultyAndPhase()
     {
         var result = await Open().ReadCreaturesAsync(Elwynn, Normal, Goldshire, "", CancellationToken.None);

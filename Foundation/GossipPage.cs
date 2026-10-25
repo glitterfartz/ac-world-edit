@@ -8,6 +8,12 @@ public sealed record GossipPageSpec(ItemListSpec Menus, ItemListSpec Options, Ta
     public RowEdit[] ChangeText(Row row, string text) => ItemListSpec.Change(Options.Table, row,
         row.With("OptionText", text).With("OptionBroadcastTextID", 0));
 
+    /// <summary>Confirmation text also has a broadcast override in TC.</summary>
+    public RowEdit[] ChangeConfirmation(Row row, string text) => ItemListSpec.Change(Options.Table, row,
+        Options.Table.Columns.Any(c => c.Name == "BoxBroadcastTextID")
+            ? row.With("BoxText", text).With("BoxBroadcastTextID", 0)
+            : row.With("BoxText", text));
+
     /// <summary>Delete both original keys before inserting either replacement, so SQL cannot collide.</summary>
     public RowEdit[] SwapOptions(Row first, Row second)
     {

@@ -95,6 +95,92 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-gossip.png"));
+                if (creatureProps.Context.TcGossipEditable)
+                {
+                    var openMenu = creatureProps.Section("gossip")!.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text.StartsWith("Open menu "));
+                    if (openMenu == null) { SmokeFail("CLIENT_SHOT_GOSSIP_SUBMENU_MISSING"); return; }
+                    openMenu.EmitSignal(Button.SignalName.Pressed);
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 18;
+                    return;
+                }
+                creatureProps.ShowSection("template", null);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 3;
+                return;
+            case 18:
+                if (clientShotFrames++ < 30) return;
+                var gossipSection = creatureProps.Section("gossip")!;
+                var menuPicker = gossipSection.FindChild("GossipMenuPicker", true, false) as OptionButton;
+                var goBack = gossipSection.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text == "Back");
+                if (menuPicker == null || !menuPicker.GetItemText(menuPicker.Selected).Contains("submenu") || goBack == null || goBack.Disabled)
+                { SmokeFail("CLIENT_SHOT_GOSSIP_NAVIGATION"); return; }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-submenu.png"));
+                goBack.EmitSignal(Button.SignalName.Pressed);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 19;
+                return;
+            case 19:
+                if (clientShotFrames++ < 30) return;
+                var rootPicker = creatureProps.Section("gossip")!.FindChild("GossipMenuPicker", true, false) as OptionButton;
+                if (rootPicker == null || !rootPicker.GetItemText(rootPicker.Selected).Contains("root"))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_BACK"); return; }
+                var addOption = creatureProps.Section("gossip")!.FindChild("AddGossipOption", true, false) as Button;
+                if (addOption == null) { SmokeFail("CLIENT_SHOT_GOSSIP_ADD_MISSING"); return; }
+                addOption.EmitSignal(Button.SignalName.Pressed);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 20;
+                return;
+            case 20:
+                if (clientShotFrames++ < 60) return;
+                var gossipContext = creatureProps.Context;
+                var gossipPage = gossipContext.Schema.GossipPage;
+                var newOption = gossipContext.Effective.All(gossipPage.Options.Table).FirstOrDefault(r => r.T("OptionText") == "New option");
+                if (newOption == null) { SmokeFail("CLIENT_SHOT_GOSSIP_ADD " + gossipContext.Status); return; }
+                if (gossipContext.Commit("Invalid gossip code", Foundation.ItemListSpec.Change(gossipPage.Options.Table, newOption, newOption.With("BoxCoded", 2u))))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_VALIDATION"); return; }
+                if (!gossipContext.Commit("Change option text", gossipPage.ChangeText(newOption, "Visual gossip check, $N.")))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_TEXT " + gossipContext.Status); return; }
+                gossipContext.Drafts.History(gossipContext, false);
+                gossipContext.Rebuild();
+                if (!gossipContext.Effective.All(gossipPage.Options.Table).Any(r => r.T("OptionText") == "New option"))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_UNDO"); return; }
+                gossipContext.Drafts.History(gossipContext, true);
+                gossipContext.Rebuild();
+                if (!gossipContext.Effective.All(gossipPage.Options.Table).Any(r => r.T("OptionText") == "Visual gossip check, $N."))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_REDO"); return; }
+                var editGreeting = creatureProps.Section("gossip")!.FindChild("EditGreetingVariants", true, false) as Button;
+                if (editGreeting == null) { SmokeFail("CLIENT_SHOT_GREETING_MISSING"); return; }
+                editGreeting.EmitSignal(Button.SignalName.Pressed);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 21;
+                return;
+            case 21:
+                if (clientShotFrames++ < 60) return;
+                var section = creatureProps.Section("gossip")!;
+                var greetingWeight = section.FindChild("GreetingWeight0", true, false) as LineEdit;
+                var greetingSave = section.FindChild("SaveGreeting0", true, false) as Button;
+                if (greetingWeight == null || greetingSave == null) { SmokeFail("CLIENT_SHOT_GREETING_EDITOR_MISSING"); return; }
+                greetingWeight.Text = "0.75";
+                greetingSave.EmitSignal(Button.SignalName.Pressed);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 22;
+                return;
+            case 22:
+                if (clientShotFrames++ < 60) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-greeting.png"));
+                var gc = creatureProps.Context;
+                if (!gc.Effective.All(gc.Schema.GossipPage.TextTable).Any(r => r.F("Probability0") == .75f))
+                { SmokeFail("CLIENT_SHOT_GREETING_SAVE " + gc.Status); return; }
+                var gossipSql = Foundation.SqlExport.Build(gc.SourceKey, [], [], gc.Draft!.NetEdits().Select(e => e.Edit).ToArray(), schema: gc.Schema);
+                if (!gossipSql.Apply.Contains("Probability0") || !gossipSql.Revert.Contains("gossip_menu_option"))
+                { SmokeFail("CLIENT_SHOT_GOSSIP_EXPORT"); return; }
+                // Restore all three successful commands before continuing the other service checks.
+                gc.Drafts.History(gc, false);
+                gc.Drafts.History(gc, false);
+                gc.Drafts.History(gc, false);
+                gc.Rebuild();
+                GD.Print("CLIENT_SHOT_GOSSIP_EDIT_OK submenu/back/add/text/validation/greeting/undo/redo/export");
                 creatureProps.ShowSection("template", null);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 3;

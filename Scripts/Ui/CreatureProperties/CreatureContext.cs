@@ -96,6 +96,8 @@ public sealed class CreatureContext
     /// <summary>TrinityCore sections turn editing on one at a time.</summary>
     public bool TcTemplateEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
 
+    public bool TcGossipEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+
     public bool TcVendorEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
 
     public IWorldSchema Schema => WorldSchemas.For(Dialect);
@@ -284,7 +286,7 @@ public sealed class CreatureContext
         var client = Lookup();
         var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows =>
             Dialect == WorldDialect.TrinityCore
-                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null)
+                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows))
                 : BuildView(rows).Issues);
         Status = message;
         if (ok)

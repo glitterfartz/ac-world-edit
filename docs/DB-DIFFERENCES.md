@@ -84,3 +84,9 @@ Schema references for column meanings, flags and enums:
   - `pet_levelstats` min/max_dmg, `player_factionchange_*` comments, `playercreateinfo` (zone → npe_* columns), `playercreateinfo_cast_spell` + createMode, `playercreateinfo_item`.Note.
   - `reputation_spillover_template` faction6, `spell_area` autocast→flags, `spell_custom_attr` spell_id→entry, `spell_enchant_proc_data` (renamed columns), `spell_group_stack_rules`.description, `spell_proc` + SpellFamilyMask3/ProcFlags2, `spell_target_position` + OrderIndex.
   - `transports` + phase columns, `vehicle_(template_)accessory` + RideSpellID.
+
+### TC gossip editing rules
+
+The [master option schema](https://trinitycore.info/database/master/world/gossip_menu_option) uses `OptionNpc` (0-based service enum) rather than AC `OptionType`/`OptionNpcFlag`, and has separate `OptionBroadcastTextID` and `BoxBroadcastTextID` overrides. Literal edits clear the corresponding override. TC `BoxMoney` is an unsigned int; the existing wide row representation is retained for compatibility, but the editor rejects costs above uint32. Confirmation code is boolean.
+
+TC [npc_text](https://trinitycore.info/database/master/world/npc_text) holds eight broadcast IDs and weights, without AC literal greeting text. ID 0 is reserved. The [TC loader](https://github.com/TrinityCore/TrinityCore/blob/master/src/server/game/Globals/ObjectMgr.cpp) ignores positive weights without broadcasts and rows with no positive sum. The editor rejects those states and negative/nonfinite weights; it accepts positive relative totals (the wiki recommends a total of 1, the loader does not require it). IDs/weights save together, and previews resolve hotfixes before client DB2. Editing references exports world rows; editing the actual broadcast content still needs the Phase 8 hotfix export path. `VerifiedBuild` stays outside the gossip catalogs and is preserved on updates; new option rows use the server default.

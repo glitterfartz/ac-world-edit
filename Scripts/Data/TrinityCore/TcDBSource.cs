@@ -46,10 +46,10 @@ public sealed class TcDBSource : IDBSource
     public Task<ContentSnapshot> ReadBehaviorAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
     public Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token) => throw Unsupported("Search");
-    public Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token) => throw Unsupported("Broadcast text search");
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token) => interaction.FindBroadcastAsync(term, token);
     public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => throw Unsupported("The behavior editor");
     public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => interaction.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
-    public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => throw Unsupported("The creature property editor");
+    public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => interaction.MenuExistsAsync(menuId, token);
     public Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token) => throw Unsupported("The creature property editor");
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => throw Unsupported("Item search");
     public Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token) => throw Unsupported("Quest search");
