@@ -18,11 +18,11 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | `ISqlDialect` (`AcSqlDialect`, `TcSqlDialect`) | done | AC export output unchanged. |
 | `TcSchema` (empty table catalog), returned by `TcDBSource.Schema` | done | TC row and waypoint edits are refused instead of exported as AC SQL. |
 | Export uses each source's dialect | done | `SourceDialects` records each opened source in `sources.json`; unknown sources are AC. |
-| Drafts use the source's table catalog | not started | `InteractionDraft` still defaults to `AcTables`; needed before any TC editor opens (Phase 6). |
+| Drafts use the source's table catalog | done | `InteractionDraft`/`ContentDrafts` resolve each source's catalog through `SourceDialects`. |
 | `SourceKey` hashes the dialect (TC only) | done | AC keys unchanged. |
 | Guids widened to `ulong` | done | Spawn search still binds the guid as `uint`; harmless today (max ≈ 11.8M). |
 | `Spatial`/`Restrictions` per dialect | deviates | TC has its own copies in `TcSpawnSource`; the AC versions stay on the shared `WorldReadSession`. |
-| `ColumnKind` 64-bit kind | not started | Phase 6 (`npcflag`, bigint guid columns). |
+| `ColumnKind` 64-bit kinds (`Long`, `ULong`) | done | Validated and exported as plain numbers; not yet used by any table. |
 | Graveyard healer lookup | deviates | TC reuses `AcGraveyardSource.ReadHealers` (works on current TDB). |
 
 ## Connection, settings and errors
