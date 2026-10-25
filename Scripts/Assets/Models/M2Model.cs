@@ -13,8 +13,9 @@ public static class M2Model
     /// Read the model/first skin, choose a native sequence, resolve texture replacements and compact
     /// referenced vertices. Preserve bone lookup chains and winding across the viewer basis.
     /// </summary>
-    public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1)
+    public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1, string? eyes = null, GeosetVariants? geosets = null)
     {
+        var variants = geosets?.Parse();
         path = BinaryAsset.ModelPath(path);
         var file = store.Read(path);
         // Legion+ files are chunked: an MD21 chunk holds the classic MD20 block (its offsets are relative to it),
@@ -266,9 +267,9 @@ public static class M2Model
             }
 
             int s = submeshes.Offset + section * 48, geoset = skin.H(s);
-            // Character base geosets plus the selected hairstyle (group 0); clothing variants need
-            // equipment composition.
-            if (baked != null && geoset > 0 && (geoset < 100 ? geoset != hairGeoset : geoset % 100 != 1))
+            // Character base geosets plus the selected hairstyle (group 0), or the variant each group's
+            // customization chose; clothing variants need equipment composition.
+            if (variants != null ? !GeosetVariants.Shows(variants, geoset) : baked != null && geoset > 0 && (geoset < 100 ? geoset != hairGeoset : geoset % 100 != 1))
             {
                 continue;
             }
@@ -309,6 +310,16 @@ public static class M2Model
                 }
 
                 texture = hair;
+            }
+            else if (type == 19 && variants != null)
+            {
+                // Retail eyes: hidden like hair when the customization names no texture.
+                if (eyes == null)
+                {
+                    continue;
+                }
+
+                texture = eyes;
             }
             else if (type == 8 && fur != null)
             {

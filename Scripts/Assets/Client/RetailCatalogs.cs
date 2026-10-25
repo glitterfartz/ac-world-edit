@@ -32,15 +32,65 @@ public readonly record struct CreatureDisplayHotfix(uint Id, uint ModelId, float
 
 /// <summary>
 /// Retail creature displays: CreatureDisplayInfo → CreatureModelData → model FileDataID, with the
-/// three replaceable skins named by FileDataID. Humanoid customization (ChrCustomization) is not
-/// composed, so a player-race display draws with its default skin.
+/// three replaceable skins named by FileDataID. A humanoid display's CreatureDisplayInfoExtra names
+/// its pre-baked skin through TextureFileData, and its customization choices
+/// (CreatureDisplayInfoOption → ChrCustomizationElement) pick the geoset variants and the hair and eye
+/// textures. Equipment is not composed.
 /// </summary>
-public sealed class RetailCreatureCatalog(Db2Tables tables) : ICreatureCatalog
+public sealed class RetailCreatureCatalog : ICreatureCatalog
 {
+    // Geoset groups whose variant 1 is an empty stub on character models: ears (7) and the head (32).
+    // A display without a choice for them shows variant 2, the ears and head the client draws.
+    static readonly IReadOnlyDictionary<int, int> DefaultVariants = new Dictionary<int, int> { [7] = 2, [32] = 2 };
+
     // Loaded up front: the catalog is built on the open worker, and Db2Tables is not thread-safe.
-    readonly IDBCDStorage displays = tables.Table("CreatureDisplayInfo");
-    readonly IDBCDStorage models = tables.Table("CreatureModelData");
+    readonly IDBCDStorage displays, models, extras, geosets, materials;
+    // Indexes built on the first humanoid lookup: TextureFileData MaterialResourcesID → FileDataID,
+    // display extra → chosen customization choices, choice → elements, texture target → M2 texture type.
+    readonly Lazy<Dictionary<int, uint>> materialFiles;
+    readonly Lazy<ILookup<int, int>> choicesByExtra;
+    readonly Lazy<ILookup<int, DBCDRow>> elementsByChoice;
+    readonly Lazy<Dictionary<int, int>> targetTypes;
     readonly Dictionary<uint, CreatureDisplayOverride> overrides = [];
+
+    public RetailCreatureCatalog(Db2Tables tables)
+    {
+        displays = tables.Table("CreatureDisplayInfo");
+        models = tables.Table("CreatureModelData");
+        extras = tables.Table("CreatureDisplayInfoExtra");
+        geosets = tables.Table("ChrCustomizationGeoset");
+        materials = tables.Table("ChrCustomizationMaterial");
+        var textureFiles = tables.Table("TextureFileData");
+        var options = tables.Table("CreatureDisplayInfoOption");
+        var elements = tables.Table("ChrCustomizationElement");
+        var layers = tables.Table("ChrModelTextureLayer");
+        materialFiles = new(() =>
+        {
+            Dictionary<int, uint> files = [];
+            // Several rows can share a material; the base texture (usage 0) wins.
+            foreach (var row in textureFiles.Values.OrderBy(r => r.FieldAs<int>("UsageType") == 0 ? 0 : 1))
+            {
+                files.TryAdd(row.FieldAs<int>("MaterialResourcesID"), row.FieldAs<uint>("FileDataID"));
+            }
+
+            return files;
+        });
+        choicesByExtra = new(() => options.Values.ToLookup(o => o.FieldAs<int>("CreatureDisplayInfoExtraID"), o => o.FieldAs<int>("ChrCustomizationChoiceID")));
+        elementsByChoice = new(() => elements.Values.ToLookup(e => e.FieldAs<int>("ChrCustomizationChoiceID")));
+        targetTypes = new(() =>
+        {
+            Dictionary<int, int> types = [];
+            foreach (var layer in layers.Values)
+            {
+                foreach (int target in layer.FieldAs<int[]>("ChrModelTextureTargetID").Where(t => t != 0))
+                {
+                    types.TryAdd(target, layer.FieldAs<int>("TextureType"));
+                }
+            }
+
+            return types;
+        });
+    }
 
     public IReadOnlyDictionary<ushort, string> AnimationNames { get; } = new Dictionary<ushort, string>();
 
@@ -80,7 +130,76 @@ public sealed class RetailCreatureCatalog(Db2Tables tables) : ICreatureCatalog
             throw new InvalidDataException($"Creature display {displayId} names model data {model}, which the client does not have.");
         }
 
-        return Appearance(displayId, data.FieldAs<uint>("FileDataID"), display.FieldAs<uint[]>("TextureVariationFileDataID"), display.FieldAs<float>("CreatureModelScale"));
+        return Humanoid(Appearance(displayId, data.FieldAs<uint>("FileDataID"), display.FieldAs<uint[]>("TextureVariationFileDataID"), display.FieldAs<float>("CreatureModelScale")), display.FieldAs<int>("ExtendedDisplayInfoID"));
+    }
+
+    /// <summary>Add a humanoid's baked skin and customization; displays without a baked extra are returned as they are.</summary>
+    CreatureAppearance Humanoid(CreatureAppearance appearance, int extraId)
+    {
+        string? baked = BakedSkin(extraId);
+        return baked == null ? appearance : Customize(appearance with { BakedTexture = baked }, extraId);
+    }
+
+    /// <summary>
+    /// Apply a humanoid's customization choices. An element applies when it names no related choice or
+    /// its related choice is also chosen (a hair colour's texture depends on the skin colour, say).
+    /// Geoset elements set their group's variant; material elements whose texture target is the hair
+    /// (type 6) or eyes (type 19) name those textures. Skin targets are already in the baked skin.
+    /// </summary>
+    CreatureAppearance Customize(CreatureAppearance appearance, int extraId)
+    {
+        var chosen = choicesByExtra.Value[extraId].ToHashSet();
+        var variants = new Dictionary<int, int>(DefaultVariants);
+        string? hair = null, eyes = null;
+        foreach (var element in chosen.SelectMany(c => elementsByChoice.Value[c]))
+        {
+            int related = element.FieldAs<int>("RelatedChrCustomizationChoiceID");
+            if (related != 0 && !chosen.Contains(related))
+            {
+                continue;
+            }
+
+            if (geosets.TryGetValue(element.FieldAs<int>("ChrCustomizationGeosetID"), out var geoset))
+            {
+                variants[geoset.FieldAs<int>("GeosetType")] = geoset.FieldAs<int>("GeosetID");
+            }
+
+            if (materials.TryGetValue(element.FieldAs<int>("ChrCustomizationMaterialID"), out var material)
+                && targetTypes.Value.TryGetValue(material.FieldAs<int>("ChrModelTextureTargetID"), out int type)
+                && materialFiles.Value.TryGetValue(material.FieldAs<int>("MaterialResourcesID"), out uint file) && file != 0)
+            {
+                if (type == 6)
+                {
+                    hair = AssetRef.FromFileId(file);
+                }
+                else if (type == 19)
+                {
+                    eyes = AssetRef.FromFileId(file);
+                }
+            }
+        }
+
+        return appearance with { HairTexture = hair, EyeTexture = eyes, Geosets = GeosetVariants.From(variants) };
+    }
+
+    /// <summary>The pre-baked skin of a humanoid display (the HD bake when there is one), or null.</summary>
+    string? BakedSkin(int extraId)
+    {
+        if (extraId == 0 || !extras.TryGetValue(extraId, out var extra))
+        {
+            return null;
+        }
+
+        foreach (string column in new[] { "HDBakeMaterialResourcesID", "BakeMaterialResourcesID" })
+        {
+            int material = extra.FieldAs<int>(column);
+            if (material != 0 && materialFiles.Value.TryGetValue(material, out uint file) && file != 0)
+            {
+                return AssetRef.FromFileId(file);
+            }
+        }
+
+        return null;
     }
 
     static CreatureAppearance Appearance(uint displayId, uint modelFileId, uint[] textureFileIds, float scale)

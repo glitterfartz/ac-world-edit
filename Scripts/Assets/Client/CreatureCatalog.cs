@@ -6,9 +6,29 @@ namespace ACWorldEdit.Assets;
 /// <summary>
 /// Model path, three replaceable skins, display scale and optional baked body texture. Humanoid
 /// displays with an extra row also carry the hair texture (type 6), fur/extra skin texture (type 8)
-/// and hair geoset chosen by their race, sex, style and colors. Equipment is not composed.
+/// and hair geoset chosen by their race, sex, style and colors. Retail humanoids name the eye texture
+/// (type 19) and the variant shown in each geoset group, which replaces the hair-geoset rule. Equipment
+/// is not composed.
 /// </summary>
-public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1);
+public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1, string? EyeTexture = null, GeosetVariants? Geosets = null);
+
+/// <summary>
+/// The variant shown in each geoset group (group 0 is the hairstyle; skin geoset 0 always shows).
+/// Groups without an entry show variant 1, and variant 0 hides the group. Value-equal through its
+/// text form, so it can sit in a model cache key.
+/// </summary>
+public sealed record GeosetVariants(string Text)
+{
+    public static GeosetVariants From(IReadOnlyDictionary<int, int> variants) =>
+        new(string.Join(",", variants.OrderBy(v => v.Key).Select(v => $"{v.Key}:{v.Value}")));
+
+    public IReadOnlyDictionary<int, int> Parse() =>
+        Text.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Split(':')).ToDictionary(p => int.Parse(p[0]), p => int.Parse(p[1]));
+
+    /// <summary>Whether a submesh with this geoset ID shows.</summary>
+    public static bool Shows(IReadOnlyDictionary<int, int> variants, int geoset) =>
+        geoset == 0 || (geoset < 100 ? variants.GetValueOrDefault(0, 1) == geoset : variants.GetValueOrDefault(geoset / 100, 1) == geoset % 100);
+}
 /// <summary>
 /// Joins client display/model/extra DBCs and exposes native animation names. Available assets
 /// are independent of live server model/equipment choices.
