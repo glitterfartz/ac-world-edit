@@ -151,3 +151,44 @@ public class RetailClientLookupTests
         Assert.NotEmpty(lookup.AreaTriggers());
     }
 }
+
+/// <summary>Retail creature models carry their own animation: chunked M2s no longer fall back to the reference pose.</summary>
+[Trait("Category", "Corpus")]
+public class RetailAnimationTests
+{
+    [RetailClientFact]
+    public void RetailCreatureModelsReadAndMostStandAnimated()
+    {
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        int read = 0, animated = 0, failed = 0;
+        foreach (var display in RetailData.Tables.Table("CreatureDisplayInfo").Values.Take(300))
+        {
+            CreatureAppearance appearance;
+            try
+            {
+                appearance = catalog.Resolve((uint)display.ID);
+            }
+            catch (InvalidDataException)
+            {
+                continue;
+            }
+
+            try
+            {
+                var model = M2Model.Read(RetailData.Files, appearance.Path, appearance.Textures);
+                read++;
+                if (model.Duration > 0 && model.Bones.Any(b => b.Rotation.Times.Length > 1 || b.Translation.Times.Length > 1))
+                {
+                    animated++;
+                }
+            }
+            catch (Exception e) when (e is InvalidDataException or NotSupportedException or FileNotFoundException)
+            {
+                failed++;
+            }
+        }
+
+        Assert.True(read > 100, $"{read} models read, {failed} failed");
+        Assert.True(animated * 2 > read, $"only {animated} of {read} models play a Stand animation");
+    }
+}
