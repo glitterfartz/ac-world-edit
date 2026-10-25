@@ -10,12 +10,12 @@ namespace ACWorldEdit;
 public static class ContentDraftFiles
 {
     /// <summary>
-    /// Absolute path of a local draft file. Any "*-smoke" run gets a unique throwaway folder under
-    /// artifacts/ so diagnostics never open or lock the user's real drafts.
+    /// Absolute path of a local draft file. Any "*-smoke" or "--client-shot*" run gets a unique
+    /// throwaway folder under artifacts/ so diagnostics never open or lock the user's real drafts.
     /// </summary>
     public static string LocalPath(string file)
     {
-        bool smoke = OS.GetCmdlineUserArgs().Any(a => a.EndsWith("-smoke", StringComparison.Ordinal));
+        bool smoke = OS.GetCmdlineUserArgs().Any(a => a.EndsWith("-smoke", StringComparison.Ordinal) || a.StartsWith("--client-shot", StringComparison.Ordinal));
         return ProjectSettings.GlobalizePath(smoke ? $"res://artifacts/drafts/{Guid.NewGuid():N}/{file}" : $"user://drafts/{file}");
     }
 
