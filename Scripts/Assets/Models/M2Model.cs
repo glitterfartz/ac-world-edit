@@ -21,10 +21,11 @@ public static class M2Model
         // SFID names the skin files and TXID the textures by FileDataID. Wrath files are the bare MD20.
         bool chunked = file.Length >= 4 && Encoding.ASCII.GetString(file, 0, 4) == "MD21";
         uint[] skinIds = [], textureIds = [];
+        uint skeletonId = 0;
         Dictionary<(ushort, ushort), uint> animFiles = [];
         if (chunked)
         {
-            (file, skinIds, textureIds, animFiles) = SplitChunked(file);
+            (file, skinIds, textureIds, animFiles, skeletonId) = SplitChunked(file);
         }
 
         var b = new BinaryAsset(file);
@@ -35,15 +36,27 @@ public static class M2Model
             throw new NotSupportedException(chunked ? "Expected MD20 version 272 or later inside the MD21 chunk." : "Expected Wrath MD20 version 264.");
         }
 
+        // Character models name a .skel file in SKID that holds the bones (SKB1), sequences and global
+        // loops (SKS1) and its own AFID; their MD20 lists none. Skeleton .anim files keep bone tracks
+        // in AFSB instead of AFM2.
+        BinaryAsset sequenceData = b, boneData = b;
+        int sequenceField = 28, globalField = 20, boneField = 44;
+        string animChunk = "AFM2";
+        if (skeletonId != 0)
+        {
+            (sequenceData, boneData, animFiles) = ReadSkeleton(store, skeletonId);
+            (sequenceField, globalField, boneField, animChunk) = (8, 0, 0, "AFSB");
+        }
+
         // MD20 descriptors store count/byte-offset pairs. Vertex/bone/sequence records are
         // 48/88/64 bytes respectively; offsets below are for Wrath version 264 only.
         var vertices = b.Array(60, 48);
-        var bones = b.Array(44, 88);
-        var sequences = b.Array(28, 64);
+        var bones = boneData.Array(boneField, 88);
+        var sequences = sequenceData.Array(sequenceField, 64);
         var textures = b.Array(80, 16);
         var materials = b.Array(112, 4);
         var textureLookup = b.Array(128, 2);
-        var globals = b.Array(20, 4);
+        var globals = sequenceData.Array(globalField, 4);
         // Batch appearance: M2Color is two 20-byte tracks (RGB, fixed16 alpha), texture weights
         // one fixed16 track and texture transforms translation/float-quaternion/scale tracks.
         // Batches reach them through the transparency and texture-transform lookup tables.
@@ -54,10 +67,10 @@ public static class M2Model
         var transformLookup = b.Array(152, 2);
         List<string> warnings = [];
         int sequenceIndex = -1;
-        var available = Enumerable.Range(0, sequences.Count).Select(i => b.H(sequences.Offset + i * 64)).Distinct().Order().ToArray();
+        var available = Enumerable.Range(0, sequences.Count).Select(i => sequenceData.H(sequences.Offset + i * 64)).Distinct().Order().ToArray();
         for (int i = 0; i < sequences.Count; i++)
         {
-            if (b.H(sequences.Offset + i * 64) == animationId)
+            if (sequenceData.H(sequences.Offset + i * 64) == animationId)
             {
                 sequenceIndex = i;
                 break;
@@ -70,7 +83,7 @@ public static class M2Model
         {
             for (int i = 0; i < sequences.Count; i++)
             {
-                if (b.H(sequences.Offset + i * 64) == 0)
+                if (sequenceData.H(sequences.Offset + i * 64) == 0)
                 {
                     sequenceIndex = i;
                     break;
@@ -90,14 +103,15 @@ public static class M2Model
             // Alias records redirect to another sequence. Track lookup must use the resolved
             // sequence, while available IDs still describe the native menu exposed to users.
             var aliases = new HashSet<int>();
-            while ((b.U(sequences.Offset + sequenceIndex * 64 + 12) & 0x40) != 0)
+            var s = sequenceData;
+            while ((s.U(sequences.Offset + sequenceIndex * 64 + 12) & 0x40) != 0)
             {
                 if (!aliases.Add(sequenceIndex))
                 {
                     throw new InvalidDataException("Cyclic animation alias.");
                 }
 
-                sequenceIndex = b.H(sequences.Offset + sequenceIndex * 64 + 62);
+                sequenceIndex = s.H(sequences.Offset + sequenceIndex * 64 + 62);
                 if (sequenceIndex >= sequences.Count)
                 {
                     throw new InvalidDataException("Bad animation alias.");
@@ -105,21 +119,21 @@ public static class M2Model
             }
 
             int p = sequences.Offset + sequenceIndex * 64;
-            duration = b.U(p + 4);
-            if ((b.U(p + 12) & 0x20) == 0 && chunked)
+            duration = s.U(p + 4);
+            if ((s.U(p + 12) & 0x20) == 0 && chunked)
             {
                 // Chunked models name a sequence's .anim file by FileDataID in AFID; the track data
-                // sits in its AFM2 chunk, with offsets relative to the chunk's data.
-                external = animFiles.TryGetValue((b.H(p), b.H(p + 2)), out uint animFile) ? ReadAnimChunk(store, animFile) : null;
+                // sits in one of its chunks, with offsets relative to the chunk's data.
+                external = animFiles.TryGetValue((s.H(p), s.H(p + 2)), out uint animFile) ? ReadAnimChunk(store, animFile, animChunk) : null;
                 if (external == null)
                 {
-                    warnings.Add($"Native animation unavailable: sequence {b.H(p)}-{b.H(p + 2)} has no .anim file.");
+                    warnings.Add($"Native animation unavailable: sequence {s.H(p)}-{s.H(p + 2)} has no .anim file.");
                     sequenceIndex = -1;
                 }
             }
-            else if ((b.U(p + 12) & 0x20) == 0)
+            else if ((s.U(p + 12) & 0x20) == 0)
             {
-                string anim = path[..^3] + $"{b.H(p):D4}-{b.H(p + 2):D2}.anim";
+                string anim = path[..^3] + $"{s.H(p):D4}-{s.H(p + 2):D2}.anim";
                 try
                 {
                     external = store.Read(anim);
@@ -132,13 +146,15 @@ public static class M2Model
             }
         }
 
-        ModelTrack<T> Track<T>(int p, int size, Func<BinaryAsset, int, T> read)
+        // Bone tracks are described in the skeleton's bone data, the rest in MD20 (`d`).
+        ModelTrack<T> Track<T>(int p, int size, Func<BinaryAsset, int, T> read, BinaryAsset? d = null)
         {
-            ushort interpolation = b.H(p);
-            short global = b.S(p + 2);
-            var timeArrays = b.Array(p + 4, 8);
-            var keyArrays = b.Array(p + 12, 8);
-            uint globalDuration = global >= 0 && global < globals.Count ? b.U(globals.Offset + global * 4) : 0;
+            d ??= b;
+            ushort interpolation = d.H(p);
+            short global = d.S(p + 2);
+            var timeArrays = d.Array(p + 4, 8);
+            var keyArrays = d.Array(p + 12, 8);
+            uint globalDuration = global >= 0 && global < globals.Count ? sequenceData.U(globals.Offset + global * 4) : 0;
             int sequence = global >= 0 ? 0 : sequenceIndex;
             if (sequence < 0 || sequence >= timeArrays.Count || sequence >= keyArrays.Count)
             {
@@ -147,9 +163,9 @@ public static class M2Model
 
             // Array descriptors live in MD20 even when ordinary sequence payloads live in
             // an external .anim file. Global tracks continue to use MD20 and their own clock.
-            var source = global < 0 && external != null ? new BinaryAsset(external) : b;
+            var source = global < 0 && external != null ? new BinaryAsset(external) : d;
             int tp = timeArrays.Offset + sequence * 8, kp = keyArrays.Offset + sequence * 8;
-            int count = b.I(tp), offset = b.I(tp + 4), keyCount = b.I(kp), keyOffset = b.I(kp + 4);
+            int count = d.I(tp), offset = d.I(tp + 4), keyCount = d.I(kp), keyOffset = d.I(kp + 4);
             if (count != keyCount)
             {
                 throw new InvalidDataException("Animation timestamp/key count mismatch.");
@@ -210,17 +226,17 @@ public static class M2Model
         ModelBone[] skeleton = new ModelBone[bones.Count];
         for (int i = 0; i < bones.Count; i++)
         {
-            int p = bones.Offset + i * 88, parent = b.S(p + 8);
+            int p = bones.Offset + i * 88, parent = boneData.S(p + 8);
             if (parent >= bones.Count || parent == i)
             {
                 throw new InvalidDataException("Bad bone parent.");
             }
 
-            skeleton[i] = new(parent, BinaryAsset.View(b.V(p + 76)), Track(p + 16, 12, (d, o) => BinaryAsset.View(d.V(o))), Track(p + 36, 8, (d, o) => BinaryAsset.View(new Quaternion(Q(d.S(o)), Q(d.S(o + 2)), Q(d.S(o + 4)), Q(d.S(o + 6))))), Track(p + 56, 12, (d, o) =>
+            skeleton[i] = new(parent, BinaryAsset.View(boneData.V(p + 76)), Track(p + 16, 12, (d, o) => BinaryAsset.View(d.V(o)), boneData), Track(p + 36, 8, (d, o) => BinaryAsset.View(new Quaternion(Q(d.S(o)), Q(d.S(o + 2)), Q(d.S(o + 4)), Q(d.S(o + 6)))), boneData), Track(p + 56, 12, (d, o) =>
             {
                 var v = d.V(o);
                 return new Vector3(v.Y, v.Z, v.X);
-            }));
+            }, boneData));
         }
 
         // SKIN triangle entries index a skin lookup table, not the MD20 vertex array
@@ -380,13 +396,14 @@ public static class M2Model
     }
 
     /// <summary>
-    /// Split an MD21 container into its MD20 block and the SFID/TXID file lists. Chunk tags are stored
-    /// unreversed in these files; unknown chunks are skipped.
+    /// Split an MD21 container into its MD20 block, the SFID/TXID/AFID file lists and the SKID skeleton
+    /// (0 when none). Chunk tags are stored unreversed in these files; unknown chunks are skipped.
     /// </summary>
-    static (byte[] Model, uint[] Skins, uint[] Textures, Dictionary<(ushort, ushort), uint> Animations) SplitChunked(byte[] file)
+    static (byte[] Model, uint[] Skins, uint[] Textures, Dictionary<(ushort, ushort), uint> Animations, uint Skeleton) SplitChunked(byte[] file)
     {
         byte[]? model = null;
         uint[] skins = [], textures = [];
+        uint skeleton = 0;
         Dictionary<(ushort, ushort), uint> animations = [];
         foreach (var chunk in Chunks.Read(file, reversed: false))
         {
@@ -403,21 +420,65 @@ public static class M2Model
                     textures = Ids();
                     break;
                 case "AFID":
-                    // 8-byte entries: animation ID, sub-animation (variation) index, FileDataID.
-                    for (int i = 0; i + 8 <= chunk.Size; i += 8)
-                    {
-                        animations[(LittleEndian.U16(file, chunk.Data + i), LittleEndian.U16(file, chunk.Data + i + 2))] = LittleEndian.U32(file, chunk.Data + i + 4);
-                    }
-
+                    animations = AnimationIds(file, chunk.Data, chunk.Size);
+                    break;
+                case "SKID" when chunk.Size >= 4:
+                    skeleton = LittleEndian.U32(file, chunk.Data);
                     break;
             }
         }
 
-        return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures, animations);
+        return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures, animations, skeleton);
     }
 
-    /// <summary>The AFM2 payload of a chunked .anim file, or null when the file is missing or has none.</summary>
-    static byte[]? ReadAnimChunk(IClientFiles store, uint fileId)
+    /// <summary>AFID entries are 8 bytes: animation ID, sub-animation (variation) index, FileDataID.</summary>
+    static Dictionary<(ushort, ushort), uint> AnimationIds(byte[] file, int data, int size)
+    {
+        Dictionary<(ushort, ushort), uint> animations = [];
+        for (int i = 0; i + 8 <= size; i += 8)
+        {
+            animations[(LittleEndian.U16(file, data + i), LittleEndian.U16(file, data + i + 2))] = LittleEndian.U32(file, data + i + 4);
+        }
+
+        return animations;
+    }
+
+    /// <summary>
+    /// The SKS1 (global loops, sequences) and SKB1 (bones) chunks of a .skel file, each with offsets
+    /// relative to its own data, and the file's AFID animation list. A parent skeleton (SKPD) is not
+    /// followed: the character skeletons creatures use carry their own sequences.
+    /// </summary>
+    static (BinaryAsset Sequences, BinaryAsset Bones, Dictionary<(ushort, ushort), uint> Animations) ReadSkeleton(IClientFiles store, uint fileId)
+    {
+        byte[] file = store.Read(AssetRef.FromFileId(fileId));
+        BinaryAsset? sequences = null, bones = null;
+        Dictionary<(ushort, ushort), uint> animations = [];
+        foreach (var chunk in Chunks.Read(file, reversed: false))
+        {
+            switch (chunk.Tag)
+            {
+                case "SKS1":
+                    sequences = new(file.AsSpan(chunk.Data, chunk.Size).ToArray());
+                    break;
+                case "SKB1":
+                    bones = new(file.AsSpan(chunk.Data, chunk.Size).ToArray());
+                    break;
+                case "AFID":
+                    animations = AnimationIds(file, chunk.Data, chunk.Size);
+                    break;
+            }
+        }
+
+        if (sequences == null || bones == null)
+        {
+            throw new InvalidDataException($"Skeleton {fileId} has no {(sequences == null ? "SKS1" : "SKB1")} chunk.");
+        }
+
+        return (sequences, bones, animations);
+    }
+
+    /// <summary>One chunk's payload from a chunked .anim file, or null when the file is missing or has none.</summary>
+    static byte[]? ReadAnimChunk(IClientFiles store, uint fileId, string tag)
     {
         byte[] data;
         try
@@ -431,7 +492,7 @@ public static class M2Model
 
         foreach (var chunk in Chunks.Read(data, reversed: false))
         {
-            if (chunk.Tag == "AFM2")
+            if (chunk.Tag == tag)
             {
                 return data.AsSpan(chunk.Data, chunk.Size).ToArray();
             }
