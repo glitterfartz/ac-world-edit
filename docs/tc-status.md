@@ -89,7 +89,13 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | SmartAI: `SmartCatalog.Trinity`, TC `smart_scripts` columns, `creature_text.SoundPlayType` | not started | Phase 8. Editor gated off in TC. |
 | Speech via BroadcastText; hotfix export with `hotfix_data` | not started | Phase 8. |
 | Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. |
-| Data-correctness review of TC schema handling | not started | Before Phase 6. |
+| Data-correctness check of the Phase 6 tables | done | Live TDB 1210.26091 checked; findings in the rows below. |
+| Creature gossip menus | deviates | `creature_template_gossip` is keyed (CreatureID, MenuID): 1:N, not the single `gossip_menu_id` the plan maps it to (7 of 7,104 creatures have several menus). |
+| Creature trainers | deviates | `creature_trainer` is keyed (CreatureID, MenuID, OptionID): a trainer belongs to a gossip option (741 of 975 rows), not just to the creature. 23 creatures have several trainers. |
+| `trainer_spell` columns | deviates | Not "the same" as AC: TC adds `ReqAbility1-3`. |
+| Per-difficulty template data | deviates | 3,648 templates have no `DifficultyID=0` row in `creature_template_difficulty` (101,919 rows are for other difficulties), so stats/loot/gold need a difficulty choice or a fallback. |
+| `npc_vendor` key | deviates | `type` is part of the key (item vs currency); 1 of 49,853 rows is not an item. |
+| TC `npcflag` bits match AC's low 32 bits | unverified | Needs TrinityCore's `NPCFlags` enum; only the spirit-healer bit (0x4000) is confirmed by data. |
 
 ## Viewer workflow
 
