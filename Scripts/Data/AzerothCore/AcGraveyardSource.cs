@@ -98,7 +98,7 @@ public sealed class AcGraveyardSource(WorldDatabase database)
     /// <summary>
     /// Spirit healers within DbLimits.HealerRadius of each returned graveyard, as read-only context.
     /// </summary>
-    static async Task<Dictionary<uint, List<SpiritHealer>>> ReadHealers(WorldReadSession session, ushort map, List<GraveyardRecord> records, CancellationToken token)
+    internal static async Task<Dictionary<uint, List<SpiritHealer>>> ReadHealers(WorldReadSession session, ushort map, List<GraveyardRecord> records, CancellationToken token)
     {
         var result = new Dictionary<uint, List<SpiritHealer>>();
         if (!session.Has("creature_template.npcflag"))

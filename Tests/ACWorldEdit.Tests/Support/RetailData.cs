@@ -82,3 +82,12 @@ public sealed class RetailClientFactAttribute : FactAttribute
         Skip = RetailEnvironment.Skip();
     }
 }
+
+/// <summary>Fact that skips unless a TrinityCore database and a retail client are both available.</summary>
+public sealed class TcRetailFactAttribute : FactAttribute
+{
+    public TcRetailFactAttribute()
+    {
+        Skip = Environments.TrinitySkip() ?? RetailEnvironment.Skip();
+    }
+}

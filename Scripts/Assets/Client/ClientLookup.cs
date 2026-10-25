@@ -47,10 +47,21 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
         }
     }
 
+    IReadOnlyList<ClientAreaTrigger>? areaTriggers;
+
+    /// <summary>Built once: the overlay asks again every time the camera crosses a query cell.</summary>
     public IReadOnlyList<ClientAreaTrigger> AreaTriggers()
     {
+        lock (gate)
+        {
+            return areaTriggers ??= ReadAreaTriggers();
+        }
+    }
+
+    List<ClientAreaTrigger> ReadAreaTriggers()
+    {
         var list = new List<ClientAreaTrigger>();
-        foreach (var row in Table("AreaTrigger").Values)
+        foreach (var row in tables.Table("AreaTrigger").Values)
         {
             float[] position = row.FieldAs<float[]>("Pos");
             list.Add(new((uint)row.ID, row.FieldAs<uint>("ContinentID"), position[0], position[1], position[2], row.FieldAs<float>("Radius"), row.FieldAs<float>("Box_length"), row.FieldAs<float>("Box_width"), row.FieldAs<float>("Box_height"), row.FieldAs<float>("Box_yaw"), row.FieldAs<byte>("ShapeType"), row.FieldAs<uint>("PhaseID"), row.FieldAs<uint>("PhaseGroupID"), row.FieldAs<uint>("PhaseUseFlags")));

@@ -1,0 +1,51 @@
+using ACWorldEdit.Assets;
+using MySqlConnector;
+
+namespace ACWorldEdit.Data;
+
+/// <summary>
+/// Read-only access to a TrinityCore `hotfixes` database. Its tables hold sparse overrides of client
+/// DB2 rows, keyed by the DB2 row ID: a row here replaces the client's row with the same ID, which is
+/// how a live client applies it. Nothing is written; each read opens its own read-only snapshot.
+/// </summary>
+public sealed class TcHotfixSource(DatabaseSettings? settings)
+{
+    public bool Available => settings is { IsComplete: true };
+
+    async Task<MySqlConnection> OpenAsync(CancellationToken token)
+    {
+        var connection = new MySqlConnection(settings!.BuildConnectionString());
+        try
+        {
+            await connection.OpenAsync(token).ConfigureAwait(false);
+            return connection;
+        }
+        catch
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    /// <summary>The server's area_trigger overrides, in the shape the client lookup returns.</summary>
+    public async Task<IReadOnlyList<ClientAreaTrigger>> ReadAreaTriggersAsync(CancellationToken token)
+    {
+        if (!Available)
+        {
+            return [];
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("SELECT ID,ContinentID,PosX,PosY,PosZ,Radius,BoxLength,BoxWidth,BoxHeight,BoxYaw,ShapeType,PhaseID,PhaseGroupID,PhaseUseFlags FROM area_trigger", connection, transaction);
+        List<ClientAreaTrigger> rows = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            rows.Add(new(Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), reader.GetFloat(2), reader.GetFloat(3), reader.GetFloat(4), reader.GetFloat(5), reader.GetFloat(6), reader.GetFloat(7), reader.GetFloat(8), reader.GetFloat(9),
+                (byte)Math.Max(0, Convert.ToInt32(reader.GetValue(10))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(11))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(12))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(13)))));
+        }
+
+        return rows;
+    }
+}
