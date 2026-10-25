@@ -27,6 +27,18 @@ public sealed class Db2Tables
         ["LiquidType"] = 1371380,
         ["LiquidMaterial"] = 1132538,
         ["LiquidObject"] = 1308058,
+        // The ones below were taken from the community listfile (dbfilesclient/<name>.db2) and each
+        // one is checked by the corpus test that loads every table against its layout hash.
+        ["CreatureDisplayInfo"] = 1108759,
+        ["CreatureModelData"] = 1365368,
+        ["GameObjectDisplayInfo"] = 1266277,
+        ["AreaTrigger"] = 1354401,
+        ["AreaTriggerActionSet"] = 1352378,
+        ["BroadcastText"] = 841604,
+        ["Item"] = 841626,
+        ["ItemSparse"] = 1572924,
+        ["SpellName"] = 1990283,
+        ["ContentTuning"] = 1962930,
     };
 
     readonly CascFiles files;
