@@ -56,6 +56,27 @@ public class RetailCatalogTests
     }
 
     [RetailClientFact]
+    public void DisplayHotfixesNameTheirModelFromTheClientOrTheirOwnModelData()
+    {
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        uint id = (uint)RetailData.Tables.Table("CreatureDisplayInfo").Keys.First();
+        var model = RetailData.Tables.Table("CreatureModelData").Values.First(r => r.FieldAs<uint>("FileDataID") != 0);
+        catalog.Apply([new(id, (uint)model.ID, 3f, [111, 0, 0])], new Dictionary<uint, uint>());
+        var fromClient = catalog.Resolve(id);
+        Assert.Equal(AssetRef.FromFileId(model.FieldAs<uint>("FileDataID")), fromClient.Path);
+        Assert.Equal(3f, fromClient.Scale);
+        Assert.Equal(AssetRef.FromFileId(111), fromClient.Textures[0]);
+
+        // A model data row the hotfixes carry themselves wins over the client's.
+        catalog.Apply([new(id, (uint)model.ID, 1f, [])], new Dictionary<uint, uint> { [(uint)model.ID] = 555 });
+        Assert.Equal(AssetRef.FromFileId(555), catalog.Resolve(id).Path);
+
+        // A model nobody knows leaves the display without one.
+        catalog.Apply([new(id, uint.MaxValue - 1, 1f, [])], new Dictionary<uint, uint>());
+        Assert.Throws<InvalidDataException>(() => catalog.Resolve(id));
+    }
+
+    [RetailClientFact]
     public void GameObjectDisplaysResolveToModelsThatExist()
     {
         var catalog = new RetailGameObjectCatalog(RetailData.Tables);

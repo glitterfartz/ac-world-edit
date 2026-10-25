@@ -134,6 +134,20 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task TheHotfixesCreatureDisplaysReadWithTheirModelFiles()
+    {
+        var source = new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings);
+        var (displays, modelFiles) = await source.ReadCreatureDisplaysAsync(CancellationToken.None);
+        Assert.NotEmpty(displays);
+        Assert.All(displays, d =>
+        {
+            Assert.True(d.Id > 0);
+            Assert.Equal(3, d.TextureFileIds.Length);
+        });
+        Assert.All(modelFiles, pair => Assert.True(pair.Key > 0));
+    }
+
+    [TcDbFact]
     public async Task AreaTriggersNeedTheClientLookup()
     {
         var error = await Assert.ThrowsAsync<InvalidDataException>(() => Open(null).ReadAreaTriggersAsync(Elwynn, null, "", CancellationToken.None));
