@@ -30,7 +30,7 @@ public class UserSettingsTests
     public void DatabaseEnvironmentOverrideIsParsed() =>
         WithEnvironment("ACWORLD_DB_INFO", "db.example;3307;reader;pw;acore_world", () =>
         {
-            var settings = UserSettings.LoadDatabase();
+            var settings = UserSettings.LoadDatabase().World;
             AssertString(settings.Host).IsEqual("db.example");
             AssertThat(settings.Port).IsEqual(3307u);
             AssertString(settings.User).IsEqual("reader");

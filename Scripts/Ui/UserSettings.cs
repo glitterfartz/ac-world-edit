@@ -1,14 +1,15 @@
 using Godot;
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
 /// <summary>
 /// Per-user settings in user://settings.cfg (outside the repo): the client profile (Wrath 3.3.5 or Retail)
-/// with one folder remembered per profile, and the world database connection. The password is stored in that profile file in plain text, like worldserver.conf
+/// with one folder remembered per profile, and the world database connection per profile ([database.wrath], [database.retail]). The password is stored in that profile file in plain text, like worldserver.conf
 /// did; it is never logged or shown. Diagnostics may override both through ACWORLD_DATA_DIR and
-/// ACWORLD_DB_INFO (host;port;user;password;database) without touching the saved file.
+/// ACWORLD_DB_INFO / ACWORLD_TC_DB_INFO (host;port;user;password;database[;hotfixes]) without touching the saved file.
 /// </summary>
 public static class UserSettings
 {
@@ -34,16 +35,23 @@ public static class UserSettings
 
     public static void SaveProfile(ClientKind kind) => Write("client", "profile", SettingsResolver.ProfileName(kind));
 
-    public static DatabaseSettings LoadDatabase() => SettingsResolver.Database(System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariable), Read);
+    public static WorldConnection LoadDatabase(WorldDialect dialect = WorldDialect.AzerothCore) =>
+        SettingsResolver.Connection(dialect, System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariableFor(dialect)), Read);
 
-    public static void SaveDatabase(DatabaseSettings settings)
+    public static void SaveDatabase(WorldConnection connection)
     {
         var file = Open();
-        file.SetValue("database", "host", settings.Host);
-        file.SetValue("database", "port", settings.Port.ToString());
-        file.SetValue("database", "user", settings.User);
-        file.SetValue("database", "password", settings.Password);
-        file.SetValue("database", "name", settings.Database);
+        string section = SettingsResolver.DatabaseSection(connection.Dialect);
+        file.SetValue(section, "host", connection.World.Host);
+        file.SetValue(section, "port", connection.World.Port.ToString());
+        file.SetValue(section, "user", connection.World.User);
+        file.SetValue(section, "password", connection.World.Password);
+        file.SetValue(section, "name", connection.World.Database);
+        if (connection.Hotfixes != null)
+        {
+            file.SetValue(section, "hotfixes", connection.Hotfixes);
+        }
+
         file.Save(Path);
     }
 

@@ -1,3 +1,4 @@
+using ACWorldEdit.Foundation;
 using MySqlConnector;
 
 namespace ACWorldEdit.Data;
@@ -9,6 +10,9 @@ namespace ACWorldEdit.Data;
 public sealed record DatabaseSettings(string Host, uint Port, string User, string Password, string Database)
 {
     public static readonly DatabaseSettings Empty = new("127.0.0.1", 3306, "", "", "acore_world");
+
+    /// <summary>TrinityCore's stock world database is called "world"; AzerothCore's is "acore_world".</summary>
+    public static DatabaseSettings DefaultFor(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? Empty with { Database = "world" } : Empty;
 
     public bool IsComplete => Host.Length > 0 && User.Length > 0 && Database.Length > 0;
 
@@ -67,7 +71,7 @@ public static class DatabaseDiagnostics
     }
 
     /// <summary>Actionable text for a failed connection. Never includes the password or provider text.</summary>
-    public static string Describe(Exception error, DatabaseSettings settings) => error switch
+    public static string Describe(Exception error, DatabaseSettings settings, WorldDialect dialect = WorldDialect.AzerothCore) => error switch
     {
         MySqlException { ErrorCode: MySqlErrorCode.AccessDenied } => $"Access denied for user '{settings.User}'. Check the user name and password.",
         MySqlException { ErrorCode: MySqlErrorCode.UnknownDatabase } => $"Database '{settings.Database}' does not exist on that server.",
@@ -75,15 +79,18 @@ public static class DatabaseDiagnostics
         MySqlException { ErrorCode: MySqlErrorCode.UnableToConnectToHost } => $"Cannot reach {settings.Host}:{settings.Port}. Check the host and port and that MySQL is running.",
         MySqlException mysql => $"MySQL error {mysql.Number}. Check the connection settings.",
         OperationCanceledException => $"Timed out connecting to {settings.Host}:{settings.Port}.",
-        SpawnSchemaException schema => $"Connected, but this is not an AzerothCore world database: {schema.Message}",
+        SpawnSchemaException schema => $"Connected, but this is not {(dialect == WorldDialect.TrinityCore ? "a TrinityCore" : "an AzerothCore")} world database: {schema.Message}",
         InvalidDataException invalid => invalid.Message,
         _ => "Could not connect. Check the host, port and that MySQL is reachable."
     };
 
-    /// <summary>Open (and immediately dispose) a read-only session including the schema check; null on success.</summary>
-    public static async Task<string?> TestAsync(DatabaseSettings settings)
+    /// <summary>
+    /// Open (and immediately dispose) a read-only session including the schema check; null on success.
+    /// A configured hotfixes database must be reachable too, because TrinityCore overlays read it.
+    /// </summary>
+    public static async Task<string?> TestAsync(WorldConnection connection)
     {
-        string? invalid = Validate(settings);
+        string? invalid = Validate(connection.World);
         if (invalid != null)
         {
             return invalid;
@@ -92,12 +99,34 @@ public static class DatabaseDiagnostics
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await using var session = await new WorldDatabase(settings).OpenAsync(timeout.Token).ConfigureAwait(false);
-            return null;
+            await using (await new WorldDatabase(connection).OpenAsync(timeout.Token).ConfigureAwait(false))
+            {
+            }
         }
         catch (Exception error)
         {
-            return Describe(error, settings);
+            return Describe(error, connection.World, connection.Dialect);
         }
+
+        if (connection.Dialect == WorldDialect.TrinityCore && connection.Hotfixes != null && connection.HotfixesSettings == null)
+        {
+            return "Enter the hotfixes database.";
+        }
+
+        if (connection.HotfixesSettings is { } hotfixes)
+        {
+            try
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                await using var session = new MySqlConnection(hotfixes.BuildConnectionString());
+                await session.OpenAsync(timeout.Token).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                return "Hotfixes database: " + Describe(error, hotfixes, connection.Dialect);
+            }
+        }
+
+        return null;
     }
 }

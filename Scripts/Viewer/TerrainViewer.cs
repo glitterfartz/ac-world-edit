@@ -86,8 +86,8 @@ public partial class TerrainViewer : Node3D
     /// User-entered world database connection shared by every database-backed layer and editor.
     /// </summary>
     readonly ConnectionForm connection = new();
-    /// <summary>The dialect follows the client kind; only AzerothCore exists so far.</summary>
-    WorldConnection DatabaseConnection() => new(connection.Settings, null, WorldDialect.AzerothCore);
+    /// <summary>The dialect follows the client kind; the form holds the settings saved for that profile.</summary>
+    WorldConnection DatabaseConnection() => connection.Connection;
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;

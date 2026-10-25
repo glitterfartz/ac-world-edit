@@ -72,5 +72,54 @@ public class DatabaseSettingsTests
         Assert.Throws<InvalidDataException>(() => DBSource.Open(WorldConnection.Empty));
 
     [Fact]
+    public void DescribeNamesTheServerFlavourWhenTheSchemaDoesNotMatch()
+    {
+        var s = new DatabaseSettings("h", 3306, "u", "p", "world");
+        var error = new SpawnSchemaException("Required database metadata unavailable: creature.guid.");
+        Assert.Contains("not a TrinityCore world database", DatabaseDiagnostics.Describe(error, s, WorldDialect.TrinityCore));
+        Assert.Contains("not an AzerothCore world database", DatabaseDiagnostics.Describe(error, s));
+    }
+
+    [Fact]
+    public async Task TestAsyncRejectsIncompleteSettingsWithoutConnecting()
+    {
+        var empty = new WorldConnection(new DatabaseSettings("", 3306, "", "", ""), null, WorldDialect.TrinityCore);
+        Assert.Equal("Enter the host, user, database.", await DatabaseDiagnostics.TestAsync(empty));
+    }
+
+    [Fact]
+    public void ABlankHotfixesNameMeansNoHotfixesDatabase()
+    {
+        var blank = new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "  ", WorldDialect.TrinityCore);
+        Assert.Null(blank.HotfixesSettings);
+    }
+
+    [Fact]
+    public void SchemaTablesDifferPerDialect()
+    {
+        var ac = WorldReadSession.SchemaTables(WorldDialect.AzerothCore);
+        var tc = WorldReadSession.SchemaTables(WorldDialect.TrinityCore);
+        Assert.Contains("game_graveyard", ac);
+        Assert.DoesNotContain("world_safe_locs", ac);
+        Assert.Contains("world_safe_locs", tc);
+        Assert.Contains("pool_members", tc);
+        Assert.DoesNotContain("game_graveyard", tc);
+        Assert.DoesNotContain("waypoint_data", tc);
+        Assert.Equal(ac.Length, ac.Distinct().Count());
+        Assert.Equal(tc.Length, tc.Distinct().Count());
+    }
+
+    [Fact]
+    public void ParseAcceptsTheOptionalHotfixesPartForTrinityCoreOnly()
+    {
+        var tc = WorldConnection.Parse("h;3306;u;p;world;hot", WorldDialect.TrinityCore);
+        Assert.Equal("hot", tc.Hotfixes);
+        Assert.Equal("hotfixes", WorldConnection.Parse("h;3306;u;p;world", WorldDialect.TrinityCore).Hotfixes);
+        Assert.Null(WorldConnection.Parse("h;3306;u;p;acore_world", WorldDialect.AzerothCore).Hotfixes);
+        Assert.Throws<InvalidDataException>(() => WorldConnection.Parse("h;3306;u;p;acore_world;hot", WorldDialect.AzerothCore));
+        Assert.Throws<InvalidDataException>(() => WorldConnection.Parse("h;3306;u;p;world;hot;extra", WorldDialect.TrinityCore));
+    }
+
+    [Fact]
     public void WorldDatabaseRefusesIncompleteSettings() => Assert.Throws<InvalidDataException>(() => new WorldDatabase(DatabaseSettings.Empty));
 }

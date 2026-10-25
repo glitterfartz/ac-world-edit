@@ -1,5 +1,6 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 using Xunit;
 
 namespace ACWorldEdit.Tests.Support;
@@ -9,6 +10,27 @@ public static class Environments
 {
     public const string DbVariable = "ACWORLD_DB_INFO";
     public const string DataVariable = "ACWORLD_DATA_DIR";
+    public const string TrinityDbVariable = "ACWORLD_TC_DB_INFO";
+
+    /// <summary>The TrinityCore connection from ACWORLD_TC_DB_INFO (host;port;user;password;database[;hotfixes]).</summary>
+    public static WorldConnection? TrinityConnection()
+    {
+        string? info = Environment.GetEnvironmentVariable(TrinityDbVariable);
+        try
+        {
+            return string.IsNullOrWhiteSpace(info) ? null : WorldConnection.Parse(info, WorldDialect.TrinityCore);
+        }
+        catch (InvalidDataException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Null when ACWORLD_TC_DB_INFO is usable; otherwise the skip reason.</summary>
+    public static string? TrinitySkip() => TrinityConnection() != null ? null
+        : string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TrinityDbVariable))
+            ? "ACWORLD_TC_DB_INFO not set; skipping TrinityCore database test"
+            : "ACWORLD_TC_DB_INFO is invalid (host;port;user;password;database[;hotfixes]); skipping TrinityCore database test";
 
     /// <summary>Null when ACWORLD_DB_INFO is usable; otherwise the skip reason.</summary>
     public static string? DatabaseSkip()
@@ -89,6 +111,15 @@ public sealed class DbFactAttribute : FactAttribute
             needsClientData = value;
             Skip = Environments.DatabaseSkip() ?? (value ? Environments.DataSkip() : null);
         }
+    }
+}
+
+/// <summary>Fact that skips unless ACWORLD_TC_DB_INFO names a TrinityCore world database.</summary>
+public sealed class TcDbFactAttribute : FactAttribute
+{
+    public TcDbFactAttribute()
+    {
+        Skip = Environments.TrinitySkip();
     }
 }
 

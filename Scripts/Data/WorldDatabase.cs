@@ -11,6 +11,8 @@ public sealed class WorldDatabase
     string[]? schema;
     public string SourceKey { get; }
 
+    readonly WorldDialect dialect;
+
     public WorldDatabase(DatabaseSettings settings) : this(settings, WorldDialect.AzerothCore)
     {
     }
@@ -26,6 +28,7 @@ public sealed class WorldDatabase
             throw new InvalidDataException("Enter the world database host, user and database name.");
         }
 
+        this.dialect = dialect;
         connectionString = settings.BuildConnectionString();
         // The dialect is hashed in for TrinityCore only, so AzerothCore keys (and the drafts saved
         // under them) stay valid while TrinityCore keys can never collide with them.
@@ -45,7 +48,7 @@ public sealed class WorldDatabase
             {
                 if (schema == null)
                 {
-                    await session.ReadSchema(token).ConfigureAwait(false);
+                    await session.ReadSchema(dialect, token).ConfigureAwait(false);
                     schema = session.Columns;
                 }
                 else
@@ -53,6 +56,7 @@ public sealed class WorldDatabase
                     session.LoadSchema(schema);
                 }
 
+                session.RequireDialect(dialect);
                 return session;
             }
             catch
@@ -106,20 +110,58 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         }
     }
 
-    public async Task ReadSchema(CancellationToken token)
+    /// <summary>
+    /// The tables whose columns the editors probe, per dialect. These are fixed names from code, never
+    /// user input, so they can be written into the statement.
+    /// </summary>
+    public static string[] SchemaTables(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? TrinityTables : AzerothTables;
+
+    static readonly string[] AzerothTables =
+    [
+        "creature", "creature_template", "creature_template_model", "gameobject", "gameobject_template",
+        "game_event", "game_event_creature", "game_event_gameobject", "pool_creature", "pool_gameobject", "conditions",
+        "game_graveyard", "graveyard_zone", "game_tele", "gossip_menu", "gossip_menu_option", "npc_text", "broadcast_text",
+        "creature_queststarter", "creature_questender", "quest_template", "npc_vendor", "item_template", "trainer",
+        "trainer_spell", "creature_default_trainer", "npc_spellclick_spells", "smart_scripts", "points_of_interest",
+        "quest_template_addon", "quest_request_items", "quest_offer_reward", "creature_text", "creature_classlevelstats",
+        "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
+        "creature_addon", "creature_template_addon", "waypoint_data"
+    ];
+
+    // Tables TrinityCore replaced (pool_members, world_safe_locs, waypoint_path(_node),
+    // creature_template_difficulty, quest_objectives, creature_trainer) stand in for the AzerothCore
+    // ones; the AC-only mirrors (broadcast_text, item_template, game_graveyard, ...) are not listed.
+    static readonly string[] TrinityTables =
+    [
+        "creature", "creature_template", "creature_template_model", "creature_template_difficulty", "gameobject", "gameobject_template",
+        "game_event", "game_event_creature", "game_event_gameobject", "pool_members", "conditions",
+        "world_safe_locs", "graveyard_zone", "game_tele", "gossip_menu", "gossip_menu_option", "npc_text",
+        "creature_queststarter", "creature_questender", "quest_template", "quest_objectives", "npc_vendor", "trainer",
+        "trainer_spell", "creature_trainer", "npc_spellclick_spells", "smart_scripts", "points_of_interest",
+        "quest_template_addon", "quest_request_items", "quest_offer_reward", "creature_text", "creature_classlevelstats",
+        "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
+        "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node"
+    ];
+
+    /// <summary>
+    /// Fail fast when the database is the wrong flavour. Only TrinityCore is checked, by tables that
+    /// exist there and nowhere in AzerothCore; AzerothCore sources keep requiring what they use.
+    /// </summary>
+    public void RequireDialect(WorldDialect dialect)
+    {
+        if (dialect == WorldDialect.TrinityCore)
+        {
+            Require("creature.spawnDifficulties", "world_safe_locs.ID");
+        }
+    }
+
+    public async Task ReadSchema(WorldDialect dialect, CancellationToken token)
     {
         await using var command = Command("""
             SELECT CONCAT(TABLE_NAME,'.',COLUMN_NAME) FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN
-            ('creature','creature_template','creature_template_model','gameobject','gameobject_template',
-             'game_event','game_event_creature','game_event_gameobject','pool_creature','pool_gameobject','conditions',
-             'game_graveyard','graveyard_zone','game_tele','gossip_menu','gossip_menu_option','npc_text','broadcast_text',
-             'creature_queststarter','creature_questender','quest_template','npc_vendor','item_template','trainer',
-             'trainer_spell','creature_default_trainer','npc_spellclick_spells','smart_scripts','points_of_interest',
-             'quest_template_addon','quest_request_items','quest_offer_reward','creature_text','creature_classlevelstats','gameobject_template',
-             'areatrigger','areatrigger_scripts','areatrigger_teleport','areatrigger_involvedrelation','areatrigger_tavern',
-             'creature_addon','creature_template_addon','waypoint_data')
+            WHERE TABLE_SCHEMA=DATABASE() AND FIND_IN_SET(TABLE_NAME,@tables)
             """);
+        command.Parameters.AddWithValue("@tables", string.Join(',', SchemaTables(dialect)));
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {

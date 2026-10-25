@@ -40,6 +40,7 @@ public partial class TerrainViewer
         wrathDirectory = UserSettings.LoadDataDirectory();
         retailDirectory = UserSettings.LoadRetailDirectory();
         databaseEnabled = profile.SupportsDatabase;
+        connection.Dialect = profile.Dialect;
         var theme = new Theme();
         theme.DefaultFontSize = 15;
         theme.SetColor("font_color", "Label", new Color("e7eef4"));
@@ -406,6 +407,7 @@ public partial class TerrainViewer
             profile = ClientProfile.For(kind);
             dataDirectory = directory;
             UserSettings.SaveProfile(kind);
+            connection.Dialect = profile.Dialect;
             if (kind == ClientKind.Retail)
             {
                 UserSettings.SaveRetailDirectory(directory);
@@ -456,7 +458,7 @@ public partial class TerrainViewer
     {
         if (databaseEnabled && !anySmoke)
         {
-            var saved = connection.Settings;
+            var saved = connection.Connection;
             string? error = await Task.Run(() => ACWorldEdit.Data.DatabaseDiagnostics.TestAsync(saved));
             if (error != null)
             {
@@ -477,7 +479,7 @@ public partial class TerrainViewer
     Task PromptConnection()
     {
         var closed = new TaskCompletionSource();
-        var dialog = new ConnectionDialog(connection.Settings);
+        var dialog = new ConnectionDialog(connection.Connection);
         dialog.Connected += connection.Adopt;
         dialog.VisibilityChanged += () =>
         {
