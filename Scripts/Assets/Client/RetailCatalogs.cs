@@ -27,6 +27,9 @@ public interface IGameObjectCatalog
 /// </summary>
 public readonly record struct CreatureDisplayOverride(uint ModelFileId, uint[] TextureFileIds, float Scale);
 
+/// <summary>A row of the server's hotfixes.creature_display_info: which model data, scale and skins a display uses.</summary>
+public readonly record struct CreatureDisplayHotfix(uint Id, uint ModelId, float Scale, uint[] TextureFileIds);
+
 /// <summary>
 /// Retail creature displays: CreatureDisplayInfo → CreatureModelData → model FileDataID, with the
 /// three replaceable skins named by FileDataID. Humanoid customization (ChrCustomization) is not
@@ -43,6 +46,21 @@ public sealed class RetailCreatureCatalog(Db2Tables tables) : ICreatureCatalog
 
     /// <summary>Replace client display rows with hotfix rows.</summary>
     public void Override(uint displayId, CreatureDisplayOverride row) => overrides[displayId] = row;
+
+    /// <summary>
+    /// Apply the server's display hotfixes. A hotfix names its model by CreatureModelData ID; the file
+    /// comes from the hotfix's own model data row when it has one (<paramref name="modelFiles"/>), else
+    /// from the client's. A model the client does not know leaves that display without a model.
+    /// </summary>
+    public void Apply(IEnumerable<CreatureDisplayHotfix> rows, IReadOnlyDictionary<uint, uint> modelFiles)
+    {
+        foreach (var row in rows)
+        {
+            uint file = modelFiles.TryGetValue(row.ModelId, out uint hotfixed) ? hotfixed
+                : models.TryGetValue((int)row.ModelId, out var data) ? data.FieldAs<uint>("FileDataID") : 0;
+            Override(row.Id, new(file, row.TextureFileIds, row.Scale));
+        }
+    }
 
     public CreatureAppearance Resolve(uint displayId)
     {

@@ -203,6 +203,11 @@ public partial class TerrainViewer : Node3D
             databaseEnabled = result.DatabaseEnabled;
             clientLookup = result.Lookup;
             ApplyClientProfile(result.Description);
+            if (databaseEnabled && result.Creatures is RetailCreatureCatalog retailCreatures)
+            {
+                await ApplyDisplayHotfixes(retailCreatures);
+            }
+
             maps.Clear();
             int selected = 0;
             await models.SetStore(store, result.Creatures, result.GameObjects);

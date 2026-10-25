@@ -27,6 +27,40 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         }
     }
 
+    /// <summary>The server's creature_display_info rows (the first three skins) and the file IDs of its creature_model_data rows.</summary>
+    public async Task<(IReadOnlyList<CreatureDisplayHotfix> Displays, IReadOnlyDictionary<uint, uint> ModelFiles)> ReadCreatureDisplaysAsync(CancellationToken token)
+    {
+        if (!Available)
+        {
+            return ([], new Dictionary<uint, uint>());
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        List<CreatureDisplayHotfix> displays = [];
+        await using (var command = new MySqlCommand("SELECT ID,ModelID,CreatureModelScale,TextureVariationFileDataID1,TextureVariationFileDataID2,TextureVariationFileDataID3 FROM creature_display_info", connection, transaction))
+        await using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
+        {
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                displays.Add(new(Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), reader.GetFloat(2),
+                    [(uint)Math.Max(0, Convert.ToInt32(reader.GetValue(3))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(4))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(5)))]));
+            }
+        }
+
+        var files = new Dictionary<uint, uint>();
+        await using (var command = new MySqlCommand("SELECT ID,FileDataID FROM creature_model_data", connection, transaction))
+        await using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
+        {
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                files[Convert.ToUInt32(reader.GetValue(0))] = (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(1)));
+            }
+        }
+
+        return (displays, files);
+    }
+
     /// <summary>The server's area_trigger overrides, in the shape the client lookup returns.</summary>
     public async Task<IReadOnlyList<ClientAreaTrigger>> ReadAreaTriggersAsync(CancellationToken token)
     {
