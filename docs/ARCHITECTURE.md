@@ -102,7 +102,7 @@ flowchart TB
     app --> fdn
 ```
 
-Solid arrows are compile or runtime dependencies. Dotted arrows are source-linked compiles: the test projects include `Scripts/Assets/**` and `Scripts/Data/*.cs` directly, so those two folders must stay free of Godot types.
+Solid arrows are compile or runtime dependencies. Dotted arrows are source-linked compiles: the test projects include `Scripts/Assets/**` and `Scripts/Data/*.cs` directly, so those two folders must stay free of Godot types. In the other direction, `ACWorldEdit.csproj` explicitly `Compile Remove`s `Tests/`, `Foundation/` and `artifacts/` so they are not built into the Godot assembly; Foundation reaches the app only as a project reference.
 
 ## Layers and dependency rules
 
