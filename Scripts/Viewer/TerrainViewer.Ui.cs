@@ -237,6 +237,7 @@ public partial class TerrainViewer
         {
             Connection = () => DatabaseConnection(),
             Store = () => store,
+            Lookup = () => clientLookup,
             Areas = () => areas,
             Drafts = drafts,
             FlyToEntry = LocateCreature,
@@ -282,13 +283,9 @@ public partial class TerrainViewer
         creatureProps.QuestEditorRequested += questEditor.Open;
         creatures.PropertiesRequested += spawn =>
         {
-            if (ContentEditors)
+            if (databaseEnabled)
             {
                 creatureProps.Open(spawn);
-            }
-            else
-            {
-                statusLog.Post(ContentEditorsUnavailable);
             }
         };
         areaTriggers.BehaviorRequested += trigger =>
@@ -309,12 +306,13 @@ public partial class TerrainViewer
     CreaturePropertiesWindow creatureProps = null!;
 
     /// <summary>
-    /// The quest, behavior and creature property editors read and draft AzerothCore tables; the
-    /// TrinityCore versions come later, so they stay off for the retail client.
+    /// The quest and behavior editors read and draft AzerothCore tables; the TrinityCore versions come
+    /// later, so they stay off for the retail client. The creature properties window opens for both
+    /// (read-only for TrinityCore).
     /// </summary>
     bool ContentEditors => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
 
-    const string ContentEditorsUnavailable = "The quest, behavior and creature property editors are not available for the TrinityCore database yet.";
+    const string ContentEditorsUnavailable = "The quest and behavior editors are not available for the TrinityCore database yet.";
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>

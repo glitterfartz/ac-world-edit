@@ -18,6 +18,8 @@ public sealed class CreatureContext
 {
     public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public Func<IClientFiles?> Store { get; set; } = () => null;
+    /// <summary>The retail client's DB2 lookup (item, spell and text names TrinityCore keeps out of its database).</summary>
+    public Func<IClientLookup?> Lookup { get; set; } = () => null;
     public ContentDrafts Drafts { get; }
     public ClientIcons Icons { get; }
     public Func<AreaLookup?> Areas { get; set; } = () => null;
@@ -74,6 +76,9 @@ public sealed class CreatureContext
     public CreatureSpawn? Target { get; private set; }
     public InteractionSnapshot? Snapshot { get; private set; }
     public NpcInteraction? View { get; private set; }
+    /// <summary>The TrinityCore read model; set instead of <see cref="View"/> when the database is TrinityCore.</summary>
+    public TcCreatureView? TcView { get; private set; }
+    public WorldDialect Dialect => Connection().Dialect;
     public RowSet Effective { get; private set; } = new();
     public InteractionCatalog? Catalog { get; private set; }
     public InteractionDraft? Draft => Drafts.Draft;
@@ -82,8 +87,11 @@ public sealed class CreatureContext
     /// <summary>The window's status line; sections set it and call <see cref="Redraw"/>.</summary>
     public string Status { get; set; } = "";
 
-    /// <summary>The sections show editors whenever a content draft is open; otherwise they are read-only.</summary>
-    public bool Editable => Draft != null;
+    /// <summary>
+    /// The sections show editors whenever a content draft is open; otherwise they are read-only.
+    /// TrinityCore creatures are read-only until their editors exist.
+    /// </summary>
+    public bool Editable => Draft != null && Dialect == WorldDialect.AzerothCore;
 
     /// <summary>Data, status or mode changed: sections and the window frame redraw.</summary>
     public event Action? Changed;
@@ -136,6 +144,7 @@ public sealed class CreatureContext
         Target = spawn;
         Snapshot = null;
         View = null;
+        TcView = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(spawn);
         if (spawn == null)
@@ -158,6 +167,7 @@ public sealed class CreatureContext
         Target = null;
         Snapshot = null;
         View = null;
+        TcView = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(null);
         Redraw();
@@ -185,9 +195,10 @@ public sealed class CreatureContext
 
         try
         {
-            var source = DBSource.Open(Connection());
-            Catalog = await ContentEditorWindow.LoadCatalog(Store());
-            if (Catalog == null && Store() != null)
+            var source = DBSource.Open(Connection(), Lookup());
+            // The Wrath DBC catalog; a retail client serves names through Lookup instead.
+            Catalog = Dialect == WorldDialect.AzerothCore ? await ContentEditorWindow.LoadCatalog(Store()) : null;
+            if (Catalog == null && Store() != null && Dialect == WorldDialect.AzerothCore)
             {
                 Status = "Client spell/item tables unavailable; names and icons limited.";
             }
@@ -235,6 +246,16 @@ public sealed class CreatureContext
         }
 
         Effective = Draft?.Effective(SourceKey, Snapshot.Rows) ?? Snapshot.Rows;
+        if (Dialect == WorldDialect.TrinityCore)
+        {
+            View = null;
+            TcView = TcCreatureView.Build(Snapshot.Entry, Effective, Snapshot.Lookup);
+            SummaryChanged?.Invoke(TcView.Summary());
+            Redraw();
+            return;
+        }
+
+        TcView = null;
         View = BuildView(Effective);
         SummaryChanged?.Invoke(Summary(View));
         Redraw();

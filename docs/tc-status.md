@@ -64,7 +64,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Area-trigger links (teleport, scripts, quest, tavern, SmartAI type 2) | done | |
 | Server-spawned `areatrigger` overlay | not started | |
 | Creature and GameObject move export | done | Same statements as AC with `ulong` guids. |
-| Overlay smoke (`--client-shot-overlays`) | done | Passed 2026-10-25: 178 creatures, 53 GameObjects, 25 graveyards, 102 triggers. |
+| Overlay smoke (`--client-shot-overlays`) | done | Passed 2026-10-25: overlays, editable graveyards and the read-only creature window (screenshots `client-shot-creature-*.png`). |
 
 ## Graveyard editing (plan Phase 5)
 
@@ -83,8 +83,10 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 |---|---|---|
 | Creature properties: `TcTables` catalog | done | Template, difficulty, gossip (menus, texts, options), trainers (`creature_trainer`, `trainer`, `trainer_spell`), vendor, quest links, spell clicks. |
 | Creature properties: TC read (`TcInteractionSource`, `TcCreatureView`) | done | All menus (1:N) and submenus, trainers bound to gossip options, vendor, quest titles; texts from `hotfixes.broadcast_text`, then client DB2. |
-| Creature properties: read-only TC sections | in progress | Template with difficulty picker, gossip, trainers, vendor, quests. |
-| Creature properties: TC editing | not started | Phase 6, after the read-only sections. |
+| Creature properties: read-only TC sections | done | Template with a difficulty picker, gossip (every menu and submenu), trainers with their gossip option, vendor, quests. The window lists only the open database's sections; checked in `--client-shot-overlays` on Innkeeper Farley. |
+| Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
+| Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
+| Creature properties: TC editing | not started | Phase 6. Sections, drafts (`TcTables`) and export are in place; the sections need editors. |
 | TC `NpcSchema` / `CreatureSchema` (64-bit `npcflag`, Classification, `unit_flags3`, OptionNpc) | not started | Phase 6. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |

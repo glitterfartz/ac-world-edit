@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
-    int clientShotFrames;
+    int clientShotFrames, clientShotCreatureStage;
     TileKey? clientShotTile;
     double clientSmokeTime;
 
@@ -44,6 +44,73 @@ public partial class TerrainViewer
         }
 
         return best;
+    }
+
+    /// <summary>Innkeeper Farley in Goldshire: a TrinityCore creature with a gossip menu and vendor items.</summary>
+    const uint ShotCreature = 295;
+
+    /// <summary>
+    /// The last --client-shot-overlays step: open the creature window on Innkeeper Farley, check that
+    /// it lists the TrinityCore pages and loaded his read model, and save the gossip and template
+    /// pages (artifacts/client-shot-creature-*.png).
+    /// </summary>
+    void ClientShotCreature()
+    {
+        switch (clientShotCreatureStage)
+        {
+            case 1:
+                if (creatures.Records.FirstOrDefault(s => s.TemplateId == ShotCreature) is not { } farley)
+                {
+                    SmokeFail($"CLIENT_SHOT_CREATURE_MISSING no spawn of creature {ShotCreature} near Goldshire");
+                    return;
+                }
+
+                // Select it in the overlay too, as a click does: the window follows the overlay's selection.
+                creatures.Select(farley.Guid);
+                creatureProps.Open(farley, "gossip");
+                clientShotFrames = 0;
+                clientShotCreatureStage = 2;
+                return;
+            case 2:
+                if (creatureProps.Context.TcView == null)
+                {
+                    if (clientShotFrames++ > 600)
+                    {
+                        SmokeFail("CLIENT_SHOT_CREATURE_NOT_LOADED " + creatureProps.Context.Status);
+                    }
+
+                    return;
+                }
+
+                if (clientShotFrames++ < 60)
+                {
+                    return;
+                }
+
+                if (creatureProps.Section("gossip") is not TcGossipSection || creatureProps.Section("behavior") != null)
+                {
+                    SmokeFail("CLIENT_SHOT_CREATURE_SECTIONS the window does not list the TrinityCore pages");
+                    return;
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-gossip.png"));
+                creatureProps.ShowSection("template", null);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 3;
+                return;
+            default:
+                if (clientShotFrames++ < 30)
+                {
+                    return;
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
+                var view = creatureProps.Context.TcView!;
+                GD.Print($"CLIENT_SHOT_CREATURE entry={view.Entry} menus={view.Menus.Length} vendor={view.Vendor.Length} difficulties={view.Difficulties.Length}");
+                GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
+                GetTree().Quit();
+                return;
+        }
     }
 
     void ClientSmoke(double delta)
@@ -141,6 +208,12 @@ public partial class TerrainViewer
                     return;
                 }
 
+                if (clientShotCreatureStage > 0)
+                {
+                    ClientShotCreature();
+                    return;
+                }
+
                 bool ready = creatures.Records.Count > 0 && gameObjects.Records.Count > 0 && graveyards.Sites.Count > 0 && areaTriggers.Triggers.Count > 0;
                 if (!ready || creatures.IsLoading || gameObjects.IsLoading || areaTriggers.IsLoading || models.Busy || clientShotFrames++ < 240)
                 {
@@ -158,8 +231,7 @@ public partial class TerrainViewer
                 }
 
                 graveyards.Deselect();
-                GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True");
-                GetTree().Quit();
+                clientShotCreatureStage = 1;
                 return;
             }
 

@@ -143,6 +143,15 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
         (0x200000ul << 32, "Personal tabard designer")
     ];
 
+    /// <summary>The creature card's interaction summary, in the AzerothCore summary's layout.</summary>
+    public string Summary()
+    {
+        var flags = DescribeNpcFlags(NpcFlags);
+        string script = Template.T("ScriptName").Length > 0 ? $"\nC++ script: {Template.T("ScriptName")}" : "";
+        return $"{(flags.Count == 0 ? "No NPC flags" : string.Join(" · ", flags))}\n" +
+               $"Gossip menus {Menus.Count(m => m.Root)} · options {Menus.Sum(m => m.Options.Length)} · Quests {Starts.Length}/{Ends.Length} · Vendor {Vendor.Length} · Trainers {Trainers.Length}" + script;
+    }
+
     /// <summary>The named flags set in npcflag, then any unnamed bits as hex.</summary>
     public static IReadOnlyList<string> DescribeNpcFlags(ulong flags)
     {

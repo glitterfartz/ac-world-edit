@@ -666,7 +666,7 @@ public partial class TerrainViewer : Node3D
         graveyards.Update(camera);
         waypoints.Update(camera);
         areaTriggers.Update(camera);
-        creatureProps.Track(ContentEditors ? creatures.SelectedSpawn : null);
+        creatureProps.Track(databaseEnabled ? creatures.SelectedSpawn : null);
         models.Update(camera);
         sidebar.UpdateCounts();
         PollPending(delta);
@@ -768,7 +768,7 @@ public partial class TerrainViewer : Node3D
                     if (creatures.FindHit(camera, press.Position) is { } hit)
                     {
                         creatures.Select(hit.Guid);
-                        if (ContentEditors && creatures.SelectedSpawn is { } spawn)
+                        if (databaseEnabled && creatures.SelectedSpawn is { } spawn)
                         {
                             creatureProps.Open(spawn, "gossip");
                         }

@@ -15,12 +15,17 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
     public const string DefaultSection = "gossip";
 
     public Func<AreaLookup?> Areas { get; set; } = () => null;
+    /// <summary>The retail client's DB2 lookup, for names a TrinityCore database does not hold.</summary>
+    public Func<IClientLookup?> Lookup { get; set; } = () => null;
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
     /// <summary>Open the behavior of another creature entry (quest giver cards).</summary>
     public Action<uint> BehaviorForEntryRequested { get; set; } = _ => { };
 
     public CreatureContext Context { get; private set; } = null!;
     readonly List<CreatureSection> sections = [];
+    /// <summary>The sections of the open database's dialect, in picker order.</summary>
+    readonly List<CreatureSection> listed = [];
+    WorldDialect? listedFor;
     readonly HashSet<CreatureSection> stale = [];
     CreatureSection? active;
     CreatureSpawn? lastSelection;
@@ -52,6 +57,7 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         Context = new CreatureContext(Drafts, () => Store())
         {
             Connection = () => Connection(),
+            Lookup = () => Lookup(),
             Areas = () => Areas(),
             FlyToEntry = (entry, name) => FlyToEntry(entry, name),
             BehaviorForEntryRequested = entry => BehaviorForEntryRequested(entry)
@@ -78,9 +84,9 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
             }
 
             (section.ScrollsItself ? directHost : scrollHost).AddChild(section);
-            picker.AddItem(section.Title);
         }
 
+        SyncListed();
         ShowSection(DefaultSection, null);
     }
 
@@ -126,7 +132,7 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
             AllowReselect = true,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
         };
-        picker.ItemSelected += index => ShowSection(sections[(int)index].Id, null);
+        picker.ItemSelected += index => ShowSection(listed[(int)index].Id, null);
         split.AddChild(picker);
         var content = new VBoxContainer
         {
@@ -229,9 +235,43 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         CloseWindow();
     }
 
+    /// <summary>
+    /// List the sections of the open database's dialect; the picker is rebuilt when the dialect
+    /// changes (switching client). Sections keep their ids across dialects, so a request for
+    /// "gossip" or "vendor" finds the dialect's own page.
+    /// </summary>
+    void SyncListed()
+    {
+        var dialect = Context.Dialect;
+        if (listedFor == dialect)
+        {
+            return;
+        }
+
+        listedFor = dialect;
+        listed.Clear();
+        listed.AddRange(sections.Where(s => s.Supports(dialect)));
+        picker.Clear();
+        foreach (var section in listed)
+        {
+            picker.AddItem(section.Title);
+        }
+
+        foreach (var section in sections.Where(s => !listed.Contains(s)))
+        {
+            section.Visible = false;
+        }
+
+        if (active != null && !listed.Contains(active))
+        {
+            active = null;
+        }
+    }
+
     public void ShowSection(string id, object? argument)
     {
-        var next = sections.FirstOrDefault(s => s.Id == id) ?? sections.FirstOrDefault();
+        SyncListed();
+        var next = listed.FirstOrDefault(s => s.Id == id) ?? listed.FirstOrDefault();
         if (next == null)
         {
             return;
@@ -279,14 +319,18 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
 
     void UpdateChrome()
     {
+        SyncListed();
         var view = Context.View;
-        title.Text = view?.Name ?? (Context.Target != null ? "Loading…" : "No creature selected");
-        subtitle.Text = view == null ? "" : (view.Subname.Length > 0 ? $"<{view.Subname}>   " : "") + $"Entry {view.Entry} · {view.SpawnCount} spawn(s)";
+        var tc = Context.TcView;
+        string? name = view?.Name ?? tc?.Name;
+        string subname = view?.Subname ?? tc?.Subname ?? "";
+        title.Text = name ?? (Context.Target != null ? "Loading…" : "No creature selected");
+        subtitle.Text = name == null ? "" : (subname.Length > 0 ? $"<{subname}>   " : "") + $"Entry {view?.Entry ?? tc!.Entry} · {view?.SpawnCount ?? Context.Snapshot?.SpawnCount ?? 0} spawn(s)";
         statusLabel.Text = Context.Status;
         statusLabel.Visible = Context.Status.Length > 0;
-        for (int i = 0; i < sections.Count; i++)
+        for (int i = 0; i < listed.Count; i++)
         {
-            var section = sections[i];
+            var section = listed[i];
             picker.SetItemText(i, section.Badge.Length > 0 ? $"{section.Title}  ·  {section.Badge}" : section.Title);
             if (section.IconPath.Length > 0)
             {
@@ -319,7 +363,8 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         Context.Rebuild();
     }
 
-    public CreatureSection? Section(string id) => sections.FirstOrDefault(s => s.Id == id);
+    /// <summary>The open database's section with this id.</summary>
+    public CreatureSection? Section(string id) => listed.FirstOrDefault(s => s.Id == id);
 
     public override void _ExitTree()
     {

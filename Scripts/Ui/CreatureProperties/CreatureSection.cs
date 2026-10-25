@@ -43,6 +43,12 @@ public abstract partial class CreatureSection : VBoxContainer
     /// </summary>
     public virtual bool ScrollsItself => false;
 
+    /// <summary>
+    /// Whether the section works with this dialect's database; the window lists only the sections of
+    /// the open database. The AzerothCore sections are the default.
+    /// </summary>
+    public virtual bool Supports(WorldDialect dialect) => dialect == WorldDialect.AzerothCore;
+
     /// <summary>The section became the shown one; <paramref name="argument"/> comes from ShowSection.</summary>
     public virtual void OnShown(object? argument)
     {
