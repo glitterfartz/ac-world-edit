@@ -20,29 +20,11 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         }
 
         Heading($"{v.Vendor.Length} item(s) for sale");
-        foreach (var item in v.Vendor)
+        new PageRenderer(Ctx).RenderItems(this, Ctx.Schema.VendorPage, Ctx.Effective, v.Entry, false, row =>
         {
-            var block = Block();
-            string name = item.Type == 2 ? $"Currency {item.Item}" : item.Info?.Name is { Length: > 0 } known ? $"{known} ({item.Item})" : $"Item {item.Item}";
-            Line(name, item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Body, 14, block);
-            var details = new List<string> { $"position {item.Slot}" };
-            details.Add(item.MaxCount > 0 ? $"stock {item.MaxCount}, restocks every {item.IncrTime} s" : "unlimited stock");
-            if (item.ExtendedCost != 0)
-            {
-                details.Add($"extended cost {item.ExtendedCost}");
-            }
-
-            if (item.BonusListIds.Length > 0)
-            {
-                details.Add($"bonus lists {item.BonusListIds}");
-            }
-
-            if (item.PlayerConditionId != 0)
-            {
-                details.Add($"player condition {item.PlayerConditionId}");
-            }
-
-            Line(string.Join(" · ", details), ClientStyle.Faded, 12, block);
-        }
+            var info = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Snapshot!.Lookup.Item((uint)row.I("item")) : null;
+            string name = row.U("type") == 2 ? $"Currency {row.I("item")}" : info?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : $"Item {row.I("item")}";
+            return ClientStyle.Text(name, 14, row.U("type") == 1 && info != null ? ClientStyle.Quality(info.Quality) : ClientStyle.Body);
+        });
     }
 }

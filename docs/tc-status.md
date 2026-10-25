@@ -9,7 +9,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
-| 6a: shared creature page descriptors (`CreaturePage`) | in progress: the Template page is done for both dialects; vendor is next as the first item-list page, then gossip, trainer and quests |
+| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template and vendor descriptors are built for both dialects; gossip, trainer and quests are next |
 | 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
@@ -28,10 +28,11 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ## Where work stopped
 
-- Last commit `e411d39`: the Template page is drawn from `CreaturePage` descriptors by `PageRenderer` for both dialects. The TC page was checked visually (`--client-shot-overlays`, retail profile); the AC page was not.
-- `--interaction-smoke` fails at "window-open" (short right-click does not open Farley's window), also before the descriptor change; cause not investigated. Until it passes, check the AC Template page by hand.
-- Next: build the item-list descriptor (source table, parent filter column, per-item fields, add/remove) and move vendor onto it first, then gossip, trainer and quests. Then TC vendor editing.
-- Uncommitted: only Godot `.uid` files.
+- Added `ItemListSpec` (source table, parent filter, ordering, per-item fields, add/remove and key-change edits) and `IWorldSchema.VendorPage`. `PageRenderer.RenderItems` draws the AC vendor editor and TC vendor read-only fields. AC keeps item search, icons/tooltips and shared-list reference cards; its compact read-only view is unchanged.
+- `--client-shot-overlays` now checks either dialect and saves Template and vendor screenshots as well as gossip. Both dialects passed on Farley. AC Template and vendor pages were inspected visually (`artifacts/vendor-wrath-template.png`, `vendor-wrath-vendor.png`), as was the TC vendor page (`artifacts/client-shot-creature-vendor.png`).
+- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. The overlay screenshot workflow opens the window directly and can check the AC pages independently.
+- Next: move gossip, trainer and quests onto item-list descriptors. Then enable TC vendor editing, including item search and validation.
+- Changes are uncommitted. The default suite passed (673 passed, 4 skipped); `ItemListTests` covers list selection, complete dialect-specific defaults, grouped key changes, undo/redo and SQL export.
 
 ## Foundation and design
 
@@ -93,7 +94,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Area-trigger links (teleport, scripts, quest, tavern, SmartAI type 2) | done | |
 | Server-spawned `areatrigger` overlay | not started | |
 | Creature and GameObject move export | done | Same statements as AC with `ulong` guids. |
-| Overlay smoke (`--client-shot-overlays`) | done | Passed 2026-10-25: overlays, editable graveyards and the read-only creature window (screenshots `client-shot-creature-*.png`). |
+| Overlay smoke (`--client-shot-overlays`) | done | Checks either dialect's creature pages and saves gossip, Template and vendor screenshots (`client-shot-creature-*.png`), along with overlays and editable graveyards. |
 
 ## Graveyard editing (plan Phase 5)
 
@@ -116,7 +117,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
 | Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
-| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw the Template page for AC and TC (`AcCreaturePage`, `TcCreaturePage`); `CreaturePageTests` guard them. Item lists (vendor, gossip, trainer, quests) are not built yet; further Phase 6 editing waits for them. The AC page was not visually checked (`--interaction-smoke` already fails at "window-open" before this change). |
+| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests` and `ItemListTests` guard the descriptors and edits. Gossip, trainer and quests still need migration. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |

@@ -75,6 +75,8 @@ Each kind of edit has its own draft type. All of them are backed by `DraftHistor
 
 ### Undo, redo and freshness
 
+Creature page metadata lives in `CreaturePage.cs`. `ItemListSpec` describes child rows by source table, parent column, ordering, fields and a complete new-row factory. Its add/remove helpers use the dialect's table; changing a primary-key field produces a delete plus insert in one command. `VendorPage` supplies the AC and TC vendor descriptors through `IWorldSchema.VendorPage`. `ItemListTests` covers selection, defaults, grouped edits, undo/redo and export.
+
 Each draft holds a `DraftHistory<T>` (`Foundation/DraftHistory.cs`):
 
 - Opening a draft takes an exclusive lock on a sibling `.lock` file, so a second writer fails.

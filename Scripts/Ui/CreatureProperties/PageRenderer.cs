@@ -23,6 +23,39 @@ public sealed class PageRenderer(CreatureContext ctx)
     /// <summary>Forget the picked difficulty (a different creature was selected).</summary>
     public void Reset() => difficulty = null;
 
+    /// <summary>Draw child rows using the same field editors as the template page. Sections supply
+    /// the card heading (names, icons and prices); this renderer owns the fields and remove action.</summary>
+    public void RenderItems(Control parent, ItemListSpec spec, RowSet rows, uint entry, bool editable, Func<Row, Control> heading)
+    {
+        foreach (var row in spec.Select(rows, entry))
+        {
+            var card = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            parent.AddChild(card);
+            var head = new HBoxContainer();
+            card.AddChild(head);
+            var title = heading(row);
+            title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            head.AddChild(title);
+            if (editable)
+            {
+                var remove = new Button { Text = "Remove", TooltipText = $"Remove this {spec.ItemName}." };
+                remove.Pressed += () => ctx.Commit($"Remove {spec.ItemName}", [spec.Remove(row)]);
+                head.AddChild(remove);
+            }
+
+            var fields = new GridContainer { Columns = 4 };
+            fields.AddThemeConstantOverride("h_separation", 8);
+            card.AddChild(fields);
+            foreach (var field in spec.Fields)
+            {
+                fields.AddChild(Caption(field.Label, field.Tip));
+                var control = editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 13);
+                control.TooltipText = field.Tip;
+                fields.AddChild(control);
+            }
+        }
+    }
+
     public void Render(Control parent, CreaturePage page, RowSet rows, uint entry, bool editable)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
@@ -168,7 +201,7 @@ public sealed class PageRenderer(CreatureContext ctx)
         _ => throw new InvalidOperationException($"{field.Kind} is not a single-row editor.")
     };
 
-    bool Commit(string label, FieldSpec field, Row row, object value) => ctx.Commit(label, [Update(field.Table, row, row.With(field.Column, value))]);
+    bool Commit(string label, FieldSpec field, Row row, object value) => ctx.Commit(label, ItemListSpec.Change(field.Table, row, row.With(field.Column, value)));
 
     void Reject(string message)
     {

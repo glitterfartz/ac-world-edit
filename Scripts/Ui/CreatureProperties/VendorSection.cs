@@ -1,8 +1,6 @@
-using System.Globalization;
 using Godot;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
-using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
@@ -94,9 +92,16 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
             body.AddChild(ClientStyle.Text("This creature sells nothing yet. Search below to add items.", 13, ClientStyle.Faded));
         }
 
-        foreach (var item in v.Vendor)
+        var renderer = new PageRenderer(Ctx);
+        var spec = Ctx.Schema.VendorPage;
+        renderer.RenderItems(body, spec, effective, v.Entry, editable, row =>
         {
-            body.AddChild(item.Row is { } row ? ItemCard(item, row) : ReferenceCard(item));
+            var item = v.Vendor.First(i => i.Row != null && spec.Table.KeyOf(i.Row) == spec.Table.KeyOf(row));
+            return ItemHeading(item);
+        });
+        foreach (var item in v.Vendor.Where(i => i.Row == null))
+        {
+            body.AddChild(ReferenceCard(item));
         }
 
         body.AddChild(new HSeparator());
@@ -129,51 +134,18 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
         return IconRow(ItemIconPath(item.Info), text, 37, ItemTip(item.Item));
     }
 
-    Control ItemCard(VendorView item, Row row)
+    Control ItemHeading(VendorView item)
     {
         var text = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        var head = new HBoxContainer();
         var name = ClientStyle.Text($"{item.Info?.Name ?? "Missing item"} ({item.Item})", 14, item.Edited ? ClientStyle.Edited : item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Error);
         name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        head.AddChild(name);
-        var remove = new Button
-        {
-            Text = "Remove",
-            TooltipText = "Stop selling this item."
-        };
-        remove.Pressed += () => Commit($"Remove vendor item {item.Item}", [Delete(InteractionTables.Vendor, row)]);
-        head.AddChild(remove);
-        text.AddChild(head);
+        text.AddChild(name);
         string price = item.ExtendedCost != 0 ? catalog?.DescribeExtendedCost(item.ExtendedCost) ?? $"Extended cost {item.ExtendedCost}" : ClientStyle.Money(item.Info?.BuyPrice ?? 0);
         text.AddChild(ClientStyle.Text($"Price: {price}", 12, ClientStyle.Faded));
 
-        var grid = new GridContainer
-        {
-            Columns = 4
-        };
-        grid.AddThemeConstantOverride("h_separation", 8);
-        text.AddChild(grid);
-        void Field(string label, string tip, uint value, Func<uint, IEnumerable<RowEdit>> apply)
-        {
-            grid.AddChild(Caption(label, tip));
-            var edit = new LineEdit
-            {
-                Text = value.ToString(CultureInfo.InvariantCulture),
-                TooltipText = tip,
-                CustomMinimumSize = new(70, 0)
-            };
-            edit.TextSubmitted += input => Try(() => Commit($"Edit vendor item {item.Item}", apply(ParseUInt(input))));
-            grid.AddChild(edit);
-        }
-
-        Field("Position", "Where the item appears in the vendor window. Lower numbers come first.", (uint)Math.Max(0, item.Slot), n => [Update(InteractionTables.Vendor, row, row.With("slot", (int)n))]);
-        Field("Stock limit", "How many the vendor holds. 0 means unlimited. A limited item refills over time (see Restock time).", item.MaxCount, n => [Update(InteractionTables.Vendor, row, row.With("maxcount", n))]);
-        Field("Restock time", "Seconds until the stock refills. Only used with a stock limit.", item.IncrTime, n => [Update(InteractionTables.Vendor, row, row.With("incrtime", n))]);
-        // ExtendedCost is part of the key: changing it re-inserts the row.
-        Field("Alternate price", "ID of an extended cost (honor, arena points, tokens, items) charged instead of gold. 0 sells for the item's gold price.", item.ExtendedCost, n => [Delete(InteractionTables.Vendor, row), Insert(InteractionTables.Vendor, row.With("ExtendedCost", n))]);
         return IconRow(ItemIconPath(item.Info), text, 37, ItemTip(item.Item));
     }
 
@@ -182,7 +154,6 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
         var item = details.Info;
         snapshot!.Lookup.Items.TryAdd(item.Id, item);
         snapshot.Lookup.ItemDetails.TryAdd(item.Id, details);
-        int slot = effective.All(InteractionTables.Vendor).Where(r => r.U("entry") == snapshot.Entry).Select(r => r.I("slot")).DefaultIfEmpty(-1).Max() + 1;
-        Commit($"Add vendor item {item.Id}", [Insert(InteractionTables.Vendor, Row.Of(("entry", snapshot.Entry), ("item", (int)item.Id), ("ExtendedCost", 0u), ("slot", slot), ("maxcount", 0u), ("incrtime", 0u)))]);
+        Commit($"Add vendor item {item.Id}", [Ctx.Schema.VendorPage.Add(effective, snapshot.Entry, ("item", checked((int)item.Id)))]);
     }
 }

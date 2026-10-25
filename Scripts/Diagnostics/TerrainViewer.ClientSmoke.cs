@@ -51,7 +51,7 @@ public partial class TerrainViewer
 
     /// <summary>
     /// The last --client-shot-overlays step: open the creature window on Innkeeper Farley, check that
-    /// it lists the TrinityCore pages and loaded his read model, and save the gossip and template
+    /// it lists the selected dialect's pages and loaded his read model, and save the gossip, template and vendor
     /// pages (artifacts/client-shot-creature-*.png).
     /// </summary>
     void ClientShotCreature()
@@ -72,7 +72,7 @@ public partial class TerrainViewer
                 clientShotCreatureStage = 2;
                 return;
             case 2:
-                if (creatureProps.Context.TcView == null)
+                if (creatureProps.Context.TcView == null && creatureProps.Context.View == null)
                 {
                     if (clientShotFrames++ > 600)
                     {
@@ -87,9 +87,10 @@ public partial class TerrainViewer
                     return;
                 }
 
-                if (creatureProps.Section("gossip") is not TcGossipSection || creatureProps.Section("behavior") != null)
+                bool retail = creatureProps.Context.Dialect == Foundation.WorldDialect.TrinityCore;
+                if ((creatureProps.Section("gossip") is TcGossipSection) != retail || (creatureProps.Section("behavior") == null) != retail)
                 {
-                    SmokeFail("CLIENT_SHOT_CREATURE_SECTIONS the window does not list the TrinityCore pages");
+                    SmokeFail("CLIENT_SHOT_CREATURE_SECTIONS the window does not list the selected dialect's pages");
                     return;
                 }
 
@@ -98,15 +99,25 @@ public partial class TerrainViewer
                 clientShotFrames = 0;
                 clientShotCreatureStage = 3;
                 return;
-            default:
+            case 3:
                 if (clientShotFrames++ < 30)
                 {
                     return;
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
-                var view = creatureProps.Context.TcView!;
-                GD.Print($"CLIENT_SHOT_CREATURE entry={view.Entry} menus={view.Menus.Length} vendor={view.Vendor.Length} difficulties={view.Difficulties.Length}");
+                creatureProps.ShowSection("vendor", null);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 4;
+                return;
+            default:
+                if (clientShotFrames++ < 30)
+                {
+                    return;
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
+                GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();
                 return;
