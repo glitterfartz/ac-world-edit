@@ -19,5 +19,11 @@ public static class ContentDraftFiles
         return ProjectSettings.GlobalizePath(smoke ? $"res://artifacts/drafts/{Guid.NewGuid():N}/{file}" : $"user://drafts/{file}");
     }
 
-    public static ContentDrafts Open() => new(LocalPath("interactions.json"));
+    static SourceDialects? sources;
+
+    /// <summary>The dialect of every database source drafts were made against (sources.json).</summary>
+    public static SourceDialects Sources => sources ??= new SourceDialects(LocalPath("sources.json"));
+
+    /// <summary>The content draft, validating each source's rows against that source's tables.</summary>
+    public static ContentDrafts Open() => new(LocalPath("interactions.json"), source => Sources.SchemaFor(source).Tables);
 }

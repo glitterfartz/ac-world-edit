@@ -51,7 +51,7 @@ public partial class TerrainViewer
 
 
     PendingChanges pendingStore = null!;
-    SourceDialects sourceDialects = null!;
+    static SourceDialects SourceDialects => ContentDraftFiles.Sources;
     PendingChangesWindow pendingWindow = null!;
     SqlPreviewWindow sqlPreview = null!;
     double pendingPoll;
@@ -64,7 +64,7 @@ public partial class TerrainViewer
     {
         pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
         RememberSourceDialect();
-        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), gameObjects.NetMoves(), sourceDialects.SchemaFor);
+        var all = pendingStore.Collect(creatures.NetMoves(), graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), gameObjects.NetMoves(), SourceDialects.SchemaFor);
         return all;
     }
 
@@ -74,11 +74,10 @@ public partial class TerrainViewer
     /// </summary>
     void RememberSourceDialect()
     {
-        sourceDialects ??= new SourceDialects(ContentDraftFiles.LocalPath("sources.json"));
         var connection = DatabaseConnection();
         if (connection.World.IsComplete)
         {
-            sourceDialects.Remember(new Data.WorldDatabase(connection).SourceKey, connection.Dialect);
+            SourceDialects.Remember(new Data.WorldDatabase(connection).SourceKey, connection.Dialect);
         }
     }
 
@@ -206,7 +205,7 @@ public partial class TerrainViewer
     void PreviewPendingSql()
     {
         var changes = CollectPending();
-        sqlPreview.Open(BuildSqlExports(changes, sourceDialects.SchemaFor));
+        sqlPreview.Open(BuildSqlExports(changes, SourceDialects.SchemaFor));
     }
 
     /// <summary>
@@ -223,7 +222,7 @@ public partial class TerrainViewer
 
         try
         {
-            string folder = WriteSqlExports(BuildSqlExports(changes, sourceDialects.SchemaFor));
+            string folder = WriteSqlExports(BuildSqlExports(changes, SourceDialects.SchemaFor));
             pendingStore.MarkExported(changes);
             RefreshPending();
             pendingWindow.SetStatus("Exported.");

@@ -9,6 +9,7 @@ namespace ACWorldEdit.Foundation;
 public sealed class ContentDrafts : IDisposable
 {
     readonly string path;
+    readonly Func<string, ITableCatalog> catalogFor;
     public InteractionDraft? Draft { get; private set; }
     public string? Error { get; private set; }
     /// <summary>
@@ -18,10 +19,12 @@ public sealed class ContentDrafts : IDisposable
 
     /// <summary>
     /// Open the draft file at an absolute path; a corrupt or locked file leaves editing disabled.
+    /// catalogFor names each source's table catalog (AzerothCore for every source when omitted).
     /// </summary>
-    public ContentDrafts(string path)
+    public ContentDrafts(string path, Func<string, ITableCatalog>? catalogFor = null)
     {
         this.path = path;
+        this.catalogFor = catalogFor ?? (_ => AcTables.Instance);
         Reopen();
     }
 
@@ -34,7 +37,7 @@ public sealed class ContentDrafts : IDisposable
         Draft = null;
         try
         {
-            Draft = new InteractionDraft(path);
+            Draft = new InteractionDraft(path, catalogFor);
             Error = null;
         }
         catch (Exception)
@@ -53,14 +56,15 @@ public sealed class ContentDrafts : IDisposable
             return (false, Error ?? "Editing is disabled.");
         }
 
-        var prospective = effective.Clone();
-        foreach (var edit in edits)
-        {
-            prospective.Apply(edit);
-        }
-
         try
         {
+            // Inside the try: a table this source cannot edit is reported like any other refusal.
+            var prospective = effective.Clone();
+            foreach (var edit in edits)
+            {
+                prospective.Apply(edit, catalogFor(source));
+            }
+
             var before = check(effective).Where(i => i.Error).Select(i => i.Message).ToHashSet();
             var introduced = check(prospective).FirstOrDefault(i => i.Error && !before.Contains(i.Message));
             if (introduced != null)

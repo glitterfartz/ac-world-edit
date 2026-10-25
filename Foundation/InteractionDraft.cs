@@ -20,30 +20,42 @@ public sealed record InteractionCommand(string Source, string Label, RowEdit[] E
 public sealed class InteractionDraft : IDisposable
 {
     readonly DraftHistory<InteractionCommand> history;
-    readonly ITableCatalog tables;
+    readonly Func<string, ITableCatalog> catalogFor;
     DraftSnapshot<InteractionCommand> state => history.State;
     public bool CanUndo => history.CanUndo;
     public bool CanRedo => history.CanRedo;
     public string? NextLabel => CanRedo ? state.History[state.Cursor].Label : null;
     public string? LastLabel => CanUndo ? state.History[state.Cursor - 1].Label : null;
 
-    public InteractionDraft(string path, ITableCatalog? tables = null)
+    /// <summary>One table catalog for every source (AzerothCore when omitted).</summary>
+    public InteractionDraft(string path, ITableCatalog? tables = null) : this(path, _ => tables ?? AcTables.Instance)
     {
-        this.tables = tables ?? AcTables.Instance;
+    }
+
+    /// <summary>
+    /// The table catalog of each draft source, so rows drafted against a TrinityCore database are
+    /// validated and applied with TrinityCore's tables.
+    /// </summary>
+    public InteractionDraft(string path, Func<string, ITableCatalog> catalogFor)
+    {
+        this.catalogFor = catalogFor;
         history = new(path, "interaction", command =>
         {
             foreach (var edit in command.Edits)
             {
-                ValidateEdit(edit);
+                ValidateEdit(command.Source, edit);
             }
 
             return command;
         });
     }
 
-    void ValidateEdit(RowEdit edit)
+    /// <summary>The table catalog rows of this source are drafted against.</summary>
+    public ITableCatalog Tables(string source) => catalogFor(source);
+
+    void ValidateEdit(string source, RowEdit edit)
     {
-        var schema = tables.Find(edit.Table);
+        var schema = Tables(source).Find(edit.Table);
         if (edit.Before == null && edit.After == null)
         {
             throw new InvalidDataException("Empty row edit.");
@@ -69,12 +81,12 @@ public sealed class InteractionDraft : IDisposable
     /// <summary>
     /// Every row key the draft touches for this source, so the reader can load those rows too.
     /// </summary>
-    public IReadOnlyList<(TableSchema Table, string Key)> Keys(string source) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Select(e => (tables.Find(e.Table), e.Key)).Distinct().ToList();
+    public IReadOnlyList<(TableSchema Table, string Key)> Keys(string source) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Select(e => (Tables(source).Find(e.Table), e.Key)).Distinct().ToList();
 
     /// <summary>
     /// Rows whose first applied edit no longer matches the database snapshot.
     /// </summary>
-    public IReadOnlyList<(string Table, string Key)> Conflicts(string source, RowSet snapshot) => Conflicts(state, tables, source, snapshot);
+    public IReadOnlyList<(string Table, string Key)> Conflicts(string source, RowSet snapshot) => Conflicts(state, Tables(source), source, snapshot);
 
     static IReadOnlyList<(string Table, string Key)> Conflicts(DraftSnapshot<InteractionCommand> state, ITableCatalog tables, string source, RowSet snapshot)
     {
@@ -98,7 +110,7 @@ public sealed class InteractionDraft : IDisposable
     /// Snapshot with applied edits layered on top. Conflicting rows keep their database value and
     /// later edits to them are skipped, so stale drafts never silently win.
     /// </summary>
-    public RowSet Effective(string source, RowSet snapshot) => Effective(state, tables, source, snapshot);
+    public RowSet Effective(string source, RowSet snapshot) => Effective(state, Tables(source), source, snapshot);
 
     /// <summary>
     /// Effective-view function over the draft as it is now. The captured history is immutable, so
@@ -107,7 +119,7 @@ public sealed class InteractionDraft : IDisposable
     public Func<RowSet, RowSet> Frozen(string source)
     {
         var captured = state;
-        var catalog = tables;
+        var catalog = Tables(source);
         return rows => Effective(captured, catalog, source, rows);
     }
 
@@ -143,10 +155,11 @@ public sealed class InteractionDraft : IDisposable
         }
 
         var effective = Effective(source, snapshot);
+        var tables = Tables(source);
         var kept = new List<RowEdit>();
         foreach (var edit in incoming)
         {
-            ValidateEdit(edit);
+            ValidateEdit(source, edit);
             var schema = tables.Find(edit.Table);
             if (effective.Get(schema, edit.Key) != edit.Before)
             {
