@@ -132,7 +132,7 @@ All camera and input handling is in `TerrainViewer.cs`.
 
 - **Flight:** hold right mouse to capture the cursor. Mouse motion changes yaw and pitch (pitch clamped to ±1.55). `MoveCamera` reads physical W, A, S, D, Q and E; Shift multiplies speed by 4; the wheel changes speed between 5 and 1500.
 - **`_Input`** runs before shortcuts. While captured it swallows keys other than Escape, so flight keys do not trigger toolbar modes. While an editor is dragging it routes motion, release and Escape to that editor.
-- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its interaction window.
+- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its interaction window (AzerothCore only until the TrinityCore editors exist). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
 - **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
 
@@ -222,11 +222,12 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--visibility-smoke` | Layers, preview policies, events, phase |
 | `--skybox-smoke` | Checks that the skybox does not overwrite opaque pixels |
 | `--graveyard-smoke` | Pick, move, undo, comments, links, layer hiding |
+| `--gameobject-smoke` | Select a GameObject, drag the real move handle, typed turn, reopen, undo/redo, exported SQL |
 | `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo |
 | `--interaction-smoke` | Gossip, vendor, quests, edit mode, reopen |
 | `--content-smoke` | Behavior rules, speech, quest create and validation |
 | `--behavior-smoke` | Behavior editor driven by mouse and key events |
-| `--client-smoke`, `--client-shot`, `--client-shot-tile=X,Y`, `--client-shot-water` | Client open check; screenshots to `artifacts/` |
+| `--client-smoke`, `--client-shot`, `--client-shot-tile=X,Y`, `--client-shot-water`, `--client-shot-overlays` | Client open check; screenshots to `artifacts/` (the overlays one keeps the UI and shows the database layers over Goldshire) |
 
 Side effects of any flag ending in `-smoke`: startup database and client prompts are skipped, and drafts go to `res://artifacts/drafts/<guid>/` instead of `user://drafts/`. Success prints `*_PASSED` and quits; failure pushes an error and quits with code 1.
 
