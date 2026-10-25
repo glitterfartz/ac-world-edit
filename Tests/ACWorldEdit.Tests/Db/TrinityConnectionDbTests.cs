@@ -39,6 +39,15 @@ public class TrinityConnectionDbTests
     public async Task ABlankHotfixesDatabaseIsOptional() =>
         Assert.Null(await DatabaseDiagnostics.TestAsync(Environments.TrinityConnection()! with { Hotfixes = "" }));
 
+    [TcDbFact]
+    public async Task AWorldDatabaseNamedAsHotfixesIsRejected()
+    {
+        var connection = Environments.TrinityConnection()!;
+        string? error = await DatabaseDiagnostics.TestAsync(connection with { Hotfixes = connection.World.Database });
+        Assert.NotNull(error);
+        Assert.Contains("not a TrinityCore hotfixes database", error);
+    }
+
     [DbFact]
     public async Task AnAzerothCoreDatabaseIsRejectedInTrinityCoreMode()
     {
@@ -46,5 +55,14 @@ public class TrinityConnectionDbTests
         var wrath = new WorldConnection(Test.Config, null, WorldDialect.TrinityCore);
         string? error = await DatabaseDiagnostics.TestAsync(wrath);
         Assert.NotNull(error);
+    }
+
+    [TcDbFact]
+    public async Task ATrinityCoreDatabaseIsRejectedInAzerothCoreMode()
+    {
+        var trinity = Environments.TrinityConnection()! with { Hotfixes = null, Dialect = WorldDialect.AzerothCore };
+        string? error = await DatabaseDiagnostics.TestAsync(trinity);
+        Assert.NotNull(error);
+        Assert.Contains("not an AzerothCore world database", error);
     }
 }

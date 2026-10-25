@@ -118,6 +118,12 @@ public static class DatabaseDiagnostics
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 await using var session = new MySqlConnection(hotfixes.BuildConnectionString());
                 await session.OpenAsync(timeout.Token).ConfigureAwait(false);
+                // Every TrinityCore hotfixes database has hotfix_data; a world or other database does not.
+                await using var probe = new MySqlCommand("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='hotfix_data'", session);
+                if (Convert.ToInt64(await probe.ExecuteScalarAsync(timeout.Token).ConfigureAwait(false)) == 0)
+                {
+                    return $"Hotfixes database: '{hotfixes.Database}' is not a TrinityCore hotfixes database (it has no hotfix_data table).";
+                }
             }
             catch (Exception error)
             {

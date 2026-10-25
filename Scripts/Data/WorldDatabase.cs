@@ -144,14 +144,19 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
     ];
 
     /// <summary>
-    /// Fail fast when the database is the wrong flavour. Only TrinityCore is checked, by tables that
-    /// exist there and nowhere in AzerothCore; AzerothCore sources keep requiring what they use.
+    /// Fail fast when the database is the wrong flavour, by columns that exist in that dialect and
+    /// not in the other: TrinityCore's difficulty list and safe locations, AzerothCore's spawn mask
+    /// and graveyard table.
     /// </summary>
     public void RequireDialect(WorldDialect dialect)
     {
         if (dialect == WorldDialect.TrinityCore)
         {
             Require("creature.spawnDifficulties", "world_safe_locs.ID");
+        }
+        else
+        {
+            Require("creature.spawnMask", "game_graveyard.ID");
         }
     }
 
