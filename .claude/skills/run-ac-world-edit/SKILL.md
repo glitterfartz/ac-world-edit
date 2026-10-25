@@ -28,7 +28,7 @@ Success is a `*_SMOKE_OK` / `TERRAIN_SMOKE_PASSED` line and exit 0. `shot` opens
 ## Tests
 
 ```bash
-dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # 559 pass, 3 skip (DB tests without ACWORLD_DB_INFO), ~7 s
+dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # Db tests skip without ACWORLD_DB_INFO / ACWORLD_TC_DB_INFO
 ```
 
 ## Run (human path)

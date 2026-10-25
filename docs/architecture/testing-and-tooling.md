@@ -6,7 +6,7 @@
 flowchart LR
     subgraph Sources["Shared source (Godot-free)"]
         assets["Scripts/Assets/**"]
-        data["Scripts/Data/*.cs"]
+        data["Scripts/Data/**"]
     end
     fdn["Foundation/ACWorldEdit.Foundation.csproj"]
     app["ACWorldEdit.csproj (Godot)"]
@@ -48,7 +48,7 @@ Categories and runsettings:
 | `Db` | needs `ACWORLD_DB_INFO` (AzerothCore) or `ACWORLD_TC_DB_INFO` (TrinityCore) | the default suite; each test skips when its variable is unset |
 | `KnownBug` | `KnownBug` attribute, added by a custom discoverer | `knownbugs.runsettings` (also needs `ACWE_RUN_KNOWN_BUGS=1`) |
 
-Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).
+Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, `TcDbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).
 
 Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehaviorTests` and `LightBandTests`. They are listed in the test attributes, not in this document.
 
@@ -76,4 +76,4 @@ Build configuration:
 - `global.json` pins the SDK (10.0.400, roll forward to latest feature). Projects target `net8.0`.
 - `ACWorldEdit.csproj` uses `Godot.NET.Sdk` 4.7.1 and references `SharpZipLib`, `DBCD` and `MySqlConnector` (versions in the project file).
 - `Experiments/` holds no tracked source; it only contains leftover build output.
-- `NEEDED-TESTS.md` lists deferred tests for retail milestones 3 to 5 (terrain, placements and models, liquids and sky).
+- `docs/NEEDED-TESTS.md` lists deferred tests for retail milestones 3 to 5 (terrain, placements and models, liquids and sky) and retail humanoid creatures.

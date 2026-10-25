@@ -31,7 +31,7 @@ sequenceDiagram
 Client selection:
 
 - `UserSettings` (`Scripts/Ui/UserSettings.cs`) reads and writes `user://settings.cfg`.
-- Environment variables override settings through `SettingsResolver`: `ACWORLD_CLIENT_PROFILE`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_DB_INFO`, `ACWORLD_LISTFILE`.
+- Environment variables override settings through `SettingsResolver`: `ACWORLD_CLIENT_PROFILE`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_DB_INFO`, `ACWORLD_TC_DB_INFO`, `ACWORLD_LISTFILE`.
 - `ClientPickerDialog` (`Scripts/Ui/ClientPickerDialog.cs`) offers the Wrath and Retail profiles, remembers one folder per profile and validates it with `ClientFolder.Validate`.
 
 Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pending tile task, then disposes the store and the drafts.
@@ -223,6 +223,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--visibility-smoke` | Layers, preview policies, events, phase |
 | `--skybox-smoke` | Checks that the skybox does not overwrite opaque pixels |
 | `--graveyard-smoke` | Pick, move, undo, comments, links, layer hiding |
+| `--waypoint-smoke` | Live waypoint paths near the start, a viewport click on a point, and the edit workflow |
 | `--gameobject-smoke` | Select a GameObject, drag the real move handle, typed turn, reopen, undo/redo, exported SQL |
 | `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo |
 | `--interaction-smoke` | Gossip, vendor, quests, edit mode, reopen |

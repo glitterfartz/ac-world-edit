@@ -1,10 +1,10 @@
 # ACWorldEdit
 
-A 3D world viewer and editor for [AzerothCore](https://www.azerothcore.org/), built with Godot 4.7 (.NET / C#, `net8.0`).
+A 3D world viewer and editor for [AzerothCore](https://www.azerothcore.org/) and [TrinityCore](https://www.trinitycore.org/), built with Godot 4.7 (.NET / C#, `net8.0`).
 
-It reads the WoW client's data to render terrain, models and liquids. On top of that it overlays AzerothCore world-database content: creature and gameobject spawns, graveyards, area triggers, NPC interactions, vendor data, quests and SmartAI scripts.
+It reads the WoW client's data to render terrain, models and liquids. On top of that it overlays world-database content: creature and gameobject spawns, graveyards, area triggers, NPC interactions, vendor data, quests and SmartAI scripts.
 
-Currently only supports AzerothCore 3.3.5 database. Capable of loading CASC client data (File -> Load Client...) but this disables DB connection. TrinityCore master support is planned for a future milestone.
+A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a TrinityCore master `world` database plus optional `hotfixes`. TrinityCore support is in progress: spawns, graveyards, area triggers and read-only creature properties work; quest, SmartAI and waypoint editing are AzerothCore-only for now (see [docs/tc-status.md](docs/tc-status.md)).
 
 The database connection is read-only, and the game files are never modified. Edits are staged as local drafts and leave the app only as SQL scripts for you to review and run.
 
@@ -22,7 +22,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams and an overview. D
 - .NET SDK matching [`global.json`](global.json) (10.0.400, roll-forward to the latest feature band)
 - Godot 4.7 .NET edition, found via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH
 - Python 3 (for `launch_viewer.py`)
-- A WoW client (3.3.5 or retail) and, for database overlays, an AzerothCore world database
+- A WoW client (3.3.5 or retail) and, for database overlays, an AzerothCore (3.3.5) or TrinityCore master (retail) world database
 
 ## Build and run
 
@@ -46,14 +46,15 @@ dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/knownbugs
 dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/all.runsettings        # everything
 ```
 
-The default settings exclude the `Corpus` (needs client data) and `KnownBug` categories; a command-line `--filter` overrides them. `Db` tests need `ACWORLD_DB_INFO`. `Tests/ACWorldEdit.GdTests` is a separate gdUnit4 project that needs `GODOT_BIN` set.
+The default settings exclude the `Corpus` (needs client data) and `KnownBug` categories, and a command-line `--filter` does not override that; combine it with `corpus.runsettings` or `all.runsettings`. `Db` tests need `ACWORLD_DB_INFO` (AzerothCore) or `ACWORLD_TC_DB_INFO` (TrinityCore) and skip without it. `Tests/ACWorldEdit.GdTests` is a separate gdUnit4 project that needs `GODOT_BIN` set.
 
 ## Environment variables
 
 | Variable                 | Purpose                                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `GODOT_BIN`              | Path to the Godot executable (alternative to `--godot-path`); also required by `Tests/ACWorldEdit.GdTests` |
-| `ACWORLD_DB_INFO`        | `host;port;user;password;database`; required by the `Db` tests                                             |
+| `ACWORLD_DB_INFO`        | `host;port;user;password;database`; AzerothCore connection, required by its `Db` tests                     |
+| `ACWORLD_TC_DB_INFO`     | Same, plus optional `;hotfixes`; TrinityCore connection, required by its `Db` tests                        |
 | `ACWORLD_DATA_DIR`       | 3.3.5 client data directory, for `ClientData`/`Corpus` tests                                               |
 | `ACWORLD_RETAIL_DIR`     | Retail client directory, for `ClientData`/`Corpus` tests                                                   |
 | `ACWORLD_CLIENT_PROFILE` | Client profile selection for `ClientData`/`Corpus` tests                                                   |
