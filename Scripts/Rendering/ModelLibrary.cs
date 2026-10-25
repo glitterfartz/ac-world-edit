@@ -105,8 +105,8 @@ public sealed class ModelLibrary
     public long CachedBytes => cachedBytes;
     public double UploadMilliseconds { get; private set; }
     public bool Busy => pending != null || building != null || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
-    public CreatureCatalog? Catalog { get; private set; }
-    public GameObjectCatalog? GameObjects { get; private set; }
+    public ICreatureCatalog? Catalog { get; private set; }
+    public IGameObjectCatalog? GameObjects { get; private set; }
 
     bool embeddedDoodadsVisible = true;
     public ModelLibrary()
@@ -120,7 +120,7 @@ public sealed class ModelLibrary
     /// Cancel/await the old worker before releasing client resources and loading the next catalog.
     /// The caller may dispose old MPQs only after this completes.
     /// </summary>
-    public async Task SetStore(IClientFiles? next, CreatureCatalog? creatures = null, GameObjectCatalog? gameObjects = null)
+    public async Task SetStore(IClientFiles? next, ICreatureCatalog? creatures = null, IGameObjectCatalog? gameObjects = null)
     {
         cancellation.Cancel();
         if (pending != null)

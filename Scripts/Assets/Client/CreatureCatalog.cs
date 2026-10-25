@@ -13,7 +13,7 @@ public sealed record CreatureAppearance(string Path, string[] Textures, float Sc
 /// Joins client display/model/extra DBCs and exposes native animation names. Available assets
 /// are independent of live server model/equipment choices.
 /// </summary>
-public sealed class CreatureCatalog
+public sealed class CreatureCatalog : ICreatureCatalog
 {
     readonly IClientFiles store;
     readonly DbcTable displays, models, extras, sections;

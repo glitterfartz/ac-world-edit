@@ -1,6 +1,6 @@
 namespace ACWorldEdit.Assets;
 /// <summary>Native GO display paths; database GameObjects are distinct from ADT scenery placements.</summary>
-public sealed class GameObjectCatalog(IClientFiles store)
+public sealed class GameObjectCatalog(IClientFiles store) : IGameObjectCatalog
 {
     readonly DbcTable displays = new(store.Read("DBFilesClient/GameObjectDisplayInfo.dbc"));
     public string Resolve(uint displayId)
