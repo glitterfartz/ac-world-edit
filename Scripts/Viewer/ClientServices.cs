@@ -66,7 +66,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, false, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables));
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables));
         }
         catch
         {

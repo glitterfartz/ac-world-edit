@@ -52,6 +52,7 @@ public partial class TerrainViewer : Node3D
     // False when the open client cannot be described by the world database (Retail): database layers,
     // teleports and the content editors stay off instead of querying a mismatched server.
     bool databaseEnabled = true;
+    IClientLookup? clientLookup;
     string dataDirectory
     {
         get => profile.Kind == ClientKind.Retail ? retailDirectory : wrathDirectory;
@@ -138,7 +139,7 @@ public partial class TerrainViewer : Node3D
         waypoints = new WaypointOverlay { Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
         AddChild(waypoints);
         waypoints.FocusRequested += FocusPose;
-        areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection() };
+        areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection(), Lookup = () => clientLookup };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         BuildUi();
@@ -200,6 +201,7 @@ public partial class TerrainViewer : Node3D
             lighting = result.Lighting;
             areas = result.Areas;
             databaseEnabled = result.DatabaseEnabled;
+            clientLookup = result.Lookup;
             ApplyClientProfile(result.Description);
             maps.Clear();
             int selected = 0;
@@ -659,7 +661,7 @@ public partial class TerrainViewer : Node3D
         graveyards.Update(camera);
         waypoints.Update(camera);
         areaTriggers.Update(camera);
-        creatureProps.Track(creatures.SelectedSpawn);
+        creatureProps.Track(ContentEditors ? creatures.SelectedSpawn : null);
         models.Update(camera);
         sidebar.UpdateCounts();
         PollPending(delta);
@@ -761,7 +763,7 @@ public partial class TerrainViewer : Node3D
                     if (creatures.FindHit(camera, press.Position) is { } hit)
                     {
                         creatures.Select(hit.Guid);
-                        if (creatures.SelectedSpawn is { } spawn)
+                        if (ContentEditors && creatures.SelectedSpawn is { } spawn)
                         {
                             creatureProps.Open(spawn, "gossip");
                         }

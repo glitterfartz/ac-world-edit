@@ -64,8 +64,19 @@ public class DatabaseSettingsTests
     }
 
     [Fact]
-    public void OpeningAnUnsupportedDialectFailsWithAnInvalidData() =>
-        Assert.Throws<InvalidDataException>(() => DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), null, WorldDialect.TrinityCore)));
+    public void OpeningATrinityCoreConnectionKeepsItsOwnSourceKey()
+    {
+        var connection = new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore);
+        Assert.Equal(new WorldDatabase(connection).SourceKey, DBSource.Open(connection).SourceKey);
+    }
+
+    [Fact]
+    public async Task TheTrinityCoreEditorsThatAreNotBuiltYetSayWhatIsMissing()
+    {
+        var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => source.SearchQuestsAsync("x", CancellationToken.None));
+        Assert.Contains("not available for the TrinityCore", error.Message);
+    }
 
     [Fact]
     public void OpeningWithIncompleteSettingsFailsWithAnInvalidData() =>

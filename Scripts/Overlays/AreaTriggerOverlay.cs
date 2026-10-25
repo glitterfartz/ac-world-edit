@@ -109,7 +109,8 @@ public partial class AreaTriggerOverlay : RegionOverlay
             var center = point;
             string term = search.Text;
             var config = Connection();
-            query.Start(token => DBSource.Open(config).ReadAreaTriggersAsync(area, center, term, token));
+            var lookup = Lookup();
+            query.Start(token => DBSource.Open(config, lookup).ReadAreaTriggersAsync(area, center, term, token));
         }
 
         foreach (var (entry, marker) in markers)

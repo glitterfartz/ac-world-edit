@@ -280,13 +280,41 @@ public partial class TerrainViewer
         sidebar.ReviewPendingRequested += OpenPendingChanges;
         creatureProps.SummaryChanged += creatures.SetInteractionSummary;
         creatureProps.QuestEditorRequested += questEditor.Open;
-        creatures.PropertiesRequested += spawn => creatureProps.Open(spawn);
-        areaTriggers.BehaviorRequested += trigger => areaBehavior.OpenAreaTrigger(trigger.Entry);
+        creatures.PropertiesRequested += spawn =>
+        {
+            if (ContentEditors)
+            {
+                creatureProps.Open(spawn);
+            }
+            else
+            {
+                statusLog.Post(ContentEditorsUnavailable);
+            }
+        };
+        areaTriggers.BehaviorRequested += trigger =>
+        {
+            if (ContentEditors)
+            {
+                areaBehavior.OpenAreaTrigger(trigger.Entry);
+            }
+            else
+            {
+                statusLog.Post(ContentEditorsUnavailable);
+            }
+        };
         BuildMenus();
         BuildToolbar();
     }
 
     CreaturePropertiesWindow creatureProps = null!;
+
+    /// <summary>
+    /// The quest, behavior and creature property editors read and draft AzerothCore tables; the
+    /// TrinityCore versions come later, so they stay off for the retail client.
+    /// </summary>
+    bool ContentEditors => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
+
+    const string ContentEditorsUnavailable = "The quest, behavior and creature property editors are not available for the TrinityCore database yet.";
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
@@ -395,8 +423,8 @@ public partial class TerrainViewer
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
         toolbar.Separator();
-        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => databaseEnabled);
-        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => databaseEnabled);
+        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => ContentEditors);
+        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => ContentEditors);
     }
 
     Label clientLabel = null!;
@@ -486,6 +514,7 @@ public partial class TerrainViewer
     {
         clientLabel.Text = "WORLD VIEWER  /  " + description.Split(" · ")[0];
         sidebar.SetDatabaseAvailable(databaseEnabled);
+        sidebar.SetDialect(profile.Dialect);
         _ = LoadTeleports();
     }
 

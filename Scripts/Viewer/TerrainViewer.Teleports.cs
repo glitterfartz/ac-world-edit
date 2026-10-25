@@ -71,7 +71,7 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// A random game_tele location on a major continent (TeleportLocations.Continents) the client has, to open instead of the default tile.
+    /// A random game_tele location on a continent the client has (the Wrath continents, or the retail open-world maps), to open instead of the default tile.
     /// Null without a usable database connection, so the default location is used.
     /// </summary>
     async Task<TeleportLocation?> PickStartLocation()
@@ -86,7 +86,10 @@ public partial class TerrainViewer
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var rows = await Task.Run(() => DBSource.Open(settings).ReadTeleportsAsync(timeout.Token), timeout.Token);
-            var available = mapList.Select(m => (ushort)m.Id).Where(TeleportLocations.Continents.Contains).ToHashSet();
+            // Wrath has four known continents; the retail Map table says which maps are open world.
+            var available = profile.Kind == ClientKind.Retail
+                ? mapList.Where(m => m.Continent).Select(m => (ushort)m.Id).ToHashSet()
+                : mapList.Select(m => (ushort)m.Id).Where(TeleportLocations.Continents.Contains).ToHashSet();
             return TeleportLocations.Pick(rows, available, Random.Shared);
         }
         catch (Exception error)

@@ -131,7 +131,8 @@ public sealed class Db2Tables
             }
 
             string name = row.Field<string>("MapName_lang") ?? "";
-            maps.Add(new MapInfo(row.ID, directory, name.Length == 0 ? directory : name, wdt));
+            // InstanceType 0 is an open-world map, which is what "continent" means for choosing a start location.
+            maps.Add(new MapInfo(row.ID, directory, name.Length == 0 ? directory : name, wdt, row.FieldAs<int>("InstanceType") == 0));
         }
 
         return maps.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToList();

@@ -19,6 +19,8 @@ public partial class SceneSidebar : PanelContainer
     TabContainer tabs = null!;
     OptionButton preset = null!, eventMode = null!, difficulty = null!, budget = null!;
     LineEdit phase = null!;
+    Label phaseCaption = null!;
+    WorldDialect dialect = WorldDialect.AzerothCore;
     CheckBox masks = null!, helpers = null!, pools = null!, conditional = null!, scripted = null!, despawned = null!, names = null!;
     MenuButton eventPicker = null!;
     HSlider distance = null!;
@@ -193,14 +195,14 @@ public partial class SceneSidebar : PanelContainer
                 return;
             }
 
-            SyncPolicy(index == 1 ? SpawnPreview.AllStored : new SpawnPreview());
+            SyncPolicy(index == 1 ? SpawnPreview.AllStored with { Dialect = dialect } : new SpawnPreview { Dialect = dialect });
             ApplyFilters(false);
         };
         preview.AddChild(InspectorUi.Text("Database rules only. Core scripts, live pools and player state can change what appears in game.", 12, true));
         masks = Toggle(preview, "Match phase & difficulty", true);
         var phaseRow = new HBoxContainer();
         preview.AddChild(phaseRow);
-        var phaseCaption = InspectorUi.Text("Phase mask", 13, true);
+        phaseCaption = InspectorUi.Text("Phase mask", 13, true);
         phaseCaption.AutowrapMode = TextServer.AutowrapMode.Off;
         phaseCaption.CustomMinimumSize = new(90, 0);
         phaseRow.AddChild(phaseCaption);
@@ -220,20 +222,7 @@ public partial class SceneSidebar : PanelContainer
         {
             FitToLongestItem = false
         };
-        foreach (string text in new[]
-        {
-            "Normal / 10-player normal",
-            "Heroic / 25-player normal",
-            "10-player heroic",
-            "25-player heroic",
-            "Any difficulty"
-        }
-
-        )
-        {
-            difficulty.AddItem(text);
-        }
-
+        FillDifficulty();
         preview.AddChild(difficulty);
         difficulty.ItemSelected += _ => ApplyFilters();
         preview.AddChild(InspectorUi.Text("Events", 12, true));
@@ -344,6 +333,61 @@ public partial class SceneSidebar : PanelContainer
         return scroll;
     }
 
+    // TrinityCore difficulty IDs worth previewing; the last entry matches every difficulty.
+    static readonly (string Text, int Id)[] TrinityDifficulties =
+    [
+        ("Open world (0)", 0),
+        ("Normal dungeon (1)", 1),
+        ("Heroic dungeon (2)", 2),
+        ("Mythic dungeon (23)", 23),
+        ("Normal raid (14)", 14),
+        ("Heroic raid (15)", 15),
+        ("Mythic raid (16)", 16),
+        ("Any difficulty", SpawnPreview.AnyDifficulty)
+    ];
+
+    void FillDifficulty()
+    {
+        difficulty.Clear();
+        if (dialect == WorldDialect.TrinityCore)
+        {
+            foreach (var (text, id) in TrinityDifficulties)
+            {
+                difficulty.AddItem(text, id);
+            }
+
+            return;
+        }
+
+        foreach (string text in new[] { "Normal / 10-player normal", "Heroic / 25-player normal", "10-player heroic", "25-player heroic", "Any difficulty" })
+        {
+            difficulty.AddItem(text);
+        }
+    }
+
+    /// <summary>
+    /// Switch the phase and difficulty controls to the open client's server: bit masks for AzerothCore,
+    /// a phase ID and a difficulty ID for TrinityCore. The preview restarts from that server's defaults.
+    /// </summary>
+    public void SetDialect(WorldDialect value)
+    {
+        if (dialect == value)
+        {
+            return;
+        }
+
+        dialect = value;
+        FillDifficulty();
+        bool trinity = dialect == WorldDialect.TrinityCore;
+        phaseCaption.Text = trinity ? "Phase ID" : "Phase mask";
+        phase.PlaceholderText = trinity ? "0 for none" : "1 or 0x1";
+        phase.TooltipText = trinity
+            ? "The phase to preview. 0 shows only spawns outside any phase; a phase ID also shows that phase's spawns."
+            : "Bitmask: 3 includes phase 1 OR phase 2. Decimal and 0x hex are accepted. This does not change the database.";
+        SyncPolicy(new SpawnPreview { Dialect = dialect });
+        ApplyFilters(false);
+    }
+
     void Layer(VBoxContainer parent, string name, string key, Action<bool> action, bool initial = true)
     {
         var row = new HBoxContainer();
@@ -409,7 +453,7 @@ public partial class SceneSidebar : PanelContainer
     {
         syncing = true;
         masks.ButtonPressed = value.RespectMasks;
-        phase.Text = value.PhaseMask.ToString();
+        phase.Text = dialect == WorldDialect.TrinityCore ? value.PhaseId.ToString() : value.PhaseMask.ToString();
         difficulty.Select(0);
         eventMode.Select((int)value.Events);
         helpers.ButtonPressed = value.IncludeHelpers;
@@ -430,10 +474,11 @@ public partial class SceneSidebar : PanelContainer
 
         previewPending = false;
         string text = phase.Text.Trim();
-        bool hex = text.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
-        if (!uint.TryParse(hex ? text[2..] : text, hex ? NumberStyles.HexNumber : NumberStyles.Integer, CultureInfo.InvariantCulture, out uint phaseMask))
+        bool trinity = dialect == WorldDialect.TrinityCore;
+        bool hex = !trinity && text.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
+        if (!uint.TryParse(hex ? text[2..] : text, hex ? NumberStyles.HexNumber : NumberStyles.Integer, CultureInfo.InvariantCulture, out uint phaseValue))
         {
-            validation.Text = "Enter a valid phase mask (for example 1, 3 or 0x3).";
+            validation.Text = trinity ? "Enter a valid phase ID (0 for none)." : "Enter a valid phase mask (for example 1, 3 or 0x3).";
             return;
         }
 
@@ -446,9 +491,12 @@ public partial class SceneSidebar : PanelContainer
         }[budget.Selected];
         var policy = new SpawnPreview
         {
+            Dialect = dialect,
             RespectMasks = masks.ButtonPressed,
-            PhaseMask = phaseMask,
-            SpawnMask = new uint[]
+            PhaseMask = trinity ? 1 : phaseValue,
+            PhaseId = trinity ? phaseValue : 0,
+            DifficultyId = trinity ? difficulty.GetItemId(difficulty.Selected) : 0,
+            SpawnMask = trinity ? 1 : new uint[]
             {
                 1,
                 2,

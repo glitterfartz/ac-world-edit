@@ -6,7 +6,7 @@ namespace ACWorldEdit.Assets;
 /// Client Map identity and display name. Directory selects WDT/ADT asset paths; Id is the server
 /// database map ID. WdtFileId is the WDT's FileDataID on a retail client and 0 on MPQ clients.
 /// </summary>
-public sealed record MapInfo(int Id, string Directory, string Name, uint WdtFileId = 0);
+public sealed record MapInfo(int Id, string Directory, string Name, uint WdtFileId = 0, bool Continent = false);
 /// <summary>
 /// Read-only mounted MPQ set with explicit stock-client precedence. Archive reads are positional
 /// and run concurrently; a reader/writer lock only keeps <see cref="Dispose"/> from closing a

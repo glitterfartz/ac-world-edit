@@ -77,8 +77,8 @@ public partial class TerrainViewer
 
         var view = menu.Menu("View");
         menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
-        menu.Command(view, "Quest editor", () => questEditor.Open(0), () => databaseEnabled);
-        menu.Command(view, "Creature behavior (selected)", OpenBehaviorEditor, () => databaseEnabled);
+        menu.Command(view, "Quest editor", () => questEditor.Open(0), () => ContentEditors);
+        menu.Command(view, "Creature behavior (selected)", OpenBehaviorEditor, () => ContentEditors);
         menu.Command(view, "Scene explorer", () =>
         {
             sidebar.Visible = true;

@@ -1,4 +1,5 @@
 using Godot;
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
@@ -13,6 +14,8 @@ namespace ACWorldEdit;
 public abstract partial class RegionOverlay : Node3D
 {
     public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
+    /// <summary>The open client's reference data (retail only); layers that need it ask for it when a query starts.</summary>
+    public Func<IClientLookup?> Lookup { get; set; } = () => null;
     public bool LayerEnabled { get; private set; }
     public string QueryStatus => queryStatus;
 
