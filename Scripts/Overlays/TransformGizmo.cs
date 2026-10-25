@@ -107,7 +107,9 @@ public partial class TransformGizmo : Node3D
     {
         AlbedoColor = color,
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        NoDepthTest = true
+        NoDepthTest = true,
+        // Above the waypoint dots and handle (priorities 10-12) so the handles are never covered.
+        RenderPriority = 20
     };
 
     /// <summary>
@@ -131,7 +133,7 @@ public partial class TransformGizmo : Node3D
         yaw = currentYaw;
         pointer.Rotation = new(0, yaw, 0);
         float depth = Math.Max(1, -(camera.GlobalTransform.AffineInverse() * GlobalPosition).Z);
-        float length = depth * Mathf.Tan(Mathf.DegToRad(camera.Fov / 2)) * 150 / camera.GetViewport().GetVisibleRect().Size.Y;
+        float length = depth * Mathf.Tan(Mathf.DegToRad(camera.Fov / 2)) * 190 /camera.GetViewport().GetVisibleRect().Size.Y;
         Scale = Vector3.One * Math.Clamp(length, 0.5f, 40);
     }
 
