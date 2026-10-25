@@ -9,7 +9,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
-| 6: creature properties | partial: TC read and read-only sections done; editing not started |
+| 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
 ### Coexisting forms
@@ -22,7 +22,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ### Gated or inconsistent right now
 
-- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties are read-only (`CreatureContext.Editable`).
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit only the template page (`CreatureContext.TcTemplateEditable`); the other TC sections stay read-only.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
 ## Foundation and design
@@ -107,8 +107,8 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Creature properties: read-only TC sections | done | Template with a difficulty picker, gossip (every menu and submenu), trainers with their gossip option, vendor, quests. The window lists only the open database's sections; checked in `--client-shot-overlays` on Innkeeper Farley. |
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
-| Creature properties: TC editing | not started | Phase 6. Sections, drafts (`TcTables`) and export are in place; the sections need editors. |
-| TC `NpcSchema` / `CreatureSchema` (64-bit `npcflag`, Classification, `unit_flags3`, OptionNpc) | not started | Phase 6. |
+| Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
+| TC `CreatureSchema` (64-bit `npcflag` bits, Classification) | partial | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |
 | Section registry and sections take field groups from the schema | not started | Phase 6. |

@@ -39,6 +39,7 @@ Schema references for column meanings, flags and enums:
 - `creature_template`:
   - Removed: difficulty_entry_1-3, gossip_menu_id, minlevel/maxlevel, exp, speed_swim/flight, detection_range, rank, DamageModifier, dynamicflags, type_flags, lootid/pickpocketloot/skinloot, PetSpellDataId, mingold/maxgold, HoverHeight, Health/Mana/ArmorModifier.
   - Added: femaleName, TitleAlt, RequiredExpansion, VignetteID, scale, Classification, unit_flags3, trainer_class, WidgetSetID/UnitConditionID, StringId.
+  - `Classification` replaces `rank` with different values: 0 Normal, 1 Elite, 2 Rare Elite, 3 Obsolete (AC: Boss), 4 Rare, 5 Trivial, 6 Minus Mob. `npcflag` is a 64-bit column (low 32 bits NPCFlags, high 32 NPCFlags2).
   - npcflag → bigint. Per-difficulty data moved to `creature_template_difficulty`.
 - `creature_template_model`: Idx smallint → int (otherwise the same). `creature_template_locale`: +NameAlt, TitleAlt.
 - `creature_classlevelstats`: TC keeps only level, class, basemana, attackpower, rangedattackpower, comment.

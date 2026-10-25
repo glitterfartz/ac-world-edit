@@ -52,7 +52,7 @@ TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage 
 | `TcSpawnSource` | `creature` / `gameobject` with their templates, `creature_template_model`; `pool_members`, event and `conditions` filters |
 | `TcGraveyardSource` | `world_safe_locs`, `graveyard_zone`, team rows in `conditions`, teleport overlaps from `areatrigger_teleport`; healers via `AcGraveyardSource.ReadHealers` |
 | `TcAreaTriggerSource` | client `AreaTrigger.db2` (through `IClientLookup`) joined to `areatrigger_scripts`, `areatrigger_teleport` → `world_safe_locs`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `smart_scripts` |
-| `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks), read-only |
+| `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks); the template and difficulty rows are editable |
 | `TcHotfixSource` | `hotfixes` database: `creature_display_info`, `creature_model_data`, `broadcast_text`, `area_trigger` |
 
 Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has no content (quest, SmartAI) or waypoint source yet; those editors and the waypoint layer are off in TrinityCore mode.

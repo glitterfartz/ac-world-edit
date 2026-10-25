@@ -93,6 +93,11 @@ public sealed class CreatureContext
     /// </summary>
     public bool Editable => Draft != null && Dialect == WorldDialect.AzerothCore;
 
+    /// <summary>TrinityCore sections turn editing on one at a time; only the template page edits so far.</summary>
+    public bool TcTemplateEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+
+    public IWorldSchema Schema => WorldSchemas.For(Dialect);
+
     /// <summary>Data, status or mode changed: sections and the window frame redraw.</summary>
     public event Action? Changed;
     /// <summary>A different creature (or none) is now the target.</summary>
@@ -269,12 +274,12 @@ public sealed class CreatureContext
     /// </summary>
     public bool Commit(string label, IEnumerable<RowEdit> edits)
     {
-        if (Draft == null || Snapshot == null || View == null)
+        if (Draft == null || Snapshot == null || (View == null && TcView == null))
         {
             return false;
         }
 
-        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows => BuildView(rows).Issues);
+        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows => View == null ? [] : BuildView(rows).Issues);
         Status = message;
         if (ok)
         {

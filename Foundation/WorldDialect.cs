@@ -30,6 +30,9 @@ public interface IWorldSchema
 
     /// <summary>The export statements for spawn moves, graveyards and waypoints.</summary>
     ISqlDialect Sql { get; }
+
+    /// <summary>Classification choices and npcflag bits for the creature template editor.</summary>
+    CreatureSchema Creature { get; }
 }
 
 /// <summary>The schema object of each dialect.</summary>
@@ -50,6 +53,7 @@ public sealed class AcSchema : IWorldSchema
     public WorldDialect Dialect => WorldDialect.AzerothCore;
     public ITableCatalog Tables => AcTables.Instance;
     public ISqlDialect Sql => AcSqlDialect.Instance;
+    public CreatureSchema Creature => CreatureSchema.Ac;
 }
 
 /// <summary>
@@ -62,4 +66,5 @@ public sealed class TcSchema : IWorldSchema
     public WorldDialect Dialect => WorldDialect.TrinityCore;
     public ITableCatalog Tables => TcTables.Instance;
     public ISqlDialect Sql => TcSqlDialect.Instance;
+    public CreatureSchema Creature => CreatureSchema.Tc;
 }

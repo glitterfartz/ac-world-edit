@@ -2,8 +2,8 @@ namespace ACWorldEdit.Foundation;
 
 /// <summary>
 /// The TrinityCore master creature tables the creature editor reads, with primary keys and column
-/// types from TDB 1210.26091. The editor is read-only for TrinityCore so far, so no drafts are made
-/// against these yet; quest, SmartAI and waypoint tables are not listed and stay uneditable. Text
+/// types from TDB 1210.26091. The template page edits creature_template and creature_template_difficulty;
+/// the other tables are still read-only in the editor. Quest, SmartAI and waypoint tables are not listed and stay uneditable. Text
 /// limits follow the column types (varchar); 0 means unbounded (mediumtext).
 /// </summary>
 public sealed class TcTables : ITableCatalog

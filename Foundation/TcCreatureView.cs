@@ -129,7 +129,7 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
     /// TrinityCore npcflag (UnitDefines.h, master): the low 32 bits are NPCFlags, the high 32 bits
     /// NPCFlags2 (Creature.cpp splits them that way).
     /// </summary>
-    static readonly (ulong Bit, string Name)[] NpcFlagNames =
+    public static readonly (ulong Bit, string Name)[] NpcFlagBits =
     [
         (0x1, "Gossip"), (0x2, "Quest giver"), (0x4, "Account banker"), (0x10, "Trainer"), (0x20, "Class trainer"), (0x40, "Profession trainer"),
         (0x80, "Vendor"), (0x100, "Ammo vendor"), (0x200, "Food vendor"), (0x400, "Poison vendor"), (0x800, "Reagent vendor"), (0x1000, "Repair"),
@@ -155,8 +155,8 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
     /// <summary>The named flags set in npcflag, then any unnamed bits as hex.</summary>
     public static IReadOnlyList<string> DescribeNpcFlags(ulong flags)
     {
-        var names = NpcFlagNames.Where(f => (flags & f.Bit) != 0).Select(f => f.Name).ToList();
-        ulong unknown = flags & ~NpcFlagNames.Aggregate(0ul, (all, f) => all | f.Bit);
+        var names = NpcFlagBits.Where(f => (flags & f.Bit) != 0).Select(f => f.Name).ToList();
+        ulong unknown = flags & ~NpcFlagBits.Aggregate(0ul, (all, f) => all | f.Bit);
         if (unknown != 0)
         {
             names.Add($"0x{unknown:X}");
