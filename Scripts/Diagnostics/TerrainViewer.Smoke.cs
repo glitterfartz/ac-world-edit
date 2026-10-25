@@ -35,6 +35,7 @@ public partial class TerrainViewer
         visibilitySmoke = flags.Contains("--visibility-smoke");
         skyboxSmoke = flags.Contains("--skybox-smoke");
         graveyardSmoke = flags.Contains("--graveyard-smoke");
+        gameObjectSmoke = flags.Contains("--gameobject-smoke");
         waypointSmoke = flags.Contains("--waypoint-smoke");
         interactionSmoke = flags.Contains("--interaction-smoke");
         contentSmoke = flags.Contains("--content-smoke");
@@ -105,6 +106,11 @@ public partial class TerrainViewer
         if (skyboxSmoke)
         {
             SkyboxSmoke(delta);
+        }
+
+        if (gameObjectSmoke)
+        {
+            GameObjectSmoke(delta);
         }
 
         if (graveyardSmoke)
