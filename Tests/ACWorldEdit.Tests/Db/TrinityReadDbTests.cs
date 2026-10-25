@@ -148,6 +148,26 @@ public class TrinityReadDbTests
         Assert.All(modelFiles, pair => Assert.True(pair.Key > 0));
     }
 
+    [TcRetailFact]
+    public async Task HotfixedHumanoidDisplaysKeepTheirSkinAndCustomization()
+    {
+        var (displays, modelFiles) = await new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings).ReadCreatureDisplaysAsync(CancellationToken.None);
+        var extras = RetailData.Tables.Table("CreatureDisplayInfoExtra");
+        var humanoids = displays.Where(d => d.ExtraId != 0).ToList();
+        Assert.NotEmpty(humanoids);
+        // The hotfixes database has no creature_display_info_extra rows, so each extra must come from the client.
+        var unknown = humanoids.Where(d => !extras.ContainsKey(d.ExtraId)).Select(d => $"{d.Id}→{d.ExtraId}").ToList();
+        Assert.True(unknown.Count == 0, "client has no extra for hotfixed displays " + string.Join(", ", unknown));
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        catalog.Apply(displays, modelFiles);
+        foreach (var display in humanoids)
+        {
+            var appearance = catalog.Resolve(display.Id);
+            Assert.NotNull(appearance.BakedTexture);
+            Assert.NotNull(appearance.Geosets);
+        }
+    }
+
     [TcDbFact]
     public async Task AreaTriggersNeedTheClientLookup()
     {

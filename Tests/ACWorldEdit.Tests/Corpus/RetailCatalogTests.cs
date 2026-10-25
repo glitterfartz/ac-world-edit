@@ -57,6 +57,26 @@ public class RetailCatalogTests
     }
 
     [RetailClientFact]
+    public void AHumanoidHotfixRowKeepsItsBakedSkinAndCustomization()
+    {
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        var extras = RetailData.Tables.Table("CreatureDisplayInfoExtra");
+        var display = RetailData.Tables.Table("CreatureDisplayInfo").Values
+            .First(d => d.FieldAs<int>("ExtendedDisplayInfoID") is int extra && extra != 0 && extras.ContainsKey(extra) && catalog.Resolve((uint)d.ID).BakedTexture != null);
+        var client = catalog.Resolve((uint)display.ID);
+        Assert.True(AssetRef.TryParse(client.Path, out uint model));
+
+        catalog.Override((uint)display.ID, new CreatureDisplayOverride(model, [0, 0, 0], 1.5f, display.FieldAs<int>("ExtendedDisplayInfoID")));
+        var hotfixed = catalog.Resolve((uint)display.ID);
+
+        Assert.Equal(1.5f, hotfixed.Scale);
+        Assert.Equal(client.BakedTexture, hotfixed.BakedTexture);
+        Assert.Equal(client.Geosets, hotfixed.Geosets);
+        Assert.Equal(client.HairTexture, hotfixed.HairTexture);
+        Assert.Equal(client.EyeTexture, hotfixed.EyeTexture);
+    }
+
+    [RetailClientFact]
     public void DisplayHotfixesNameTheirModelFromTheClientOrTheirOwnModelData()
     {
         var catalog = new RetailCreatureCatalog(RetailData.Tables);
@@ -193,5 +213,40 @@ public class RetailAnimationTests
 
         Assert.True(read > 100, $"{read} models read, {failed} failed");
         Assert.True(animated * 2 > read, $"only {animated} of {read} models play a Stand animation");
+    }
+
+    /// <summary>
+    /// Humanoid displays draw a character model whose skeleton lives in a .skel file, with a baked skin
+    /// and customization choices that pick the head, hair and eyes.
+    /// </summary>
+    [RetailClientFact]
+    public void HumanoidDisplaysAnimateWithBakedSkinHairAndEyes()
+    {
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        var extras = RetailData.Tables.Table("CreatureDisplayInfoExtra");
+        var humanoids = RetailData.Tables.Table("CreatureDisplayInfo").Values
+            .Where(d => d.FieldAs<int>("ExtendedDisplayInfoID") is int extra && extra != 0 && extras.ContainsKey(extra))
+            .Select(d => catalog.Resolve((uint)d.ID))
+            .Where(a => a.BakedTexture != null)
+            .Take(5)
+            .ToList();
+
+        Assert.NotEmpty(humanoids);
+        foreach (var appearance in humanoids)
+        {
+            Assert.NotNull(appearance.Geosets);
+            Assert.Equal(2, appearance.Geosets.Parse()[32]);
+            Assert.NotNull(appearance.HairTexture);
+            Assert.NotNull(appearance.EyeTexture);
+
+            var model = M2Model.Read(RetailData.Files, appearance.Path, appearance.Textures, appearance.BakedTexture, hair: appearance.HairTexture, eyes: appearance.EyeTexture, geosets: appearance.Geosets);
+            Assert.True(model.Bones.Length > 100, $"{appearance.Path}: {model.Bones.Length} bones");
+            Assert.True(model.Duration > 0, $"{appearance.Path}: no Stand animation");
+            Assert.Contains(model.Bones, b => b.Rotation.Times.Length > 1);
+            Assert.DoesNotContain(model.Warnings, w => w.StartsWith("Unresolved replaceable texture"));
+            Assert.Contains(model.Surfaces, s => s.Texture == appearance.BakedTexture);
+            Assert.Contains(model.Surfaces, s => s.Texture == appearance.HairTexture);
+            Assert.Contains(model.Surfaces, s => s.Texture == appearance.EyeTexture);
+        }
     }
 }
