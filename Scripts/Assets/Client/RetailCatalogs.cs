@@ -24,11 +24,12 @@ public interface IGameObjectCatalog
 /// <summary>
 /// One display row as the server's hotfixes describe it. A hotfix row replaces the client row with
 /// the same ID, the way the live client applies it; zero file IDs mean "no model" / "no texture".
+/// A non-zero extra names the client CreatureDisplayInfoExtra row of a humanoid.
 /// </summary>
-public readonly record struct CreatureDisplayOverride(uint ModelFileId, uint[] TextureFileIds, float Scale);
+public readonly record struct CreatureDisplayOverride(uint ModelFileId, uint[] TextureFileIds, float Scale, int ExtraId = 0);
 
-/// <summary>A row of the server's hotfixes.creature_display_info: which model data, scale and skins a display uses.</summary>
-public readonly record struct CreatureDisplayHotfix(uint Id, uint ModelId, float Scale, uint[] TextureFileIds);
+/// <summary>A row of the server's hotfixes.creature_display_info: which model data, scale, skins and humanoid extra a display uses.</summary>
+public readonly record struct CreatureDisplayHotfix(uint Id, uint ModelId, float Scale, uint[] TextureFileIds, int ExtraId = 0);
 
 /// <summary>
 /// Retail creature displays: CreatureDisplayInfo → CreatureModelData → model FileDataID, with the
@@ -108,7 +109,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
         {
             uint file = modelFiles.TryGetValue(row.ModelId, out uint hotfixed) ? hotfixed
                 : models.TryGetValue((int)row.ModelId, out var data) ? data.FieldAs<uint>("FileDataID") : 0;
-            Override(row.Id, new(file, row.TextureFileIds, row.Scale));
+            Override(row.Id, new(file, row.TextureFileIds, row.Scale, row.ExtraId));
         }
     }
 
@@ -116,7 +117,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
     {
         if (overrides.TryGetValue(displayId, out var hotfix))
         {
-            return Appearance(displayId, hotfix.ModelFileId, hotfix.TextureFileIds, hotfix.Scale);
+            return Humanoid(Appearance(displayId, hotfix.ModelFileId, hotfix.TextureFileIds, hotfix.Scale), hotfix.ExtraId);
         }
 
         if (!displays.TryGetValue((int)displayId, out var display))
