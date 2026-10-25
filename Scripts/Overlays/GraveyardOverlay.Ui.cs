@@ -206,8 +206,10 @@ public partial class GraveyardOverlay
             rowBox.AddChild(InspectorUi.Text($"{name}   ·   {zone}", 13));
             var controls = new HBoxContainer();
             rowBox.AddChild(controls);
+            bool locked = site.IsLocked(zone);
             var faction = FactionPicker(link.Faction);
-            faction.Disabled = !editable;
+            faction.Disabled = !editable || locked;
+            faction.TooltipText = locked ? "Battleground or world-state conditions decide this link's team; edit them in the conditions table." : "";
             faction.ItemSelected += index => SetLinkFaction(zone, Factions[index].Value);
             controls.AddChild(faction);
             var linkComment = new LineEdit
@@ -220,13 +222,18 @@ public partial class GraveyardOverlay
             linkComment.TextSubmitted += text => SetLinkComment(zone, text);
             controls.AddChild(linkComment);
             var remove = InspectorUi.Button("Remove", () => RemoveLink(zone));
-            remove.Disabled = !editable;
+            remove.Disabled = !editable || locked;
             controls.AddChild(remove);
         }
 
         string healers = site.Healers.Length == 0
             ? $"No spirit healer within {Data.DbLimits.HealerRadius:0} yd."
             : "Spirit healers (separate creature spawns, not moved with the graveyard): " + string.Join(", ", site.Healers.Select(h => $"{h.Name} #{h.Guid}"));
+        if (site.TeleportUses > 0)
+        {
+            warnings.Add($"Also the destination of {site.TeleportUses} area trigger teleport(s); moving the graveyard moves them.");
+        }
+
         string conflict = draft?.Conflict(sourceKey, site.Record) == true ? "Source graveyard changed since this draft; draft requires review.\n" : "";
         details.Text = $"{conflict}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";
         InspectorUi.SelectRow(list, record.Id);

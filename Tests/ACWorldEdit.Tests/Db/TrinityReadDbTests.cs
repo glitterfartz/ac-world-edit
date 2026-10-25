@@ -108,6 +108,18 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task BattlegroundLinksAreLockedAndPlainTeamLinksAreNot()
+    {
+        var goldshire = (await Open().ReadGraveyardsAsync(Elwynn, Goldshire, "", CancellationToken.None)).Sites.Single(s => s.Record.Id == 106);
+        Assert.False(goldshire.IsLocked(12));
+        Assert.Equal(0, goldshire.TeleportUses);
+        // Snowfall in Alterac Valley: its zone link is decided by world states and else-groups.
+        var alterac = await Open().ReadGraveyardsAsync(new CreatureRegion(30, 30, 33, 30, 33), null, "", CancellationToken.None);
+        var snowfall = alterac.Sites.Single(s => s.Record.Id == 169);
+        Assert.True(snowfall.IsLocked(2597));
+    }
+
+    [TcDbFact]
     public async Task SafeLocationsThatAreNotGraveyardsAreLeftOut()
     {
         // Deadmines Exit Front Target (3601) is a world_safe_locs row of an area trigger, not a graveyard.

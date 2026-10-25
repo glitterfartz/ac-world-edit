@@ -149,16 +149,16 @@ public partial class TerrainViewer
 
                 GD.Print($"CLIENT_SHOT_OVERLAYS creatures={creatures.Records.Count} models={creatures.ModelCreatureCount} gameobjects={gameObjects.Records.Count} models={gameObjects.ModelObjectCount} graveyards={graveyards.Sites.Count} triggers={areaTriggers.Triggers.Count}");
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-overlays.png"));
-                // Graveyard edits export AzerothCore statements, so a TrinityCore graveyard must not be editable.
+                // TrinityCore graveyards export world_safe_locs and team-condition statements, so they are editable.
                 graveyards.Select(graveyards.Sites[0].Record.Id);
-                if (graveyards.CanEdit)
+                if (!graveyards.CanEdit)
                 {
-                    SmokeFail("CLIENT_SHOT_GRAVEYARD_EDITABLE a TrinityCore graveyard accepted edits");
+                    SmokeFail("CLIENT_SHOT_GRAVEYARD_READONLY a TrinityCore graveyard refused edits");
                     return;
                 }
 
                 graveyards.Deselect();
-                GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} database={databaseEnabled} overlays=True graveyardsReadOnly=True");
+                GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True");
                 GetTree().Quit();
                 return;
             }

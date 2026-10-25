@@ -164,11 +164,105 @@ public sealed class TcSqlDialect : ISqlDialect
 {
     public static readonly TcSqlDialect Instance = new();
 
+    /// <summary>conditions source type for a graveyard zone link, and the team condition type.</summary>
+    public const int GraveyardCondition = 27, TeamCondition = 6;
+
     public SqlStep CreatureMove(CreatureMove move) => AcSqlDialect.Instance.CreatureMove(move);
     public SqlStep GameObjectMove(GameObjectMove move) => AcSqlDialect.Instance.GameObjectMove(move);
 
-    public IEnumerable<SqlStep> Graveyard(GraveyardEdit edit) =>
-        throw new InvalidDataException("Graveyard edits cannot be exported for the TrinityCore world database yet.");
+    /// <summary>
+    /// A graveyard is a world_safe_locs row (position, name), its graveyard_zone links (zone, comment)
+    /// and, per link, at most one plain team row in `conditions` (source type 27, SourceGroup = zone,
+    /// SourceEntry = graveyard, CONDITION_TEAM with the team in ConditionValue1); no team row is
+    /// neutral. Facing is not edited. A link with any other conditions (battleground world states,
+    /// area checks, else-groups) never reaches here: the source marks it locked and the editor
+    /// refuses faction changes and unlinking for it. A new team row's preflight requires that the link
+    /// has no conditions at all, so a link that gained some since the draft reads STALE.
+    /// </summary>
+    public IEnumerable<SqlStep> Graveyard(GraveyardEdit edit)
+    {
+        var before = edit.Before.Normalized();
+        var after = edit.After.Normalized();
+        string pos(GraveyardRecord r) => $"`ID` = {r.Id} AND {Near("LocX", r.X)} AND {Near("LocY", r.Y)} AND {Near("LocZ", r.Z)} AND {TextEq("Comment", r.Comment)}";
+        if (before.X != after.X || before.Y != after.Y || before.Z != after.Z || before.Comment != after.Comment)
+        {
+            string set(GraveyardRecord r) => $"`LocX` = {Num(r.X)}, `LocY` = {Num(r.Y)}, `LocZ` = {Num(r.Z)}, `Comment` = {Quote(r.Comment)}";
+            string label = $"graveyard {edit.Id} \"{before.Comment}\": position/name";
+            yield return new(label,
+                $"UPDATE `world_safe_locs` SET {set(after)} WHERE {pos(before)};",
+                $"UPDATE `world_safe_locs` SET {set(before)} WHERE {pos(after)};",
+                Check(label, "world_safe_locs", pos(before)), Check(label, "world_safe_locs", pos(after)));
+        }
+
+        string key(uint zone) => $"`ID` = {edit.Id} AND `GhostZone` = {zone}";
+        string full(GraveyardLink l) => $"{key(l.GhostZone)} AND {TextEq("Comment", l.Comment)}";
+        string insert(GraveyardLink l) => $"INSERT INTO `graveyard_zone` (`ID`, `GhostZone`, `Comment`) VALUES ({edit.Id}, {l.GhostZone}, {Quote(l.Comment)});";
+        string delete(GraveyardLink l) => $"DELETE FROM `graveyard_zone` WHERE {full(l)};";
+        string anyCondition(uint zone) => $"`SourceTypeOrReferenceId` = {GraveyardCondition} AND `SourceGroup` = {zone} AND `SourceEntry` = {edit.Id}";
+        string team(uint zone, ushort faction) => $"{anyCondition(zone)} AND `SourceId` = 0 AND `ElseGroup` = 0 AND `ConditionTypeOrReference` = {TeamCondition} AND `ConditionTarget` = 0 AND `ConditionValue1` = {faction} AND `ConditionValue2` = 0 AND `ConditionValue3` = 0 AND `ConditionStringValue1` = '' AND `NegativeCondition` = 0";
+        string insertTeam(GraveyardLink l) => "INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `ConditionStringValue1`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) "
+            + $"VALUES ({GraveyardCondition}, {l.GhostZone}, {edit.Id}, 0, 0, {TeamCondition}, 0, {l.Faction}, 0, 0, '', 0, 0, 0, '', {Quote(TeamComment(edit.Id, after.Comment, l))});";
+        string deleteTeam(GraveyardLink l) => $"DELETE FROM `conditions` WHERE {team(l.GhostZone, l.Faction)};";
+        SqlStep addTeam(string label, GraveyardLink l) => new(label, insertTeam(l), deleteTeam(l), Absent(label, "conditions", anyCondition(l.GhostZone)), Check(label, "conditions", team(l.GhostZone, l.Faction)));
+        SqlStep removeTeam(string label, GraveyardLink l) => new(label, deleteTeam(l), insertTeam(l), Check(label, "conditions", team(l.GhostZone, l.Faction)), Absent(label, "conditions", anyCondition(l.GhostZone)));
+        foreach (var (zone, old, next) in AcSqlDialect.ChangedLinks(before, after))
+        {
+            if (old == null)
+            {
+                string label = $"graveyard {edit.Id}: link zone {zone}";
+                yield return new(label, insert(next!), delete(next!), Absent(label, "graveyard_zone", key(zone)), Check(label, "graveyard_zone", full(next!)));
+                if (next!.Faction != 0)
+                {
+                    yield return addTeam($"graveyard {edit.Id}: zone {zone} team {next.Faction}", next);
+                }
+            }
+            else if (next == null)
+            {
+                if (old.Faction != 0)
+                {
+                    yield return removeTeam($"graveyard {edit.Id}: zone {zone} drop team {old.Faction}", old);
+                }
+
+                string label = $"graveyard {edit.Id}: unlink zone {zone}";
+                yield return new(label, delete(old), insert(old), Check(label, "graveyard_zone", full(old)), Absent(label, "graveyard_zone", key(zone)));
+            }
+            else
+            {
+                if (old.Comment != next.Comment)
+                {
+                    string label = $"graveyard {edit.Id}: zone {zone} comment";
+                    string set(GraveyardLink l) => $"`Comment` = {Quote(l.Comment)}";
+                    yield return new(label, $"UPDATE `graveyard_zone` SET {set(next)} WHERE {full(old)};", $"UPDATE `graveyard_zone` SET {set(old)} WHERE {full(next)};", Check(label, "graveyard_zone", full(old)), Check(label, "graveyard_zone", full(next)));
+                }
+
+                string factionLabel = $"graveyard {edit.Id}: zone {zone} faction {old.Faction} -> {next.Faction}";
+                if (old.Faction == next.Faction)
+                {
+                    continue;
+                }
+                else if (old.Faction == 0)
+                {
+                    yield return addTeam(factionLabel, next);
+                }
+                else if (next.Faction == 0)
+                {
+                    yield return removeTeam(factionLabel, old);
+                }
+                else
+                {
+                    // Only the team changes; the row's comment keeps its text.
+                    yield return new(factionLabel,
+                        $"UPDATE `conditions` SET `ConditionValue1` = {next.Faction} WHERE {team(zone, old.Faction)};",
+                        $"UPDATE `conditions` SET `ConditionValue1` = {old.Faction} WHERE {team(zone, next.Faction)};",
+                        Check(factionLabel, "conditions", team(zone, old.Faction)), Check(factionLabel, "conditions", team(zone, next.Faction)));
+                }
+            }
+        }
+    }
+
+    /// <summary>The comment TDB gives a graveyard team row: "Graveyard - ID - zone - name - zone name - Team Alliance".</summary>
+    static string TeamComment(uint id, string graveyard, GraveyardLink link) =>
+        $"Graveyard - {id} - {link.GhostZone} - {graveyard} - {link.Comment} - Team {(link.Faction == GraveyardLink.Horde ? "Horde" : "Alliance")}";
 
     public SqlStep Waypoint(WaypointEdit edit) =>
         throw new InvalidDataException("Waypoint edits cannot be exported for the TrinityCore world database yet.");

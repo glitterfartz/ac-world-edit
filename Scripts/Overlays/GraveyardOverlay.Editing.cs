@@ -61,14 +61,28 @@ public partial class GraveyardOverlay : IPlacementEditor
         gizmo.Changed += MoveSelection;
     }
 
-    /// <summary>
-    /// Graveyard edits export AzerothCore's game_graveyard and graveyard_zone statements, so they stay
-    /// off for TrinityCore (world_safe_locs, team conditions) until its editor exists.
-    /// </summary>
-    bool EditingSupported => Connection().Dialect == WorldDialect.AzerothCore;
-
     (GraveyardSite Site, Node3D Node)? EditableMarker() =>
-        draft != null && EditingSupported && selected.HasValue && lookup.TryGetValue(selected.Value, out var site) && markers.TryGetValue(selected.Value, out var marker) ? (site, marker.Node) : null;
+        draft != null && selected.HasValue && lookup.TryGetValue(selected.Value, out var site) && markers.TryGetValue(selected.Value, out var marker) ? (site, marker.Node) : null;
+
+    /// <summary>
+    /// A TrinityCore link whose conditions are more than one team row (battleground world states,
+    /// area checks) keeps its faction and stays linked; those conditions are edited in the table.
+    /// </summary>
+    bool RefuseLocked(uint zone)
+    {
+        if (EditableMarker() is not { } editing || !editing.Site.IsLocked(zone))
+        {
+            return false;
+        }
+
+        Say($"Not saved: zone {zone} has battleground or world-state conditions; edit them in the conditions table.");
+        return true;
+    }
+
+    /// <summary>The move message, plus a warning when area trigger teleports land on the same safe location.</summary>
+    string MoveMessage(string message) => EditableMarker() is { Site.TeleportUses: > 0 and var uses }
+        ? $"{message} It is also the destination of {uses} area trigger teleport(s), which move with it."
+        : message;
 
     GraveyardRecord RecordOf(GraveyardSite site) => draft?.Effective(sourceKey, site.Record) ?? site.Record;
 
@@ -155,7 +169,7 @@ public partial class GraveyardOverlay : IPlacementEditor
             X = position.Z == start.Z ? r.X : server.X,
             Y = position.X == start.X ? r.Y : server.Y,
             Z = position.Y == start.Y ? r.Z : server.Z
-        }, success);
+        }, MoveMessage(success));
     }
 
     public bool BeginDrag(Camera3D camera, Vector2 screen) => CanEdit && gizmo.Begin(camera, screen);
@@ -179,7 +193,7 @@ public partial class GraveyardOverlay : IPlacementEditor
             return;
         }
 
-        Commit(r => r with { Z = height }, "Dropped graveyard to ground.");
+        Commit(r => r with { Z = height }, MoveMessage("Dropped graveyard to ground."));
     }
 
     public void ResetToSource()
@@ -197,15 +211,30 @@ public partial class GraveyardOverlay : IPlacementEditor
             X = Math.Abs(x - r.X) < 0.5e-4 ? r.X : x,
             Y = Math.Abs(y - r.Y) < 0.5e-4 ? r.Y : y,
             Z = Math.Abs(z - r.Z) < 0.5e-4 ? r.Z : z
-        }, "Saved typed position.");
+        }, MoveMessage("Saved typed position."));
 
     public void SetComment(string comment) => Commit(r => r with { Comment = comment.Trim() }, "Saved graveyard name.");
 
     public void AddLink(uint zone, ushort faction) => Commit(r => r with { Links = [.. r.Links, new GraveyardLink(zone, faction, ZoneName(zone))] }, $"Linked zone {zone}.");
 
-    public void RemoveLink(uint zone) => Commit(r => r with { Links = r.Links.Where(l => l.GhostZone != zone).ToArray() }, $"Removed zone {zone} link.");
+    public void RemoveLink(uint zone)
+    {
+        if (!RefuseLocked(zone))
+        {
+            Commit(r => r with { Links = r.Links.Where(l => l.GhostZone != zone).ToArray() }, $"Removed zone {zone} link.");
+        }
+    }
 
-    public void SetLinkFaction(uint zone, ushort faction) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Faction = faction } : l).ToArray() }, $"Changed zone {zone} faction.");
+    public void SetLinkFaction(uint zone, ushort faction)
+    {
+        if (RefuseLocked(zone))
+        {
+            ShowSelection();
+            return;
+        }
+
+        Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Faction = faction } : l).ToArray() }, $"Changed zone {zone} faction.");
+    }
 
     public void SetLinkComment(uint zone, string comment) => Commit(r => r with { Links = r.Links.Select(l => l.GhostZone == zone ? l with { Comment = comment.Trim() } : l).ToArray() }, $"Changed zone {zone} comment.");
 
