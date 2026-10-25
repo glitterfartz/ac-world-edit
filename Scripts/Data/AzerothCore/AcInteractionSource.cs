@@ -6,73 +6,17 @@ using MySqlConnector;
 namespace ACWorldEdit.Data;
 
 /// <summary>
-/// Read-only database snapshot of one creature entry's interaction rows plus the lookup data the
-/// view and validation need. Rows are captured with InteractionTables' column whitelist only.
-/// </summary>
-public sealed class InteractionSnapshot(uint entry, uint guid, string name, string scriptName, string aiName, int spawnCount, RowSet rows, ScriptHook[] scripts, Dictionary<int, int> conditions, InteractionLookupData lookup, string sourceKey)
-{
-    public uint Entry => entry;
-    public uint Guid => guid;
-    public string Name => name;
-    public string ScriptName => scriptName;
-    public string AIName => aiName;
-    public int SpawnCount => spawnCount;
-    public RowSet Rows => rows;
-    public ScriptHook[] Scripts => scripts;
-    public IReadOnlyDictionary<int, int> Conditions => conditions;
-    public InteractionLookupData Lookup => lookup;
-    public string SourceKey => sourceKey;
-}
-
-/// <summary>
-/// One creature_classlevelstats row. Health and damage have one value per expansion tier (the
-/// creature_template.exp column picks it).
-/// </summary>
-public sealed record ClassLevelStats(uint Level, uint Class, uint[] BaseHealth, uint BaseMana, uint BaseArmor, uint AttackPower, uint RangedAttackPower, float[] DamageBase, int Strength, int Agility, int Stamina, int Intellect, int Spirit);
-
-/// <summary>
-/// IInteractionLookup backed by data read in the same snapshot transaction plus the client catalog.
-/// </summary>
-public sealed class InteractionLookupData(InteractionCatalog? catalog) : IInteractionLookup
-{
-    public readonly Dictionary<uint, ItemInfo> Items = [];
-    /// <summary>Tooltip fields of the same items.</summary>
-    public readonly Dictionary<uint, ItemDetails> ItemDetails = [];
-    public readonly Dictionary<uint, QuestInfo> Quests = [];
-    public readonly Dictionary<uint, (string, string)> Broadcasts = [];
-    public readonly HashSet<uint> Pois = [], Menus = [], Texts = [], Trainers = [];
-    public readonly Dictionary<uint, List<Row>> ReferenceVendors = [];
-    public readonly Dictionary<uint, int> MenuUserCounts = [], TextUserCounts = [], TrainerUserCounts = [];
-    public uint MaxMenuId, MaxTextId, MaxTrainerId;
-    /// <summary>creature_classlevelstats keyed by (class, level).</summary>
-    public readonly Dictionary<(uint Class, uint Level), ClassLevelStats> ClassLevelStats = [];
-    public InteractionCatalog? Catalog => catalog;
-
-    public ItemInfo? Item(uint id) => Items.GetValueOrDefault(id);
-    public QuestInfo? Quest(uint id) => Quests.GetValueOrDefault(id);
-    public string? SpellName(uint id) => catalog?.SpellName(id);
-    public bool ExtendedCostExists(uint id) => catalog?.ExtendedCostExists(id) ?? true;
-    public (string Male, string Female)? BroadcastText(uint id) => Broadcasts.TryGetValue(id, out var text) ? text : null;
-    public bool PoiExists(uint id) => Pois.Contains(id);
-    public bool MenuExists(uint menuId) => Menus.Contains(menuId);
-    public bool TextExists(uint textId) => Texts.Contains(textId);
-    public bool TrainerExists(uint id) => Trainers.Contains(id);
-    public IReadOnlyList<Row> ReferenceVendor(uint entry) => ReferenceVendors.TryGetValue(entry, out var rows) ? rows : [];
-    public int MenuUsers(uint menuId) => MenuUserCounts.GetValueOrDefault(menuId);
-    public int TextUsers(uint textId) => TextUserCounts.GetValueOrDefault(textId);
-    public int TrainerUsers(uint trainerId) => TrainerUserCounts.GetValueOrDefault(trainerId);
-}
-
-/// <summary>
 /// Read-only interaction reads (server ObjectMgr tables). Every query is parameterized, bounded and
 /// runs in one read-only transaction. Draft-touched rows are loaded too, and references reachable in
 /// the effective (database + draft) view are followed until stable, so new submenus, texts and
 /// trainers created in the draft resolve against the database.
 /// </summary>
-public sealed class InteractionSource(DatabaseSettings settings)
+public sealed class AcInteractionSource(WorldDatabase database)
 {
-    public const int MaxRows = 500, MaxSearch = 50;
-    readonly WorldDatabase database = new(settings);
+    public AcInteractionSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     /// <summary>
     /// Hash of host/port/database (no credentials) identifying drafts made against this source.
     /// </summary>
@@ -89,7 +33,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
         "quest_template.LogTitle", "item_template.name"
     ];
 
-    public async Task<InteractionSnapshot> ReadAsync(uint entry, uint guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
+    public async Task<InteractionSnapshot> ReadAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         session.Require(RequiredColumns);
@@ -196,12 +140,12 @@ public sealed class InteractionSource(DatabaseSettings settings)
 
     /// <summary>
     /// Load rows of one table matching a parameterized predicate (identifiers come from the schema
-    /// registry, never from input) into the snapshot, bounded by MaxRows.
+    /// registry, never from input) into the snapshot, bounded by DbLimits.MaxRows.
     /// </summary>
     internal static async Task Load(WorldReadSession session, RowSet rows, TableSchema table, string predicate, object[] values, CancellationToken token)
     {
         string columns = string.Join(',', table.Columns.Select(c => c.Kind == ColumnKind.Text ? $"COALESCE(`{c.Name}`,'')" : $"`{c.Name}`"));
-        await using var command = session.Command($"SELECT {columns} FROM `{table.SqlName}` WHERE {predicate} LIMIT {MaxRows}");
+        await using var command = session.Command($"SELECT {columns} FROM `{table.SqlName}` WHERE {predicate} LIMIT {DbLimits.MaxRows}");
         for (int i = 0; i < values.Length; i++)
         {
             command.Parameters.AddWithValue($"@k{i}", values[i]);
@@ -232,7 +176,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
         return await command.ExecuteScalarAsync(token).ConfigureAwait(false);
     }
 
-    internal static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix) => WorldReadSession.InList(command, ids, prefix, MaxRows);
+    internal static string InList(MySqlCommand command, IEnumerable<uint> ids, string prefix) => WorldReadSession.InList(command, ids, prefix, DbLimits.MaxRows);
 
     async Task ReadLookups(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
     {
@@ -377,7 +321,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
         return quests.Select(q => q with { RewardItems = rewardIds.Where(r => r.Quest == q.Id).Select(r => $"{r.Count}× {names.GetValueOrDefault(r.Item, $"item {r.Item}")}").ToArray() }).ToList();
     }
 
-    static async Task<ScriptHook[]> ReadScripts(WorldReadSession session, uint entry, uint guid, CancellationToken token)
+    static async Task<ScriptHook[]> ReadScripts(WorldReadSession session, uint entry, ulong guid, CancellationToken token)
     {
         await using var command = session.Command("""
             SELECT event_type,action_type,event_param1,event_param2,COALESCE(comment,'') FROM smart_scripts
@@ -471,7 +415,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
     public async Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        await using var command = session.Command($"SELECT {ItemColumns} FROM item_template WHERE name LIKE @s ESCAPE '=' OR entry=@id ORDER BY entry=@id DESC, CHAR_LENGTH(name), entry LIMIT {MaxSearch}");
+        await using var command = session.Command($"SELECT {ItemColumns} FROM item_template WHERE name LIKE @s ESCAPE '=' OR entry=@id ORDER BY entry=@id DESC, CHAR_LENGTH(name), entry LIMIT {DbLimits.MaxSearch}");
         WorldReadSession.AddSearch(command, term, "@s", "@id");
         List<ItemDetails> items = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
@@ -491,7 +435,7 @@ public sealed class InteractionSource(DatabaseSettings settings)
 
     internal static async Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuests(WorldReadSession session, string term, CancellationToken token)
     {
-        await using var command = session.Command($"SELECT ID,COALESCE(LogTitle,''),QuestLevel FROM quest_template WHERE LogTitle LIKE @s ESCAPE '=' OR ID=@id ORDER BY ID=@id DESC, CHAR_LENGTH(LogTitle), ID LIMIT {MaxSearch}");
+        await using var command = session.Command($"SELECT ID,COALESCE(LogTitle,''),QuestLevel FROM quest_template WHERE LogTitle LIKE @s ESCAPE '=' OR ID=@id ORDER BY ID=@id DESC, CHAR_LENGTH(LogTitle), ID LIMIT {DbLimits.MaxSearch}");
         WorldReadSession.AddSearch(command, term, "@s", "@id");
         List<(uint, string, int)> quests = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);

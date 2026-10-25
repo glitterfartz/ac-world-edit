@@ -17,7 +17,7 @@ public partial class TerrainViewer
     /// <summary>
     /// Spawn to select when it appears in the creature region, with its name and a deadline.
     /// </summary>
-    (uint Guid, string Name, double Remaining)? pendingLocate;
+    (ulong Guid, string Name, double Remaining)? pendingLocate;
     int locateGeneration;
 
     /// <summary>
@@ -32,15 +32,15 @@ public partial class TerrainViewer
         }
 
         int current = ++locateGeneration;
-        IReadOnlyList<(uint Guid, uint Map, double X, double Y, double Z)> spawns;
+        IReadOnlyList<(ulong Guid, uint Map, double X, double Y, double Z)> spawns;
         try
         {
-            var source = new ContentSource(connection.Settings);
+            var source = DBSource.Open(DatabaseConnection());
             spawns = await Task.Run(() => source.FindSpawnsAsync(entry, CancellationToken.None));
         }
         catch (Exception error)
         {
-            return CreatureSource.SafeError(error);
+            return DbErrors.Safe(error);
         }
 
         if (current != locateGeneration)

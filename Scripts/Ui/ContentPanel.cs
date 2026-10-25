@@ -13,7 +13,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class ContentPanel : VBoxContainer
 {
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
+    public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public Func<IClientFiles?> Store { get; set; } = () => null;
     public ContentDrafts Drafts { get; set; } = null!;
 

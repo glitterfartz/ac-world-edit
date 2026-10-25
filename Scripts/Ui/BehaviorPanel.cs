@@ -25,7 +25,8 @@ public partial class BehaviorPanel : ContentPanel
     IReadOnlyList<InteractionIssue> issues = [];
     string sourceKey = "";
     int generation;
-    uint entry, guid;
+    uint entry;
+    ulong guid;
     bool areaTrigger;
     /// <summary>
     /// Shown scope; null shows the speech page.
@@ -89,7 +90,7 @@ public partial class BehaviorPanel : ContentPanel
     /// Show the behavior of a creature entry; a non-zero GUID also offers that spawn's own rules.
     /// Entry 0 opens the window with a hint (toolbar without a selection).
     /// </summary>
-    public void Open(uint creatureEntry, uint spawnGuid) => Show(creatureEntry, spawnGuid, false);
+    public void Open(uint creatureEntry, ulong spawnGuid) => Show(creatureEntry, spawnGuid, false);
 
     /// <summary>The creature entry or trigger ID shown, 0 when none.</summary>
     public uint OwnerId => entry;
@@ -97,7 +98,7 @@ public partial class BehaviorPanel : ContentPanel
     /// <summary>Show the SmartAI rules (source_type 2) of one AreaTrigger.</summary>
     public void OpenAreaTrigger(uint trigger) => Show(trigger, 0, trigger != 0);
 
-    void Show(uint owner, uint spawnGuid, bool trigger)
+    void Show(uint owner, ulong spawnGuid, bool trigger)
     {
         if (owner != entry || spawnGuid != guid || trigger != areaTrigger)
         {
@@ -128,11 +129,12 @@ public partial class BehaviorPanel : ContentPanel
     {
         int current = ++generation;
         IsLoading = true;
-        uint loadEntry = entry, loadGuid = guid;
+        uint loadEntry = entry;
+        ulong loadGuid = guid;
         bool loadTrigger = areaTrigger;
         try
         {
-            var source = new ContentSource(Connection());
+            var source = DBSource.Open(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];
@@ -161,7 +163,7 @@ public partial class BehaviorPanel : ContentPanel
         {
             if (current == generation)
             {
-                status = CreatureSource.SafeError(error);
+                status = DbErrors.Safe(error);
                 UpdateStatus();
             }
         }
@@ -183,7 +185,7 @@ public partial class BehaviorPanel : ContentPanel
         }
 
         effective = Drafts.Draft?.Effective(sourceKey, snapshot.Rows) ?? snapshot.Rows;
-        ContentSource.FillTexts(snapshot.Names, effective, entry);
+        ContentNames.FillTexts(snapshot.Names, effective, entry);
         issues = CheckAll(effective).ToArray();
         Render();
     }

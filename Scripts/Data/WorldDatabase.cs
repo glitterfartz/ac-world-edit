@@ -11,7 +11,15 @@ public sealed class WorldDatabase
     string[]? schema;
     public string SourceKey { get; }
 
-    public WorldDatabase(DatabaseSettings settings)
+    public WorldDatabase(DatabaseSettings settings) : this(settings, WorldDialect.AzerothCore)
+    {
+    }
+
+    public WorldDatabase(WorldConnection connection) : this(connection.World, connection.Dialect)
+    {
+    }
+
+    WorldDatabase(DatabaseSettings settings, WorldDialect dialect)
     {
         if (!settings.IsComplete)
         {
@@ -19,7 +27,10 @@ public sealed class WorldDatabase
         }
 
         connectionString = settings.BuildConnectionString();
-        SourceKey = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{settings.Host}:{settings.Port}/{settings.Database}")));
+        // The dialect is hashed in for TrinityCore only, so AzerothCore keys (and the drafts saved
+        // under them) stay valid while TrinityCore keys can never collide with them.
+        string identity = $"{settings.Host}:{settings.Port}/{settings.Database}" + (dialect == WorldDialect.AzerothCore ? "" : $"#{dialect}");
+        SourceKey = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(identity)));
     }
 
     public async Task<WorldReadSession> OpenAsync(CancellationToken token)

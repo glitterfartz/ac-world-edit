@@ -3,10 +3,14 @@ using MySqlConnector;
 
 namespace ACWorldEdit.Data;
 /// <summary>Bounded SELECT-only creature snapshots; visibility predicates run before nearest-first LIMIT.</summary>
-public sealed class CreatureSource
+public sealed class AcCreatureSource
 {
     readonly WorldDatabase database;
-    public CreatureSource(DatabaseSettings settings) => database = new(settings);
+    public AcCreatureSource(WorldDatabase database) => this.database = database;
+    public AcCreatureSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     public Task<CreatureRegionResult> ReadAsync(CreatureRegion region, CancellationToken token) => ReadAsync(region, new SpawnPreview(), null, "", token);
     public async Task<CreatureRegionResult> ReadAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)
     {
@@ -57,17 +61,9 @@ public sealed class CreatureSource
             }
 
             var visibility = new SpawnVisibility(WorldReadSession.EventIds(reader.GetString(12)), reader.GetUInt32(13), reader.GetBoolean(14), reader.GetString(15), reader.GetBoolean(16));
-            spawns.Add(new(reader.GetUInt32(0), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), modelScale, visibility));
+            spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), modelScale, visibility));
         }
 
         return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, database.SourceKey, events);
     }
-
-    public static string SafeError(Exception error) => error switch
-    {
-        SpawnSchemaException schema => schema.Message,
-        MySqlException => "Database unavailable. Check Scene → Database connection…",
-        InvalidDataException => "Check the database connection settings, or the spawn data is unsupported.",
-        _ => "Could not load spawns. Check the connection and database format."
-    };
 }

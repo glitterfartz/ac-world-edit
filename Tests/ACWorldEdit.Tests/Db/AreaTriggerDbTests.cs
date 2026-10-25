@@ -46,9 +46,9 @@ public class AreaTriggerDbTests
         var (tileX, tileY) = WorldCoordinates.Tile(center);
         var region = new CreatureRegion(575, tileX - 2, tileX + 2, tileY - 2, tileY + 2);
         var point = new SpawnQueryPoint(center.X, center.Y, center.Z);
-        var source = new AreaTriggerSource(config);
+        var source = new AcAreaTriggerSource(config);
         var result = await source.ReadAsync(region, point, "", CancellationToken.None);
-        Check(result.Triggers.Length > 0 && result.Triggers.Length <= AreaTriggerSource.Limit, "No bounded Utgarde Pinnacle triggers");
+        Check(result.Triggers.Length > 0 && result.Triggers.Length <= AcAreaTriggerSource.Limit, "No bounded Utgarde Pinnacle triggers");
         double previous = 0;
         foreach (var t in result.Triggers)
         {
@@ -114,7 +114,7 @@ public class AreaTriggerDbTests
         Console.WriteLine($"AREATRIGGER_VIEW_TRANSFORM volumes={sampled} faces/corners inside and outside agree with Position::IsWithinBox / sphere distance");
 
         // Behavior snapshot: the rule that starts Svala's intro and the script name that runs it.
-        var content = new ContentSource(config);
+        var content = new AcContentSource(config);
         var snapshot = await content.ReadAreaTriggerBehaviorAsync(5140, [], rows => rows, null, CancellationToken.None);
         var scope = new SmartScope(5140, SmartScope.AreaTrigger);
         var rules = snapshot.Rows.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).Where(r => r.Scope == scope).ToList();

@@ -34,7 +34,7 @@ public class SpawnFilterDbTests
         }
 
         var config = Config;
-        var source = new CreatureSource(config);
+        var source = new AcCreatureSource(config);
         var region = new CreatureRegion(0, 31, 33, 48, 50);
         var point = new SpawnQueryPoint(-9492.72, 75.6383, 56.1841);
         var ordinary = await source.ReadAsync(region, policy, point, "96098", default);
@@ -49,12 +49,12 @@ public class SpawnFilterDbTests
         Check(bounded.Spawns.Count == 3 && bounded.Truncated, "Filtering/nearest LIMIT contract failed");
         var scripted = await source.ReadAsync(region, policy with { IncludeScripted = false }, point, "", default);
         Check(scripted.Spawns.All(s => s.Visibility!.Script.Length == 0), "Script-binding filter failed");
-        var objects = await new GameObjectSource(config).ReadAsync(region, policy, point, "", default);
+        var objects = await new AcGameObjectSource(config).ReadAsync(region, policy, point, "", default);
         Check(objects.Spawns.Count > 0 && objects.Spawns.Count <= policy.QueryLimit, "No bounded GameObject snapshot");
         Check(objects.Spawns.All(s => s.Visibility.Pool == 0 && !s.Visibility.Conditional && !s.Visibility.Helper && !s.Visibility.InitiallyDespawned && policy.MatchesMasks(s.PhaseMask, s.SpawnMask)), "GameObject defaults leaked restricted spawns");
         var cancel = new CancellationTokenSource();
         Check(objects.Spawns.All(s => Math.Abs(s.Rotation.LengthSquared() - 1) < .0001f), "GameObject rotations are not normalized");
-        var objectSource = new GameObjectSource(config);
+        var objectSource = new AcGameObjectSource(config);
         var objectLimit = await objectSource.ReadAsync(region, SpawnPreview.AllStored with { QueryLimit = 3 }, point, "", default);
         Check(objectLimit.Spawns.Count == 3 && objectLimit.Truncated, "Broad GameObject preview bypassed its SQL cap");
         var objectMask = await objectSource.ReadAsync(region, policy with { PhaseMask = 0 }, point, "", default);

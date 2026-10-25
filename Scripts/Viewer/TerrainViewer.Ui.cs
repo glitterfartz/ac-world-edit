@@ -234,7 +234,7 @@ public partial class TerrainViewer
         drafts = ContentDraftFiles.Open();
         creatureProps = new CreaturePropertiesWindow
         {
-            Connection = () => connection.Settings,
+            Connection = () => DatabaseConnection(),
             Store = () => store,
             Areas = () => areas,
             Drafts = drafts,
@@ -243,13 +243,13 @@ public partial class TerrainViewer
         };
         areaBehavior = new BehaviorEditorWindow
         {
-            Connection = () => connection.Settings,
+            Connection = () => DatabaseConnection(),
             Store = () => store,
             Drafts = drafts
         };
         questEditor = new QuestEditorWindow
         {
-            Connection = () => connection.Settings,
+            Connection = () => DatabaseConnection(),
             Store = () => store,
             Areas = () => areas,
             Drafts = drafts,

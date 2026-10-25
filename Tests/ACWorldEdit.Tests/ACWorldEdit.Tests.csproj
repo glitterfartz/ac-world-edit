@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Scripts/Assets/**/*.cs" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../../Scripts/Data/*.cs" Link="Data/%(Filename)%(Extension)" />
+    <Compile Include="../../Scripts/Data/**/*.cs" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="DBCD" Version="2.3.1" />

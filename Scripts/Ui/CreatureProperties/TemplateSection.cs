@@ -534,7 +534,7 @@ public sealed partial class TemplateSection(CreatureContext ctx) : InteractionSe
     {
         if (menu != 0 && !effective.All(InteractionTables.GossipMenu).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
         {
-            if (!await new InteractionSource(Connection()).MenuExistsAsync(menu, CancellationToken.None))
+            if (!await DBSource.Open(Connection()).MenuExistsAsync(menu, CancellationToken.None))
             {
                 status = $"Not saved: gossip menu {menu} does not exist.";
                 Render();

@@ -1,3 +1,4 @@
+using ACWorldEdit.Foundation;
 using ACWorldEdit.Data;
 using Xunit;
 
@@ -46,6 +47,29 @@ public class DatabaseSettingsTests
         Assert.Contains("Pooling=False", cs, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("AllowLoadLocalInfile=False", cs, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void AzerothCoreSourceKeyIsStableSoSavedDraftsStayValid()
+    {
+        var settings = new DatabaseSettings("db.example", 3307, "u", "p", "acore_world");
+        Assert.Equal("EC41E454880D7A30DF5A345C3BF180E16C5690917781B8469061AAA42BD10168", new WorldDatabase(settings).SourceKey);
+        Assert.Equal(new WorldDatabase(settings).SourceKey, new WorldDatabase(new WorldConnection(settings, null, WorldDialect.AzerothCore)).SourceKey);
+    }
+
+    [Fact]
+    public void TrinityCoreSourceKeyNeverCollidesWithAzerothCore()
+    {
+        var settings = new DatabaseSettings("db.example", 3307, "u", "p", "acore_world");
+        Assert.Equal("0E99AAEBC8EE481351BAB3B0ECD222AFEDB3D1A1AEABA9E8072F57CB4DD5F345", new WorldDatabase(new WorldConnection(settings, null, WorldDialect.TrinityCore)).SourceKey);
+    }
+
+    [Fact]
+    public void OpeningAnUnsupportedDialectFailsWithAnInvalidData() =>
+        Assert.Throws<InvalidDataException>(() => DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), null, WorldDialect.TrinityCore)));
+
+    [Fact]
+    public void OpeningWithIncompleteSettingsFailsWithAnInvalidData() =>
+        Assert.Throws<InvalidDataException>(() => DBSource.Open(WorldConnection.Empty));
 
     [Fact]
     public void WorldDatabaseRefusesIncompleteSettings() => Assert.Throws<InvalidDataException>(() => new WorldDatabase(DatabaseSettings.Empty));

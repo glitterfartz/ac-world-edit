@@ -85,7 +85,7 @@ public sealed record InteractionIssue(bool Error, string Message, RowEdit[]? Fix
 /// </summary>
 public sealed record NpcInteraction(
     uint Entry,
-    uint Guid,
+    ulong Guid,
     string Name,
     Row Template,
     string ScriptName,
@@ -113,7 +113,7 @@ public sealed record NpcInteraction(
     /// <summary>
     /// Build the view from effective rows. Edited marks compare against the database snapshot.
     /// </summary>
-    public static NpcInteraction Build(uint entry, uint guid, string name, string scriptName, string aiName, int spawnCount, RowSet snapshot, RowSet rows, IInteractionLookup lookup, ScriptHook[] scripts, IReadOnlyDictionary<int, int> conditions)
+    public static NpcInteraction Build(uint entry, ulong guid, string name, string scriptName, string aiName, int spawnCount, RowSet snapshot, RowSet rows, IInteractionLookup lookup, ScriptHook[] scripts, IReadOnlyDictionary<int, int> conditions)
     {
         bool Edited(TableSchema table, Row row) => snapshot.Get(table, table.KeyOf(row)) != row;
         var template = rows.Get(InteractionTables.CreatureTemplate, entry.ToString()) ?? throw new InvalidDataException($"Creature template {entry} is missing.");

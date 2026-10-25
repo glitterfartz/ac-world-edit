@@ -12,16 +12,16 @@ public partial class CreatureOverlay
 {
     public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
 
-    public uint? SelectedListGuid
+    public ulong? SelectedListGuid
     {
         get
         {
             var indices = list.GetSelectedItems();
-            return indices.Length == 0 ? null : uint.Parse(list.GetItemMetadata(indices[0]).AsString());
+            return indices.Length == 0 ? null : ulong.Parse(list.GetItemMetadata(indices[0]).AsString());
         }
     }
 
-    public Vector3 PositionOf(uint guid) => markers[guid].Node.GlobalPosition;
+    public Vector3 PositionOf(ulong guid) => markers[guid].Node.GlobalPosition;
 
     public bool Pick(Camera3D camera, Vector2 screen)
     {
@@ -64,7 +64,7 @@ public partial class CreatureOverlay
             return false;
         }
 
-        uint guid = selectedGuid.Value;
+        ulong guid = selectedGuid.Value;
         var original = markers[guid].Node.Position;
         if (!Pick(camera, camera.UnprojectPosition(original + Vector3.Up)) || selectedGuid != guid)
         {
@@ -147,7 +147,7 @@ public partial class CreatureOverlay
         float tallest = 0;
         foreach (var batch in modelBatches.Values.Where(b => b.Node.ModelReady))
         {
-            foreach (uint guid in batch.Guids)
+            foreach (ulong guid in batch.Guids)
             {
                 if (!markers.TryGetValue(guid, out var marker))
                 {
@@ -180,7 +180,7 @@ public partial class CreatureOverlay
     /// Grab the real ring handle, then check cancel restores yaw, a commit stores a normalized
     /// heading without touching coordinates, and undo/redo restore both rotation and pose.
     /// </summary>
-    bool SmokeRotate(Camera3D camera, uint guid)
+    bool SmokeRotate(Camera3D camera, ulong guid)
     {
         var spawn = markers[guid].Spawn;
         var node = markers[guid].Node;
@@ -260,7 +260,7 @@ public partial class CreatureOverlay
     /// Drop the selection onto real loaded ground, require an exact Z-only change with undo, and
     /// prove the probe refuses to snap when nothing lies at or below the query point.
     /// </summary>
-    bool SmokeGround(uint guid)
+    bool SmokeGround(ulong guid)
     {
         if (GroundAt == null)
         {

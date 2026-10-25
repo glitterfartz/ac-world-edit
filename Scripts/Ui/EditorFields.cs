@@ -411,7 +411,7 @@ public partial class PickerPopup : PopupPanel
         }
         catch (Exception error)
         {
-            status.Text = Data.CreatureSource.SafeError(error);
+            status.Text = Data.DbErrors.Safe(error);
         }
     }
 

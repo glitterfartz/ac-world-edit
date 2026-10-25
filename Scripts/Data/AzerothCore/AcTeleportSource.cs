@@ -2,26 +2,16 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 
-/// <summary>One game_tele row: a named server position (orientation in radians, as the server stores it).</summary>
-public sealed record TeleportLocation(uint Id, string Name, ushort Map, double X, double Y, double Z, double Orientation);
-
 /// <summary>
 /// Read-only game_tele snapshot (the server's .tele command table). The table is small and
 /// administrator-curated, so it is read whole, ordered by name; non-finite rows are dropped.
 /// </summary>
-public sealed class TeleportSource(DatabaseSettings settings)
+public sealed class AcTeleportSource(WorldDatabase database)
 {
-    readonly WorldDatabase database = new(settings);
-
-    /// <summary>The Wrath world continents: Eastern Kingdoms, Kalimdor, Outland, Northrend.</summary>
-    public static readonly IReadOnlySet<ushort> Continents = new HashSet<ushort> { 0, 1, 530, 571 };
-
-    /// <summary>A random location on any of the given maps, or null when the table has none there.</summary>
-    public static TeleportLocation? Pick(IReadOnlyList<TeleportLocation> rows, IReadOnlySet<ushort> maps, Random random)
+    public AcTeleportSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
     {
-        var usable = rows.Where(r => maps.Contains(r.Map)).ToArray();
-        return usable.Length == 0 ? null : usable[random.Next(usable.Length)];
     }
+
 
     public async Task<TeleportLocation[]> ReadAsync(CancellationToken token)
     {

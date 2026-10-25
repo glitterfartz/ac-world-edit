@@ -98,7 +98,7 @@ public partial class TerrainViewer
                     var list = VisibilityControl<ItemList>("GameObjectList");
                     list.Select(0);
                     list.EmitSignal(ItemList.SignalName.ItemSelected, 0);
-                    uint guid = uint.Parse(list.GetItemMetadata(0).AsString());
+                    ulong guid = uint.Parse(list.GetItemMetadata(0).AsString());
                     if (gameObjects.SelectedGuid != guid || creatures.SelectedGuid != null)
                     {
                         throw new Exception("GameObject list selection failed");

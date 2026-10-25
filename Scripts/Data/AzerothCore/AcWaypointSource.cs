@@ -3,41 +3,18 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit.Data;
 
 /// <summary>
-/// One waypoint_data row: Point is the order, Delay the pause in milliseconds and MoveType the
-/// server's WaypointMoveType (0 walk, 1 run, 2 land, 3 takeoff). Positions are server coordinates.
-/// Orientation is null when the column is NULL; wpguid (a runtime marker) is not read.
-/// </summary>
-public sealed record WaypointNode(uint Point, double X, double Y, double Z, double? Orientation, double Velocity, uint Delay, bool Smooth, int MoveType, int Action, int ActionChance);
-
-/// <summary>
-/// A creature spawn that follows a path. Walks is false when creature.MovementType is not 2, in
-/// which case the server loads the path but the creature does not follow it.
-/// </summary>
-public sealed record WaypointUser(uint Guid, uint Entry, string Name, bool Walks);
-
-/// <summary>
-/// One path with the spawns in the region that use it. A path id may be shared by several spawns.
-/// </summary>
-public sealed record WaypointPath(uint Id, ushort Map, WaypointNode[] Nodes, WaypointUser[] Users)
-{
-    /// <summary>
-    /// True when at least one user actually follows the path (MovementType 2).
-    /// </summary>
-    public bool Active => Users.Any(u => u.Walks);
-}
-
-public sealed record WaypointRegionResult(WaypointPath[] Paths, bool Truncated, string SourceKey);
-
-/// <summary>
 /// Read-only waypoint_data paths of the creatures in the streamed region. waypoint_data has no map
 /// column, so paths are found through the creatures: creature_addon.path_id for the spawn, or the
 /// template's creature_template_addon.path_id when the spawn has no creature_addon row (the server
 /// never consults the template addon once a spawn row exists, even if its path_id is 0).
 /// </summary>
-public sealed class WaypointSource(DatabaseSettings settings)
+public sealed class AcWaypointSource(WorldDatabase database)
 {
+    public AcWaypointSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     public const int CreatureLimit = 300, PathLimit = 200, PointLimit = 20000;
-    readonly WorldDatabase database = new(settings);
 
     public async Task<WaypointRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token)
     {
@@ -89,7 +66,7 @@ public sealed class WaypointSource(DatabaseSettings settings)
                 users[path] = list = [];
             }
 
-            list.Add(new(Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), reader.GetString(2), Convert.ToInt32(reader.GetValue(3)) == 2));
+            list.Add(new(Convert.ToUInt64(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), reader.GetString(2), Convert.ToInt32(reader.GetValue(3)) == 2));
         }
 
         return users;

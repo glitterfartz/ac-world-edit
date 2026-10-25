@@ -25,7 +25,7 @@ public class SmartEditorFlowTests : IDisposable
         public string? Quest(uint id) => $"quest {id}";
         public string? Item(uint id) => $"item {id}";
         public string? Text(uint entry, uint group) => "text";
-        public bool CreatureSpawnExists(uint guid) => true;
+        public bool CreatureSpawnExists(ulong guid) => true;
         public string? Emote(uint id) => $"emote {id}";
         public string? TextEmote(uint id) => $"text emote {id}";
         public string? FactionTemplate(uint id) => $"faction {id}";

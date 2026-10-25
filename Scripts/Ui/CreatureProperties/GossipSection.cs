@@ -371,7 +371,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         {
             status = $"Checking menu {menu}…";
             Render();
-            if (!await new InteractionSource(Connection()).MenuExistsAsync(menu, CancellationToken.None))
+            if (!await DBSource.Open(Connection()).MenuExistsAsync(menu, CancellationToken.None))
             {
                 status = $"Not saved: gossip menu {menu} does not exist.";
                 Render();

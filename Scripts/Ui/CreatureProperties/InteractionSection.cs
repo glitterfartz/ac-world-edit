@@ -25,7 +25,7 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
     protected Row TemplateRow => Ctx.TemplateRow;
     protected readonly Dictionary<string, (string Term, List<(string Label, Action Pick)> Results)> searches = [];
 
-    protected Func<DatabaseSettings> Connection => Ctx.Connection;
+    protected Func<WorldConnection> Connection => Ctx.Connection;
     protected void Render() => Ctx.Redraw();
     protected bool Commit(string label, IEnumerable<RowEdit> edits) => Ctx.Commit(label, edits);
     protected uint NextId(TableSchema table, string column, uint databaseMax) => Ctx.NextId(table, column, databaseMax);
@@ -112,7 +112,7 @@ public abstract partial class InteractionSection(CreatureContext ctx) : Creature
             }
             catch (Exception error)
             {
-                status = CreatureSource.SafeError(error);
+                status = DbErrors.Safe(error);
             }
 
             Render();

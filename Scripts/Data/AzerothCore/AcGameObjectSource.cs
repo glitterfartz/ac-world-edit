@@ -3,9 +3,12 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 /// <summary>Read-only database GO snapshots. SQL membership, masks and default despawn state precede LIMIT.</summary>
-public sealed class GameObjectSource(DatabaseSettings settings)
+public sealed class AcGameObjectSource(WorldDatabase database)
 {
-    readonly WorldDatabase database = new(settings);
+    public AcGameObjectSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     public async Task<GameObjectRegionResult> ReadAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)
     {
         preview.Validate();
@@ -58,7 +61,7 @@ public sealed class GameObjectSource(DatabaseSettings settings)
             }
 
             var visibility = new SpawnVisibility(WorldReadSession.EventIds(reader.GetString(18)), reader.GetUInt32(19), reader.GetBoolean(20), reader.GetString(21), reader.GetBoolean(22), reader.GetBoolean(23));
-            spawns.Add(new(reader.GetUInt32(0), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), scale, rotation, reader.GetInt32(16), reader.GetInt32(17), visibility));
+            spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), scale, rotation, reader.GetInt32(16), reader.GetInt32(17), visibility));
         }
 
         return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey);

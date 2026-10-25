@@ -96,7 +96,7 @@ public sealed record SpawnVisibility(int[] Events, uint Pool, bool Conditional, 
 public sealed record WorldEventInfo(int Id, string Name, bool Scheduled);
 
 /// <summary>Database GO pose uses a native server-space quaternion, independent of ADT facing rules.</summary>
-public sealed record GameObjectSpawn(uint Guid, uint TemplateId, string Name, WorldPose Pose,
+public sealed record GameObjectSpawn(ulong Guid, uint TemplateId, string Name, WorldPose Pose,
     uint SpawnMask, uint PhaseMask, uint DisplayId, float Scale,
     System.Numerics.Quaternion Rotation, int State, int Type, SpawnVisibility Visibility);
 

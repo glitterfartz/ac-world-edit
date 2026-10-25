@@ -230,12 +230,12 @@ public sealed partial class QuestsSection(CreatureContext ctx) : InteractionSect
             Render();
             try
             {
-                foundQuests = (await new InteractionSource(Connection()).SearchQuestsAsync(questTerm, CancellationToken.None)).ToList();
+                foundQuests = (await DBSource.Open(Connection()).SearchQuestsAsync(questTerm, CancellationToken.None)).ToList();
                 status = $"{foundQuests.Count} result(s) for \"{questTerm}\".";
             }
             catch (Exception error)
             {
-                status = CreatureSource.SafeError(error);
+                status = DbErrors.Safe(error);
             }
 
             Render();

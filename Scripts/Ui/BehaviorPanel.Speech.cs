@@ -89,7 +89,7 @@ public partial class BehaviorPanel
 
     void ChooseBroadcast(Row line, Action<uint> choose)
     {
-        var source = new ContentSource(Connection());
+        var source = DBSource.Open(Connection());
         PickerPopup.Show(this, "Choose broadcast text", async term =>
         {
             var found = await source.SearchBroadcastAsync(term, CancellationToken.None);

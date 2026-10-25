@@ -16,7 +16,7 @@ public class GameObjectDbTests
     static async Task Core(AssetStore store)
     {
         var config = Config;
-        var result = await new GameObjectSource(config).ReadAsync(new(0, 31, 33, 48, 50), new(), new(-9492.72, 75.6383, 56.1841), "", default);
+        var result = await new AcGameObjectSource(config).ReadAsync(new(0, 31, 33, 48, 50), new(), new(-9492.72, 75.6383, 56.1841), "", default);
         var catalog = new GameObjectCatalog(store);
         var table = new DbcTable(store.Read("DBFilesClient/GameObjectDisplayInfo.dbc"));
         var paths = result.Spawns.Select(s => catalog.Resolve(s.DisplayId)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();

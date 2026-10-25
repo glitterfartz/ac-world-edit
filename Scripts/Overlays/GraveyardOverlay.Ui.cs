@@ -23,7 +23,7 @@ public partial class GraveyardOverlay
     {
         var page = InspectorUi.Page("Graveyards", out var scroll);
         (search, list, status, fly) = InspectorUi.ListSection(page, "Graveyards", "game_graveyard + graveyard_zone in the streamed region.",
-            "Name or ID…", "Waiting for a world…", Select, Refresh, FlyToSelection, query.MarkSearchChanged, 170);
+            "Name or ID…", "Waiting for a world…", id => Select((uint)id), Refresh, FlyToSelection, query.MarkSearchChanged, 170);
         var selection = InspectorUi.SelectionCard(page, "Select a graveyard", "Click an icon or choose one above");
         var card = selection.Box;
         title = selection.Title;
@@ -225,7 +225,7 @@ public partial class GraveyardOverlay
         }
 
         string healers = site.Healers.Length == 0
-            ? $"No spirit healer within {Data.GraveyardSource.HealerRadius:0} yd."
+            ? $"No spirit healer within {Data.DbLimits.HealerRadius:0} yd."
             : "Spirit healers (separate creature spawns, not moved with the graveyard): " + string.Join(", ", site.Healers.Select(h => $"{h.Name} #{h.Guid}"));
         string conflict = draft?.Conflict(sourceKey, site.Record) == true ? "Source graveyard changed since this draft; draft requires review.\n" : "";
         details.Text = $"{conflict}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";

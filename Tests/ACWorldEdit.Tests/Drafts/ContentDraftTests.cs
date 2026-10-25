@@ -21,7 +21,7 @@ public class ContentDraftTests
         public string? Quest(uint id) => id is 7 or 900001 ? "Known quest" : null;
         public string? Item(uint id) => id == 2589 ? "Linen Cloth" : null;
         public string? Text(uint entry, uint group) => entry == 42 && group == 0 ? "For the Alliance!" : null;
-        public bool CreatureSpawnExists(uint guid) => guid == 5;
+        public bool CreatureSpawnExists(ulong guid) => guid == 5;
         public string? Emote(uint id) => id == 3 ? "wave" : null;
         public string? TextEmote(uint id) => id == 101 ? "wave" : null;
         public string? FactionTemplate(uint id) => null;

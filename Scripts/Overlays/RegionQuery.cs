@@ -87,7 +87,7 @@ public sealed class RegionQuery<T> : IDisposable
         {
             if (pendingGeneration == generation)
             {
-                onError(CreatureSource.SafeError(error));
+                onError(DbErrors.Safe(error));
             }
         }
 

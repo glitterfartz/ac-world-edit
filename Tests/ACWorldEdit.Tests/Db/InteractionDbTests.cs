@@ -52,7 +52,7 @@ public class InteractionDbTests
             }
         }
 
-        var source = new InteractionSource(config);
+        var source = new AcInteractionSource(config);
         foreach (var (role, (entry, guid)) in samples)
         {
             var snapshot = await source.ReadAsync(entry, guid, [], rows => rows, catalog, CancellationToken.None);
@@ -79,7 +79,7 @@ public class InteractionDbTests
         }
 
         var items = await source.SearchItemsAsync("Linen", CancellationToken.None);
-        Check(items.Count is > 0 and <= InteractionSource.MaxSearch && items.All(i => i.Name.Contains("Linen", StringComparison.OrdinalIgnoreCase)), "Item search");
+        Check(items.Count is > 0 and <= DbLimits.MaxSearch && items.All(i => i.Name.Contains("Linen", StringComparison.OrdinalIgnoreCase)), "Item search");
         var wildcard = await source.SearchItemsAsync("%", CancellationToken.None);
         Check(wildcard.All(i => i.Name.Contains('%')), "Item search escaping");
         Check((await source.SearchQuestsAsync("Kobold", CancellationToken.None)).Count > 0, "Quest search");

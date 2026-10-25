@@ -112,7 +112,7 @@ public static class InspectorUi
     /// Select the list row whose string metadata is this ID (entity lists store IDs that way), and
     /// optionally scroll it into view. Does nothing when the row is not listed.
     /// </summary>
-    public static void SelectRow(ItemList list, uint id, bool reveal = true)
+    public static void SelectRow(ItemList list, ulong id, bool reveal = true)
     {
         string key = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
         for (int i = 0; i < list.ItemCount; i++)
@@ -135,7 +135,7 @@ public static class InspectorUi
     /// Refresh / Fly to selection row, shared by every overlay page.
     /// </summary>
     public static ListParts ListSection(VBoxContainer page, string heading, string subtitle, string placeholder, string initialStatus,
-        Action<uint> select, Action refresh, Action fly, Action searchChanged, int listHeight,
+        Action<ulong> select, Action refresh, Action fly, Action searchChanged, int listHeight,
         int? listFontSize = null, string? listName = null, string? searchName = null, bool flyDisabled = false, bool clipList = false)
     {
         page.AddChild(Text(heading, 20));
@@ -170,7 +170,7 @@ public static class InspectorUi
         }
 
         page.AddChild(list);
-        list.ItemSelected += index => select(uint.Parse(list.GetItemMetadata((int)index).AsString(), System.Globalization.CultureInfo.InvariantCulture));
+        list.ItemSelected += index => select(ulong.Parse(list.GetItemMetadata((int)index).AsString(), System.Globalization.CultureInfo.InvariantCulture));
         var status = Text(initialStatus, 12, true);
         page.AddChild(status);
         var row = new HBoxContainer();

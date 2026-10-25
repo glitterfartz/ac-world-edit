@@ -55,8 +55,8 @@ public partial class CreatureOverlay : IPlacementEditor
     /// </summary>
     public bool FlyToEntry(uint entry, Vector3 from)
     {
-        var nearest = markers.Values.Where(m => m.Spawn.TemplateId == entry).OrderBy(m => m.Node.GlobalPosition.DistanceSquaredTo(from)).Select(m => (uint?)m.Spawn.Guid).FirstOrDefault();
-        if (nearest is not uint guid)
+        var nearest = markers.Values.Where(m => m.Spawn.TemplateId == entry).OrderBy(m => m.Node.GlobalPosition.DistanceSquaredTo(from)).Select(m => (ulong?)m.Spawn.Guid).FirstOrDefault();
+        if (nearest is not ulong guid)
         {
             return false;
         }

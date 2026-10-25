@@ -112,7 +112,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         Panel.ShowStatus("Searching…");
         try
         {
-            var found = await new ContentSource(Connection()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
+            var found = await DBSource.Open(Connection()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
             if (current != searchGeneration)
             {
                 return;
@@ -126,11 +126,11 @@ public partial class QuestEditorWindow : ContentEditorWindow
             }
 
             ResultCount = found.Count;
-            Panel.ShowStatus(found.Count >= InteractionSource.MaxSearch ? "Showing the first matches; refine the search for more." : "");
+            Panel.ShowStatus(found.Count >= DbLimits.MaxSearch ? "Showing the first matches; refine the search for more." : "");
         }
         catch (Exception error)
         {
-            Panel.ShowStatus(CreatureSource.SafeError(error));
+            Panel.ShowStatus(DbErrors.Safe(error));
         }
     }
 }

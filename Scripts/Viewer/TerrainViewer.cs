@@ -86,6 +86,8 @@ public partial class TerrainViewer : Node3D
     /// User-entered world database connection shared by every database-backed layer and editor.
     /// </summary>
     readonly ConnectionForm connection = new();
+    /// <summary>The dialect follows the client kind; only AzerothCore exists so far.</summary>
+    WorldConnection DatabaseConnection() => new(connection.Settings, null, WorldDialect.AzerothCore);
     CreatureOverlay creatures = null!;
     GameObjectOverlay gameObjects = null!;
     GraveyardOverlay graveyards = null!;
@@ -121,22 +123,22 @@ public partial class TerrainViewer : Node3D
         creatures = new CreatureOverlay
         {
             Models = models,
-            Connection = () => connection.Settings,
+            Connection = () => DatabaseConnection(),
             Report = statusLog.Post
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;
         creatures.GroundAt = GroundAt;
-        gameObjects = new GameObjectOverlay { Models = models, Connection = () => connection.Settings };
+        gameObjects = new GameObjectOverlay { Models = models, Connection = () => DatabaseConnection() };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
-        graveyards = new GraveyardOverlay { Connection = () => connection.Settings, Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
+        graveyards = new GraveyardOverlay { Connection = () => DatabaseConnection(), Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
         AddChild(graveyards);
         graveyards.FocusRequested += FocusPose;
-        waypoints = new WaypointOverlay { Connection = () => connection.Settings, GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
+        waypoints = new WaypointOverlay { Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
         AddChild(waypoints);
         waypoints.FocusRequested += FocusPose;
-        areaTriggers = new AreaTriggerOverlay { Connection = () => connection.Settings };
+        areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection() };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         BuildUi();

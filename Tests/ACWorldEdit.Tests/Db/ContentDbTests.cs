@@ -19,7 +19,7 @@ public class ContentDbTests
     {
         var catalog = InteractionCatalog.Load(store);
         var config = Config;
-        var source = new ContentSource(config);
+        var source = new AcContentSource(config);
         var quests = await source.SearchAsync(SmartParamKind.Quest, "Kobold Camp Cleanup", CancellationToken.None);
         Check(quests.Count > 0, "Quest search found nothing");
         uint questId = quests[0].Id;
@@ -103,11 +103,11 @@ public class ContentDbTests
     [DbFact]
     public async Task BroadcastSearchFindsByIdAndText()
     {
-        var source = new ContentSource(Config);
+        var source = new AcContentSource(Config);
         var any = await source.SearchBroadcastAsync("the", CancellationToken.None);
         Assert.NotEmpty(any);
         var byId = await source.SearchBroadcastAsync(any[0].Id.ToString(), CancellationToken.None);
         Assert.Equal(any[0].Id, byId[0].Id);
-        Assert.True(any.Count <= InteractionSource.MaxSearch);
+        Assert.True(any.Count <= DbLimits.MaxSearch);
     }
 }

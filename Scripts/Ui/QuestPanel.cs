@@ -121,7 +121,7 @@ public partial class QuestPanel : ContentPanel
         IsLoading = true;
         try
         {
-            var source = new ContentSource(Connection());
+            var source = DBSource.Open(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];
@@ -151,7 +151,7 @@ public partial class QuestPanel : ContentPanel
         {
             if (current == generation)
             {
-                status = CreatureSource.SafeError(error);
+                status = DbErrors.Safe(error);
                 UpdateStatus();
             }
         }
@@ -243,7 +243,7 @@ public partial class QuestPanel : ContentPanel
         int current = ++generation;
         try
         {
-            var source = new ContentSource(Connection());
+            var source = DBSource.Open(Connection());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             if (draft == null)
@@ -293,7 +293,7 @@ public partial class QuestPanel : ContentPanel
         }
         catch (Exception error)
         {
-            status = CreatureSource.SafeError(error);
+            status = DbErrors.Safe(error);
             UpdateStatus();
         }
     }
@@ -305,7 +305,7 @@ public partial class QuestPanel : ContentPanel
     void Pick(SmartParamKind kind, string heading, Action<uint> apply)
     {
         var names = snapshot?.Names;
-        PickerPopup.Show(this, heading, term => new ContentSource(Connection()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        PickerPopup.Show(this, heading, term => DBSource.Open(Connection()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
         {
             var target = kind switch
             {

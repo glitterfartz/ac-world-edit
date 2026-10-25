@@ -103,7 +103,7 @@ public sealed partial class VendorSection(CreatureContext ctx) : InteractionSect
         body.AddChild(ClientStyle.Text("Add an item", 16, ClientStyle.Header));
         SearchPicker("item", "Find item by name or ID…", async term =>
         {
-            var found = await new InteractionSource(Connection()).SearchItemDetailsAsync(term, CancellationToken.None);
+            var found = await DBSource.Open(Connection()).SearchItemDetailsAsync(term, CancellationToken.None);
             return found.Select(details =>
             {
                 var item = details.Info;

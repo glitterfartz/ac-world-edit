@@ -118,7 +118,7 @@ public partial class GraveyardOverlay : RegionOverlay
             var center = point;
             string term = search.Text;
             var config = Connection();
-            query.Start(token => new GraveyardSource(config).ReadAsync(area, center, term, token));
+            query.Start(token => DBSource.Open(config).ReadGraveyardsAsync(area, center, term, token));
         }
 
         foreach (var (id, marker) in markers)

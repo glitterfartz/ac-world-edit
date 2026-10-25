@@ -142,7 +142,7 @@ public sealed partial class TrainerSection(CreatureContext ctx) : InteractionSec
     {
         if (!effective.All(InteractionTables.Trainer).Any(r => r.U("Id") == trainer) && !snapshot!.Lookup.TrainerExists(trainer))
         {
-            if (!await new InteractionSource(Connection()).TrainerExistsAsync(trainer, CancellationToken.None))
+            if (!await DBSource.Open(Connection()).TrainerExistsAsync(trainer, CancellationToken.None))
             {
                 status = $"Not saved: trainer {trainer} does not exist.";
                 Render();

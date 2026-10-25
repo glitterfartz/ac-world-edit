@@ -4,7 +4,7 @@ namespace ACWorldEdit.Foundation;
 /// One local history command isolated by database identity and GUID. Before/After are server
 /// poses; commands never own or write database rows.
 /// </summary>
-public sealed record CreatureMove(string Source, uint Guid, WorldPose Before, WorldPose After);
+public sealed record CreatureMove(string Source, ulong Guid, WorldPose Before, WorldPose After);
 
 /// <summary>
 /// Position-only draft independent of scene nodes and the database, persisted by DraftHistory. Source
@@ -33,13 +33,13 @@ public sealed class CreatureDraft : IDisposable
         return move;
     }
 
-    IEnumerable<CreatureMove> Applied(string source, uint guid, WorldPose original) => history.State.AppliedEntries().Where(m => m.Source == source && m.Guid == guid && m.Before.Map == original.Map);
+    IEnumerable<CreatureMove> Applied(string source, ulong guid, WorldPose original) => history.State.AppliedEntries().Where(m => m.Source == source && m.Guid == guid && m.Before.Map == original.Map);
 
     /// <summary>
     /// Resolve the last applied move only when its first baseline still equals the source pose.
     /// Conflicts return the source position so outdated drafts cannot silently win.
     /// </summary>
-    public WorldPose Effective(string source, uint guid, WorldPose original)
+    public WorldPose Effective(string source, ulong guid, WorldPose original)
     {
         var moves = Applied(source, guid, original).ToArray();
         return moves.Length > 0 && moves[0].Before == original ? moves[^1].After : original;
@@ -49,7 +49,7 @@ public sealed class CreatureDraft : IDisposable
     /// Compare the earliest applied command for this source/GUID/map with the current database
     /// baseline. Undone commands do not create an active conflict.
     /// </summary>
-    public bool Conflict(string source, uint guid, WorldPose original)
+    public bool Conflict(string source, ulong guid, WorldPose original)
     {
         var first = Applied(source, guid, original).FirstOrDefault();
         return first != null && first.Before != original;
@@ -59,7 +59,7 @@ public sealed class CreatureDraft : IDisposable
     /// Validate a same-map movement, reject a stale baseline and save a command after discarding any
     /// redo branch. No-op moves do not add history.
     /// </summary>
-    public void Move(string source, uint guid, WorldPose original, WorldPose after)
+    public void Move(string source, ulong guid, WorldPose original, WorldPose after)
     {
         after.Validate();
         if (after.Map != original.Map)

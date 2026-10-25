@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 /// </summary>
 public abstract partial class RegionOverlay : Node3D
 {
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
+    public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public bool LayerEnabled { get; private set; }
     public string QueryStatus => queryStatus;
 

@@ -18,7 +18,7 @@ public partial class GameObjectOverlay : RegionOverlay
     public SpawnPreview Preview { get; private set; } = new();
     public IReadOnlyList<GameObjectSpawn> Records => records;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
-    public uint? SelectedGuid => selected;
+    public ulong? SelectedGuid => selected;
     public int ModelObjectCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedObjectCount { get; private set; }
     public bool IsLoading => query.IsLoading;
@@ -26,11 +26,11 @@ public partial class GameObjectOverlay : RegionOverlay
     public event Action<WorldPose>? FocusRequested;
     public event Action? SelectionChanged;
     IReadOnlyList<GameObjectSpawn> records = [];
-    readonly Dictionary<uint, GameObjectSpawn> lookup = [];
+    readonly Dictionary<ulong, GameObjectSpawn> lookup = [];
     readonly Dictionary<uint, string?> paths = [];
-    readonly Dictionary<ModelKey, (ModelInstance Node, uint[] Guids)> batches = [];
-    readonly Dictionary<uint, MeshInstance3D> fallbacks = [];
-    readonly Dictionary<uint, Label3D> names = [];
+    readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> batches = [];
+    readonly Dictionary<ulong, MeshInstance3D> fallbacks = [];
+    readonly Dictionary<ulong, Label3D> names = [];
     readonly BoxMesh fallbackMesh = new()
     {
         Size = Vector3.One
@@ -40,7 +40,7 @@ public partial class GameObjectOverlay : RegionOverlay
         AlbedoColor = new("e4b56c")
     };
     Label3D selectionLabel = null!;
-    uint? selected;
+    ulong? selected;
     readonly RegionQuery<GameObjectRegionResult> query = new();
     long modelUpdate;
     ItemList list = null!;
@@ -131,7 +131,7 @@ public partial class GameObjectOverlay : RegionOverlay
             var center = point;
             string term = search.Text;
             var config = Connection();
-            query.Start(token => new GameObjectSource(config).ReadAsync(area, preview, center, term, token));
+            query.Start(token => DBSource.Open(config).ReadGameObjectsAsync(area, preview, center, term, token));
         }
 
         if (LayerEnabled && Models.GameObjects != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
@@ -150,7 +150,7 @@ public partial class GameObjectOverlay : RegionOverlay
         var incoming = result.Spawns.ToDictionary(s => s.Guid);
         // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
         // their native model/fallback/label on its next tick without needing a full wipe.
-        foreach (uint guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
+        foreach (ulong guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
         {
             lookup.Remove(guid);
         }
@@ -186,8 +186,8 @@ public partial class GameObjectOverlay : RegionOverlay
             .Select(c => c.Spawn)
             .ToArray();
         AdmittedObjectCount = admitted.Length;
-        Dictionary<ModelKey, List<uint>> groups = [];
-        HashSet<uint> missing = [];
+        Dictionary<ModelKey, List<ulong>> groups = [];
+        HashSet<ulong> missing = [];
         foreach (var spawn in admitted)
         {
             if (!paths.TryGetValue(spawn.DisplayId, out var path))
@@ -242,7 +242,7 @@ public partial class GameObjectOverlay : RegionOverlay
 
             if (!batches[pair.Key].Node.ModelReady)
             {
-                foreach (uint guid in pair.Value)
+                foreach (ulong guid in pair.Value)
                 {
                     missing.Add(guid);
                 }
@@ -257,7 +257,7 @@ public partial class GameObjectOverlay : RegionOverlay
             }
         }
 
-        foreach (uint guid in missing)
+        foreach (ulong guid in missing)
         {
             if (fallbacks.ContainsKey(guid))
             {
@@ -329,7 +329,7 @@ public partial class GameObjectOverlay : RegionOverlay
         }
     }
 
-    public void Select(uint guid)
+    public void Select(ulong guid)
     {
         if (!LayerEnabled || !lookup.TryGetValue(guid, out var spawn))
         {
@@ -365,7 +365,7 @@ public partial class GameObjectOverlay : RegionOverlay
         }
     }
 
-    public (uint Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
+    public (ulong Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
     {
         // Preserve the ray parameter across inverse-scaled batches so GO/creature hits are
         // comparable. This is bounding-box selection, without terrain or triangle occlusion.
@@ -377,7 +377,7 @@ public partial class GameObjectOverlay : RegionOverlay
         var ray = PickRay.From(camera, screen);
         var (origin, direction) = (ray.Origin, ray.Direction);
         var model = ScenePicking.NearestInBatches(ray, batches.Values);
-        uint? nearest = model?.Guid;
+        ulong? nearest = model?.Guid;
         float distance = model?.Distance ?? float.MaxValue;
 
         foreach (var pair in fallbacks)

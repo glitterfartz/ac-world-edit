@@ -17,7 +17,7 @@ public partial class CreatureOverlay : RegionOverlay
     public ModelLibrary? Models { get; set; }
 
     readonly Dictionary<uint, CreatureAppearance?> appearances = [];
-    readonly Dictionary<ModelKey, (ModelInstance Node, uint[] Guids)> modelBatches = [];
+    readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> modelBatches = [];
     long modelUpdate;
     // Source records are immutable baselines. Markers/native transforms show effective
     // draft poses; neither a streaming refresh nor a failed save replaces source rows.
@@ -31,12 +31,12 @@ public partial class CreatureOverlay : RegionOverlay
     TransformGizmo gizmo = null!;
     OptionButton animation = null!;
     ushort previewAnimation;
-    uint? animationListGuid;
+    ulong? animationListGuid;
     public bool IsDragging => gizmo.Dragging;
     public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedCreatureCount => admitted.Count;
 
-    readonly Dictionary<uint, (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)> markers = [];
+    readonly Dictionary<ulong, (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)> markers = [];
     readonly StandardMaterial3D normal = new()
     {
         AlbedoColor = new("5bd8c2")
@@ -60,7 +60,7 @@ public partial class CreatureOverlay : RegionOverlay
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
 
     public event Action? SelectionChanged;
-    readonly HashSet<uint> admitted = [];
+    readonly HashSet<ulong> admitted = [];
     public void SetPreview(SpawnPreview preview)
     {
         preview.Validate();
@@ -90,10 +90,10 @@ public partial class CreatureOverlay : RegionOverlay
     // and keeps at most one database query active.
     readonly RegionQuery<CreatureRegionResult> query = new();
     IReadOnlyList<CreatureSpawn> records = [];
-    uint? selectedGuid;
+    ulong? selectedGuid;
     List<CreatureSpawn> pendingMarkers = [];
     bool truncated;
-    public uint? SelectedGuid => selectedGuid;
+    public ulong? SelectedGuid => selectedGuid;
     public IReadOnlyList<CreatureSpawn> Records => records;
     public bool IsLoading => query.IsLoading || pendingMarkers.Count > 0;
 
@@ -248,7 +248,7 @@ public partial class CreatureOverlay : RegionOverlay
             var preview = Preview;
             var center = point;
             string term = filter.Text;
-            query.Start(token => new CreatureSource(path).ReadAsync(next, preview, center, term, token));
+            query.Start(token => DBSource.Open(path).ReadCreaturesAsync(next, preview, center, term, token));
         }
 
         if (pendingMarkers.Count > 0)
@@ -301,7 +301,7 @@ public partial class CreatureOverlay : RegionOverlay
         {
             if (batch.Node.ModelReady)
             {
-                foreach (uint guid in batch.Guids)
+                foreach (ulong guid in batch.Guids)
                 {
                     if (markers.TryGetValue(guid, out var marker))
                     {
@@ -373,7 +373,7 @@ public partial class CreatureOverlay : RegionOverlay
             return;
         }
 
-        var groups = new Dictionary<ModelKey, List<uint>>();
+        var groups = new Dictionary<ModelKey, List<ulong>>();
         admitted.Clear();
         float viewDistanceSquared = Preview.ViewDistance * Preview.ViewDistance;
         var candidates = markers.Values
@@ -429,7 +429,7 @@ public partial class CreatureOverlay : RegionOverlay
                 continue;
             }
 
-            foreach (uint guid in batch.Value.Guids)
+            foreach (ulong guid in batch.Value.Guids)
             {
                 if (markers.TryGetValue(guid, out var marker))
                 {
@@ -460,7 +460,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// creatures (dragons, giants) do not swallow it. Bounds are model space (Y up) and the label is
     /// a child of the unscaled marker node, so the model's display scale is applied here.
     /// </summary>
-    float LabelHeight(uint guid, Aabb bounds)
+    float LabelHeight(ulong guid, Aabb bounds)
     {
         var marker = markers[guid];
         float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
@@ -472,7 +472,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// Compose creature heading, effective draft position and template/display scale. Static scenery
     /// facing corrections do not belong here.
     /// </summary>
-    Transform3D ModelTransform(uint guid)
+    Transform3D ModelTransform(ulong guid)
     {
         var marker = markers[guid];
         float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
@@ -488,7 +488,7 @@ public partial class CreatureOverlay : RegionOverlay
     void ReconcileSpawns(IReadOnlyList<CreatureSpawn> spawns)
     {
         var incoming = spawns.ToDictionary(s => s.Guid);
-        foreach (uint guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
+        foreach (ulong guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
         {
             markers.Free(guid, m => m.Node);
             admitted.Remove(guid);
@@ -568,7 +568,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// Synchronize viewport/list/details and reset the clip menu on selection changes. Highlight
     /// fallback geometry when needed.
     /// </summary>
-    public void Select(uint guid)
+    public void Select(ulong guid)
     {
         if (!markers.TryGetValue(guid, out var marker))
         {
@@ -711,7 +711,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// <summary>
     /// Move a marker and its native model placements to the effective draft pose.
     /// </summary>
-    void ApplyPose(uint guid)
+    void ApplyPose(ulong guid)
     {
         var marker = markers[guid];
         var pose = PoseOf(marker.Spawn);
@@ -720,7 +720,7 @@ public partial class CreatureOverlay : RegionOverlay
         PlaceModels(guid);
     }
 
-    void PlaceModels(uint guid)
+    void PlaceModels(ulong guid)
     {
         foreach (var batch in modelBatches.Values)
         {
@@ -815,7 +815,7 @@ public partial class CreatureOverlay : RegionOverlay
         }
     }
 
-    public (uint Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
+    public (ulong Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
     {
         if (!LayerEnabled)
         {
@@ -824,9 +824,9 @@ public partial class CreatureOverlay : RegionOverlay
 
         var ray = PickRay.From(camera, screen);
         Vector3 origin = ray.Origin, direction = ray.Direction;
-        var modelGuids = new HashSet<uint>();
+        var modelGuids = new HashSet<ulong>();
         var model = ScenePicking.NearestInBatches(ray, modelBatches.Values, modelGuids);
-        uint? nearest = model?.Guid;
+        ulong? nearest = model?.Guid;
         float distance = model?.Distance ?? float.MaxValue;
 
         foreach (var marker in markers.Values)

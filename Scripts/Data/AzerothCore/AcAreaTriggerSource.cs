@@ -2,18 +2,19 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 
-public sealed record AreaTriggerRegionResult(AreaTriggerRecord[] Triggers, bool Truncated, string SourceKey);
-
 /// <summary>
 /// Read-only `areatrigger` snapshots with their server links (ObjectMgr::LoadAreaTriggers and the
 /// areatrigger_scripts/teleport/involvedrelation/tavern loaders). Centers are limited to the
 /// streamed region, ordered nearest-first and bounded; search applies before LIMIT. The client's
 /// own AreaTrigger.dbc decides when a trigger fires and is not read here.
 /// </summary>
-public sealed class AreaTriggerSource(DatabaseSettings settings)
+public sealed class AcAreaTriggerSource(WorldDatabase database)
 {
+    public AcAreaTriggerSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     public const int Limit = 256;
-    readonly WorldDatabase database = new(settings);
     public string SourceKey => database.SourceKey;
 
     public async Task<AreaTriggerRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token)

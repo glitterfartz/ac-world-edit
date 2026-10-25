@@ -17,7 +17,7 @@ public class QuestModelTests
         public string? Quest(uint id) => id is 7 or Id ? "Known quest" : null;
         public string? Item(uint id) => id == 2589 ? "Linen Cloth" : null;
         public string? Text(uint entry, uint group) => null;
-        public bool CreatureSpawnExists(uint guid) => false;
+        public bool CreatureSpawnExists(ulong guid) => false;
         public string? Emote(uint id) => null;
         public string? TextEmote(uint id) => null;
         public string? FactionTemplate(uint id) => null;

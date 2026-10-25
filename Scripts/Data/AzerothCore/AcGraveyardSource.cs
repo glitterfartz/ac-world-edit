@@ -3,30 +3,18 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit.Data;
 
 /// <summary>
-/// A spirit healer creature near a graveyard. Healers are ordinary creature spawns
-/// (npcflag & UNIT_NPC_FLAG_SPIRITHEALER); moving a graveyard does not move them.
-/// </summary>
-public sealed record SpiritHealer(uint Guid, uint Entry, string Name, double X, double Y, double Z);
-/// <summary>
-/// One graveyard source row with its links and nearby healers, as read from the database.
-/// </summary>
-public sealed record GraveyardSite(GraveyardRecord Record, SpiritHealer[] Healers);
-public sealed record GraveyardRegionResult(GraveyardSite[] Sites, bool Truncated, string SourceKey);
-
-/// <summary>
 /// Read-only game_graveyard/graveyard_zone snapshots (server GameGraveyard.cpp tables). Rows are
 /// limited to the streamed region, ordered nearest-first and bounded; links and healers are fetched
 /// only for the returned IDs inside the same read-only transaction.
 /// </summary>
-public sealed class GraveyardSource(DatabaseSettings settings)
+public sealed class AcGraveyardSource(WorldDatabase database)
 {
+    public AcGraveyardSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
+    {
+    }
+
     public const int Limit = 128;
-    /// <summary>
-    /// Yards around a graveyard searched for spirit healers (they usually stand within ~10 yd).
-    /// </summary>
-    public const double HealerRadius = 40;
     const uint SpiritHealerFlag = 0x4000;
-    readonly WorldDatabase database = new(settings);
 
     public async Task<GraveyardRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token)
     {
@@ -108,7 +96,7 @@ public sealed class GraveyardSource(DatabaseSettings settings)
     }
 
     /// <summary>
-    /// Spirit healers within HealerRadius of each returned graveyard, as read-only context.
+    /// Spirit healers within DbLimits.HealerRadius of each returned graveyard, as read-only context.
     /// </summary>
     static async Task<Dictionary<uint, List<SpiritHealer>>> ReadHealers(WorldReadSession session, ushort map, List<GraveyardRecord> records, CancellationToken token)
     {
@@ -122,10 +110,10 @@ public sealed class GraveyardSource(DatabaseSettings settings)
         await using var command = session.Command("");
         command.Parameters.AddWithValue("@map", map);
         command.Parameters.AddWithValue("@flag", SpiritHealerFlag);
-        command.Parameters.AddWithValue("@minX", records.Min(r => r.X) - HealerRadius);
-        command.Parameters.AddWithValue("@maxX", records.Max(r => r.X) + HealerRadius);
-        command.Parameters.AddWithValue("@minY", records.Min(r => r.Y) - HealerRadius);
-        command.Parameters.AddWithValue("@maxY", records.Max(r => r.Y) + HealerRadius);
+        command.Parameters.AddWithValue("@minX", records.Min(r => r.X) - DbLimits.HealerRadius);
+        command.Parameters.AddWithValue("@maxX", records.Max(r => r.X) + DbLimits.HealerRadius);
+        command.Parameters.AddWithValue("@minY", records.Min(r => r.Y) - DbLimits.HealerRadius);
+        command.Parameters.AddWithValue("@maxY", records.Max(r => r.Y) + DbLimits.HealerRadius);
         command.CommandText = $"""
             SELECT c.guid,{id},COALESCE(t.name,''),c.position_x,c.position_y,c.position_z
             FROM creature c JOIN creature_template t ON t.entry={id}
@@ -138,13 +126,13 @@ public sealed class GraveyardSource(DatabaseSettings settings)
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                healers.Add(new(reader.GetUInt32(0), reader.GetUInt32(1), reader.GetString(2), reader.GetDouble(3), reader.GetDouble(4), reader.GetDouble(5)));
+                healers.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), reader.GetDouble(3), reader.GetDouble(4), reader.GetDouble(5)));
             }
         }
 
         foreach (var record in records)
         {
-            var near = healers.Where(h => Math.Pow(h.X - record.X, 2) + Math.Pow(h.Y - record.Y, 2) <= HealerRadius * HealerRadius).ToList();
+            var near = healers.Where(h => Math.Pow(h.X - record.X, 2) + Math.Pow(h.Y - record.Y, 2) <= DbLimits.HealerRadius * DbLimits.HealerRadius).ToList();
             if (near.Count > 0)
             {
                 result[record.Id] = near;

@@ -19,7 +19,7 @@ public partial class AreaTriggerOverlay
     {
         var page = InspectorUi.Page("AreaTriggers", out var scroll);
         (search, list, status, fly) = InspectorUi.ListSection(page, "AreaTriggers", "Server areatrigger volumes in the streamed region. Turn the layer on in Scene.",
-            "ID, script, teleport or tavern name…", queryStatus, Select, Refresh, FlyToSelection, query.MarkSearchChanged, 170);
+            "ID, script, teleport or tavern name…", queryStatus, id => Select((uint)id), Refresh, FlyToSelection, query.MarkSearchChanged, 170);
         var selection = InspectorUi.SelectionCard(page, "Select an AreaTrigger", "Click a volume or choose one above");
         var card = selection.Box;
         title = selection.Title;

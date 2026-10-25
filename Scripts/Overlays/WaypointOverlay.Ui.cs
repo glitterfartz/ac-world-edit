@@ -23,7 +23,7 @@ public partial class WaypointOverlay
     {
         var page = InspectorUi.Page("Waypoints", out var scroll);
         (search, list, status, fly) = InspectorUi.ListSection(page, "Waypoints", "waypoint_data paths of the creatures in the streamed region.",
-            "Path ID, creature name or GUID…", "Waiting for a world…", SelectPath, Refresh, FlyToSelection, PopulateList, 170);
+            "Path ID, creature name or GUID…", "Waiting for a world…", id => SelectPath((uint)id), Refresh, FlyToSelection, PopulateList, 170);
         var display = InspectorUi.Card(page, "Pathing");
         all = new CheckBox
         {

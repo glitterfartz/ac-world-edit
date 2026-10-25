@@ -17,7 +17,7 @@ public interface IContentNames
     /// First creature_text line of a group for a creature entry.
     /// </summary>
     string? Text(uint entry, uint group);
-    bool CreatureSpawnExists(uint guid);
+    bool CreatureSpawnExists(ulong guid);
     string? Emote(uint id);
     string? TextEmote(uint id);
     string? FactionTemplate(uint id);
@@ -293,7 +293,7 @@ public static partial class SmartCatalog
         public string? Quest(uint id) => null;
         public string? Item(uint id) => null;
         public string? Text(uint entry, uint group) => null;
-        public bool CreatureSpawnExists(uint guid) => false;
+        public bool CreatureSpawnExists(ulong guid) => false;
         public string? Emote(uint id) => null;
         public string? TextEmote(uint id) => null;
         public string? FactionTemplate(uint id) => null;

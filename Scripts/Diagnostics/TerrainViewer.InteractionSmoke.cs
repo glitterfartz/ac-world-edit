@@ -252,7 +252,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            Require(questEditor.ResultCount <= Data.InteractionSource.MaxSearch && !questEditor.SmokeEditingEnabled, "quest search unbounded or a quest opened unexpectedly");
+            Require(questEditor.ResultCount <= Data.DbLimits.MaxSearch && !questEditor.SmokeEditingEnabled, "quest search unbounded or a quest opened unexpectedly");
             Screenshot("quest-editor");
             return true;
         }),

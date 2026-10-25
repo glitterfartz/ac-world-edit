@@ -50,11 +50,11 @@ public class GraveyardDbTests
         }
 
         // Elwynn/Goldshire, the same neighborhood the viewer smoke uses.
-        var source = new GraveyardSource(config);
+        var source = new AcGraveyardSource(config);
         var region = new CreatureRegion(0, 31, 33, 48, 50);
         var point = new SpawnQueryPoint(-9492.72, 75.6383, 56.1841);
         var result = await source.ReadAsync(region, point, "", CancellationToken.None);
-        Check(result.Sites.Length > 0 && result.Sites.Length <= GraveyardSource.Limit, "No bounded Elwynn graveyards");
+        Check(result.Sites.Length > 0 && result.Sites.Length <= AcGraveyardSource.Limit, "No bounded Elwynn graveyards");
         double previous = 0;
         foreach (var site in result.Sites)
         {

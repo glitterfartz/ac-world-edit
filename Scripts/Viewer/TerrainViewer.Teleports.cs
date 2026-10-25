@@ -39,17 +39,17 @@ public partial class TerrainViewer
             return;
         }
 
-        var settings = connection.Settings;
+        var settings = DatabaseConnection();
         TeleportLocation[] rows;
         string failure = "";
         try
         {
-            rows = await Task.Run(() => new TeleportSource(settings).ReadAsync(CancellationToken.None));
+            rows = await Task.Run(() => DBSource.Open(settings).ReadTeleportsAsync(CancellationToken.None));
         }
         catch (Exception error)
         {
             rows = [];
-            failure = CreatureSource.SafeError(error);
+            failure = DbErrors.Safe(error);
         }
 
         if (current != teleportGeneration || !IsInstanceValid(teleports))
@@ -71,7 +71,7 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// A random game_tele location on a major continent (TeleportSource.Continents) the client has, to open instead of the default tile.
+    /// A random game_tele location on a major continent (TeleportLocations.Continents) the client has, to open instead of the default tile.
     /// Null without a usable database connection, so the default location is used.
     /// </summary>
     async Task<TeleportLocation?> PickStartLocation()
@@ -81,17 +81,17 @@ public partial class TerrainViewer
             return null;
         }
 
-        var settings = connection.Settings;
+        var settings = DatabaseConnection();
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var rows = await Task.Run(() => new TeleportSource(settings).ReadAsync(timeout.Token), timeout.Token);
-            var available = mapList.Select(m => (ushort)m.Id).Where(TeleportSource.Continents.Contains).ToHashSet();
-            return TeleportSource.Pick(rows, available, Random.Shared);
+            var rows = await Task.Run(() => DBSource.Open(settings).ReadTeleportsAsync(timeout.Token), timeout.Token);
+            var available = mapList.Select(m => (ushort)m.Id).Where(TeleportLocations.Continents.Contains).ToHashSet();
+            return TeleportLocations.Pick(rows, available, Random.Shared);
         }
         catch (Exception error)
         {
-            GD.Print("Start location: game_tele unavailable, using the default (" + CreatureSource.SafeError(error) + ")");
+            GD.Print("Start location: game_tele unavailable, using the default (" + DbErrors.Safe(error) + ")");
             return null;
         }
     }

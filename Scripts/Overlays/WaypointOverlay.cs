@@ -34,7 +34,7 @@ public partial class WaypointOverlay : RegionOverlay
     const float DotRadius = 0.45f, EmphasizedDotRadius = 0.65f, PickPixels = 12;
 
     /// <summary>The creature selected in the creature layer; its path is emphasized.</summary>
-    public Func<uint?> FocusedCreature { get; set; } = () => null;
+    public Func<ulong?> FocusedCreature { get; set; } = () => null;
     public IReadOnlyCollection<WaypointPath> Paths => lookup.Values;
     public bool IsLoading => query.IsLoading;
     public event Action? SelectionChanged;
@@ -56,7 +56,7 @@ public partial class WaypointOverlay : RegionOverlay
     string sourceKey = "";
     (uint Path, uint Point)? selected;
     uint? focusedPath, emphasized;
-    uint? focusedGuid;
+    ulong? focusedGuid;
     SphereMesh dotMesh = null!;
     StandardMaterial3D lineMaterial = null!, dotMaterial = null!;
     MeshInstance3D handle = null!, walker = null!;
@@ -152,7 +152,7 @@ public partial class WaypointOverlay : RegionOverlay
             var area = region;
             var center = point;
             var config = Connection();
-            query.Start(token => new WaypointSource(config).ReadAsync(area, center, token));
+            query.Start(token => DBSource.Open(config).ReadWaypointsAsync(area, center, token));
         }
 
         UpdateFocus();
@@ -178,7 +178,7 @@ public partial class WaypointOverlay : RegionOverlay
     /// </summary>
     void UpdateFocus()
     {
-        uint? guid = FocusedCreature();
+        ulong? guid = FocusedCreature();
         if (guid != focusedGuid)
         {
             focusedGuid = guid;

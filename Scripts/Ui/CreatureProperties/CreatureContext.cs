@@ -16,7 +16,7 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class CreatureContext
 {
-    public Func<DatabaseSettings> Connection { get; set; } = () => DatabaseSettings.Empty;
+    public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public Func<IClientFiles?> Store { get; set; } = () => null;
     public ContentDrafts Drafts { get; }
     public ClientIcons Icons { get; }
@@ -28,7 +28,7 @@ public sealed class CreatureContext
 
     BehaviorPanel? behavior;
     QuestPanel? quest;
-    (uint Entry, uint Guid)? behaviorOpenedFor;
+    (uint Entry, ulong Guid)? behaviorOpenedFor;
 
     /// <summary>
     /// The one behavior editor body shared by the Behavior and Speech sections (they are two views of
@@ -185,7 +185,7 @@ public sealed class CreatureContext
 
         try
         {
-            var source = new InteractionSource(Connection());
+            var source = DBSource.Open(Connection());
             Catalog = await ContentEditorWindow.LoadCatalog(Store());
             if (Catalog == null && Store() != null)
             {
@@ -196,7 +196,7 @@ public sealed class CreatureContext
             var keys = Draft?.Keys(SourceKey) ?? [];
             var apply = Draft?.Frozen(SourceKey) ?? (rows => rows);
             var cat = Catalog;
-            var result = await Task.Run(() => source.ReadAsync(spawn.TemplateId, spawn.Guid, keys, apply, cat, token), token);
+            var result = await Task.Run(() => source.ReadInteractionAsync(spawn.TemplateId, spawn.Guid, keys, apply, cat, token), token);
             if (current != generation)
             {
                 return;
@@ -219,7 +219,7 @@ public sealed class CreatureContext
         {
             if (current == generation)
             {
-                Status = CreatureSource.SafeError(error);
+                Status = DbErrors.Safe(error);
                 SummaryChanged?.Invoke(Status);
                 Redraw();
             }
