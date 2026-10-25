@@ -119,6 +119,21 @@ public partial class TerrainViewer
             {
                 if (!clientShotOverlaysFocused)
                 {
+                    // The poses below are Eastern Kingdoms coordinates; open that map first if another is showing.
+                    if (currentMapId != 0)
+                    {
+                        int azeroth = mapList.FindIndex(m => m.Directory == "Azeroth");
+                        if (azeroth >= 0 && maps.Selected != azeroth)
+                        {
+                            maps.Select(azeroth);
+                            tileX.Value = 31;
+                            tileY.Value = 49;
+                            _ = OpenMap();
+                        }
+
+                        return;
+                    }
+
                     clientShotOverlaysFocused = true;
                     areaTriggers.SetLayerEnabled(true);
                     FocusPose(new(0, -9465.5, 74, 56.8, 0));
