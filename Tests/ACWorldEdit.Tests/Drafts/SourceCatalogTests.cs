@@ -76,7 +76,7 @@ public class SourceCatalogTests
         public WorldDialect Dialect => WorldDialect.TrinityCore;
         public ITableCatalog Tables => this;
         public ISqlDialect Sql => TcSqlDialect.Instance;
-        public CreatureSchema Creature => CreatureSchema.Tc;
+        public CreaturePage TemplatePage => TcCreaturePage.Page;
         public IReadOnlyList<TableSchema> All => [Wide];
         public TableSchema Find(string name) => name == Wide.Name ? Wide : throw new InvalidDataException(name);
     }

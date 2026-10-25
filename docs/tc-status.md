@@ -9,6 +9,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
+| 6a: shared creature page descriptors (`CreaturePage`) | in progress: the Template page is done for both dialects; vendor is next as the first item-list page, then gossip, trainer and quests |
 | 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
@@ -108,7 +109,8 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
 | Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
-| TC `CreatureSchema` (64-bit `npcflag` bits, Classification) | partial | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
+| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw the Template page for AC and TC (`AcCreaturePage`, `TcCreaturePage`); `CreaturePageTests` guard them. Item lists (vendor, gossip, trainer, quests) are not built yet; further Phase 6 editing waits for them. The AC page was not visually checked (`--interaction-smoke` already fails at "window-open" before this change). |
+| TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |
 | Section registry and sections take field groups from the schema | not started | Phase 6. |
