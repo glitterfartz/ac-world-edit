@@ -48,38 +48,22 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
                 Line($"npc_text {text.TextId}", ClientStyle.Faded, 11, block);
             }
 
-            foreach (var option in menu.Options)
-            {
-                Line($"{option.OptionId}. {(option.Text.Length > 0 ? option.Text : "(no text)")}", ClientStyle.Gold, 13, block);
-                // OptionNpc 0 (None) is a plain gossip option: it only shows text or opens a submenu.
-                var details = new List<string> { option.OptionNpc == 0 ? "Gossip" : TcCreatureView.OptionNpcName(option.OptionNpc) };
-                if (option.ActionMenuId != 0)
+            new PageRenderer(Ctx).RenderItems(block, Ctx.Schema.GossipPage.Options, Ctx.Effective, menu.MenuId, false,
+                row =>
                 {
-                    details.Add($"opens menu {option.ActionMenuId}");
-                }
-
-                if (option.TrainerId is { } trainer)
+                    var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
+                    string trainer = option.TrainerId is { } id ? $" · trainer {id}" : "";
+                    return ClientStyle.Text($"{option.OptionId}. {(option.Text.Length > 0 ? option.Text : "(no text)")}{trainer}", 13, ClientStyle.Gold);
+                }, (field, row) =>
                 {
-                    details.Add($"trainer {trainer}");
-                }
-
-                if (option.ActionPoiId != 0)
-                {
-                    details.Add($"point of interest {option.ActionPoiId}");
-                }
-
-                if (option.SpellId != 0)
-                {
-                    details.Add($"casts spell {option.SpellId}");
-                }
-
-                if (option.BoxText.Length > 0 || option.BoxMoney != 0 || option.Coded)
-                {
-                    details.Add($"confirm “{option.BoxText}”" + (option.BoxMoney != 0 ? $" for {ClientStyle.Money((long)Math.Min(option.BoxMoney, long.MaxValue))}" : "") + (option.Coded ? ", asks for a code" : ""));
-                }
-
-                Line("    " + string.Join(" · ", details), ClientStyle.Faded, 12, block);
-            }
+                    var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
+                    return field.Column switch
+                    {
+                        "OptionText" => ClientStyle.Text(option.Text, 13),
+                        "BoxText" => ClientStyle.Text(option.BoxText, 13),
+                        _ => null
+                    };
+                }, columns: 2);
         }
     }
 }

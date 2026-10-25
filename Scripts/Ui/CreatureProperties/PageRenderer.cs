@@ -24,8 +24,10 @@ public sealed class PageRenderer(CreatureContext ctx)
     public void Reset() => difficulty = null;
 
     /// <summary>Draw child rows using the same field editors as the template page. Sections supply
-    /// the card heading (names, icons and prices); this renderer owns the fields and remove action.</summary>
-    public void RenderItems(Control parent, ItemListSpec spec, RowSet rows, uint entry, bool editable, Func<Row, Control> heading)
+    /// the card heading (names, icons and prices); this renderer owns the fields and remove action.
+    /// Optional field controls preserve specialized editors and resolved text; afterItem adds navigation.</summary>
+    public void RenderItems(Control parent, ItemListSpec spec, RowSet rows, uint entry, bool editable, Func<Row, Control> heading,
+        Func<FieldSpec, Row, Control?>? fieldControl = null, Action<Control, Row>? afterItem = null, int columns = 4)
     {
         foreach (var row in spec.Select(rows, entry))
         {
@@ -35,6 +37,10 @@ public sealed class PageRenderer(CreatureContext ctx)
             card.AddChild(head);
             var title = heading(row);
             title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            if (title is Label titleLabel)
+            {
+                titleLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            }
             head.AddChild(title);
             if (editable)
             {
@@ -43,16 +49,22 @@ public sealed class PageRenderer(CreatureContext ctx)
                 head.AddChild(remove);
             }
 
-            var fields = new GridContainer { Columns = 4 };
+            var fields = new GridContainer { Columns = columns };
             fields.AddThemeConstantOverride("h_separation", 8);
             card.AddChild(fields);
             foreach (var field in spec.Fields)
             {
                 fields.AddChild(Caption(field.Label, field.Tip));
-                var control = editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 13);
+                var control = fieldControl?.Invoke(field, row) ?? (editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 13));
                 control.TooltipText = field.Tip;
+                if (control is Label label)
+                {
+                    label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                    label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                }
                 fields.AddChild(control);
             }
+            afterItem?.Invoke(card, row);
         }
     }
 

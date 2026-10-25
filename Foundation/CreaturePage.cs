@@ -63,7 +63,7 @@ public sealed record ItemListSpec(
 {
     public IEnumerable<Row> Select(RowSet rows, uint parent) => rows.All(Table)
         .Where(r => r.U(ParentColumn) == parent && (Visible?.Invoke(r) ?? true))
-        .OrderBy(r => r.I(OrderColumn)).ThenBy(r => ThenByColumn == null ? 0L : r.L(ThenByColumn))
+        .OrderBy(r => r.L(OrderColumn)).ThenBy(r => ThenByColumn == null ? 0L : r.L(ThenByColumn))
         .ThenBy(Table.KeyOf, StringComparer.Ordinal);
 
     public RowEdit Add(RowSet rows, uint parent, params (string Column, object Value)[] values)

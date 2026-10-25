@@ -50,7 +50,7 @@ Schema references for column meanings, flags and enums:
 - `gossip_menu_option`:
   - Removed: OptionIcon, OptionType, OptionNpcFlag.
   - Added: GossipOptionID, OptionNpc, Language, Flags, GossipNpcOptionID, SpellID, OverrideIconID.
-  - BoxMoney → bigint.
+  - BoxMoney → bigint. Shared gossip descriptors use TC `OptionNpc` service values rather than AC `OptionType` / `OptionNpcFlag`. Checked against the official [AC](https://www.azerothcore.org/wiki/gossip_menu_option) and [TC](https://trinitycore.info/database/master/world/gossip_menu_option) pages. The TC wiki currently lists BoxMoney as int; the existing catalog and TDB check use bigint. The AC wiki lists `BoxBroadcastTextID`, which the existing AC read/edit catalog does not include; the migration retains that subset.
 - `npc_text`: TC has only Probability0-7 and BroadcastTextID0-7. The text, lang and emote columns are gone, and the text lives in BroadcastText.
 - `npc_vendor`/`game_event_npc_vendor`: + type, BonusListIDs, PlayerConditionID, IgnoreFiltering. In `npc_vendor`, TC's primary key includes `type` (item vs currency) in addition to AC's `(entry,item,ExtendedCost)`. Both use signed smallint slots; AC's stock limit is an unsigned tinyint, TC's an unsigned int. Checked against the official [AC](https://www.azerothcore.org/wiki/npc_vendor) and [TC](https://trinitycore.info/database/master/world/npc_vendor) schema pages for the vendor descriptors.
 - `trainer`: Requirement removed. `trainer_spell`: TC adds `ReqAbility1-3`.

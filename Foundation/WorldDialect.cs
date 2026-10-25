@@ -36,6 +36,9 @@ public interface IWorldSchema
 
     /// <summary>The creature's vendor rows and per-item fields.</summary>
     ItemListSpec VendorPage { get; }
+
+    /// <summary>Gossip menus, option fields and greeting storage.</summary>
+    GossipPageSpec GossipPage { get; }
 }
 
 /// <summary>The schema object of each dialect.</summary>
@@ -58,6 +61,7 @@ public sealed class AcSchema : IWorldSchema
     public ISqlDialect Sql => AcSqlDialect.Instance;
     public CreaturePage TemplatePage => AcCreaturePage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.AzerothCore;
+    public GossipPageSpec GossipPage => Foundation.GossipPage.AzerothCore;
 }
 
 /// <summary>
@@ -72,4 +76,5 @@ public sealed class TcSchema : IWorldSchema
     public ISqlDialect Sql => TcSqlDialect.Instance;
     public CreaturePage TemplatePage => TcCreaturePage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
+    public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
 }

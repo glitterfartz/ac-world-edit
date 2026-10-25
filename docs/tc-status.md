@@ -9,7 +9,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
-| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template and vendor descriptors are built for both dialects; gossip, trainer and quests are next |
+| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor and gossip descriptors are built for both dialects; trainer and quests are next |
 | 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
@@ -17,7 +17,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 | Legacy form | Target | Where the legacy form remains |
 |---|---|---|
-| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | ~216 references: `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest, behavior and creature-property panels), content smokes. Converted as Phases 6–8 reach each area. |
+| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | Remaining references: `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest, behavior and creature-property panels), content smokes. Converted as Phases 6–8 reach each area. |
 | `Ac*Source(DatabaseSettings)` constructors | `DBSource.Open(WorldConnection, IClientLookup?)` | Used only by the AC Db tests (`Tests/ACWorldEdit.Tests/Db/`). To remove: switch those tests to `DBSource.Open`, then delete the constructors. |
 | Pre-profile `[database]` settings section | `[database.wrath]` / `[database.retail]` | `SettingsResolver.Connection` falls back to it for AzerothCore. To remove once saved settings have moved to the per-profile sections. |
 
@@ -28,11 +28,13 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ## Where work stopped
 
-- Added `ItemListSpec` (source table, parent filter, ordering, per-item fields, add/remove and key-change edits) and `IWorldSchema.VendorPage`. `PageRenderer.RenderItems` draws the AC vendor editor and TC vendor read-only fields. AC keeps item search, icons/tooltips and shared-list reference cards; its compact read-only view is unchanged.
-- `--client-shot-overlays` now checks either dialect and saves Template and vendor screenshots as well as gossip. Both dialects passed on Farley. AC Template and vendor pages were inspected visually (`artifacts/vendor-wrath-template.png`, `vendor-wrath-vendor.png`), as was the TC vendor page (`artifacts/client-shot-creature-vendor.png`).
-- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. The overlay screenshot workflow opens the window directly and can check the AC pages independently.
-- Next: move gossip, trainer and quests onto item-list descriptors. Then enable TC vendor editing, including item search and validation.
-- Changes are uncommitted. The default suite passed (673 passed, 4 skipped); `ItemListTests` covers list selection, complete dialect-specific defaults, grouped key changes, undo/redo and SQL export.
+- Added `GossipPageSpec` / `IWorldSchema.GossipPage` with dialect-specific menu text links, option lists and greeting tables. Both gossip option pages use `PageRenderer.RenderItems`; its optional field controls preserve AC icons, literal-text/broadcast behavior and submenu validation, and an after-item callback keeps navigation and reordering. AC retains greeting editing, shared-menu copying and the compact read-only preview; TC remains read-only, including all root menus, submenus, broadcast variants and trainer bindings.
+- Gossip option fields now include the catalog's point-of-interest and confirmation settings. AC's existing catalog still omits `BoxBroadcastTextID` (present in the official schema docs); the migration does not add it.
+- `GossipPageTests` covers complete defaults, parent selection, ordering, atomic broadcast override clearing, grouped reordering, undo/redo and SQL export. List ordering now supports full unsigned 32-bit gossip IDs as well as signed vendor slots. Build passed; default suite: 680 passed, 4 skipped.
+- Both dialects passed the Godot overlay screenshot workflow and gossip visual inspection (`artifacts/gossip-wrath.png`, `artifacts/gossip-retail.png`). The workflow also captured Template and vendor pages.
+- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. Use `--client-shot --client-shot-overlays` to open the window directly for screenshot checks.
+- Next: move trainer and quests onto item-list descriptors. Then enable TC vendor editing, including item search and validation.
+- Changes are uncommitted.
 
 ## Foundation and design
 
@@ -117,7 +119,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
 | Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
-| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests` and `ItemListTests` guard the descriptors and edits. Gossip, trainer and quests still need migration. |
+| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests` and `GossipPageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. Trainer and quests still need migration. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |

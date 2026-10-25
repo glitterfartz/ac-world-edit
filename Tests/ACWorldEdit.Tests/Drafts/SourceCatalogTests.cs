@@ -78,6 +78,7 @@ public class SourceCatalogTests
         public ISqlDialect Sql => TcSqlDialect.Instance;
         public CreaturePage TemplatePage => TcCreaturePage.Page;
         public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
+        public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
         public IReadOnlyList<TableSchema> All => [Wide];
         public TableSchema Find(string name) => name == Wide.Name ? Wide : throw new InvalidDataException(name);
     }

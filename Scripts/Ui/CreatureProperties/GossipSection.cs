@@ -73,7 +73,6 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         {
             if (editable)
             {
-                RenderOptionEditor(v, menu, option);
                 continue;
             }
 
@@ -96,6 +95,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
 
         if (editable)
         {
+            RenderOptions(menu);
             RenderAddOption(v, menu);
         }
 
@@ -165,14 +165,14 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         };
         create.Pressed += () =>
         {
-            uint menu = NextId(InteractionTables.GossipMenu, "MenuID", snapshot!.Lookup.MaxMenuId);
-            uint text = NextId(InteractionTables.NpcText, "ID", snapshot.Lookup.MaxTextId);
+            uint menu = NextId(Ctx.Schema.GossipPage.Menus.Table, "MenuID", snapshot!.Lookup.MaxMenuId);
+            uint text = NextId(Ctx.Schema.GossipPage.TextTable, "ID", snapshot.Lookup.MaxTextId);
             var template = TemplateRow;
             Commit("Create gossip menu",
             [
-                Insert(InteractionTables.NpcText, NewText(text, "Greetings, $N.")),
-                Insert(InteractionTables.GossipMenu, Row.Of(("MenuID", menu), ("TextID", text))),
-                Update(InteractionTables.CreatureTemplate, template, template.With("gossip_menu_id", menu).With("npcflag", template.U("npcflag") | NpcFlags.Gossip))
+                Insert(Ctx.Schema.GossipPage.TextTable, NewText(text, "Greetings, $N.")),
+                Insert(Ctx.Schema.GossipPage.Menus.Table, Row.Of(("MenuID", menu), ("TextID", text))),
+                Update(Ctx.Schema.Tables.Find("creature_template"), template, template.With("gossip_menu_id", menu).With("npcflag", template.U("npcflag") | NpcFlags.Gossip))
             ]);
         };
         body.AddChild(create);
@@ -198,36 +198,36 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
 
         fork.Pressed += () =>
         {
-            uint copy = NextId(InteractionTables.GossipMenu, "MenuID", snapshot!.Lookup.MaxMenuId);
-            uint nextText = NextId(InteractionTables.NpcText, "ID", snapshot.Lookup.MaxTextId);
+            uint copy = NextId(Ctx.Schema.GossipPage.Menus.Table, "MenuID", snapshot!.Lookup.MaxMenuId);
+            uint nextText = NextId(Ctx.Schema.GossipPage.TextTable, "ID", snapshot.Lookup.MaxTextId);
             List<RowEdit> edits = [];
-            foreach (var link in effective.All(InteractionTables.GossipMenu).Where(r => r.U("MenuID") == menu.MenuId).ToArray())
+            foreach (var link in effective.All(Ctx.Schema.GossipPage.Menus.Table).Where(r => r.U("MenuID") == menu.MenuId).ToArray())
             {
-                var text = effective.Get(InteractionTables.NpcText, link["TextID"]);
+                var text = effective.Get(Ctx.Schema.GossipPage.TextTable, link["TextID"]);
                 uint textId = link.U("TextID");
                 if (text != null)
                 {
                     textId = nextText++;
-                    edits.Add(Insert(InteractionTables.NpcText, text.With("ID", textId)));
+                    edits.Add(Insert(Ctx.Schema.GossipPage.TextTable, text.With("ID", textId)));
                 }
 
-                edits.Add(Insert(InteractionTables.GossipMenu, Row.Of(("MenuID", copy), ("TextID", textId))));
+                edits.Add(Insert(Ctx.Schema.GossipPage.Menus.Table, Row.Of(("MenuID", copy), ("TextID", textId))));
             }
 
-            edits.AddRange(effective.All(InteractionTables.GossipOption).Where(r => r.U("MenuID") == menu.MenuId).ToArray().Select(r => Insert(InteractionTables.GossipOption, r.With("MenuID", copy))));
+            edits.AddRange(effective.All(Ctx.Schema.GossipPage.Options.Table).Where(r => r.U("MenuID") == menu.MenuId).ToArray().Select(r => Insert(Ctx.Schema.GossipPage.Options.Table, r.With("MenuID", copy))));
             if (menus.Count == 0)
             {
                 var template = TemplateRow;
-                edits.Add(Update(InteractionTables.CreatureTemplate, template, template.With("gossip_menu_id", copy)));
+                edits.Add(Update(Ctx.Schema.Tables.Find("creature_template"), template, template.With("gossip_menu_id", copy)));
             }
             else
             {
                 uint current = menus.Pop();
                 uint parent = menus.Count > 0 ? menus.Peek() : v.GossipMenuId;
                 menus.Push(current);
-                foreach (var option in effective.All(InteractionTables.GossipOption).Where(r => r.U("MenuID") == parent && r.U("ActionMenuID") == menu.MenuId).ToArray())
+                foreach (var option in effective.All(Ctx.Schema.GossipPage.Options.Table).Where(r => r.U("MenuID") == parent && r.U("ActionMenuID") == menu.MenuId).ToArray())
                 {
-                    edits.Add(Update(InteractionTables.GossipOption, option, option.With("ActionMenuID", copy)));
+                    edits.Add(Update(Ctx.Schema.GossipPage.Options.Table, option, option.With("ActionMenuID", copy)));
                 }
             }
 
@@ -247,7 +247,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
     /// </summary>
     void RenderTextEditor(TextView text)
     {
-        var row = effective.Get(InteractionTables.NpcText, text.TextId.ToString(CultureInfo.InvariantCulture));
+        var row = effective.Get(Ctx.Schema.GossipPage.TextTable, text.TextId.ToString(CultureInfo.InvariantCulture));
         var editor = new TextEdit
         {
             Text = row?.T("text0_0") ?? text.Male,
@@ -263,111 +263,83 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
             Text = "Save text",
             Disabled = row == null
         };
-        save.Pressed += () => Commit($"Edit text {text.TextId}", [Update(InteractionTables.NpcText, row!, row!.With("text0_0", editor.Text).With("BroadcastTextID0", 0))]);
+        save.Pressed += () => Commit($"Edit text {text.TextId}", [Update(Ctx.Schema.GossipPage.TextTable, row!, row!.With("text0_0", editor.Text).With("BroadcastTextID0", 0))]);
         actions.AddChild(save);
         actions.AddChild(ClientStyle.Text(text.FromBroadcast ? $"Currently shows broadcast_text {text.BroadcastId}; saving switches to this npc_text." : $"npc_text {text.TextId}{(snapshot!.Lookup.TextUsers(text.TextId) > 1 ? $" · used by {snapshot.Lookup.TextUsers(text.TextId)} menus" : "")} · $N name, $B newline", 11, ClientStyle.Faded));
     }
 
-    void RenderOptionEditor(NpcInteraction v, MenuView menu, OptionView option)
+    void RenderOptions(MenuView menu)
     {
-        var row = option.Row;
-        var box = new VBoxContainer();
-        body.AddChild(box);
-        var line = new HBoxContainer();
-        box.AddChild(line);
-        var icon = new OptionButton
-        {
-            TooltipText = "Icon"
-        };
-        for (int i = 0; i < NpcFlags.OptionIcons.Length; i++)
-        {
-            icon.AddIconItem(icons.Get(ClientStyle.GossipIcon((uint)i)) ?? new PlaceholderTexture2D(), NpcFlags.OptionIcons[i], i);
-        }
-
-        icon.Select((int)Math.Min(option.Icon, (uint)NpcFlags.OptionIcons.Length - 1));
-        icon.ItemSelected += index => Commit("Change option icon", [Update(InteractionTables.GossipOption, row, row.With("OptionIcon", (uint)index))]);
-        line.AddChild(icon);
-        var text = new LineEdit
-        {
-            Text = row.T("OptionText"),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            PlaceholderText = option.FromBroadcast ? option.Text : "Option text"
-        };
-        text.TextSubmitted += value => Commit("Edit option text", [Update(InteractionTables.GossipOption, row, row.With("OptionText", value).With("OptionBroadcastTextID", 0))]);
-        line.AddChild(text);
-        var remove = new Button
-        {
-            Text = "✕",
-            TooltipText = "Delete option"
-        };
-        remove.Pressed += () => Commit("Delete option", [Delete(InteractionTables.GossipOption, row)]);
-        line.AddChild(remove);
-        var details = new HBoxContainer();
-        box.AddChild(details);
-        var type = new OptionButton
-        {
-            TooltipText = "OptionType (what the client does)"
-        };
-        for (int i = 0; i < NpcFlags.OptionTypes.Length; i++)
-        {
-            type.AddItem(NpcFlags.OptionTypes[i], i);
-        }
-
-        type.Select((int)Math.Min(option.Type, (uint)NpcFlags.OptionTypes.Length - 1));
-        type.ItemSelected += index => Commit("Change option type", [Update(InteractionTables.GossipOption, row, row.With("OptionType", (uint)index))]);
-        details.AddChild(type);
-        details.AddChild(ClientStyle.Tag("NpcFlag"));
-        var flag = new LineEdit
-        {
-            Text = $"0x{option.NpcFlag:X}",
-            CustomMinimumSize = new(80, 0),
-            TooltipText = "Shown only when this & npcflag is non-zero"
-        };
-        flag.TextSubmitted += value => Try(() => Commit("Change option NpcFlag", [Update(InteractionTables.GossipOption, row, row.With("OptionNpcFlag", ParseUInt(value)))]));
-        details.AddChild(flag);
-        details.AddChild(ClientStyle.Tag("Submenu"));
-        var action = new LineEdit
-        {
-            Text = option.ActionMenu.ToString(CultureInfo.InvariantCulture),
-            CustomMinimumSize = new(70, 0),
-            TooltipText = "ActionMenuID (0 = none); must exist"
-        };
-        action.TextSubmitted += value => Try(() => _ = SetSubmenu(row, ParseUInt(value)));
-        details.AddChild(action);
-        var up = new Button
-        {
-            Text = "▲",
-            TooltipText = "Move up"
-        };
-        up.Pressed += () => MoveOption(menu, option, -1);
-        details.AddChild(up);
-        var down = new Button
-        {
-            Text = "▼",
-            TooltipText = "Move down"
-        };
-        down.Pressed += () => MoveOption(menu, option, 1);
-        details.AddChild(down);
-        if (option.ActionMenu != 0)
-        {
-            var open = new Button
+        new PageRenderer(Ctx).RenderItems(body, Ctx.Schema.GossipPage.Options, effective, menu.MenuId, true,
+            row => ClientStyle.Text($"Option {row.U("OptionID")}", 14, ClientStyle.Header),
+            (field, row) =>
             {
-                Text = "Open submenu ▸"
-            };
-            open.Pressed += () =>
-            {
-                menus.Push(option.ActionMenu);
-                Render();
-            };
-            box.AddChild(open);
-        }
+                var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
+                switch (field.Column)
+                {
+                    case "OptionIcon":
+                        var icon = new OptionButton();
+                        foreach (var (value, name) in field.Options!)
+                        {
+                            icon.AddIconItem(icons.Get(ClientStyle.GossipIcon((uint)value)) ?? new PlaceholderTexture2D(), name, value);
+                        }
 
-        box.AddChild(new HSeparator());
+                        int selected = icon.GetItemIndex((int)option.Icon);
+                        if (selected < 0)
+                        {
+                            icon.AddItem($"Unknown ({option.Icon})", (int)option.Icon);
+                            selected = icon.ItemCount - 1;
+                        }
+
+                        icon.Select(selected);
+                        icon.ItemSelected += index => Commit("Change option icon", [Update(field.Table, row, row.With(field.Column, icon.GetItemId((int)index)))]);
+                        return icon;
+                    case "OptionText":
+                        var text = new LineEdit
+                        {
+                            Text = row.T(field.Column),
+                            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                            PlaceholderText = option.FromBroadcast ? option.Text : "Option text",
+                            CustomMinimumSize = new(220, 0)
+                        };
+                        text.TextSubmitted += value => Commit("Edit option text", Ctx.Schema.GossipPage.ChangeText(row, value));
+                        return text;
+                    case "ActionMenuID":
+                        var action = new LineEdit { Text = row.T(field.Column), CustomMinimumSize = new(70, 0) };
+                        action.TextSubmitted += value => Try(() => _ = SetSubmenu(row, ParseUInt(value)));
+                        return action;
+                    default:
+                        return null;
+                }
+            }, (card, row) =>
+            {
+                var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
+                var actions = new HBoxContainer();
+                card.AddChild(actions);
+                var up = new Button { Text = "▲", TooltipText = "Move up", Disabled = option == menu.Options[0] };
+                up.Pressed += () => MoveOption(menu, option, -1);
+                actions.AddChild(up);
+                var down = new Button { Text = "▼", TooltipText = "Move down", Disabled = option == menu.Options[^1] };
+                down.Pressed += () => MoveOption(menu, option, 1);
+                actions.AddChild(down);
+                if (option.ActionMenu != 0)
+                {
+                    var open = new Button { Text = "Open submenu ▸" };
+                    open.Pressed += () =>
+                    {
+                        menus.Push(option.ActionMenu);
+                        Render();
+                    };
+                    actions.AddChild(open);
+                }
+
+                card.AddChild(new HSeparator());
+            }, columns: 2);
     }
 
     async Task SetSubmenu(Row option, uint menu)
     {
-        if (menu != 0 && !effective.All(InteractionTables.GossipMenu).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
+        if (menu != 0 && !effective.All(Ctx.Schema.GossipPage.Menus.Table).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
         {
             status = $"Checking menu {menu}…";
             Render();
@@ -381,7 +353,7 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
             snapshot!.Lookup.Menus.Add(menu);
         }
 
-        Commit("Change option submenu", [Update(InteractionTables.GossipOption, option, option.With("ActionMenuID", menu))]);
+        Commit("Change option submenu", [Update(Ctx.Schema.GossipPage.Options.Table, option, option.With("ActionMenuID", menu))]);
     }
 
     /// <summary>
@@ -397,25 +369,18 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         }
 
         var other = menu.Options[index];
-        Commit("Reorder options",
-        [
-            Delete(InteractionTables.GossipOption, option.Row),
-            Delete(InteractionTables.GossipOption, other.Row),
-            Insert(InteractionTables.GossipOption, option.Row.With("OptionID", other.OptionId)),
-            Insert(InteractionTables.GossipOption, other.Row.With("OptionID", option.OptionId))
-        ]);
+        Commit("Reorder options", Ctx.Schema.GossipPage.SwapOptions(option.Row, other.Row));
     }
 
     void RenderAddOption(NpcInteraction v, MenuView menu)
     {
-        uint nextOption = menu.Options.Length == 0 ? 0 : menu.Options.Max(o => o.OptionId) + 1;
         var row = new HBoxContainer();
         body.AddChild(row);
         var add = new Button
         {
             Text = "+ Add option"
         };
-        add.Pressed += () => Commit("Add option", [Insert(InteractionTables.GossipOption, NewOption(menu.MenuId, nextOption, "New option", 1, NpcFlags.Gossip, 0, 0))]);
+        add.Pressed += () => Commit("Add option", [Ctx.Schema.GossipPage.Options.Add(effective, menu.MenuId)]);
         row.AddChild(add);
         var withMenu = new Button
         {
@@ -423,13 +388,13 @@ public sealed partial class GossipSection(CreatureContext ctx) : InteractionSect
         };
         withMenu.Pressed += () =>
         {
-            uint newMenu = NextId(InteractionTables.GossipMenu, "MenuID", snapshot!.Lookup.MaxMenuId);
-            uint text = NextId(InteractionTables.NpcText, "ID", snapshot.Lookup.MaxTextId);
+            uint newMenu = NextId(Ctx.Schema.GossipPage.Menus.Table, "MenuID", snapshot!.Lookup.MaxMenuId);
+            uint text = NextId(Ctx.Schema.GossipPage.TextTable, "ID", snapshot.Lookup.MaxTextId);
             Commit("Add option with new submenu",
             [
-                Insert(InteractionTables.NpcText, NewText(text, "New submenu text.")),
-                Insert(InteractionTables.GossipMenu, Row.Of(("MenuID", newMenu), ("TextID", text))),
-                Insert(InteractionTables.GossipOption, NewOption(menu.MenuId, nextOption, "Tell me more.", 1, NpcFlags.Gossip, 0, newMenu))
+                Insert(Ctx.Schema.GossipPage.TextTable, NewText(text, "New submenu text.")),
+                Insert(Ctx.Schema.GossipPage.Menus.Table, Row.Of(("MenuID", newMenu), ("TextID", text))),
+                Ctx.Schema.GossipPage.Options.Add(effective, menu.MenuId, ("OptionText", "Tell me more."), ("ActionMenuID", newMenu))
             ]);
         };
         row.AddChild(withMenu);
