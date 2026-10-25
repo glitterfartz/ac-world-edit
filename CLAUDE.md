@@ -78,4 +78,4 @@ Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` path
 - Body (when the change needs explaining): blank line, then wrapped prose at 72 columns. Say what changed and why, and any constraint a reader needs. Do not list file names the diff already shows.
 - One logical change per commit. If a commit mixes unrelated work, split it.
 - Never use placeholders such as "WIP", "misc", "updates", "fixes", or stray symbols.
-- A commit that already carries a `Co-Authored-By:` trailer keeps it when amended.
+- No AI attribution in commits: never add a `Co-Authored-By:` trailer naming Claude (or any AI model), and remove one if it appears when amending. The commit author is the only attribution.

@@ -49,5 +49,9 @@
     "code-simplifier@anthropic-plugin-directory": true,
     "feature-dev@anthropic-plugin-directory": true,
     "csharp-lsp@claude-plugins-official": true
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
   }
 }
