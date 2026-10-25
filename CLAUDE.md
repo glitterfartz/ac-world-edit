@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor for AzerothCore. It reads the WoW client's data (3.3.5 MPQ archives, or the retail CASC client) to render terrain, models and liquids, and overlays world-database content. Edits are staged as drafts and exported as SQL; the database connection is read-only.
+ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor for AzerothCore and TrinityCore. It reads the WoW client's data (3.3.5 MPQ archives, or the retail CASC client) to render terrain, models and liquids, and overlays world-database content: AzerothCore for the 3.3.5 client, TrinityCore master (`world` plus `hotfixes`) for retail. Edits are staged as drafts and exported as SQL; the database connection is read-only.
+
+> **Overhaul in progress: TrinityCore backend** (branch `trinity-master`, phases in `docs/TC-DB-Update-Plan.md`, live status in `docs/tc-status.md`). Phases 1–5 are done, Phase 6 (creature properties) is read-only so far, Phases 7–9 (quests, SmartAI, waypoints) are not started and their editors are switched off for TrinityCore.
+> - New database code goes through one interface: reads through `DBSource.Open(...)` → `IDBSource`, schema knowledge through `IDBSource.Schema` (`IWorldSchema`: `Tables`, `Sql`; Foundation code gets it from `WorldSchemas.For(dialect)`). Don't construct `Ac*Source`/`Tc*Source` outside `Scripts/Data`, and don't add new uses of the AzerothCore-only statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`); when a dialect needs a descriptor `IWorldSchema` lacks, add it there.
+> - Legacy forms still in the code are listed under "Coexisting forms" in `docs/tc-status.md`; they are being removed, so don't build on them.
 
 ## Architecture
 
@@ -39,7 +43,8 @@ Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smok
 
 ### Environment variables used by tests/tools
 
-- `ACWORLD_DB_INFO` = `host;port;user;password;database` — required by `Tests/.../Db/*` tests.
+- `ACWORLD_DB_INFO` = `host;port;user;password;database` — required by the AzerothCore `Tests/.../Db/*` tests.
+- `ACWORLD_TC_DB_INFO` = `host;port;user;password;database[;hotfixes]` — required by the TrinityCore Db tests (`TcDbFact`).
 - `ACWORLD_DATA_DIR` (3.3.5 client data), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE` — client data for `ClientData`/`Corpus` tests.
 - `ACWORLD_CASCLIB` (path to `CascLib.dll`; fetch with `Tools/get_casclib.py` into `native/win-x64/`), `ACWORLD_DBD_DIR` (WoWDBDefs; defaults to the `Data/WoWDBDefs` submodule (`git submodule update --init`)).
 - `ACWORLD_LISTFILE` overrides the downloaded community listfile path; corpus tests that need it (`RetailListfileFact`) skip unless it is present.
@@ -58,7 +63,7 @@ Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smok
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them directly without a Godot reference.
 - When working with world-database tables or columns, check the official schema docs, not only the live database or memory: AzerothCore at https://www.azerothcore.org/wiki/database-world and TrinityCore (master) at https://trinitycore.info/database/master/world/home. Record any AC/TC difference that affects the editors in `docs/DB-DIFFERENCES.md`.
 - Game and DB data is read-only reference: `azerothcore-wotlk` and `wow-data` paths must never be modified (enforced by `.claude/hooks/block_readonly.py`).
-- `NEEDED-TESTS.md` lists tests deferred while implementing retail loading; add them once the feature works and remove the entry when its test exists.
+- `docs/NEEDED-TESTS.md` lists tests deferred while implementing retail loading; add them once the feature works and remove the entry when its test exists.
 - `docs/tc-status.md` tracks the TrinityCore database work (plan status, gaps, work in progress) and the project's other unfinished features and known gaps; update it when work lands or a new gap is found.
 - Feature implementations should be followed up by tests, but don't write tests for trivial getters/setters or Godot UI wiring. Tests should be fast and deterministic; slow corpus tests are opt-in via `--settings corpus.runsettings`.
 - For large features, don't implement tests ahead of the feature; implement the feature first, then add tests. Tests should be written to verify the feature works as intended, not to drive the implementation.

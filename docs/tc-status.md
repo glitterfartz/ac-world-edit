@@ -4,6 +4,27 @@ Status of the TrinityCore database work (phases from `docs/TC-DB-Update-Plan.md`
 
 Status values: **done**, **partial**, **not started**, **deviates** (built differently from the plan), **unverified**.
 
+## Overhaul summary
+
+| Phase | Status |
+|---|---|
+| 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
+| 6: creature properties | partial: TC read and read-only sections done; editing not started |
+| 7–9: quests, SmartAI and speech, waypoints | not started |
+
+### Coexisting forms
+
+| Legacy form | Target | Where the legacy form remains |
+|---|---|---|
+| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | ~216 references: `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest, behavior and creature-property panels), content smokes. Converted as Phases 6–8 reach each area. |
+| `Ac*Source(DatabaseSettings)` constructors | `DBSource.Open(WorldConnection, IClientLookup?)` | Used only by the AC Db tests (`Tests/ACWorldEdit.Tests/Db/`). To remove: switch those tests to `DBSource.Open`, then delete the constructors. |
+| Pre-profile `[database]` settings section | `[database.wrath]` / `[database.retail]` | `SettingsResolver.Connection` falls back to it for AzerothCore. To remove once saved settings have moved to the per-profile sections. |
+
+### Gated or inconsistent right now
+
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties are read-only (`CreatureContext.Editable`).
+- Export treats a source with no `SourceDialects` entry as AzerothCore.
+
 ## Foundation and design
 
 | Feature | Status | Notes |
@@ -16,7 +37,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | `SmartCatalog`, `QuestModel`, `NpcFlags` behind `AcSchema` | deviates | They stay static AC data; moved per area in Phases 6–8. |
 | `IWorldSchema` (`Dialect`, `Tables`, `Sql`) | partial | `QuestSchema`, `NpcSchema`, `CreatureSchema`, `Smart` come with Phases 6–8. |
 | `ISqlDialect` (`AcSqlDialect`, `TcSqlDialect`) | done | AC export output unchanged. |
-| `TcSchema` (empty table catalog), returned by `TcDBSource.Schema` | done | TC row and waypoint edits are refused instead of exported as AC SQL. |
+| `TcSchema` (`TcTables` catalog, creature tables only), returned by `TcDBSource.Schema` | done | TC quest, SmartAI and waypoint edits are refused instead of exported as AC SQL. |
 | Export uses each source's dialect | done | `SourceDialects` records each opened source in `sources.json`; unknown sources are AC. |
 | Drafts use the source's table catalog | done | `InteractionDraft`/`ContentDrafts` resolve each source's catalog through `SourceDialects`. |
 | `SourceKey` hashes the dialect (TC only) | done | AC keys unchanged. |

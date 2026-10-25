@@ -1,6 +1,6 @@
 # ACWorldEdit Architecture
 
-ACWorldEdit is a Godot 4.7 (.NET, `net8.0`) 3D viewer and editor for AzerothCore. It renders WoW terrain, models, liquids, lighting and skyboxes from a 3.3.5 MPQ client or a retail CASC client, and overlays AzerothCore world-database content on top: creature and GameObject spawns, graveyards, area triggers, NPC interactions, quests and SmartAI scripts.
+ACWorldEdit is a Godot 4.7 (.NET, `net8.0`) 3D viewer and editor for AzerothCore. It renders WoW terrain, models, liquids, lighting and skyboxes from a 3.3.5 MPQ client or a retail CASC client, and overlays world-database content on top (AzerothCore for the 3.3.5 client, TrinityCore master for retail; TrinityCore support is mid-build, see [`tc-status.md`](tc-status.md)): creature and GameObject spawns, graveyards, area triggers, NPC interactions, quests and SmartAI scripts.
 
 The application never writes to the database or the game files. Edits are staged as local drafts and leave the app only as SQL scripts that a person reviews and runs.
 
@@ -18,7 +18,7 @@ flowchart LR
     user(["User"])
     app["ACWorldEdit<br/>Godot 4.7 app"]
     client[("WoW client data<br/>3.3.5 MPQ or retail CASC")]
-    db[("AzerothCore<br/>acore_world MySQL")]
+    db[("World database (MySQL)<br/>AzerothCore acore_world, or<br/>TrinityCore world + hotfixes")]
     listfile[("wowdev community listfile<br/>downloaded on request")]
     drafts[("Local drafts<br/>user://drafts/*.json")]
     sql[("SQL scripts<br/>user://drafts/exports/")]
@@ -102,7 +102,7 @@ flowchart TB
     app --> fdn
 ```
 
-Solid arrows are compile or runtime dependencies. Dotted arrows are source-linked compiles: the test projects include `Scripts/Assets/**` and `Scripts/Data/*.cs` directly, so those two folders must stay free of Godot types. In the other direction, `ACWorldEdit.csproj` explicitly `Compile Remove`s `Tests/`, `Foundation/` and `artifacts/` so they are not built into the Godot assembly; Foundation reaches the app only as a project reference.
+Solid arrows are compile or runtime dependencies. Dotted arrows are source-linked compiles: the test projects include `Scripts/Assets/**` and `Scripts/Data/**` directly, so those two folders must stay free of Godot types. In the other direction, `ACWorldEdit.csproj` explicitly `Compile Remove`s `Tests/`, `Foundation/` and `artifacts/` so they are not built into the Godot assembly; Foundation reaches the app only as a project reference.
 
 ## Layers and dependency rules
 
@@ -140,7 +140,7 @@ A client folder is opened by `ClientServices`, which wires an `IClientFiles` sou
 | Path | Contents |
 |---|---|
 | `Scripts/Assets/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs |
-| `Scripts/Data/` | Read-only MySQL sessions and per-domain `*Source` classes |
+| `Scripts/Data/` | Read-only MySQL sessions, `IDBSource`, and per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`) |
 | `Scripts/Viewer/` | `TerrainViewer` (partial class), `ClientServices`, sky, minimap, picking |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky node construction |
 | `Scripts/Overlays/` | Creature, GameObject, graveyard and AreaTrigger overlays, gizmo, region queries |

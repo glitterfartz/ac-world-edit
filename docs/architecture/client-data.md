@@ -107,7 +107,8 @@ Retail:
 3. Read maps through `Db2Tables`.
 4. If a listfile is present, install `PathListfile.Resolve` as `PathResolver`.
 5. Register `RetailLiquids` and call `ClientLighting.TryLoadRetail`.
-6. Areas are `null`. `DatabaseEnabled` is false when the world database cannot describe that client.
+6. Build the retail creature and GameObject display catalogs and the `RetailClientLookup` (`IClientLookup`) from `Db2Tables`.
+7. Areas are `null`. The world database is enabled (TrinityCore dialect).
 
 If opening fails, the partly opened store is disposed.
 

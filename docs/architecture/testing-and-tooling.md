@@ -32,7 +32,7 @@ Folders mirror the layers:
 - `Assets/`: area lookup, asset references, client folder, light bands, listfile store, malformed input, retail client, retail liquids, split terrain, terrain geometry.
 - `Corpus/`: tests that need real client data (world, model, liquid, retail).
 - `Data/`: database settings, read-only guard, settings resolution.
-- `Db/`: tests that need a live database, one per source.
+- `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`).
 - `Drafts/`: creature, graveyard, content and interaction drafts, history, pending changes.
 - `Placement/`: pose text, spawn preview, world coordinates.
 - `Smart/`: quest model, SmartAI behaviour, catalog and rule edits.
@@ -45,7 +45,7 @@ Categories and runsettings:
 |---|---|---|
 | unit (default) | none | `default.runsettings` (excludes Corpus and KnownBug) |
 | `Corpus` | needs `ACWORLD_DATA_DIR` or `wow-data` | `corpus.runsettings` |
-| `Db` | needs `ACWORLD_DB_INFO` | a command-line filter |
+| `Db` | needs `ACWORLD_DB_INFO` (AzerothCore) or `ACWORLD_TC_DB_INFO` (TrinityCore) | the default suite; each test skips when its variable is unset |
 | `KnownBug` | `KnownBug` attribute, added by a custom discoverer | `knownbugs.runsettings` (also needs `ACWE_RUN_KNOWN_BUGS=1`) |
 
 Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).

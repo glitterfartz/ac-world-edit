@@ -15,30 +15,47 @@ flowchart LR
     recs --> ov["Overlays and editors"]
 ```
 
-- `WorldDatabase` (`Scripts/Data/WorldDatabase.cs`) holds the connection string in memory. `SourceKey` is a SHA-256 of `host:port/database`; drafts are tied to it.
-- `WorldReadSession` reads `information_schema.COLUMNS` for about 40 known tables. A missing column raises `SpawnSchemaException`, so a query fails rather than guessing.
+- `WorldDatabase` (`Scripts/Data/WorldDatabase.cs`) holds the connection string in memory. `SourceKey` is a SHA-256 of `host:port/database` (plus `#TrinityCore` for TrinityCore, so AzerothCore keys are unchanged); drafts are tied to it.
+- `WorldReadSession` reads `information_schema.COLUMNS` for the dialect's known tables (`WorldReadSession.SchemaTables`), then `RequireDialect` rejects a database of the other dialect. A missing column raises `SpawnSchemaException`, so a query fails rather than guessing.
 - User values are always bound as parameters. Table and column names come from code. LIKE wildcards in search text are escaped and terms are capped at 80 characters.
 - `Restrictions` builds EXISTS filters over event, pool and conditions tables so spawn queries can respect the preview policy.
 - `DatabaseSettings` (`Scripts/Data/DatabaseSettings.cs`) parses `host;port;user;password;database`. The connection string sets short timeouts, disables `LOAD DATA LOCAL` and does not pool. `ToString` omits the password.
-- `SettingsResolver` (`Scripts/Data/SettingsResolver.cs`) lets environment variables (`ACWORLD_DB_INFO`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_CLIENT_PROFILE`) override saved settings. An invalid `ACWORLD_DB_INFO` falls back to saved values silently.
+- `SettingsResolver` (`Scripts/Data/SettingsResolver.cs`) lets environment variables (`ACWORLD_DB_INFO`, `ACWORLD_TC_DB_INFO`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_CLIENT_PROFILE`) override saved settings. An invalid `ACWORLD_DB_INFO` falls back to saved values silently.
 
 ### Dialects: `IDBSource`
 
 Reads go through `IDBSource` (`Scripts/Data/IDBSource.cs`), opened with `DBSource.Open`, which picks the dialect and takes the client's `IClientLookup`. AzerothCore lives in `Scripts/Data/AzerothCore/` (`Ac*Source`), TrinityCore in `Scripts/Data/TrinityCore/` (`Tc*Source`). TrinityCore coverage and gaps are tracked in [`docs/tc-status.md`](../tc-status.md); schema differences are in [`docs/DB-DIFFERENCES.md`](../DB-DIFFERENCES.md).
 
+Callers outside `Scripts/Data` use `DBSource.Open` and `IDBSource.Schema`, not the source classes. The `Ac*Source(DatabaseSettings)` constructors are legacy, used only by the AzerothCore Db tests, and are slated for removal.
+
 ### Source classes and the tables they read
+
+AzerothCore (`Scripts/Data/AzerothCore/`):
 
 | Source | Tables read |
 |---|---|
-| `CreatureSource` | `creature` joined to `creature_template`; `creature_template_model` if present, otherwise `modelid1..4` and `scale`; event, pool and condition filters |
-| `GameObjectSource` | `gameobject` joined to `gameobject_template`; event, pool and condition filters |
-| `GraveyardSource` | `game_graveyard`, `graveyard_zone`; spirit healers from `creature` joined to `creature_template` (npcflag) |
-| `TeleportSource` | `game_tele` |
-| `AreaTriggerSource` | `areatrigger`, `areatrigger_scripts`, `areatrigger_teleport`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `quest_template`, `smart_scripts` |
-| `InteractionSource` | `creature_template`, `creature`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `npc_spellclick_spells`, `gossip_menu`, `gossip_menu_option`, `npc_text`, `trainer`, `trainer_spell`, `item_template`, `quest_template`, `broadcast_text`, `points_of_interest`, `conditions`, `smart_scripts` |
-| `ContentSource` | the four quest tables, starter and ender links, `creature_template` (AIName), `smart_scripts` (source types 0, 9, 2), `creature_text`, `areatrigger_scripts`, `areatrigger`, `creature`, `gameobject_template`, `item_template` |
+| `AcCreatureSource` | `creature` joined to `creature_template`; `creature_template_model` if present, otherwise `modelid1..4` and `scale`; event, pool and condition filters |
+| `AcGameObjectSource` | `gameobject` joined to `gameobject_template`; event, pool and condition filters |
+| `AcGraveyardSource` | `game_graveyard`, `graveyard_zone`; spirit healers from `creature` joined to `creature_template` (npcflag) |
+| `AcTeleportSource` | `game_tele` |
+| `AcWaypointSource` | `waypoint_data`; paths found through `creature_addon.path_id`, else `creature_template_addon.path_id` |
+| `AcAreaTriggerSource` | `areatrigger`, `areatrigger_scripts`, `areatrigger_teleport`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `quest_template`, `smart_scripts` |
+| `AcInteractionSource` | `creature_template`, `creature`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `npc_spellclick_spells`, `gossip_menu`, `gossip_menu_option`, `npc_text`, `trainer`, `trainer_spell`, `item_template`, `quest_template`, `broadcast_text`, `points_of_interest`, `conditions`, `smart_scripts` |
+| `AcContentSource` | the four quest tables, starter and ender links, `creature_template` (AIName), `smart_scripts` (source types 0, 9, 2), `creature_text`, `areatrigger_scripts`, `areatrigger`, `creature`, `gameobject_template`, `item_template` |
 
-`ContentSource` also provides name search (`SearchAsync`). `InteractionSource` uses `InteractionCatalog` (from `Scripts/Assets/Client`) to look up client-side names and icons.
+`AcContentSource` also provides name search (`SearchAsync`). `AcInteractionSource` uses `InteractionCatalog` (from `Scripts/Assets/Client`) to look up client-side names and icons.
+
+TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage in [`docs/tc-status.md`](../tc-status.md)):
+
+| Source | Reads |
+|---|---|
+| `TcSpawnSource` | `creature` / `gameobject` with their templates, `creature_template_model`; `pool_members`, event and `conditions` filters |
+| `TcGraveyardSource` | `world_safe_locs`, `graveyard_zone`, team rows in `conditions`, teleport overlaps from `areatrigger_teleport`; healers via `AcGraveyardSource.ReadHealers` |
+| `TcAreaTriggerSource` | client `AreaTrigger.db2` (through `IClientLookup`) joined to `areatrigger_scripts`, `areatrigger_teleport` → `world_safe_locs`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `smart_scripts` |
+| `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks), read-only |
+| `TcHotfixSource` | `hotfixes` database: `creature_display_info`, `creature_model_data`, `broadcast_text`, `area_trigger` |
+
+Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has no content (quest, SmartAI) or waypoint source yet; those editors and the waypoint layer are off in TrinityCore mode.
 
 ## Draft model: `Foundation/`
 
@@ -47,12 +64,14 @@ Each kind of edit has its own draft type. All of them are backed by `DraftHistor
 | Draft | File | Covers |
 |---|---|---|
 | `CreatureDraft` | `CreatureDraft.cs` | Creature positions. `Move`, `Revert`, `Undo`, `Redo`, `NetMoves()` |
-| `GraveyardDraft` | `GraveyardDraft.cs` | Whole `game_graveyard` rows plus `graveyard_zone` links. ID and map cannot change |
+| `GameObjectDraft` | `GameObjectDraft.cs` | GameObject positions and rotation |
+| `GraveyardDraft` | `GraveyardDraft.cs` | Graveyard location, name and zone links, dialect-neutral (`ISqlDialect.Graveyard` maps them to tables). ID and map cannot change |
+| `WaypointDraft` | `WaypointDraft.cs` | AzerothCore `waypoint_data` point positions and properties |
 | `ContentDrafts` | `ContentDrafts.cs` | One shared `InteractionDraft` for the interaction, quest and behavior editors |
-| `InteractionDraft` | `InteractionDraft.cs` | Generic row edits (insert, update, delete); several edits undo as one command |
-| `InteractionRows` | `InteractionRows.cs` | Allowed tables and columns (`InteractionTables.All`) and the row model |
+| `InteractionDraft` | `InteractionDraft.cs` | Generic row edits (insert, update, delete); several edits undo as one command. Each source's table catalog comes from `SourceDialects` (`sources.json`); an unknown source is AzerothCore |
+| `InteractionRows` | `InteractionRows.cs` | The row model and `AcTables`, the AzerothCore catalog (`InteractionTables` is its legacy static facade); TrinityCore's catalog is `TcTables` (`TcTables.cs`) |
 
-`InteractionTables.All` lists the editable tables: `creature_template` (npcflag, gossip_menu_id, subname), `gossip_menu`, `npc_text`, `gossip_menu_option`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `trainer`, `trainer_spell`, `npc_spellclick_spells`, `creature_ai` (a logical name for `creature_template.AIName`), the four quest tables, `smart_scripts`, `creature_text`, and `areatrigger_scripts`.
+`AcTables` lists the editable AzerothCore tables: `creature_template` (npcflag, gossip_menu_id, subname), `gossip_menu`, `npc_text`, `gossip_menu_option`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `trainer`, `trainer_spell`, `npc_spellclick_spells`, `creature_ai` (a logical name for `creature_template.AIName`), the four quest tables, `smart_scripts`, `creature_text`, and `areatrigger_scripts`. `TcTables` holds only the creature-property tables (see `docs/tc-status.md`), so a TrinityCore quest or SmartAI row is refused.
 
 ### Undo, redo and freshness
 
@@ -92,11 +111,11 @@ Details:
 - **Net changes.** Draft entries are collapsed per source, GUID or key: the first `Before` to the last `After`. Changes that end up at the baseline are dropped.
 - **Pending changes** (`Foundation/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. The set of exported IDs is saved as a JSON array.
 - **Discard** calls the owning draft's `Revert`. Reverts are themselves undoable entries.
-- **Local file locations** come from `Scripts/Ui/ContentDraftFiles.cs`: `user://drafts/creature-positions.json`, `graveyards.json`, `interactions.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
+- **Local file locations** come from `Scripts/Ui/ContentDraftFiles.cs`: `user://drafts/creature-positions.json`, `gameobject-positions.json`, `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
 
 ## SQL generation: `Foundation/SqlExport.cs`
 
-`SqlExport.Build(source, creatures, graveyards, rows)` returns `SqlScripts(Apply, Revert, Changes, Summary)`. It never connects to anything.
+`SqlExport.Build(source, creatures, graveyards, rows, ..., waypoints, schema, gameObjects)` returns `SqlScripts(Apply, Revert, Changes, Summary)`. It never connects to anything. `schema` (default `AcSchema`) picks the dialect: content rows use `schema.Tables`, and moves, graveyards and waypoints use `schema.Sql` (`AcSqlDialect` or `TcSqlDialect` in `Foundation/SqlDialect.cs`). The viewer passes each source's schema from `SourceDialects`.
 
 Each script has the same structure:
 
@@ -110,8 +129,10 @@ The revert script is the same shape, with the statements in reverse order.
 Per change:
 
 - **Creature move:** `UPDATE creature SET position_x, position_y, position_z, orientation WHERE guid = ...` with a guard that the four columns still hold their old values (floats compared with `ABS(col - v) < 0.0001`).
-- **Graveyard position or name:** an `UPDATE` on `game_graveyard` guarded by ID, position and comment.
-- **Graveyard links:** `INSERT`, `DELETE` or `UPDATE` on `graveyard_zone`, one per changed link.
+- **GameObject move:** the same pattern on `gameobject`.
+- **Graveyard position or name:** an `UPDATE` guarded by ID, position and comment, on `game_graveyard` (AzerothCore) or `world_safe_locs` (TrinityCore).
+- **Graveyard links:** `INSERT`, `DELETE` or `UPDATE` on `graveyard_zone`, one per changed link. TrinityCore has no `Faction` column; the faction is a team row in `conditions` (source type 27).
+- **Waypoint point:** an `UPDATE` on `waypoint_data` (AzerothCore only; `TcSqlDialect` refuses waypoint edits).
 - **Content rows:** insert writes every allowed column; delete matches every allowed column; update changes and guards only the key plus the changed columns. Restricting updates this way is what lets `creature_ai` and `creature_template` share a table safely.
 
 Escaping and guards:
@@ -130,6 +151,8 @@ Escaping and guards:
 - `ExportAllPending` writes, calls `MarkExported`, then opens the folder.
 
 ## SmartAI and quest rules
+
+These are AzerothCore-only static data today; the quest and behavior editors are off in TrinityCore mode until Phases 7–8 add TrinityCore descriptors to `IWorldSchema`.
 
 - `SmartCatalog` (`Foundation/SmartCatalog.cs`) is generated by `Tools/generate_smart_catalog.py` from AzerothCore's `SmartScriptMgr.h` enums, with hand-written names and sentences. `SmartCategories.cs` hides the server's marker entries (`_TC_END`, `_AC_START`, `_AC_END`, `RESERVED`).
 - `SmartBehavior` (`Foundation/SmartBehavior.cs`) turns rows into readable sentences, groups linked rows into chains, and checks rules that mirror `SmartScriptMgr.cpp`.

@@ -17,7 +17,7 @@ sequenceDiagram
 
     Main->>TV: scene loaded
     TV->>TV: create TerrainRenderer, ModelLibrary, WorldObjectScene, Camera3D
-    TV->>TV: create SkyLighting and four overlays
+    TV->>TV: create SkyLighting and five overlays
     TV->>UI: BuildUi (menus, toolbar, sidebar, editor windows, drafts)
     TV->>TV: ConfigureSmokeChecks (parse CLI flags)
     TV-->>TV: StartupPrompts (not awaited): DB test, client picker if none saved
@@ -132,7 +132,7 @@ All camera and input handling is in `TerrainViewer.cs`.
 
 - **Flight:** hold right mouse to capture the cursor. Mouse motion changes yaw and pitch (pitch clamped to ±1.55). `MoveCamera` reads physical W, A, S, D, Q and E; Shift multiplies speed by 4; the wheel changes speed between 5 and 1500.
 - **`_Input`** runs before shortcuts. While captured it swallows keys other than Escape, so flight keys do not trigger toolbar modes. While an editor is dragging it routes motion, release and Escape to that editor.
-- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its interaction window (AzerothCore only until the TrinityCore editors exist). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
+- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window (read-only for TrinityCore until its editors exist). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
 - **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
 
@@ -144,7 +144,7 @@ Per-frame order in `_Process`:
 4. Status, menu and toolbar refresh
 5. `sky.Update`
 6. Labels, telemetry and minimap
-7. Creature, GameObject, graveyard and trigger `Update(camera)`
+7. Creature, GameObject, graveyard, waypoint and trigger `Update(camera)`
 8. `interaction.Track(creatures.SelectedSpawn)`
 9. `models.Update(camera)`
 10. Sidebar counts
@@ -153,25 +153,26 @@ Per-frame order in `_Process`:
 
 ## Overlays
 
-Four overlays are children of `TerrainViewer`. They share one shape:
+Five overlays are children of `TerrainViewer`. They share one shape (`RegionOverlay`):
 
-- `Connection` gives the database settings, and `SetRegion` receives the query region from `UpdateWanted`.
+- `Connection` gives the `WorldConnection` (settings, hotfixes database and dialect); queries open it with `DBSource.Open`. `SetRegion` `SetRegion` receives the query region from `UpdateWanted`.
 - `RegionQuery<T>` (`Overlays/RegionQuery.cs`) runs one cancellable, generation-checked query on a worker. A search box has a 0.3 s debounce.
 - Results are diffed against existing markers by ID.
 - Each overlay exposes `FindHit`, `Select`, `Deselect`, `SelectionChanged`, `FocusRequested(WorldPose)`, `SetLayerEnabled` and `BuildPanel()`, which the sidebar hosts.
 
 | Overlay | Files | Data source | Editable |
 |---|---|---|---|
-| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `CreatureSource` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens interaction and behavior editors |
-| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Ui.cs` | `GameObjectSource` | No |
-| `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `GraveyardSource` | Yes: position, name and zone links through `GraveyardDraft` |
-| `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs` | `AreaTriggerSource` | No (behavior editor only) |
+| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens the properties window and (AzerothCore only) the behavior editor |
+| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `GameObjectDraft` |
+| `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
+| `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions through `WaypointDraft` (AzerothCore only; the layer is off for TrinityCore) |
+| `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs` | `IDBSource.ReadAreaTriggersAsync` | No (behavior editor only, AzerothCore) |
 
 Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures within `Preview.ViewDistance`, refreshed every 0.2 s. Creatures with a model hide their capsule placeholder once the model is ready.
 
 ### Editing
 
-`IPlacementEditor` (`Overlays/IPlacementEditor.cs`) is implemented by `CreatureOverlay` and `GraveyardOverlay`. `TerrainViewer.ActiveEditor` sends menu, toolbar and viewport commands to whichever editor owns the selection.
+`IPlacementEditor` (`Overlays/IPlacementEditor.cs`) is implemented by `CreatureOverlay`, `GameObjectOverlay`, `GraveyardOverlay` and `WaypointOverlay`. `TerrainViewer.ActiveEditor` sends menu, toolbar and viewport commands to whichever editor owns the selection.
 
 `TransformGizmo` (`Overlays/TransformGizmo.cs`) draws three axis arrows and a yaw ring. It has Select, Move and Rotate modes, and emits `Changed(GizmoEdit)` events. Preview events have `Commit = false`; exactly one commit fires per gesture. Rotation snaps in steps, or 15° with Ctrl held.
 
