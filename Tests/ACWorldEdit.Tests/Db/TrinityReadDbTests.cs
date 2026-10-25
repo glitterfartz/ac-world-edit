@@ -10,6 +10,7 @@ using Xunit;
 /// retail client's AreaTrigger.db2. Only SELECTs inside read-only transactions; nothing is written.
 /// </summary>
 [Trait("Category", "Db")]
+[Collection(RetailData.Collection)]
 public class TrinityReadDbTests
 {
     // Elwynn Forest around Goldshire, the neighborhood the viewer smokes use.

@@ -8,6 +8,7 @@ using Xunit;
 /// or the definitions are absent. Visual output is not covered.
 /// </summary>
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailCorpusTests
 {
     [RetailClientFact]

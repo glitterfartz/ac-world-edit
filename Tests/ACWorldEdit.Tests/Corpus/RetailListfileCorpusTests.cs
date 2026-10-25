@@ -7,6 +7,7 @@ using Xunit;
 /// garrison interiors resolve to readable files.
 /// </summary>
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailListfileCorpusTests
 {
     static readonly Lazy<PathListfile> list = new(() => PathListfile.Load(ListfileEnvironment.Path()!));

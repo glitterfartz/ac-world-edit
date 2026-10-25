@@ -7,6 +7,7 @@ using Xunit;
 /// texture sequence reachable through the bundled listfile, and WMO liquid groups resolve.
 /// </summary>
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailLiquidCorpusTests
 {
     static RetailLiquidCorpusTests()

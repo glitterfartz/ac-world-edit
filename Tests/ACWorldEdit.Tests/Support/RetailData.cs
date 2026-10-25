@@ -63,9 +63,14 @@ public sealed class RetailListfileFactAttribute : FactAttribute
     }
 }
 
-/// <summary>Opened once and shared by the retail tests.</summary>
+/// <summary>
+/// Opened once and shared by the retail tests. Db2Tables is not thread-safe, so every test class that
+/// reads it joins the <see cref="Collection"/> collection, whose classes run one at a time.
+/// </summary>
 public static class RetailData
 {
+    public const string Collection = "RetailClient";
+
     static readonly Lazy<CascFiles> files = new(() => new CascFiles(RetailEnvironment.Directory()!));
     static readonly Lazy<Db2Tables> tables = new(() => new Db2Tables(Files, RetailEnvironment.DefinitionsDirectory()!));
 
@@ -73,6 +78,9 @@ public static class RetailData
 
     public static Db2Tables Tables => tables.Value;
 }
+
+[CollectionDefinition(RetailData.Collection)]
+public sealed class RetailClientCollection;
 
 /// <summary>Fact that skips unless a retail client, CascLib.dll and the definitions are available.</summary>
 public sealed class RetailClientFactAttribute : FactAttribute

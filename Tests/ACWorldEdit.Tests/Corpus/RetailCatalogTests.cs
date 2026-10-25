@@ -7,6 +7,7 @@ using Xunit;
 /// model references that exist in CASC, and hotfix rows replace client rows.
 /// </summary>
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailCatalogTests
 {
     [RetailClientFact]
@@ -109,6 +110,7 @@ public class RetailCatalogTests
 }
 
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailClientLookupTests
 {
     static RetailClientLookup Lookup() => new(RetailData.Tables);
@@ -154,6 +156,7 @@ public class RetailClientLookupTests
 
 /// <summary>Retail creature models carry their own animation: chunked M2s no longer fall back to the reference pose.</summary>
 [Trait("Category", "Corpus")]
+[Collection(RetailData.Collection)]
 public class RetailAnimationTests
 {
     [RetailClientFact]
