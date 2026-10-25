@@ -61,8 +61,21 @@ public partial class TerrainViewer
 
                 // A real click through the viewport picking path, not a direct Select call.
                 var screen = camera.UnprojectPosition(icon);
-                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen, GlobalPosition = screen });
-                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = screen, GlobalPosition = screen });
+                if (!GetViewport().GetVisibleRect().HasPoint(screen))
+                {
+                    // FocusPose stands beside the marker without facing it; turn toward the icon and retry.
+                    camera.LookAt(icon);
+                    pitch = camera.Rotation.X;
+                    yaw = camera.Rotation.Y;
+                    graveyardWait = 3;
+                    return;
+                }
+
+                // Injected events are in window coordinates; the viewport may be scaled (headless runs at 40x).
+                var window = GetViewport().GetFinalTransform() * screen;
+                Input.ParseInputEvent(new InputEventMouseMotion { Position = window, GlobalPosition = window });
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = window, GlobalPosition = window });
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = window, GlobalPosition = window });
                 graveyardStage = 2;
                 graveyardWait = 3;
                 break;
