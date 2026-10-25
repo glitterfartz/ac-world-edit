@@ -4,7 +4,7 @@ namespace ACWorldEdit.Foundation;
 /// Immutable database spawn projection. SpawnMask and PhaseMask are metadata currently shown in
 /// details; event, pool, player-phase and script visibility are not simulated.
 /// </summary>
-public sealed record CreatureSpawn(ulong Guid, uint TemplateId, string Name, WorldPose Pose, uint SpawnMask, uint PhaseMask, uint DisplayId = 0, float DisplayScale = 1, SpawnVisibility? Visibility = null);
+public sealed record CreatureSpawn(ulong Guid, uint TemplateId, string Name, WorldPose Pose, uint SpawnMask, uint PhaseMask, uint DisplayId = 0, float DisplayScale = 1, SpawnVisibility? Visibility = null, SpawnPhasing? Phasing = null);
 /// <summary>
 /// Inclusive tile region defining a bounded server query rectangle. Lower spatial edges are
 /// exclusive and upper edges inclusive, matching CreatureSource predicates.

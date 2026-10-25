@@ -17,6 +17,16 @@ public sealed record SpawnPreview
 {
     public uint PhaseMask { get; init; } = 1;
     public uint SpawnMask { get; init; } = 1;
+
+    /// <summary>
+    /// TrinityCore replaced the masks with a difficulty ID list and a phase ID. DifficultyId is the
+    /// difficulty to preview (0 is the open world; <see cref="AnyDifficulty"/> matches every row) and
+    /// PhaseId the phase (0 shows only spawns outside any phase). Wrath sources ignore both.
+    /// </summary>
+    public WorldDialect Dialect { get; init; } = WorldDialect.AzerothCore;
+    public int DifficultyId { get; init; }
+    public uint PhaseId { get; init; }
+    public const int AnyDifficulty = -1;
     public bool RespectMasks { get; init; } = true;
     public EventPreviewMode Events { get; init; } = EventPreviewMode.Scheduled;
     public int[] ActiveEvents { get; init; } = [];
@@ -45,7 +55,7 @@ public sealed record SpawnPreview
         if (!float.IsFinite(ViewDistance) || ViewDistance is < 60 or > 600 ||
             QueryLimit is < 1 or > 768 || ModelLimit is < 1 or > 256 ||
             ActiveEvents.Length > 128 || ActiveEvents.Any(e => e is < 1 or > 65535) ||
-            !Enum.IsDefined(Events))
+            !Enum.IsDefined(Events) || DifficultyId is < AnyDifficulty or > 255)
         {
             throw new ArgumentException("Preview settings exceed supported bounds.");
         }
@@ -56,6 +66,17 @@ public sealed record SpawnPreview
     // pin these rules and the Db tests use them as an oracle for the query results.
     public bool MatchesMasks(uint phase, uint spawn) =>
         !RespectMasks || ((phase & PhaseMask) != 0 && (spawn & SpawnMask) != 0);
+
+    /// <summary>
+    /// TrinityCore counterpart of <see cref="MatchesMasks"/>. A spawn lists its difficulties as a CSV
+    /// ("0" is the open world) and sits in at most one phase and phase group. A phased spawn shows
+    /// when its phase is the previewed one; an unphased spawn always shows.
+    /// </summary>
+    public bool MatchesPhasing(string difficulties, uint phaseId, uint phaseGroup) =>
+        !RespectMasks || (MatchesDifficulty(difficulties) && ((phaseId == 0 && phaseGroup == 0) || (phaseId != 0 && phaseId == PhaseId)));
+
+    public bool MatchesDifficulty(string difficulties) =>
+        DifficultyId == AnyDifficulty || difficulties.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Contains(DifficultyId.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
     public bool MatchesEvents(IEnumerable<int> bindings, IEnumerable<int> scheduled)
     {
@@ -98,7 +119,22 @@ public sealed record WorldEventInfo(int Id, string Name, bool Scheduled);
 /// <summary>Database GO pose uses a native server-space quaternion, independent of ADT facing rules.</summary>
 public sealed record GameObjectSpawn(ulong Guid, uint TemplateId, string Name, WorldPose Pose,
     uint SpawnMask, uint PhaseMask, uint DisplayId, float Scale,
-    System.Numerics.Quaternion Rotation, int State, int Type, SpawnVisibility Visibility);
+    System.Numerics.Quaternion Rotation, int State, int Type, SpawnVisibility Visibility, SpawnPhasing? Phasing = null);
+
+/// <summary>
+/// Where and when a TrinityCore spawn exists: its difficulty CSV, phase, phase group and phase use
+/// flags. Null on records read from AzerothCore, which carries masks instead.
+/// </summary>
+public sealed record SpawnPhasing(string Difficulties, uint PhaseId, uint PhaseGroup, uint PhaseUseFlags)
+{
+    public string Description => string.Join(" · ", new[]
+    {
+        Difficulties.Length > 0 ? "Difficulty " + Difficulties : "",
+        PhaseId != 0 ? $"Phase {PhaseId}" : "",
+        PhaseGroup != 0 ? $"Phase group {PhaseGroup}" : "",
+        PhaseUseFlags != 0 ? $"Phase flags 0x{PhaseUseFlags:X}" : ""
+    }.Where(s => s.Length > 0));
+}
 
 public sealed record GameObjectRegionResult(IReadOnlyList<GameObjectSpawn> Spawns, bool Truncated,
     WorldEventInfo[] Events, string SourceKey);

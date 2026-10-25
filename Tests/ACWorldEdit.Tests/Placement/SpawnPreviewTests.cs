@@ -100,6 +100,45 @@ public class SpawnPreviewTests
         Assert.True((new SpawnPreview { RespectMasks = false }).MatchesMasks(0, 0));
     }
 
+    [Theory]
+    [InlineData("0", 0, 0u, 0u, true)]
+    [InlineData("1,2", 0, 0u, 0u, false)]
+    [InlineData("1,2", 2, 0u, 0u, true)]
+    [InlineData("23, 2,8", 8, 0u, 0u, true)]
+    [InlineData("12", 1, 0u, 0u, false)]
+    [InlineData("0", 0, 169u, 0u, false)]
+    [InlineData("0", 0, 0u, 7u, false)]
+    public void TrinityDifficultyAndPhaseMustMatch(string difficulties, int difficulty, uint phaseId, uint phaseGroup, bool expected)
+    {
+        var preview = new SpawnPreview { Dialect = WorldDialect.TrinityCore, DifficultyId = difficulty };
+        Assert.Equal(expected, preview.MatchesPhasing(difficulties, phaseId, phaseGroup));
+    }
+
+    [Fact]
+    public void ThePreviewedPhaseShowsItsOwnSpawns()
+    {
+        var preview = new SpawnPreview { Dialect = WorldDialect.TrinityCore, PhaseId = 169 };
+        Assert.True(preview.MatchesPhasing("0", 169, 0));
+        Assert.True(preview.MatchesPhasing("0", 0, 0));
+        Assert.False(preview.MatchesPhasing("0", 170, 0));
+    }
+
+    [Fact]
+    public void AnyDifficultyAndUnrespectedFiltersShowEverything()
+    {
+        Assert.True((new SpawnPreview { DifficultyId = SpawnPreview.AnyDifficulty }).MatchesPhasing("14,15", 0, 0));
+        Assert.True((new SpawnPreview { RespectMasks = false }).MatchesPhasing("14,15", 169, 3));
+        Assert.Throws<ArgumentException>(() => (new SpawnPreview { DifficultyId = -2 }).Validate());
+        (new SpawnPreview { DifficultyId = SpawnPreview.AnyDifficulty }).Validate();
+    }
+
+    [Fact]
+    public void PhasingDescriptionNamesOnlyWhatIsSet()
+    {
+        Assert.Equal("Difficulty 1,2 · Phase 169", new SpawnPhasing("1,2", 169, 0, 0).Description);
+        Assert.Equal("Difficulty 0", new SpawnPhasing("0", 0, 0, 0).Description);
+    }
+
     [Fact]
     public void ScheduledEventsUseTheSchedule()
     {
