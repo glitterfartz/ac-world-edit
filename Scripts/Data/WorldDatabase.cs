@@ -133,7 +133,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
     // ones; the AC-only mirrors (broadcast_text, item_template, game_graveyard, ...) are not listed.
     static readonly string[] TrinityTables =
     [
-        "creature", "creature_template", "creature_template_model", "creature_template_difficulty", "gameobject", "gameobject_template",
+        "creature", "creature_template", "creature_template_model", "creature_template_difficulty", "creature_template_gossip", "gameobject", "gameobject_template",
         "game_event", "game_event_creature", "game_event_gameobject", "pool_members", "conditions",
         "world_safe_locs", "graveyard_zone", "game_tele", "gossip_menu", "gossip_menu_option", "npc_text",
         "creature_queststarter", "creature_questender", "quest_template", "quest_objectives", "npc_vendor", "trainer",

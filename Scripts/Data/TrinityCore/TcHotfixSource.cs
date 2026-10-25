@@ -61,6 +61,37 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return (displays, files);
     }
 
+    /// <summary>
+    /// broadcast_text rows for these IDs as (male, female) text. The table is keyed by (ID,
+    /// VerifiedBuild), so an ID can have several versions; the highest build wins.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<uint, (string Male, string Female)>> ReadBroadcastTextsAsync(IReadOnlyCollection<uint> ids, CancellationToken token)
+    {
+        var texts = new Dictionary<uint, (string, string)>();
+        if (!Available || ids.Count == 0)
+        {
+            return texts;
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("", connection, transaction);
+        string list = string.Join(',', ids.Distinct().Take(DbLimits.MaxRows).Select((id, i) =>
+        {
+            command.Parameters.AddWithValue($"@id{i}", id);
+            return $"@id{i}";
+        }));
+        command.CommandText = $"SELECT ID,COALESCE(Text,''),COALESCE(Text1,'') FROM broadcast_text WHERE ID IN ({list}) ORDER BY ID,VerifiedBuild";
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            string male = reader.GetString(1), female = reader.GetString(2);
+            texts[Convert.ToUInt32(reader.GetValue(0))] = (male.Length > 0 ? male : female, female.Length > 0 ? female : male);
+        }
+
+        return texts;
+    }
+
     /// <summary>The server's area_trigger overrides, in the shape the client lookup returns.</summary>
     public async Task<IReadOnlyList<ClientAreaTrigger>> ReadAreaTriggersAsync(CancellationToken token)
     {

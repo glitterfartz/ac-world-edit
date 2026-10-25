@@ -53,9 +53,8 @@ public sealed class AcSchema : IWorldSchema
 }
 
 /// <summary>
-/// The TrinityCore master world schema. Its table catalog is empty until the creature, quest and
-/// SmartAI editors are built for it, so a row edit fails rather than being written against
-/// AzerothCore's tables.
+/// The TrinityCore master world schema. Its table catalog holds the creature tables only, so a quest
+/// or SmartAI row fails rather than being written against AzerothCore's tables.
 /// </summary>
 public sealed class TcSchema : IWorldSchema
 {
@@ -63,12 +62,4 @@ public sealed class TcSchema : IWorldSchema
     public WorldDialect Dialect => WorldDialect.TrinityCore;
     public ITableCatalog Tables => TcTables.Instance;
     public ISqlDialect Sql => TcSqlDialect.Instance;
-}
-
-/// <summary>TrinityCore's editable tables: none yet.</summary>
-public sealed class TcTables : ITableCatalog
-{
-    public static readonly TcTables Instance = new();
-    public IReadOnlyList<TableSchema> All => [];
-    public TableSchema Find(string name) => throw new InvalidDataException($"Table {name} is not editable for the TrinityCore world database yet.");
 }

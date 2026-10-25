@@ -11,13 +11,14 @@ public class SourceCatalogTests
 {
     static string TempPath() => Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json");
 
-    static readonly Row Before = Row.Of(("entry", 100u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", ""));
-    static readonly RowEdit Rename = new("creature_template", "100", Before, Before.With("subname", "Innkeeper"));
+    // creature_ai is an AzerothCore column group; TrinityCore's catalog has no such table.
+    static readonly Row Before = Row.Of(("entry", 100u), ("AIName", ""));
+    static readonly RowEdit Rename = new("creature_ai", "100", Before, Before.With("AIName", "SmartAI"));
 
     static RowSet Snapshot()
     {
         var rows = new RowSet();
-        rows.Set(AcTables.CreatureTemplate, Before);
+        rows.Set(AcTables.CreatureAI, Before);
         return rows;
     }
 

@@ -119,6 +119,49 @@ public class TrinityReadDbTests
         Assert.True(snowfall.IsLocked(2597));
     }
 
+    static async Task<TcCreatureView> Creature(uint entry)
+    {
+        var snapshot = await Open().ReadInteractionAsync(entry, 0, [], rows => rows, null, CancellationToken.None);
+        return TcCreatureView.Build(entry, snapshot.Rows, snapshot.Lookup);
+    }
+
+    [TcDbFact]
+    public async Task TheGoldshireInnkeeperHasHisMenuTextsAndVendorItems()
+    {
+        var farley = await Creature(295);
+        Assert.Equal("Innkeeper Farley", farley.Name);
+        Assert.Contains("Innkeeper", TcCreatureView.DescribeNpcFlags(farley.NpcFlags));
+        Assert.Contains("Vendor", TcCreatureView.DescribeNpcFlags(farley.NpcFlags));
+        Assert.Equal(2, farley.Difficulties.Length);
+        var menu = Assert.Single(farley.Menus, m => m.Root);
+        Assert.NotEmpty(menu.Texts);
+        // The menu text comes from hotfixes.broadcast_text (no client data in this test).
+        Assert.Contains(menu.Texts.SelectMany(t => t.Variants), v => !string.IsNullOrEmpty(v.Text));
+        Assert.Equal(12, farley.Vendor.Length);
+        Assert.All(farley.Vendor, v => Assert.Equal(1u, v.Type));
+    }
+
+    [TcDbFact]
+    public async Task ATrainerIsBoundToTheGossipOptionThatOpensIt()
+    {
+        var belle = await Creature(2329);
+        var trainer = Assert.Single(belle.Trainers);
+        Assert.Equal(877u, trainer.TrainerId);
+        Assert.Equal((5855u, 0u), (trainer.MenuId, trainer.OptionId));
+        Assert.False(trainer.Missing);
+        Assert.Equal(9, trainer.Spells.Length);
+        var option = belle.Menus.Single(m => m.MenuId == 5855).Options.Single(o => o.OptionId == 0);
+        Assert.Equal(877u, option.TrainerId);
+    }
+
+    [TcDbFact]
+    public async Task QuestLinksCarryTheirTitles()
+    {
+        var dughan = await Creature(240);
+        Assert.Equal(5, dughan.Starts.Length);
+        Assert.All(dughan.Starts, q => Assert.False(string.IsNullOrEmpty(q.Title)));
+    }
+
     [TcDbFact]
     public async Task SafeLocationsThatAreNotGraveyardsAreLeftOut()
     {

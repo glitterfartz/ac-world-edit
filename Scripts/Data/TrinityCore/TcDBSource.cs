@@ -5,8 +5,8 @@ namespace ACWorldEdit.Data;
 
 /// <summary>
 /// The TrinityCore world database (with its hotfixes database): one connection shared by the per-area
-/// sources. Spawns, graveyards, teleports and area triggers are read here; the editors that depend on
-/// TrinityCore's restructured tables (quests, SmartAI, creature interaction, waypoints) are not
+/// sources. Spawns, graveyards, teleports, area triggers and creature properties are read here; the
+/// editors that depend on TrinityCore's restructured quest, SmartAI and waypoint tables are not
 /// available yet and say so.
 /// </summary>
 public sealed class TcDBSource : IDBSource
@@ -16,13 +16,16 @@ public sealed class TcDBSource : IDBSource
     readonly TcGraveyardSource graveyards;
     readonly TcAreaTriggerSource areaTriggers;
     readonly AcTeleportSource teleports;
+    readonly TcInteractionSource interaction;
 
     public TcDBSource(WorldConnection connection, IClientLookup? lookup)
     {
         database = new WorldDatabase(connection);
         spawns = new(database);
         graveyards = new(database);
-        areaTriggers = new(database, lookup, new TcHotfixSource(connection.HotfixesSettings));
+        var hotfixes = new TcHotfixSource(connection.HotfixesSettings);
+        areaTriggers = new(database, lookup, hotfixes);
+        interaction = new(database, lookup, hotfixes);
         // game_tele has the same schema in both servers.
         teleports = new(database);
     }
@@ -45,7 +48,7 @@ public sealed class TcDBSource : IDBSource
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token) => throw Unsupported("Search");
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token) => throw Unsupported("Broadcast text search");
     public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => throw Unsupported("The behavior editor");
-    public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The creature property editor");
+    public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => interaction.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
     public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => throw Unsupported("The creature property editor");
     public Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token) => throw Unsupported("The creature property editor");
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => throw Unsupported("Item search");

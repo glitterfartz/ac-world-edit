@@ -158,6 +158,12 @@ public sealed class AcInteractionSource(WorldDatabase database)
             for (int i = 0; i < table.Columns.Length; i++)
             {
                 object value = reader.GetValue(i);
+                // A NULL number reads as 0, as the server loads it (text is already COALESCEd).
+                if (value is DBNull)
+                {
+                    value = 0;
+                }
+
                 row.Values[table.Columns[i].Name] = table.Columns[i].Kind == ColumnKind.Float ? Convert.ToSingle(value, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture) : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
             }
 

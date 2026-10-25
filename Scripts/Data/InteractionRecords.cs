@@ -31,9 +31,10 @@ public sealed class InteractionSnapshot(uint entry, ulong guid, string name, str
 public sealed record ClassLevelStats(uint Level, uint Class, uint[] BaseHealth, uint BaseMana, uint BaseArmor, uint AttackPower, uint RangedAttackPower, float[] DamageBase, int Strength, int Agility, int Stamina, int Intellect, int Spirit);
 
 /// <summary>
-/// IInteractionLookup backed by data read in the same snapshot transaction plus the client catalog.
+/// IInteractionLookup backed by data read in the same snapshot transaction plus the client catalog
+/// (Wrath DBC) or, for retail, the client's DB2 lookup.
 /// </summary>
-public sealed class InteractionLookupData(InteractionCatalog? catalog) : IInteractionLookup
+public sealed class InteractionLookupData(InteractionCatalog? catalog, IClientLookup? client = null) : IInteractionLookup
 {
     public readonly Dictionary<uint, ItemInfo> Items = [];
     /// <summary>Tooltip fields of the same items.</summary>
@@ -50,7 +51,7 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog) : IIntera
 
     public ItemInfo? Item(uint id) => Items.GetValueOrDefault(id);
     public QuestInfo? Quest(uint id) => Quests.GetValueOrDefault(id);
-    public string? SpellName(uint id) => catalog?.SpellName(id);
+    public string? SpellName(uint id) => catalog?.SpellName(id) ?? client?.SpellName(id);
     public bool ExtendedCostExists(uint id) => catalog?.ExtendedCostExists(id) ?? true;
     public (string Male, string Female)? BroadcastText(uint id) => Broadcasts.TryGetValue(id, out var text) ? text : null;
     public bool PoiExists(uint id) => Pois.Contains(id);

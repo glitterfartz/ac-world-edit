@@ -36,6 +36,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Schema mismatch detected up front | done | Both directions: TC needs `creature.spawnDifficulties` + `world_safe_locs`, AC needs `creature.spawnMask` + `game_graveyard`. |
 | Hotfixes database test | done | Connects and requires a `hotfix_data` table. |
 | Hotfix reads fall back to client DB2 | done | Display and area-trigger hotfixes; the area-trigger fallback is silent. |
+| Hotfix rows with several `VerifiedBuild` versions | partial | Broadcast text takes the highest build; display and area-trigger reads take whichever row comes last. |
 | User-facing error text in the status bar (`DatabaseFeatureException`) | done | |
 
 ## Retail client data (plan Phase 3)
@@ -80,7 +81,10 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 | Feature | Status | Notes |
 |---|---|---|
-| Creature properties: `TcTables` (`creature_template`, `_difficulty`, `_gossip`, `creature_trainer`, `gossip_menu_option`, `npc_text`, `npc_vendor`, quest starters/enders) | not started | Phase 6. Editor gated off in TC. |
+| Creature properties: `TcTables` catalog | done | Template, difficulty, gossip (menus, texts, options), trainers (`creature_trainer`, `trainer`, `trainer_spell`), vendor, quest links, spell clicks. |
+| Creature properties: TC read (`TcInteractionSource`, `TcCreatureView`) | done | All menus (1:N) and submenus, trainers bound to gossip options, vendor, quest titles; texts from `hotfixes.broadcast_text`, then client DB2. |
+| Creature properties: read-only TC sections | in progress | Template with difficulty picker, gossip, trainers, vendor, quests. |
+| Creature properties: TC editing | not started | Phase 6, after the read-only sections. |
 | TC `NpcSchema` / `CreatureSchema` (64-bit `npcflag`, Classification, `unit_flags3`, OptionNpc) | not started | Phase 6. |
 | `StatsSection` via ContentTuning | not started | Phase 6. |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |
@@ -95,7 +99,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | `trainer_spell` columns | deviates | Not "the same" as AC: TC adds `ReqAbility1-3`. |
 | Per-difficulty template data | deviates | 3,648 templates have no `DifficultyID=0` row in `creature_template_difficulty` (101,919 rows are for other difficulties), so stats/loot/gold need a difficulty choice or a fallback. |
 | `npc_vendor` key | deviates | `type` is part of the key (item vs currency); 1 of 49,853 rows is not an item. |
-| TC `npcflag` bits match AC's low 32 bits | unverified | Needs TrinityCore's `NPCFlags` enum; only the spirit-healer bit (0x4000) is confirmed by data. |
+| TC `npcflag` bits | deviates | Checked against TrinityCore master `UnitDefines.h`: the low 32 bits are `NPCFlags` (vendor/trainer/quest-giver bits match AC; 0x4 and 0x8000000+ differ), the high 32 bits are `NPCFlags2`. Named in `TcCreatureView.DescribeNpcFlags`. |
 
 ## Viewer workflow
 
