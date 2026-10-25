@@ -119,7 +119,8 @@ public sealed record WorldEventInfo(int Id, string Name, bool Scheduled);
 /// <summary>Database GO pose uses a native server-space quaternion, independent of ADT facing rules.</summary>
 public sealed record GameObjectSpawn(ulong Guid, uint TemplateId, string Name, WorldPose Pose,
     uint SpawnMask, uint PhaseMask, uint DisplayId, float Scale,
-    System.Numerics.Quaternion Rotation, int State, int Type, SpawnVisibility Visibility, SpawnPhasing? Phasing = null);
+    System.Numerics.Quaternion Rotation, int State, int Type, SpawnVisibility Visibility, SpawnPhasing? Phasing = null,
+    System.Numerics.Quaternion? StoredRotation = null);
 
 /// <summary>
 /// Where and when a TrinityCore spawn exists: its difficulty CSV, phase, phase group and phase use

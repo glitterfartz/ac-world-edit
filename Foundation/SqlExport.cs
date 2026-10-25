@@ -33,12 +33,17 @@ public static class SqlExport
     /// Build the scripts for one database source. Creature moves, graveyards and interaction rows
     /// may each be empty.
     /// </summary>
-    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, ITableCatalog? tables = null)
+    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, ITableCatalog? tables = null, IEnumerable<GameObjectMove>? gameObjects = null)
     {
         var steps = new List<Step>();
         foreach (var move in creatures.OrderBy(m => m.Guid))
         {
             steps.Add(Creature(move));
+        }
+
+        foreach (var move in (gameObjects ?? []).OrderBy(m => m.Guid))
+        {
+            steps.Add(GameObject(move));
         }
 
         foreach (var edit in graveyards.OrderBy(e => e.Id))
@@ -119,6 +124,22 @@ public static class SqlExport
             $"UPDATE `creature` SET {set(move.After)} WHERE {where(move.Before)};",
             $"UPDATE `creature` SET {set(move.Before)} WHERE {where(move.After)};",
             Check(label, "creature", where(move.Before)), Check(label, "creature", where(move.After)));
+    }
+
+    // ---- gameobject ------------------------------------------------------------------------
+
+    static Step GameObject(GameObjectMove move)
+    {
+        bool turned = move.Before.RotX != move.After.RotX || move.Before.RotY != move.After.RotY || move.Before.RotZ != move.After.RotZ || move.Before.RotW != move.After.RotW;
+        string where(GameObjectPlacement p) => $"`guid` = {move.Guid} AND {Near("position_x", p.Pose.X)} AND {Near("position_y", p.Pose.Y)} AND {Near("position_z", p.Pose.Z)} AND {Near("orientation", p.Pose.Heading)}"
+            + (turned ? $" AND {Near("rotation0", p.RotX)} AND {Near("rotation1", p.RotY)} AND {Near("rotation2", p.RotZ)} AND {Near("rotation3", p.RotW)}" : "");
+        string set(GameObjectPlacement p) => $"`position_x` = {Num(p.Pose.X)}, `position_y` = {Num(p.Pose.Y)}, `position_z` = {Num(p.Pose.Z)}, `orientation` = {Num(p.Pose.Heading)}"
+            + (turned ? $", `rotation0` = {Num(p.RotX)}, `rotation1` = {Num(p.RotY)}, `rotation2` = {Num(p.RotZ)}, `rotation3` = {Num(p.RotW)}" : "");
+        string label = FormattableString.Invariant($"gameobject guid {move.Guid}: ({move.Before.Pose.X:0.###}, {move.Before.Pose.Y:0.###}, {move.Before.Pose.Z:0.###}, {move.Before.Pose.Heading:0.###}) -> ({move.After.Pose.X:0.###}, {move.After.Pose.Y:0.###}, {move.After.Pose.Z:0.###}, {move.After.Pose.Heading:0.###})");
+        return new(label,
+            $"UPDATE `gameobject` SET {set(move.After)} WHERE {where(move.Before)};",
+            $"UPDATE `gameobject` SET {set(move.Before)} WHERE {where(move.After)};",
+            Check(label, "gameobject", where(move.Before)), Check(label, "gameobject", where(move.After)));
     }
 
     // ---- graveyard -------------------------------------------------------------------------

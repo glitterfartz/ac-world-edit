@@ -9,6 +9,7 @@ namespace ACWorldEdit.Foundation;
 public enum PendingKind
 {
     Creature,
+    GameObject,
     Graveyard,
     Row,
     Waypoint
@@ -20,7 +21,7 @@ public enum PendingKind
 /// (not the timestamp), so the same net change keeps its Id across sessions and a changed one gets
 /// a new Id.
 /// </summary>
-public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, CreatureMove? Move, GraveyardEdit? Graveyard, RowEdit? Row, WaypointEdit? Waypoint = null);
+public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, CreatureMove? Move, GraveyardEdit? Graveyard, RowEdit? Row, WaypointEdit? Waypoint = null, GameObjectMove? GameObject = null);
 
 /// <summary>
 /// Lists the net draft changes as individual pending changes and remembers which were exported.
@@ -54,15 +55,21 @@ public sealed class PendingChanges
     }
 
     /// <summary>
-    /// Every net change not yet exported, in creature, graveyard, row, waypoint order.
+    /// Every net change not yet exported, in creature, GameObject, graveyard, row, waypoint order.
     /// </summary>
-    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null)
+    public List<PendingChange> Collect(IEnumerable<CreatureMove> moves, IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null, IEnumerable<GameObjectMove>? gameObjects = null)
     {
         var all = new List<PendingChange>();
         foreach (var move in moves.OrderBy(m => m.Guid))
         {
             var scripts = SqlExport.Build(move.Source, [move], [], [], FixedStamp);
             all.Add(new(Fingerprint(move.Source, scripts), PendingKind.Creature, move.Source, string.Join("; ", scripts.Summary), move, null, null));
+        }
+
+        foreach (var move in (gameObjects ?? []).OrderBy(m => m.Guid))
+        {
+            var scripts = SqlExport.Build(move.Source, [], [], [], FixedStamp, null, null, [move]);
+            all.Add(new(Fingerprint(move.Source, scripts), PendingKind.GameObject, move.Source, string.Join("; ", scripts.Summary), null, null, null, null, move));
         }
 
         foreach (var edit in graveyards.OrderBy(e => e.Id))
