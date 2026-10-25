@@ -22,7 +22,7 @@ dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/knownbugs
 dotnet test Tests/ACWorldEdit.Tests --settings Tests/ACWorldEdit.Tests/all.runsettings        # everything
 ```
 
-`default.runsettings` excludes `Corpus` and `KnownBug` categories; a command-line `--filter` overrides it. `Tests/ACWorldEdit.GdTests` is a separate gdUnit4 project that needs `GODOT_BIN` set in the environment.
+`default.runsettings` excludes `Corpus` and `KnownBug` categories, and a command-line `--filter` does not override that: filter a Corpus or KnownBug test together with `--settings corpus.runsettings` (or `all.runsettings`). `Tests/ACWorldEdit.GdTests` is a separate gdUnit4 project that needs `GODOT_BIN` set in the environment.
 
 Smoke workflows are opt-in CLI flags passed after `--` to Godot (`--terrain-smoke`, `--visual-smoke`, `--water-smoke`, `--reload-smoke`, `--creature-smoke`, `--client-smoke`, etc.); they are parsed in `Scripts/Diagnostics/TerrainViewer.Smoke.cs` and never run in normal startup.
 

@@ -32,9 +32,8 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
     }
 
     /// <summary>
-    /// Retail CASC storage. The world database targets a different server version, so database
-    /// features are off. Lighting and liquids are loaded from the DB2 tables; area names are not yet
-    /// and stay null.
+    /// Retail CASC storage, served by a TrinityCore world database. Lighting and liquids are loaded
+    /// from the DB2 tables; area names are not yet and stay null.
     /// </summary>
     public static ClientServices OpenRetail(string directory, string? listfile = null)
     {

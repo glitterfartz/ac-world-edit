@@ -33,11 +33,10 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | `ACWORLD_TC_DB_INFO` (optional 6th part for hotfixes) | done | |
 | Connection form hotfixes field (TC only, optional) | done | Blank means no hotfixes database. |
 | Per-dialect schema probe and "not a TrinityCore world database" error | done | |
-| Schema mismatch detected up front | partial | Only TC mode is checked; a TC database in Wrath mode fails later on the first missing column. |
-| Hotfixes database test | partial | Checks that it connects, not that its tables exist. |
+| Schema mismatch detected up front | done | Both directions: TC needs `creature.spawnDifficulties` + `world_safe_locs`, AC needs `creature.spawnMask` + `game_graveyard`. |
+| Hotfixes database test | done | Connects and requires a `hotfix_data` table. |
 | Hotfix reads fall back to client DB2 | done | Display and area-trigger hotfixes; the area-trigger fallback is silent. |
 | User-facing error text in the status bar (`DatabaseFeatureException`) | done | |
-| `ClientServices.OpenRetail` doc comment | not started | Still says database features are off. |
 
 ## Retail client data (plan Phase 3)
 
@@ -105,8 +104,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 |---|---|---|
 | TC connection and read Db tests (`TcDbFact`) | done | Spawns, graveyards (incl. locked links), teleports, area triggers, hotfixes. |
 | TC export unit tests | done | Spawn moves, graveyard transitions, refused edits. |
-| `Db2Tables` thread safety | not started | Retail test classes run one at a time (`[Collection(RetailData.Collection)]`); a lock in `Db2Tables.Table` would remove that need. |
-| `--filter` overriding `default.runsettings` | not started | It doesn't; CLAUDE.md says it does. Corpus/KnownBug tests still need `--settings`. |
+| `Db2Tables` thread safety | partial | `Table` loads are locked. Retail test classes still run one at a time (`[Collection(RetailData.Collection)]`); drop that once the retail corpus tests pass in parallel. |
 | `RetailCorpusTests.EveryMapWdtParsesAndOneTilePerTerrainMapDecodes` accepted failures | not started | Stale "until the retail WMO milestone" comments; tighten or remove the filter. |
 
 ## Retail creatures
