@@ -61,8 +61,14 @@ public partial class GraveyardOverlay : IPlacementEditor
         gizmo.Changed += MoveSelection;
     }
 
+    /// <summary>
+    /// Graveyard edits export AzerothCore's game_graveyard and graveyard_zone statements, so they stay
+    /// off for TrinityCore (world_safe_locs, team conditions) until its editor exists.
+    /// </summary>
+    bool EditingSupported => Connection().Dialect == WorldDialect.AzerothCore;
+
     (GraveyardSite Site, Node3D Node)? EditableMarker() =>
-        draft != null && selected.HasValue && lookup.TryGetValue(selected.Value, out var site) && markers.TryGetValue(selected.Value, out var marker) ? (site, marker.Node) : null;
+        draft != null && EditingSupported && selected.HasValue && lookup.TryGetValue(selected.Value, out var site) && markers.TryGetValue(selected.Value, out var marker) ? (site, marker.Node) : null;
 
     GraveyardRecord RecordOf(GraveyardSite site) => draft?.Effective(sourceKey, site.Record) ?? site.Record;
 
