@@ -89,12 +89,14 @@ public sealed class CreatureContext
 
     /// <summary>
     /// The sections show editors whenever a content draft is open; otherwise they are read-only.
-    /// TrinityCore creatures are read-only until their editors exist.
+    /// AzerothCore sections use this gate; TC sections enable their implemented editors separately.
     /// </summary>
     public bool Editable => Draft != null && Dialect == WorldDialect.AzerothCore;
 
-    /// <summary>TrinityCore sections turn editing on one at a time; only the template page edits so far.</summary>
+    /// <summary>TrinityCore sections turn editing on one at a time.</summary>
     public bool TcTemplateEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+
+    public bool TcVendorEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
 
     public IWorldSchema Schema => WorldSchemas.For(Dialect);
 
@@ -279,7 +281,11 @@ public sealed class CreatureContext
             return false;
         }
 
-        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows => View == null ? [] : BuildView(rows).Issues);
+        var client = Lookup();
+        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows =>
+            Dialect == WorldDialect.TrinityCore
+                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null)
+                : BuildView(rows).Issues);
         Status = message;
         if (ok)
         {

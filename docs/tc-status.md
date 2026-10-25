@@ -10,7 +10,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
 | 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor, gossip, trainer and quest-link descriptors are built for both dialects; legacy stats/schema extraction remains |
-| 6: creature properties | partial: TC read done; template and difficulty editing done; gossip, trainer, vendor, quests still read-only |
+| 6: creature properties | partial: TC read done; template, difficulty and vendor editing done; gossip, trainer and quests still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
 ### Coexisting forms
@@ -23,19 +23,18 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ### Gated or inconsistent right now
 
-- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit only the template page (`CreatureContext.TcTemplateEditable`); the other TC sections stay read-only.
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template and vendor pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable`); gossip, trainer and quest sections stay read-only.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
 ## Where work stopped
 
-- Added `TrainerPageSpec` / `IWorldSchema.TrainerPage` for trainer storage, creature bindings and spell lists. AC and TC spell fields use `PageRenderer.RenderItems`; AC retains trainer assignment/creation, shared-trainer copying and spell search, and now exposes catalog skill requirements alongside cost and level. TC retains all default/gossip-bound trainers, missing-trainer reporting and prerequisite abilities, all read-only.
-- Added `QuestLinksPageSpec` / `IWorldSchema.QuestLinksPage` for creature starter/ender lists. Its `SetRoles` groups giver/ender changes, retaining existing rows. AC retains combined quest icons, role menus, search and embedded quest editing; TC uses the shared list renderer for separate read-only starter/ender lists. The TC quest-content editor remains Phase 7.
-- Added the dialect naming/layout rule to `CLAUDE.md`. All creature-property adapters now use `Ac` / `Tc` class and file prefixes under `AzerothCore/` / `TrinityCore/`; shared context, registry, base section and renderer remain common. Existing Godot UID companions moved with the scripts. `AcSpeechSection` now has its own file.
-- `CreatureServicePageTests` covers complete spell defaults, requirements, parent selection/order, distinct TC menu/option bindings, grouped quest roles, undo/redo and SQL export. Build passed; default suite: 685 passed, 4 skipped.
-- The official AC trainer wiki now lists `ReqAbility1-3`, but the existing AC catalog/read path omits them; this migration preserves that subset. Trainer/spell build metadata and TC quest-link `VerifiedBuild` also remain outside the read catalogs. The previously noted AC gossip `BoxBroadcastTextID` gap remains.
-- Extended `--client-shot --client-shot-overlays` to capture populated trainer and quest pages using Smith Argus (514) and Marshal Dughan (240), after the existing Farley gossip/Template/vendor captures. Both dialects passed the workflow and visual inspection (`artifacts/services-wrath-trainer.png`, `artifacts/services-wrath-quests.png`, `artifacts/services-retail-trainer.png`, `artifacts/services-retail-quests.png`).
-- `--interaction-smoke` still has the pre-existing "window-open" failure (short right-click does not open Farley's window); cause not investigated. The overlay screenshot workflow opens the windows directly.
-- Next: enable TC vendor editing, including item search and validation; continue remaining Phase 6 editors and legacy schema extraction.
+- Enabled TC vendor editing through the shared descriptors: add by retail item search or item/currency ID, edit fields, remove, undo/redo and SQL export. Search uses `IClientLookup.SearchItems` on a worker, caps terms/results, and drops results on creature changes.
+- Added `Foundation/TrinityCore/TcVendorRules`, checked during TC creature commits. Validates the Vendor flag, signed smallint slots, item existence when the client is available, type, stock/restock pairing for items, positive currency quantity, bonus-list integer syntax and IgnoreFiltering. Stock/restock save together. Negative item IDs remain reference rows.
+- `TcVendorTests` covers rejection without history changes, stock and retail fields, currency rules, duplicate/key collisions, reopen, undo/redo, removal and TC SQL export. Build passed; default suite: 699 passed, 4 skipped.
+- Currency, extended-cost, bonus-list and player-condition existence checks remain open; their lookup catalogs are not wired. TC shared vendor references are shown without expansion. Item icons, detailed retail tooltips and `hotfixes.item_sparse` overrides remain open.
+- Extended `--client-shot --client-shot-overlays` to exercise TC item search/add, stock validation and undo/redo, with an additional search screenshot. Both dialects passed and the vendor pages were visually inspected (`artifacts/vendor-retail-editor.png`, `artifacts/vendor-retail-search.png`, `artifacts/vendor-wrath-editor.png`).
+- Existing gaps: AC gossip `BoxBroadcastTextID`, AC trainer `ReqAbility1-3`, and trainer/quest-link build metadata remain outside the catalogs. `--interaction-smoke` retains its previously reported window-open failure; the screenshot workflow opens the windows directly.
+- Next: TC gossip editing; continue remaining Phase 6 editors and legacy schema extraction.
 - Changes are uncommitted.
 
 ## Foundation and design
@@ -81,7 +80,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Retail creature and GameObject display catalogs | done | Includes humanoids (baked skins, customization geosets, hair/eye textures). |
 | `hotfixes.creature_display_info` overrides | done | Reads 3 of 4 texture columns; `creature_display_info_extra` not read (empty in TDB). |
 | Other hotfix overrides (`gameobject_display_info`, `item_sparse`, `spell_name`, `broadcast_text`, `content_tuning`) | not started | `RetailGameObjectCatalog.Override` exists but is never called. |
-| `IClientLookup` (area triggers, broadcast text, items, spells) | done | Items, spells and broadcast text are not wired into any editor yet. |
+| `IClientLookup` (area triggers, broadcast text, items, spells) | done | Item names/search serve the TC vendor editor; spell and broadcast names serve read-only service pages. |
 | Retail area names (`AreaLookup`) | not started | Null for retail. |
 | `AreaTriggerActionSet`, `ContentTuning` tables | not started | Registered, not read. |
 
@@ -120,11 +119,11 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Creature properties: read-only TC sections | done | Template with a difficulty picker, gossip (every menu and submenu), trainers with their gossip option, vendor, quests. The window lists only the open database's sections; checked in `--client-shot-overlays` on Innkeeper Farley. |
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
-| Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor, gossip, trainer and quest sections still need editors. |
-| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor fields through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests`, `GossipPageTests` and `CreatureServicePageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. `TrainerPageSpec` covers trainer storage, bindings and spell fields; `QuestLinksPageSpec` covers starter/ender lists and grouped role edits. AC keeps specialized quest icons and navigation; TC remains read-only. |
+| Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor supports item search/add, currency IDs, fields, removal, validation and history/export. Gossip, trainer and quest sections still need editors. |
+| Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor editors through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests`, `GossipPageTests` and `CreatureServicePageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. `TrainerPageSpec` covers trainer storage, bindings and spell fields; `QuestLinksPageSpec` covers starter/ender lists and grouped role edits. AC keeps specialized quest icons and navigation; TC quest links remain read-only. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `AcStatsSection` via ContentTuning | not started | Phase 6. |
-| Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | not started | Phase 6. |
+| Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | partial | Client ItemSparse search by name/ID is wired; icons, detailed tooltips and hotfix overrides remain open. |
 | Section registry and sections take field groups from the schema | not started | Phase 6. |
 | Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | not started | Phase 7. Editor gated off in TC. |
 | SmartAI: `SmartCatalog.Trinity`, TC `smart_scripts` columns, `creature_text.SoundPlayType` | not started | Phase 8. Editor gated off in TC. |

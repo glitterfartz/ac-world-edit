@@ -118,7 +118,57 @@ public partial class TerrainViewer
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
                 GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
+                if (creatureProps.Context.TcVendorEditable)
+                {
+                    var search = creatureProps.Section("vendor")!.FindChild("Search_item", true, false) as LineEdit;
+                    if (search == null) { SmokeFail("CLIENT_SHOT_VENDOR_SEARCH_MISSING"); return; }
+                    search.Text = "2589"; // Linen Cloth, not one of Farley's drinks/food.
+                    search.EmitSignal(LineEdit.SignalName.TextSubmitted, search.Text);
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 40;
+                    return;
+                }
                 OpenShotCreature(514, "trainer", 5); // Smith Argus, Goldshire's blacksmith trainer.
+                return;
+            case 40:
+                var addItem = creatureProps.Section("vendor")!.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text.StartsWith("+ ") && b.Text.EndsWith("(2589)"));
+                if (addItem == null)
+                {
+                    if (clientShotFrames++ > 1800) SmokeFail("CLIENT_SHOT_VENDOR_SEARCH " + creatureProps.Context.Status);
+                    return;
+                }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-vendor-search.png"));
+                addItem.EmitSignal(Button.SignalName.Pressed);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 41;
+                return;
+            case 41:
+                var context = creatureProps.Context;
+                var vendor = context.Schema.VendorPage;
+                var added = vendor.Select(context.Effective, ShotCreature).FirstOrDefault(r => r.I("item") == 2589);
+                if (added == null)
+                {
+                    if (clientShotFrames++ > 600) SmokeFail("CLIENT_SHOT_VENDOR_ADD " + context.Status);
+                    return;
+                }
+                // A stock-only change is invalid; the paired change, undo and redo must work.
+                if (context.Commit("Invalid vendor stock", Foundation.ItemListSpec.Change(vendor.Table, added, added.With("maxcount", 5u))))
+                { SmokeFail("CLIENT_SHOT_VENDOR_VALIDATION accepted stock without restock"); return; }
+                if (!context.Commit("Set vendor stock", Foundation.ItemListSpec.Change(vendor.Table, added, added.With("maxcount", 5u).With("incrtime", 60u))))
+                { SmokeFail("CLIENT_SHOT_VENDOR_STOCK " + context.Status); return; }
+                context.Drafts.History(context, false);
+                context.Rebuild();
+                if (vendor.Select(context.Effective, ShotCreature).First(r => r.I("item") == 2589).U("maxcount") != 0)
+                { SmokeFail("CLIENT_SHOT_VENDOR_UNDO"); return; }
+                context.Drafts.History(context, true);
+                context.Rebuild();
+                if (vendor.Select(context.Effective, ShotCreature).First(r => r.I("item") == 2589).U("maxcount") != 5)
+                { SmokeFail("CLIENT_SHOT_VENDOR_REDO"); return; }
+                context.Drafts.History(context, false);
+                context.Drafts.History(context, false);
+                context.Rebuild();
+                GD.Print("CLIENT_SHOT_VENDOR_EDIT_OK search/add/validation/stock/undo/redo");
+                OpenShotCreature(514, "trainer", 5);
                 return;
             case 5:
                 if (!ShotCreatureReady(514)) return;

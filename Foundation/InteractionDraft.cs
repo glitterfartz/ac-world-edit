@@ -78,26 +78,34 @@ public sealed class InteractionDraft : IDisposable
 
     static IEnumerable<InteractionCommand> Applied(DraftSnapshot<InteractionCommand> state, string source) => state.AppliedEntries().Where(c => c.Source == source);
 
+    // Once edits cancel out, the next edit starts from the newly observed database baseline.
+    static RowEdit Collapse(IEnumerable<RowEdit> edits) => edits.Aggregate((before, next) => before.Before == before.After
+        ? next
+        : new RowEdit(before.Table, before.Key, before.Before, next.After));
+
+    static IEnumerable<RowEdit> NetRows(DraftSnapshot<InteractionCommand> state, string source) => Applied(state, source)
+        .SelectMany(c => c.Edits)
+        .GroupBy(e => (e.Table, e.Key))
+        .Select(Collapse)
+        .Where(e => e.Before != e.After);
+
     /// <summary>
     /// Every row key the draft touches for this source, so the reader can load those rows too.
     /// </summary>
     public IReadOnlyList<(TableSchema Table, string Key)> Keys(string source) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Select(e => (Tables(source).Find(e.Table), e.Key)).Distinct().ToList();
 
     /// <summary>
-    /// Rows whose first applied edit no longer matches the database snapshot.
+    /// Rows with a remaining change whose baseline no longer matches the database snapshot.
     /// </summary>
     public IReadOnlyList<(string Table, string Key)> Conflicts(string source, RowSet snapshot) => Conflicts(state, Tables(source), source, snapshot);
 
     static IReadOnlyList<(string Table, string Key)> Conflicts(DraftSnapshot<InteractionCommand> state, ITableCatalog tables, string source, RowSet snapshot)
     {
-        var edits = Applied(state, source).SelectMany(c => c.Edits).ToList();
-        var latest = edits.GroupBy(e => (e.Table, e.Key)).ToDictionary(g => g.Key, g => g.Last().After);
-        var seen = new HashSet<(string, string)>();
         List<(string, string)> conflicts = [];
-        foreach (var edit in edits)
+        foreach (var edit in NetRows(state, source))
         {
             // A row already equal to the draft's final value was applied to the database, so it is not stale.
-            if (seen.Add((edit.Table, edit.Key)) && snapshot.Get(tables.Find(edit.Table), edit.Key) is var current && current != edit.Before && current != latest[(edit.Table, edit.Key)])
+            if (snapshot.Get(tables.Find(edit.Table), edit.Key) is var current && current != edit.Before && current != edit.After)
             {
                 conflicts.Add((edit.Table, edit.Key));
             }
@@ -127,7 +135,7 @@ public sealed class InteractionDraft : IDisposable
     {
         var conflicts = Conflicts(state, tables, source, snapshot).ToHashSet();
         var result = snapshot.Clone();
-        foreach (var edit in Applied(state, source).SelectMany(c => c.Edits))
+        foreach (var edit in NetRows(state, source))
         {
             if (conflicts.Contains((edit.Table, edit.Key)))
             {
@@ -195,7 +203,7 @@ public sealed class InteractionDraft : IDisposable
     public IReadOnlyList<(string Source, RowEdit Edit)> NetEdits() => state.AppliedEntries()
         .SelectMany(c => c.Edits.Select(e => (c.Source, Edit: e)))
         .GroupBy(x => (x.Source, x.Edit.Table, x.Edit.Key))
-        .Select(g => (g.Key.Source, new RowEdit(g.Key.Table, g.Key.Key, g.First().Edit.Before, g.Last().Edit.After)))
+        .Select(g => (g.Key.Source, Collapse(g.Select(x => x.Edit))))
         .Where(x => x.Item2.Before != x.Item2.After)
         .ToList();
 

@@ -6,7 +6,7 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// Base of the TrinityCore creature sections: they draw the read model (<see cref="TcCreatureView"/>)
-/// and are read-only until TrinityCore editing exists. They use the AzerothCore sections' ids, so
+/// with editing enabled separately by each implemented page. They use the AzerothCore sections' ids, so
 /// opening the window on "gossip" or "vendor" finds the page of the open database.
 /// </summary>
 public abstract partial class TcSection(CreatureContext ctx) : CreatureSection(ctx)

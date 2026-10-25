@@ -52,7 +52,7 @@ TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage 
 | `TcSpawnSource` | `creature` / `gameobject` with their templates, `creature_template_model`; `pool_members`, event and `conditions` filters |
 | `TcGraveyardSource` | `world_safe_locs`, `graveyard_zone`, team rows in `conditions`, teleport overlaps from `areatrigger_teleport`; healers via `AcGraveyardSource.ReadHealers` |
 | `TcAreaTriggerSource` | client `AreaTrigger.db2` (through `IClientLookup`) joined to `areatrigger_scripts`, `areatrigger_teleport` → `world_safe_locs`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `smart_scripts` |
-| `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks); the template and difficulty rows are editable |
+| `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks); the template, difficulty and vendor rows are editable |
 | `TcHotfixSource` | `hotfixes` database: `creature_display_info`, `creature_model_data`, `broadcast_text`, `area_trigger` |
 
 Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has no content (quest, SmartAI) or waypoint source yet; those editors and the waypoint layer are off in TrinityCore mode.
@@ -87,7 +87,7 @@ Each draft holds a `DraftHistory<T>` (`Foundation/DraftHistory.cs`):
 
 Freshness: every edit records the value it replaced (`Before`). A new edit is refused if the current effective value no longer matches. Per-row staleness shows up as a conflict, and the database value is displayed instead of the draft value.
 
-`ContentDrafts.Commit` also refuses edits that introduce a new rule error, using `InteractionRules` and the quest and SmartAI checks.
+`ContentDrafts.Commit` also refuses edits that introduce a new rule error, using `InteractionRules` and the quest and SmartAI checks. TC creature commits use `TrinityCore/TcVendorRules`: vendor flag, signed slot range, item/type validity, paired item stock/restock, positive currency quantity, bonus-list integer syntax and filtering boolean. Item existence is checked against the retail client when available. Currency/cost/bonus/condition existence and shared-reference expansion remain gaps. Stock and restock are one command so a valid limited-stock row can be created from unlimited stock.
 
 ## Draft lifecycle
 
