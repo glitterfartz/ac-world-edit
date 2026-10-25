@@ -21,9 +21,10 @@ public static class M2Model
         // SFID names the skin files and TXID the textures by FileDataID. Wrath files are the bare MD20.
         bool chunked = file.Length >= 4 && Encoding.ASCII.GetString(file, 0, 4) == "MD21";
         uint[] skinIds = [], textureIds = [];
+        Dictionary<(ushort, ushort), uint> animFiles = [];
         if (chunked)
         {
-            (file, skinIds, textureIds) = SplitChunked(file);
+            (file, skinIds, textureIds, animFiles) = SplitChunked(file);
         }
 
         var b = new BinaryAsset(file);
@@ -77,13 +78,7 @@ public static class M2Model
             }
         }
 
-        // Chunked models keep their animation data in per-sequence .anim files named by AFID; retail
-        // scenery is drawn in its reference pose for now.
-        if (chunked)
-        {
-            sequenceIndex = -1;
-        }
-        else if (sequenceIndex < 0 && bones.Count > 0)
+        if (sequenceIndex < 0 && bones.Count > 0)
         {
             warnings.Add($"Native animation {animationId} unavailable; showing reference pose.");
         }
@@ -111,7 +106,18 @@ public static class M2Model
 
             int p = sequences.Offset + sequenceIndex * 64;
             duration = b.U(p + 4);
-            if ((b.U(p + 12) & 0x20) == 0)
+            if ((b.U(p + 12) & 0x20) == 0 && chunked)
+            {
+                // Chunked models name a sequence's .anim file by FileDataID in AFID; the track data
+                // sits in its AFM2 chunk, with offsets relative to the chunk's data.
+                external = animFiles.TryGetValue((b.H(p), b.H(p + 2)), out uint animFile) ? ReadAnimChunk(store, animFile) : null;
+                if (external == null)
+                {
+                    warnings.Add($"Native animation unavailable: sequence {b.H(p)}-{b.H(p + 2)} has no .anim file.");
+                    sequenceIndex = -1;
+                }
+            }
+            else if ((b.U(p + 12) & 0x20) == 0)
             {
                 string anim = path[..^3] + $"{b.H(p):D4}-{b.H(p + 2):D2}.anim";
                 try
@@ -377,10 +383,11 @@ public static class M2Model
     /// Split an MD21 container into its MD20 block and the SFID/TXID file lists. Chunk tags are stored
     /// unreversed in these files; unknown chunks are skipped.
     /// </summary>
-    static (byte[] Model, uint[] Skins, uint[] Textures) SplitChunked(byte[] file)
+    static (byte[] Model, uint[] Skins, uint[] Textures, Dictionary<(ushort, ushort), uint> Animations) SplitChunked(byte[] file)
     {
         byte[]? model = null;
         uint[] skins = [], textures = [];
+        Dictionary<(ushort, ushort), uint> animations = [];
         foreach (var chunk in Chunks.Read(file, reversed: false))
         {
             uint[] Ids() => Enumerable.Range(0, chunk.Size / 4).Select(i => LittleEndian.U32(file, chunk.Data + i * 4)).ToArray();
@@ -395,9 +402,41 @@ public static class M2Model
                 case "TXID":
                     textures = Ids();
                     break;
+                case "AFID":
+                    // 8-byte entries: animation ID, sub-animation (variation) index, FileDataID.
+                    for (int i = 0; i + 8 <= chunk.Size; i += 8)
+                    {
+                        animations[(LittleEndian.U16(file, chunk.Data + i), LittleEndian.U16(file, chunk.Data + i + 2))] = LittleEndian.U32(file, chunk.Data + i + 4);
+                    }
+
+                    break;
             }
         }
 
-        return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures);
+        return (model ?? throw new InvalidDataException("Missing MD21 chunk."), skins, textures, animations);
+    }
+
+    /// <summary>The AFM2 payload of a chunked .anim file, or null when the file is missing or has none.</summary>
+    static byte[]? ReadAnimChunk(IClientFiles store, uint fileId)
+    {
+        byte[] data;
+        try
+        {
+            data = store.Read(AssetRef.FromFileId(fileId));
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+
+        foreach (var chunk in Chunks.Read(data, reversed: false))
+        {
+            if (chunk.Tag == "AFM2")
+            {
+                return data.AsSpan(chunk.Data, chunk.Size).ToArray();
+            }
+        }
+
+        return null;
     }
 }
