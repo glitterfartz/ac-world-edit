@@ -50,6 +50,8 @@ public partial class TerrainViewer
         }
 
         clientShotWater = flags.Contains("--client-shot-water");
+        clientShotOverlays = flags.Contains("--client-shot-overlays");
+        clientShot |= clientShotOverlays;
         clientShot |= clientShotWater;
         clientSmoke = flags.Contains("--client-smoke") || clientShot;
     }

@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class TerrainViewer
 {
-    bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater;
+    bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
     int clientShotFrames;
     TileKey? clientShotTile;
     double clientSmokeTime;
@@ -110,6 +110,32 @@ public partial class TerrainViewer
 
             if (pending != null || building != null || !wanted.All(loaded.ContainsKey) || models.Busy || clientShotFrames++ < 120)
             {
+                return;
+            }
+
+            // --client-shot-overlays keeps the interface and shows the database layers over Goldshire:
+            // creatures, GameObjects, graveyards and AreaTriggers, all read from the world database.
+            if (clientShotOverlays)
+            {
+                if (!clientShotOverlaysFocused)
+                {
+                    clientShotOverlaysFocused = true;
+                    areaTriggers.SetLayerEnabled(true);
+                    FocusPose(new(0, -9465.5, 74, 56.8, 0));
+                    clientShotFrames = 0;
+                    return;
+                }
+
+                bool ready = creatures.Records.Count > 0 && gameObjects.Records.Count > 0 && graveyards.Sites.Count > 0 && areaTriggers.Triggers.Count > 0;
+                if (!ready || creatures.IsLoading || gameObjects.IsLoading || areaTriggers.IsLoading || models.Busy || clientShotFrames++ < 240)
+                {
+                    return;
+                }
+
+                GD.Print($"CLIENT_SHOT_OVERLAYS creatures={creatures.Records.Count} models={creatures.ModelCreatureCount} gameobjects={gameObjects.Records.Count} models={gameObjects.ModelObjectCount} graveyards={graveyards.Sites.Count} triggers={areaTriggers.Triggers.Count}");
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-overlays.png"));
+                GD.Print($"CLIENT_SMOKE_OK kind={store.Kind} database={databaseEnabled} overlays=True");
+                GetTree().Quit();
                 return;
             }
 
