@@ -20,11 +20,11 @@ public sealed class TcAreaTriggerSource(WorldDatabase database, IClientLookup? l
     {
         if (lookup == null)
         {
-            throw new InvalidDataException("AreaTriggers come from the client's AreaTrigger.db2, which needs the retail client data.");
+            throw new DatabaseFeatureException("AreaTriggers come from the client's AreaTrigger.db2, which needs the retail client data.");
         }
 
         var client = lookup.AreaTriggers().ToDictionary(t => t.Id);
-        foreach (var row in await hotfixes.ReadAreaTriggersAsync(token).ConfigureAwait(false))
+        foreach (var row in await ReadHotfixes(token).ConfigureAwait(false))
         {
             client[row.Id] = row;
         }
@@ -57,6 +57,22 @@ public sealed class TcAreaTriggerSource(WorldDatabase database, IClientLookup? l
                 link.Script, link.Teleport, link.Quest, link.QuestTitle, link.Tavern, link.Smart);
         }).Where(t => t.Map <= ushort.MaxValue).ToArray();
         return new(triggers, truncated, database.SourceKey);
+    }
+
+    /// <summary>
+    /// The hotfix overrides, or none when the hotfixes database cannot be read (missing table,
+    /// unreachable server): the client rows are what a client without those hotfixes would use.
+    /// </summary>
+    async Task<IReadOnlyList<ClientAreaTrigger>> ReadHotfixes(CancellationToken token)
+    {
+        try
+        {
+            return await hotfixes.ReadAreaTriggersAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return [];
+        }
     }
 
     sealed class Links

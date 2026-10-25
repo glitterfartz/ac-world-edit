@@ -171,8 +171,31 @@ public class TrinityReadDbTests
     [TcDbFact]
     public async Task AreaTriggersNeedTheClientLookup()
     {
-        var error = await Assert.ThrowsAsync<InvalidDataException>(() => Open(null).ReadAreaTriggersAsync(Elwynn, null, "", CancellationToken.None));
+        var error = await Assert.ThrowsAsync<DatabaseFeatureException>(() => Open(null).ReadAreaTriggersAsync(Elwynn, null, "", CancellationToken.None));
         Assert.Contains("retail client", error.Message);
+    }
+
+    [TcDbFact]
+    public async Task AnUnreadableHotfixesDatabaseLeavesTheClientTriggers()
+    {
+        var connection = Environments.TrinityConnection()! with { Hotfixes = "no_such_hotfixes_database" };
+        var lookup = new OneTrigger(new ClientAreaTrigger(78, 0, -11208f, 1672f, 24f, 5f, 0, 0, 0, 0, 0, 0, 0, 0));
+        var result = await DBSource.Open(connection, lookup).ReadAreaTriggersAsync(Westfall, null, "", CancellationToken.None);
+        var trigger = Assert.Single(result.Triggers);
+        Assert.Equal(78u, trigger.Entry);
+        Assert.Equal("Deadmines Entrance Target", trigger.Teleport!.Name);
+    }
+
+    /// <summary>A client lookup holding a single trigger, so the test needs no retail client.</summary>
+    sealed class OneTrigger(ClientAreaTrigger trigger) : IClientLookup
+    {
+        public IReadOnlyList<ClientAreaTrigger> AreaTriggers() => [trigger];
+        public string? BroadcastText(uint id, bool female = false) => null;
+        public IReadOnlyList<(uint Id, string Text)> SearchBroadcastText(string term, int limit) => [];
+        public ClientItem? Item(uint id) => null;
+        public IReadOnlyList<ClientItem> SearchItems(string term, int limit) => [];
+        public string? SpellName(uint id) => null;
+        public IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit) => [];
     }
 
     [TcRetailFact]

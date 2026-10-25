@@ -74,13 +74,31 @@ public class DatabaseSettingsTests
     public async Task TheTrinityCoreEditorsThatAreNotBuiltYetSayWhatIsMissing()
     {
         var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
-        var error = await Assert.ThrowsAsync<InvalidDataException>(() => source.SearchQuestsAsync("x", CancellationToken.None));
+        var error = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.SearchQuestsAsync("x", CancellationToken.None));
         Assert.Contains("not available for the TrinityCore", error.Message);
     }
 
     [Fact]
-    public void OpeningWithIncompleteSettingsFailsWithAnInvalidData() =>
-        Assert.Throws<InvalidDataException>(() => DBSource.Open(WorldConnection.Empty));
+    public void OpeningWithIncompleteSettingsSaysWhatToEnter() =>
+        Assert.Throws<DatabaseFeatureException>(() => DBSource.Open(WorldConnection.Empty));
+
+    [Fact]
+    public async Task StatusTextKeepsFeatureMessagesAndHidesParserInternals()
+    {
+        var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
+        var unsupported = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.ReadWaypointsAsync(new CreatureRegion(0, 31, 33, 48, 50), null, CancellationToken.None));
+        Assert.Equal(unsupported.Message, DbErrors.Safe(unsupported));
+        Assert.Equal("Enter the world database host, user and database name.", DbErrors.Safe(Record.Exception(() => DBSource.Open(WorldConnection.Empty))!));
+        Assert.DoesNotContain("Missing column", DbErrors.Safe(new InvalidDataException("Missing column guid.")));
+    }
+
+    [Fact]
+    public async Task TrinityCoreAreaTriggersWithoutClientDataSayWhy()
+    {
+        var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
+        var error = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.ReadAreaTriggersAsync(new CreatureRegion(0, 31, 33, 48, 50), null, "", CancellationToken.None));
+        Assert.Contains("retail client", DbErrors.Safe(error));
+    }
 
     [Fact]
     public void DescribeNamesTheServerFlavourWhenTheSchemaDoesNotMatch()
@@ -132,5 +150,5 @@ public class DatabaseSettingsTests
     }
 
     [Fact]
-    public void WorldDatabaseRefusesIncompleteSettings() => Assert.Throws<InvalidDataException>(() => new WorldDatabase(DatabaseSettings.Empty));
+    public void WorldDatabaseRefusesIncompleteSettings() => Assert.Throws<DatabaseFeatureException>(() => new WorldDatabase(DatabaseSettings.Empty));
 }

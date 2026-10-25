@@ -35,6 +35,10 @@ public class TrinityConnectionDbTests
         Assert.Contains("no_such_hotfixes_database", error);
     }
 
+    [TcDbFact]
+    public async Task ABlankHotfixesDatabaseIsOptional() =>
+        Assert.Null(await DatabaseDiagnostics.TestAsync(Environments.TrinityConnection()! with { Hotfixes = "" }));
+
     [DbFact]
     public async Task AnAzerothCoreDatabaseIsRejectedInTrinityCoreMode()
     {

@@ -30,7 +30,7 @@ public sealed class TcDBSource : IDBSource
     public IWorldSchema Schema => throw Unsupported("The table catalog");
     public string SourceKey => database.SourceKey;
 
-    static InvalidDataException Unsupported(string what) => new($"{what} is not available for the TrinityCore world database yet.");
+    static DatabaseFeatureException Unsupported(string what) => new($"{what} is not available for the TrinityCore world database yet.");
 
     public Task<CreatureRegionResult> ReadCreaturesAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token) => spawns.ReadCreaturesAsync(region, preview, point, search, token);
     public Task<GameObjectRegionResult> ReadGameObjectsAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token) => spawns.ReadGameObjectsAsync(region, preview, point, search, token);

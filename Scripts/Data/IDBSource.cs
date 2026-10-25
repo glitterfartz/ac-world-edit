@@ -48,7 +48,7 @@ public static class DBSource
 {
     /// <summary>
     /// The client lookup serves what the TrinityCore database lacks (area trigger volumes); AzerothCore ignores it.
-    /// Fails with <see cref="InvalidDataException"/> when the connection settings are incomplete or
+    /// Fails with <see cref="DatabaseFeatureException"/> when the connection settings are incomplete or
     /// the dialect has no implementation yet. Call it where the read starts so the error reaches the
     /// caller's status handling.
     /// </summary>
@@ -56,6 +56,6 @@ public static class DBSource
     {
         WorldDialect.AzerothCore => new AcDBSource(connection),
         WorldDialect.TrinityCore => new TcDBSource(connection, lookup),
-        _ => throw new InvalidDataException($"The {connection.Dialect} world database is not supported yet.")
+        _ => throw new DatabaseFeatureException($"The {connection.Dialect} world database is not supported yet.")
     };
 }

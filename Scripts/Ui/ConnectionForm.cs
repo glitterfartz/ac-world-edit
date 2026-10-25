@@ -16,7 +16,7 @@ public sealed partial class ConnectionForm : VBoxContainer
     readonly LineEdit user = new() { PlaceholderText = "User" };
     readonly LineEdit password = new() { PlaceholderText = "Password", Secret = true };
     readonly LineEdit database = new() { PlaceholderText = "Database (e.g. acore_world)" };
-    readonly LineEdit hotfixes = new() { PlaceholderText = "Hotfixes database (e.g. hotfixes)" };
+    readonly LineEdit hotfixes = new() { PlaceholderText = "Hotfixes database (optional, e.g. hotfixes)" };
     readonly List<Control> hotfixRows = [];
     readonly Label result = InspectorUi.Text("", 12);
     bool testing;

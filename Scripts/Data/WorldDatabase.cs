@@ -25,7 +25,7 @@ public sealed class WorldDatabase
     {
         if (!settings.IsComplete)
         {
-            throw new InvalidDataException("Enter the world database host, user and database name.");
+            throw new DatabaseFeatureException("Enter the world database host, user and database name.");
         }
 
         this.dialect = dialect;

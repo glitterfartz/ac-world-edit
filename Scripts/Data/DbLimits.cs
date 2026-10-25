@@ -13,12 +13,19 @@ public static class DbLimits
     public const double HealerRadius = 40;
 }
 
+/// <summary>
+/// A read that cannot run for a reason the user can act on (an editor the dialect lacks, missing client
+/// data, incomplete settings). Its message is written for the status bar and is shown as is.
+/// </summary>
+public sealed class DatabaseFeatureException(string message) : Exception(message);
+
 public static class DbErrors
 {
     /// <summary>User-facing text for a failed read; never includes provider text or credentials.</summary>
     public static string Safe(Exception error) => error switch
     {
         SpawnSchemaException schema => schema.Message,
+        DatabaseFeatureException feature => feature.Message,
         MySqlException => "Database unavailable. Check Scene → Database connection…",
         InvalidDataException => "Check the database connection settings, or the spawn data is unsupported.",
         _ => "Could not load spawns. Check the connection and database format."

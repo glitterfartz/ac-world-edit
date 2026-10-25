@@ -80,13 +80,15 @@ public static class DatabaseDiagnostics
         MySqlException mysql => $"MySQL error {mysql.Number}. Check the connection settings.",
         OperationCanceledException => $"Timed out connecting to {settings.Host}:{settings.Port}.",
         SpawnSchemaException schema => $"Connected, but this is not {(dialect == WorldDialect.TrinityCore ? "a TrinityCore" : "an AzerothCore")} world database: {schema.Message}",
+        DatabaseFeatureException feature => feature.Message,
         InvalidDataException invalid => invalid.Message,
         _ => "Could not connect. Check the host, port and that MySQL is reachable."
     };
 
     /// <summary>
     /// Open (and immediately dispose) a read-only session including the schema check; null on success.
-    /// A configured hotfixes database must be reachable too, because TrinityCore overlays read it.
+    /// A configured hotfixes database must be reachable too, because TrinityCore overlays read it; a
+    /// blank one is optional.
     /// </summary>
     public static async Task<string?> TestAsync(WorldConnection connection)
     {
@@ -108,11 +110,7 @@ public static class DatabaseDiagnostics
             return Describe(error, connection.World, connection.Dialect);
         }
 
-        if (connection.Dialect == WorldDialect.TrinityCore && connection.Hotfixes != null && connection.HotfixesSettings == null)
-        {
-            return "Enter the hotfixes database.";
-        }
-
+        // A blank hotfixes name means there is none: every hotfix read then keeps the client's rows.
         if (connection.HotfixesSettings is { } hotfixes)
         {
             try
