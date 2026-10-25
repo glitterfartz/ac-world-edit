@@ -488,7 +488,14 @@ public partial class TerrainViewer
             }
         };
         AddChild(dialog);
-        dialog.PopupCentered();
+        dialog.PopupCentered(new Vector2I(420, 0));
+        // The first layout pass measures wrapping labels at zero width, and a window never shrinks
+        // by itself, so refit it once the labels have their real width.
+        Callable.From(() =>
+        {
+            dialog.ResetSize();
+            dialog.MoveToCenter();
+        }).CallDeferred();
         return closed.Task;
     }
 }

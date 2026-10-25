@@ -27,8 +27,7 @@ public sealed partial class ConnectionForm : VBoxContainer
         AddField("User", user);
         AddField("Password", password);
         AddField("Database", database);
-        result.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        AddChild(result);
+        result.AutowrapMode = TextServer.AutowrapMode.WordSmart; AddChild(result);
         Settings = UserSettings.LoadDatabase();
     }
 
@@ -118,7 +117,11 @@ public sealed partial class ConnectionDialog : AcceptDialog
         DialogHideOnOk = false;
         form.Settings = initial;
         var box = new VBoxContainer { CustomMinimumSize = new Vector2(380, 0) };
-        box.AddChild(InspectorUi.Text("Enter your AzerothCore world database. The connection is read-only; nothing is written.", 12, true));
+        // A wrapping label measured before it has a width asks for one line per word, which makes the
+        // dialog as tall as the window; a minimum width keeps its height to the real line count.
+        var intro = InspectorUi.Text("Enter your AzerothCore world database. The connection is read-only; nothing is written.", 12, true);
+        intro.CustomMinimumSize = new Vector2(380, 0);
+        box.AddChild(intro);
         box.AddChild(form);
         AddChild(box);
         Confirmed += async () =>
