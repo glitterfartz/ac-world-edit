@@ -10,7 +10,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
 | 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor, gossip, trainer and quest-link descriptors are built for both dialects; legacy stats/schema extraction remains |
-| 6: creature properties | partial: TC read done; template, difficulty, vendor and gossip editing done; trainer and quests still read-only |
+| 6: creature properties | partial: TC read done; template, difficulty, vendor, gossip and trainer editing done; quest links still read-only |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
 ### Coexisting forms
@@ -23,10 +23,14 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ### Gated or inconsistent right now
 
-- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, vendor and gossip pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable` / `TcGossipEditable`); trainer and quest sections stay read-only.
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, vendor, gossip and trainer pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable` / `TcGossipEditable` / `TcTrainerEditable`); the quest section stays read-only.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
 ## Where work stopped
+
+- Enabled TC trainer editing: trainer type and greeting, spell fields (cost, level, skill, `ReqAbility1-3`), remove, client spell search and add by ID, with undo/redo and SQL export. `TcTrainerRules` checks type, spell existence when the client is open, required level and required abilities. A warning shows when several `creature_trainer` bindings share the trainer (`TcTrainerView.SharedBy`, read at load).
+- `TcTrainerTests` covers validation, persistence, history and export. Default suite: 723 passed, 4 skipped. The AzerothCore screenshot workflow still passes. The TC branch of `--client-shot-overlays` (edit, validation and undo, saving `client-shot-trainer-edit.png`) has not been run yet because it needs the retail client, so the TC trainer page is not yet inspected visually.
+- Trainer gaps: assigning or creating trainers and rebinding gossip options (`creature_trainer`), shared-trainer copying, skill-line existence checks, and `VerifiedBuild`. Spell edits still apply to every creature that shares the trainer.
 
 - Enabled TC gossip editing using `GossipPageSpec`: option fields/add/remove, menu selection and Back/submenu navigation, option/confirmation broadcast IDs, and all eight greeting broadcast/weight pairs. Literal text edits clear the corresponding override atomically. `TcGossipRules` checks service values, confirmation fields and weighted greetings; asynchronous reference checks use `IDBSource.MenuExistsAsync` and exact-ID `SearchBroadcastAsync`, dropping results when the creature changes.
 - `TcGossipTests` covers validation, persistence, history and apply/revert SQL; `TrinityReadDbTests.GossipReferenceChecksResolveMenusAndExactBroadcastIds` covers live reference reads. Build passed; default suite: 717 passed, 4 skipped. Godot's TC screenshot workflow exercises the editor and saves the option, submenu and expanded greeting pages for inspection.
@@ -39,7 +43,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 - Extended `--client-shot --client-shot-overlays` to exercise TC item search/add, stock validation and undo/redo, with an additional search screenshot. Both dialects passed and the vendor pages were visually inspected (`artifacts/vendor-retail-editor.png`, `artifacts/vendor-retail-search.png`, `artifacts/vendor-wrath-editor.png`).
 - Existing gaps: AC gossip `BoxBroadcastTextID`, AC trainer `ReqAbility1-3`, and trainer/quest-link build metadata remain outside the catalogs. `--interaction-smoke` retains its previously reported window-open failure; the screenshot workflow opens the windows directly.
 - Fixed false creature-property conflicts from discarded edits: conflict detection, effective views and exports now use remaining row changes, and later edits take a fresh baseline after cancellation. Existing saved histories need no cleanup; `InteractionConflictTests` covers both dialects.
-- Next: TC trainer and quest-link editing; continue remaining Phase 6 editors and legacy schema extraction.
+- Next: TC quest-link editing; continue remaining Phase 6 editors and legacy schema extraction.
 
 ## Foundation and design
 
@@ -123,7 +127,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Creature properties: read-only TC sections | done | Template with a difficulty picker, gossip (every menu and submenu), trainers with their gossip option, vendor, quests. The window lists only the open database's sections; checked in `--client-shot-overlays` on Innkeeper Farley. |
 | Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; icons need the ItemSparse/Item icon FileDataID wiring. |
-| Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor supports item search/add, currency IDs, fields, removal, validation and history/export. Gossip supports option fields/add/remove, root/submenu selection and Back navigation, option/confirmation broadcast references, and all eight greeting ID/weight pairs. Trainer and quest sections still need editors. |
+| Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A difficulty the creature has no row for cannot be added yet. Vendor supports item search/add, currency IDs, fields, removal, validation and history/export. Gossip supports option fields/add/remove, root/submenu selection and Back navigation, option/confirmation broadcast references, and all eight greeting ID/weight pairs. Trainer supports type, greeting and spell edits (see Where work stopped). The quest section still needs an editor. |
 | Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor editors through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests`, `GossipPageTests` and `CreatureServicePageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. `TrainerPageSpec` covers trainer storage, bindings and spell fields; `QuestLinksPageSpec` covers starter/ender lists and grouped role edits. AC keeps specialized quest icons and navigation; TC quest links remain read-only. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
 | `AcStatsSection` via ContentTuning | not started | Phase 6. |

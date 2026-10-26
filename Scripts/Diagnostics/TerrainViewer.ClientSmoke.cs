@@ -264,6 +264,22 @@ public partial class TerrainViewer
                     SmokeFail("CLIENT_SHOT_TRAINER_EMPTY Smith Argus has no trainer spells");
                     return;
                 }
+                if (creatureProps.Context.TcTrainerEditable && creatureProps.Context.TcView?.Trainers.FirstOrDefault(t => t.Spells.Length > 0) is { } tcTrainer)
+                {
+                    var trainerCtx = creatureProps.Context;
+                    var spells = trainerCtx.Schema.TrainerPage.Spells;
+                    var first = spells.Select(trainerCtx.Effective, tcTrainer.TrainerId).First();
+                    if (!trainerCtx.Commit("Change trainer cost", Foundation.ItemListSpec.Change(spells.Table, first, first.With("MoneyCost", first.U("MoneyCost") + 1))))
+                    { SmokeFail("CLIENT_SHOT_TRAINER_EDIT " + trainerCtx.Status); return; }
+                    if (trainerCtx.Commit("Invalid trainer level", Foundation.ItemListSpec.Change(spells.Table, first, first.With("ReqLevel", 256u))))
+                    { SmokeFail("CLIENT_SHOT_TRAINER_VALIDATION accepted level 256"); return; }
+                    GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-trainer-edit.png"));
+                    trainerCtx.Drafts.History(trainerCtx, false);
+                    trainerCtx.Rebuild();
+                    if (spells.Select(trainerCtx.Effective, tcTrainer.TrainerId).First(r => r.U("SpellId") == first.U("SpellId")).U("MoneyCost") != first.U("MoneyCost"))
+                    { SmokeFail("CLIENT_SHOT_TRAINER_UNDO"); return; }
+                    GD.Print("CLIENT_SHOT_TRAINER_EDIT_OK edit/validation/undo");
+                }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-trainer.png"));
                 OpenShotCreature(240, "quests", 6); // Marshal Dughan, a quest giver in Goldshire.
                 return;

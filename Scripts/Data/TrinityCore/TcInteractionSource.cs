@@ -84,6 +84,7 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
 
         var final = effective(rows);
         var lookup = new InteractionLookupData(catalog, client);
+        await AcInteractionSource.ReadCounts(session, "SELECT TrainerID,COUNT(*) FROM creature_trainer WHERE TrainerID IN ({0}) GROUP BY TrainerID", final.All(TcTables.CreatureTrainer).Select(r => r.U("TrainerID")).Distinct().ToArray(), lookup.TrainerUserCounts, token);
         await ReadQuestTitles(session, final, lookup, token);
         await ReadTexts(final, lookup, token);
         foreach (var item in final.All(TcTables.Vendor).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct())

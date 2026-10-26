@@ -274,7 +274,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
         }
     }
 
-    static async Task ReadCounts(WorldReadSession session, string sql, IEnumerable<uint> ids, Dictionary<uint, int> target, CancellationToken token)
+    internal static async Task ReadCounts(WorldReadSession session, string sql, IEnumerable<uint> ids, Dictionary<uint, int> target, CancellationToken token)
     {
         await using var command = session.Command("");
         command.CommandText = string.Format(CultureInfo.InvariantCulture, sql, InList(command, ids, "c"));

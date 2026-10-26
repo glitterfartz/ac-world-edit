@@ -100,6 +100,8 @@ public sealed class CreatureContext
 
     public bool TcVendorEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
 
+    public bool TcTrainerEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+
     public IWorldSchema Schema => WorldSchemas.For(Dialect);
 
     /// <summary>Data, status or mode changed: sections and the window frame redraw.</summary>
@@ -286,7 +288,7 @@ public sealed class CreatureContext
         var client = Lookup();
         var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows =>
             Dialect == WorldDialect.TrinityCore
-                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows))
+                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows)).Concat(TcTrainerRules.Check(rows, client == null ? null : id => client.SpellName(id) != null))
                 : BuildView(rows).Issues);
         Status = message;
         if (ok)

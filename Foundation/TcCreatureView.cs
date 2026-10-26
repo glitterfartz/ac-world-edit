@@ -20,7 +20,7 @@ public sealed record TcMenuView(uint MenuId, bool Root, TcMenuText[] Texts, TcOp
 public sealed record TcTrainerSpell(uint SpellId, string? Name, uint MoneyCost, uint ReqSkillLine, uint ReqSkillRank, uint ReqLevel, uint[] ReqAbilities);
 
 /// <summary>A trainer reached from gossip option (MenuId, OptionId); 0/0 is the creature's default trainer.</summary>
-public sealed record TcTrainerView(uint TrainerId, uint MenuId, uint OptionId, bool Missing, uint Type, string Greeting, TcTrainerSpell[] Spells);
+public sealed record TcTrainerView(uint TrainerId, uint MenuId, uint OptionId, bool Missing, uint Type, string Greeting, TcTrainerSpell[] Spells, int SharedBy);
 
 /// <summary>An npc_vendor row (Type 1 item, 2 currency).</summary>
 public sealed record TcVendorItem(int Item, uint Type, ItemInfo? Info, int Slot, uint MaxCount, uint IncrTime, uint ExtendedCost, string BonusListIds, uint PlayerConditionId);
@@ -82,7 +82,7 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
             var spells = rows.All(TcTables.TrainerSpell).Where(s => s.U("TrainerId") == id).OrderBy(s => s.U("ReqLevel")).ThenBy(s => s.U("SpellId"))
                 .Select(s => new TcTrainerSpell(s.U("SpellId"), lookup.SpellName(s.U("SpellId")), s.U("MoneyCost"), s.U("ReqSkillLine"), s.U("ReqSkillRank"), s.U("ReqLevel"),
                     new[] { s.U("ReqAbility1"), s.U("ReqAbility2"), s.U("ReqAbility3") }.Where(a => a != 0).ToArray())).ToArray();
-            return new TcTrainerView(id, link.U("MenuID"), link.U("OptionID"), trainer == null, trainer?.U("Type") ?? 0, trainer?.T("Greeting") ?? "", spells);
+            return new TcTrainerView(id, link.U("MenuID"), link.U("OptionID"), trainer == null, trainer?.U("Type") ?? 0, trainer?.T("Greeting") ?? "", spells, lookup.TrainerUsers(id));
         }).ToArray();
 
         var vendor = rows.All(TcTables.Vendor).Where(r => r.U("entry") == entry).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item"))
