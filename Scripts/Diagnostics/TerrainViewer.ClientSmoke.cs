@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
-    int clientShotFrames, clientShotCreatureStage;
+    int clientShotFrames, clientShotCreatureStage, clientShotDifficulty;
     TileKey? clientShotTile;
     double clientSmokeTime;
 
@@ -192,6 +192,52 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
+                if (creatureProps.Context.TcTemplateEditable)
+                {
+                    var addDifficulty = creatureProps.Section("template")!.FindChild("AddDifficulty", true, false) as OptionButton;
+                    if (addDifficulty == null || addDifficulty.ItemCount < 2) { SmokeFail("CLIENT_SHOT_DIFFICULTY_ADD_MISSING"); return; }
+                    clientShotDifficulty = addDifficulty.GetItemId(1);
+                    addDifficulty.Select(1);
+                    addDifficulty.EmitSignal(OptionButton.SignalName.ItemSelected, 1L);
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 30;
+                    return;
+                }
+                creatureProps.ShowSection("vendor", null);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 4;
+                return;
+            case 30:
+                if (clientShotFrames++ < 60) return;
+                var dc = creatureProps.Context;
+                var difficulties = dc.Schema.TemplatePage.Difficulty!;
+                if (!difficulties.Select(dc.Effective, ShotCreature).Any(r => r.I(difficulties.IdColumn) == clientShotDifficulty))
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_ADD " + dc.Status); return; }
+                if (creatureProps.Section("template")!.FindChild("DifficultyPicker", true, false) is not OptionButton shownDifficulty
+                    || shownDifficulty.GetSelectedId() != clientShotDifficulty)
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_NOT_SHOWN"); return; }
+                // The picker sits in the Combat group, below the first screen of the page.
+                for (Node? node = shownDifficulty; node != null; node = node.GetParent())
+                {
+                    if (node is ScrollContainer scroll)
+                    {
+                        scroll.ScrollVertical = (int)(shownDifficulty.GlobalPosition.Y - scroll.GlobalPosition.Y) + scroll.ScrollVertical - 40;
+                        break;
+                    }
+                }
+                clientShotFrames = 0;
+                clientShotCreatureStage = 31;
+                return;
+            case 31:
+                if (clientShotFrames++ < 20) return;
+                dc = creatureProps.Context;
+                difficulties = dc.Schema.TemplatePage.Difficulty!;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-difficulty-add.png"));
+                dc.Drafts.History(dc, false);
+                dc.Rebuild();
+                if (difficulties.Select(dc.Effective, ShotCreature).Any(r => r.I(difficulties.IdColumn) == clientShotDifficulty))
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_UNDO"); return; }
+                GD.Print($"CLIENT_SHOT_DIFFICULTY_EDIT_OK add={clientShotDifficulty}/shown/undo");
                 creatureProps.ShowSection("vendor", null);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 4;
@@ -293,6 +339,27 @@ public partial class TerrainViewer
                     return;
                 }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-quests.png"));
+                if (creatureProps.Context.TcQuestsEditable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
+                {
+                    // Unlink the first quest he starts, then undo: the link must come back unchanged.
+                    var qc = creatureProps.Context;
+                    var links = qc.Schema.QuestLinksPage;
+                    uint quest = dughan.Starts[0].Quest;
+                    bool ends = dughan.Ends.Any(q => q.Quest == quest);
+                    if (!qc.Commit($"Unlink quest {quest}", links.SetRoles(qc.Effective, 240, quest, false, ends)))
+                    { SmokeFail("CLIENT_SHOT_QUEST_UNLINK " + qc.Status); return; }
+                    if (links.Starts.Select(qc.Effective, 240).Any(r => r.U("quest") == quest))
+                    { SmokeFail("CLIENT_SHOT_QUEST_UNLINK still linked"); return; }
+                    if (qc.Commit("Invalid quest link", links.SetRoles(qc.Effective, 240, 0, true, false)))
+                    { SmokeFail("CLIENT_SHOT_QUEST_VALIDATION accepted quest 0"); return; }
+                    qc.Drafts.History(qc, false);
+                    qc.Rebuild();
+                    if (!links.Starts.Select(qc.Effective, 240).Any(r => r.U("quest") == quest))
+                    { SmokeFail("CLIENT_SHOT_QUEST_UNDO"); return; }
+                    if (creatureProps.Section("quests")!.FindChild("Search_quest", true, false) == null)
+                    { SmokeFail("CLIENT_SHOT_QUEST_SEARCH_MISSING"); return; }
+                    GD.Print($"CLIENT_SHOT_QUEST_EDIT_OK unlink={quest}/validation/undo");
+                }
                 GD.Print($"CLIENT_SHOT_SERVICES trainer=514 quests=240 links={quests}");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();

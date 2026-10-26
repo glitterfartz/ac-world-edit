@@ -46,8 +46,33 @@ public sealed record FieldSpec(
 /// <summary>A titled section of the page; a group with no fields for a dialect is not drawn.</summary>
 public sealed record GroupSpec(string Id, string Title, string? Hint = null);
 
-/// <summary>The per-difficulty rows some fields bind to (TrinityCore's creature_template_difficulty).</summary>
-public sealed record DifficultySpec(TableSchema Table, string EntryColumn, string IdColumn, Func<int, string> Name);
+/// <summary>
+/// The per-difficulty rows some fields bind to (TrinityCore's creature_template_difficulty).
+/// NewRow supplies a complete row with the dialect's defaults; Common lists the IDs offered by name.
+/// </summary>
+public sealed record DifficultySpec(TableSchema Table, string EntryColumn, string IdColumn, Func<int, string> Name, Func<uint, int, Row> NewRow, int[] Common, int MaxId)
+{
+    public IEnumerable<Row> Select(RowSet rows, uint entry) => rows.All(Table).Where(r => r.U(EntryColumn) == entry).OrderBy(r => r.I(IdColumn));
+
+    /// <summary>Why the difficulty cannot be added, or null when it can.</summary>
+    public string? CannotAdd(RowSet rows, uint entry, int id) =>
+        id < 0 || id > MaxId ? $"Difficulty must be between 0 and {MaxId}."
+        : Select(rows, entry).Any(r => r.I(IdColumn) == id) ? $"{Name(id)} already has a row."
+        : null;
+
+    /// <summary>Insert a difficulty row: a copy of <paramref name="copyFrom"/> when given, otherwise the defaults.</summary>
+    public RowEdit Add(RowSet rows, uint entry, int id, Row? copyFrom = null)
+    {
+        if (CannotAdd(rows, entry, id) is { } reason)
+        {
+            throw new InvalidDataException(reason);
+        }
+
+        var row = (copyFrom ?? NewRow(entry, id)).With(EntryColumn, entry).With(IdColumn, id);
+        row.Validate(Table);
+        return InteractionEdits.Insert(Table, row);
+    }
+}
 
 /// <summary>A child-row list on a creature page. NewRow supplies a complete dialect-specific row;
 /// the caller fills the picked item's identity. Key changes are one delete/insert command.</summary>

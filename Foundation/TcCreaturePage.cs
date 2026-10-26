@@ -107,6 +107,19 @@ public static class TcCreaturePage
             fields.Add(DFlags($"StaticFlags{i}", $"Static flags {i}", "Static creature flags."));
         }
 
-        return new(CreaturePage.StandardGroups(flagsHint: "The raw value keeps every bit; named bits come once they are checked against TrinityCore."), fields.ToArray(), new DifficultySpec(d, "Entry", "DifficultyID", DifficultyName));
+        return new(CreaturePage.StandardGroups(flagsHint: "The raw value keeps every bit; named bits come once they are checked against TrinityCore."), fields.ToArray(),
+            new DifficultySpec(d, "Entry", "DifficultyID", DifficultyName, NewDifficulty, [0, 1, 2, 14, 15, 16, 23], byte.MaxValue));
+    }
+
+    /// <summary>A creature_template_difficulty row with the trinitycore.info defaults: modifiers 1, everything else 0.</summary>
+    static Row NewDifficulty(uint entry, int id)
+    {
+        var row = new Row(TcTables.CreatureDifficulty.Columns.Select(c => new KeyValuePair<string, string>(c.Name, "0")));
+        foreach (string modifier in new[] { "HealthModifier", "ManaModifier", "ArmorModifier", "DamageModifier" })
+        {
+            row = row.With(modifier, 1f);
+        }
+
+        return row.With("Entry", entry).With("DifficultyID", id);
     }
 }

@@ -89,7 +89,7 @@ public sealed class PageRenderer(CreatureContext ctx)
             if (page.Difficulty is { } spec && !difficultyShown && fields.Any(f => f.Row == RowBinding.Difficulty))
             {
                 difficultyShown = true;
-                picked = ShowPicker(parent, spec, rows, entry);
+                picked = ShowPicker(parent, spec, rows, entry, editable);
             }
 
             grid = null;
@@ -138,15 +138,23 @@ public sealed class PageRenderer(CreatureContext ctx)
         }
     }
 
-    /// <summary>The difficulty picker; returns the shown row, or null (with a note) when the creature has none.</summary>
-    Row? ShowPicker(Control parent, DifficultySpec spec, RowSet rows, uint entry)
+    /// <summary>
+    /// The difficulty picker, with the add-difficulty controls when editable; returns the shown row, or
+    /// null (with a note) when the creature has none.
+    /// </summary>
+    Row? ShowPicker(Control parent, DifficultySpec spec, RowSet rows, uint entry, bool editable)
     {
-        var list = rows.All(spec.Table).Where(r => r.U(spec.EntryColumn) == entry).OrderBy(r => r.I(spec.IdColumn)).ToList();
+        var list = spec.Select(rows, entry).ToList();
         if (list.Count == 0)
         {
-            var note = ClientStyle.Text("This creature has no creature_template_difficulty rows; add them in the database first.", 13, ClientStyle.Warning);
+            var note = ClientStyle.Text(editable ? "This creature has no difficulty rows yet. Add one to edit stats, loot and gold." : "This creature has no difficulty rows.", 13, ClientStyle.Warning);
             note.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             parent.AddChild(note);
+            if (editable)
+            {
+                AddDifficulty(parent, spec, rows, entry, null);
+            }
+
             return null;
         }
 
@@ -169,7 +177,64 @@ public sealed class PageRenderer(CreatureContext ctx)
             ctx.Redraw();
         };
         parent.AddChild(picker);
+        if (editable)
+        {
+            AddDifficulty(parent, spec, rows, entry, shown);
+        }
+
         return shown;
+    }
+
+    /// <summary>Add a named or numbered difficulty row, copied from the shown row when there is one, then show it.</summary>
+    void AddDifficulty(Control parent, DifficultySpec spec, RowSet rows, uint entry, Row? shown)
+    {
+        var box = new HBoxContainer();
+        box.AddThemeConstantOverride("separation", 6);
+        parent.AddChild(box);
+        void Add(int id)
+        {
+            try
+            {
+                var edit = spec.Add(rows, entry, id, shown);
+                if (ctx.Commit($"Add {spec.Name(id)}", [edit]))
+                {
+                    difficulty = id;
+                    ctx.Redraw();
+                }
+            }
+            catch (InvalidDataException error)
+            {
+                ctx.Status = error.Message;
+                ctx.Redraw();
+            }
+        }
+
+        string from = shown == null ? "with default values" : $"as a copy of {spec.Name(shown.I(spec.IdColumn))}";
+        var missing = spec.Common.Where(id => spec.CannotAdd(rows, entry, id) == null).ToArray();
+        var common = new OptionButton { Name = "AddDifficulty", TooltipText = $"Add a difficulty row {from}." };
+        common.AddItem("Add difficulty…", -1);
+        foreach (int id in missing)
+        {
+            common.AddItem(spec.Name(id), id);
+        }
+
+        common.Selected = 0;
+        common.ItemSelected += index =>
+        {
+            int id = common.GetItemId((int)index);
+            if (id >= 0)
+            {
+                Add(id);
+            }
+        };
+        box.AddChild(common);
+        var other = new LineEdit { PlaceholderText = "Other ID", CustomMinimumSize = new(90, 0), TooltipText = $"Any difficulty ID from 0 to {spec.MaxId}, added {from}." };
+        var add = new Button { Text = "Add" };
+        void AddOther() => ctx.Try(() => Add(int.Parse(other.Text.Trim(), CultureInfo.InvariantCulture)));
+        add.Pressed += AddOther;
+        other.TextSubmitted += _ => AddOther();
+        box.AddChild(other);
+        box.AddChild(add);
     }
 
     static Label Caption(string name, string tip)

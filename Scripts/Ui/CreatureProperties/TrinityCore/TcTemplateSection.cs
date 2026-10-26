@@ -5,7 +5,7 @@ namespace ACWorldEdit;
 /// <summary>
 /// TrinityCore creature_template plus the creature_template_difficulty row picked on the page, drawn
 /// from <see cref="TcCreaturePage"/> by the shared <see cref="PageRenderer"/>. With a draft open the
-/// fields are editable; a difficulty the creature has no row for cannot be added yet.
+/// fields are editable and a missing difficulty row can be added.
 /// </summary>
 public sealed partial class TcTemplateSection(CreatureContext ctx) : TcSection(ctx)
 {
