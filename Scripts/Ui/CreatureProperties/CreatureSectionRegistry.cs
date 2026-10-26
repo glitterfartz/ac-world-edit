@@ -18,6 +18,7 @@ public static class CreatureSectionRegistry
         ctx => new AcTemplateSection(ctx),
         ctx => new AcTrainerSection(ctx),
         ctx => new AcVendorSection(ctx),
+        ctx => new TcStatsSection(ctx),
         ctx => new TcGossipSection(ctx),
         ctx => new TcQuestsSection(ctx),
         ctx => new TcTemplateSection(ctx),

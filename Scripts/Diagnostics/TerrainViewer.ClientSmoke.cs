@@ -327,7 +327,29 @@ public partial class TerrainViewer
                     GD.Print("CLIENT_SHOT_TRAINER_EDIT_OK edit/validation/undo");
                 }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-trainer.png"));
-                OpenShotCreature(240, "quests", 6); // Marshal Dughan, a quest giver in Goldshire.
+                OpenShotCreature(240, "stats", 7); // Marshal Dughan, a quest giver in Goldshire.
+                return;
+            case 7:
+                if (!ShotCreatureReady(240)) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-stats.png"));
+                if (creatureProps.Context.TcTemplateEditable)
+                {
+                    var sc = creatureProps.Context;
+                    var captions = creatureProps.Section("stats")!.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
+                    if (!captions.Contains("Health") || !captions.Any(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6])))
+                    { SmokeFail("CLIENT_SHOT_STATS_MISSING " + string.Join("|", captions.Take(40))); return; }
+                    var difficulty = sc.Schema.TemplatePage.Difficulty!.Select(sc.Effective, 240).First();
+                    if (sc.Commit("Invalid scaling expansion", Foundation.ItemListSpec.Change(Foundation.TcTables.CreatureDifficulty, difficulty, difficulty.With("HealthScalingExpansion", 12))))
+                    { SmokeFail("CLIENT_SHOT_STATS_VALIDATION accepted expansion 12"); return; }
+                    if (!sc.Commit("Change level delta", Foundation.ItemListSpec.Change(Foundation.TcTables.CreatureDifficulty, difficulty, difficulty.With("LevelScalingDeltaMax", 2))))
+                    { SmokeFail("CLIENT_SHOT_STATS_EDIT " + sc.Status); return; }
+                    sc.Drafts.History(sc, false);
+                    sc.Rebuild();
+                    if (sc.Schema.TemplatePage.Difficulty!.Select(sc.Effective, 240).First().I("LevelScalingDeltaMax") != difficulty.I("LevelScalingDeltaMax"))
+                    { SmokeFail("CLIENT_SHOT_STATS_UNDO"); return; }
+                    GD.Print($"CLIENT_SHOT_STATS_EDIT_OK levels={captions.First(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6]))}/validation/undo");
+                }
+                OpenShotCreature(240, "quests", 6);
                 return;
             default:
                 if (!ShotCreatureReady(240)) return;

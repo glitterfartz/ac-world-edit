@@ -9,8 +9,8 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Phase | Status |
 |---|---|
 | 1–5: interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing | done |
-| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor, gossip, trainer and quest-link descriptors are built for both dialects; legacy stats/schema extraction remains |
-| 6: creature properties | partial: TC read done; template, difficulty, vendor, gossip, trainer and quest-link editing done |
+| 6a: shared creature page descriptors (`CreaturePage`) | in progress: Template, vendor, gossip, trainer and quest-link descriptors are built for both dialects; legacy schema extraction remains |
+| 6: creature properties | partial: TC read done; template, difficulty, stats, vendor, gossip, trainer and quest-link editing done |
 | 7–9: quests, SmartAI and speech, waypoints | not started |
 
 ### Coexisting forms
@@ -23,12 +23,12 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ### Gated or inconsistent right now
 
-- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, vendor, gossip and trainer pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable` / `TcGossipEditable` / `TcTrainerEditable` / `TcQuestsEditable`); quest content has no TC editor until Phase 7.
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, stats, vendor, gossip, trainer and quest-link pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable` / `TcGossipEditable` / `TcTrainerEditable` / `TcQuestsEditable`); quest content has no TC editor until Phase 7.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
 ## Where work stopped
 
-- Started the TC stats page (Phase 6): `creature_template_difficulty` gains `LevelScalingDeltaMin/Max` (editable on the Template page; draft rows saved without them are upgraded on load through `TableSchema.Added`), `TcStatRules` checks them and `HealthScalingExpansion`, `TcStatCalculator` computes levels, health, armor, damage, mana and attack power the way `Creature::SelectLevel` / `EvaluateExpectedStat` do, and the TC source reads `creature_classlevelstats`. `TcStatTests` covers it. The stats section itself comes next. Approximations: Mythic+ limited modifiers (min season skipped, max season kept) and server rates taken as 1.
+- Added the TC stats page (`TcStatsSection`, "Class / Level / Stats"): the content tuning, level deltas, scaling expansion and four multipliers of the picked difficulty row (`TcStatsPage`, same picker and add-difficulty controls as Template), and below them the level range, health, mana, armor, weapon damage and attack power the server computes (`TcStatCalculator`: ContentTuning levels, ExpectedStat by level and `HealthScalingExpansion`, ContentTuningXExpected and class modifiers, then the template multipliers; mana and attack power from `creature_classlevelstats`, read by `TcInteractionSource`). `creature_template_difficulty` gained `LevelScalingDeltaMin/Max` (also on the Template page); draft rows saved without them are upgraded on load (`TableSchema.Added`); `TcStatRules` checks them and `HealthScalingExpansion`. `TcStatTests` covers the calculator, rules and the upgrade; `RetailClientLookupTests` reads the four DB2 tables from the client. The smoke prints `CLIENT_SHOT_STATS_EDIT_OK` and saves `client-shot-creature-stats.png` (inspected on Marshal Dughan). Default suite: 757 passed, 4 skipped. Gaps: content tuning 0 (the server then uses the map's or area's tuning), Mythic+ limited modifiers (a modifier limited to start in a season is skipped, one limited to end in a season is kept), the server's `Rate.Creature.*` (taken as 1), conditional content tuning redirects, and attack power / speed in the damage line.
 - Added missing difficulty rows on the TC Template page: an "Add difficulty…" list of the common difficulties the creature lacks, plus an ID box (0–255). The new `creature_template_difficulty` row copies the shown difficulty, or uses the trinitycore.info defaults (modifiers 1, everything else 0) when the creature has none; it is then shown. `DifficultySpec` gained `NewRow`, `Common`, `MaxId`, `Select`, `CannotAdd` and `Add`; `TcDifficultyTests` covers defaults, copying, refusals and history/export. Gaps: removing a difficulty row, and checking that the ID is a real Difficulty.db2 row.
 - Fixed TC trainer types: `trainer.Type` is 0 None, 1 Talent, 2 Tradeskill, 3 Pet (trinitycore.info), not Class/Tradeskill/Pet; blacksmith trainers showed as Pet.
 - Ran the TC screenshot workflow against the retail client: gossip, difficulty add, vendor, trainer and quest-link checks pass (`CLIENT_SHOT_DIFFICULTY_EDIT_OK`, `CLIENT_SHOT_TRAINER_EDIT_OK`, `CLIENT_SHOT_QUEST_EDIT_OK`). The difficulty, trainer and quest pages were inspected. The AzerothCore workflow still passes. Default suite: 732 passed, 4 skipped.
@@ -48,7 +48,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 - Extended `--client-shot --client-shot-overlays` to exercise TC item search/add, stock validation and undo/redo, with an additional search screenshot. Both dialects passed and the vendor pages were visually inspected (`artifacts/vendor-retail-editor.png`, `artifacts/vendor-retail-search.png`, `artifacts/vendor-wrath-editor.png`).
 - Existing gaps: AC gossip `BoxBroadcastTextID`, AC trainer `ReqAbility1-3`, and trainer/quest-link build metadata remain outside the catalogs. `--interaction-smoke` retains its previously reported window-open failure; the screenshot workflow opens the windows directly.
 - Fixed false creature-property conflicts from discarded edits: conflict detection, effective views and exports now use remaining row changes, and later edits take a fresh baseline after cancellation. Existing saved histories need no cleanup; `InteractionConflictTests` covers both dialects.
-- Next: continue remaining Phase 6 work (legacy schema extraction, `AcStatsSection` via ContentTuning, gossip and vendor gaps), then Phase 7.
+- Next: continue remaining Phase 6 work (legacy schema extraction, section registry and field groups from the schema, gossip and vendor gaps), then Phase 7.
 
 ## Foundation and design
 
@@ -110,7 +110,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Area-trigger links (teleport, scripts, quest, tavern, SmartAI type 2) | done | |
 | Server-spawned `areatrigger` overlay | not started | |
 | Creature and GameObject move export | done | Same statements as AC with `ulong` guids. |
-| Overlay smoke (`--client-shot-overlays`) | done | Checks either dialect's creature pages and saves gossip, Template, vendor, trainer and quest screenshots (`client-shot-creature-*.png`), along with overlays and editable graveyards. In TC it also exercises the gossip, difficulty, vendor, trainer and quest-link editors. |
+| Overlay smoke (`--client-shot-overlays`) | done | Checks either dialect's creature pages and saves gossip, Template, vendor, trainer, stats and quest screenshots (`client-shot-creature-*.png`), along with overlays and editable graveyards. In TC it also exercises the gossip, difficulty, vendor, trainer, stats and quest-link editors. |
 
 ## Graveyard editing (plan Phase 5)
 
@@ -135,7 +135,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Creature properties: TC editing | partial | Template page edits `creature_template` and the picked `creature_template_difficulty` row (drafts, SQL export, tests). A missing difficulty row can be added (copied from the shown one, or with defaults). Vendor supports item search/add, currency IDs, fields, removal, validation and history/export. Gossip supports option fields/add/remove, root/submenu selection and Back navigation, option/confirmation broadcast references, and all eight greeting ID/weight pairs. Trainer supports type, greeting and spell edits (see Where work stopped). Quest links support remove and add from a quest search. |
 | Shared page descriptors: groups of row-bound fields and item lists, filled in per dialect; one renderer | partial | `CreaturePage` / `FieldSpec` / `PageRenderer` draw both Template pages. `ItemListSpec` / `VendorPage` draw the AC vendor editor and TC vendor editors through `RenderItems`; AC's compact read-only view stays specialized. `CreaturePageTests`, `ItemListTests`, `GossipPageTests` and `CreatureServicePageTests` guard the descriptors and edits. Gossip uses `GossipPageSpec` for option fields, text links and greeting storage; specialized greeting controls remain. `TrainerPageSpec` covers trainer storage, bindings and spell fields; `QuestLinksPageSpec` covers starter/ender lists and grouped role edits. AC keeps specialized quest icons and navigation; TC quest links use the same descriptors through `RenderItems`. |
 | TC 64-bit `npcflag` bits and Classification | done | Folded into `TcCreaturePage` (`CreatureSchema` removed). | `IWorldSchema.Creature`; `unit_flags*` edit as raw hex, OptionNpc and `NpcSchema` come with the gossip editor. |
-| `AcStatsSection` via ContentTuning | not started | Phase 6. |
+| TC stats page via ContentTuning | done | `TcStatsSection` / `TcStatsPage` / `TcStatCalculator`; see Where work stopped for the approximations. `AcStatsSection` stays as it is (AC has its own level range and class stats). |
 | Vendor search and item tooltips via ItemSparse + `hotfixes.item_sparse` | partial | Client ItemSparse search by name/ID is wired; icons, detailed tooltips and hotfix overrides remain open. |
 | Section registry and sections take field groups from the schema | not started | Phase 6. |
 | Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | not started | Phase 7. Editor gated off in TC. |

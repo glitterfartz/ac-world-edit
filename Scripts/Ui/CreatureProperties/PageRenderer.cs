@@ -20,6 +20,9 @@ public sealed class PageRenderer(CreatureContext ctx)
     /// <summary>Controls a section adds after a group's fields (group id → builder).</summary>
     public Dictionary<string, Action> After { get; } = [];
 
+    /// <summary>The difficulty row the last <see cref="Render"/> showed (null when the creature has none), for the <see cref="After"/> builders.</summary>
+    public Row? Picked { get; private set; }
+
     /// <summary>Forget the picked difficulty (a different creature was selected).</summary>
     public void Reset() => difficulty = null;
 
@@ -72,6 +75,7 @@ public sealed class PageRenderer(CreatureContext ctx)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
         Row? picked = null;
+        Picked = null;
         bool difficultyShown = false;
         foreach (var group in page.Groups)
         {
@@ -89,7 +93,7 @@ public sealed class PageRenderer(CreatureContext ctx)
             if (page.Difficulty is { } spec && !difficultyShown && fields.Any(f => f.Row == RowBinding.Difficulty))
             {
                 difficultyShown = true;
-                picked = ShowPicker(parent, spec, rows, entry, editable);
+                picked = Picked = ShowPicker(parent, spec, rows, entry, editable);
             }
 
             grid = null;
