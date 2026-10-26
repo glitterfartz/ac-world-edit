@@ -49,6 +49,9 @@ public sealed class Db2Tables
         ["ItemSparse"] = 1572924,
         ["SpellName"] = 1990283,
         ["ContentTuning"] = 1962930,
+        ["ContentTuningXExpected"] = 2976765,
+        ["ExpectedStat"] = 1937326,
+        ["ExpectedStatMod"] = 1969773,
     };
 
     readonly CascFiles files;

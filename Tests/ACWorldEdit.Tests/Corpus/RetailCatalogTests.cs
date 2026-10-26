@@ -166,6 +166,31 @@ public class RetailClientLookupTests
     }
 
     [RetailClientFact]
+    public void CreatureScalingTablesReadByLevelExpansionAndContentTuning()
+    {
+        var lookup = Lookup();
+
+        // ExpectedStat is keyed by its Lvl relation column: a normal level must resolve for the current expansion.
+        var stat = lookup.ExpectedStat(10, 11) ?? lookup.ExpectedStat(10, -2);
+        Assert.NotNull(stat);
+        Assert.True(stat.CreatureHealth > 0 && stat.CreatureAutoAttackDps > 0 && stat.CreatureArmor > 0);
+        Assert.True((lookup.ExpectedStat(60, 11) ?? lookup.ExpectedStat(60, -2))!.CreatureHealth > stat.CreatureHealth);
+
+        // The four class modifier rows TrinityCore picks by unit class.
+        for (uint id = 1; id <= 4; id++)
+        {
+            Assert.NotNull(lookup.ExpectedStatMod(id));
+        }
+
+        // ContentTuningXExpected is grouped by its ContentTuningID relation column.
+        Assert.Null(lookup.ContentTuning(uint.MaxValue - 1));
+        var grouped = Enumerable.Range(1, 3000).Select(i => (uint)i).Where(i => lookup.ContentTuningMods(i).Count > 0).ToArray();
+        Assert.NotEmpty(grouped);
+        var tuning = Enumerable.Range(1, 3000).Select(i => lookup.ContentTuning((uint)i)).First(t => t != null && t.MaxLevel > 0);
+        Assert.InRange(tuning!.MinLevel, 0, 123);
+    }
+
+    [RetailClientFact]
     public void ConcurrentCallsAreSafe()
     {
         var lookup = Lookup();

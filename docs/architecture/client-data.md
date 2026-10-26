@@ -183,7 +183,7 @@ Callers choose the reader that matches their client. `ClientLighting` has both `
 | `CreatureCatalog` | `Client/CreatureCatalog.cs` | Joins display, model, extra and char-section tables into a model path, skins, scale and textures | Wrath (DBC) |
 | `GameObjectCatalog` | `Client/GameObjectCatalog.cs` | Display ID to model path | Wrath (DBC) |
 | `RetailCreatureCatalog`, `RetailGameObjectCatalog` | `Client/RetailCatalogs.cs` | The same jobs from DB2 (`ICreatureCatalog` / `IGameObjectCatalog`), with `hotfixes.creature_display_info` overrides | Retail |
-| `RetailClientLookup` | `Client/ClientLookup.cs` | `IClientLookup`: AreaTrigger rows, broadcast text, item and spell names for the TrinityCore sources | Retail |
+| `RetailClientLookup` | `Client/ClientLookup.cs` | `IClientLookup`: AreaTrigger rows, broadcast text, item and spell names, and the ContentTuning, ExpectedStat, ExpectedStatMod and ContentTuningXExpected rows behind creature scaling (`ITcStatData`), for the TrinityCore sources | Retail |
 | `InteractionCatalog` | `Client/InteractionCatalog.cs` | Spell, taxi, item cost, emote, faction lookups for the NPC and content editors | Wrath (DBC) |
 | `LiquidTextures` | `Client/LiquidTextures.cs` | Liquid texture atlases; uses `RetailLiquids` on retail | Both |
 | `ClientLighting`, `LightBand` | `Viewer/ClientLighting.cs`, `World/LightBand.cs` | Time-of-day colour keyframes and light regions | Both |

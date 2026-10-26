@@ -92,7 +92,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 | Retail creature and GameObject display catalogs | done | Includes humanoids (baked skins, customization geosets, hair/eye textures). |
 | `hotfixes.creature_display_info` overrides | done | Reads 3 of 4 texture columns; `creature_display_info_extra` not read (empty in TDB). |
 | Other hotfix overrides (`gameobject_display_info`, `item_sparse`, `spell_name`, `broadcast_text`, `content_tuning`) | not started | `RetailGameObjectCatalog.Override` exists but is never called. |
-| `IClientLookup` (area triggers, broadcast text, items, spells) | done | Item names/search serve the TC vendor editor; spell names serve read-only trainer pages; broadcast names and exact-ID checks serve gossip editing. |
+| `IClientLookup` (area triggers, broadcast text, items, spells, creature scaling) | done | Item names/search serve the TC vendor editor; spell names serve read-only trainer pages; broadcast names and exact-ID checks serve gossip editing. `ITcStatData` serves ContentTuning, ExpectedStat, ExpectedStatMod and ContentTuningXExpected rows (corpus-tested), used by the TC stats calculation. |
 | Retail area names (`AreaLookup`) | not started | Null for retail. |
 | `AreaTriggerActionSet`, `ContentTuning` tables | not started | Registered, not read. |
 

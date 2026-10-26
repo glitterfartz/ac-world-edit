@@ -266,6 +266,10 @@ public class TrinityReadDbTests
         public IReadOnlyList<ClientItem> SearchItems(string term, int limit) => [];
         public string? SpellName(uint id) => null;
         public IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit) => [];
+        public TcContentTuning? ContentTuning(uint id) => null;
+        public TcExpectedStat? ExpectedStat(uint level, int expansion) => null;
+        public TcExpectedStatMod? ExpectedStatMod(uint id) => null;
+        public IReadOnlyList<TcContentTuningMod> ContentTuningMods(uint contentTuningId) => [];
     }
 
     [TcRetailFact]
