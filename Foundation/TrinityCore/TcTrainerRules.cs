@@ -5,15 +5,15 @@ namespace ACWorldEdit.Foundation;
 /// <summary>TC trainer checks from ObjectMgr::LoadTrainers and the trainer / trainer_spell schema.</summary>
 public static class TcTrainerRules
 {
-    /// <summary>Trainer.Type: 0 class, 1 tradeskill, 2 pet.</summary>
-    public static readonly string[] TypeNames = ["Class", "Tradeskill", "Pet"];
+    /// <summary>trainer.Type per trinitycore.info: 0 none, 1 talent, 2 tradeskill (the default), 3 pet.</summary>
+    public static readonly string[] TypeNames = ["None", "Talent", "Tradeskill", "Pet"];
 
     public static IEnumerable<InteractionIssue> Check(RowSet rows, Func<uint, bool>? spellExists = null)
     {
         foreach (var row in rows.All(TcTables.Trainer))
         {
             if (row.U("Type") >= TypeNames.Length)
-                yield return new(true, $"Trainer {row.U("Id")}: type must be Class, Tradeskill or Pet.");
+                yield return new(true, $"Trainer {row.U("Id")}: type must be None, Talent, Tradeskill or Pet.");
         }
 
         foreach (var row in rows.All(TcTables.TrainerSpell))

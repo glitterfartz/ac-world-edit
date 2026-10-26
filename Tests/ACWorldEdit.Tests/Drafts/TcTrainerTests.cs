@@ -38,8 +38,9 @@ public class TcTrainerTests
         var rows = Rows();
         var trainer = rows.Get(TcTables.Trainer, "7")!;
         using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
-        Assert.False(drafts.Commit(null, "tc", rows, rows, "Type", ItemListSpec.Change(TcTables.Trainer, trainer, trainer.With("Type", 3u)), Check).Ok);
-        Assert.True(drafts.Commit(null, "tc", rows, rows, "Type", ItemListSpec.Change(TcTables.Trainer, trainer, trainer.With("Type", 1u)), Check).Ok);
+        Assert.False(drafts.Commit(null, "tc", rows, rows, "Type", ItemListSpec.Change(TcTables.Trainer, trainer, trainer.With("Type", 4u)), Check).Ok);
+        Assert.True(drafts.Commit(null, "tc", rows, rows, "Type", ItemListSpec.Change(TcTables.Trainer, trainer, trainer.With("Type", 3u)), Check).Ok);
+        Assert.Equal("Tradeskill", TcTrainerRules.TypeNames[2]);
     }
 
     [Fact]

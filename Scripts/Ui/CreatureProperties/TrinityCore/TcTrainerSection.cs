@@ -75,7 +75,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
         var box = new HBoxContainer();
         block.AddChild(box);
         box.AddChild(ClientStyle.Tag("Type"));
-        var type = new OptionButton { TooltipText = "Which kind of trainer this is: class, tradeskill or pet." };
+        var type = new OptionButton { TooltipText = "Which kind of trainer this is: none, talent, tradeskill or pet." };
         for (int i = 0; i < TcTrainerRules.TypeNames.Length; i++) type.AddItem(TcTrainerRules.TypeNames[i], i);
         type.Selected = (int)Math.Min(row.U("Type"), (uint)TcTrainerRules.TypeNames.Length - 1);
         type.ItemSelected += index => Ctx.Commit("Change trainer type", ItemListSpec.Change(TcTables.Trainer, row, row.With("Type", (uint)index)));
