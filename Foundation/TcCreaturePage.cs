@@ -70,7 +70,9 @@ public static class TcCreaturePage
             new("interaction", t, "npcflag", "NPC flags", "What players can do by right-clicking. The low 32 bits are NPCFlags, the high 32 bits NPCFlags2.", FieldKind.Flags, Flags: NpcServices),
 
             DWhole("combat", "ContentTuningID", "Content tuning", "ContentTuning ID that scales level and health."),
-            DWhole("combat", "HealthScalingExpansion", "Health scaling expansion", "Expansion whose health scaling applies."),
+            DWhole("combat", "LevelScalingDeltaMin", "Level delta min", "Lowest level added to the content tuning's top level (can be negative)."),
+            DWhole("combat", "LevelScalingDeltaMax", "Level delta max", "Highest level added to the content tuning's top level. The creature's level is rolled between the two."),
+            DWhole("combat", "HealthScalingExpansion", "Health scaling expansion", "Expansion whose health scaling applies. -1 means the current expansion."),
             DDecimal("combat", "HealthModifier", "Health modifier", "Multiplies the scaled health."),
             DDecimal("combat", "ManaModifier", "Mana modifier", "Multiplies the scaled mana."),
             DDecimal("combat", "ArmorModifier", "Armor modifier", "Multiplies the scaled armor."),

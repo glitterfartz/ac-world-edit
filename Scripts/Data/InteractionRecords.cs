@@ -47,6 +47,8 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog, IClientLo
     public uint MaxMenuId, MaxTextId, MaxTrainerId;
     /// <summary>creature_classlevelstats keyed by (class, level).</summary>
     public readonly Dictionary<(uint Class, uint Level), ClassLevelStats> ClassLevelStats = [];
+    /// <summary>TrinityCore's creature_classlevelstats (mana and attack power only) keyed by (level, class).</summary>
+    public readonly Dictionary<(uint Level, uint Class), TcClassLevelStats> TcClassStats = [];
     public InteractionCatalog? Catalog => catalog;
 
     public ItemInfo? Item(uint id) => Items.GetValueOrDefault(id);

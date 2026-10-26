@@ -33,7 +33,7 @@ public class TcTemplateEditTests
     [Fact]
     public void ADifficultyRowEditUsesBothKeyColumns()
     {
-        var before = Row.Of(("Entry", 54u), ("DifficultyID", 0), ("ContentTuningID", 1), ("HealthScalingExpansion", 0), ("HealthModifier", 1f), ("ManaModifier", 1f), ("ArmorModifier", 1f), ("DamageModifier", 1f),
+        var before = Row.Of(("Entry", 54u), ("DifficultyID", 0), ("LevelScalingDeltaMin", 0), ("LevelScalingDeltaMax", 0), ("ContentTuningID", 1), ("HealthScalingExpansion", 0), ("HealthModifier", 1f), ("ManaModifier", 1f), ("ArmorModifier", 1f), ("DamageModifier", 1f),
             ("CreatureDifficultyID", 5), ("TypeFlags", 0u), ("TypeFlags2", 0u), ("TypeFlags3", 0u), ("LootID", 0u), ("PickPocketLootID", 0u), ("SkinLootID", 0u), ("GoldMin", 0u), ("GoldMax", 0u),
             ("StaticFlags1", 0u), ("StaticFlags2", 0u), ("StaticFlags3", 0u), ("StaticFlags4", 0u), ("StaticFlags5", 0u), ("StaticFlags6", 0u), ("StaticFlags7", 0u), ("StaticFlags8", 0u));
         var edit = new RowEdit("creature_template_difficulty", TcTables.CreatureDifficulty.KeyOf(before), before, before.With("LootID", 123u));

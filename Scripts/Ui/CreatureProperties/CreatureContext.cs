@@ -290,7 +290,7 @@ public sealed class CreatureContext
         var client = Lookup();
         var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows =>
             Dialect == WorldDialect.TrinityCore
-                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows)).Concat(TcTrainerRules.Check(rows, client == null ? null : id => client.SpellName(id) != null)).Concat(TcQuestLinkRules.Check(rows, id => Snapshot.Lookup.Quest(id) != null))
+                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows)).Concat(TcTrainerRules.Check(rows, client == null ? null : id => client.SpellName(id) != null)).Concat(TcQuestLinkRules.Check(rows, id => Snapshot.Lookup.Quest(id) != null)).Concat(TcStatRules.Check(rows))
                 : BuildView(rows).Issues);
         Status = message;
         if (ok)

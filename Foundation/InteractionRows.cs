@@ -22,9 +22,12 @@ public enum ColumnKind
 /// export updates only these. Name is the logical draft table; SqlName the physical table (they
 /// differ when one physical table is split into independent column groups, e.g. creature_ai).
 /// </summary>
-public sealed record TableSchema(string Name, string[] Key, (string Name, ColumnKind Kind, int MaxLength)[] Columns, string? Sql = null)
+public sealed record TableSchema(string Name, string[] Key, (string Name, ColumnKind Kind, int MaxLength)[] Columns, string? Sql = null, (string Column, string Default)[]? Added = null)
 {
     public string SqlName => Sql ?? Name;
+
+    /// <summary>A saved row that predates <see cref="Added"/> columns, with those columns set to their defaults; other rows are returned as they are.</summary>
+    public Row Upgrade(Row row) => Added == null ? row : Added.Where(a => !row.Values.ContainsKey(a.Column)).Aggregate(row, (current, a) => current.With(a.Column, a.Default));
 
     public bool Has(string column) => Columns.Any(c => c.Name == column);
     public string KeyOf(Row row) => string.Join('|', Key.Select(k => row[k]));

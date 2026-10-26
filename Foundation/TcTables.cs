@@ -42,6 +42,8 @@ public sealed class TcTables : ITableCatalog
     [
         ("Entry", ColumnKind.UInt, 0),
         ("DifficultyID", ColumnKind.Int, 0),
+        ("LevelScalingDeltaMin", ColumnKind.Int, 0),
+        ("LevelScalingDeltaMax", ColumnKind.Int, 0),
         ("ContentTuningID", ColumnKind.Int, 0),
         ("HealthScalingExpansion", ColumnKind.Int, 0),
         ("HealthModifier", ColumnKind.Float, 0),
@@ -65,7 +67,7 @@ public sealed class TcTables : ITableCatalog
         ("StaticFlags6", ColumnKind.UInt, 0),
         ("StaticFlags7", ColumnKind.UInt, 0),
         ("StaticFlags8", ColumnKind.UInt, 0)
-    ]);
+    ], Added: [("LevelScalingDeltaMin", "0"), ("LevelScalingDeltaMax", "0")]);
 
     /// <summary>A creature's gossip menus: one row per menu, so a creature can have several.</summary>
     public static readonly TableSchema CreatureGossip = new("creature_template_gossip", ["CreatureID", "MenuID"], [("CreatureID", ColumnKind.UInt, 0), ("MenuID", ColumnKind.UInt, 0)]);

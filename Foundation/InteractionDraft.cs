@@ -41,17 +41,25 @@ public sealed class InteractionDraft : IDisposable
         this.catalogFor = catalogFor;
         history = new(path, "interaction", command =>
         {
-            foreach (var edit in command.Edits)
+            var upgraded = command with { Edits = command.Edits.Select(edit => Upgrade(command.Source, edit)).ToArray() };
+            foreach (var edit in upgraded.Edits)
             {
                 ValidateEdit(command.Source, edit);
             }
 
-            return command;
+            return upgraded;
         });
     }
 
     /// <summary>The table catalog rows of this source are drafted against.</summary>
     public ITableCatalog Tables(string source) => catalogFor(source);
+
+    /// <summary>The edit with rows saved before a table gained columns filled in with those columns' defaults.</summary>
+    RowEdit Upgrade(string source, RowEdit edit)
+    {
+        var schema = Tables(source).Find(edit.Table);
+        return edit with { Before = edit.Before == null ? null : schema.Upgrade(edit.Before), After = edit.After == null ? null : schema.Upgrade(edit.After) };
+    }
 
     void ValidateEdit(string source, RowEdit edit)
     {

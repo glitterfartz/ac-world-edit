@@ -16,7 +16,7 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
 {
     static readonly string[] RequiredColumns =
     [
-        "creature_template.npcflag", "creature_template.Classification", "creature_template_difficulty.ContentTuningID",
+        "creature_template.npcflag", "creature_template.Classification", "creature_template_difficulty.ContentTuningID", "creature_template_difficulty.LevelScalingDeltaMin", "creature_classlevelstats.basemana",
         "creature_template_gossip.MenuID", "gossip_menu.TextID", "npc_text.BroadcastTextID0", "gossip_menu_option.OptionNpc",
         "creature_trainer.TrainerID", "trainer.Type", "trainer_spell.ReqAbility1", "npc_vendor.type",
         "creature_queststarter.quest", "creature_questender.quest", "npc_spellclick_spells.spell_id", "quest_template.LogTitle"
@@ -85,6 +85,7 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         var final = effective(rows);
         var lookup = new InteractionLookupData(catalog, client);
         await AcInteractionSource.ReadCounts(session, "SELECT TrainerID,COUNT(*) FROM creature_trainer WHERE TrainerID IN ({0}) GROUP BY TrainerID", final.All(TcTables.CreatureTrainer).Select(r => r.U("TrainerID")).Distinct().ToArray(), lookup.TrainerUserCounts, token);
+        await ReadClassStats(session, lookup, token);
         await ReadQuestTitles(session, final, lookup, token);
         await ReadTexts(final, lookup, token);
         foreach (var item in final.All(TcTables.Vendor).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct())
@@ -122,6 +123,18 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         return await AcInteractionSource.SearchQuests(session, term, token).ConfigureAwait(false);
+    }
+
+    /// <summary>The base mana and attack power per level and class are small (about 4 classes x 123 levels), so read them all.</summary>
+    static async Task ReadClassStats(WorldReadSession session, InteractionLookupData lookup, CancellationToken token)
+    {
+        await using var command = session.Command("SELECT level,class,basemana,attackpower,rangedattackpower FROM creature_classlevelstats LIMIT 5000");
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            lookup.TcClassStats[(Convert.ToUInt32(reader.GetValue(0), CultureInfo.InvariantCulture), Convert.ToUInt32(reader.GetValue(1), CultureInfo.InvariantCulture))] =
+                new(Convert.ToUInt32(reader.GetValue(2), CultureInfo.InvariantCulture), Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture), Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture));
+        }
     }
 
     static async Task ReadQuestTitles(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
