@@ -74,7 +74,7 @@ public class DatabaseSettingsTests
     public async Task TheTrinityCoreEditorsThatAreNotBuiltYetSayWhatIsMissing()
     {
         var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
-        var error = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.SearchQuestsAsync("x", CancellationToken.None));
+        var error = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.SearchItemDetailsAsync("x", CancellationToken.None));
         Assert.Contains("not available for the TrinityCore", error.Message);
     }
 

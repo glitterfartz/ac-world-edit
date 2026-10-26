@@ -52,5 +52,5 @@ public sealed class TcDBSource : IDBSource
     public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => interaction.MenuExistsAsync(menuId, token);
     public Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token) => throw Unsupported("The creature property editor");
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => throw Unsupported("Item search");
-    public Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token) => throw Unsupported("Quest search");
+    public Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token) => interaction.SearchQuestsAsync(term, token);
 }

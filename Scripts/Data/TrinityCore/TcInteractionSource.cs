@@ -118,6 +118,12 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
             new object[] { menu }, token), CultureInfo.InvariantCulture) != 0;
     }
 
+    public async Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        return await AcInteractionSource.SearchQuests(session, term, token).ConfigureAwait(false);
+    }
+
     static async Task ReadQuestTitles(WorldReadSession session, RowSet view, InteractionLookupData lookup, CancellationToken token)
     {
         var quests = view.All(TcTables.QuestStarter).Concat(view.All(TcTables.QuestEnder)).Select(r => r.U("quest")).Distinct().ToArray();
