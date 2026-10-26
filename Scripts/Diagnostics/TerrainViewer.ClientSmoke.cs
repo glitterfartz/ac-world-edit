@@ -347,6 +347,13 @@ public partial class TerrainViewer
                     var captions = creatureProps.Section("stats")!.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
                     if (!captions.Contains("Health") || !captions.Any(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6])))
                     { SmokeFail("CLIENT_SHOT_STATS_MISSING " + string.Join("|", captions.Take(40))); return; }
+                    // The base values come from creature_classlevelstats: the level's attack power must be on the page.
+                    uint statsLevel = uint.Parse(captions.First(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6]))[6..]);
+                    uint statsClass = sc.Effective.Get(Foundation.TcTables.CreatureTemplate, "240")!.U("unit_class");
+                    if (!sc.Snapshot!.Lookup.TcClassStats.TryGetValue((statsLevel, statsClass), out var baseStats))
+                    { SmokeFail($"CLIENT_SHOT_STATS_CLASS_ROW no creature_classlevelstats row for level {statsLevel} class {statsClass}"); return; }
+                    if (!captions.Contains(baseStats.AttackPower.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)))
+                    { SmokeFail($"CLIENT_SHOT_STATS_ATTACK_POWER expected {baseStats.AttackPower} on the page: " + string.Join("|", captions.Take(60))); return; }
                     var difficulty = sc.Schema.TemplatePage.Difficulty!.Select(sc.Effective, 240).First();
                     if (sc.Commit("Invalid scaling expansion", Foundation.ItemListSpec.Change(Foundation.TcTables.CreatureDifficulty, difficulty, difficulty.With("HealthScalingExpansion", 12))))
                     { SmokeFail("CLIENT_SHOT_STATS_VALIDATION accepted expansion 12"); return; }
@@ -356,7 +363,7 @@ public partial class TerrainViewer
                     sc.Rebuild();
                     if (sc.Schema.TemplatePage.Difficulty!.Select(sc.Effective, 240).First().I("LevelScalingDeltaMax") != difficulty.I("LevelScalingDeltaMax"))
                     { SmokeFail("CLIENT_SHOT_STATS_UNDO"); return; }
-                    GD.Print($"CLIENT_SHOT_STATS_EDIT_OK levels={captions.First(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6]))}/validation/undo");
+                    GD.Print($"CLIENT_SHOT_STATS_EDIT_OK attackPower={baseStats.AttackPower} mana={baseStats.BaseMana} levels={captions.First(t => t.Length > 6 && t.StartsWith("Level ", StringComparison.Ordinal) && char.IsDigit(t[6]))}/validation/undo");
                 }
                 OpenShotCreature(240, "quests", 6);
                 return;
