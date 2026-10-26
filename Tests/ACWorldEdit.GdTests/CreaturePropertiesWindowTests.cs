@@ -30,8 +30,11 @@ public class CreaturePropertiesWindowTests
     {
         var window = Spawn();
         var picker = (ItemList)window.FindChild("SectionPicker", true, false)!;
-        AssertThat(picker.ItemCount).IsEqual(CreatureSectionRegistry.Factories.Count);
-        AssertThat(window.Sections.Select(s => s.Id).ToArray()).IsEqual(new[] { "behavior", "stats", "gossip", "quests", "speech", "template", "trainer", "vendor" });
+        // Every registered section exists; the picker lists the ones of the open database's dialect (AzerothCore here).
+        AssertThat(window.Sections.Count).IsEqual(CreatureSectionRegistry.Factories.Count);
+        var listed = window.Sections.Where(s => s.Supports(window.Context.Dialect)).ToArray();
+        AssertThat(picker.ItemCount).IsEqual(listed.Length);
+        AssertThat(listed.Select(s => s.Id).ToArray()).IsEqual(new[] { "behavior", "stats", "gossip", "quests", "speech", "template", "trainer", "vendor" });
         AssertThat(window.ActiveSection).IsEqual(CreaturePropertiesWindow.DefaultSection);
     }
 
@@ -43,7 +46,7 @@ public class CreaturePropertiesWindowTests
         AssertThat(window.ActiveSection).IsEqual("vendor");
         foreach (var section in window.Sections)
         {
-            AssertThat(section.Visible).IsEqual(section.Id == "vendor");
+            AssertThat(section.Visible).IsEqual(section.Id == "vendor" && section.Supports(window.Context.Dialect));
         }
 
         window.ShowSection("speech", null);
