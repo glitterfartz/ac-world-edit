@@ -233,11 +233,20 @@ public partial class TerrainViewer
                 dc = creatureProps.Context;
                 difficulties = dc.Schema.TemplatePage.Difficulty!;
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-difficulty-add.png"));
+                if (creatureProps.Section("template")!.FindChild("RemoveDifficulty", true, false) is not Button removeDifficulty)
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_REMOVE_MISSING"); return; }
+                removeDifficulty.EmitSignal(BaseButton.SignalName.Pressed);
+                if (difficulties.Select(dc.Effective, ShotCreature).Any(r => r.I(difficulties.IdColumn) == clientShotDifficulty))
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_REMOVE " + dc.Status); return; }
+                dc.Drafts.History(dc, false);
+                dc.Rebuild();
+                if (!difficulties.Select(dc.Effective, ShotCreature).Any(r => r.I(difficulties.IdColumn) == clientShotDifficulty))
+                { SmokeFail("CLIENT_SHOT_DIFFICULTY_REMOVE_UNDO"); return; }
                 dc.Drafts.History(dc, false);
                 dc.Rebuild();
                 if (difficulties.Select(dc.Effective, ShotCreature).Any(r => r.I(difficulties.IdColumn) == clientShotDifficulty))
                 { SmokeFail("CLIENT_SHOT_DIFFICULTY_UNDO"); return; }
-                GD.Print($"CLIENT_SHOT_DIFFICULTY_EDIT_OK add={clientShotDifficulty}/shown/undo");
+                GD.Print($"CLIENT_SHOT_DIFFICULTY_EDIT_OK add={clientShotDifficulty}/shown/remove/undo");
                 creatureProps.ShowSection("vendor", null);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 4;

@@ -67,4 +67,21 @@ public class TcDifficultyTests
         using var reopened = new ContentDrafts(path, _ => TcTables.Instance);
         Assert.Equal(1, Spec.Select(reopened.Draft!.Effective("tc", rows), 5).Single().I("DifficultyID"));
     }
+
+    [Fact]
+    public void ARemovedRowIsDeletedUndoneAndExported()
+    {
+        var rows = new RowSet();
+        var heroic = Spec.Add(rows, 5, 2).After!;
+        rows.Set(Spec.Table, Spec.Add(rows, 5, 0).After!);
+        rows.Set(Spec.Table, heroic);
+        using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
+        Assert.True(drafts.Commit(null, "tc", rows, rows, "Remove", [Spec.Remove(heroic)], NoIssues).Ok);
+        Assert.Equal([0], Spec.Select(drafts.Draft!.Effective("tc", rows), 5).Select(r => r.I("DifficultyID")));
+        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        Assert.Contains("DELETE FROM `creature_template_difficulty` WHERE `Entry` = 5 AND `DifficultyID` = 2", sql.Apply);
+        Assert.Contains("INSERT INTO `creature_template_difficulty`", sql.Revert);
+        drafts.History(null, false);
+        Assert.Equal([0, 2], Spec.Select(drafts.Draft.Effective("tc", rows), 5).Select(r => r.I("DifficultyID")));
+    }
 }

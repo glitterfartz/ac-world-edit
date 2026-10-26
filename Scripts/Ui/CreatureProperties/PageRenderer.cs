@@ -180,11 +180,27 @@ public sealed class PageRenderer(CreatureContext ctx)
             difficulty = list[(int)index].I(spec.IdColumn);
             ctx.Redraw();
         };
-        parent.AddChild(picker);
-        if (editable)
+        if (!editable)
         {
-            AddDifficulty(parent, spec, rows, entry, shown);
+            parent.AddChild(picker);
+            return shown;
         }
+
+        var pick = new HBoxContainer();
+        pick.AddThemeConstantOverride("separation", 6);
+        pick.AddChild(picker);
+        var remove = new Button { Name = "RemoveDifficulty", Text = "Remove", TooltipText = $"Delete the {spec.Name(shown.I(spec.IdColumn))} row. The server then falls back to another difficulty for it." };
+        remove.Pressed += () =>
+        {
+            if (ctx.Commit($"Remove {spec.Name(shown.I(spec.IdColumn))}", [spec.Remove(shown)]))
+            {
+                difficulty = null;
+                ctx.Redraw();
+            }
+        };
+        pick.AddChild(remove);
+        parent.AddChild(pick);
+        AddDifficulty(parent, spec, rows, entry, shown);
 
         return shown;
     }

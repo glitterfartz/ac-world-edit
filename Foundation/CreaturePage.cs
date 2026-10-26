@@ -72,6 +72,9 @@ public sealed record DifficultySpec(TableSchema Table, string EntryColumn, strin
         row.Validate(Table);
         return InteractionEdits.Insert(Table, row);
     }
+
+    /// <summary>Delete a difficulty row. The creature then uses the server's fallback for that difficulty, as the many templates without a row for it already do.</summary>
+    public RowEdit Remove(Row row) => InteractionEdits.Delete(Table, row);
 }
 
 /// <summary>A child-row list on a creature page. NewRow supplies a complete dialect-specific row;
