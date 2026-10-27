@@ -31,7 +31,6 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Quest links | partial | Link availability conditions not shown; quest content is Phase 7. |
 | Difficulty rows | partial | Check the ID against Difficulty.db2. |
 | Stats calculator | partial | Content tuning 0 (the server then uses the map's or area's tuning), Mythic+ modifiers (a modifier limited to start in a season is skipped, one limited to end in a season is kept), `Rate.Creature.*` taken as 1, conditional content tuning redirects, attack power / speed in the damage line. |
-| Text placeholders in TC gossip text | not started | `$B`, `$N` and similar tokens show raw. |
 | Item icons in the TC vendor page | not started | Names and quality only; needs the ItemSparse/Item icon FileDataID wiring. |
 | AC gaps | partial | Gossip `BoxBroadcastTextID`, trainer `ReqAbility1-3` and trainer/quest-link build metadata are outside the catalogs. |
 | `--interaction-smoke` | partial | Reports a window-open failure; the screenshot workflow opens the windows directly. Headless `--behavior-smoke` times out at `pick-template` (passes windowed). |

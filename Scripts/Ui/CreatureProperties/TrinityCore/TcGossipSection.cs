@@ -85,7 +85,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
                 if (greetingExpanded) Greeting(row);
             }
             if (!editable || !greetingExpanded) foreach (var variant in text.Variants)
-                Line($"{variant.Text ?? $"Broadcast text {variant.BroadcastId} not found"} · weight {Number(variant.Probability)}");
+                Line($"{(variant.Text is { } shown ? NpcInteraction.Render(shown) : $"Broadcast text {variant.BroadcastId} not found")} · weight {Number(variant.Probability)}");
         }
         Heading("Options");
         if (editable)
@@ -99,7 +99,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             {
                 var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
                 string trainer = option.TrainerId is { } id ? $" · trainer {id}" : "";
-                return ClientStyle.Text($"{option.OptionId}. {option.Text}{trainer}", 13, ClientStyle.Gold);
+                return ClientStyle.Text($"{option.OptionId}. {NpcInteraction.Render(option.Text)}{trainer}", 13, ClientStyle.Gold);
             }, (field, row) =>
             {
                 if (editable && field.Column is "ActionMenuID" or "OptionBroadcastTextID" or "BoxBroadcastTextID")
@@ -137,9 +137,9 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
     {
         if (id == 0) return;
         var text = Ctx.Snapshot?.Lookup.BroadcastText(id);
-        Line($"{label} broadcast {id}: {text?.Male ?? "not resolved in hotfixes/client data"}", text == null ? ClientStyle.Warning : ClientStyle.Body, 12, parent);
+        Line($"{label} broadcast {id}: {(text == null ? "not resolved in hotfixes/client data" : NpcInteraction.Render(text.Value.Male))}", text == null ? ClientStyle.Warning : ClientStyle.Body, 12, parent);
         if (text is { } variant && variant.Female != variant.Male && variant.Female.Length > 0)
-            Line(variant.Female, ClientStyle.Faded, 12, parent);
+            Line(NpcInteraction.Render(variant.Female), ClientStyle.Faded, 12, parent);
     }
 
     async Task SaveReference(string label, RowEdit[] edits, uint id, bool menu)

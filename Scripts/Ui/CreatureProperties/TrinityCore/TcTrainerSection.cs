@@ -46,7 +46,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
             if (trainer.SharedBy > 1)
                 Line($"Shared by {trainer.SharedBy} creature bindings: changes here affect all of them.", ClientStyle.Warning, 12, block);
             if (editable) TrainerFields(trainer, block);
-            else Facts([("Type", trainer.Type < TcTrainerRules.TypeNames.Length ? TcTrainerRules.TypeNames[trainer.Type] : trainer.Type.ToString(CultureInfo.InvariantCulture)), ("Greeting", trainer.Greeting.Length > 0 ? trainer.Greeting : "None")], block);
+            else Facts([("Type", trainer.Type < TcTrainerRules.TypeNames.Length ? TcTrainerRules.TypeNames[trainer.Type] : trainer.Type.ToString(CultureInfo.InvariantCulture)), ("Greeting", trainer.Greeting.Length > 0 ? NpcInteraction.Render(trainer.Greeting) : "None")], block);
             Line($"{trainer.Spells.Length} spell(s)", ClientStyle.Header, 13, block);
             if (editable) AddSpellControls(trainer, block);
             new PageRenderer(Ctx).RenderItems(block, Ctx.Schema.TrainerPage.Spells, Ctx.Effective, trainer.TrainerId, editable,
