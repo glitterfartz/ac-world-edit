@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
-    int clientShotFrames, clientShotCreatureStage, clientShotDifficulty;
+    int clientShotFrames, clientShotCreatureStage, clientShotDifficulty, sharedVendorFrames;
     TileKey? clientShotTile;
     double clientSmokeTime;
 
@@ -330,7 +330,33 @@ public partial class TerrainViewer
                 context.Drafts.History(context, false);
                 context.Drafts.History(context, false);
                 context.Rebuild();
-                GD.Print("CLIENT_SHOT_VENDOR_EDIT_OK search/add/validation/stock/undo/redo");
+                // A row that points at a shared vendor list shows the list's items once the creature reloads.
+                if (!context.Commit("Add shared vendor list", [vendor.Add(context.Effective, ShotCreature, ("item", -(int)ShotCreature), ("type", 1u))]))
+                { SmokeFail("CLIENT_SHOT_VENDOR_SHARED " + context.Status); return; }
+                clientShotFrames = 0;
+                clientShotCreatureStage = 42;
+                return;
+            case 42:
+                var sharedLabel = creatureProps.Section("vendor")!.FindChildren("*", "Label", true, false).OfType<Label>().FirstOrDefault(l => l.Text.StartsWith($"Shared vendor list {ShotCreature} · ", StringComparison.Ordinal));
+                if (sharedLabel == null || creatureProps.Context.Snapshot!.Lookup.ReferenceVendor(ShotCreature).Count == 0)
+                {
+                    if (clientShotFrames++ > 600) SmokeFail("CLIENT_SHOT_VENDOR_SHARED list not shown " + creatureProps.Context.Status);
+                    return;
+                }
+                if (sharedVendorFrames++ == 0)
+                {
+                    // Scroll the list into view and let a few frames draw before the screenshot.
+                    for (Node ancestor = sharedLabel.GetParent(); ancestor != null; ancestor = ancestor.GetParent())
+                    {
+                        if (ancestor is ScrollContainer scroller) { scroller.EnsureControlVisible(sharedLabel); break; }
+                    }
+                }
+
+                if (sharedVendorFrames < 15) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-vendor-shared.png"));
+                creatureProps.Context.Drafts.History(creatureProps.Context, false);
+                creatureProps.Context.Rebuild();
+                GD.Print("CLIENT_SHOT_VENDOR_EDIT_OK search/add/validation/stock/undo/redo/shared");
                 OpenShotCreature(514, "trainer", 5);
                 return;
             case 5:

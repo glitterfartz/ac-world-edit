@@ -91,8 +91,17 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         lookup.MaxTrainerId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM trainer", [], token), CultureInfo.InvariantCulture);
         await ReadClassStats(session, lookup, token);
         await ReadQuestTitles(session, final, lookup, token);
+        await AcInteractionSource.ReadCounts(session, "SELECT SourceEntry,COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId=19 AND SourceEntry IN ({0}) GROUP BY SourceEntry", final.All(TcTables.QuestStarter).Concat(final.All(TcTables.QuestEnder)).Select(r => r.U("quest")).Distinct().ToArray(), lookup.QuestConditionCounts, token);
         await ReadTexts(final, lookup, token);
-        foreach (var item in final.All(TcTables.Vendor).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct())
+        // Shared vendor lists (negative items), one level deep like the view.
+        foreach (uint list in final.All(TcTables.Vendor).Where(r => r.I("item") < 0).Select(r => (uint)-r.I("item")).Distinct())
+        {
+            var listed = new RowSet();
+            await AcInteractionSource.Load(session, listed, TcTables.Vendor, "entry=@k0", [list], token);
+            lookup.ReferenceVendors[list] = listed.All(TcTables.Vendor).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item")).ToList();
+        }
+
+        foreach (var item in final.All(TcTables.Vendor).Concat(lookup.ReferenceVendors.Values.SelectMany(l => l)).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct())
         {
             if (client?.Item(item) is { } info)
             {

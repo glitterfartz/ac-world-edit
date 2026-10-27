@@ -40,7 +40,8 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
                     uint id = row.U("quest");
                     var quest = quests.FirstOrDefault(q => q.Quest == id);
                     string? name = quest?.Title ?? Ctx.Snapshot?.Lookup.Quest(id)?.Title;
-                    return ClientStyle.Text($"{name ?? "Missing quest"} ({id.ToString(CultureInfo.InvariantCulture)})",
+                    int conditions = Ctx.Snapshot?.Lookup.QuestConditionCounts.GetValueOrDefault(id) ?? 0;
+                    return ClientStyle.Text($"{name ?? "Missing quest"} ({id.ToString(CultureInfo.InvariantCulture)}){(conditions > 0 ? $" · {conditions} availability condition(s)" : "")}",
                         13, name == null ? ClientStyle.Error : ClientStyle.Gold);
                 });
         }

@@ -40,6 +40,8 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog, IClientLo
     /// <summary>Tooltip fields of the same items.</summary>
     public readonly Dictionary<uint, ItemDetails> ItemDetails = [];
     public readonly Dictionary<uint, QuestInfo> Quests = [];
+    /// <summary>Quest availability conditions (conditions source type 19) per quest, TrinityCore only.</summary>
+    public readonly Dictionary<uint, int> QuestConditionCounts = [];
     public readonly Dictionary<uint, (string, string)> Broadcasts = [];
     public readonly HashSet<uint> Pois = [], Menus = [], Texts = [], Trainers = [];
     public readonly Dictionary<uint, List<Row>> ReferenceVendors = [];

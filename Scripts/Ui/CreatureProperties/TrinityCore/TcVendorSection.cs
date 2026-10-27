@@ -33,7 +33,8 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         new PageRenderer(Ctx).RenderItems(this, spec, Ctx.Effective, v.Entry, editable, row =>
         {
             var info = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Lookup()?.Item((uint)row.I("item")) : null;
-            string name = row.I("item") < 0 ? $"Shared vendor list {-(long)row.I("item")}" : row.U("type") == 2 ? $"Currency {row.I("item")}" : info?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : $"Item {row.I("item")}";
+            if (row.I("item") < 0) return SharedList((uint)-row.I("item"));
+            string name = row.U("type") == 2 ? $"Currency {row.I("item")}" : info?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : $"Item {row.I("item")}";
             var label = ClientStyle.Text(name, 14, info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
             if (info is not { IconFileId: > 0 }) return label;
             // The client names an item's icon by FileDataID, which the retail file store reads like a path.
@@ -49,6 +50,24 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
             line.AddChild(label);
             return line;
         }, (field, row) => editable && field.Column == "maxcount" ? StockEditor(row) : null, columns: 2);
+    }
+
+    /// <summary>A shared vendor list: its items, read-only (they belong to the list's own entry).</summary>
+    Control SharedList(uint list)
+    {
+        const int Shown = 25;
+        var rows = Ctx.Snapshot?.Lookup.ReferenceVendor(list) ?? [];
+        var box = new VBoxContainer();
+        box.AddChild(ClientStyle.Text($"Shared vendor list {list} · {rows.Count} item(s). Edit the list on its own vendor.", 14, ClientStyle.Gold));
+        foreach (var item in rows.Take(Shown))
+        {
+            uint id = (uint)Math.Max(item.I("item"), 0);
+            string name = item.U("type") == 2 ? $"Currency {id}" : Ctx.Snapshot!.Lookup.Item(id)?.Name is { Length: > 0 } known ? $"{known} ({id})" : $"Item {item.I("item")}";
+            box.AddChild(ClientStyle.Text(name, 12, ClientStyle.Faded));
+        }
+
+        if (rows.Count > Shown) box.AddChild(ClientStyle.Text($"and {rows.Count - Shown} more", 12, ClientStyle.Faded));
+        return box;
     }
 
     Control StockEditor(Row row)
