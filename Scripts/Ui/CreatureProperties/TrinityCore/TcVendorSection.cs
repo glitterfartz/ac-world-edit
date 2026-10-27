@@ -13,18 +13,9 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
     public override string Title => "Vendor";
     public override string Badge => Ctx.TcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcEditable || v.Vendor.Length > 0);
-    string searchTerm = "";
-    IReadOnlyList<ClientItem> results = [];
-    int searchGeneration;
-    bool searching;
+    readonly SearchState<ClientItem> search = new();
 
-    public override void OnCreatureChanged(CreatureSpawn? creature)
-    {
-        searchGeneration++;
-        searchTerm = "";
-        results = [];
-        searching = false;
-    }
+    public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
@@ -67,44 +58,13 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
     void AddControls(uint entry)
     {
         Heading("Add an item");
-        var box = new HBoxContainer();
-        AddChild(box);
-        var term = new LineEdit { Name = "Search_item", Text = searchTerm, PlaceholderText = "Find item by name or ID…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var search = new Button { Text = "Search", Disabled = searching || Ctx.Lookup() == null };
-        term.TextChanged += text => searchTerm = text;
-        async void Search()
+        SearchBox(this, search, "Search_item", "Find item by name or ID…", "item", true, text =>
         {
-            if (searching || Ctx.Lookup() is not { } client) return;
-            string text = term.Text.Trim();
-            if (text.Length == 0) return;
-            text = text[..Math.Min(80, text.Length)];
-            searchTerm = text;
-            int generation = ++searchGeneration;
-            searching = true;
-            Ctx.Status = "Searching items…";
-            Ctx.Redraw();
-            try
-            {
-                var found = await Task.Run(() => client.SearchItems(text, 30));
-                if (generation != searchGeneration) return;
-                results = found;
-                Ctx.Status = $"{found.Count} item(s) found.";
-            }
-            catch (Exception error)
-            {
-                if (generation != searchGeneration) return;
-                Ctx.Status = DbErrors.Safe(error);
-            }
-            if (generation != searchGeneration) return;
-            searching = false;
-            Ctx.Redraw();
-        }
-        search.Pressed += Search;
-        term.TextSubmitted += _ => Search();
-        box.AddChild(term);
-        box.AddChild(search);
+            var client = Ctx.Lookup()!;
+            return Task.Run(() => client.SearchItems(text, 30));
+        });
         if (Ctx.Lookup() == null) Line("Open a retail client to search and validate item IDs.", ClientStyle.Warning, 11);
-        foreach (var item in results)
+        foreach (var item in search.Results)
         {
             var add = new Button { Text = $"+ {item.Name} ({item.Id})", Alignment = HorizontalAlignment.Left };
             add.Pressed += () => Add(entry, checked((int)item.Id), 1);

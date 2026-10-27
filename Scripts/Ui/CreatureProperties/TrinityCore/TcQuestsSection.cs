@@ -15,18 +15,9 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
     public override string Title => "Quests";
     public override string Badge => Ctx.TcView is { } v && v.Starts.Length + v.Ends.Length > 0 ? $"{v.Starts.Length}/{v.Ends.Length}" : "";
     public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcEditable || v.Starts.Length + v.Ends.Length > 0);
-    string searchTerm = "";
-    IReadOnlyList<(uint Id, string Title, int Level)> results = [];
-    int searchGeneration;
-    bool searching;
+    readonly SearchState<(uint Id, string Title, int Level)> search = new();
 
-    public override void OnCreatureChanged(CreatureSpawn? creature)
-    {
-        searchGeneration++;
-        searchTerm = "";
-        results = [];
-        searching = false;
-    }
+    public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
@@ -82,44 +73,9 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
             Ctx.Commit($"Link quest {quest}", edits);
         }
 
-        var box = new HBoxContainer();
-        block.AddChild(box);
-        var term = new LineEdit { Name = "Search_quest", Text = searchTerm, PlaceholderText = "Find quest by title or ID…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var search = new Button { Text = "Search", Disabled = searching };
-        term.TextChanged += text => searchTerm = text;
-        async void Search()
-        {
-            if (searching) return;
-            string text = term.Text.Trim();
-            if (text.Length == 0) return;
-            text = text[..Math.Min(80, text.Length)];
-            searchTerm = text;
-            int generation = ++searchGeneration;
-            searching = true;
-            Ctx.Status = "Searching quests…";
-            Ctx.Redraw();
-            try
-            {
-                var found = await DBSource.Open(Ctx.Connection()).SearchQuestsAsync(text, CancellationToken.None);
-                if (generation != searchGeneration) return;
-                results = found;
-                Ctx.Status = $"{found.Count} quest(s) found.";
-            }
-            catch (Exception error)
-            {
-                if (generation != searchGeneration) return;
-                Ctx.Status = DbErrors.Safe(error);
-            }
-            if (generation != searchGeneration) return;
-            searching = false;
-            Ctx.Redraw();
-        }
-
-        search.Pressed += Search;
-        term.TextSubmitted += _ => Search();
-        box.AddChild(term);
-        box.AddChild(search);
-        foreach (var (id, title, level) in results)
+        SearchBox(block, search, "Search_quest", "Find quest by title or ID…", "quest", false,
+            text => DBSource.Open(Ctx.Connection()).SearchQuestsAsync(text, CancellationToken.None));
+        foreach (var (id, title, level) in search.Results)
         {
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 6);

@@ -16,18 +16,9 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
     public override string Title => "Trainer";
     public override string Badge => Ctx.TcView is { Trainers.Length: > 0 } v ? v.Trainers.Length.ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.TcView is { Trainers.Length: > 0 };
-    string searchTerm = "";
-    IReadOnlyList<(uint Id, string Name)> results = [];
-    int searchGeneration;
-    bool searching;
+    readonly SearchState<(uint Id, string Name)> search = new();
 
-    public override void OnCreatureChanged(CreatureSpawn? creature)
-    {
-        searchGeneration++;
-        searchTerm = "";
-        results = [];
-        searching = false;
-    }
+    public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
@@ -90,44 +81,13 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
     {
         var spec = Ctx.Schema.TrainerPage.Spells;
         void Add(uint spell) => Ctx.Commit($"Add trainer spell {spell}", [spec.Add(Ctx.Effective, trainer.TrainerId, ("SpellId", spell))]);
-        var box = new HBoxContainer();
-        block.AddChild(box);
-        var term = new LineEdit { Name = "Search_spell", Text = searchTerm, PlaceholderText = "Find spell by name or ID…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var search = new Button { Text = "Search", Disabled = searching || Ctx.Lookup() == null };
-        term.TextChanged += text => searchTerm = text;
-        async void Search()
+        SearchBox(block, search, "Search_spell", "Find spell by name or ID…", "spell", true, text =>
         {
-            if (searching || Ctx.Lookup() is not { } client) return;
-            string text = term.Text.Trim();
-            if (text.Length == 0) return;
-            text = text[..Math.Min(80, text.Length)];
-            searchTerm = text;
-            int generation = ++searchGeneration;
-            searching = true;
-            Ctx.Status = "Searching spells…";
-            Ctx.Redraw();
-            try
-            {
-                var found = await Task.Run(() => client.SearchSpells(text, 30));
-                if (generation != searchGeneration) return;
-                results = found;
-                Ctx.Status = $"{found.Count} spell(s) found.";
-            }
-            catch (Exception error)
-            {
-                if (generation != searchGeneration) return;
-                Ctx.Status = DbErrors.Safe(error);
-            }
-            if (generation != searchGeneration) return;
-            searching = false;
-            Ctx.Redraw();
-        }
-        search.Pressed += Search;
-        term.TextSubmitted += _ => Search();
-        box.AddChild(term);
-        box.AddChild(search);
+            var client = Ctx.Lookup()!;
+            return Task.Run(() => client.SearchSpells(text, 30));
+        });
         if (Ctx.Lookup() == null) Line("Open a retail client to search and validate spell IDs.", ClientStyle.Warning, 11, block);
-        foreach (var (id, name) in results)
+        foreach (var (id, name) in search.Results)
         {
             var add = new Button { Text = $"+ {name} ({id})", Alignment = HorizontalAlignment.Left };
             add.Pressed += () => Add(id);
