@@ -191,6 +191,8 @@ public partial class TerrainViewer
                 { SmokeFail("CLIENT_SHOT_MENU_COPY " + gc.Status); return; }
                 gc.Drafts.History(gc, false);
                 gc.Rebuild();
+                if (creatureProps.Section("gossip")!.FindChild("NewMenu", true, false) is not Button)
+                { SmokeFail("CLIENT_SHOT_NEW_MENU control missing"); return; }
                 GD.Print("CLIENT_SHOT_GOSSIP_EDIT_OK submenu/back/add/text/validation/greeting/undo/redo/export");
                 creatureProps.ShowSection("template", null);
                 clientShotFrames = 0;

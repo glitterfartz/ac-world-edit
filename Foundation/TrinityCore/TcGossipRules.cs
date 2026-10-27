@@ -45,6 +45,11 @@ public static class TcGossipRules
         }
     }
 
+    /// <summary>A new npc_text row whose first slot plays one broadcast text; the other slots are empty.</summary>
+    public static Row NewGreeting(uint id, uint broadcast) =>
+        Row.Of(TcTables.NpcText.Columns.Select(c => (c.Name, c.Kind == ColumnKind.Float ? (object)0f : 0u)).ToArray())
+            .With("ID", id).With("BroadcastTextID0", broadcast).With("Probability0", 1f);
+
     /// <summary>Save a broadcast and its weight together, allowing unused slots to be cleared.</summary>
     public static RowEdit[] SetVariant(Row row, int slot, uint broadcast, float weight)
     {

@@ -179,4 +179,24 @@ public class TcGossipTests
         drafts.History(null, false);
         Assert.Equal(42u, drafts.Draft.Effective("tc", rows).All(TcTables.CreatureGossip).Single().U("MenuID"));
     }
+
+    [Fact]
+    public void ANewGreetingAndMenuPassTheRulesPersistAndExport()
+    {
+        var rows = new RowSet();
+        using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
+        var greeting = TcGossipRules.NewGreeting(500, 123);
+        Assert.Equal(1f, greeting.F("Probability0"));
+        Assert.Equal(0f, greeting.F("Probability7"));
+        Assert.True(drafts.Commit(null, "tc", rows, rows, "New menu",
+        [
+            InteractionEdits.Insert(TcTables.NpcText, greeting),
+            InteractionEdits.Insert(TcTables.GossipMenu, Row.Of(("MenuID", 900u), ("TextID", 500u))),
+            InteractionEdits.Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", 5u), ("MenuID", 900u)))
+        ], Check).Ok);
+        var sql = SqlExport.Build("tc", [], [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        Assert.Contains("`npc_text`", sql.Apply);
+        Assert.Contains("`gossip_menu`", sql.Apply);
+        Assert.Contains("`creature_template_gossip`", sql.Revert);
+    }
 }

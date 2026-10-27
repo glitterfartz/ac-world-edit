@@ -25,7 +25,7 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Item | Status | Notes |
 |---|---|---|
 | Schema-driven section registry and field groups | not started | Sections do not yet take their field groups from the schema. |
-| Gossip | partial | Creating greeting rows (needs broadcast text, Phase 8), condition/SmartAI remapping when a menu is copied, and an existence check for `OverrideIconID`. Removing an option keeps trainer bindings and other external references. |
+| Gossip | partial | Condition/SmartAI remapping when a menu is copied, and an existence check for `OverrideIconID`. Removing an option keeps trainer bindings and other external references. |
 | Stats calculator | partial | Content tuning 0 (the server then uses the map's or area's tuning), Mythic+ modifiers (a modifier limited to start in a season is skipped, one limited to end in a season is kept), `Rate.Creature.*` taken as 1, conditional content tuning redirects, attack power / speed in the damage line. |
 | AC gaps | partial | Gossip `BoxBroadcastTextID`, trainer `ReqAbility1-3` and trainer/quest-link build metadata are outside the catalogs. |
 | Headless smokes | partial | `--interaction-smoke` passes windowed but, headless, the simulated right-click does not open the window; `--behavior-smoke` times out at `pick-template` headless (passes windowed). |

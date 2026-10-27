@@ -88,6 +88,7 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         await AcInteractionSource.ReadIds(session, "SELECT ID FROM points_of_interest WHERE ID IN ({0})", final.All(TcTables.GossipOption).Select(r => r.U("ActionPoiID")).Where(id => id != 0), lookup.Pois, token);
         await AcInteractionSource.ReadCounts(session, "SELECT MenuID,COUNT(*) FROM creature_template_gossip WHERE MenuID IN ({0}) GROUP BY MenuID", final.All(TcTables.CreatureGossip).Select(r => r.U("MenuID")).Distinct().ToArray(), lookup.MenuUserCounts, token);
         lookup.MaxMenuId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT GREATEST(COALESCE((SELECT MAX(MenuID) FROM gossip_menu),0),COALESCE((SELECT MAX(MenuID) FROM gossip_menu_option),0))", [], token), CultureInfo.InvariantCulture);
+        lookup.MaxTextId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM npc_text", [], token), CultureInfo.InvariantCulture);
         lookup.MaxTrainerId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM trainer", [], token), CultureInfo.InvariantCulture);
         await ReadClassStats(session, lookup, token);
         await ReadQuestTitles(session, final, lookup, token);

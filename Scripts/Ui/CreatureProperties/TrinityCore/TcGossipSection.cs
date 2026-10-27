@@ -70,7 +70,11 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         Line("Menus and greetings can be shared by several creatures. Editing them affects every use.", ClientStyle.Faded, 11);
         foreach (var issue in TcGossipRules.Check(Ctx.Effective)) Line(issue.Message, ClientStyle.Warning, 11);
         Heading("Greeting");
-        if (menu.Texts.Length == 0) Line("No gossip_menu text: the client shows a default greeting.", ClientStyle.Faded, 12);
+        if (menu.Texts.Length == 0)
+        {
+            Line("No gossip_menu text: the client shows a default greeting.", ClientStyle.Faded, 12);
+            if (editable) GreetingControls(menu.MenuId, false, v.Entry);
+        }
         foreach (var text in menu.Texts)
         {
             var row = Ctx.Effective.Get(page.TextTable, text.TextId.ToString(CultureInfo.InvariantCulture));
@@ -153,6 +157,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         Heading("Creature menus");
         var box = new HBoxContainer();
         AddChild(box);
+        GreetingControls(0, true, v.Entry);
         var id = new LineEdit { Name = "AssignMenuId", PlaceholderText = "Menu ID", CustomMinimumSize = new(110, 0) };
         var assign = new Button { Name = "AssignMenu", Text = "Assign menu", TooltipText = "Let this creature open the menu." };
         assign.Pressed += () => Ctx.Try(() =>
@@ -173,6 +178,31 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             copy.Pressed += () => CopyMenu(v.Entry, menu, link);
             box.AddChild(copy);
         }
+    }
+
+    /// <summary>
+    /// A greeting for a menu with none (a new npc_text row and its gossip_menu link), or, with
+    /// <paramref name="newMenu"/>, a whole new menu with that greeting for the creature.
+    /// </summary>
+    void GreetingControls(uint menu, bool newMenu, uint entry)
+    {
+        var box = new HBoxContainer();
+        AddChild(box);
+        var broadcast = new LineEdit { Name = newMenu ? "NewMenuBroadcast" : "AddGreetingBroadcast", PlaceholderText = "Greeting broadcast ID", CustomMinimumSize = new(160, 0), TooltipText = "The broadcast text the greeting plays." };
+        var add = new Button { Name = newMenu ? "NewMenu" : "AddGreeting", Text = newMenu ? "+ New menu" : "Add greeting", TooltipText = newMenu ? "Create a menu with this greeting and let the creature open it." : "Give this menu a greeting." };
+        add.Pressed += () => Ctx.Try(() =>
+        {
+            uint broadcastId = uint.Parse(broadcast.Text, CultureInfo.InvariantCulture);
+            uint text = Ctx.NextId(TcTables.NpcText, "ID", Ctx.Snapshot!.Lookup.MaxTextId);
+            uint target = newMenu ? Math.Max(Ctx.NextId(TcTables.GossipMenu, "MenuID", Ctx.Snapshot.Lookup.MaxMenuId), Ctx.NextId(TcTables.GossipOption, "MenuID", 0)) : menu;
+            List<RowEdit> edits = [Insert(TcTables.NpcText, TcGossipRules.NewGreeting(text, broadcastId)), Insert(TcTables.GossipMenu, Row.Of(("MenuID", target), ("TextID", text)))];
+            if (newMenu) edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", entry), ("MenuID", target))));
+            _ = SaveReference(newMenu ? $"New gossip menu {target}" : "Add greeting", [.. edits], broadcastId, Reference.Broadcast);
+            if (newMenu) selected = target;
+        });
+        broadcast.TextSubmitted += _ => add.EmitSignal(BaseButton.SignalName.Pressed);
+        box.AddChild(broadcast);
+        box.AddChild(add);
     }
 
     Row? RootLink(uint entry, uint menu) => Ctx.Effective.All(TcTables.CreatureGossip).FirstOrDefault(r => r.U("CreatureID") == entry && r.U("MenuID") == menu);
