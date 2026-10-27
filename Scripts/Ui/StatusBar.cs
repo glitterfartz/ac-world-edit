@@ -72,3 +72,81 @@ public sealed partial class StatusBar : PanelContainer
         set => telemetry.Text = value;
     }
 }
+
+/// <summary>
+/// Recent status messages for the status bar: the newest shows on the bar and the rest stay readable
+/// in the history window. Main-thread only.
+/// </summary>
+public sealed class StatusLog
+{
+    const int Capacity = 200;
+    readonly List<(DateTime Time, string Text)> entries = [];
+
+    /// <summary>Raised after every posted message.</summary>
+    public event Action? Posted;
+
+    public IReadOnlyList<(DateTime Time, string Text)> Entries => entries;
+    public string Latest => entries.Count > 0 ? entries[^1].Text : "";
+
+    public void Post(string text)
+    {
+        text = text.Trim();
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        entries.Add((DateTime.Now, text));
+        if (entries.Count > Capacity)
+        {
+            entries.RemoveAt(0);
+        }
+
+        Posted?.Invoke();
+    }
+
+    public void Clear()
+    {
+        entries.Clear();
+        Posted?.Invoke();
+    }
+}
+
+/// <summary>
+/// The status bar's message history, newest first. Opened by clicking the message on the bar.
+/// </summary>
+public sealed partial class StatusHistoryWindow : AcceptDialog
+{
+    readonly StatusLog log;
+    readonly ItemList list = new() { SizeFlagsVertical = Control.SizeFlags.ExpandFill, AutoHeight = true };
+
+    public StatusHistoryWindow(StatusLog log)
+    {
+        this.log = log;
+        Title = "Message history";
+        OkButtonText = "Close";
+        MinSize = new Vector2I(560, 360);
+        AddButton("Clear", false, "clear");
+        CustomAction += _ =>
+        {
+            log.Clear();
+            Rebuild();
+        };
+        AddChild(list);
+    }
+
+    public void Open()
+    {
+        Rebuild();
+        PopupCentered();
+    }
+
+    void Rebuild()
+    {
+        list.Clear();
+        foreach (var (time, text) in log.Entries.Reverse())
+        {
+            list.AddItem($"{time:HH:mm:ss}   {text}", null, false);
+        }
+    }
+}
