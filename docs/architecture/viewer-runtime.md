@@ -191,7 +191,7 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 | Behavior panel | `Ui/BehaviorPanel.cs`, `.Rules.cs`, `.Speech.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window |
 | AreaTrigger behavior | `Ui/BehaviorEditorWindow.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature |
 | Pending changes | `Ui/PendingChangesWindow.cs` | Lists pending changes; the viewer performs discard and export |
-| Menus and toolbar | `Ui/EditorMenu.cs`, `Ui/EditorToolbar.cs` | Callback-driven menus and mode buttons |
+| Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | Callback-driven menus and mode buttons |
 | Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |
 | Client styling | `Ui/ClientStyle.cs` | Dark editor-window theme, quality colours, gossip icons |
 
