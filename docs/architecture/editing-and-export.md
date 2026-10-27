@@ -113,7 +113,7 @@ Details:
 - **Net changes.** Draft entries are collapsed per source, GUID or key: the first `Before` to the last `After`. Changes that end up at the baseline are dropped.
 - **Pending changes** (`Foundation/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. The set of exported IDs is saved as a JSON array.
 - **Discard** calls the owning draft's `Revert`. Reverts are themselves undoable entries.
-- **Local file locations** come from `Scripts/Ui/ContentDraftFiles.cs`: `user://drafts/creature-positions.json`, `gameobject-positions.json`, `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
+- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/UserSettings.cs`): `user://drafts/creature-positions.json`, `gameobject-positions.json`, `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
 
 ## SQL generation: `Foundation/SqlExport.cs`
 
