@@ -34,7 +34,20 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         {
             var info = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Lookup()?.Item((uint)row.I("item")) : null;
             string name = row.I("item") < 0 ? $"Shared vendor list {-(long)row.I("item")}" : row.U("type") == 2 ? $"Currency {row.I("item")}" : info?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : $"Item {row.I("item")}";
-            return ClientStyle.Text(name, 14, info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
+            var label = ClientStyle.Text(name, 14, info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
+            if (info is not { IconFileId: > 0 }) return label;
+            // The client names an item's icon by FileDataID, which the retail file store reads like a path.
+            var line = new HBoxContainer();
+            line.AddThemeConstantOverride("separation", 6);
+            line.AddChild(new TextureRect
+            {
+                Texture = Ctx.Icons.Get(AssetRef.FromFileId(info.IconFileId)),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                CustomMinimumSize = new(28, 28)
+            });
+            line.AddChild(label);
+            return line;
         }, (field, row) => editable && field.Column == "maxcount" ? StockEditor(row) : null, columns: 2);
     }
 

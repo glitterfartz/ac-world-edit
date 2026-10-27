@@ -2,6 +2,7 @@ using System.Globalization;
 using Godot;
 using ACWorldEdit.Foundation;
 using ACWorldEdit.Data;
+using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
@@ -44,6 +45,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         var page = Ctx.Schema.GossipPage;
         if (v.Menus.Length == 0)
         {
+            if (editable) RootControls(v, null);
             Line("This creature has no gossip menu.", ClientStyle.Faded);
             return;
         }
@@ -63,6 +65,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         }
         picker.ItemSelected += i => Navigate(v.Menus[(int)i].MenuId);
         nav.AddChild(picker);
+        if (editable) RootControls(v, menu);
         Heading($"Menu {menu.MenuId}");
         Line("Menus and greetings can be shared by several creatures. Editing them affects every use.", ClientStyle.Faded, 11);
         foreach (var issue in TcGossipRules.Check(Ctx.Effective)) Line(issue.Message, ClientStyle.Warning, 11);
@@ -102,14 +105,14 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
                 return ClientStyle.Text($"{option.OptionId}. {NpcInteraction.Render(option.Text)}{trainer}", 13, ClientStyle.Gold);
             }, (field, row) =>
             {
-                if (editable && field.Column is "ActionMenuID" or "OptionBroadcastTextID" or "BoxBroadcastTextID")
+                if (editable && field.Column is "ActionMenuID" or "ActionPoiID" or "OptionBroadcastTextID" or "BoxBroadcastTextID")
                 {
                     var edit = new LineEdit { Text = row.T(field.Column), CustomMinimumSize = new(110, 0) };
                     edit.TextSubmitted += text => Ctx.Try(() =>
                     {
                         uint id = uint.Parse(text, CultureInfo.InvariantCulture);
                         _ = SaveReference($"Change {field.Label.ToLowerInvariant()}", ItemListSpec.Change(page.Options.Table, row, row.With(field.Column, id)),
-                            id, field.Column == "ActionMenuID");
+                            id, field.Column switch { "ActionMenuID" => Reference.Menu, "ActionPoiID" => Reference.Poi, _ => Reference.Broadcast });
                     });
                     return edit;
                 }
@@ -142,7 +145,51 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             Line(NpcInteraction.Render(variant.Female), ClientStyle.Faded, 12, parent);
     }
 
-    async Task SaveReference(string label, RowEdit[] edits, uint id, bool menu)
+    enum Reference { Menu, Broadcast, Poi }
+
+    /// <summary>Menus the creature opens with (creature_template_gossip), and a copy for a menu other creatures share.</summary>
+    void RootControls(TcCreatureView v, TcMenuView? menu)
+    {
+        Heading("Creature menus");
+        var box = new HBoxContainer();
+        AddChild(box);
+        var id = new LineEdit { Name = "AssignMenuId", PlaceholderText = "Menu ID", CustomMinimumSize = new(110, 0) };
+        var assign = new Button { Name = "AssignMenu", Text = "Assign menu", TooltipText = "Let this creature open the menu." };
+        assign.Pressed += () => Ctx.Try(() =>
+        {
+            uint menuId = uint.Parse(id.Text, CultureInfo.InvariantCulture);
+            _ = SaveReference($"Assign gossip menu {menuId}", [Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", v.Entry), ("MenuID", menuId)))], menuId, Reference.Menu);
+        });
+        id.TextSubmitted += _ => assign.EmitSignal(BaseButton.SignalName.Pressed);
+        box.AddChild(id);
+        box.AddChild(assign);
+        if (menu is not { Root: true } || RootLink(v.Entry, menu.MenuId) is not { } link) return;
+        var remove = new Button { Name = "UnassignMenu", Text = "Unassign menu", TooltipText = "This creature stops opening the menu; the menu itself stays." };
+        remove.Pressed += () => Ctx.Commit($"Unassign gossip menu {menu.MenuId}", [Delete(TcTables.CreatureGossip, link)]);
+        box.AddChild(remove);
+        if (Ctx.Snapshot?.Lookup.MenuUsers(menu.MenuId) > 1)
+        {
+            var copy = new Button { Name = "CopyMenu", Text = "Copy for this creature", TooltipText = "Give this creature its own copy of the menu and its options. Conditions and scripts that name the menu do not move." };
+            copy.Pressed += () => CopyMenu(v.Entry, menu, link);
+            box.AddChild(copy);
+        }
+    }
+
+    Row? RootLink(uint entry, uint menu) => Ctx.Effective.All(TcTables.CreatureGossip).FirstOrDefault(r => r.U("CreatureID") == entry && r.U("MenuID") == menu);
+
+    void CopyMenu(uint entry, TcMenuView menu, Row link)
+    {
+        uint copy = Math.Max(Ctx.NextId(TcTables.GossipMenu, "MenuID", Ctx.Snapshot!.Lookup.MaxMenuId), Ctx.NextId(TcTables.GossipOption, "MenuID", 0));
+        List<RowEdit> edits = [];
+        edits.AddRange(Ctx.Effective.All(TcTables.GossipMenu).Where(r => r.U("MenuID") == menu.MenuId).Select(r => Insert(TcTables.GossipMenu, r.With("MenuID", copy))));
+        edits.AddRange(Ctx.Effective.All(TcTables.GossipOption).Where(r => r.U("MenuID") == menu.MenuId).Select(r => Insert(TcTables.GossipOption, r.With("MenuID", copy))));
+        edits.Add(Delete(TcTables.CreatureGossip, link));
+        edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", entry), ("MenuID", copy))));
+        Ctx.Commit($"Copy gossip menu {menu.MenuId}", edits);
+        selected = copy;
+    }
+
+    async Task SaveReference(string label, RowEdit[] edits, uint id, Reference kind)
     {
         int current = generation;
         string source = Ctx.SourceKey;
@@ -151,19 +198,24 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             if (id != 0)
             {
                 var db = DBSource.Open(Ctx.Connection(), Ctx.Lookup());
-                bool found = menu
-                    ? Ctx.Effective.All(Ctx.Schema.GossipPage.Menus.Table).Any(r => r.U("MenuID") == id)
+                bool found = kind switch
+                {
+                    Reference.Menu => Ctx.Effective.All(Ctx.Schema.GossipPage.Menus.Table).Any(r => r.U("MenuID") == id)
                         || Ctx.Effective.All(Ctx.Schema.GossipPage.Options.Table).Any(r => r.U("MenuID") == id)
-                        || await db.MenuExistsAsync(id, CancellationToken.None)
-                    : Ctx.Snapshot?.Lookup.BroadcastText(id) != null
-                        || (await db.SearchBroadcastAsync(id.ToString(CultureInfo.InvariantCulture), CancellationToken.None)).Any(r => r.Id == id);
+                        || await db.MenuExistsAsync(id, CancellationToken.None),
+                    Reference.Poi => Ctx.Snapshot?.Lookup.PoiExists(id) == true || await db.PoiExistsAsync(id, CancellationToken.None),
+                    _ => Ctx.Snapshot?.Lookup.BroadcastText(id) != null
+                        || (await db.SearchBroadcastAsync(id.ToString(CultureInfo.InvariantCulture), CancellationToken.None)).Any(r => r.Id == id)
+                };
                 if (current != generation || source != Ctx.SourceKey) return;
                 if (!found)
                 {
-                    Ctx.Status = $"Not saved: {(menu ? "gossip menu" : "broadcast text")} {id} was not found.";
+                    Ctx.Status = $"Not saved: {kind switch { Reference.Menu => "gossip menu", Reference.Poi => "point of interest", _ => "broadcast text" }} {id} was not found.";
                     Ctx.Redraw();
                     return;
                 }
+
+                if (kind == Reference.Poi) Ctx.Snapshot?.Lookup.Pois.Add(id);
             }
             if (current == generation && source == Ctx.SourceKey) Ctx.Commit(label, edits);
         }
@@ -191,7 +243,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             {
                 uint broadcast = uint.Parse(id.Text, CultureInfo.InvariantCulture);
                 var edits = TcGossipRules.SetVariant(row, slot, broadcast, float.Parse(weight.Text, CultureInfo.InvariantCulture));
-                _ = SaveReference("Change greeting variant", edits, broadcast, false);
+                _ = SaveReference("Change greeting variant", edits, broadcast, Reference.Broadcast);
             });
             save.Pressed += Save;
             id.TextSubmitted += _ => Save();
