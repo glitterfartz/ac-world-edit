@@ -2,7 +2,7 @@
 
 The plan and open work for the TrinityCore database overhaul, and the project's other known gaps. Finished work is described in the architecture docs, not here. Schema differences are in `docs/DB-DIFFERENCES.md`. Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575. Delete the TrinityCore plan sections when Phase 9 lands.
 
-Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phases 8–9 (SmartAI and speech, waypoints) are not started; the behavior editor and the waypoint layer are off in TrinityCore mode (`TerrainViewer.BehaviorEditors`).
+Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is not started; the waypoint layer and AreaTrigger rules are off in TrinityCore mode (`TerrainViewer.AreaTriggerBehavior`).
 
 ## Decisions and design
 
@@ -10,9 +10,9 @@ Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, re
 - Hotfixes are read from a second database name on the same connection (default `hotfixes`), falling back to client DB2.
 - Each phase delivers full read and edit/export parity for its area, with its own commit(s), tests, and a visual check where the UI changes.
 - **Dialect-native rows.** Read-only overlay results are shared records translated by each dialect. Editing stays on the generic path, `RowEdit(Table, Key, Before, After)` → `SqlExport`, with each dialect's own table catalog, so structural differences (`quest_objectives` 1:N rows, `creature_template_difficulty`, `creature_template_gossip`) round-trip without a lossy neutral model. Editors switch descriptors (field groups, enums, catalogs), not data models.
-- **`IWorldSchema` grows per phase.** It has `Tables` and `Sql`, plus the creature descriptors. Phase 8 adds `SmartCatalog Smart`; the quest pages are drawn by `AcQuestPanel` / `TcQuestPanel` over `AcTables` / `TcTables` instead of a schema descriptor. The AzerothCore statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
+- **`IWorldSchema` grows per phase.** It has `Tables` and `Sql`, plus the creature descriptors. `Smart` is the dialect's `SmartCatalog`; the quest pages are drawn by `AcQuestPanel` / `TcQuestPanel` over `AcTables` / `TcTables` instead of a schema descriptor. The AzerothCore statics (`InteractionTables`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
 - **Creature pages are descriptors, not per-dialect classes.** A page is an ordered list of groups; a group is fields bound to one row or an item list (source table, parent filter column, per-item fields, nested lists, add/remove). Each dialect fills the descriptor in; one renderer draws it. Dialect-specific section adapters use `Ac` / `Tc` prefixes in `AzerothCore/` / `TrinityCore/` directories.
-- **Editors read the dialect only through `IDBSource.Schema`:** `CreatureSectionRegistry` filters sections by schema support; `QuestPanel` is shared and `AcQuestPanel` / `TcQuestPanel` draw the pages that differ (TC replaces `RequiredNpcOrGo`/`RequiredItem` with an Objectives list); `AcBehaviorPanel.Rules` will use `Schema.Smart`.
+- **Editors read the dialect only through `IDBSource.Schema`:** `CreatureSectionRegistry` filters sections by schema support; `QuestPanel` is shared and `AcQuestPanel` / `TcQuestPanel` draw the pages that differ (TC replaces `RequiredNpcOrGo`/`RequiredItem` with an Objectives list); `BehaviorPanel` (and its creature `BehaviorSection` / `SpeechSection`) is shared and takes `SmartCatalog` from the open connection's dialect.
 
 Verification per phase: the default suite; Db tests with `ACWORLD_DB_INFO` (AC regression) and `ACWORLD_TC_DB_INFO` (TC); the retail corpus with `--settings corpus.runsettings` and `ACWORLD_RETAIL_DIR`; `check-layering` after any Data/Foundation/Assets edit. Visually: `--client-shot-overlays` (retail, Goldshire); open the creature, quest and behavior editors in both modes and confirm they show the dialect's fields; export SQL from the pending changes window and run it against a scratch copy of `world`.
 
@@ -22,12 +22,12 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 
 | Legacy form | Target | Where the legacy form remains |
 |---|---|---|
-| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest and behavior panels; the AC creature-property sections only use `NpcFlags.Gossip` and `NpcFlags.FlightMaster`, which have no descriptor yet), content smokes. Converted as Phases 6–8 reach each area. |
+| Static AC catalogs `InteractionTables`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | `Foundation/` (`NpcInteraction`, `QuestModel`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/AzerothCore/` (the AC quest panel; the AC creature-property sections only use `NpcFlags.Gossip` and `NpcFlags.FlightMaster`, which have no descriptor yet), content smokes. Converted as each area is touched. |
+| `InteractionTables.SmartScripts` / `CreatureText` in the SmartAI row helpers | `SmartCatalog.Scripts` / `CreatureText` | `SmartRule.Key`, `SmartRuleEdits.RulesOf`, `SpeechEdits` and `ContentNames.FillTexts` still name AzerothCore's descriptors. Both dialects share the table names and key columns, so rows resolve by name; switch them when the AC statics go. |
 | `Ac*Source(DatabaseSettings)` constructors | `DBSource.Open(WorldConnection, IClientLookup?)` | Used only by the AC Db tests (`Tests/ACWorldEdit.Tests/Db/`). Switch those tests to `DBSource.Open`, then delete the constructors. |
 | Pre-profile `[database]` settings section | `[database.wrath]` / `[database.retail]` | `SettingsResolver.Connection` falls back to it for AzerothCore. Remove once saved settings have moved to the per-profile sections. |
 | `CreatureContext.View` and `TcView` | one shared creature read model | The two read models (`NpcInteraction`, `TcCreatureView`) sit side by side; sections use the one for their dialect. |
 | AC `SearchPicker` vs TC `TcSection.SearchBox` | one search control | AC's has no length cap or stale-result guard and different status text. |
-| AC-only `AcBehaviorPanel` | shared panel | Phase 8 decides whether it becomes shared. |
 | Export treats a source with no `SourceDialects` entry as AzerothCore | | Unknown sources are AC. |
 
 ## Open work
@@ -54,24 +54,28 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Quest givers | partial | Creatures only, as in AzerothCore; object and item starters are not edited. |
 | Content-smoke equivalent for TC | not started | The TC quest editor is covered by the client smoke (an objective add and undo, validation, rename, screenshots) and unit tests, not by a copy of `--content-smoke`. |
 
-### Phases 8–9
+### Phase 8 refinements
 
 | Item | Status | Notes |
 |---|---|---|
-| SmartAI: `SmartCatalog.Trinity`, TC `smart_scripts` columns, `creature_text.SoundPlayType` | not started | Phase 8. Editor gated off in TC. |
-| Speech via BroadcastText; hotfix export with `hotfix_data` | not started | Phase 8. |
-| Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. |
+| AreaTrigger rules for TC | not started | `source_type` 2 is keyed by AreaTrigger.db2 ID, and server-side triggers run through `areatrigger_template.ScriptName` (source type 12). `TcDBSource.ReadAreaTriggerBehaviorAsync` throws and the AreaTrigger editor stays off. |
+| Other script source types | not started | TC also uses types 1 (object), 3, 5, 10, 11 and 12; only creature rules (0) and the timed action lists (9) they run are read. |
+| Loader rules | partial | `SmartCatalog.Check` mirrors the shared checks (unknown types, ranges, links, named references, SmartAI on the creature) plus TC's deprecated difficulty flags. TC's per-type validation (`IsEventValid`, `CheckUnusedEventParams` / `ActionParams` / `TargetParams`: unused parameters must be 0, ranges, existing spells and creatures) is not reproduced, so the server may reject a row the editor accepts. |
+| Type curation | partial | Of the selectable TC types 49 of 83 events, 57 of 139 actions and 19 of 31 targets have a written sentence; the rest show their name and the parameter labels read from the server comment, and 5 actions and 1 target show raw numbered fields. |
+| Names for parameters | partial | Spells and items are named from the retail client; creatures, objects and quests from the world database. Emotes, text emotes, faction templates, game events, sound kits and the scene or conversation IDs show numbers (no TC catalog behind the pickers). |
+| `Difficulties` | partial | A free text field of difficulty IDs; the values are not checked against Difficulty.db2. |
+| Speech | partial | Lines link an existing broadcast text (hotfixes first, then the client) and edit `Text`, type, language, range, chance, gesture, sound and `SoundPlayType`. Editing a broadcast text itself, which is a `hotfixes.broadcast_text` row plus a `hotfix_data` row with stale checks against both databases, is not started. |
+| Smokes | partial | The TC client smoke (stages 70–72) opens Hogger's behavior and speech, adds a rule, checks validation and `Difficulties`, and undoes. `--behavior-smoke` and `--content-smoke` still run against AzerothCore only; there is no TC copy of the action-list and Then-chain flows beyond unit tests. |
+
+### Phase 9
+
+| Item | Status | Notes |
+|---|---|---|
+| Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. SmartAI waypoint events (`WAYPOINT_REACHED`, path events) are already in the catalog. |
 
 ### Phase plans
 
-Phases 6 and 7 are built; their refinements are in the tables above. Phases 8–9 are not started:
-
-**Phase 8: SmartAI and speech**
-- Generate `SmartCatalog.Trinity` from TrinityCore master `SmartScriptMgr.h`, the same way as the AC catalog. ID ranges differ (TC events ≤90, actions ≤153, targets ≤29; AC 110/242/207), so nothing is reused by ID.
-- `smart_scripts` TC columns: `entryorguid` bigint, `Difficulties`, no `event_param6`, adds `action_param7` and `event/action/target_param_string`. Source types 0, 1, 2, 3, 5, 9, 10, 11, 12 occur; scope 2 is keyed by AreaTrigger.db2 ID.
-- `creature_text` gains `SoundPlayType`. Speech text and search use BroadcastText (`hotfixes.broadcast_text`, then client DB2).
-- Editing broadcast text is a hotfixes export: a schema-qualified `hotfixes.broadcast_text` row plus a `hotfix_data` row (TableHash, RecordId, Status). STALE checks cover both databases.
-- Tests: `SmartCatalogTests` for the TC catalog, `SmartRuleEditsTests` TC columns, a TcDb Goldshire SmartAI creature.
+Phases 6–8 are built; their refinements are in the tables above. Phase 9 is not started:
 
 **Phase 9: waypoints**
 - `TcWaypointSource` reads `waypoint_path(PathId, MoveType, Flags, Velocity, Comment)` and `waypoint_path_node(PathId, NodeId, PositionX/Y/Z, Orientation, Delay)`. Creatures reference paths through `creature_addon`/`creature_template_addon.PathId`.
@@ -83,8 +87,7 @@ Phases 6 and 7 are built; their refinements are in the tables above. Phases 8–
 
 | Item | Status | Notes |
 |---|---|---|
-| `IWorldSchema` | partial | `Smart` comes with Phase 8. |
-| `SmartCatalog`, `QuestModel`, `NpcFlags` behind `AcSchema` | deviates | Static AC data; moved per area in Phases 6–8. |
+| `QuestModel`, `NpcFlags` behind `AcSchema` | deviates | Static AC data; moved per area as it is touched. |
 | `Spatial`/`Restrictions` per dialect | deviates | TC has its own copies in `TcSpawnSource`; AC stays on the shared `WorldReadSession`. |
 | Teleports from `game_tele` | deviates | Reuses `AcTeleportSource` (same schema); no `TcTeleportSource`. |
 | Graveyard healer lookup | deviates | TC reuses `AcGraveyardSource.ReadHealers`. |

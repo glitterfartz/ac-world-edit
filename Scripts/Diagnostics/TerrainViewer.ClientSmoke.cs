@@ -90,7 +90,7 @@ public partial class TerrainViewer
                 }
 
                 bool retail = creatureProps.Context.Dialect == Foundation.WorldDialect.TrinityCore;
-                if ((creatureProps.Section("gossip") is TcGossipSection) != retail || (creatureProps.Section("behavior") == null) != retail)
+                if ((creatureProps.Section("gossip") is TcGossipSection) != retail || creatureProps.Section("behavior") is null || creatureProps.Section("speech") is null)
                 {
                     SmokeFail("CLIENT_SHOT_CREATURE_SECTIONS the window does not list the selected dialect's pages");
                     return;
@@ -512,6 +512,69 @@ public partial class TerrainViewer
                     return;
                 }
                 GD.Print($"CLIENT_SHOT_TEMPLATE_SEARCH_OK entry={found.TemplateId} name={found.Name}");
+                if (creatureProps.Context.TcEditable)
+                {
+                    // The behavior editor on Hogger (4 rules, one linked, speech linked to broadcast text).
+                    questEditor.Visible = false;
+                    creatureProps.OpenEntry(448, "Hogger", "behavior");
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 70;
+                    return;
+                }
+
+                GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
+                GetTree().Quit();
+                return;
+            case 70:
+                var behavior = creatureProps.Context.Behavior;
+                var hoggerScope = new SmartScope(448, SmartScope.Creature);
+                if (behavior.IsLoading || behavior.Entry != 448 || behavior.SmokeRules(hoggerScope).Count == 0)
+                {
+                    if (clientShotFrames++ > 1200) SmokeFail("CLIENT_SHOT_BEHAVIOR_NOT_LOADED " + behavior.SmokeStatus);
+                    return;
+                }
+
+                int rulesBefore = behavior.SmokeRules(hoggerScope).Count;
+                if (rulesBefore != 4 || behavior.SmokeAiName != "SmartAI" || !behavior.SmokeRules(hoggerScope).Any(r => behavior.SmokeDescribe(r).Contains("enters combat", StringComparison.Ordinal)))
+                { SmokeFail($"CLIENT_SHOT_BEHAVIOR_RULES rules={rulesBefore} ai={behavior.SmokeAiName}: " + string.Join(" | ", behavior.SmokeRules(hoggerScope).Select(behavior.SmokeDescribe))); return; }
+                behavior.SmokeAddRule(0);
+                if (behavior.SmokeRules(hoggerScope).Count != rulesBefore + 1)
+                { SmokeFail("CLIENT_SHOT_BEHAVIOR_ADD " + behavior.SmokeStatus); return; }
+                var addedRule = behavior.SmokeRules(hoggerScope).Last();
+                if (behavior.SmokeUpdate(addedRule, "Invalid chance", ("event_chance", 101u)))
+                { SmokeFail("CLIENT_SHOT_BEHAVIOR_VALIDATION accepted a chance of 101%"); return; }
+                if (!behavior.SmokeUpdate(addedRule, "Change difficulties", ("Difficulties", "0,1")) || behavior.SmokeRules(hoggerScope).Last().Row.T("Difficulties") != "0,1")
+                { SmokeFail("CLIENT_SHOT_BEHAVIOR_DIFFICULTIES " + behavior.SmokeStatus); return; }
+                behavior.SmokeHistory(false);
+                behavior.SmokeHistory(false);
+                if (behavior.SmokeRules(hoggerScope).Count != rulesBefore)
+                { SmokeFail("CLIENT_SHOT_BEHAVIOR_UNDO rules=" + behavior.SmokeRules(hoggerScope).Count); return; }
+                clientShotFrames = 0;
+                clientShotCreatureStage = 71;
+                return;
+            case 71:
+                if (clientShotFrames++ < 60) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-behavior.png"));
+                // The expanded card of the first rule: the TrinityCore-only Difficulties field is on it.
+                creatureProps.Context.Behavior.SmokeExpand(creatureProps.Context.Behavior.SmokeRules(new SmartScope(448, SmartScope.Creature))[0].Id);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 73;
+                return;
+            case 73:
+                if (clientShotFrames++ < 60) return;
+                if (creatureProps.Context.Behavior.SmokeControl("Difficulties") == null)
+                { SmokeFail("CLIENT_SHOT_BEHAVIOR_DIFFICULTIES_FIELD missing on the expanded rule"); return; }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-behavior-rule.png"));
+                creatureProps.ShowSection("speech", null);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 72;
+                return;
+            case 72:
+                if (clientShotFrames++ < 60) return;
+                if (creatureProps.Context.Behavior.SmokeLineCount < 2)
+                { SmokeFail("CLIENT_SHOT_SPEECH_LINES lines=" + creatureProps.Context.Behavior.SmokeLineCount); return; }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-speech.png"));
+                GD.Print($"CLIENT_SHOT_BEHAVIOR_OK entry=448 rules=4 lines={creatureProps.Context.Behavior.SmokeLineCount} add/validation/difficulties/undo");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();
                 return;

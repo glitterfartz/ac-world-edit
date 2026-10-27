@@ -5,8 +5,8 @@ namespace ACWorldEdit.Data;
 
 /// <summary>
 /// The TrinityCore world database (with its hotfixes database): one connection shared by the per-area
-/// sources. Spawns, graveyards, teleports, area triggers and creature properties are read here; the
-/// editors that depend on TrinityCore's restructured quest, SmartAI and waypoint tables are not
+/// sources. Spawns, graveyards, teleports, area triggers, creature properties, quests and creature
+/// behavior (SmartAI and speech) are read here; the waypoint tables and AreaTrigger scripts are not
 /// available yet and say so.
 /// </summary>
 public sealed class TcDBSource : IDBSource
@@ -18,6 +18,7 @@ public sealed class TcDBSource : IDBSource
     readonly AcTeleportSource teleports;
     readonly TcInteractionSource interaction;
     readonly TcContentSource content;
+    readonly TcBehaviorSource behavior;
 
     public TcDBSource(WorldConnection connection, IClientLookup? lookup)
     {
@@ -28,6 +29,7 @@ public sealed class TcDBSource : IDBSource
         areaTriggers = new(database, lookup, hotfixes);
         interaction = new(database, lookup, hotfixes);
         content = new(database, lookup);
+        behavior = new(database, lookup, hotfixes);
         // game_tele has the same schema in both servers.
         teleports = new(database);
     }
@@ -45,11 +47,11 @@ public sealed class TcDBSource : IDBSource
     public Task<TeleportLocation[]> ReadTeleportsAsync(CancellationToken token) => teleports.ReadAsync(token);
     public Task<WaypointRegionResult> ReadWaypointsAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token) => throw Unsupported("Waypoints");
     public Task<ContentSnapshot> ReadQuestAsync(uint quest, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => content.ReadQuestAsync(quest, draftKeys, effective, catalog, token);
-    public Task<ContentSnapshot> ReadBehaviorAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
-    public Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
+    public Task<ContentSnapshot> ReadBehaviorAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => behavior.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
+    public Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("AreaTrigger rules");
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token) => content.SearchAsync(kind, term, token);
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token) => interaction.FindBroadcastAsync(term, token);
-    public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => throw Unsupported("The behavior editor");
+    public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => behavior.UsedActionListsAsync(from, to, token);
     public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => interaction.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
     public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => interaction.MenuExistsAsync(menuId, token);
     public Task<bool> PoiExistsAsync(uint poiId, CancellationToken token) => interaction.PoiExistsAsync(poiId, token);

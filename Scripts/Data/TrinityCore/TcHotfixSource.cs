@@ -92,6 +92,34 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return texts;
     }
 
+    /// <summary>Broadcast texts whose male or female text contains the term, newest build of an ID first, bounded.</summary>
+    public async Task<IReadOnlyList<(uint Id, string Text)>> SearchBroadcastTextsAsync(string term, int limit, CancellationToken token)
+    {
+        if (!Available)
+        {
+            return [];
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("SELECT ID,CASE WHEN COALESCE(Text,'')<>'' THEN Text ELSE COALESCE(Text1,'') END FROM broadcast_text WHERE Text LIKE @s ESCAPE '=' OR Text1 LIKE @s ESCAPE '=' ORDER BY CHAR_LENGTH(COALESCE(Text,'')),ID,VerifiedBuild DESC LIMIT @n", connection, transaction);
+        command.Parameters.AddWithValue("@s", "%" + term.Replace("=", "==", StringComparison.Ordinal).Replace("%", "=%", StringComparison.Ordinal).Replace("_", "=_", StringComparison.Ordinal) + "%");
+        command.Parameters.AddWithValue("@n", limit);
+        List<(uint, string)> results = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            // An ID can have several builds; the newest comes first and wins.
+            uint id = Convert.ToUInt32(reader.GetValue(0));
+            if (results.All(r => r.Item1 != id))
+            {
+                results.Add((id, reader.GetString(1)));
+            }
+        }
+
+        return results;
+    }
+
     /// <summary>
     /// The server's item_sparse overrides for these item IDs as (name, quality); the highest build of an
     /// ID wins. An item the table does not list keeps the client's data.

@@ -56,6 +56,63 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task BehaviorSnapshotReadsHoggersRulesLinkAndSpeech()
+    {
+        var source = Open();
+        var smart = source.Schema.Smart;
+        var snapshot = await source.ReadBehaviorAsync(448, 0, [], rows => rows, null, CancellationToken.None);
+        var scope = new SmartScope(448, SmartScope.Creature);
+        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, scope);
+        Assert.Equal("Hogger", snapshot.CreatureName);
+        Assert.Equal(4, rules.Count);
+        Assert.Contains(rules, r => r.Event == SmartCatalog.LinkEvent && r.Id != 0);
+        Assert.Equal("SmartAI", snapshot.Rows.Get(smart.CreatureAi, "448")!.T("AIName"));
+        Assert.Empty(smart.Check(scope, rules, snapshot.Names, snapshot.Rows.Get(smart.CreatureAi, "448"), 448).Where(i => i.Error));
+
+        // Every rule reads as a sentence (no unknown types) and its row round-trips the TrinityCore table.
+        foreach (var rule in rules)
+        {
+            rule.Row.Validate(smart.Scripts);
+            Assert.DoesNotContain("(unknown)", smart.Describe(rule, snapshot.Names, 448), StringComparison.Ordinal);
+        }
+
+        // Speech: the lines carry their SoundPlayType and the broadcast texts they link are named.
+        var lines = snapshot.Rows.All(smart.CreatureText).Where(t => t.U("CreatureID") == 448).ToList();
+        Assert.NotEmpty(lines);
+        lines.ForEach(line => line.Validate(smart.CreatureText));
+        Assert.Contains("Grrrr", (snapshot.Names.Broadcasts.TryGetValue(1870, out var broadcast) ? broadcast : ""), StringComparison.Ordinal);
+        Assert.Contains("bones to gnaw", snapshot.Names.Text(448, 0) ?? "", StringComparison.Ordinal);
+    }
+
+    [TcDbFact]
+    public async Task BehaviorSnapshotLoadsTimedActionListsAndSeesDraftedRules()
+    {
+        var source = Open();
+        var smart = source.Schema.Smart;
+        // Scourge Plague Spreader runs timed action lists; they come with the snapshot.
+        var snapshot = await source.ReadBehaviorAsync(25349, 0, [], rows => rows, null, CancellationToken.None);
+        Assert.Contains(snapshot.Rows.All(smart.Scripts), r => r.U("source_type") == SmartScope.ActionList);
+        var used = await source.UsedActionListsAsync(2534900, 2534999, CancellationToken.None);
+        Assert.All(used, id => Assert.InRange(id, 2534900, 2534999));
+
+        // A drafted rule on another creature is loaded by its key even though it is not in the database.
+        var drafted = smart.NewRow(new SmartScope(448, SmartScope.Creature), 40, 4, 1, 1, "draft");
+        var withDraft = await source.ReadBehaviorAsync(448, 0, [(smart.Scripts, smart.Scripts.KeyOf(drafted))], rows => rows, null, CancellationToken.None);
+        Assert.Null(withDraft.Rows.Get(smart.Scripts, smart.Scripts.KeyOf(drafted)));
+        await Assert.ThrowsAsync<InvalidDataException>(() => source.ReadBehaviorAsync(4_000_000_000, 0, [], rows => rows, null, CancellationToken.None));
+    }
+
+    [TcDbFact]
+    public async Task BroadcastSearchFindsTextFromTheHotfixesTable()
+    {
+        var source = Open();
+        var byText = await source.SearchBroadcastAsync("fresh meat", CancellationToken.None);
+        Assert.Contains(byText, b => b.Id == 1870);
+        Assert.Equal("Grrrr... fresh meat!", Assert.Single(await source.SearchBroadcastAsync("1870", CancellationToken.None)).Name);
+        Assert.Empty(await source.SearchBroadcastAsync("", CancellationToken.None));
+    }
+
+    [TcDbFact]
     public async Task CreaturesNearGoldshireCarryTheirDifficultyAndPhase()
     {
         var result = await Open().ReadCreaturesAsync(Elwynn, Normal, Goldshire, "", CancellationToken.None);

@@ -127,15 +127,30 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         return new InteractionSnapshot(entry, guid, template.T("name"), template.T("ScriptName"), template.T("AIName"), spawns, rows, [], new(), lookup, database.SourceKey);
     }
 
-    /// <summary>Exact-ID lookup for editable broadcast references, hotfixes before client DB2.</summary>
+    /// <summary>
+    /// Broadcast text for the pickers: an ID gives that text (hotfixes before client DB2); other text
+    /// searches the hotfixes table and the client's BroadcastText.db2 by (partial) text, hotfixes first.
+    /// </summary>
     public async Task<IReadOnlyList<(uint Id, string Name)>> FindBroadcastAsync(string term, CancellationToken token)
     {
-        if (!uint.TryParse(term, out uint id))
-            throw new DatabaseFeatureException("TrinityCore broadcast lookup requires an exact ID.");
-        var texts = await hotfixes.ReadBroadcastTextsAsync(new[] { id }, token).ConfigureAwait(false);
-        if (texts.TryGetValue(id, out var text)) return new[] { (id, text.Male) };
-        if (client?.BroadcastText(id) is { } male) return new[] { (id, male) };
-        return Array.Empty<(uint, string)>();
+        if (uint.TryParse(term, out uint id))
+        {
+            var texts = await hotfixes.ReadBroadcastTextsAsync(new[] { id }, token).ConfigureAwait(false);
+            if (texts.TryGetValue(id, out var text)) return new[] { (id, text.Male) };
+            if (client?.BroadcastText(id) is { } male) return new[] { (id, male) };
+            return Array.Empty<(uint, string)>();
+        }
+
+        if (term.Trim().Length == 0)
+            return Array.Empty<(uint, string)>();
+        var found = new List<(uint Id, string Name)>(await hotfixes.SearchBroadcastTextsAsync(term.Trim(), DbLimits.MaxSearch, token).ConfigureAwait(false));
+        foreach (var hit in client?.SearchBroadcastText(term.Trim(), DbLimits.MaxSearch) ?? [])
+        {
+            if (found.Count >= DbLimits.MaxSearch) break;
+            if (found.All(f => f.Id != hit.Id)) found.Add((hit.Id, hit.Text));
+        }
+
+        return found;
     }
 
     public async Task<bool> PoiExistsAsync(uint poi, CancellationToken token)
