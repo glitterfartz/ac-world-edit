@@ -205,6 +205,16 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task TheHotfixesItemSparseOverridesReadByIdAndSkipUnlistedItems()
+    {
+        var source = new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings);
+        var items = await source.ReadItemOverridesAsync([165657u, 2589u], CancellationToken.None);
+        Assert.Equal("Free T-Shirt", items[165657].Name);
+        Assert.Equal(3, items[165657].Quality);
+        Assert.False(items.ContainsKey(2589));
+    }
+
+    [TcDbFact]
     public async Task TheHotfixesCreatureDisplaysReadWithTheirModelFiles()
     {
         var source = new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings);

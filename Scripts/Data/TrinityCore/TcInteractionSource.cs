@@ -101,11 +101,24 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
             lookup.ReferenceVendors[list] = listed.All(TcTables.Vendor).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item")).ToList();
         }
 
-        foreach (var item in final.All(TcTables.Vendor).Concat(lookup.ReferenceVendors.Values.SelectMany(l => l)).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct())
+        var vendorItems = final.All(TcTables.Vendor).Concat(lookup.ReferenceVendors.Values.SelectMany(l => l)).Where(r => r.U("type") == 1 && r.I("item") > 0).Select(r => (uint)r.I("item")).Distinct().ToList();
+        IReadOnlyDictionary<uint, (string Name, int Quality)> overrides;
+        try
+        {
+            overrides = await hotfixes.ReadItemOverridesAsync(vendorItems, token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            overrides = new Dictionary<uint, (string, int)>();
+        }
+
+        // The hotfixes database overrides the client's name and quality, as the server sends them.
+        foreach (uint item in vendorItems)
         {
             if (client?.Item(item) is { } info)
             {
-                lookup.Items[item] = new ItemInfo(info.Id, info.Name, (int)info.Quality, 0, 0);
+                var over = overrides.GetValueOrDefault(item);
+                lookup.Items[item] = new ItemInfo(info.Id, over.Name is { Length: > 0 } name ? name : info.Name, overrides.ContainsKey(item) ? over.Quality : (int)info.Quality, 0, 0);
             }
         }
 

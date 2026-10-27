@@ -92,6 +92,36 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return texts;
     }
 
+    /// <summary>
+    /// The server's item_sparse overrides for these item IDs as (name, quality); the highest build of an
+    /// ID wins. An item the table does not list keeps the client's data.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<uint, (string Name, int Quality)>> ReadItemOverridesAsync(IReadOnlyCollection<uint> ids, CancellationToken token)
+    {
+        var items = new Dictionary<uint, (string, int)>();
+        if (!Available || ids.Count == 0)
+        {
+            return items;
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("", connection, transaction);
+        string list = string.Join(',', ids.Distinct().Take(DbLimits.MaxRows).Select((id, i) =>
+        {
+            command.Parameters.AddWithValue($"@id{i}", id);
+            return $"@id{i}";
+        }));
+        command.CommandText = $"SELECT ID,COALESCE(Display,''),OverallQualityID FROM item_sparse WHERE ID IN ({list}) ORDER BY ID,VerifiedBuild";
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            items[Convert.ToUInt32(reader.GetValue(0))] = (reader.GetString(1), Convert.ToInt32(reader.GetValue(2)));
+        }
+
+        return items;
+    }
+
     /// <summary>The server's area_trigger overrides, in the shape the client lookup returns.</summary>
     public async Task<IReadOnlyList<ClientAreaTrigger>> ReadAreaTriggersAsync(CancellationToken token)
     {

@@ -32,10 +32,12 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         if (editable) spec = spec with { Fields = spec.Fields.Where(f => f.Column != "incrtime").Select(f => f.Column == "maxcount" ? f with { Label = "Stock / restock", Tip = "Item stock (0 unlimited) and restock seconds, or currency quantity. Save both together." } : f).ToArray() };
         new PageRenderer(Ctx).RenderItems(this, spec, Ctx.Effective, v.Entry, editable, row =>
         {
+            // Name and quality come from the snapshot (hotfixes over the client); the icon from the client item.
+            var shown = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Snapshot?.Lookup.Item((uint)row.I("item")) : null;
             var info = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Lookup()?.Item((uint)row.I("item")) : null;
             if (row.I("item") < 0) return SharedList((uint)-row.I("item"));
-            string name = row.U("type") == 2 ? $"Currency {row.I("item")}" : info?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : $"Item {row.I("item")}";
-            var label = ClientStyle.Text(name, 14, info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
+            string name = row.U("type") == 2 ? $"Currency {row.I("item")}" : shown?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : info?.Name is { Length: > 0 } clientName ? $"{clientName} ({row.I("item")})" : $"Item {row.I("item")}";
+            var label = ClientStyle.Text(name, 14, shown != null ? ClientStyle.Quality(shown.Quality) : info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
             if (info is not { IconFileId: > 0 }) return label;
             // The client names an item's icon by FileDataID, which the retail file store reads like a path.
             var line = new HBoxContainer();
