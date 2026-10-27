@@ -201,11 +201,11 @@ public sealed class CreatureContext
         try
         {
             var source = DBSource.Open(Connection(), Lookup());
-            // The Wrath DBC catalog; a retail client serves names through Lookup instead.
-            Catalog = Dialect == WorldDialect.AzerothCore ? await ContentEditorWindow.LoadCatalog(Store()) : null;
-            if (Catalog == null && Store() != null && Dialect == WorldDialect.AzerothCore)
+            var (catalog, note) = await CreatureDialects.For(Dialect).LoadCatalog(Store());
+            Catalog = catalog;
+            if (note != null)
             {
-                Status = "Client spell/item tables unavailable; names and icons limited.";
+                Status = note;
             }
 
             SourceKey = source.SourceKey;
@@ -251,22 +251,12 @@ public sealed class CreatureContext
         }
 
         Effective = Draft?.Effective(SourceKey, Snapshot.Rows) ?? Snapshot.Rows;
-        if (Dialect == WorldDialect.TrinityCore)
-        {
-            View = null;
-            TcView = TcCreatureView.Build(Snapshot.Entry, Effective, Snapshot.Lookup);
-            SummaryChanged?.Invoke(TcView.Summary());
-            Redraw();
-            return;
-        }
-
-        TcView = null;
-        View = BuildView(Effective);
-        SummaryChanged?.Invoke(Summary(View));
+        var built = CreatureDialects.For(Dialect).Build(Snapshot, Effective);
+        View = built.Ac;
+        TcView = built.Tc;
+        SummaryChanged?.Invoke(built.Summary);
         Redraw();
     }
-
-    NpcInteraction BuildView(RowSet rows) => NpcInteraction.Build(Snapshot!.Entry, Snapshot.Guid, Snapshot.Name, Snapshot.ScriptName, Snapshot.AIName, Snapshot.SpawnCount, Snapshot.Rows, rows, Snapshot.Lookup, Snapshot.Scripts, Snapshot.Conditions);
 
     /// <summary>
     /// Validate and record one command. Rejected when the row edits break the column rules or
@@ -280,10 +270,8 @@ public sealed class CreatureContext
         }
 
         var client = Lookup();
-        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows =>
-            Dialect == WorldDialect.TrinityCore
-                ? TcVendorRules.Check(Snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null).Concat(TcGossipRules.Check(rows)).Concat(TcTrainerRules.Check(rows, client == null ? null : id => client.SpellName(id) != null)).Concat(TcQuestLinkRules.Check(rows, id => Snapshot.Lookup.Quest(id) != null)).Concat(TcStatRules.Check(rows))
-                : BuildView(rows).Issues);
+        var dialect = CreatureDialects.For(Dialect);
+        var (ok, message) = Drafts.Commit(this, SourceKey, Snapshot.Rows, Effective, label, edits.ToArray(), rows => dialect.Check(Snapshot, rows, client));
         Status = message;
         if (ok)
         {
