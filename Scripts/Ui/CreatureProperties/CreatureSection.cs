@@ -62,6 +62,19 @@ public abstract partial class CreatureSection : VBoxContainer
     /// <summary>Rebuild the content from the context. Cheap enough to redo after every change.</summary>
     public abstract void Refresh();
 
+    /// <summary>The line shown while the creature's rows load, or when no creature is selected.</summary>
+    protected Label Placeholder() => ClientStyle.Text(Ctx.Target != null ? "Loading…" : "Select a creature in the world.", 15, ClientStyle.Faded);
+
+    /// <summary>Move a panel the context shares (behavior, quest) into <paramref name="parent"/>; it can only live in one place.</summary>
+    protected static void Host(Control panel, Control parent)
+    {
+        if (panel.GetParent() != parent)
+        {
+            panel.GetParent()?.RemoveChild(panel);
+            parent.AddChild(panel);
+        }
+    }
+
     protected virtual void Clear()
     {
         foreach (var child in GetChildren())

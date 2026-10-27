@@ -14,7 +14,7 @@ public sealed partial class AcSpeechSection(CreatureContext ctx) : CreatureSecti
 
     public override void OnShown(object? argument)
     {
-        AcBehaviorSection.Host(Ctx, this);
+        Host(Ctx.Behavior, this);
         Ctx.EnsureBehaviorOpen();
         Ctx.Behavior.ShowSpeech();
     }

@@ -43,7 +43,7 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
         }
         else
         {
-            body.AddChild(ClientStyle.Text(Ctx.Target != null ? "Loading…" : "Select a creature in the world.", 15, ClientStyle.Faded));
+            body.AddChild(Placeholder());
         }
     }
 

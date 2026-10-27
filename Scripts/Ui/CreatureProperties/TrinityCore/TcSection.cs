@@ -25,7 +25,7 @@ public abstract partial class TcSection(CreatureContext ctx) : CreatureSection(c
         }
         else
         {
-            AddChild(ClientStyle.Text(Ctx.Target != null ? "Loading…" : "Select a creature in the world.", 15, ClientStyle.Faded));
+            AddChild(Placeholder());
         }
     }
 

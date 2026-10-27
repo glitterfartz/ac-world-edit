@@ -65,12 +65,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         }
 
         var panel = Ctx.Quest;
-        if (panel.GetParent() != detail)
-        {
-            panel.GetParent()?.RemoveChild(panel);
-            detail.AddChild(panel);
-        }
-
+        Host(panel, detail);
         if (openedQuest != questDetail)
         {
             openedQuest = questDetail;

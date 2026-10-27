@@ -16,24 +16,13 @@ public sealed partial class AcBehaviorSection(CreatureContext ctx) : CreatureSec
 
     public override void OnShown(object? argument)
     {
-        Host(Ctx, this);
+        Host(Ctx.Behavior, this);
         Ctx.EnsureBehaviorOpen();
         Ctx.Behavior.ShowRules();
     }
 
     public override void Refresh()
     {
-    }
-
-    /// <summary>Move the shared behavior panel into a section (it can only live in one).</summary>
-    public static void Host(CreatureContext ctx, Control section)
-    {
-        var panel = ctx.Behavior;
-        if (panel.GetParent() != section)
-        {
-            panel.GetParent()?.RemoveChild(panel);
-            section.AddChild(panel);
-        }
     }
 }
 
