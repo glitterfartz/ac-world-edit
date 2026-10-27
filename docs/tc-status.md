@@ -17,7 +17,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 | Legacy form | Target | Where the legacy form remains |
 |---|---|---|
-| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | Remaining references: `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest, behavior and creature-property panels), content smokes. Converted as Phases 6–8 reach each area. |
+| Static AC catalogs `InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags` | `IDBSource.Schema` / `IWorldSchema` (descriptors added per phase) | Remaining references: `Foundation/` (`NpcInteraction`, `QuestModel`, `SmartBehavior`, `SmartRuleEdits`, `SpeechEdits`), `Scripts/Data/AzerothCore/`, `Scripts/Ui/` (quest and behavior panels; the AC creature-property sections only use `NpcFlags.Gossip` and `NpcFlags.FlightMaster`, which have no descriptor yet), content smokes. Converted as Phases 6–8 reach each area. |
 | `Ac*Source(DatabaseSettings)` constructors | `DBSource.Open(WorldConnection, IClientLookup?)` | Used only by the AC Db tests (`Tests/ACWorldEdit.Tests/Db/`). To remove: switch those tests to `DBSource.Open`, then delete the constructors. |
 | Pre-profile `[database]` settings section | `[database.wrath]` / `[database.retail]` | `SettingsResolver.Connection` falls back to it for AzerothCore. To remove once saved settings have moved to the per-profile sections. |
 

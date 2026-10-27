@@ -20,9 +20,12 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
     public override string Title => "Class / Level / Stats";
     public override string IconPath => "Interface/Icons/INV_Sword_04.blp";
 
+    /// <summary>The creature_template level, class and stat column group.</summary>
+    TableSchema StatsTable => Ctx.Schema.Tables.Find("creature_stats");
+
     protected override void Populate(NpcInteraction v)
     {
-        var stats = effective.Get(InteractionTables.CreatureStats, v.Entry.ToString(CultureInfo.InvariantCulture));
+        var stats = effective.Get(StatsTable, v.Entry.ToString(CultureInfo.InvariantCulture));
         if (stats == null)
         {
             body.AddChild(ClientStyle.Text("This creature has no stats row.", 14, ClientStyle.Faded));
@@ -143,7 +146,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
         picker.ItemSelected += i =>
         {
             uint id = (uint)picker.GetItemId((int)i);
-            Commit($"Change class to {picker.GetItemText((int)i)}", [Update(InteractionTables.CreatureStats, stats, stats.With("unit_class", id))]);
+            Commit($"Change class to {picker.GetItemText((int)i)}", [Update(StatsTable, stats, stats.With("unit_class", id))]);
         };
         return picker;
     }
@@ -157,7 +160,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
         }
 
         picker.Selected = (int)current;
-        picker.ItemSelected += i => Commit($"Change expansion tier to {Tiers[i]}", [Update(InteractionTables.CreatureStats, stats, stats.With("exp", (uint)i))]);
+        picker.ItemSelected += i => Commit($"Change expansion tier to {Tiers[i]}", [Update(StatsTable, stats, stats.With("exp", (uint)i))]);
         return picker;
     }
 
@@ -179,7 +182,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
                 return;
             }
 
-            Commit($"Change {label.ToLowerInvariant()}", [Update(InteractionTables.CreatureStats, stats, stats.With(column, value))]);
+            Commit($"Change {label.ToLowerInvariant()}", [Update(StatsTable, stats, stats.With(column, value))]);
         });
         return edit;
     }
@@ -201,7 +204,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
                 return;
             }
 
-            Commit($"Change {label.ToLowerInvariant()}", [Update(InteractionTables.CreatureStats, stats, stats.With(column, value))]);
+            Commit($"Change {label.ToLowerInvariant()}", [Update(StatsTable, stats, stats.With(column, value))]);
         });
         return edit;
     }

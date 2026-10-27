@@ -306,7 +306,7 @@ public sealed class CreatureContext
         return ok;
     }
 
-    public Row TemplateRow => Effective.Get(InteractionTables.CreatureTemplate, Snapshot!.Entry.ToString(CultureInfo.InvariantCulture))!;
+    public Row TemplateRow => Effective.Get(Schema.Tables.Find("creature_template"),Snapshot!.Entry.ToString(CultureInfo.InvariantCulture))!;
 
     /// <summary>
     /// Next free ID above the database maximum, earlier reservations in the draft and rows in view.

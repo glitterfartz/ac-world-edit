@@ -29,7 +29,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
 
     protected override void Populate(NpcInteraction v)
     {
-        var details = effective.Get(InteractionTables.CreatureDetails, v.Entry.ToString(CultureInfo.InvariantCulture));
+        var details = effective.Get(Ctx.Schema.Tables.Find("creature_details"),v.Entry.ToString(CultureInfo.InvariantCulture));
         if (details == null)
         {
             body.AddChild(ClientStyle.Text("This creature has no template row.", 14, ClientStyle.Faded));
@@ -133,7 +133,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
 
     async Task SetRootMenu(uint menu)
     {
-        if (menu != 0 && !effective.All(InteractionTables.GossipMenu).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
+        if (menu != 0 && !effective.All(Ctx.Schema.GossipPage.Menus.Table).Any(r => r.U("MenuID") == menu) && !snapshot!.Lookup.MenuExists(menu))
         {
             if (!await DBSource.Open(Connection()).MenuExistsAsync(menu, CancellationToken.None))
             {
@@ -145,8 +145,10 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             snapshot!.Lookup.Menus.Add(menu);
         }
 
-        Commit("Change gossip menu", [Update(InteractionTables.CreatureTemplate, TemplateRow, TemplateRow.With("gossip_menu_id", menu))]);
+        Commit("Change gossip menu", [Update(Ctx.Schema.Tables.Find("creature_template"),TemplateRow, TemplateRow.With("gossip_menu_id", menu))]);
     }
+
+    TableSchema SpellClick => Ctx.Schema.Tables.Find("npc_spellclick_spells");
 
     void RenderSpellClickEditor(NpcInteraction v)
     {
@@ -156,11 +158,11 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             {
                 Text = $"Remove {click.Name}"
             };
-            remove.Pressed += () => Commit($"Remove spell click {click.SpellId}", [Delete(InteractionTables.SpellClick, click.Row)]);
+            remove.Pressed += () => Commit($"Remove spell click {click.SpellId}", [Delete(SpellClick,click.Row)]);
             body.AddChild(remove);
         }
 
         SearchPicker("click", "Add spell click: spell name or ID…", term => Task.FromResult<IReadOnlyList<(string, Action)>>(
-            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add spell click {s.Id}", [Insert(InteractionTables.SpellClick, Row.Of(("npc_entry", v.Entry), ("spell_id", s.Id), ("cast_flags", 1u), ("user_type", 0u)))])))).ToList()));
+            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add spell click {s.Id}", [Insert(SpellClick,Row.Of(("npc_entry", v.Entry), ("spell_id", s.Id), ("cast_flags", 1u), ("user_type", 0u)))])))).ToList()));
     }
 }
