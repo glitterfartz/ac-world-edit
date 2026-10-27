@@ -50,7 +50,6 @@
   },
   "enabledPlugins": {
     "claude-md-management@anthropic-plugin-directory": false,
-    "code-simplifier@anthropic-plugin-directory": false,
     "feature-dev@anthropic-plugin-directory": false,
     "csharp-lsp@claude-plugins-official": true
   }
