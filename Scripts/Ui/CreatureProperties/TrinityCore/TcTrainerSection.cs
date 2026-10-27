@@ -51,7 +51,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
                 continue;
             }
 
-            bool editable = Ctx.TcTrainerEditable;
+            bool editable = Ctx.TcEditable;
             if (trainer.SharedBy > 1)
                 Line($"Shared by {trainer.SharedBy} creature bindings: changes here affect all of them.", ClientStyle.Warning, 12, block);
             if (editable) TrainerFields(trainer, block);

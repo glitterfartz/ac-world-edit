@@ -95,7 +95,7 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-gossip.png"));
-                if (creatureProps.Context.TcGossipEditable)
+                if (creatureProps.Context.TcEditable)
                 {
                     var openMenu = creatureProps.Section("gossip")!.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text.StartsWith("Open menu "));
                     if (openMenu == null) { SmokeFail("CLIENT_SHOT_GOSSIP_SUBMENU_MISSING"); return; }
@@ -192,7 +192,7 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
-                if (creatureProps.Context.TcTemplateEditable)
+                if (creatureProps.Context.TcEditable)
                 {
                     var addDifficulty = creatureProps.Section("template")!.FindChild("AddDifficulty", true, false) as OptionButton;
                     if (addDifficulty == null || addDifficulty.ItemCount < 2) { SmokeFail("CLIENT_SHOT_DIFFICULTY_ADD_MISSING"); return; }
@@ -259,7 +259,7 @@ public partial class TerrainViewer
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
                 GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
-                if (creatureProps.Context.TcVendorEditable)
+                if (creatureProps.Context.TcEditable)
                 {
                     var search = creatureProps.Section("vendor")!.FindChild("Search_item", true, false) as LineEdit;
                     if (search == null) { SmokeFail("CLIENT_SHOT_VENDOR_SEARCH_MISSING"); return; }
@@ -319,7 +319,7 @@ public partial class TerrainViewer
                     SmokeFail("CLIENT_SHOT_TRAINER_EMPTY Smith Argus has no trainer spells");
                     return;
                 }
-                if (creatureProps.Context.TcTrainerEditable && creatureProps.Context.TcView?.Trainers.FirstOrDefault(t => t.Spells.Length > 0) is { } tcTrainer)
+                if (creatureProps.Context.TcEditable && creatureProps.Context.TcView?.Trainers.FirstOrDefault(t => t.Spells.Length > 0) is { } tcTrainer)
                 {
                     var trainerCtx = creatureProps.Context;
                     var spells = trainerCtx.Schema.TrainerPage.Spells;
@@ -341,7 +341,7 @@ public partial class TerrainViewer
             case 7:
                 if (!ShotCreatureReady(240)) return;
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-stats.png"));
-                if (creatureProps.Context.TcTemplateEditable)
+                if (creatureProps.Context.TcEditable)
                 {
                     var sc = creatureProps.Context;
                     var captions = creatureProps.Section("stats")!.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
@@ -377,7 +377,7 @@ public partial class TerrainViewer
                     return;
                 }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-quests.png"));
-                if (creatureProps.Context.TcQuestsEditable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
+                if (creatureProps.Context.TcEditable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
                 {
                     // Unlink the first quest he starts, then undo: the link must come back unchanged.
                     var qc = creatureProps.Context;

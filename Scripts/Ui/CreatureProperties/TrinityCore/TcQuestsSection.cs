@@ -14,7 +14,7 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
     public override string Id => "quests";
     public override string Title => "Quests";
     public override string Badge => Ctx.TcView is { } v && v.Starts.Length + v.Ends.Length > 0 ? $"{v.Starts.Length}/{v.Ends.Length}" : "";
-    public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcQuestsEditable || v.Starts.Length + v.Ends.Length > 0);
+    public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcEditable || v.Starts.Length + v.Ends.Length > 0);
     string searchTerm = "";
     IReadOnlyList<(uint Id, string Title, int Level)> results = [];
     int searchGeneration;
@@ -33,7 +33,7 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
         foreach (var issue in TcQuestLinkRules.Check(Ctx.Effective))
             Line(issue.Message, ClientStyle.Warning, 11);
 
-        bool editable = Ctx.TcQuestsEditable;
+        bool editable = Ctx.TcEditable;
         void List(string title, ItemListSpec spec, TcQuestLink[] quests)
         {
             Heading($"{title} ({quests.Length})");

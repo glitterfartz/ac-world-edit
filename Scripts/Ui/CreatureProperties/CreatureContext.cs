@@ -89,20 +89,12 @@ public sealed class CreatureContext
 
     /// <summary>
     /// The sections show editors whenever a content draft is open; otherwise they are read-only.
-    /// AzerothCore sections use this gate; TC sections enable their implemented editors separately.
+    /// AzerothCore sections use this gate, TrinityCore sections <see cref="TcEditable"/>.
     /// </summary>
     public bool Editable => Draft != null && Dialect == WorldDialect.AzerothCore;
 
-    /// <summary>TrinityCore sections turn editing on one at a time.</summary>
-    public bool TcTemplateEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
-
-    public bool TcGossipEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
-
-    public bool TcVendorEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
-
-    public bool TcTrainerEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
-
-    public bool TcQuestsEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+    /// <summary>The TrinityCore sections' editing gate (template, stats, gossip, vendor, trainer, quest links).</summary>
+    public bool TcEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
 
     public IWorldSchema Schema => WorldSchemas.For(Dialect);
 

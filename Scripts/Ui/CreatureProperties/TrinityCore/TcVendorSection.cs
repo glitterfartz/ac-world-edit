@@ -12,7 +12,7 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
     public override string Id => "vendor";
     public override string Title => "Vendor";
     public override string Badge => Ctx.TcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString(CultureInfo.InvariantCulture) : "";
-    public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcVendorEditable || v.Vendor.Length > 0);
+    public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcEditable || v.Vendor.Length > 0);
     string searchTerm = "";
     IReadOnlyList<ClientItem> results = [];
     int searchGeneration;
@@ -28,7 +28,7 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
 
     protected override void Populate(TcCreatureView v)
     {
-        bool editable = Ctx.TcVendorEditable;
+        bool editable = Ctx.TcEditable;
         if (editable) AddControls(v.Entry);
         if (v.Vendor.Length == 0) Line("This creature sells nothing.", ClientStyle.Faded);
         else Heading($"{v.Vendor.Length} item(s) for sale");

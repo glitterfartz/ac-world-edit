@@ -23,13 +23,13 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
 
     protected override void Populate(TcCreatureView v)
     {
-        if (Ctx.TcTemplateEditable)
+        if (Ctx.TcEditable)
         {
             Line($"These apply to every spawn of entry {v.Entry}.", ClientStyle.Warning, 11);
         }
 
         renderer.After["multipliers"] = () => Results(v);
-        renderer.Render(this, TcStatsPage.Page, Ctx.Effective, v.Entry, Ctx.TcTemplateEditable);
+        renderer.Render(this, TcStatsPage.Page, Ctx.Effective, v.Entry, Ctx.TcEditable);
     }
 
     void Results(TcCreatureView v)

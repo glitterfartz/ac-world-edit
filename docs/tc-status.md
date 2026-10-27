@@ -23,7 +23,7 @@ Status values: **done**, **partial**, **not started**, **deviates** (built diffe
 
 ### Gated or inconsistent right now
 
-- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, stats, vendor, gossip, trainer and quest-link pages (`CreatureContext.TcTemplateEditable` / `TcVendorEditable` / `TcGossipEditable` / `TcTrainerEditable` / `TcQuestsEditable`); quest content has no TC editor until Phase 7.
+- TrinityCore mode: quest and behavior editors are off (`TerrainViewer.ContentEditors`), the waypoint layer is off, and creature properties edit the template, stats, vendor, gossip, trainer and quest-link pages (all behind `CreatureContext.TcEditable`); quest content has no TC editor until Phase 7.
 - Export treats a source with no `SourceDialects` entry as AzerothCore.
 
 ## Where work stopped

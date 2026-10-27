@@ -11,7 +11,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
     public override string Id => "gossip";
     public override string Title => "Gossip";
     public override string Badge => Ctx.TcView is { } v && v.Menus.Length > 0 ? v.Menus.Count(m => m.Root).ToString(CultureInfo.InvariantCulture) : "";
-    public override bool HasContent => Ctx.TcGossipEditable || Ctx.TcView is { Menus.Length: > 0 };
+    public override bool HasContent => Ctx.TcEditable || Ctx.TcView is { Menus.Length: > 0 };
     bool greetingExpanded;
     int generation;
     uint? selected;
@@ -40,7 +40,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
 
     protected override void Populate(TcCreatureView v)
     {
-        bool editable = Ctx.TcGossipEditable;
+        bool editable = Ctx.TcEditable;
         var page = Ctx.Schema.GossipPage;
         if (v.Menus.Length == 0)
         {
