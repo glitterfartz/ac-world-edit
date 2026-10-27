@@ -41,8 +41,9 @@ public readonly record struct CreatureDisplayHotfix(uint Id, uint ModelId, float
 public sealed class RetailCreatureCatalog : ICreatureCatalog
 {
     // Geoset groups whose variant 1 is an empty stub on character models: ears (7) and the head (32).
-    // A display without a choice for them shows variant 2, the ears and head the client draws.
-    static readonly IReadOnlyDictionary<int, int> DefaultVariants = new Dictionary<int, int> { [7] = 2, [32] = 2 };
+    // A display without a choice for them shows variant 2, the ears and head the client draws. The eye
+    // glow (17) is hidden unless a choice (a death knight's) names a variant.
+    static readonly IReadOnlyDictionary<int, int> DefaultVariants = new Dictionary<int, int> { [7] = 2, [17] = 0, [32] = 2 };
 
     // Loaded up front: the catalog is built on the open worker, and Db2Tables is not thread-safe.
     readonly IDBCDStorage displays, models, extras, geosets, materials;
@@ -145,13 +146,13 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
     /// Apply a humanoid's customization choices. An element applies when it names no related choice or
     /// its related choice is also chosen (a hair colour's texture depends on the skin colour, say).
     /// Geoset elements set their group's variant; material elements whose texture target is the hair
-    /// (type 6) or eyes (type 19) name those textures. Skin targets are already in the baked skin.
+    /// (type 6), eyes (type 19), the skin extra (type 8) or the second extra (type 20) name those textures. Skin targets are already in the baked skin.
     /// </summary>
     CreatureAppearance Customize(CreatureAppearance appearance, int extraId)
     {
         var chosen = choicesByExtra.Value[extraId].ToHashSet();
         var variants = new Dictionary<int, int>(DefaultVariants);
-        string? hair = null, eyes = null;
+        string? hair = null, eyes = null, fur = null, extra = null;
         foreach (var element in chosen.SelectMany(c => elementsByChoice.Value[c]))
         {
             int related = element.FieldAs<int>("RelatedChrCustomizationChoiceID");
@@ -177,10 +178,18 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
                 {
                     eyes = AssetRef.FromFileId(file);
                 }
+                else if (type == 8)
+                {
+                    fur = AssetRef.FromFileId(file);
+                }
+                else if (type == 20)
+                {
+                    extra = AssetRef.FromFileId(file);
+                }
             }
         }
 
-        return appearance with { HairTexture = hair, EyeTexture = eyes, Geosets = GeosetVariants.From(variants) };
+        return appearance with { HairTexture = hair, EyeTexture = eyes, FurTexture = fur, ExtraTexture = extra, Geosets = GeosetVariants.From(variants) };
     }
 
     /// <summary>The pre-baked skin of a humanoid display (the HD bake when there is one), or null.</summary>

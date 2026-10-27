@@ -10,7 +10,7 @@ namespace ACWorldEdit.Assets;
 /// (type 19) and the variant shown in each geoset group, which replaces the hair-geoset rule. Equipment
 /// is not composed.
 /// </summary>
-public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1, string? EyeTexture = null, GeosetVariants? Geosets = null);
+public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1, string? EyeTexture = null, GeosetVariants? Geosets = null, string? ExtraTexture = null);
 
 /// <summary>
 /// The variant shown in each geoset group (group 0 is the hairstyle; skin geoset 0 always shows).

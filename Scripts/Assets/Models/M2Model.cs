@@ -13,7 +13,7 @@ public static class M2Model
     /// Read the model/first skin, choose a native sequence, resolve texture replacements and compact
     /// referenced vertices. Preserve bone lookup chains and winding across the viewer basis.
     /// </summary>
-    public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1, string? eyes = null, GeosetVariants? geosets = null)
+    public static ModelData Read(IClientFiles store, string path, string[]? replacements = null, string? baked = null, CancellationToken token = default, ushort animationId = 0, string? hair = null, string? fur = null, int hairGeoset = 1, string? eyes = null, GeosetVariants? geosets = null, string? extra = null)
     {
         var variants = geosets?.Parse();
         path = BinaryAsset.ModelPath(path);
@@ -324,6 +324,10 @@ public static class M2Model
             else if (type == 8 && fur != null)
             {
                 texture = fur;
+            }
+            else if (type == 20 && extra != null)
+            {
+                texture = extra;
             }
             else if (type is >= 11 and <= 13 && replacements != null)
             {
