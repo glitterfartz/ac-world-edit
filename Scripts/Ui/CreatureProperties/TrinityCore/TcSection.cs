@@ -71,6 +71,5 @@ public abstract partial class TcSection(CreatureContext ctx) : CreatureSection(c
         return box;
     }
 
-    protected static string Hex(uint value) => value == 0 ? "0" : "0x" + value.ToString("X", CultureInfo.InvariantCulture);
     protected static string Number(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 }
