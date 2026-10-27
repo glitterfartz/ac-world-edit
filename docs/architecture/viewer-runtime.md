@@ -189,7 +189,7 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
 | Quest editor | `Ui/QuestEditorWindow.cs` (search and frame), `Ui/QuestPanel.cs`, `.Pages.cs` | `quest_template` and related tables, with `QuestModel.Check`; the panel is also embedded in the creature window |
 | Behavior panel | `Ui/BehaviorPanel.cs` (with the speech page), `.Rules.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window |
-| AreaTrigger behavior | `Ui/BehaviorEditorWindow.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature |
+| AreaTrigger behavior | `BehaviorEditorWindow` in `Ui/BehaviorPanel.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature |
 | Pending changes | `Ui/PendingChangesWindow.cs` (`PendingChangesWindow`, `SqlPreviewWindow`) | Lists pending changes; the viewer performs discard and export. The SQL preview shows the apply or revert script an export would write |
 | Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | Callback-driven menus and mode buttons |
 | Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |
