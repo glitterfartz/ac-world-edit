@@ -43,6 +43,19 @@ public static class TcQuestRules
     /// <summary>quest_template_addon.SpecialFlags (QuestSpecialFlags).</summary>
     public static readonly (uint Bit, string Name)[] SpecialFlags = [(0x1, "Repeatable"), (0x2, "Completed by exploration or event"), (0x4, "Auto-accept"), (0x8, "Dungeon Finder quest"), (0x10, "Monthly"), (0x20, "Credit by spell, not kill"), (0x40, "No reputation spillover"), (0x80, "Can fail in any state"), (0x100, "Not counted for Loremaster")];
 
+    /// <summary>
+    /// quest_template.AllowableRaces is a 64-bit mask with one bit per ChrRaces ID; all bits set means
+    /// every race. The team masks are the values TrinityCore's data uses for Alliance-only and Horde-only quests.
+    /// </summary>
+    public const ulong AllRaces = ulong.MaxValue, AllianceRaces = 6130900294268439629UL, HordeRaces = 12261800583900083122UL;
+
+    /// <summary>quest_template_addon.AllowableClasses (one bit per ChrClasses ID; 0 means every class).</summary>
+    public static readonly (uint Bit, string Name)[] Classes =
+    [
+        (1, "Warrior"), (2, "Paladin"), (4, "Hunter"), (8, "Rogue"), (16, "Priest"), (32, "Death Knight"), (64, "Shaman"),
+        (128, "Mage"), (256, "Warlock"), (512, "Monk"), (1024, "Druid"), (2048, "Demon Hunter"), (4096, "Evoker")
+    ];
+
     /// <summary>The five per-quest tables keyed by ID, in the order <see cref="NewQuest"/> returns their rows.</summary>
     public static readonly TableSchema[] Tables = [TcTables.QuestTemplate, TcTables.QuestAddon, TcTables.QuestRequestItems, TcTables.QuestOfferReward];
 
@@ -220,7 +233,12 @@ public static class TcQuestRules
                 yield return new(true, $"{label}: storage slot {objective.I("StorageIndex")} is out of range (0 to {MaxStorage - 1}).");
             }
 
-            switch (type)
+            // A target not chosen yet is only a warning, so a new objective can be added before its target is picked.
+            if (target == 0 && type is Monster or TalkTo or GameObject or Item or LearnSpell or Currency or HaveCurrency or ObtainCurrency)
+            {
+                yield return new(false, $"{label}: no target chosen yet.");
+            }
+            else switch (type)
             {
                 case Monster or TalkTo when names.Creature(target) == null:
                     yield return new(true, $"{label}: creature {target} does not exist.");

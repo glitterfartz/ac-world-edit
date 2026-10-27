@@ -1,5 +1,6 @@
 using Godot;
 using ACWorldEdit.Assets;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -291,13 +292,13 @@ public partial class TerrainViewer
         };
         areaTriggers.BehaviorRequested += trigger =>
         {
-            if (ContentEditors)
+            if (BehaviorEditors)
             {
                 areaBehavior.OpenAreaTrigger(trigger.Entry);
             }
             else
             {
-                statusLog.Post(ContentEditorsUnavailable);
+                statusLog.Post(BehaviorEditorsUnavailable);
             }
         };
         BuildMenus();
@@ -307,13 +308,12 @@ public partial class TerrainViewer
     CreaturePropertiesWindow creatureProps = null!;
 
     /// <summary>
-    /// The quest and behavior editors read and draft AzerothCore tables; the TrinityCore versions come
-    /// later, so they stay off for the retail client. The creature properties window opens for both
-    /// (read-only for TrinityCore).
+    /// The behavior (SmartAI) editors read and draft AzerothCore tables; the TrinityCore version comes
+    /// later, so it stays off for the retail client. The creature properties and quest editors open for both.
     /// </summary>
-    bool ContentEditors => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
+    bool BehaviorEditors => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
 
-    const string ContentEditorsUnavailable = "The quest and behavior editors are not available for the TrinityCore database yet.";
+    const string BehaviorEditorsUnavailable = "The behavior editor is not available for the TrinityCore database yet.";
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
@@ -321,6 +321,16 @@ public partial class TerrainViewer
     QuestEditorWindow questEditor = null!;
     /// <summary>AreaTrigger rules have no creature, so they keep a window of their own.</summary>
     AcBehaviorEditorWindow areaBehavior = null!;
+
+    /// <summary>
+    /// Search creature templates by name or ID (the database of either dialect) and open the pick in the
+    /// creature properties window, as a quest giver card does. The picker is the one the quest editor uses.
+    /// </summary>
+    void OpenCreatureTemplateSearch()
+    {
+        PickerPopup.Show(this, "Find creature template", term => DBSource.Open(DatabaseConnection(), clientLookup).SearchAsync(SmartParamKind.Creature, term, CancellationToken.None),
+            (entry, name) => creatureProps.OpenEntry(entry, name));
+    }
 
     /// <summary>
     /// Behavior of the selected AreaTrigger or creature; with nothing selected the creature window
@@ -422,8 +432,8 @@ public partial class TerrainViewer
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
         toolbar.Separator();
-        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => ContentEditors);
-        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => ContentEditors);
+        toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => databaseEnabled);
+        toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => BehaviorEditors);
     }
 
     Label clientLabel = null!;

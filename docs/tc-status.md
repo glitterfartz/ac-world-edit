@@ -2,7 +2,7 @@
 
 The plan and open work for the TrinityCore database overhaul, and the project's other known gaps. Finished work is described in the architecture docs, not here. Schema differences are in `docs/DB-DIFFERENCES.md`. Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575. Delete the TrinityCore plan sections when Phase 9 lands.
 
-Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phases 7–9 (quests, SmartAI and speech, waypoints) are not started; their editors are off in TrinityCore mode (`TerrainViewer.ContentEditors`, waypoint layer).
+Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phases 8–9 (SmartAI and speech, waypoints) are not started; the behavior editor and the waypoint layer are off in TrinityCore mode (`TerrainViewer.BehaviorEditors`).
 
 ## Decisions and design
 
@@ -10,7 +10,7 @@ Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, re
 - Hotfixes are read from a second database name on the same connection (default `hotfixes`), falling back to client DB2.
 - Each phase delivers full read and edit/export parity for its area, with its own commit(s), tests, and a visual check where the UI changes.
 - **Dialect-native rows.** Read-only overlay results are shared records translated by each dialect. Editing stays on the generic path, `RowEdit(Table, Key, Before, After)` → `SqlExport`, with each dialect's own table catalog, so structural differences (`quest_objectives` 1:N rows, `creature_template_difficulty`, `creature_template_gossip`) round-trip without a lossy neutral model. Editors switch descriptors (field groups, enums, catalogs), not data models.
-- **`IWorldSchema` grows per phase.** It has `Tables` and `Sql`, plus the creature descriptors. Phases 7–8 add `QuestSchema` and `SmartCatalog Smart`. The AzerothCore statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
+- **`IWorldSchema` grows per phase.** It has `Tables` and `Sql`, plus the creature descriptors. Phase 8 adds `SmartCatalog Smart`; the quest pages are drawn by `AcQuestPanel` / `TcQuestPanel` over `AcTables` / `TcTables` instead of a schema descriptor. The AzerothCore statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
 - **Creature pages are descriptors, not per-dialect classes.** A page is an ordered list of groups; a group is fields bound to one row or an item list (source table, parent filter column, per-item fields, nested lists, add/remove). Each dialect fills the descriptor in; one renderer draws it. Dialect-specific section adapters use `Ac` / `Tc` prefixes in `AzerothCore/` / `TrinityCore/` directories.
 - **Editors read the dialect only through `IDBSource.Schema`:** `CreatureSectionRegistry` filters sections by schema support; `QuestPanel` is shared and `AcQuestPanel` / `TcQuestPanel` draw the pages that differ (TC replaces `RequiredNpcOrGo`/`RequiredItem` with an Objectives list); `AcBehaviorPanel.Rules` will use `Schema.Smart`.
 
@@ -42,26 +42,29 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | AC gaps | partial | Gossip `BoxBroadcastTextID`, trainer `ReqAbility1-3` and trainer/quest-link build metadata are outside the catalogs. |
 | Headless smokes | partial | `--interaction-smoke` passes windowed but, headless, the simulated right-click does not open the window; `--behavior-smoke` times out at `pick-template` headless (passes windowed). |
 
-### Phases 7–9
+### Phase 7 refinements
 
 | Item | Status | Notes |
 |---|---|---|
-| Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | partial | Phase 7. Done: the five quest tables in `TcTables`, `TcContentSource` (read, names, search), `TcQuestRules` (checks). Next: the shared quest panel with TC pages, then enabling the editor. Editor still gated off in TC. |
+| Quest tables outside the editor | not started | `quest_*_conditional`, `quest_objectives_completion_effect`, `quest_reward_choice_items`, `quest_reward_display_spell`, `quest_poi`, locale tables and the `conditions` rows of source types 19 and 20 are neither read nor edited. |
+| Objective fields | partial | The panel edits type, amount, target, text and flags; `Flags2`, `Visible`, `ConditionalAmount`, `ProgressBarWeight` and `ParentObjectiveID` are whitelisted but have no control. Targets of types without a search (currencies, factions, area triggers, criteria trees, pet battles) are typed IDs. |
+| Reference checks | partial | Creature, object, item, spell, currency, follow-up and chain quests, and the zone (when `AreaLookup` exists) are checked. Faction, emote, area trigger, criteria tree, `ContentTuningID`, `QuestInfoID`, `QuestSortID` for retail and the skill and title rewards are not. |
+| Names on the quest pages | partial | Factions, emotes, currencies and content tuning show IDs; the retail zone name needs `AreaLookup` (not built for retail). |
+| Race picker | partial | Everyone, Alliance or Horde, or a typed 64-bit mask; no per-race checkboxes (ChrRaces names are not read). |
+| Quest givers | partial | Creatures only, as in AzerothCore; object and item starters are not edited. |
+| Content-smoke equivalent for TC | not started | The TC quest editor is covered by the client smoke (an objective add and undo, validation, rename, screenshots) and unit tests, not by a copy of `--content-smoke`. |
+
+### Phases 8–9
+
+| Item | Status | Notes |
+|---|---|---|
 | SmartAI: `SmartCatalog.Trinity`, TC `smart_scripts` columns, `creature_text.SoundPlayType` | not started | Phase 8. Editor gated off in TC. |
 | Speech via BroadcastText; hotfix export with `hotfix_data` | not started | Phase 8. |
 | Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. |
 
 ### Phase plans
 
-Phase 6 is built; its refinements are in the table above. Phases 7–9 are not started:
-
-**Phase 7: quests**
-- `TcQuestSchema`: `quest_template` TC columns (ContentTuningID, RewardMoneyDifficulty/Multiplier, FlagsEx/Ex2/Ex3, RewardDisplaySpell1-3, RewardCurrency*, Portrait*, Expansion, ...). QuestLevel, MinLevel, RewardMoney, RequiredFaction*, RequiredNpcOrGo*, RequiredItem*, ObjectiveText* are gone.
-- Objectives become a 1:N `quest_objectives` page (Type, Order, StorageIndex, ObjectID, Amount, Flags, Description; ID allocation via MAX(ID)+1). ObjectID name lookups depend on Type (creature, GO, item, currency, ...).
-- `quest_template_addon` gains ScriptName; `quest_request_items` gains the emote delays.
-- `QuestModel.Check` per dialect, with TC defaults for `NewQuest`. Races and classes come from the retail lists (ChrRaces/ChrClasses DB2 or a static table).
-- The conditional text tables (`quest_*_conditional`) are read-only in this phase.
-- Tests: TcDb read of a known quest with objectives; draft/SQL round-trip tests for objectives.
+Phases 6 and 7 are built; their refinements are in the tables above. Phases 8–9 are not started:
 
 **Phase 8: SmartAI and speech**
 - Generate `SmartCatalog.Trinity` from TrinityCore master `SmartScriptMgr.h`, the same way as the AC catalog. ID ranges differ (TC events ≤90, actions ≤153, targets ≤29; AC 110/242/207), so nothing is reused by ID.
@@ -80,7 +83,7 @@ Phase 6 is built; its refinements are in the table above. Phases 7–9 are not s
 
 | Item | Status | Notes |
 |---|---|---|
-| `IWorldSchema` | partial | `QuestSchema` and `Smart` come with Phases 7–8. |
+| `IWorldSchema` | partial | `Smart` comes with Phase 8. |
 | `SmartCatalog`, `QuestModel`, `NpcFlags` behind `AcSchema` | deviates | Static AC data; moved per area in Phases 6–8. |
 | `Spatial`/`Restrictions` per dialect | deviates | TC has its own copies in `TcSpawnSource`; AC stays on the shared `WorldReadSession`. |
 | Teleports from `game_tele` | deviates | Reuses `AcTeleportSource` (same schema); no `TcTeleportSource`. |

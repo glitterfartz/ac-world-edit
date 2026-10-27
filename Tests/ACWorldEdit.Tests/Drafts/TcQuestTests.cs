@@ -81,10 +81,18 @@ public class TcQuestTests
         Assert.Empty(Issues(Valid(null, Objective(1, type, target)), true));
 
     [Fact]
+    public void AnObjectiveWithoutATargetIsOnlyAWarning()
+    {
+        var rows = Valid(null, Objective(1, TcQuestRules.Monster, 0));
+        Assert.Empty(Issues(rows, true));
+        Assert.Contains(Issues(rows, false), m => m.Contains("no target"));
+    }
+
+    [Fact]
     public void CountedObjectivesNeedAnAmountButAreaTriggersDoNot()
     {
         Assert.Contains(Issues(Valid(null, Objective(1, TcQuestRules.Monster, 6, 0)), true), m => m.Contains("amount"));
-        Assert.Empty(Issues(Valid(null, Objective(1, TcQuestRules.AreaTrigger, 999, -1)), true));
+        Assert.Empty(Issues(Valid(null, Objective(1, TcQuestRules.AreaTrigger, 999, 0)), true));
     }
 
     [Fact]
@@ -112,6 +120,28 @@ public class TcQuestTests
         Assert.Contains(Issues(Valid(q => q.With("RewardNextQuest", 9u)), true), m => m.Contains("quest 9"));
         Assert.Contains(Issues(Valid(q => q.With("QuestSortID", 99)), true), m => m.Contains("Zone 99"));
         Assert.Empty(Issues(Valid(q => q.With("QuestSortID", 12).With("RewardItem1", 2589u).With("RewardAmount1", 2u)), true));
+    }
+
+    [Fact]
+    public void QuestEditsExportAsRowsOfTheTrinityCoreTables()
+    {
+        var when = new DateTime(2026, 1, 1);
+        var objective = Objective(77, TcQuestRules.Monster, 6);
+        var created = new RowEdit("quest_objectives", "77", null, objective);
+        var sql = SqlExport.Build("tc", [], [], [created], when, null, TcSchema.Instance).Apply;
+        // `Order` is a reserved word, so every identifier is quoted; the new row carries every whitelisted column.
+        Assert.Contains("INSERT INTO `quest_objectives`", sql);
+        Assert.Contains("`Order`", sql);
+        Assert.Contains("`StorageIndex`", sql);
+
+        var edit = new RowEdit("quest_objectives", "77", objective, objective.With("Amount", 8));
+        Assert.Contains("UPDATE `quest_objectives` SET `Amount` = 8 WHERE `ID` = 77 AND `Amount` = 1;", SqlExport.Build("tc", [], [], [edit], when, null, TcSchema.Instance).Apply);
+
+        var template = TcQuestRules.NewQuest(Id, "Old title")[0];
+        var rename = new RowEdit("quest_template", Id.ToString(), template, template.With("LogTitle", "New title").With("AllowableRaces", TcQuestRules.HordeRaces));
+        var renamed = SqlExport.Build("tc", [], [], [rename], when, null, TcSchema.Instance).Apply;
+        Assert.Contains("`LogTitle` = 'New title'", renamed);
+        Assert.Contains($"`AllowableRaces` = {TcQuestRules.HordeRaces}", renamed);
     }
 
     [Fact]

@@ -52,6 +52,27 @@ public abstract partial class QuestPanel
         return EditorFields.Reference(Named(kind, id), choose, id == 0 ? null : () => Set(table, label, (column, 0)), Missing(kind, id));
     }
 
+    /// <summary>The quest log zone: an area name when the client's AreaTable is loaded, else the raw ID.</summary>
+    protected void ZoneRow(Row q)
+    {
+        var areas = Areas();
+        if (areas == null)
+        {
+            Add("Quest log zone", EditorFields.Number(q.I("QuestSortID"), value => Set(Template, "Change quest zone", ("QuestSortID", (int)value)), 80, "AreaTable ID; negative = quest log category"));
+            return;
+        }
+
+        uint zone = q.I("QuestSortID") > 0 ? (uint)q.I("QuestSortID") : 0;
+        bool zoneMissing = zone != 0 && !areas.Contains(zone);
+        string zoneText = q.I("QuestSortID") switch
+        {
+            0 => "No zone",
+            < 0 => $"Quest log category {-q.I("QuestSortID")}",
+            _ => zoneMissing ? $"Missing zone #{zone}" : areas!.Describe(zone).Zone
+        };
+        Add("Quest log zone", EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing));
+    }
+
     protected void PickZone()
     {
         if (Areas() is not { } areas)

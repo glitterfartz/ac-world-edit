@@ -1,5 +1,6 @@
 using Godot;
 using ACWorldEdit.Assets;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -13,6 +14,7 @@ public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
     int clientShotFrames, clientShotCreatureStage, clientShotDifficulty, sharedVendorFrames;
+    uint clientShotQuest;
     TileKey? clientShotTile;
     double clientSmokeTime;
 
@@ -423,6 +425,96 @@ public partial class TerrainViewer
                 }
                 OpenShotCreature(240, "quests", 6);
                 return;
+            case 50:
+                if (questEditor.IsLoading || questEditor.QuestId != clientShotQuest || questEditor.SmokeQuest is not { } loadedQuest)
+                {
+                    if (clientShotFrames++ > 1200) SmokeFail("CLIENT_SHOT_QUEST_EDITOR_NOT_LOADED " + questEditor.SmokeStatus);
+                    return;
+                }
+                if (loadedQuest.T("LogTitle").Length == 0) { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_TITLE"); return; }
+                questEditor.ShowTab(QuestPanel.Tab.Objectives);
+                int before = questEditor.SmokeEffective.All(TcTables.QuestObjectives).Count(o => o.U("QuestID") == clientShotQuest);
+                if (!questEditor.SmokePress("+ Add objective")) { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_ADD_MISSING"); return; }
+                if (questEditor.SmokeEffective.All(TcTables.QuestObjectives).Count(o => o.U("QuestID") == clientShotQuest) != before + 1)
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_ADD " + questEditor.SmokeStatus); return; }
+                if (!questEditor.SmokeIssues.Any(i => !i.Error && i.Message.Contains("no target", StringComparison.Ordinal)))
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_VALIDATION an objective without a target raised no warning: " + string.Join("; ", questEditor.SmokeIssues.Select(i => i.Message))); return; }
+                questEditor.SmokeHistory(false);
+                if (questEditor.SmokeEffective.All(TcTables.QuestObjectives).Count(o => o.U("QuestID") == clientShotQuest) != before)
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_UNDO"); return; }
+                if (!questEditor.SmokeSet(TcTables.QuestTemplate, "Rename quest", ("LogTitle", "Smoke quest")) || questEditor.SmokeQuest?.T("LogTitle") != "Smoke quest")
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_RENAME " + questEditor.SmokeStatus); return; }
+                if (questEditor.SmokeSet(TcTables.QuestTemplate, "Change reward item", ("RewardItem1", 4000000000u), ("RewardAmount1", 1u)))
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_ITEM_VALIDATION accepted an unknown reward item"); return; }
+                if (questEditor.SmokeSet(TcTables.QuestTemplate, "Change reward currency", ("RewardCurrencyID1", 4000000000u), ("RewardCurrencyQty1", 1u)))
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_CURRENCY_VALIDATION accepted an unknown currency"); return; }
+                questEditor.ShowTab(QuestPanel.Tab.Objectives);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 51;
+                return;
+            case 51:
+                if (clientShotFrames++ < 60) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-quest-editor.png"));
+                foreach (var tab in Enum.GetValues<QuestPanel.Tab>())
+                {
+                    questEditor.ShowTab(tab);
+                }
+                GD.Print($"CLIENT_SHOT_QUEST_EDITOR_OK quest={clientShotQuest} add/validation/undo/rename/references issues={questEditor.SmokeIssues.Count}");
+                // A quest with a kill objective (the Hogger quest in TDB).
+                questEditor.Open(176);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 52;
+                return;
+            case 52:
+                if (questEditor.IsLoading || questEditor.QuestId != 176 || questEditor.SmokeQuest == null)
+                {
+                    if (clientShotFrames++ > 1200) SmokeFail("CLIENT_SHOT_QUEST_EDITOR_OBJECTIVES_NOT_LOADED " + questEditor.SmokeStatus);
+                    return;
+                }
+                questEditor.ShowTab(QuestPanel.Tab.Objectives);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 53;
+                return;
+            case 53:
+                if (clientShotFrames++ < 60) return;
+                if (questEditor.SmokeEffective.All(TcTables.QuestObjectives).All(o => o.U("QuestID") != 176))
+                { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_OBJECTIVES the quest has no objective rows"); return; }
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-quest-objectives.png"));
+                GD.Print("CLIENT_SHOT_QUEST_OBJECTIVES_OK quest=176");
+                clientShotFrames = 0;
+                clientShotCreatureStage = 60;
+                return;
+            case 60:
+                // View > Find creature template…: search by name, pick, and the creature window opens on it.
+                creatureProps.Visible = false;
+                OpenCreatureTemplateSearch();
+                if (GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible) is not { } templatePicker) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_MISSING"); return; }
+                templatePicker.SmokeSearch("Farley");
+                clientShotFrames = 0;
+                clientShotCreatureStage = 61;
+                return;
+            case 61:
+                var picker = GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
+                if (picker == null) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_CLOSED"); return; }
+                if (picker.ResultCount == 0 || picker.ShownTerm != "Farley")
+                {
+                    if (clientShotFrames++ > 1200) SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_EMPTY");
+                    return;
+                }
+                picker.Choose(0);
+                clientShotFrames = 0;
+                clientShotCreatureStage = 62;
+                return;
+            case 62:
+                if (!creatureProps.Visible || creatureProps.Context.Target is not { } found || !found.Name.Contains("Farley", StringComparison.Ordinal))
+                {
+                    if (clientShotFrames++ > 600) SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_OPEN the creature window did not open on the pick");
+                    return;
+                }
+                GD.Print($"CLIENT_SHOT_TEMPLATE_SEARCH_OK entry={found.TemplateId} name={found.Name}");
+                GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
+                GetTree().Quit();
+                return;
             default:
                 if (!ShotCreatureReady(240)) return;
                 int quests = creatureProps.Context.View is { } ac ? ac.Starts.Length + ac.Ends.Length
@@ -453,10 +545,20 @@ public partial class TerrainViewer
                     if (creatureProps.Section("quests")!.FindChild("Search_quest", true, false) == null)
                     { SmokeFail("CLIENT_SHOT_QUEST_SEARCH_MISSING"); return; }
                     GD.Print($"CLIENT_SHOT_QUEST_EDIT_OK unlink={quest}/validation/undo");
+                    clientShotQuest = quest;
                 }
                 GD.Print($"CLIENT_SHOT_SERVICES trainer=514 quests=240 links={quests}");
-                GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
-                GetTree().Quit();
+                if (clientShotQuest != 0)
+                {
+                    // The TrinityCore quest editor on a quest Marshal Dughan offers.
+                    creatureProps.Visible = false;
+                    questEditor.Open(clientShotQuest);
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 50;
+                    return;
+                }
+                clientShotFrames = 0;
+                clientShotCreatureStage = 60;
                 return;
         }
     }

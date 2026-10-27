@@ -7,7 +7,7 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// The quests a TrinityCore creature starts and ends (creature_queststarter/questender). Links can be
-/// removed and added from a quest_template search; the quest content itself has no TrinityCore editor yet.
+/// removed and added from a quest_template search; each quest opens in the Quest window.
 /// </summary>
 public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx)
 {
@@ -41,8 +41,18 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
                     var quest = quests.FirstOrDefault(q => q.Quest == id);
                     string? name = quest?.Title ?? Ctx.Snapshot?.Lookup.Quest(id)?.Title;
                     int conditions = Ctx.Snapshot?.Lookup.QuestConditionCounts.GetValueOrDefault(id) ?? 0;
-                    return ClientStyle.Text($"{name ?? "Missing quest"} ({id.ToString(CultureInfo.InvariantCulture)}){(conditions > 0 ? $" · {conditions} availability condition(s)" : "")}",
-                        13, name == null ? ClientStyle.Error : ClientStyle.Gold);
+                    var line = new HBoxContainer();
+                    line.AddThemeConstantOverride("separation", 6);
+                    line.AddChild(ClientStyle.Text($"{name ?? "Missing quest"} ({id.ToString(CultureInfo.InvariantCulture)}){(conditions > 0 ? $" · {conditions} availability condition(s)" : "")}",
+                        13, name == null ? ClientStyle.Error : ClientStyle.Gold));
+                    if (name != null)
+                    {
+                        var open = new Button { Name = "OpenQuest", Text = "Open in Quest window" };
+                        open.Pressed += () => Ctx.RequestQuestEditor(id);
+                        line.AddChild(open);
+                    }
+
+                    return line;
                 });
         }
 
@@ -82,7 +92,7 @@ public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx
             row.AddThemeConstantOverride("separation", 6);
             row.AddChild(new Label
             {
-                Text = $"{title} ({id}, level {level})",
+                Text = level > 0 ? $"{title} ({id}, level {level})" : $"{title} ({id})",
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
             });

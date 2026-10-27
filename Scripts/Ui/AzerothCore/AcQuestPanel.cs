@@ -41,16 +41,7 @@ public partial class AcQuestPanel : QuestPanel
         Add("Kind", EditorFields.Choice(QuestModel.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value))),
             ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "0 = solo"));
         Add("Availability", EditorFields.Choice(QuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
-        uint zone = q.I("QuestSortID") > 0 ? (uint)q.I("QuestSortID") : 0;
-        var areas = Areas();
-        bool zoneMissing = zone != 0 && areas?.Contains(zone) != true;
-        string zoneText = q.I("QuestSortID") switch
-        {
-            0 => "No zone",
-            < 0 => $"Quest log category {-q.I("QuestSortID")}",
-            _ => zoneMissing ? $"Missing zone #{zone}" : areas!.Describe(zone).Zone
-        };
-        Add("Quest log zone", EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing));
+        ZoneRow(q);
 
         Heading("Levels", "Quest level sets XP and the con colour; −1 scales with the player. Players outside required…maximum cannot accept it.");
         Add("Quest level", UNumber(Template, "QuestLevel", "Change quest level", 60),
