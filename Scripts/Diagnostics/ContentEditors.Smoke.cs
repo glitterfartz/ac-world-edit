@@ -7,7 +7,7 @@ namespace ACWorldEdit;
 /// Opt-in helpers for --content-smoke and --interaction-smoke. They call the same private paths the
 /// editors' buttons and pickers use, so validation, drafting and re-rendering are the real ones.
 /// </summary>
-public partial class AcQuestPanel
+public partial class QuestPanel
 {
     public string SmokeStatus => status;
     public RowSet SmokeEffective => effective;
@@ -36,7 +36,7 @@ public partial class AcQuestPanel
     public PickerPopup? SmokePicker => GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
 }
 
-public partial class AcQuestEditorWindow
+public partial class QuestEditorWindow
 {
     public string SmokeStatus => Panel.SmokeStatus;
     public RowSet SmokeEffective => Panel.SmokeEffective;

@@ -12,7 +12,7 @@ Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, re
 - **Dialect-native rows.** Read-only overlay results are shared records translated by each dialect. Editing stays on the generic path, `RowEdit(Table, Key, Before, After)` → `SqlExport`, with each dialect's own table catalog, so structural differences (`quest_objectives` 1:N rows, `creature_template_difficulty`, `creature_template_gossip`) round-trip without a lossy neutral model. Editors switch descriptors (field groups, enums, catalogs), not data models.
 - **`IWorldSchema` grows per phase.** It has `Tables` and `Sql`, plus the creature descriptors. Phases 7–8 add `QuestSchema` and `SmartCatalog Smart`. The AzerothCore statics (`InteractionTables`, `SmartCatalog`, `QuestModel`, `NpcFlags`) move behind `AcSchema` as each area is touched.
 - **Creature pages are descriptors, not per-dialect classes.** A page is an ordered list of groups; a group is fields bound to one row or an item list (source table, parent filter column, per-item fields, nested lists, add/remove). Each dialect fills the descriptor in; one renderer draws it. Dialect-specific section adapters use `Ac` / `Tc` prefixes in `AzerothCore/` / `TrinityCore/` directories.
-- **Editors read the dialect only through `IDBSource.Schema`:** `CreatureSectionRegistry` filters sections by schema support; `AcQuestPanel.Pages` will build pages from `QuestSchema` (TC adds an Objectives page and drops `RequiredNpcOrGo`/`RequiredItem`); `AcBehaviorPanel.Rules` will use `Schema.Smart`.
+- **Editors read the dialect only through `IDBSource.Schema`:** `CreatureSectionRegistry` filters sections by schema support; `QuestPanel` is shared and `AcQuestPanel` / `TcQuestPanel` draw the pages that differ (TC replaces `RequiredNpcOrGo`/`RequiredItem` with an Objectives list); `AcBehaviorPanel.Rules` will use `Schema.Smart`.
 
 Verification per phase: the default suite; Db tests with `ACWORLD_DB_INFO` (AC regression) and `ACWORLD_TC_DB_INFO` (TC); the retail corpus with `--settings corpus.runsettings` and `ACWORLD_RETAIL_DIR`; `check-layering` after any Data/Foundation/Assets edit. Visually: `--client-shot-overlays` (retail, Goldshire); open the creature, quest and behavior editors in both modes and confirm they show the dialect's fields; export SQL from the pending changes window and run it against a scratch copy of `world`.
 
@@ -27,7 +27,7 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Pre-profile `[database]` settings section | `[database.wrath]` / `[database.retail]` | `SettingsResolver.Connection` falls back to it for AzerothCore. Remove once saved settings have moved to the per-profile sections. |
 | `CreatureContext.View` and `TcView` | one shared creature read model | The two read models (`NpcInteraction`, `TcCreatureView`) sit side by side; sections use the one for their dialect. |
 | AC `SearchPicker` vs TC `TcSection.SearchBox` | one search control | AC's has no length cap or stale-result guard and different status text. |
-| AC-only `AcBehaviorPanel` / `AcQuestPanel` | shared panels | Phases 7–8 decide whether they become shared. |
+| AC-only `AcBehaviorPanel` | shared panel | Phase 8 decides whether it becomes shared. |
 | Export treats a source with no `SourceDialects` entry as AzerothCore | | Unknown sources are AC. |
 
 ## Open work

@@ -1,448 +1,270 @@
-using System.Globalization;
 using Godot;
-using ACWorldEdit.Assets;
-using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
 /// <summary>
-/// Quest editor: friendly pages over quest_template, quest_template_addon, quest_request_items,
-/// quest_offer_reward and the creature starter/ender links. Every change is one validated command
-/// in the shared local content draft (undo/redo, stale-row conflicts); nothing is written to the
-/// database. Pages are in AcQuestPanel.Pages.cs.
+/// The AzerothCore quest editor: the overview, objectives, rewards and preview pages over
+/// quest_template (QuestLevel, RequiredNpcOrGo, RequiredItem, RewardMoney) and its addon tables. The
+/// shared pages and the draft plumbing are in <see cref="QuestPanel"/>.
 /// </summary>
-public partial class AcQuestPanel : ContentPanel
+public partial class AcQuestPanel : QuestPanel
 {
-    public enum Tab
+    static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
+    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (QuestModel.AllianceRaces, "Alliance only"), (QuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
+
+    protected override TableSchema Template => InteractionTables.QuestTemplate;
+    protected override TableSchema Addon => InteractionTables.QuestAddon;
+    protected override TableSchema Request => InteractionTables.QuestRequestItems;
+    protected override TableSchema Offer => InteractionTables.QuestOfferReward;
+    protected override TableSchema Starter => InteractionTables.QuestStarter;
+    protected override TableSchema Ender => InteractionTables.QuestEnder;
+    protected override TableSchema[] Tables => QuestModel.Tables;
+    protected override Row[] NewQuestRows(uint id, string title) => QuestModel.NewQuest(id, title);
+
+    protected override IEnumerable<InteractionIssue> Check(uint id, RowSet rows, IContentNames names) => QuestModel.Check(id, rows, names, ZoneExists);
+
+    protected override string Subtitle(Row q) => $"Quest {Key} · level {q.I("QuestLevel")} · requires level {q.U("MinLevel")}";
+
+    protected override void RenderObjectivesPage(Row q) => RenderObjectives(q);
+
+    protected override void RenderOverviewPage(Row q) => RenderOverview(q);
+
+    protected override void RenderRewardsPage(Row q) => RenderRewards(q);
+
+    protected override void RenderPreviewPage(Row q) => RenderPreview(q);
+
+    void RenderOverview(Row q)
     {
-        Overview,
-        Story,
-        Objectives,
-        Rewards,
-        Chain,
-        Givers,
-        Preview
-    }
-
-    public Func<AreaLookup?> Areas { get; set; } = () => null;
-    /// <summary>
-    /// Locate a creature entry (loading its map when needed) by entry and display name; returns a
-    /// status line, empty when it was selected immediately.
-    /// </summary>
-    public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
-    /// <summary>
-    /// Open the behavior editor for a creature entry (giver cards link to its SmartAI).
-    /// </summary>
-    public Action<uint> BehaviorRequested { get; set; } = _ => { };
-
-    ContentSnapshot? snapshot;
-    RowSet effective = new();
-    IReadOnlyList<InteractionIssue> issues = [];
-    string sourceKey = "";
-    int generation;
-    Tab tab;
-    VBoxContainer page = null!, issueBox = null!;
-    HBoxContainer tabs = null!;
-    Label title = null!, subtitle = null!, statusLabel = null!;
-    public uint? QuestId { get; private set; }
-    /// <summary>Raised after every redraw so a host can refresh its Duplicate/Undo/Redo state.</summary>
-    public event Action? Rendered;
-    public bool HasQuest => Quest != null;
-    /// <summary>Show a message in the status line (the standalone window reports its search here).</summary>
-    public void ShowStatus(string text)
-    {
-        status = text;
-        UpdateStatus();
-    }
-
-    public bool IsLoading { get; private set; }
-
-    public AcQuestPanel()
-    {
-        Name = "AcQuestPanel";
-        SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
-    }
-
-    public override void _Ready()
-    {
-        ReloadOnForeignChange(() => QuestId.HasValue, () => _ = Load(QuestId!.Value));
-        AddThemeConstantOverride("separation", 4);
-        title = ClientStyle.Text("", 19, ClientStyle.Header);
-        AddChild(title);
-        subtitle = ClientStyle.Text("", 12, ClientStyle.Faded);
-        AddChild(subtitle);
-        tabs = new HBoxContainer();
-        AddChild(tabs);
-        var scroll = new ScrollContainer
+        Heading("Basics");
+        Add("Title", EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it"));
+        Add("Kind", EditorFields.Choice(QuestModel.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value))),
+            ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "0 = solo"));
+        Add("Availability", EditorFields.Choice(QuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
+        uint zone = q.I("QuestSortID") > 0 ? (uint)q.I("QuestSortID") : 0;
+        var areas = Areas();
+        bool zoneMissing = zone != 0 && areas?.Contains(zone) != true;
+        string zoneText = q.I("QuestSortID") switch
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+            0 => "No zone",
+            < 0 => $"Quest log category {-q.I("QuestSortID")}",
+            _ => zoneMissing ? $"Missing zone #{zone}" : areas!.Describe(zone).Zone
         };
-        AddChild(scroll);
-        page = new VBoxContainer
+        Add("Quest log zone", EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing));
+
+        Heading("Levels", "Quest level sets XP and the con colour; −1 scales with the player. Players outside required…maximum cannot accept it.");
+        Add("Quest level", UNumber(Template, "QuestLevel", "Change quest level", 60),
+            ClientStyle.Tag("Required"), UNumber(Template, "MinLevel", "Change required level", 60),
+            ClientStyle.Tag("Maximum"), UNumber(Addon, "MaxLevel", "Change maximum level", 60, "0 = no maximum"));
+        Add("Time limit", UNumber(Template, "TimeAllowed", "Change time limit", 80, "Seconds; 0 = untimed"), ClientStyle.Tag("seconds (0 = none)"));
+
+        Heading("Who can take it");
+        uint races = q.U("AllowableRaces");
+        uint preset = races is 0 or QuestModel.AllianceRaces or QuestModel.HordeRaces ? races : 1;
+        Add("Faction", EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? QuestModel.AllianceRaces | QuestModel.HordeRaces : value))));
+        if (preset == 1)
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            page.AddChild(EditorFields.Flags(QuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5));
+        }
+
+        uint classes = RowOf(Addon).U("AllowableClasses");
+        var allClasses = new CheckBox
+        {
+            Text = "All classes",
+            ButtonPressed = classes == 0
         };
-        page.AddThemeConstantOverride("separation", 6);
-        scroll.AddChild(page);
-        AddChild(new HSeparator());
-        issueBox = new VBoxContainer();
-        AddChild(issueBox);
-        statusLabel = ClientStyle.Text("", 12, ClientStyle.Warning);
-        AddChild(statusLabel);
-        Render();
+        allClasses.Toggled += on => Set(Addon, "Change allowed classes", ("AllowableClasses", on ? 0u : 1u));
+        Add("Classes", allClasses);
+        if (classes != 0)
+        {
+            page.AddChild(EditorFields.Flags(QuestModel.Classes, classes, value => Set(Addon, "Change allowed classes", ("AllowableClasses", value)), 5));
+        }
+
+        Heading("Behavior");
+        page.AddChild(EditorFields.Flags(QuestModel.Flags, q.U("Flags"), value => Set(Template, "Change quest options", ("Flags", value)), 3));
+        page.AddChild(EditorFields.Flags(QuestModel.SpecialFlags, RowOf(Addon).U("SpecialFlags"), value => Set(Addon, "Change special options", ("SpecialFlags", value)), 3));
     }
 
-    /// <summary>
-    /// Show a quest; 0 shows nothing (the standalone window without a selection).
-    /// </summary>
-    public void Open(uint quest)
+    void RenderObjectives(Row q)
     {
-        if (quest == 0)
+        Heading("Defeat or use", "Kill a creature, or use a game object, a number of times. Custom text replaces \"<name> slain\".");
+        for (int i = 1; i <= 4; i++)
         {
-            QuestId = null;
-            snapshot = null;
-            Render();
-        }
-        else
-        {
-            _ = Load(quest);
-        }
-    }
-
-    /// <summary>
-    /// Read the quest rows (plus every draft-touched quest row) on a worker; stale results drop.
-    /// </summary>
-    public async Task Load(uint quest)
-    {
-        int current = ++generation;
-        IsLoading = true;
-        try
-        {
-            var source = DBSource.Open(Connection());
-            var cat = await EnsureCatalog();
-            var draft = Drafts.Draft;
-            var keys = draft?.Keys(source.SourceKey) ?? [];
-            var apply = draft?.Frozen(source.SourceKey) ?? (rows => rows);
-            var result = await Task.Run(() => source.ReadQuestAsync(quest, keys, apply, cat, CancellationToken.None));
-            if (current != generation)
+            int slot = i;
+            int target = q.I($"RequiredNpcOrGo{slot}");
+            var row = new HBoxContainer();
+            row.AddChild(ClientStyle.Tag($"{slot}."));
+            if (target == 0)
             {
-                return;
-            }
-
-            sourceKey = source.SourceKey;
-            if (QuestId != quest)
-            {
-                status = "";
-            }
-
-            QuestId = quest;
-            snapshot = result;
-            if (draft != null && draft.Conflicts(sourceKey, result.Rows).Count > 0)
-            {
-                status = "Some draft rows changed in the database since you edited them; undo or re-edit them.";
-            }
-
-            Rebuild();
-        }
-        catch (Exception error)
-        {
-            if (current == generation)
-            {
-                status = DbErrors.Safe(error);
-                UpdateStatus();
-            }
-        }
-        finally
-        {
-            if (current == generation)
-            {
-                IsLoading = false;
-            }
-        }
-    }
-
-    void Rebuild()
-    {
-        if (snapshot == null)
-        {
-            Render();
-            return;
-        }
-
-        effective = Drafts.Draft?.Effective(sourceKey, snapshot.Rows) ?? snapshot.Rows;
-        issues = QuestId is uint id ? QuestModel.Check(id, effective, snapshot.Names, ZoneExists).ToArray() : [];
-        Render();
-    }
-
-    Func<uint, bool>? ZoneExists => Areas() is { } areas ? areas.Contains : null;
-
-    string Key => QuestId!.Value.ToString(CultureInfo.InvariantCulture);
-
-    Row? Quest => QuestId.HasValue ? effective.Get(InteractionTables.QuestTemplate, Key) : null;
-
-    /// <summary>
-    /// The quest's row in a per-quest table, or its default when the quest has none yet (the first
-    /// edit then inserts it).
-    /// </summary>
-    Row RowOf(TableSchema table) => effective.Get(table, Key) ?? QuestModel.NewQuest(QuestId!.Value, "")[Array.IndexOf(QuestModel.Tables, table)];
-
-    /// <summary>
-    /// Record one validated command against this quest's rows.
-    /// </summary>
-    bool Commit(string label, params RowEdit[] edits)
-    {
-        if (snapshot == null || QuestId is not uint id)
-        {
-            return false;
-        }
-
-        var names = snapshot.Names;
-        return CommitEdits(sourceKey, snapshot.Rows, effective, label, edits, rows => QuestModel.Check(id, rows, names, ZoneExists), Rebuild, UpdateStatus);
-    }
-
-    /// <summary>
-    /// Change columns on one per-quest row (inserting the row with defaults when missing).
-    /// </summary>
-    bool Set(TableSchema table, string label, params (string Column, object Value)[] values)
-    {
-        var existing = effective.Get(table, Key);
-        var row = RowOf(table);
-        foreach (var (column, value) in values)
-        {
-            row = row.With(column, value);
-        }
-
-        if (row == existing)
-        {
-            return true;
-        }
-
-        return Commit(label, new RowEdit(table.Name, Key, existing, row));
-    }
-
-    public void History(bool forward)
-    {
-        ApplyHistory(forward, Rebuild, () =>
-        {
-            if (QuestId is uint id)
-            {
-                _ = Load(id);
-            }
-        });
-    }
-
-    /// <summary>
-    /// Create a quest (or copy the current one) under the next ID above both the database maximum
-    /// and every quest ID already reserved in the draft.
-    /// </summary>
-    public async Task NewQuest(uint? copyFrom)
-    {
-        int current = ++generation;
-        try
-        {
-            var source = DBSource.Open(Connection());
-            var cat = await EnsureCatalog();
-            var draft = Drafts.Draft;
-            if (draft == null)
-            {
-                status = Drafts.Error ?? "Editing is disabled.";
-                UpdateStatus();
-                return;
-            }
-
-            var keys = draft.Keys(source.SourceKey);
-            var apply = draft.Frozen(source.SourceKey);
-            var probe = await Task.Run(() => source.ReadQuestAsync(copyFrom ?? 0, keys, apply, cat, CancellationToken.None));
-            if (current != generation)
-            {
-                return;
-            }
-
-            sourceKey = source.SourceKey;
-            uint id = Math.Max(probe.MaxQuestId, draft.MaxReserved(sourceKey, InteractionTables.QuestTemplate, "ID")) + 1;
-            string key = id.ToString(CultureInfo.InvariantCulture);
-            var probeView = draft.Effective(sourceKey, probe.Rows);
-            var defaults = QuestModel.NewQuest(id, "New quest");
-            List<RowEdit> edits = [];
-            for (int i = 0; i < QuestModel.Tables.Length; i++)
-            {
-                var table = QuestModel.Tables[i];
-                var row = copyFrom is uint from && probeView.Get(table, from.ToString(CultureInfo.InvariantCulture)) is { } original ? original.With("ID", id) : defaults[i];
-                if (copyFrom != null && i == 0)
-                {
-                    row = row.With("LogTitle", row.T("LogTitle") + " (copy)");
-                }
-
-                edits.Add(new RowEdit(table.Name, key, null, row));
-            }
-
-            var (ok, message) = Drafts.Commit(this, sourceKey, probe.Rows, probeView, copyFrom == null ? $"Create quest {id}" : $"Copy quest {copyFrom} as {id}", edits, _ => []);
-            status = ok ? (copyFrom == null ? $"Created quest {id}. Give it a title and an objective, then pick who offers it." : $"Copied as quest {id}. Givers are not copied.") : message;
-            if (ok)
-            {
-                tab = Tab.Overview;
-                await Load(id);
+                row.AddChild(ButtonOf("Kill a creature…", () => Pick(SmartParamKind.Creature, "Choose creature to defeat", id => SetObjective(slot, (int)id))));
+                row.AddChild(ButtonOf("Use an object…", () => Pick(SmartParamKind.GameObject, "Choose object to use", id => SetObjective(slot, -(int)id))));
             }
             else
             {
-                UpdateStatus();
-            }
-        }
-        catch (Exception error)
-        {
-            status = DbErrors.Safe(error);
-            UpdateStatus();
-        }
-    }
-
-    /// <summary>
-    /// Search picker over creatures, objects, items or quests. The chosen name is remembered so the
-    /// edit validates before the next reload.
-    /// </summary>
-    void Pick(SmartParamKind kind, string heading, Action<uint> apply)
-    {
-        var names = snapshot?.Names;
-        PickerPopup.Show(this, heading, term => DBSource.Open(Connection()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
-        {
-            var target = kind switch
-            {
-                SmartParamKind.Creature => names?.Creatures,
-                SmartParamKind.GameObject => names?.GameObjects,
-                SmartParamKind.Item => names?.Items,
-                _ => names?.Quests
-            };
-            if (target != null)
-            {
-                target[id] = name;
+                var kind = target > 0 ? SmartParamKind.Creature : SmartParamKind.GameObject;
+                row.AddChild(ClientStyle.Tag(target > 0 ? "Defeat" : "Use"));
+                row.AddChild(EditorFields.Number(q.U($"RequiredNpcOrGoCount{slot}"), count => Set(Template, "Change objective count", ($"RequiredNpcOrGoCount{slot}", count)), 50));
+                row.AddChild(ClientStyle.Tag("×"));
+                row.AddChild(EditorFields.Reference(Named(kind, (uint)Math.Abs(target)), () => Pick(kind, "Choose target", id => SetObjective(slot, target > 0 ? (int)id : -(int)id)), () => Set(Template, "Remove objective", ($"RequiredNpcOrGo{slot}", 0), ($"RequiredNpcOrGoCount{slot}", 0), ($"ObjectiveText{slot}", "")), Missing(kind, (uint)Math.Abs(target))));
             }
 
-            apply(id);
-        });
-    }
-
-    void PickSpell(string heading, Action<uint> apply) =>
-        PickerPopup.Show(this, heading, term => Task.FromResult(catalog?.SearchSpells(term) ?? []), (id, _) => apply(id));
-
-    void PickFromList(string heading, IEnumerable<(uint Id, string Name)> all, Action<uint> apply)
-    {
-        var list = all.Where(e => e.Name.Length > 0).ToList();
-        PickerPopup.Show(this, heading, term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(list
-            .Where(e => term.Length == 0 || e.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || e.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
-            .OrderBy(e => e.Name.Length).Take(200).ToList()), (id, _) => apply(id));
-    }
-
-    void UpdateStatus()
-    {
-        if (statusLabel != null)
-        {
-            statusLabel.Text = status;
-            statusLabel.Visible = status.Length > 0;
-        }
-    }
-
-    void Render()
-    {
-        if (page == null)
-        {
-            return;
+            page.AddChild(row);
+            if (target != 0)
+            {
+                Add("   custom text", EditorFields.Line(q.T($"ObjectiveText{slot}"), text => Set(Template, "Edit objective text", ($"ObjectiveText{slot}", text)), "Optional, e.g. \"Kobolds driven off\""));
+            }
         }
 
-        foreach (var child in page.GetChildren().Concat(tabs.GetChildren()).Concat(issueBox.GetChildren()))
+        Heading("Collect items", "Items the player must hold when turning in; they are taken on completion.");
+        for (int i = 1; i <= 6; i++)
         {
-            child.QueueFree();
+            ItemSlot(q, $"{i}.", $"RequiredItemId{i}", $"RequiredItemCount{i}", "required item", "Change required item");
         }
 
-        EditorFields.Error = message =>
+        Heading("Quest drops", "Items this quest makes drop for players on it (the loot itself is set on the creature or object).");
+        for (int i = 1; i <= 4; i++)
         {
-            status = message;
-            UpdateStatus();
+            ItemSlot(q, $"{i}.", $"ItemDrop{i}", $"ItemDropQuantity{i}", "quest drop", "Change quest drop");
+        }
+
+        Heading("Other goals");
+        Add("Players defeated", UNumber(Template, "RequiredPlayerKills", "Change player kills", 60, "Honorable kills required"));
+        for (int i = 1; i <= 2; i++)
+        {
+            int slot = i;
+            Add(slot == 1 ? "Reach reputation" : "", FactionRef(Template, $"RequiredFactionId{slot}", "Change reputation goal"), ClientStyle.Tag("at least"), UNumber(Template, $"RequiredFactionValue{slot}", "Change reputation goal", 70));
+        }
+
+        Heading("Given on accept", "An item the giver hands over when the quest is accepted.");
+        Add("Starting item", Ref(Template, "StartItem", SmartParamKind.Item, "starting item", "Change starting item"), ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50));
+        Add("Cast on accept", Ref(Addon, "SourceSpellID", SmartParamKind.Spell, "spell cast on accept", "Change spell cast on accept"));
+    }
+
+    void SetObjective(int slot, int target)
+    {
+        var q = Quest!;
+        uint count = Math.Max(1u, q.U($"RequiredNpcOrGoCount{slot}"));
+        Set(Template, "Set objective", ($"RequiredNpcOrGo{slot}", target), ($"RequiredNpcOrGoCount{slot}", count));
+    }
+
+    void RenderRewards(Row q)
+    {
+        Heading("Money and experience");
+        int money = q.I("RewardMoney");
+        long abs = Math.Abs((long)money);
+        void SetMoney(long gold, long silver, long copper, bool pays)
+        {
+            long total = gold * 10000 + silver * 100 + copper;
+            Set(Template, pays ? "Change money required" : "Change money reward", ("RewardMoney", (int)Math.Clamp(pays ? -total : total, int.MinValue, int.MaxValue)));
+        }
+
+        var pays = new CheckBox
+        {
+            Text = "Player pays instead",
+            ButtonPressed = money < 0,
+            TooltipText = "Negative money: the quest takes this amount on turn-in."
         };
-        UpdateStatus();
-        if (Quest is not { } q)
+        pays.Toggled += on => SetMoney(abs / 10000, abs / 100 % 100, abs % 100, on);
+        Add("Money",
+            EditorFields.Number(abs / 10000, g => SetMoney(g, abs / 100 % 100, abs % 100, money < 0), 60), ClientStyle.Tag("g"),
+            EditorFields.Number(abs / 100 % 100, s => SetMoney(abs / 10000, s, abs % 100, money < 0), 40), ClientStyle.Tag("s"),
+            EditorFields.Number(abs % 100, c => SetMoney(abs / 10000, abs / 100 % 100, c, money < 0), 40), ClientStyle.Tag("c"), pays);
+        Add("Experience", EditorFields.Choice(XpTiers, q.U("RewardXPDifficulty"), value => Set(Template, "Change experience reward", ("RewardXPDifficulty", value)), "Scaled by quest level (QuestXP.dbc)"),
+            ClientStyle.Tag("Money at max level"), EditorFields.Choice(XpTiers, q.U("RewardMoneyDifficulty"), value => Set(Template, "Change max-level money", ("RewardMoneyDifficulty", value))));
+
+        Heading("Always given", "Every player receives these items.");
+        for (int i = 1; i <= 4; i++)
         {
-            title.Text = QuestId.HasValue ? $"Quest {QuestId} does not exist" : "No quest open";
-            subtitle.Text = QuestId.HasValue ? "Create one with + New quest, or search for another." : "Find a quest on the left, or create one with + New quest.";
-            Rendered?.Invoke();
-            return;
+            ItemSlot(q, $"{i}.", $"RewardItem{i}", $"RewardAmount{i}", "reward item", "Change reward item");
         }
 
-        var original = snapshot!.Rows.Get(InteractionTables.QuestTemplate, Key);
-        title.Text = q.T("LogTitle").Length > 0 ? q.T("LogTitle") : "(untitled quest)";
-        subtitle.Text = $"Quest {Key} · level {q.I("QuestLevel")} · requires level {q.U("MinLevel")}{(original == null ? " · new in draft" : QuestModel.Tables.Any(t => snapshot.Rows.Get(t, Key) != effective.Get(t, Key)) ? " · edited in draft" : "")}";
-        foreach (var value in Enum.GetValues<Tab>())
+        Heading("Choose one of", "The player picks one item from this list.");
+        for (int i = 1; i <= 6; i++)
         {
-            var button = new Button
+            ItemSlot(q, $"{i}.", $"RewardChoiceItemID{i}", $"RewardChoiceItemQuantity{i}", "choice", "Change choice reward");
+        }
+
+        Heading("Reputation", "Standard tier (1–9) uses the client's reward table; an exact amount overrides it.");
+        for (int i = 1; i <= 5; i++)
+        {
+            int slot = i;
+            if (q.U($"RewardFactionID{slot}") == 0 && slot > 1 && q.U($"RewardFactionID{slot - 1}") == 0)
             {
-                Text = value == Tab.Chain ? "Chain & requirements" : value.ToString(),
-                ToggleMode = true,
-                ButtonPressed = tab == value,
-                Name = "Tab" + value
-            };
-            var chosen = value;
-            button.Pressed += () =>
-            {
-                tab = chosen;
-                Render();
-            };
-            tabs.AddChild(button);
+                continue;
+            }
+
+            Add($"{slot}.", FactionRef(Template, $"RewardFactionID{slot}", "Change reputation reward"),
+                ClientStyle.Tag("tier"), UNumber(Template, $"RewardFactionValue{slot}", "Change reputation tier", 40),
+                ClientStyle.Tag("or exact"), EditorFields.Number(q.I($"RewardFactionOverride{slot}") / 100, value => Set(Template, "Change reputation amount", ($"RewardFactionOverride{slot}", value * 100)), 60));
         }
 
-        switch (tab)
-        {
-            case Tab.Overview:
-                RenderOverview(q);
-                break;
-            case Tab.Story:
-                RenderStory(q);
-                break;
-            case Tab.Objectives:
-                RenderObjectives(q);
-                break;
-            case Tab.Rewards:
-                RenderRewards(q);
-                break;
-            case Tab.Chain:
-                RenderChain(q);
-                break;
-            case Tab.Givers:
-                RenderGivers();
-                break;
-            default:
-                RenderPreview(q);
-                break;
-        }
-
-        RenderIssues();
-        Rendered?.Invoke();
-    }
-
-    void RenderIssues()
-    {
-        foreach (var issue in issues.OrderByDescending(i => i.Error).Take(5))
-        {
-            var row = new HBoxContainer();
-            var label = ClientStyle.Text((issue.Error ? "⛔ " : "⚠ ") + issue.Message, 12, issue.Error ? ClientStyle.Error : ClientStyle.Warning);
-            label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            row.AddChild(label);
-            issueBox.AddChild(row);
-        }
-
-        if (issues.Count > 5)
-        {
-            issueBox.AddChild(ClientStyle.Text($"…and {issues.Count - 5} more.", 11, ClientStyle.Faded));
-        }
+        Heading("Other rewards");
+        Add("Spell cast on player", Ref(Template, "RewardSpell", SmartParamKind.Spell, "spell cast on the player", "Change reward spell"));
+        Add("Spell shown as reward", Ref(Template, "RewardDisplaySpell", SmartParamKind.Spell, "displayed reward spell", "Change displayed spell"));
+        Add("Honor", UNumber(Template, "RewardHonor", "Change honor reward", 60), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60),
+            ClientStyle.Tag("Talents"), UNumber(Template, "RewardTalents", "Change talent reward", 40), ClientStyle.Tag("Title ID"), UNumber(Template, "RewardTitle", "Change title reward", 50));
+        Add("Mail afterwards", UNumber(Addon, "RewardMailTemplateID", "Change reward mail", 70, "Mail template ID; 0 = none"), ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70), ClientStyle.Tag("seconds"));
     }
 
     /// <summary>
-    /// Switch page (smoke hook and cross-links).
+    /// Client-style read-only rendering of the drafted quest, as the player would read it.
     /// </summary>
-    public void ShowTab(Tab value)
+    void RenderPreview(Row q)
     {
-        tab = value;
-        Render();
+        var request = RowOf(InteractionTables.QuestRequestItems);
+        var offer = RowOf(InteractionTables.QuestOfferReward);
+        void Text(string text, int size = 14, Color? color = null)
+        {
+            var label = ClientStyle.Text(NpcInteraction.Render(text), size, color ?? ClientStyle.Body);
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            page.AddChild(label);
+        }
+
+        Text(q.T("LogTitle"), 19, ClientStyle.Header);
+        Text(q.T("QuestDescription"));
+        Text("Quest Objectives", 16, ClientStyle.Header);
+        Text(q.T("LogDescription"));
+        for (int i = 1; i <= 4; i++)
+        {
+            int target = q.I($"RequiredNpcOrGo{i}");
+            if (target != 0)
+            {
+                string name = q.T($"ObjectiveText{i}") is { Length: > 0 } custom ? custom : (target > 0 ? snapshot!.Names.Creature((uint)target) + " slain" : snapshot!.Names.GameObject((uint)-target)) ?? "?";
+                Text($"  {name}: 0/{q.U($"RequiredNpcOrGoCount{i}")}", 13);
+            }
+        }
+
+        for (int i = 1; i <= 6; i++)
+        {
+            if (q.U($"RequiredItemId{i}") is var item && item != 0)
+            {
+                Text($"  {snapshot!.Names.Item(item) ?? "?"}: 0/{q.U($"RequiredItemCount{i}")}", 13);
+            }
+        }
+
+        Text("Rewards", 16, ClientStyle.Header);
+        var rewards = Enumerable.Range(1, 4).Where(i => q.U($"RewardItem{i}") != 0).Select(i => $"{snapshot!.Names.Item(q.U($"RewardItem{i}"))} ×{q.U($"RewardAmount{i}")}").ToList();
+        var choices = Enumerable.Range(1, 6).Where(i => q.U($"RewardChoiceItemID{i}") != 0).Select(i => $"{snapshot!.Names.Item(q.U($"RewardChoiceItemID{i}"))} ×{q.U($"RewardChoiceItemQuantity{i}")}").ToList();
+        if (choices.Count > 0)
+        {
+            Text("You will be able to choose one of these rewards:\n  " + string.Join("\n  ", choices), 13);
+        }
+
+        if (rewards.Count > 0)
+        {
+            Text("You will receive:\n  " + string.Join("\n  ", rewards), 13);
+        }
+
+        if (q.I("RewardMoney") != 0)
+        {
+            Text((q.I("RewardMoney") > 0 ? "Money: " : "Costs: ") + ClientStyle.Money(Math.Abs((long)q.I("RewardMoney"))), 13);
+        }
+
+        Text("Progress", 16, ClientStyle.Header);
+        Text(request.T("CompletionText").Length > 0 ? request.T("CompletionText") : "(no progress text: the client skips this page)", 13, request.T("CompletionText").Length > 0 ? null : ClientStyle.Faded);
+        Text("Completion", 16, ClientStyle.Header);
+        Text(offer.T("RewardText"), 13);
+        // Added directly: Text() would substitute the placeholders this note names.
+        page.AddChild(ClientStyle.Text("Preview shows $N, $C and $R as <name>, <class>, <race> and uses the male $G form; conditions and scripts are not evaluated.", 11, ClientStyle.Faded));
     }
 }

@@ -6,16 +6,19 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Standalone quest editor: a quest search list on the left and a <see cref="AcQuestPanel"/> (the same
-/// editor the creature properties window embeds for its quest givers) on the right.
+/// Standalone quest editor: a quest search list on the left and the open database's
+/// <see cref="QuestPanel"/> (<see cref="AcQuestPanel"/> or <see cref="TcQuestPanel"/>) on the right.
 /// </summary>
-public partial class AcQuestEditorWindow : ContentEditorWindow
+public partial class QuestEditorWindow : ContentEditorWindow
 {
     protected override Vector2 TargetSize => new(1000, 720);
-    public AcQuestPanel Panel { get; } = new();
-    public Func<AreaLookup?> Areas { get => Panel.Areas; set => Panel.Areas = value; }
-    public Func<uint, string, Task<string>> FlyToEntry { get => Panel.FlyToEntry; set => Panel.FlyToEntry = value; }
-    public Action<uint> BehaviorRequested { get => Panel.BehaviorRequested; set => Panel.BehaviorRequested = value; }
+    /// <summary>The panel of the open database's dialect; replaced when the dialect changes.</summary>
+    public QuestPanel Panel { get; private set; } = new AcQuestPanel();
+    public Func<AreaLookup?> Areas { get; set; } = () => null;
+    public Func<IClientLookup?> Lookup { get; set; } = () => null;
+    public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
+    public Action<uint> BehaviorRequested { get; set; } = _ => { };
+    HBoxContainer split = null!;
 
     int searchGeneration;
     LineEdit search = null!;
@@ -25,16 +28,13 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
     public uint? QuestId => Panel.QuestId;
     public bool IsLoading => Panel.IsLoading;
 
-    public AcQuestEditorWindow() : base("QuestEditor")
+    public QuestEditorWindow() : base("QuestEditor")
     {
         Size = TargetSize;
     }
 
     public override void _Ready()
     {
-        Panel.Connection = () => Connection();
-        Panel.Store = () => Store();
-        Panel.Drafts = Drafts;
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
@@ -51,7 +51,7 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
         duplicate = ButtonIn(header, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
         duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
         ButtonIn(header, "✕", () => Visible = false);
-        var split = new HBoxContainer
+        split = new HBoxContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
@@ -79,9 +79,39 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
         results.ItemSelected += index => _ = Panel.Load((uint)results.GetItemMetadata((int)index).AsInt64());
         left.AddChild(results);
         split.AddChild(new VSeparator());
-        split.AddChild(Panel);
-        Panel.Rendered += Sync;
+        Attach(Panel);
         Sync();
+    }
+
+    /// <summary>Wire a panel to this window's hooks and put it beside the search list.</summary>
+    void Attach(QuestPanel panel)
+    {
+        panel.Connection = () => Connection();
+        panel.Store = () => Store();
+        panel.Drafts = Drafts;
+        panel.Areas = () => Areas();
+        panel.Lookup = () => Lookup();
+        panel.FlyToEntry = (entry, name) => FlyToEntry(entry, name);
+        panel.BehaviorRequested = entry => BehaviorRequested(entry);
+        panel.Rendered += Sync;
+        Panel = panel;
+        split.AddChild(panel);
+    }
+
+    /// <summary>Swap in the panel for the open database's dialect.</summary>
+    void MatchDialect()
+    {
+        var dialect = Connection().Dialect;
+        if (dialect == WorldDialect.TrinityCore == Panel is TcQuestPanel)
+        {
+            return;
+        }
+
+        split.RemoveChild(Panel);
+        Panel.QueueFree();
+        results.Clear();
+        ResultCount = 0;
+        Attach(dialect == WorldDialect.TrinityCore ? new TcQuestPanel() : new AcQuestPanel());
     }
 
     void Sync()
@@ -97,6 +127,7 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
     {
         Visible = true;
         PlaceOnFirstOpen(0, 80);
+        MatchDialect();
         Panel.Open(quest);
     }
 
@@ -104,7 +135,7 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
 
     public Task NewQuest(uint? copyFrom) => Panel.NewQuest(copyFrom);
 
-    public void ShowTab(AcQuestPanel.Tab value) => Panel.ShowTab(value);
+    public void ShowTab(QuestPanel.Tab value) => Panel.ShowTab(value);
 
     public async Task Search()
     {
@@ -112,7 +143,8 @@ public partial class AcQuestEditorWindow : ContentEditorWindow
         Panel.ShowStatus("Searching…");
         try
         {
-            var found = await DBSource.Open(Connection()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
+            MatchDialect();
+            var found = await DBSource.Open(Connection(), Lookup()).SearchAsync(SmartParamKind.Quest, search.Text, CancellationToken.None);
             if (current != searchGeneration)
             {
                 return;

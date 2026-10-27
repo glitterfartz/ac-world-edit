@@ -249,11 +249,12 @@ public partial class TerrainViewer
             Store = () => store,
             Drafts = drafts
         };
-        questEditor = new AcQuestEditorWindow
+        questEditor = new QuestEditorWindow
         {
             Connection = () => DatabaseConnection(),
             Store = () => store,
             Areas = () => areas,
+            Lookup = () => clientLookup,
             Drafts = drafts,
             FlyToEntry = LocateCreature,
             BehaviorRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
@@ -317,7 +318,7 @@ public partial class TerrainViewer
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
     ContentDrafts drafts = null!;
-    AcQuestEditorWindow questEditor = null!;
+    QuestEditorWindow questEditor = null!;
     /// <summary>AreaTrigger rules have no creature, so they keep a window of their own.</summary>
     AcBehaviorEditorWindow areaBehavior = null!;
 

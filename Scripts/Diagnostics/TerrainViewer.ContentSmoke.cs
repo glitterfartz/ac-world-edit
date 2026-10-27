@@ -252,7 +252,7 @@ public partial class TerrainViewer
         }),
         ("quest-objective-picker", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Objectives);
+            questEditor.ShowTab(QuestPanel.Tab.Objectives);
             Require(questEditor.SmokePress("Kill a creature…"), "no Kill a creature button");
             return true;
         }),
@@ -287,7 +287,7 @@ public partial class TerrainViewer
         }),
         ("quest-story", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Story);
+            questEditor.ShowTab(QuestPanel.Tab.Story);
             Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Edit quest text", ("QuestDescription", "Those kobolds keep scaring my guests, $n.$B$BThin them out, would you?"), ("LogDescription", "Kill 8 Kobold Vermin.")), "story: " + questEditor.SmokeStatus);
             Require(questEditor.SmokeSet(InteractionTables.QuestOfferReward, "Edit turn-in text", ("RewardText", "My guests can finally sleep. Thank you, $n.")), "turn-in: " + questEditor.SmokeStatus);
             Screenshot("quest-story");
@@ -295,7 +295,7 @@ public partial class TerrainViewer
         }),
         ("quest-rewards", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Rewards);
+            questEditor.ShowTab(QuestPanel.Tab.Rewards);
             Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change money reward", ("RewardMoney", 1500)), "money: " + questEditor.SmokeStatus);
             Require(!questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change reward item", ("RewardItem1", 99999999u), ("RewardAmount1", 1u)) && questEditor.SmokeStatus.StartsWith("Not saved", StringComparison.Ordinal), "missing reward item was accepted");
             Screenshot("quest-rewards");
@@ -303,7 +303,7 @@ public partial class TerrainViewer
         }),
         ("quest-givers", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Givers);
+            questEditor.ShowTab(QuestPanel.Tab.Givers);
             var link = Row.Of(("id", SmokeInnkeeper), ("quest", smokeNewQuest));
             var table = InteractionTables.QuestStarter;
             Require(questEditor.SmokeCommit("Add quest giver", new RowEdit(table.Name, table.KeyOf(link), null, link)), "giver: " + questEditor.SmokeStatus);
@@ -315,13 +315,13 @@ public partial class TerrainViewer
         }),
         ("quest-chain", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Chain);
+            questEditor.ShowTab(QuestPanel.Tab.Chain);
             Screenshot("quest-chain");
             return true;
         }),
         ("quest-preview", () =>
         {
-            questEditor.ShowTab(AcQuestPanel.Tab.Preview);
+            questEditor.ShowTab(QuestPanel.Tab.Preview);
             Screenshot("quest-preview");
             return true;
         }),
