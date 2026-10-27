@@ -28,7 +28,7 @@ public sealed class CreatureContext
     /// <summary>A section wants the behavior of another creature entry (a quest giver card).</summary>
     public Action<uint> BehaviorForEntryRequested { get; set; } = _ => { };
 
-    AcBehaviorPanel? behavior;
+    BehaviorPanel? behavior;
     AcQuestPanel? quest;
     (uint Entry, ulong Guid)? behaviorOpenedFor;
 
@@ -36,10 +36,11 @@ public sealed class CreatureContext
     /// The one behavior editor body shared by the Behavior and Speech sections (they are two views of
     /// the same rows and snapshot).
     /// </summary>
-    public AcBehaviorPanel Behavior => behavior ??= new AcBehaviorPanel
+    public BehaviorPanel Behavior => behavior ??= new BehaviorPanel
     {
         Connection = () => Connection(),
         Store = () => Store(),
+        Lookup = () => Lookup(),
         Drafts = Drafts,
         SpeechInScopes = false
     };

@@ -3,7 +3,7 @@ namespace ACWorldEdit.Foundation;
 /// <summary>
 /// The TrinityCore master creature tables the creature editor reads, with primary keys and column
 /// types from TDB 1210.26091. The template page edits creature_template and creature_template_difficulty;
-/// the other tables are still read-only in the editor. SmartAI and waypoint tables are not listed and stay uneditable. Text
+/// the other tables are still read-only in the editor. Waypoint tables are not listed and stay uneditable. Text
 /// limits follow the column types (varchar); 0 means unbounded (mediumtext).
 /// </summary>
 public sealed class TcTables : ITableCatalog
@@ -323,7 +323,72 @@ public sealed class TcTables : ITableCatalog
     public static readonly TableSchema QuestEnder = new("creature_questender", ["id", "quest"], [("id", ColumnKind.UInt, 0), ("quest", ColumnKind.UInt, 0)]);
     public static readonly TableSchema SpellClick = new("npc_spellclick_spells", ["npc_entry", "spell_id"], [("npc_entry", ColumnKind.UInt, 0), ("spell_id", ColumnKind.UInt, 0), ("cast_flags", ColumnKind.UInt, 0), ("user_type", ColumnKind.UInt, 0)]);
 
-    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick];
+    /// <summary>The creature's AI name, a column of creature_template edited on its own so a SmartAI change never rewrites the whole template.</summary>
+    public static readonly TableSchema CreatureAI = new("creature_ai", ["entry"], [("entry", ColumnKind.UInt, 0), ("AIName", ColumnKind.Text, 64)], "creature_template");
+
+    /// <summary>
+    /// smart_scripts of TrinityCore master: entryorguid is a bigint, event_param6 is gone, actions have
+    /// a seventh parameter and each part has a string parameter; Difficulties replaces the difficulty flags.
+    /// </summary>
+    public static readonly TableSchema SmartScripts = new("smart_scripts", ["entryorguid", "source_type", "id", "link"],
+    [
+        ("entryorguid", ColumnKind.Long, 0),
+        ("source_type", ColumnKind.UInt, 0),
+        ("id", ColumnKind.UInt, 0),
+        ("link", ColumnKind.UInt, 0),
+        ("Difficulties", ColumnKind.Text, 100),
+        ("event_type", ColumnKind.UInt, 0),
+        ("event_phase_mask", ColumnKind.UInt, 0),
+        ("event_chance", ColumnKind.UInt, 0),
+        ("event_flags", ColumnKind.UInt, 0),
+        ("event_param1", ColumnKind.UInt, 0),
+        ("event_param2", ColumnKind.UInt, 0),
+        ("event_param3", ColumnKind.UInt, 0),
+        ("event_param4", ColumnKind.UInt, 0),
+        ("event_param5", ColumnKind.UInt, 0),
+        ("event_param_string", ColumnKind.Text, 255),
+        ("action_type", ColumnKind.UInt, 0),
+        ("action_param1", ColumnKind.UInt, 0),
+        ("action_param2", ColumnKind.UInt, 0),
+        ("action_param3", ColumnKind.UInt, 0),
+        ("action_param4", ColumnKind.UInt, 0),
+        ("action_param5", ColumnKind.UInt, 0),
+        ("action_param6", ColumnKind.UInt, 0),
+        ("action_param7", ColumnKind.UInt, 0),
+        ("action_param_string", ColumnKind.Text, 255),
+        ("target_type", ColumnKind.UInt, 0),
+        ("target_param1", ColumnKind.UInt, 0),
+        ("target_param2", ColumnKind.UInt, 0),
+        ("target_param3", ColumnKind.UInt, 0),
+        ("target_param4", ColumnKind.UInt, 0),
+        ("target_param_string", ColumnKind.Text, 255),
+        ("target_x", ColumnKind.Float, 0),
+        ("target_y", ColumnKind.Float, 0),
+        ("target_z", ColumnKind.Float, 0),
+        ("target_o", ColumnKind.Float, 0),
+        ("comment", ColumnKind.Text, 0)
+    ]);
+
+    /// <summary>creature_text of TrinityCore master: AzerothCore's columns plus SoundPlayType.</summary>
+    public static readonly TableSchema CreatureText = new("creature_text", ["CreatureID", "GroupID", "ID"],
+    [
+        ("CreatureID", ColumnKind.UInt, 0),
+        ("GroupID", ColumnKind.UInt, 0),
+        ("ID", ColumnKind.UInt, 0),
+        ("Text", ColumnKind.Text, 0),
+        ("Type", ColumnKind.UInt, 0),
+        ("Language", ColumnKind.UInt, 0),
+        ("Probability", ColumnKind.Float, 0),
+        ("Emote", ColumnKind.UInt, 0),
+        ("Duration", ColumnKind.UInt, 0),
+        ("Sound", ColumnKind.UInt, 0),
+        ("SoundPlayType", ColumnKind.UInt, 0),
+        ("BroadcastTextId", ColumnKind.Int, 0),
+        ("TextRange", ColumnKind.UInt, 0),
+        ("comment", ColumnKind.Text, 255)
+    ]);
+
+    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText];
 
     public IReadOnlyList<TableSchema> All => Tables;
 

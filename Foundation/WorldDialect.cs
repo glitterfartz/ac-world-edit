@@ -42,6 +42,9 @@ public interface IWorldSchema
 
     TrainerPageSpec TrainerPage { get; }
     QuestLinksPageSpec QuestLinksPage { get; }
+
+    /// <summary>SmartAI: event, action and target types, smart_scripts columns and the loader rules.</summary>
+    SmartCatalog Smart { get; }
 }
 
 /// <summary>The schema object of each dialect.</summary>
@@ -55,7 +58,7 @@ public static class WorldSchemas
     };
 }
 
-/// <summary>The AzerothCore 3.3.5 world schema. SmartCatalog and QuestModel remain its static data.</summary>
+/// <summary>The AzerothCore 3.3.5 world schema. QuestModel remains its static data.</summary>
 public sealed class AcSchema : IWorldSchema
 {
     public static readonly AcSchema Instance = new();
@@ -67,11 +70,12 @@ public sealed class AcSchema : IWorldSchema
     public GossipPageSpec GossipPage => Foundation.GossipPage.AzerothCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.AzerothCore;
     public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.AzerothCore;
+    public SmartCatalog Smart => SmartCatalog.Ac;
 }
 
 /// <summary>
-/// The TrinityCore master world schema. Its table catalog holds the creature tables only, so a quest
-/// or SmartAI row fails rather than being written against AzerothCore's tables.
+/// The TrinityCore master world schema. Its table catalog holds the creature, quest and SmartAI tables, so a
+/// row of another table fails rather than being written against AzerothCore's tables.
 /// </summary>
 public sealed class TcSchema : IWorldSchema
 {
@@ -84,4 +88,5 @@ public sealed class TcSchema : IWorldSchema
     public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.TrinityCore;
     public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.TrinityCore;
+    public SmartCatalog Smart => SmartCatalog.Trinity;
 }

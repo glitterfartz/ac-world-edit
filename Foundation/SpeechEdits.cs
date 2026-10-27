@@ -17,11 +17,16 @@ public static class SpeechEdits
     /// A blank line appended to a group (a new group when it has no lines yet). Returns the label and
     /// the insert edit.
     /// </summary>
-    public static (string Label, RowEdit Edit) NewLine(RowSet rows, uint entry, uint group, string comment)
+    public static (string Label, RowEdit Edit) NewLine(SmartCatalog smart, RowSet rows, uint entry, uint group, string comment)
     {
         uint id = LinesOf(rows, entry).Where(t => t.U("GroupID") == group).Select(t => t.U("ID") + 1).DefaultIfEmpty(0u).Max();
         var row = Row.Of(("CreatureID", entry), ("GroupID", group), ("ID", id), ("Text", ""), ("Type", 12u), ("Language", 0), ("Probability", 100f), ("Emote", 0u),
             ("Duration", 0u), ("Sound", 0u), ("BroadcastTextId", 0), ("TextRange", 0u), ("comment", comment.Length > 255 ? comment[..255] : comment));
+        if (smart.Dialect == WorldDialect.TrinityCore)
+        {
+            row = row.With("SoundPlayType", 0u);
+        }
+
         return (id == 0 ? $"Add speech group {group}" : $"Add line to group {group}", new RowEdit(Table.Name, Table.KeyOf(row), null, row));
     }
 

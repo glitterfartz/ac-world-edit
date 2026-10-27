@@ -5,7 +5,7 @@ using Xunit;
 namespace ACWorldEdit.Tests.Smart;
 
 /// <summary>
-/// SmartCatalog.Check loader rules (SmartScriptMgr.cpp), plus sentence/chain helpers, one rule per
+/// SmartCatalog.Ac.Check loader rules (SmartScriptMgr.cpp), plus sentence/chain helpers, one rule per
 /// test over in-memory rows.
 /// </summary>
 public class SmartBehaviorTests
@@ -31,11 +31,11 @@ public class SmartBehaviorTests
 
     static SmartRule Rule(uint id, uint ev = Aggro, uint action = Cast, uint target = Victim, SmartScope? scope = null, Func<Row, Row>? edit = null)
     {
-        var row = SmartCatalog.NewRow(scope ?? Entry, id, ev, action, target);
+        var row = SmartCatalog.Ac.NewRow(scope ?? Entry, id, ev, action, target);
         return new(edit?.Invoke(row) ?? row);
     }
 
-    static List<InteractionIssue> Check(SmartScope scope, IEnumerable<SmartRule> rules, Row? ai = null) => SmartCatalog.Check(scope, rules.ToList(), Lookup, ai, 42).ToList();
+    static List<InteractionIssue> Check(SmartScope scope, IEnumerable<SmartRule> rules, Row? ai = null) => SmartCatalog.Ac.Check(scope, rules.ToList(), Lookup, ai, 42).ToList();
 
     static List<InteractionIssue> Check(params SmartRule[] rules) => Check(Entry, rules);
 
@@ -85,7 +85,7 @@ public class SmartBehaviorTests
         AssertIssue(issues, true, "event type 9999");
         AssertIssue(issues, true, "action type 9999");
         AssertIssue(issues, true, "target type 9999");
-        var marker = SmartCatalog.Events.First(SmartCatalog.IsMarker);
+        var marker = SmartCatalog.Ac.Events.First(SmartCatalog.IsMarker);
         AssertIssue(Check(Rule(0, (uint)marker.Id)), true, "is unknown to this server");
     }
 
@@ -111,7 +111,7 @@ public class SmartBehaviorTests
     {
         Assert.DoesNotContain(Check(Rule(0, edit: r => r.With("event_flags", SmartCatalog.AllEventFlags))), i => i.Error);
         AssertIssue(Check(Rule(0, edit: r => r.With("event_flags", 0x400u))), true, "unknown event flags 0x400");
-        Assert.Equal(SmartCatalog.AllEventFlags, SmartCatalog.EventFlags.Aggregate(0u, (m, f) => m | f.Bit) | 0x40u | 0x20u);
+        Assert.Equal(SmartCatalog.AllEventFlags, SmartCatalog.Ac.EventFlags.Aggregate(0u, (m, f) => m | f.Bit) | 0x40u | 0x20u);
     }
 
     [Fact]
@@ -136,12 +136,12 @@ public class SmartBehaviorTests
     [Fact]
     public void ReferencedIdsMustExistPerParameterKind()
     {
-        var spell = FirstWith(SmartCatalog.Actions, SmartParamKind.Spell);
+        var spell = FirstWith(SmartCatalog.Ac.Actions, SmartParamKind.Spell);
         AssertIssue(Check(Rule(0, action: (uint)spell.Id, edit: r => r.With("action_param1", 1u))), true, "does not exist");
         Assert.Empty(Check(Rule(0, action: (uint)spell.Id, edit: r => r.With("action_param1", 133u))));
         Assert.DoesNotContain(Check(Rule(0, action: (uint)spell.Id, edit: r => r.With("action_param1", 0u))), i => i.Error);
 
-        var creature = FirstWith(SmartCatalog.Events, SmartParamKind.Creature);
+        var creature = FirstWith(SmartCatalog.Ac.Events, SmartParamKind.Creature);
         AssertIssue(Check(Rule(0, ev: (uint)creature.Id, edit: r => r.With("event_param1", 1u))), true, "event ");
         Assert.DoesNotContain(Check(Rule(0, ev: (uint)creature.Id, edit: r => r.With("event_param1", 6u))), i => i.Error && i.Message.Contains("does not exist", StringComparison.Ordinal));
     }
@@ -273,7 +273,7 @@ public class SmartBehaviorTests
     [Fact]
     public void DescribeShowsUnknownTypeIdsInsteadOfHidingThem()
     {
-        string text = SmartCatalog.Describe(Rule(0, 9999, 9998, 9997), Lookup, 42);
+        string text = SmartCatalog.Ac.Describe(Rule(0, 9999, 9998, 9997), Lookup, 42);
         Assert.Contains("9999", text);
         Assert.Contains("9998", text);
         Assert.Contains("9997", text);
@@ -282,17 +282,17 @@ public class SmartBehaviorTests
     [Fact]
     public void DescribeAppendsChanceOnceAndPhaseExtras()
     {
-        string text = SmartCatalog.Describe(Rule(0, edit: r => r.With("event_chance", 30u).With("event_flags", 1u).With("event_phase_mask", 0b101u)), Lookup, 42);
+        string text = SmartCatalog.Ac.Describe(Rule(0, edit: r => r.With("event_chance", 30u).With("event_flags", 1u).With("event_phase_mask", 0b101u)), Lookup, 42);
         Assert.Contains("(30% chance)", text);
         Assert.Contains("(once)", text);
         Assert.Contains("(phases 1,3)", text);
-        Assert.DoesNotContain("chance", SmartCatalog.Describe(Rule(0), Lookup, 42));
+        Assert.DoesNotContain("chance", SmartCatalog.Ac.Describe(Rule(0), Lookup, 42));
     }
 
     [Fact]
     public void LinkedRuleReadsThen()
     {
-        Assert.StartsWith("Then:", SmartCatalog.Describe(Rule(1, SmartCatalog.LinkEvent), Lookup, 42));
+        Assert.StartsWith("Then:", SmartCatalog.Ac.Describe(Rule(1, SmartCatalog.LinkEvent), Lookup, 42));
     }
 
     [Theory]
@@ -302,22 +302,22 @@ public class SmartBehaviorTests
     public void TimerEventsReadNaturally(uint min, uint max, uint repeatMin, uint repeatMax, string prefix)
     {
         var rule = Rule(0, 0, edit: r => r.With("event_param1", min).With("event_param2", max).With("event_param3", repeatMin).With("event_param4", repeatMax));
-        Assert.StartsWith(prefix, SmartCatalog.Describe(rule, Lookup, 42));
+        Assert.StartsWith(prefix, SmartCatalog.Ac.Describe(rule, Lookup, 42));
     }
 
     [KnownBug("KB-002", "Timer ranges render each endpoint with its unit ('8 s–12 s'); the SmartCatalog.Timer doc comment promises '8–12 s'.")]
     public void TimerRangesShareOneUnit()
     {
         var rule = Rule(0, 0, edit: r => r.With("event_param3", 8000u).With("event_param4", 12000u));
-        Assert.StartsWith("Every 8–12 s in combat: ", SmartCatalog.Describe(rule, Lookup, 42));
+        Assert.StartsWith("Every 8–12 s in combat: ", SmartCatalog.Ac.Describe(rule, Lookup, 42));
     }
 
     [Fact]
     public void ActionListTimerIsTheDelayAfterThePreviousStep()
     {
         var list = new SmartScope(4200, SmartScope.ActionList);
-        Assert.StartsWith("After 2 s:", SmartCatalog.Describe(Rule(0, 0, scope: list, edit: r => r.With("event_param1", 2000u).With("event_param2", 2000u)), Lookup, 42));
-        Assert.StartsWith("Right away:", SmartCatalog.Describe(Rule(0, 0, scope: list), Lookup, 42));
+        Assert.StartsWith("After 2 s:", SmartCatalog.Ac.Describe(Rule(0, 0, scope: list, edit: r => r.With("event_param1", 2000u).With("event_param2", 2000u)), Lookup, 42));
+        Assert.StartsWith("Right away:", SmartCatalog.Ac.Describe(Rule(0, 0, scope: list), Lookup, 42));
     }
 
     [Fact]
@@ -331,15 +331,15 @@ public class SmartBehaviorTests
     [Fact]
     public void AutoCommentUsesCatalogNamesWithFallbacks()
     {
-        Assert.Equal("Kobold - " + SmartCatalog.Event(Aggro)!.Name + " - " + SmartCatalog.Action(Cast)!.Name, SmartCatalog.AutoComment(Rule(0), "Kobold"));
-        Assert.Equal("Kobold - Linked - Action 9999", SmartCatalog.AutoComment(Rule(0, SmartCatalog.LinkEvent, 9999), "Kobold"));
-        Assert.Equal("Kobold - Event 9999 - " + SmartCatalog.Action(Cast)!.Name, SmartCatalog.AutoComment(Rule(0, 9999), "Kobold"));
+        Assert.Equal("Kobold - " + SmartCatalog.Ac.Event(Aggro)!.Name + " - " + SmartCatalog.Ac.Action(Cast)!.Name, SmartCatalog.Ac.AutoComment(Rule(0), "Kobold"));
+        Assert.Equal("Kobold - Linked - Action 9999", SmartCatalog.Ac.AutoComment(Rule(0, SmartCatalog.LinkEvent, 9999), "Kobold"));
+        Assert.Equal("Kobold - Event 9999 - " + SmartCatalog.Ac.Action(Cast)!.Name, SmartCatalog.Ac.AutoComment(Rule(0, 9999), "Kobold"));
     }
 
     [Fact]
     public void NewRowHasEveryWhitelistedColumnAndDefaultsToFullChance()
     {
-        var row = SmartCatalog.NewRow(Entry, 3, Aggro, Cast, Victim, "note");
+        var row = SmartCatalog.Ac.NewRow(Entry, 3, Aggro, Cast, Victim, "note");
         row.Validate(InteractionTables.SmartScripts);
         var rule = new SmartRule(row);
         Assert.Equal(100u, rule.Chance);

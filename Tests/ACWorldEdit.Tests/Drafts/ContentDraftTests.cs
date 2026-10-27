@@ -51,17 +51,17 @@ public class ContentDraftTests
     /// </summary>
     static void CheckCategories()
     {
-        foreach (var (kind, types) in new[] { ("event", SmartCatalog.Events), ("action", SmartCatalog.Actions), ("target", SmartCatalog.Targets) })
+        foreach (var (kind, types) in new[] { ("event", SmartCatalog.Ac.Events), ("action", SmartCatalog.Ac.Actions), ("target", SmartCatalog.Ac.Targets) })
         {
             var selectable = types.Where(t => !SmartCatalog.IsMarker(t)).ToList();
             var groups = SmartCatalog.Grouped(types, kind).ToList();
             Check(groups.Sum(g => g.Types.Count) == selectable.Count && groups.SelectMany(g => g.Types).Distinct().Count() == selectable.Count, $"{kind} grouping lost or duplicated types");
-            Console.WriteLine($"  {kind}s={selectable.Count} markers={types.Length - selectable.Count}: " + string.Join(", ", groups.Select(g => $"{g.Category} {g.Types.Count}")));
+            Console.WriteLine($"  {kind}s={selectable.Count} markers={types.Count - selectable.Count}: " + string.Join(", ", groups.Select(g => $"{g.Category} {g.Types.Count}")));
         }
 
-        var marker = SmartCatalog.Events.First(SmartCatalog.IsMarker);
-        Check(SmartCatalog.Event((uint)marker.Id) == null, "Range marker accepted as an event");
-        Check(SmartCatalog.Category(SmartCatalog.Event(4)!) == "Combat" && SmartCatalog.Category(SmartCatalog.Action(11)!) == "Spells & combat" && SmartCatalog.Category(SmartCatalog.Target(2)!) == "Enemies", "Category assignment");
+        var marker = SmartCatalog.Ac.Events.First(SmartCatalog.IsMarker);
+        Check(SmartCatalog.Ac.Event((uint)marker.Id) == null, "Range marker accepted as an event");
+        Check(SmartCatalog.Category(SmartCatalog.Ac.Event(4)!) == "Combat" && SmartCatalog.Category(SmartCatalog.Ac.Action(11)!) == "Spells & combat" && SmartCatalog.Category(SmartCatalog.Ac.Target(2)!) == "Enemies", "Category assignment");
     }
 
     static void CheckQuest(InteractionDraft draft, IContentNames names)
@@ -120,20 +120,20 @@ public class ContentDraftTests
         var scope = new SmartScope(trigger, SmartScope.AreaTrigger);
         Check(scope.Describe("") == "AreaTrigger 5140" && !scope.IsSpawn && scope.IsAreaTrigger, "AreaTrigger scope identity");
         // The Utgarde Pinnacle row: On trigger -> set data 1 1 on creature spawn 126115 (Svala).
-        var svala = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 45, 10).With("action_param1", 1u).With("action_param2", 1u).With("target_param1", 126115u).With("target_param2", 42u));
+        var svala = new SmartRule(SmartCatalog.Ac.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 45, 10).With("action_param1", 1u).With("action_param2", 1u).With("target_param1", 126115u).With("target_param2", 42u));
         svala.Row.Validate(InteractionTables.SmartScripts);
-        var clean = SmartCatalog.Check(scope, [svala], names, null, trigger).ToList();
+        var clean = SmartCatalog.Ac.Check(scope, [svala], names, null, trigger).ToList();
         Check(clean.All(i => !i.Error && i.Fix == null && !i.Message.Contains("AI is", StringComparison.Ordinal)), "Valid AreaTrigger rule reported: " + string.Join("; ", clean.Select(i => i.Message)));
-        var aggro = new SmartRule(SmartCatalog.NewRow(scope, 1, 4, 11, 7));
-        Check(SmartCatalog.Check(scope, [aggro], names, null, trigger).Any(i => i.Error && i.Message.Contains("On trigger", StringComparison.Ordinal)), "Creature event accepted for an AreaTrigger");
-        var self = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 11, SmartCatalog.SelfTarget));
-        Check(SmartCatalog.Check(scope, [self], names, null, trigger).Any(i => !i.Error && i.Message.Contains("targets Self", StringComparison.Ordinal)), "Self target not warned");
-        var talk = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.Talk, 7));
-        Check(SmartCatalog.Check(scope, [talk], names, null, trigger).Any(i => i.Message.Contains("only speaks", StringComparison.Ordinal)), "Talk on the player not warned");
-        var list = new SmartRule(SmartCatalog.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.RunActionList, 7));
-        Check(SmartCatalog.Check(scope, [list], names, null, trigger).Any(i => i.Message.Contains("action lists", StringComparison.Ordinal)), "Action list on the player not warned");
+        var aggro = new SmartRule(SmartCatalog.Ac.NewRow(scope, 1, 4, 11, 7));
+        Check(SmartCatalog.Ac.Check(scope, [aggro], names, null, trigger).Any(i => i.Error && i.Message.Contains("On trigger", StringComparison.Ordinal)), "Creature event accepted for an AreaTrigger");
+        var self = new SmartRule(SmartCatalog.Ac.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 11, SmartCatalog.SelfTarget));
+        Check(SmartCatalog.Ac.Check(scope, [self], names, null, trigger).Any(i => !i.Error && i.Message.Contains("targets Self", StringComparison.Ordinal)), "Self target not warned");
+        var talk = new SmartRule(SmartCatalog.Ac.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.Talk, 7));
+        Check(SmartCatalog.Ac.Check(scope, [talk], names, null, trigger).Any(i => i.Message.Contains("only speaks", StringComparison.Ordinal)), "Talk on the player not warned");
+        var list = new SmartRule(SmartCatalog.Ac.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, SmartCatalog.RunActionList, 7));
+        Check(SmartCatalog.Ac.Check(scope, [list], names, null, trigger).Any(i => i.Message.Contains("action lists", StringComparison.Ordinal)), "Action list on the player not warned");
         var other = new SmartRule(svala.Row.With("event_param1", 9999u));
-        Check(SmartCatalog.Check(scope, [other], names, null, trigger).Any(i => !i.Error && i.Message.Contains("9999", StringComparison.Ordinal)), "Foreign trigger ID not warned");
+        Check(SmartCatalog.Ac.Check(scope, [other], names, null, trigger).Any(i => !i.Error && i.Message.Contains("9999", StringComparison.Ordinal)), "Foreign trigger ID not warned");
         Check(SmartCatalog.AllowedForAreaTrigger(SmartCatalog.LinkEvent) && !SmartCatalog.AllowedForAreaTrigger(0), "Allowed AreaTrigger events");
 
         var missing = SmartCatalog.CheckAreaTriggerScript(trigger, null, true).Single();
@@ -167,9 +167,9 @@ public class ContentDraftTests
     {
         var scope = new SmartScope(42, SmartScope.Creature);
         var snapshot = new RowSet();
-        var aggro = SmartCatalog.NewRow(scope, 0, 4, SmartCatalog.Talk, 1).With("link", 1u);
-        var then = SmartCatalog.NewRow(scope, 1, SmartCatalog.LinkEvent, 11, 2).With("action_param1", 133u);
-        var timer = SmartCatalog.NewRow(scope, 2, 0, 11, 2).With("action_param1", 133u).With("event_param1", 3000u).With("event_param2", 3000u).With("event_param3", 8000u).With("event_param4", 8000u).With("event_chance", 30u);
+        var aggro = SmartCatalog.Ac.NewRow(scope, 0, 4, SmartCatalog.Talk, 1).With("link", 1u);
+        var then = SmartCatalog.Ac.NewRow(scope, 1, SmartCatalog.LinkEvent, 11, 2).With("action_param1", 133u);
+        var timer = SmartCatalog.Ac.NewRow(scope, 2, 0, 11, 2).With("action_param1", 133u).With("event_param1", 3000u).With("event_param2", 3000u).With("event_param3", 8000u).With("event_param4", 8000u).With("event_chance", 30u);
         var ai = Row.Of(("entry", 42u), ("AIName", ""));
         foreach (var row in new[] { aggro, then, timer })
         {
@@ -179,16 +179,16 @@ public class ContentDraftTests
 
         snapshot.Set(InteractionTables.CreatureAI, ai);
         var rules = snapshot.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
-        string first = SmartCatalog.Describe(rules[0], names, 42);
-        string second = SmartCatalog.Describe(rules[1], names, 42);
-        string third = SmartCatalog.Describe(rules[2], names, 42);
+        string first = SmartCatalog.Ac.Describe(rules[0], names, 42);
+        string second = SmartCatalog.Ac.Describe(rules[1], names, 42);
+        string third = SmartCatalog.Ac.Describe(rules[2], names, 42);
         Check(first.StartsWith("When it enters combat", StringComparison.Ordinal) && first.Contains("For the Alliance!", StringComparison.Ordinal), "Aggro/talk sentence: " + first);
         Check(second.StartsWith("Then:", StringComparison.Ordinal) && second.Contains("Fireball", StringComparison.Ordinal) && second.Contains("its victim", StringComparison.Ordinal), "Linked sentence: " + second);
         Check(third.StartsWith("Every 8 s in combat (first after 3 s)", StringComparison.Ordinal) && third.Contains("30% chance", StringComparison.Ordinal), "Timer sentence: " + third);
         var chains = SmartCatalog.Chains(rules);
         Check(chains.Count == 2 && chains[0].Count == 2 && chains[1].Count == 1, "Chain grouping");
 
-        var issues = SmartCatalog.Check(scope, rules, names, ai, 42).ToList();
+        var issues = SmartCatalog.Ac.Check(scope, rules, names, ai, 42).ToList();
         Check(issues.All(i => !i.Error), "Valid rules reported errors: " + string.Join("; ", issues.Where(i => i.Error).Select(i => i.Message)));
         var fix = issues.FirstOrDefault(i => i.Fix != null);
         Check(fix != null && fix.Fix![0].After!.T("AIName") == "SmartAI", "SmartAI enable fix");
@@ -206,18 +206,18 @@ public class ContentDraftTests
         var view = draft.Effective("src", snapshot);
         var after = view.All(table).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
         Check(after.Count == 3 && after[0].Event == 0 && after[2].Event == 4 && after[2].Link == 1, "Rekeyed swap");
-        Check(SmartCatalog.Check(scope, after, names, view.Get(InteractionTables.CreatureAI, "42"), 42).All(i => !i.Error && i.Fix == null), "Swap broke the rules or AI fix stayed");
+        Check(SmartCatalog.Ac.Check(scope, after, names, view.Get(InteractionTables.CreatureAI, "42"), 42).All(i => !i.Error && i.Fix == null), "Swap broke the rules or AI fix stayed");
 
         var broken = after.Select(r => r.Id == 2 ? new SmartRule(r.Row.With("link", 7u)) : r).ToList();
-        Check(SmartCatalog.Check(scope, broken, names, null, 42).Any(i => i.Error && i.Message.Contains("does not exist", StringComparison.Ordinal)), "Missing link target not reported");
+        Check(SmartCatalog.Ac.Check(scope, broken, names, null, 42).Any(i => i.Error && i.Message.Contains("does not exist", StringComparison.Ordinal)), "Missing link target not reported");
         var orphan = after.Where(r => r.Id != 2).ToList();
-        Check(SmartCatalog.Check(scope, orphan, names, null, 42).Any(i => !i.Error && i.Message.Contains("never runs", StringComparison.Ordinal)), "Orphan Then rule not reported");
+        Check(SmartCatalog.Ac.Check(scope, orphan, names, null, 42).Any(i => !i.Error && i.Message.Contains("never runs", StringComparison.Ordinal)), "Orphan Then rule not reported");
         var spawn = new SmartScope(-77, SmartScope.Creature);
-        Check(SmartCatalog.Check(spawn, [new SmartRule(SmartCatalog.NewRow(spawn, 0, 4, 0, 1))], names, null, 42).Any(i => i.Error && i.Message.Contains("#77", StringComparison.Ordinal)), "Missing spawn not reported");
+        Check(SmartCatalog.Ac.Check(spawn, [new SmartRule(SmartCatalog.Ac.NewRow(spawn, 0, 4, 0, 1))], names, null, 42).Any(i => i.Error && i.Message.Contains("#77", StringComparison.Ordinal)), "Missing spawn not reported");
 
         var list = new SmartScope(4200, SmartScope.ActionList);
-        var step = new SmartRule(SmartCatalog.NewRow(list, 0, 0, 5, 1).With("action_param1", 3u).With("event_param1", 2000u).With("event_param2", 2000u));
-        Check(SmartCatalog.Describe(step, names, 42) == "After 2 s: play emote wave", "Action list step sentence: " + SmartCatalog.Describe(step, names, 42));
+        var step = new SmartRule(SmartCatalog.Ac.NewRow(list, 0, 0, 5, 1).With("action_param1", 3u).With("event_param1", 2000u).With("event_param2", 2000u));
+        Check(SmartCatalog.Ac.Describe(step, names, 42) == "After 2 s: play emote wave", "Action list step sentence: " + SmartCatalog.Ac.Describe(step, names, 42));
 
         var line = Row.Of(("CreatureID", 42u), ("GroupID", 0u), ("ID", 0u), ("Text", "For the Alliance!"), ("Type", 14u), ("Language", 0), ("Probability", 100f), ("Emote", 0u), ("Duration", 0u), ("Sound", 0u), ("BroadcastTextId", 0), ("TextRange", 0u), ("comment", "Test NPC"));
         line.Validate(InteractionTables.CreatureText);

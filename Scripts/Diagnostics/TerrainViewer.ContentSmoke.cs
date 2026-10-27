@@ -160,9 +160,9 @@ public partial class TerrainViewer
         }),
         ("composer-choose", () =>
         {
-            int events = SmartCatalog.Events.Count(t => !SmartCatalog.IsMarker(t) && t.Id != SmartCatalog.LinkEvent);
-            int actions = SmartCatalog.Actions.Count(t => !SmartCatalog.IsMarker(t));
-            int targets = SmartCatalog.Targets.Count(t => !SmartCatalog.IsMarker(t));
+            int events = SmartCatalog.Ac.Events.Count(t => !SmartCatalog.IsMarker(t) && t.Id != SmartCatalog.LinkEvent);
+            int actions = SmartCatalog.Ac.Actions.Count(t => !SmartCatalog.IsMarker(t));
+            int targets = SmartCatalog.Ac.Targets.Count(t => !SmartCatalog.IsMarker(t));
             Require(behaviorEditor.SmokeComposerOptions("event") == events && behaviorEditor.SmokeComposerOptions("action") == actions && behaviorEditor.SmokeComposerOptions("target") == targets,
                 $"composer lists {behaviorEditor.SmokeComposerOptions("event")}/{behaviorEditor.SmokeComposerOptions("action")}/{behaviorEditor.SmokeComposerOptions("target")}, expected {events}/{actions}/{targets}");
             smokeRuleCount = behaviorEditor.SmokeRules(FarleyScope).Count;

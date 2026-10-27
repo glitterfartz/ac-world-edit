@@ -57,17 +57,17 @@ public partial class QuestEditorWindow
     }
 }
 
-public partial class AcBehaviorPanel
+public partial class BehaviorPanel
 {
     public string SmokeStatus => status;
     public RowSet SmokeEffective => effective;
-    public int SmokeLineCount => effective.All(InteractionTables.CreatureText).Count(t => t.U("CreatureID") == entry);
+    public int SmokeLineCount => effective.All(smart.CreatureText).Count(t => t.U("CreatureID") == entry);
     public string SmokeAiName => CreatureAi(effective)?.T("AIName") ?? "";
     public string SmokeScriptName => snapshot?.ScriptName ?? "";
 
     public List<SmartRule> SmokeRules(SmartScope of) => RulesOf(effective, of);
 
-    public string SmokeDescribe(SmartRule rule) => SmartCatalog.Describe(rule, snapshot!.Names, entry);
+    public string SmokeDescribe(SmartRule rule) => smart.Describe(rule, snapshot!.Names, entry);
 
     public void SmokeAddRule(int template)
     {

@@ -253,7 +253,7 @@ public sealed class AcContentSource(WorldDatabase database)
         List<uint> creatures = [], objects = [], items = [], quests = [];
         foreach (var rule in view.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)))
         {
-            foreach (var (type, param) in new[] { (SmartCatalog.Event(rule.Event), (Func<int, uint>)rule.EventParam), (SmartCatalog.Action(rule.Action), rule.ActionParam), (SmartCatalog.Target(rule.Target), i => i <= 4 ? rule.TargetParam(i) : 0) })
+            foreach (var (type, param) in new[] { (SmartCatalog.Ac.Event(rule.Event), (Func<int, uint>)rule.EventParam), (SmartCatalog.Ac.Action(rule.Action), rule.ActionParam), (SmartCatalog.Ac.Target(rule.Target), i => i <= 4 ? rule.TargetParam(i) : 0) })
             {
                 for (int i = 1; type != null && i <= type.Params.Length; i++)
                 {

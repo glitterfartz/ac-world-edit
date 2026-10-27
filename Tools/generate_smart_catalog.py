@@ -1,7 +1,11 @@
-"""Generate Foundation/SmartCatalog.cs from AzerothCore SmartScriptMgr.h enum comments plus curated labels.
+"""Generate the SmartAI type arrays from a server's SmartScriptMgr.h enum comments plus curated labels.
 
-Usage: python Tools/generate_smart_catalog.py <azerothcore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/SmartCatalog.cs
-Reads the server header only; never touches the database or client files.
+Usage:
+  python Tools/generate_smart_catalog.py <azerothcore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/AcSmartTypes.cs
+  python Tools/generate_smart_catalog.py --trinity <trinitycore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/TrinityCore/TcSmartTypes.cs <azerothcore header>
+Reads the server headers only; never touches the database or client files. The curated labels below
+are keyed by AzerothCore's IDs. TrinityCore reuses one only when the type has the same code name and
+the same parameter comment in both headers; the rest read their parameters from the comment.
 """
 import re, sys
 
@@ -20,8 +24,10 @@ def parse_enums(header_path):
     return result
 
 
-enums = parse_enums(sys.argv[1])
-out_path = sys.argv[2]
+args = [a for a in sys.argv[1:] if a != '--trinity']
+trinity = '--trinity' in sys.argv
+enums = parse_enums(args[0])
+out_path = args[1]
 
 # Curated (id: (name, sentence, [(label, kind)])). Sentences use {1}..{6} for params; kinds drive
 # pickers and formatting. Labels follow the server comments in SmartScriptMgr.h.
@@ -154,6 +160,64 @@ TARGETS = {
 }
 
 
+# TrinityCore types whose meaning or parameters differ from the AzerothCore entry of the same code.
+TC_EVENTS = {
+    9: ("Target in range", "when its target is {1}–{2} yd away", [("Min distance", "Yards"), ("Max distance", "Yards"), ("Repeat every (min)", T), ("Repeat every (max)", T)]),
+    10: ("Unit comes near (out of combat)", "when a unit comes within {2} yd (out of combat)", [("Hostility (0 hostile, 1 not hostile, 2 any)", "Number"), ("Max distance", "Yards"), ("Cooldown (min)", T), ("Cooldown (max)", T), ("Players only", "Bool")]),
+    26: ("Unit comes near (in combat)", "when a unit comes within {2} yd (in combat)", [("Hostility (0 hostile, 1 not hostile, 2 any)", "Number"), ("Max distance", "Yards"), ("Cooldown (min)", T), ("Cooldown (max)", T), ("Players only", "Bool")]),
+    13: ("Victim casting", "when its victim casts {3}", [("Repeat every (min)", T), ("Repeat every (max)", T), ("Spell", "Spell")]),
+    32: ("Damaged", "when it takes {1}–{2} damage", [("Min damage", "Number"), ("Max damage", "Number"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    34: ("Reaches movement point", "when it reaches movement point {2}", [("Movement type (0 any)", "Number"), ("Point", "Number")]),
+    40: ("Reaches waypoint", "when it reaches waypoint {1}", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
+    55: ("Path paused", "when its path is paused", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
+    56: ("Path resumed", "when its path resumes", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
+    57: ("Path stopped", "when its path stops", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
+    58: ("Path ended", "when its path ends", [("Waypoint (0 any)", "Number"), ("Path (0 any)", "Number")]),
+    46: ("Area trigger entered", "when a player enters the area trigger", []),
+    88: ("Area trigger left", "when a player leaves the area trigger", []),
+    64: ("Gossip opened", "when a player opens its gossip", [("Skip when only used (objects)", "Bool")]),
+    73: ("Spellclick", "when a player clicks it (spellclick)", []),
+    83: ("Casts a spell", "when it casts {1}", [("Spell (0 any)", "Spell"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    84: ("Spell cast fails", "when its cast of {1} fails", [("Spell (0 any)", "Spell"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    85: ("Starts a spell cast", "when it starts casting {1}", [("Spell (0 any)", "Spell"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    86: ("Despawns", "when it despawns", []),
+    89: ("Aura applied", "when {1} is applied to it", [("Spell (0 any)", "Spell"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    90: ("Aura removed", "when {1} is removed from it", [("Spell (0 any)", "Spell"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    82: ("Summoned unit dies", "when a summoned {1} dies", [("Creature (0 any)", "Creature"), ("Cooldown (min)", T), ("Cooldown (max)", T)]),
+    36: ("Corpse removed", "when its corpse is removed", []),
+    37: ("AI initialised", "when its AI initialises", []),
+}
+TC_ACTIONS = {
+    1: ("Say text", "say text group {1}", [("Text group", "TextGroup"), ("Wait before 'text finished' (ms)", T), ("Speak to the target", "Bool")]),
+    4: ("Play sound", "play sound {1}", [("Sound", "Number"), ("Only the target hears it", "Bool")]),
+    6: ("Fail quest", "fail {1}", [("Quest", "Quest")]),
+    7: ("Offer quest", "offer {1}", [("Quest", "Quest"), ("Add directly", "Bool")]),
+    11: ("Cast spell", "cast {1}", [("Spell", "Spell"), ("Cast flags", "Flags"), ("Triggered flags", "Flags")]),
+    12: ("Summon creature", "summon {1}", [("Creature", "Creature"), ("Summon type", "Number"), ("Duration", T), ("Stored target id", "Number"), ("Flags", "Flags"), ("Count", "Number"), ("Created by spell", "Spell")]),
+    24: ("Evade", "evade (reset)", [("Last stored home position (0 respawn point)", "Bool")]),
+    27: ("Stop combat", "stop combat", []),
+    34: ("Set instance data", "set instance data {1} to {2}", [("Field", "Number"), ("Value", "Number"), ("Type (0 data, 1 boss state)", "Number")]),
+    37: ("Die", "die", []),
+    38: ("Engage whole zone", "put everyone in the zone in combat", []),
+    50: ("Summon object", "summon {1} for {2} s", [("GameObject", "GameObject"), ("Despawn after (s)", "Number"), ("Summon type", "Number"), ("Stored target id", "Number")]),
+    69: ("Move to position", "move to point {1}", [("Point id", "Number"), ("Transport", "Bool"), ("Disable pathfinding", "Bool"), ("Contact distance", "Yards")]),
+    85: ("Cast on self", "cast {1} on itself", [("Spell", "Spell"), ("Cast flags", "Flags")]),
+    134: ("Make invoker cast", "make the invoker cast {1}", [("Spell", "Spell"), ("Cast flags", "Flags")]),
+    111: ("Stop game event", "stop game event {1}", [("Game event", "Number")]),
+    112: ("Start game event", "start game event {1}", [("Game event", "Number")]),
+    142: ("Set health", "set its health to {1}", [("Percent", "Percent")]),
+}
+TC_TARGETS = {
+    9: ("Creatures in range", "{1} within {2}–{3} yd", [("Creature (0 any)", "Creature"), ("Min distance", "Yards"), ("Max distance", "Yards"), ("Max count", "Number")]),
+    11: ("Creatures within", "{1} within {2} yd", [("Creature (0 any)", "Creature"), ("Max distance", "Yards"), ("Max count", "Number")]),
+    13: ("Objects in range", "{1} within {2}–{3} yd", [("GameObject (0 any)", "GameObject"), ("Min distance", "Yards"), ("Max distance", "Yards")]),
+    15: ("Objects within", "{1} within {2} yd", [("GameObject (0 any)", "GameObject"), ("Max distance", "Yards")]),
+    19: ("Closest creature", "the closest {1} within {2} yd", [("Creature (0 any)", "Creature"), ("Max distance", "Yards"), ("Alive (0 alive, 1 dead, 2 both)", "Number")]),
+    20: ("Closest object", "the closest {1} within {2} yd", [("GameObject (0 any)", "GameObject"), ("Max distance", "Yards")]),
+    28: ("Farthest target", "the farthest target within {1} yd", [("Max distance", "Yards"), ("Players only", "Bool"), ("In line of sight", "Bool")]),
+}
+
+
 def friendly(code, prefix):
     words = code[len(prefix):].replace('_', ' ').lower()
     return words[:1].upper() + words[1:]
@@ -216,53 +280,53 @@ def emit(name, items, prefix, curated, max_params):
     return '\n'.join(lines)
 
 
-header = '''namespace ACWorldEdit.Foundation;
+def reuse_for_trinity(curated_by_ac_id, kind):
+    """AzerothCore's curated entries that still describe the same type in TrinityCore."""
+    ac = {code: (ident, comment) for code, ident, comment in parse_enums(args[2])[kind]}
+    reused = {}
+    for code, ident, comment in enums[kind]:
+        found = ac.get(code)
+        if found and found[0] in curated_by_ac_id and norm(found[1]) == norm(comment):
+            reused[ident] = curated_by_ac_id[found[0]]
+    return reused
+
+
+def norm(comment):
+    return re.sub(r'[^a-z0-9]', '', comment.lower())
+
+
+def generate(class_name, dialect_name):
+    return f'''namespace ACWorldEdit.Foundation;
 
 /// <summary>
-/// How a SmartAI parameter is edited and shown (pickers, units, names).
-/// </summary>
-public enum SmartParamKind
-{
-    Number,
-    Ms,
-    Percent,
-    Yards,
-    Bool,
-    Flags,
-    Spell,
-    Creature,
-    GameObject,
-    Quest,
-    Item,
-    TextGroup,
-    ActionList,
-    Emote,
-    TextEmote,
-    FactionTemplate
-}
-
-public sealed record SmartParam(string Label, SmartParamKind Kind);
-
-/// <summary>
-/// One SmartAI event, action or target type. Sentence uses {1}..{6} for parameters ({x}/{y}/{z}
-/// for target coordinates). ParamsKnown is false when the server comment is free text: the editor
-/// then shows all raw parameters with the comment as help.
-/// </summary>
-public sealed record SmartType(int Id, string Code, string Name, string Sentence, string Help, SmartParam[] Params, bool ParamsKnown);
-
-/// <summary>
-/// SmartAI type catalog generated from AzerothCore SmartScriptMgr.h enum comments (SMART_EVENT,
+/// SmartAI type arrays generated from {dialect_name} SmartScriptMgr.h enum comments (SMART_EVENT,
 /// SMART_ACTION, SMARTAI_TARGETS), with curated names, sentences and parameter kinds for the types
-/// most used in the world database. Regenerate when the server adds types; values not listed here
-/// are shown as raw numbers.
+/// most used in the world database. Regenerate with Tools/generate_smart_catalog.py when the server
+/// adds types; types without a curated entry show their parameters from the server comment.
 /// </summary>
-public static partial class SmartCatalog
-{
+public static class {class_name}
+{{
 '''
+
+
+if trinity:
+    event_curated = reuse_for_trinity(EVENTS, 'SMART_EVENT')
+    action_curated = reuse_for_trinity(ACTIONS, 'SMART_ACTION')
+    target_curated = reuse_for_trinity(TARGETS, 'SMARTAI_TARGETS')
+    event_curated.update(TC_EVENTS)
+    action_curated.update(TC_ACTIONS)
+    target_curated.update(TC_TARGETS)
+    head = generate('TcSmartTypes', 'TrinityCore master')
+    max_event, max_action = 5, 7
+else:
+    event_curated, action_curated, target_curated = EVENTS, ACTIONS, TARGETS
+    head = generate('AcSmartTypes', 'AzerothCore')
+    max_event, max_action = 6, 6
+
 body = '\n\n'.join([
-    emit('Events', enums['SMART_EVENT'], 'SMART_EVENT_', EVENTS, 6),
-    emit('Actions', enums['SMART_ACTION'], 'SMART_ACTION_', ACTIONS, 6),
-    emit('Targets', enums['SMARTAI_TARGETS'], 'SMART_TARGET_', TARGETS, 4),
+    emit('Events', enums['SMART_EVENT'], 'SMART_EVENT_', event_curated, max_event),
+    emit('Actions', enums['SMART_ACTION'], 'SMART_ACTION_', action_curated, max_action),
+    emit('Targets', enums['SMARTAI_TARGETS'], 'SMART_TARGET_', target_curated, 4),
 ])
-open(out_path, 'w', encoding='utf-8', newline='\n').write(header + body + '\n}\n')
+open(out_path, 'w', encoding='utf-8', newline='\n').write(head + body + '\n}\n')
 print('events', len(enums['SMART_EVENT']), 'actions', len(enums['SMART_ACTION']), 'targets', len(enums['SMARTAI_TARGETS']))

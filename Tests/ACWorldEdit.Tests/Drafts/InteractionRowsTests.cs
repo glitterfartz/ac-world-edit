@@ -116,7 +116,7 @@ public class InteractionRowsTests
     [InlineData("1e999")]
     public void FloatColumnsRejectNonFinite(string bad)
     {
-        var row = SmartCatalog.NewRow(new SmartScope(1, 0), 0, 4, 11, 2);
+        var row = SmartCatalog.Ac.NewRow(new SmartScope(1, 0), 0, 4, 11, 2);
         row.Values["target_x"] = bad;
         Assert.Throws<InvalidDataException>(() => row.Validate(InteractionTables.SmartScripts));
     }

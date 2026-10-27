@@ -7,7 +7,7 @@ namespace ACWorldEdit.Tests.Smart;
 public class SmartCatalogTests
 {
     static IEnumerable<(string Kind, SmartType Type)> All() =>
-        SmartCatalog.Events.Select(t => ("event", t)).Concat(SmartCatalog.Actions.Select(t => ("action", t))).Concat(SmartCatalog.Targets.Select(t => ("target", t)));
+        SmartCatalog.Ac.Events.Select(t => ("event", t)).Concat(SmartCatalog.Ac.Actions.Select(t => ("action", t))).Concat(SmartCatalog.Ac.Targets.Select(t => ("target", t)));
 
     [Fact]
     public void TypeIdsAreUniquePerKind()

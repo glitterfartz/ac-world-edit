@@ -166,6 +166,6 @@ Generated or local-only folders (`artifacts/`, `native/`, `.build-env/`, `bin/`,
 - **DBC / DB2**: client database tables. DBC is the 3.3.5 format, read by field index; DB2 is the retail format, read through DBCD with WoWDBDefs layouts.
 - **FileDataID (FDID)**: a numeric retail file identifier. The app encodes it in path strings as `fdid:N`.
 - **MH2O**: retail liquid data in the root ADT.
-- **SmartAI**: AzerothCore's scripting table `smart_scripts`.
+- **SmartAI**: the scripting table `smart_scripts` of both servers (the columns and ID ranges differ; `SmartCatalog` holds each dialect's).
 - **Draft**: a locally stored, undoable set of edits that is not yet in the database.
 - **Apply / revert script**: the generated SQL that applies a set of changes, and the SQL that undoes them.

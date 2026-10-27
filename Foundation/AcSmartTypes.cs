@@ -1,44 +1,12 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
-/// How a SmartAI parameter is edited and shown (pickers, units, names).
-/// </summary>
-public enum SmartParamKind
-{
-    Number,
-    Ms,
-    Percent,
-    Yards,
-    Bool,
-    Flags,
-    Spell,
-    Creature,
-    GameObject,
-    Quest,
-    Item,
-    TextGroup,
-    ActionList,
-    Emote,
-    TextEmote,
-    FactionTemplate
-}
-
-public sealed record SmartParam(string Label, SmartParamKind Kind);
-
-/// <summary>
-/// One SmartAI event, action or target type. Sentence uses {1}..{6} for parameters ({x}/{y}/{z}
-/// for target coordinates). ParamsKnown is false when the server comment is free text: the editor
-/// then shows all raw parameters with the comment as help.
-/// </summary>
-public sealed record SmartType(int Id, string Code, string Name, string Sentence, string Help, SmartParam[] Params, bool ParamsKnown);
-
-/// <summary>
-/// SmartAI type catalog generated from AzerothCore SmartScriptMgr.h enum comments (SMART_EVENT,
+/// SmartAI type arrays generated from AzerothCore SmartScriptMgr.h enum comments (SMART_EVENT,
 /// SMART_ACTION, SMARTAI_TARGETS), with curated names, sentences and parameter kinds for the types
-/// most used in the world database. Regenerate when the server adds types; values not listed here
-/// are shown as raw numbers.
+/// most used in the world database. Regenerate with Tools/generate_smart_catalog.py when the server
+/// adds types; types without a curated entry show their parameters from the server comment.
 /// </summary>
-public static partial class SmartCatalog
+public static class AcSmartTypes
 {
     public static readonly SmartType[] Events =
     [

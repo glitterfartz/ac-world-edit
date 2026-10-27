@@ -66,9 +66,9 @@ public static class SmartRuleEdits
     public static uint FirstTextGroup(RowSet effective, uint entry) => effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
 
     /// <summary>The pending row for a template: a fresh id, the template's parameters and an automatic note.</summary>
-    public static Row FromTemplate(RowSet effective, SmartScope of, uint entry, string creatureName, RuleTemplate template)
+    public static Row FromTemplate(SmartCatalog smart, RowSet effective, SmartScope of, uint entry, string creatureName, RuleTemplate template)
     {
-        var row = SmartCatalog.NewRow(of, NextId(effective, of), template.Event, template.Action, template.Target);
+        var row = smart.NewRow(of, NextId(effective, of), template.Event, template.Action, template.Target);
         for (int i = 0; i < template.EventParams.Length; i++)
         {
             row = row.With($"event_param{i + 1}", template.EventParams[i]);
@@ -84,7 +84,7 @@ public static class SmartRuleEdits
             row = row.With("action_param1", FirstTextGroup(effective, entry));
         }
 
-        return row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), creatureName));
+        return row.With("comment", smart.AutoComment(new SmartRule(row), creatureName));
     }
 
     /// <summary>
@@ -110,14 +110,14 @@ public static class SmartRuleEdits
     /// (<paramref name="enableSmartAi"/> supplies those edits). No edits when a "Then" step's rule no
     /// longer exists.
     /// </summary>
-    public static (Row Row, RowEdit[] Edits) PendingEdits(RowSet effective, SmartScope scope, Row pendingRow, uint? after, string creatureName, Func<RowEdit[]> enableSmartAi)
+    public static (Row Row, RowEdit[] Edits) PendingEdits(SmartCatalog smart, RowSet effective, SmartScope scope, Row pendingRow, uint? after, string creatureName, Func<RowEdit[]> enableSmartAi)
     {
         var table = InteractionTables.SmartScripts;
         uint id = NextId(effective, scope);
         var row = pendingRow.With("id", id).With("link", 0u);
         if (row.T("comment").Length == 0)
         {
-            row = row.With("comment", SmartCatalog.AutoComment(new SmartRule(row), creatureName));
+            row = row.With("comment", smart.AutoComment(new SmartRule(row), creatureName));
         }
 
         if (after is uint predecessor)
@@ -144,7 +144,7 @@ public static class SmartRuleEdits
     /// Errors the edits would introduce: those in the checked result that were not already in the
     /// current rows. <paramref name="check"/> is the editor's loader-rule check over a row set.
     /// </summary>
-    public static IEnumerable<string> NewProblems(RowSet effective, RowEdit[] edits, Func<RowSet, IEnumerable<InteractionIssue>> check)
+    public static IEnumerable<string> NewProblems(ITableCatalog tables, RowSet effective, RowEdit[] edits, Func<RowSet, IEnumerable<InteractionIssue>> check)
     {
         if (edits.Length == 0)
         {
@@ -154,7 +154,7 @@ public static class SmartRuleEdits
         var prospective = effective.Clone();
         foreach (var edit in edits)
         {
-            prospective.Apply(edit);
+            prospective.Apply(edit, tables);
         }
 
         var before = check(effective).Where(i => i.Error).Select(i => i.Message).ToHashSet();
@@ -165,15 +165,21 @@ public static class SmartRuleEdits
     /// Column values for a new event/action/target type: parameters reset (their meaning changes),
     /// except timer events, which share the same four timing fields.
     /// </summary>
-    public static (string Column, object Value)[] ChangeTypeValues(SmartRule rule, string part, uint id, RowSet effective, uint entry)
+    public static (string Column, object Value)[] ChangeTypeValues(SmartCatalog smart, SmartRule rule, string part, uint id, RowSet effective, uint entry)
     {
         var values = new List<(string, object)> { ($"{part}_type", id) };
         bool timers = part == "event" && rule.Event is 0 or 1 or 60 && id is 0 or 1 or 60;
         if (!timers)
         {
-            for (int i = 1; i <= (part == "target" ? 4 : 6); i++)
+            int count = part == "event" ? smart.EventParamCount : part == "action" ? smart.ActionParamCount : SmartCatalog.TargetParamCount;
+            for (int i = 1; i <= count; i++)
             {
                 values.Add(($"{part}_param{i}", 0u));
+            }
+
+            if (smart.HasStringParams)
+            {
+                values.Add(($"{part}_param_string", ""));
             }
         }
 

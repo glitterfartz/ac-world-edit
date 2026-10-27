@@ -41,11 +41,11 @@ public class SqlDialectTests
         var waypoint = new WaypointEdit("src", 5, 1, new(1, 2, 3), new(4, 5, 6));
         var error = Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [], Stamp, [waypoint], TcSchema.Instance));
         Assert.Contains("TrinityCore", error.Message);
-        // creature_ai is an AzerothCore column group; TrinityCore's catalog has no such table.
-        var before = Row.Of(("entry", 100u), ("AIName", ""));
-        var row = new RowEdit("creature_ai", "100", before, before.With("AIName", "SmartAI"));
+        // areatrigger_scripts is an AzerothCore table; TrinityCore's catalog has no such table.
+        var before = Row.Of(("entry", 100), ("ScriptName", ""));
+        var row = new RowEdit("areatrigger_scripts", "100", before, before.With("ScriptName", "SmartTrigger"));
         Assert.Contains("TrinityCore", Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [row], Stamp, null, TcSchema.Instance)).Message);
-        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "creature_ai" or "smart_scripts");
+        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "areatrigger_scripts" or "waypoint_data");
     }
 
     [Fact]

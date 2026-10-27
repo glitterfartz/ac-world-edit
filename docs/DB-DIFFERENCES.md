@@ -78,8 +78,11 @@ Schema references for column meanings, flags and enums:
 - `smart_scripts`:
   - entryorguid → bigint. + Difficulties.
   - event_param6 removed. + event_param_string, action_param7, action_param_string, target_param_string.
-  - Max IDs: AC event 110 / action 242 / target 207; TC 90 / 153 / 29.
-  - TC source_types used: 0,1,2,3,5,9,10,11,12. Catalogs must be separate.
+  - Max IDs: AC event 110 / action 242 / target 207; TC master 90 / 159 / 30. Slots TC marks "UNUSED, DO NOT REUSE" (events 12, 14, 18, 30, 39, 66, 67; many actions) fail its loader. The IDs also mean different things (46 is AC `AREATRIGGER_ONTRIGGER`, TC `AREATRIGGER_ENTER`; 40 is AC `ESCORT_REACHED`, TC `WAYPOINT_REACHED`), so the catalogs are separate.
+  - Event flags: TC drops the per-difficulty bits (0x2-0x10, cleared with a warning; `Difficulties` lists them) and adds 0x20 "action list waits". Phase mask is 12 bits in both.
+  - String parameters: TC `event_param_string` (scene trigger name), `action_param_string`, `target_param_string` (a StringId that narrows creature and object target searches).
+  - TC source_types used: 0,1,2,3,5,9,10,11,12. Type 2 is keyed by AreaTrigger.db2 ID (the editor leaves AreaTrigger rules off for TC).
+  - `creature_text` + SoundPlayType (0 normal, 1 from the creature); Language is unsigned in TC. `BroadcastTextId` links `hotfixes.broadcast_text` (client BroadcastText.db2), not a world table.
 - `conditions`: + ConditionStringValue1. Source types ≥25 diverge. TC uses 25-36: 26 phase, 27 graveyard, 28/30 areatrigger, 29 conversation, 31 trainer spell, 32 object visibility, 33 spawn group…. AC uses 28-30 with different meanings.
 - `points_of_interest`: + PositionZ, WMOGroupID, VerifiedBuild. `page_text`: + PlayerConditionID, Flags.
 - Waypoints: AC `waypoint_data(id,point,position_*,orientation,velocity,delay,smoothTransition,move_type,action,action_chance,wpguid)`. TC `waypoint_path(PathId,MoveType,Flags,Velocity,Comment)` plus `waypoint_path_node(PathId,NodeId,PositionX/Y/Z,Orientation,Delay)`.

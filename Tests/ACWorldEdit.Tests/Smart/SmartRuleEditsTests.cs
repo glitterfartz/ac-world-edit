@@ -4,7 +4,7 @@ using Xunit;
 namespace ACWorldEdit.Tests.Smart;
 
 /// <summary>
-/// Behavior-editor row arithmetic (extracted from AcBehaviorEditorWindow.Rules.cs). The asserted edit
+/// Behavior-editor row arithmetic (extracted from BehaviorEditorWindow.Rules.cs). The asserted edit
 /// order matters: deletes precede inserts so re-keyed rows never collide inside one command.
 /// </summary>
 public class SmartRuleEditsTests
@@ -14,7 +14,7 @@ public class SmartRuleEditsTests
     static readonly TableSchema Table = InteractionTables.SmartScripts;
 
     static Row Rule(uint id, uint link = 0, uint eventType = 4, uint action = 1, SmartScope? scope = null) =>
-        SmartCatalog.NewRow(scope ?? Scope, id, eventType, action, 1).With("link", link);
+        SmartCatalog.Ac.NewRow(scope ?? Scope, id, eventType, action, 1).With("link", link);
 
     static RowSet Rows(params Row[] rows)
     {
@@ -80,12 +80,12 @@ public class SmartRuleEditsTests
     public void FromTemplateUsesNextIdParametersAndAutoComment()
     {
         var rows = Rows(Rule(0), Rule(1));
-        var row = SmartRuleEdits.FromTemplate(rows, Scope, Entry, "Farley", SmartRuleEdits.RuleTemplates[2]);
+        var row = SmartRuleEdits.FromTemplate(SmartCatalog.Ac, rows, Scope, Entry, "Farley", SmartRuleEdits.RuleTemplates[2]);
         var rule = new SmartRule(row);
         Assert.Equal(2u, rule.Id);
         Assert.Equal(2u, rule.Event);
         Assert.Equal(30u, rule.EventParam(2));
-        Assert.Equal("Farley - " + SmartCatalog.Event(2)!.Name + " - " + SmartCatalog.Action(11)!.Name, rule.Comment);
+        Assert.Equal("Farley - " + SmartCatalog.Ac.Event(2)!.Name + " - " + SmartCatalog.Ac.Action(11)!.Name, rule.Comment);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class SmartRuleEditsTests
         rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", 777u), ("GroupID", 1u), ("ID", 0u)));
         Assert.Equal(2u, SmartRuleEdits.FirstTextGroup(rows, Entry));
         Assert.Equal(0u, SmartRuleEdits.FirstTextGroup(Rows(), Entry));
-        var say = SmartRuleEdits.FromTemplate(rows, Scope, Entry, "N", SmartRuleEdits.RuleTemplates[0]);
+        var say = SmartRuleEdits.FromTemplate(SmartCatalog.Ac, rows, Scope, Entry, "N", SmartRuleEdits.RuleTemplates[0]);
         Assert.Equal(2u, new SmartRule(say).ActionParam(1));
     }
 
@@ -125,7 +125,7 @@ public class SmartRuleEditsTests
     public void FirstRuleInCreatureScopeAlsoEnablesSmartAi()
     {
         var enable = new RowEdit("creature_template", "295", null, Row.Of(("entry", 295u)));
-        var (row, edits) = SmartRuleEdits.PendingEdits(Rows(), Scope, Rule(9), null, "N", () => [enable]);
+        var (row, edits) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, Rows(), Scope, Rule(9), null, "N", () => [enable]);
         Assert.Equal(0u, row.U("id"));
         Assert.Equal(2, edits.Length);
         Assert.Equal(Table.Name, edits[0].Table);
@@ -136,17 +136,17 @@ public class SmartRuleEditsTests
     public void ActionListStepsNeverEnableSmartAi()
     {
         var list = new SmartScope(2950, SmartScope.ActionList);
-        var (_, edits) = SmartRuleEdits.PendingEdits(Rows(), list, Rule(0, scope: list), null, "N", () => throw new InvalidOperationException("must not be asked"));
+        var (_, edits) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, Rows(), list, Rule(0, scope: list), null, "N", () => throw new InvalidOperationException("must not be asked"));
         Assert.Single(edits);
     }
 
     [Fact]
     public void EmptyCommentGetsAutoCommentAndLinkIsReset()
     {
-        var (row, _) = SmartRuleEdits.PendingEdits(Rows(), Scope, Rule(7, link: 3), null, "Farley", () => []);
+        var (row, _) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, Rows(), Scope, Rule(7, link: 3), null, "Farley", () => []);
         Assert.Equal(0u, row.U("link"));
         Assert.StartsWith("Farley - ", row.T("comment"));
-        var (kept, _) = SmartRuleEdits.PendingEdits(Rows(), Scope, Rule(7).With("comment", "mine"), null, "Farley", () => []);
+        var (kept, _) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, Rows(), Scope, Rule(7).With("comment", "mine"), null, "Farley", () => []);
         Assert.Equal("mine", kept.T("comment"));
     }
 
@@ -155,7 +155,7 @@ public class SmartRuleEditsTests
     {
         // 0 -> 1, add a step after 0: 0 -> new(2) -> 1
         var rows = Rows(Rule(0, link: 1), Rule(1, eventType: SmartCatalog.LinkEvent));
-        var (row, edits) = SmartRuleEdits.PendingEdits(rows, Scope, Rule(0, eventType: SmartCatalog.LinkEvent), 0u, "N", () => throw new InvalidOperationException());
+        var (row, edits) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, rows, Scope, Rule(0, eventType: SmartCatalog.LinkEvent), 0u, "N", () => throw new InvalidOperationException());
         Assert.Equal(2u, row.U("id"));
         Assert.Equal(1u, row.U("link"));
         // The key includes link, so re-linking the predecessor is delete + insert.
@@ -166,9 +166,9 @@ public class SmartRuleEditsTests
     [Fact]
     public void ThenStepWithVanishedPredecessorProducesNoEdits()
     {
-        var (_, edits) = SmartRuleEdits.PendingEdits(Rows(Rule(0)), Scope, Rule(0), 5u, "N", () => []);
+        var (_, edits) = SmartRuleEdits.PendingEdits(SmartCatalog.Ac, Rows(Rule(0)), Scope, Rule(0), 5u, "N", () => []);
         Assert.Empty(edits);
-        Assert.Empty(SmartRuleEdits.NewProblems(Rows(), edits, _ => throw new InvalidOperationException()));
+        Assert.Empty(SmartRuleEdits.NewProblems(AcTables.Instance, Rows(), edits, _ => throw new InvalidOperationException()));
     }
 
     [Fact]
@@ -179,22 +179,22 @@ public class SmartRuleEditsTests
         IEnumerable<InteractionIssue> Check(RowSet set) =>
             new InteractionIssue[] { new(true, "old error"), new(false, "a warning") }
                 .Concat(set.All(Table).Count > 1 ? [new InteractionIssue(true, "new error")] : []);
-        Assert.Equal(["new error"], SmartRuleEdits.NewProblems(rows, edits, Check));
+        Assert.Equal(["new error"], SmartRuleEdits.NewProblems(AcTables.Instance, rows, edits, Check));
     }
 
     [Fact]
     public void ChangeTypeKeepsTimerParametersAndResetsOthers()
     {
         var timer = new SmartRule(Rule(0, eventType: 0));
-        var keep = SmartRuleEdits.ChangeTypeValues(timer, "event", 60, Rows(), Entry);
+        var keep = SmartRuleEdits.ChangeTypeValues(SmartCatalog.Ac, timer, "event", 60, Rows(), Entry);
         Assert.Equal([("event_type", (object)60u)], keep);
 
         var combat = new SmartRule(Rule(0, eventType: 4));
-        var reset = SmartRuleEdits.ChangeTypeValues(combat, "event", 0, Rows(), Entry);
+        var reset = SmartRuleEdits.ChangeTypeValues(SmartCatalog.Ac, combat, "event", 0, Rows(), Entry);
         Assert.Equal(7, reset.Length);
         Assert.All(reset.Skip(1), v => Assert.Equal(0u, v.Value));
 
-        var target = SmartRuleEdits.ChangeTypeValues(combat, "target", 2, Rows(), Entry);
+        var target = SmartRuleEdits.ChangeTypeValues(SmartCatalog.Ac, combat, "target", 2, Rows(), Entry);
         Assert.Equal(["target_type", "target_param1", "target_param2", "target_param3", "target_param4", "target_x", "target_y", "target_z", "target_o"], target.Select(v => v.Column));
     }
 
@@ -203,7 +203,7 @@ public class SmartRuleEditsTests
     {
         var rows = Rows();
         rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 3u), ("ID", 0u)));
-        var values = SmartRuleEdits.ChangeTypeValues(new SmartRule(Rule(0)), "action", SmartCatalog.Talk, rows, Entry);
+        var values = SmartRuleEdits.ChangeTypeValues(SmartCatalog.Ac, new SmartRule(Rule(0)), "action", SmartCatalog.Talk, rows, Entry);
         Assert.Equal(("action_param1", (object)3u), values[^1]);
         Assert.Equal(8, values.Length);
     }

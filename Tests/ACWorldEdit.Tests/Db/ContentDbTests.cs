@@ -69,10 +69,10 @@ public class ContentDbTests
             Console.WriteLine($"BEHAVIOR_SNAPSHOT entry={entry} '{snapshot.CreatureName}' ai={snapshot.Rows.All(InteractionTables.CreatureAI).First().T("AIName")} rules={rules.Count} scopes={string.Join(",", scopes.Select(s => s.Key.Describe(snapshot.CreatureName)))}");
             foreach (var scope in scopes)
             {
-                var issues = SmartCatalog.Check(scope.Key, scope.ToList(), snapshot.Names, snapshot.Rows.All(InteractionTables.CreatureAI).First(), entry).ToArray();
+                var issues = SmartCatalog.Ac.Check(scope.Key, scope.ToList(), snapshot.Names, snapshot.Rows.All(InteractionTables.CreatureAI).First(), entry).ToArray();
                 foreach (var chain in SmartCatalog.Chains(scope).Take(6))
                 {
-                    Console.WriteLine("  " + string.Join("\n    ", chain.Select(r => SmartCatalog.Describe(r, snapshot.Names, entry))));
+                    Console.WriteLine("  " + string.Join("\n    ", chain.Select(r => SmartCatalog.Ac.Describe(r, snapshot.Names, entry))));
                 }
 
                 Console.WriteLine($"  {scope.Key.Describe(snapshot.CreatureName)}: errors={issues.Count(i => i.Error)} {string.Join("; ", issues.Take(3).Select(i => i.Message))}");

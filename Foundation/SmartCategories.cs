@@ -3,13 +3,15 @@ namespace ACWorldEdit.Foundation;
 /// <summary>
 /// Browsing groups for SmartAI types, assigned from their server code names (first matching
 /// keyword wins, so order matters). Grouping is presentation only; it never changes validation.
-/// Server range markers (TC_END/AC_START/AC_END) and reserved slots are not types.
+/// Server range markers (TC_END/AC_START/AC_END, TrinityCore's plain END), reserved slots and
+/// slots the server marks "UNUSED, DO NOT REUSE" are not types.
 /// </summary>
-public static partial class SmartCatalog
+public sealed partial class SmartCatalog
 {
     public static bool IsMarker(SmartType type) =>
         type.Code.EndsWith("_TC_END", StringComparison.Ordinal) || type.Code.EndsWith("_AC_START", StringComparison.Ordinal) ||
-        type.Code.EndsWith("_AC_END", StringComparison.Ordinal) || type.Code.Contains("RESERVED", StringComparison.Ordinal);
+        type.Code.EndsWith("_AC_END", StringComparison.Ordinal) || type.Code.Contains("RESERVED", StringComparison.Ordinal) ||
+        type.Code is "SMART_EVENT_END" or "SMART_ACTION_END" or "SMART_TARGET_END" || type.Help.StartsWith("UNUSED", StringComparison.Ordinal);
 
     static readonly (string Category, string[] Keywords)[] EventGroups =
     [

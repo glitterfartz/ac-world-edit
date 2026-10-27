@@ -83,9 +83,19 @@ public sealed class SmartRule(Row row)
     public uint Action => row.U("action_type");
     public uint Target => row.U("target_type");
     public string Comment => row.T("comment");
-    public uint EventParam(int i) => row.U($"event_param{i}");
-    public uint ActionParam(int i) => row.U($"action_param{i}");
-    public uint TargetParam(int i) => row.U($"target_param{i}");
+    // A dialect without that parameter column (AzerothCore has no action_param7, TrinityCore no
+    // event_param6) reads as 0, so one description routine serves both.
+    public uint EventParam(int i) => Param($"event_param{i}");
+    public uint ActionParam(int i) => Param($"action_param{i}");
+    public uint TargetParam(int i) => Param($"target_param{i}");
+
+    /// <summary>TrinityCore's string parameters (empty in AzerothCore).</summary>
+    public string EventString => Text("event_param_string");
+    public string ActionString => Text("action_param_string");
+    public string TargetString => Text("target_param_string");
+
+    uint Param(string column) => row.Values.TryGetValue(column, out var value) ? uint.Parse(value, CultureInfo.InvariantCulture) : 0;
+    string Text(string column) => row.Values.GetValueOrDefault(column) ?? "";
     public float X => row.F("target_x");
     public float Y => row.F("target_y");
     public float Z => row.F("target_z");
@@ -95,18 +105,83 @@ public sealed class SmartRule(Row row)
 }
 
 /// <summary>
-/// SmartAI editing helpers: catalog lookups, readable sentences, linked chains, new rows and the
-/// server loader's rules (SmartScriptMgr.cpp) as errors/warnings.
+/// One dialect's SmartAI: its event, action and target types and the smart_scripts columns it has,
+/// with catalog lookups, readable sentences, linked chains, new rows and the server loader's rules
+/// (SmartScriptMgr.cpp) as errors/warnings. <see cref="Ac"/> and <see cref="Trinity"/> are the
+/// instances; the ID ranges differ, so nothing is shared by ID.
 /// </summary>
-public static partial class SmartCatalog
+public sealed partial class SmartCatalog
 {
+    /// <summary>The 3.3.5 AzerothCore catalog (event_param1-6, action_param1-6).</summary>
+    public static readonly SmartCatalog Ac = new(WorldDialect.AzerothCore, AcSmartTypes.Events, AcSmartTypes.Actions, AcSmartTypes.Targets, 6, 6, AcTables.Instance, AcTables.SmartScripts, AcTables.CreatureText, AcTables.CreatureAI,
+        [(0x1, "Only once"), (0x2, "Normal (10)"), (0x4, "Heroic (25)"), (0x8, "Heroic 10"), (0x10, "Heroic 25"), (0x80, "Debug builds only"), (0x100, "Keep after reset"), (0x200, "Also while charmed")], 0);
+
+    /// <summary>
+    /// The TrinityCore master catalog (event_param1-5, action_param1-7, string parameters and a
+    /// Difficulties list instead of the difficulty flags).
+    /// </summary>
+    public static readonly SmartCatalog Trinity = new(WorldDialect.TrinityCore, TcSmartTypes.Events, TcSmartTypes.Actions, TcSmartTypes.Targets, 5, 7, TcTables.Instance, TcTables.SmartScripts, TcTables.CreatureText, TcTables.CreatureAI,
+        [(0x1, "Only once"), (0x20, "Action list waits for it"), (0x80, "Debug builds only"), (0x100, "Keep after reset"), (0x200, "Also while charmed")], 0x1E);
+
+    public static SmartCatalog For(WorldDialect dialect) => dialect switch
+    {
+        WorldDialect.AzerothCore => Ac,
+        WorldDialect.TrinityCore => Trinity,
+        _ => throw new InvalidDataException($"The {dialect} world database is not supported yet.")
+    };
+
+    readonly SmartType[] events, actions, targets;
+    readonly Dictionary<int, SmartType> eventById, actionById, targetById;
+
+    SmartCatalog(WorldDialect dialect, SmartType[] events, SmartType[] actions, SmartType[] targets, int eventParams, int actionParams, ITableCatalog tables, TableSchema scripts, TableSchema text, TableSchema ai, (uint Bit, string Name)[] eventFlags, uint deprecatedFlags)
+    {
+        Dialect = dialect;
+        Tables = tables;
+        Scripts = scripts;
+        CreatureText = text;
+        CreatureAi = ai;
+        this.events = events;
+        this.actions = actions;
+        this.targets = targets;
+        EventParamCount = eventParams;
+        ActionParamCount = actionParams;
+        EventFlags = eventFlags;
+        DeprecatedEventFlags = deprecatedFlags;
+        eventById = events.Where(t => !IsMarker(t)).ToDictionary(t => t.Id);
+        actionById = actions.Where(t => !IsMarker(t)).ToDictionary(t => t.Id);
+        targetById = targets.Where(t => !IsMarker(t)).ToDictionary(t => t.Id);
+    }
+
+    public WorldDialect Dialect { get; }
+
+    /// <summary>The dialect's table catalog and the three tables the behavior editor edits.</summary>
+    public ITableCatalog Tables { get; }
+    public TableSchema Scripts { get; }
+    public TableSchema CreatureText { get; }
+
+    /// <summary>The creature's AIName, which must be SmartAI for the rules to run.</summary>
+    public TableSchema CreatureAi { get; }
+
+    /// <summary>Every type of the server's enums, including range markers and removed slots (see <see cref="IsMarker"/>).</summary>
+    public IReadOnlyList<SmartType> Events => events;
+    public IReadOnlyList<SmartType> Actions => actions;
+    public IReadOnlyList<SmartType> Targets => targets;
+
+    /// <summary>Numbered parameter columns an event (event_paramN) or action (action_paramN) has; targets have four.</summary>
+    public int EventParamCount { get; }
+    public int ActionParamCount { get; }
+    public const int TargetParamCount = 4;
+
+    /// <summary>True when smart_scripts has the string parameter columns and the Difficulties list.</summary>
+    public bool HasStringParams => Dialect == WorldDialect.TrinityCore;
+
     /// <summary>
     /// smart_scripts event_flags bits shown as checkboxes (SmartEventFlags).
     /// </summary>
-    public static readonly (uint Bit, string Name)[] EventFlags =
-    [
-        (0x1, "Only once"), (0x2, "Normal (10)"), (0x4, "Heroic (25)"), (0x8, "Heroic 10"), (0x10, "Heroic 25"), (0x80, "Debug builds only"), (0x100, "Keep after reset"), (0x200, "Also while charmed")
-    ];
+    public (uint Bit, string Name)[] EventFlags { get; }
+
+    /// <summary>Flag bits the server still reads but only warns about (TrinityCore's per-difficulty flags, replaced by Difficulties).</summary>
+    public uint DeprecatedEventFlags { get; }
 
     public const uint AllEventFlags = 0x3FF, AllPhases = 0xFFF;
     public const uint LinkEvent = 61, RunActionList = 80, Talk = 1;
@@ -147,19 +222,16 @@ public static partial class SmartCatalog
         return new(InteractionTables.AreaTriggerScripts.Name, key, script, script?.With("ScriptName", AreaTriggerRecord.SmartTrigger) ?? Row.Of(("entry", trigger), ("ScriptName", AreaTriggerRecord.SmartTrigger)));
     }
 
-    // Built lazily: the generated arrays live in the other partial file, and static initializer
-    // order across partial files is undefined.
-    static Dictionary<int, SmartType>? events, actions, targets;
-
-    // Range markers are not types: looking one up returns null, so validation reports it unknown.
-    public static SmartType? Event(uint id) => (events ??= Events.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
-    public static SmartType? Action(uint id) => (actions ??= Actions.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
-    public static SmartType? Target(uint id) => (targets ??= Targets.Where(t => !IsMarker(t)).ToDictionary(t => t.Id)).GetValueOrDefault((int)id);
+    // Range markers and removed slots are not types: looking one up returns null, so validation
+    // reports it unknown.
+    public SmartType? Event(uint id) => eventById.GetValueOrDefault((int)id);
+    public SmartType? Action(uint id) => actionById.GetValueOrDefault((int)id);
+    public SmartType? Target(uint id) => targetById.GetValueOrDefault((int)id);
 
     /// <summary>
     /// A complete smart_scripts row with every whitelisted column, defaults for a new rule.
     /// </summary>
-    public static Row NewRow(SmartScope scope, uint id, uint eventType, uint action, uint target, string comment = "")
+    public Row NewRow(SmartScope scope, uint id, uint eventType, uint action, uint target, string comment = "")
     {
         var values = new List<(string, object)>
         {
@@ -167,15 +239,24 @@ public static partial class SmartCatalog
             ("event_phase_mask", 0u), ("event_chance", 100u), ("event_flags", 0u), ("action_type", action), ("target_type", target),
             ("target_x", 0f), ("target_y", 0f), ("target_z", 0f), ("target_o", 0f), ("comment", comment)
         };
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= EventParamCount; i++)
         {
             values.Add(($"event_param{i}", 0u));
+        }
+
+        for (int i = 1; i <= ActionParamCount; i++)
+        {
             values.Add(($"action_param{i}", 0u));
         }
 
-        for (int i = 1; i <= 4; i++)
+        for (int i = 1; i <= TargetParamCount; i++)
         {
             values.Add(($"target_param{i}", 0u));
+        }
+
+        if (HasStringParams)
+        {
+            values.AddRange([("Difficulties", ""), ("event_param_string", ""), ("action_param_string", ""), ("target_param_string", "")]);
         }
 
         return Row.Of(values.ToArray());
@@ -205,7 +286,7 @@ public static partial class SmartCatalog
         };
     }
 
-    static string Fill(SmartType? type, Func<int, uint> param, IContentNames names, uint entry, SmartRule? rule = null)
+    string Fill(SmartType? type, Func<int, uint> param, IContentNames names, uint entry, SmartRule? rule = null)
     {
         if (type == null)
         {
@@ -214,7 +295,7 @@ public static partial class SmartCatalog
 
         // Uncurated types: the name plus the first parameter, so the key value is still visible.
         string text = type.Sentence.Length > 0 ? type.Sentence : type.Name.ToLowerInvariant() + (type.Params.Length > 0 && param(1) != 0 ? " {1}" : "");
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= 7; i++)
         {
             var kind = i <= type.Params.Length ? type.Params[i - 1].Kind : SmartParamKind.Number;
             text = text.Replace("{" + i + "}", FormatValue(kind, param(i), names, entry));
@@ -232,14 +313,14 @@ public static partial class SmartCatalog
     /// One-line description: "When it enters combat: cast Fireball on its victim (30% chance)".
     /// Linked rows read "Then: …". Unknown types show their IDs so nothing is hidden.
     /// </summary>
-    public static string Describe(SmartRule rule, IContentNames names, uint entry)
+    public string Describe(SmartRule rule, IContentNames names, uint entry)
     {
         var e = Event(rule.Event);
         var a = Action(rule.Action);
         var t = Target(rule.Target);
         string when = rule.Event == LinkEvent ? "Then" : e == null ? $"On event {rule.Event}" : Timer(rule) ?? Capitalize(Fill(e, rule.EventParam, names, entry));
         string what = a == null ? $"action {rule.Action}" : Fill(a, rule.ActionParam, names, entry);
-        string target = t == null ? $"target type {rule.Target}" : Fill(t, i => i <= 4 ? rule.TargetParam(i) : 0, names, entry, rule);
+        string target = t == null ? $"target type {rule.Target}" : Fill(t, i => i <= TargetParamCount ? rule.TargetParam(i) : 0, names, entry, rule);
         string on = target.Length == 0 || rule.Target == 1 && (what.Contains("itself", StringComparison.Ordinal) || SelfImplied.Contains(rule.Action)) ? "" : $" → {target}";
         string extras = (rule.Chance is > 0 and < 100 ? $" ({rule.Chance}% chance)" : "") + ((rule.Flags & 1) != 0 ? " (once)" : "") + (rule.Phases != 0 ? $" (phases {PhaseList(rule.Phases)})" : "");
         return $"{when}: {what}{on}{extras}";
@@ -307,7 +388,7 @@ public static partial class SmartCatalog
     /// <summary>
     /// Server-style comment "Name - On event - Do action" used when the comment is left empty.
     /// </summary>
-    public static string AutoComment(SmartRule rule, string creature) => $"{creature} - {(rule.Event == LinkEvent ? "Linked" : Event(rule.Event)?.Name ?? $"Event {rule.Event}")} - {Action(rule.Action)?.Name ?? $"Action {rule.Action}"}";
+    public string AutoComment(SmartRule rule, string creature) => $"{creature} - {(rule.Event == LinkEvent ? "Linked" : Event(rule.Event)?.Name ?? $"Event {rule.Event}")} - {Action(rule.Action)?.Name ?? $"Action {rule.Action}"}";
 
     /// <summary>
     /// Rules grouped into chains: each root (not a linked "then" row) followed by the rows it links
@@ -340,7 +421,7 @@ public static partial class SmartCatalog
     /// Loader rules for one scope's rules. Errors are what the server skips; warnings are what it
     /// loads but never runs. Fix rows enable SmartAI on the creature when needed.
     /// </summary>
-    public static IEnumerable<InteractionIssue> Check(SmartScope scope, IReadOnlyList<SmartRule> rules, IContentNames names, Row? creatureAi, uint entry)
+    public IEnumerable<InteractionIssue> Check(SmartScope scope, IReadOnlyList<SmartRule> rules, IContentNames names, Row? creatureAi, uint entry)
     {
         var ids = rules.Select(r => r.Id).ToHashSet();
         var linkedTo = rules.Where(r => r.Link != 0).Select(r => r.Link).ToHashSet();
@@ -375,6 +456,10 @@ public static partial class SmartCatalog
             if ((rule.Flags & ~AllEventFlags) != 0)
             {
                 yield return new(true, $"{where}: unknown event flags 0x{rule.Flags & ~AllEventFlags:X}.");
+            }
+            else if ((rule.Flags & DeprecatedEventFlags) != 0)
+            {
+                yield return new(false, $"{where}: the difficulty flags 0x{rule.Flags & DeprecatedEventFlags:X} are no longer read; the server clears them. Use the Difficulties list.");
             }
 
             if (rule.Link != 0)
@@ -426,7 +511,7 @@ public static partial class SmartCatalog
                 yield return new(false, $"{where} is a \"Then\" rule that no other rule leads to; it never runs.");
             }
 
-            foreach (var (type, param, label) in new[] { (Event(rule.Event), (Func<int, uint>)rule.EventParam, "event"), (Action(rule.Action), rule.ActionParam, "action"), (Target(rule.Target), i => i <= 4 ? rule.TargetParam(i) : 0, "target") })
+            foreach (var (type, param, label) in new[] { (Event(rule.Event), (Func<int, uint>)rule.EventParam, "event"), (Action(rule.Action), rule.ActionParam, "action"), (Target(rule.Target), i => i <= TargetParamCount ? rule.TargetParam(i) : 0, "target") })
             {
                 if (type == null)
                 {
@@ -458,7 +543,7 @@ public static partial class SmartCatalog
         if (!scope.IsActionList && !scope.IsAreaTrigger && rules.Count > 0 && creatureAi != null && creatureAi.T("AIName") != "SmartAI")
         {
             string current = creatureAi.T("AIName");
-            yield return new(false, $"The creature's AI is {(current.Length == 0 ? "the default" : current)}, so these rules never run.", [new RowEdit(InteractionTables.CreatureAI.Name, creatureAi["entry"], creatureAi, creatureAi.With("AIName", "SmartAI"))]);
+            yield return new(false, $"The creature's AI is {(current.Length == 0 ? "the default" : current)}, so these rules never run.", [new RowEdit(CreatureAi.Name, creatureAi["entry"], creatureAi, creatureAi.With("AIName", "SmartAI"))]);
         }
     }
 }

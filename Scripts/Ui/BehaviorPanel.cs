@@ -8,17 +8,24 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// Creature behavior editor body over SmartAI (smart_scripts), the creature's AI selection
-/// (creature_template.AIName) and its speech lines (creature_text). Rules read as sentences
+/// (creature_template.AIName) and its speech lines (creature_text), for both databases: the
+/// dialect's <see cref="SmartCatalog"/> supplies the types, columns and loader rules. Rules read as sentences
 /// ("When it enters combat: cast Fireball → its victim"); editing uses searchable pickers instead of
 /// type numbers. Scopes: every spawn of the entry, one spawn (negative GUID) and timed action lists.
-/// The same panel edits an AreaTrigger's rules (source_type 2) and its areatrigger_scripts name;
-/// then <c>entry</c> holds the trigger ID and the creature-only parts (AI, speech, spawn) are hidden.
+/// With AzerothCore the same panel edits an AreaTrigger's rules (source_type 2) and its areatrigger_scripts
+/// name; then <c>entry</c> holds the trigger ID and the creature-only parts (AI, speech, spawn) are hidden.
 /// Every change is one validated command in the shared local content draft; nothing is written to
-/// the database. Rule cards are in AcBehaviorPanel.Rules.cs; the speech page is at the end of this file.
+/// the database. Rule cards are in BehaviorPanel.Rules.cs; the speech page is at the end of this file.
 /// </summary>
-public partial class AcBehaviorPanel : ContentPanel
+public partial class BehaviorPanel : ContentPanel
 {
     public Action<uint> QuestEditorRequested { get; set; } = _ => { };
+
+    /// <summary>The retail client's tables for spell names and search (TrinityCore); AzerothCore uses the 3.3.5 catalog.</summary>
+    public Func<IClientLookup?> Lookup { get; set; } = () => null;
+
+    /// <summary>The open database's SmartAI: types, columns and tables.</summary>
+    SmartCatalog smart => SmartCatalog.For(Connection().Dialect);
 
     ContentSnapshot? snapshot;
     RowSet effective = new();
@@ -49,9 +56,9 @@ public partial class AcBehaviorPanel : ContentPanel
     public SmartScope? Scope => scope;
     public IReadOnlyList<InteractionIssue> Issues => issues;
 
-    public AcBehaviorPanel()
+    public BehaviorPanel()
     {
-        Name = "AcBehaviorPanel";
+        Name = "BehaviorPanel";
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
     }
@@ -134,7 +141,7 @@ public partial class AcBehaviorPanel : ContentPanel
         bool loadTrigger = areaTrigger;
         try
         {
-            var source = DBSource.Open(Connection());
+            var source = DBSource.Open(Connection(), Lookup());
             var cat = await EnsureCatalog();
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];
@@ -194,7 +201,7 @@ public partial class AcBehaviorPanel : ContentPanel
     const uint InvokerTarget = SmartRuleEdits.InvokerTarget;
     SmartScope EntryScope => new((int)entry, areaTrigger ? SmartScope.AreaTrigger : SmartScope.Creature);
     SmartScope SpawnScope => new(-(int)guid, SmartScope.Creature);
-    Row? CreatureAi(RowSet rows) => areaTrigger ? null : rows.Get(InteractionTables.CreatureAI, entry.ToString(CultureInfo.InvariantCulture));
+    Row? CreatureAi(RowSet rows) => areaTrigger ? null : rows.Get(smart.CreatureAi, entry.ToString(CultureInfo.InvariantCulture));
     Row? TriggerScript(RowSet rows) => areaTrigger ? rows.Get(InteractionTables.AreaTriggerScripts, entry.ToString(CultureInfo.InvariantCulture)) : null;
 
     static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(rows, of);
@@ -244,7 +251,7 @@ public partial class AcBehaviorPanel : ContentPanel
         foreach (var each in Scopes(rows))
         {
             var rules = RulesOf(rows, each);
-            foreach (var issue in SmartCatalog.Check(each, rules, snapshot.Names, CreatureAi(rows), entry))
+            foreach (var issue in smart.Check(each, rules, snapshot.Names, CreatureAi(rows), entry))
             {
                 yield return each == EntryScope ? issue : issue with { Message = $"{each.Describe(snapshot.CreatureName)}: {issue.Message}" };
             }
@@ -255,7 +262,7 @@ public partial class AcBehaviorPanel : ContentPanel
             }
 
             // Talk lines belong to the speaking creature; an AreaTrigger has none of its own.
-            foreach (var rule in rules.Where(r => !areaTrigger && r.Action == SmartCatalog.Talk && !rows.All(InteractionTables.CreatureText).Any(t => t.U("CreatureID") == entry && t.U("GroupID") == r.ActionParam(1))))
+            foreach (var rule in rules.Where(r => !areaTrigger && r.Action == SmartCatalog.Talk && !rows.All(smart.CreatureText).Any(t => t.U("CreatureID") == entry && t.U("GroupID") == r.ActionParam(1))))
             {
                 if (rule.Target is 1 or 0 || each.IsActionList)
                 {
@@ -370,7 +377,7 @@ public partial class AcBehaviorPanel : ContentPanel
 
         if (!areaTrigger && SpeechInScopes)
         {
-            int lines = effective.All(InteractionTables.CreatureText).Count(t => t.U("CreatureID") == entry);
+            int lines = effective.All(smart.CreatureText).Count(t => t.U("CreatureID") == entry);
             ScopeButton($"Speech · {lines} line(s)", null);
         }
 
@@ -460,7 +467,7 @@ public partial class AcBehaviorPanel : ContentPanel
 
         if (CreatureAi(effective) is { } ai && ai.T("AIName").Length == 0 && snapshot!.ScriptName.Length == 0)
         {
-            return [new RowEdit(InteractionTables.CreatureAI.Name, ai["entry"], ai, ai.With("AIName", "SmartAI"))];
+            return [new RowEdit(smart.CreatureAi.Name, ai["entry"], ai, ai.With("AIName", "SmartAI"))];
         }
 
         return [];
@@ -482,7 +489,7 @@ public partial class AcBehaviorPanel : ContentPanel
         var help = ClientStyle.Text("\"Say text\" actions pick one line of a group at random (weighted by chance). Use $n for the player's name.", 12, ClientStyle.Faded);
         help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         page.AddChild(help);
-        var lines = effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).ToList();
+        var lines = effective.All(smart.CreatureText).Where(t => t.U("CreatureID") == entry).ToList();
         var allRules = Scopes(effective).SelectMany(s => RulesOf(effective, s)).ToList();
         foreach (var group in lines.GroupBy(t => t.U("GroupID")).OrderBy(g => g.Key))
         {
@@ -510,7 +517,7 @@ public partial class AcBehaviorPanel : ContentPanel
 
     void RenderLine(Row line)
     {
-        var table = InteractionTables.CreatureText;
+        var table = smart.CreatureText;
         bool edited = snapshot!.Rows.Get(table, table.KeyOf(line)) != line;
         void Put(string label, params (string Column, object Value)[] values)
         {
@@ -534,6 +541,15 @@ public partial class AcBehaviorPanel : ContentPanel
             ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value))),
             ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50), ClientStyle.Tag("%"),
             ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)))));
+        if (smart.HasStringParams)
+        {
+            // TrinityCore: the sound plays to everyone in range, or from the creature itself (SoundKitPlayType).
+            (uint, string)[] playTypes = [(0, "Normal"), (1, "From the creature")];
+            var sound = EditorFields.Number(line.U("Sound"), value => Put("Change line sound", ("Sound", (uint)Math.Clamp(value, 0, uint.MaxValue))), 80, "Sound kit ID (0 = none)");
+            sound.Name = "LineSound";
+            page.AddChild(EditorFields.Row("Sound", sound, ClientStyle.Tag("played"), EditorFields.Choice(playTypes, line.U("SoundPlayType"), value => Put("Change how the sound plays", ("SoundPlayType", value)))));
+        }
+
         int broadcast = line.I("BroadcastTextId");
         string shown = broadcast <= 0 ? "none (the line's own text is used)"
             : snapshot!.Names.Broadcasts.TryGetValue((uint)broadcast, out var preview) ? $"#{broadcast}: {Shorten(preview)}" : $"#{broadcast}";
@@ -548,7 +564,7 @@ public partial class AcBehaviorPanel : ContentPanel
 
     void ChooseBroadcast(Row line, Action<uint> choose)
     {
-        var source = DBSource.Open(Connection());
+        var source = DBSource.Open(Connection(), Lookup());
         PickerPopup.Show(this, "Choose broadcast text", async term =>
         {
             var found = await source.SearchBroadcastAsync(term, CancellationToken.None);
@@ -563,23 +579,23 @@ public partial class AcBehaviorPanel : ContentPanel
 
     void AddLine(uint group)
     {
-        var (label, edit) = SpeechEdits.NewLine(effective, entry, group, snapshot!.CreatureName);
+        var (label, edit) = SpeechEdits.NewLine(smart, effective, entry, group, snapshot!.CreatureName);
         Commit(label, edit);
     }
 }
 
 /// <summary>
-/// Standalone window around a <see cref="AcBehaviorPanel"/>, used for AreaTrigger rules (source_type 2)
+/// Standalone window around a <see cref="BehaviorPanel"/>, used for AreaTrigger rules (source_type 2)
 /// which have no creature to open the creature properties window on.
 /// </summary>
-public partial class AcBehaviorEditorWindow : ContentEditorWindow
+public partial class BehaviorEditorWindow : ContentEditorWindow
 {
     protected override Vector2 TargetSize => new(980, 720);
-    public AcBehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
+    public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
     Label title = null!;
     Button undo = null!, redo = null!;
 
-    public AcBehaviorEditorWindow() : base("BehaviorEditor")
+    public BehaviorEditorWindow() : base("BehaviorEditor")
     {
         Size = TargetSize;
     }

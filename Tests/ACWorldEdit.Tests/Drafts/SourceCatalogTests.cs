@@ -11,14 +11,14 @@ public class SourceCatalogTests
 {
     static string TempPath() => Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json");
 
-    // creature_ai is an AzerothCore column group; TrinityCore's catalog has no such table.
-    static readonly Row Before = Row.Of(("entry", 100u), ("AIName", ""));
-    static readonly RowEdit Rename = new("creature_ai", "100", Before, Before.With("AIName", "SmartAI"));
+    // areatrigger_scripts is an AzerothCore table; TrinityCore's catalog has no such table.
+    static readonly Row Before = Row.Of(("entry", 100), ("ScriptName", ""));
+    static readonly RowEdit Rename = new("areatrigger_scripts", "100", Before, Before.With("ScriptName", "SmartTrigger"));
 
     static RowSet Snapshot()
     {
         var rows = new RowSet();
-        rows.Set(AcTables.CreatureAI, Before);
+        rows.Set(AcTables.AreaTriggerScripts, Before);
         return rows;
     }
 
@@ -81,6 +81,7 @@ public class SourceCatalogTests
         public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
         public TrainerPageSpec TrainerPage => AcSchema.Instance.TrainerPage;
         public QuestLinksPageSpec QuestLinksPage => AcSchema.Instance.QuestLinksPage;
+        public SmartCatalog Smart => SmartCatalog.Trinity;
         public IReadOnlyList<TableSchema> All => [Wide];
         public TableSchema Find(string name) => name == Wide.Name ? Wide : throw new InvalidDataException(name);
     }

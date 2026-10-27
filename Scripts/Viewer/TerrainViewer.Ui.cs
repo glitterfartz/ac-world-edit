@@ -244,7 +244,7 @@ public partial class TerrainViewer
             FlyToEntry = LocateCreature,
             BehaviorForEntryRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
-        areaBehavior = new AcBehaviorEditorWindow
+        areaBehavior = new BehaviorEditorWindow
         {
             Connection = () => DatabaseConnection(),
             Store = () => store,
@@ -292,7 +292,7 @@ public partial class TerrainViewer
         };
         areaTriggers.BehaviorRequested += trigger =>
         {
-            if (BehaviorEditors)
+            if (AreaTriggerBehavior)
             {
                 areaBehavior.OpenAreaTrigger(trigger.Entry);
             }
@@ -308,19 +308,22 @@ public partial class TerrainViewer
     CreaturePropertiesWindow creatureProps = null!;
 
     /// <summary>
-    /// The behavior (SmartAI) editors read and draft AzerothCore tables; the TrinityCore version comes
-    /// later, so it stays off for the retail client. The creature properties and quest editors open for both.
+    /// The creature behavior (SmartAI and speech) editor opens for both databases. AreaTrigger rules
+    /// (<see cref="AreaTriggerBehavior"/>) are AzerothCore only: TrinityCore keys source type 2 by
+    /// AreaTrigger.db2 and runs server-side triggers through areatrigger_template.
     /// </summary>
-    bool BehaviorEditors => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
+    bool BehaviorEditors => databaseEnabled;
 
-    const string BehaviorEditorsUnavailable = "The behavior editor is not available for the TrinityCore database yet.";
+    bool AreaTriggerBehavior => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
+
+    const string BehaviorEditorsUnavailable = "AreaTrigger rules are not available for the TrinityCore database yet.";
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
     ContentDrafts drafts = null!;
     QuestEditorWindow questEditor = null!;
     /// <summary>AreaTrigger rules have no creature, so they keep a window of their own.</summary>
-    AcBehaviorEditorWindow areaBehavior = null!;
+    BehaviorEditorWindow areaBehavior = null!;
 
     /// <summary>
     /// Search creature templates by name or ID (the database of either dialect) and open the pick in the
@@ -340,7 +343,14 @@ public partial class TerrainViewer
     {
         if (areaTriggers.SelectedEntry is uint trigger)
         {
-            areaBehavior.OpenAreaTrigger(trigger);
+            if (AreaTriggerBehavior)
+            {
+                areaBehavior.OpenAreaTrigger(trigger);
+            }
+            else
+            {
+                statusLog.Post(BehaviorEditorsUnavailable);
+            }
         }
         else if (creatures.SelectedSpawn is { } spawn)
         {
