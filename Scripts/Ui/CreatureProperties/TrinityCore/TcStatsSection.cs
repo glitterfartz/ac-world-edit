@@ -87,10 +87,7 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
 
         void Result(string name, string tip, Func<TcStatLine, string> value)
         {
-            var caption = ClientStyle.Tag(name);
-            caption.TooltipText = tip;
-            caption.MouseFilter = Control.MouseFilterEnum.Stop;
-            grid.AddChild(caption);
+            grid.AddChild(ClientStyle.Caption(name, tip));
             grid.AddChild(ClientStyle.Text(value(low), 14));
             if (!oneLevel)
             {

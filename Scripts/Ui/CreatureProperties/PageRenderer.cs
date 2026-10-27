@@ -57,7 +57,7 @@ public sealed class PageRenderer(CreatureContext ctx)
             card.AddChild(fields);
             foreach (var field in spec.Fields)
             {
-                fields.AddChild(Caption(field.Label, field.Tip));
+                fields.AddChild(ClientStyle.Caption(field.Label, field.Tip));
                 var control = fieldControl?.Invoke(field, row) ?? (editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 13));
                 control.TooltipText = field.Tip;
                 if (control is Label label)
@@ -122,7 +122,7 @@ public sealed class PageRenderer(CreatureContext ctx)
                     parent.AddChild(grid);
                 }
 
-                grid.AddChild(Caption(field.Label, field.Tip));
+                grid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
                 var control = editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 14);
                 control.TooltipText = field.Tip;
                 if (control is Label label)
@@ -255,14 +255,6 @@ public sealed class PageRenderer(CreatureContext ctx)
         other.TextSubmitted += _ => AddOther();
         box.AddChild(other);
         box.AddChild(add);
-    }
-
-    static Label Caption(string name, string tip)
-    {
-        var label = ClientStyle.Tag(name);
-        label.TooltipText = tip;
-        label.MouseFilter = Control.MouseFilterEnum.Stop;
-        return label;
     }
 
     static ColumnKind KindOf(FieldSpec field) => field.Table.Columns.First(c => c.Name == field.Column).Kind;
@@ -417,7 +409,7 @@ public sealed class PageRenderer(CreatureContext ctx)
     {
         ulong value = Number(field, row);
         var bits = field.Flags ?? [];
-        parent.AddChild(Caption(field.Label, field.Tip));
+        parent.AddChild(ClientStyle.Caption(field.Label, field.Tip));
         if (!editable)
         {
             var names = bits.Where(f => (value & f.Bit) != 0).Select(f => f.Name).ToList();

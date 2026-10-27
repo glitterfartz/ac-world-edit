@@ -47,15 +47,6 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
         }
     }
 
-    /// <summary>A field label that shows the explanation on hover.</summary>
-    protected static Label Caption(string name, string tip)
-    {
-        var label = ClientStyle.Tag(name);
-        label.TooltipText = tip;
-        label.MouseFilter = MouseFilterEnum.Stop;
-        return label;
-    }
-
     protected static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
     protected HBoxContainer IconRow(string iconPath, Control content, int size = 16, Tooltip? tooltip = null)

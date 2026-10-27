@@ -111,7 +111,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
 
         void Result(GridContainer table, string name, string tip, Func<ClassLevelStats, float> value)
         {
-            table.AddChild(Caption(name, tip));
+            table.AddChild(ClientStyle.Caption(name, tip));
             table.AddChild(ClientStyle.Text(Shown(value(low)), 14));
             table.AddChild(ClientStyle.Text(Shown(value(high)), 14));
         }
@@ -119,7 +119,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
 
     static void Field(GridContainer grid, string name, string tip, Control editor)
     {
-        grid.AddChild(Caption(name, tip));
+        grid.AddChild(ClientStyle.Caption(name, tip));
         editor.TooltipText = tip;
         grid.AddChild(editor);
     }

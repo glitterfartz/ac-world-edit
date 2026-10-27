@@ -59,7 +59,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
 
     void Add(string label, string tip, string shown, Func<Control> editor)
     {
-        grid.AddChild(Caption(label, tip));
+        grid.AddChild(ClientStyle.Caption(label, tip));
         var control = editable ? editor() : ClientStyle.Text(shown, 14);
         control.TooltipText = tip;
         grid.AddChild(control);
@@ -76,7 +76,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             body.AddChild(ClientStyle.Text($"Flight master: nearest taxi node {node.Name} ({node.Id}), {node.Distance:0} yd.", 14));
         }
 
-        body.AddChild(Caption("Spell click", "Spells that cast when a player clicks the creature, used for rideable vehicles and similar. Each entry names the spell, who casts it and on whom."));
+        body.AddChild(ClientStyle.Caption("Spell click", "Spells that cast when a player clicks the creature, used for rideable vehicles and similar. Each entry names the spell, who casts it and on whom."));
         if (v.SpellClicks.Length == 0)
         {
             body.AddChild(ClientStyle.Text("None", 13, ClientStyle.Faded));

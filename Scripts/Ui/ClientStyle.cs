@@ -164,6 +164,15 @@ public static class ClientStyle
         return label;
     }
 
+    /// <summary>A field label (<see cref="Tag"/>) that shows the explanation on hover.</summary>
+    public static Label Caption(string name, string tip)
+    {
+        var label = Tag(name);
+        label.TooltipText = tip;
+        label.MouseFilter = Control.MouseFilterEnum.Stop;
+        return label;
+    }
+
     /// <summary>
     /// Copper amount as the client shows it: "1g 20s 5c".
     /// </summary>
