@@ -22,7 +22,7 @@ Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`.
 
 ## Phases (each phase = its own commit(s), tests, and a visual check where the UI changes)
 
-**Phase 6: creature properties (TC)** (read side done; see `tc-status.md`)
+**Phase 6: creature properties (TC)** (read and edit sides done; refinements in `tc-status.md`)
 - `TcTables` catalog: `creature_template` (TC columns); `creature_template_difficulty` (levels via ContentTuningID, Health/Mana/Armor/DamageModifier, loot IDs, gold, TypeFlags, StaticFlags; needs a difficulty choice, not only `DifficultyID=0`); `creature_template_gossip` (1:N menus); `creature_trainer` (bound to a gossip option); `gossip_menu_option` (GossipOptionID, OptionNpc, Language, Flags, GossipNpcOptionID, SpellID, OverrideIconID); `npc_text` (BroadcastTextID0-7, Probability0-7); `npc_vendor` (+type in the key, BonusListIDs, PlayerConditionID, IgnoreFiltering); quest starter/ender links; `npc_spellclick_spells`.
 - TC `NpcSchema`/`CreatureSchema`: 64-bit `npcflag`, Classification, `unit_flags3`, the TC OptionNpc enum. The TC stats page uses ContentTuning instead of minlevel/maxlevel; `creature_classlevelstats` has only basemana/attackpower/rangedattackpower.
 - Vendor search uses client ItemSparse through `IClientLookup` (implemented). Detailed tooltips and `hotfixes.item_sparse` overrides remain to be added. Shared-list expansion also remains; validation covers item, currency, extended cost, bonus list and player condition existence, fields and stock rules.
