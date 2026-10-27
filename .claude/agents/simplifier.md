@@ -32,7 +32,7 @@ Do not simplify for its own sake: leave code alone when merging would need flags
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` stay Godot-free. Run the `check-layering` skill after editing them.
 - Don't construct `Ac*Source`/`Tc*Source` outside `Scripts/Data`.
 - `azerothcore-wotlk` and `wow-data` are read-only; never touch them or mention the `wow-data` path in a shell command.
-- Update the docs in the same change: every page that names a renamed, moved, merged or removed class (grep `docs/` and `CLAUDE.md` for each name), and `docs/tc-status.md` ("Coexisting forms" and "Where work stopped"). Fix wrong doc statements you come across.
+- Update the docs in the same change: every page that names a renamed, moved, merged or removed class (grep `docs/` and `CLAUDE.md` for each name), and `docs/tc-status.md` ("Coexisting forms" and "Open work"). Fix wrong doc statements you come across.
 - Use `-p:NuGetAudit=false` for dotnet. After editing `.cs` files the format hook runs on its own.
 - Tests: update them with the code they cover. Merge duplicate tests only when the merged test still checks both dialects. Don't delete coverage.
 
