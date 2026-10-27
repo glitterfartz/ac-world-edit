@@ -14,9 +14,9 @@ namespace ACWorldEdit;
 /// The same panel edits an AreaTrigger's rules (source_type 2) and its areatrigger_scripts name;
 /// then <c>entry</c> holds the trigger ID and the creature-only parts (AI, speech, spawn) are hidden.
 /// Every change is one validated command in the shared local content draft; nothing is written to
-/// the database. Rule cards are in BehaviorPanel.Rules.cs; the speech page is at the end of this file.
+/// the database. Rule cards are in AcBehaviorPanel.Rules.cs; the speech page is at the end of this file.
 /// </summary>
-public partial class BehaviorPanel : ContentPanel
+public partial class AcBehaviorPanel : ContentPanel
 {
     public Action<uint> QuestEditorRequested { get; set; } = _ => { };
 
@@ -49,9 +49,9 @@ public partial class BehaviorPanel : ContentPanel
     public SmartScope? Scope => scope;
     public IReadOnlyList<InteractionIssue> Issues => issues;
 
-    public BehaviorPanel()
+    public AcBehaviorPanel()
     {
-        Name = "BehaviorPanel";
+        Name = "AcBehaviorPanel";
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
     }
@@ -569,17 +569,17 @@ public partial class BehaviorPanel : ContentPanel
 }
 
 /// <summary>
-/// Standalone window around a <see cref="BehaviorPanel"/>, used for AreaTrigger rules (source_type 2)
+/// Standalone window around a <see cref="AcBehaviorPanel"/>, used for AreaTrigger rules (source_type 2)
 /// which have no creature to open the creature properties window on.
 /// </summary>
-public partial class BehaviorEditorWindow : ContentEditorWindow
+public partial class AcBehaviorEditorWindow : ContentEditorWindow
 {
     protected override Vector2 TargetSize => new(980, 720);
-    public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
+    public AcBehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
     Label title = null!;
     Button undo = null!, redo = null!;
 
-    public BehaviorEditorWindow() : base("BehaviorEditor")
+    public AcBehaviorEditorWindow() : base("BehaviorEditor")
     {
         Size = TargetSize;
     }

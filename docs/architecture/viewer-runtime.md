@@ -187,9 +187,9 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 | Sidebar | `Ui/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
 | Editor base | `Ui/ContentEditorWindow.cs`, `Ui/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
-| Quest editor | `Ui/QuestEditorWindow.cs` (search and frame), `Ui/QuestPanel.cs`, `.Pages.cs` | `quest_template` and related tables, with `QuestModel.Check`; the panel is also embedded in the creature window |
-| Behavior panel | `Ui/BehaviorPanel.cs` (with the speech page), `.Rules.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window |
-| AreaTrigger behavior | `BehaviorEditorWindow` in `Ui/BehaviorPanel.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature |
+| Quest editor | `Ui/AcQuestEditorWindow.cs` (search and frame), `Ui/AcQuestPanel.cs`, `.Pages.cs` | `quest_template` and related tables, with `QuestModel.Check`; the panel is also embedded in the creature window |
+| Behavior panel | `Ui/AcBehaviorPanel.cs` (with the speech page), `.Rules.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window |
+| AreaTrigger behavior | `AcBehaviorEditorWindow` in `Ui/AcBehaviorPanel.cs` | A window around `AcBehaviorPanel` for AreaTrigger rules, which have no creature |
 | Pending changes | `Ui/PendingChangesWindow.cs` (`PendingChangesWindow`, `SqlPreviewWindow`) | Lists pending changes; the viewer performs discard and export. The SQL preview shows the apply or revert script an export would write |
 | Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | Callback-driven menus and mode buttons |
 | Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |

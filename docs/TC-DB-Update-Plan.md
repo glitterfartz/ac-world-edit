@@ -17,8 +17,8 @@ Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`.
 - **Editors read the dialect only through `IDBSource.Schema`:**
   - `CreatureSectionRegistry` filters sections by schema support.
   - `AcTemplateSection`, `AcStatsSection`, `AcGossipSection`, `AcTrainerSection` and `AcVendorSection` take their field groups and enums from the schema.
-  - `QuestPanel.Pages` builds pages from `QuestSchema`. TC adds an Objectives page and drops `RequiredNpcOrGo`/`RequiredItem`.
-  - `BehaviorPanel.Rules` uses `Schema.Smart`.
+  - `AcQuestPanel.Pages` builds pages from `QuestSchema`. TC adds an Objectives page and drops `RequiredNpcOrGo`/`RequiredItem`.
+  - `AcBehaviorPanel.Rules` uses `Schema.Smart`.
 
 ## Phases (each phase = its own commit(s), tests, and a visual check where the UI changes)
 

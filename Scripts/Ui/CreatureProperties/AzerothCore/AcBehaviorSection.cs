@@ -3,7 +3,7 @@ using Godot;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Hosts the shared <see cref="BehaviorPanel"/> (SmartAI rules, AI selection and action lists) for
+/// Hosts the shared <see cref="AcBehaviorPanel"/> (SmartAI rules, AI selection and action lists) for
 /// the selected creature. The panel loads and edits its own rows; this section only places it and
 /// points it at the creature.
 /// </summary>
@@ -27,7 +27,7 @@ public sealed partial class AcBehaviorSection(CreatureContext ctx) : CreatureSec
 }
 
 /// <summary>
-/// The creature's speech lines (creature_text): the other view of the shared <see cref="BehaviorPanel"/>.
+/// The creature's speech lines (creature_text): the other view of the shared <see cref="AcBehaviorPanel"/>.
 /// </summary>
 public sealed partial class AcSpeechSection(CreatureContext ctx) : CreatureSection(ctx)
 {

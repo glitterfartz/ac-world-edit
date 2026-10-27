@@ -6,13 +6,13 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Standalone quest editor: a quest search list on the left and a <see cref="QuestPanel"/> (the same
+/// Standalone quest editor: a quest search list on the left and a <see cref="AcQuestPanel"/> (the same
 /// editor the creature properties window embeds for its quest givers) on the right.
 /// </summary>
-public partial class QuestEditorWindow : ContentEditorWindow
+public partial class AcQuestEditorWindow : ContentEditorWindow
 {
     protected override Vector2 TargetSize => new(1000, 720);
-    public QuestPanel Panel { get; } = new();
+    public AcQuestPanel Panel { get; } = new();
     public Func<AreaLookup?> Areas { get => Panel.Areas; set => Panel.Areas = value; }
     public Func<uint, string, Task<string>> FlyToEntry { get => Panel.FlyToEntry; set => Panel.FlyToEntry = value; }
     public Action<uint> BehaviorRequested { get => Panel.BehaviorRequested; set => Panel.BehaviorRequested = value; }
@@ -25,7 +25,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
     public uint? QuestId => Panel.QuestId;
     public bool IsLoading => Panel.IsLoading;
 
-    public QuestEditorWindow() : base("QuestEditor")
+    public AcQuestEditorWindow() : base("QuestEditor")
     {
         Size = TargetSize;
     }
@@ -104,7 +104,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
 
     public Task NewQuest(uint? copyFrom) => Panel.NewQuest(copyFrom);
 
-    public void ShowTab(QuestPanel.Tab value) => Panel.ShowTab(value);
+    public void ShowTab(AcQuestPanel.Tab value) => Panel.ShowTab(value);
 
     public async Task Search()
     {

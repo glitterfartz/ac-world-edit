@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 /// smart_scripts is keyed by (entryorguid, source_type, id, link), so edits that change id or link
 /// are recorded as delete + insert within one command.
 /// </summary>
-public partial class BehaviorPanel
+public partial class AcBehaviorPanel
 {
     /// <summary>
     /// The rule being created: its row (id assigned on Add), its scope and, for a "Then" step, the

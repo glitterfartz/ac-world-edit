@@ -10,9 +10,9 @@ namespace ACWorldEdit;
 /// Quest editor: friendly pages over quest_template, quest_template_addon, quest_request_items,
 /// quest_offer_reward and the creature starter/ender links. Every change is one validated command
 /// in the shared local content draft (undo/redo, stale-row conflicts); nothing is written to the
-/// database. Pages are in QuestPanel.Pages.cs.
+/// database. Pages are in AcQuestPanel.Pages.cs.
 /// </summary>
-public partial class QuestPanel : ContentPanel
+public partial class AcQuestPanel : ContentPanel
 {
     public enum Tab
     {
@@ -58,9 +58,9 @@ public partial class QuestPanel : ContentPanel
 
     public bool IsLoading { get; private set; }
 
-    public QuestPanel()
+    public AcQuestPanel()
     {
-        Name = "QuestPanel";
+        Name = "AcQuestPanel";
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
     }

@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// page re-renders from the draft afterwards, so what is shown is always what is drafted. Column
 /// names stay out of the UI: captions describe what the player experiences.
 /// </summary>
-public partial class QuestPanel
+public partial class AcQuestPanel
 {
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
     static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (QuestModel.AllianceRaces, "Alliance only"), (QuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];

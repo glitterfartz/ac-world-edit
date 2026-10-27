@@ -4,7 +4,7 @@ using Xunit;
 namespace ACWorldEdit.Tests.Smart;
 
 /// <summary>
-/// Behavior-editor row arithmetic (extracted from BehaviorEditorWindow.Rules.cs). The asserted edit
+/// Behavior-editor row arithmetic (extracted from AcBehaviorEditorWindow.Rules.cs). The asserted edit
 /// order matters: deletes precede inserts so re-keyed rows never collide inside one command.
 /// </summary>
 public class SmartRuleEditsTests
