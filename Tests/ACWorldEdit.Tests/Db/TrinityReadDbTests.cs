@@ -38,6 +38,24 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task QuestSnapshotReadsTheTemplateAndItsObjectives()
+    {
+        var source = Open();
+        var snapshot = await source.ReadQuestAsync(176, [], rows => rows, null, CancellationToken.None);
+        var quest = snapshot.Rows.Get(TcTables.QuestTemplate, "176");
+        Assert.NotNull(quest);
+        Assert.Contains("Hogger", quest.T("LogTitle"));
+        var objective = Assert.Single(snapshot.Rows.All(TcTables.QuestObjectives), r => r.U("QuestID") == 176);
+        Assert.Equal(TcQuestRules.Monster, objective.U("Type"));
+        Assert.Equal("Hogger", snapshot.Names.Creature(objective.U("ObjectID")));
+        Assert.True(snapshot.MaxQuestId >= 176);
+        Assert.True(snapshot.MaxObjectiveId >= objective.U("ID"));
+        Assert.Empty(TcQuestRules.Check(176, snapshot.Rows, snapshot.Names, null, null).Where(i => i.Error));
+        Assert.Contains(await source.SearchQuestsAsync("Hogger", CancellationToken.None), q => q.Id == 176);
+        Assert.Contains(await source.SearchAsync(SmartParamKind.Creature, "Hogger", CancellationToken.None), c => c.Id == 448);
+    }
+
+    [TcDbFact]
     public async Task CreaturesNearGoldshireCarryTheirDifficultyAndPhase()
     {
         var result = await Open().ReadCreaturesAsync(Elwynn, Normal, Goldshire, "", CancellationToken.None);

@@ -53,9 +53,10 @@ TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage 
 | `TcGraveyardSource` | `world_safe_locs`, `graveyard_zone`, team rows in `conditions`, teleport overlaps from `areatrigger_teleport`; healers via `AcGraveyardSource.ReadHealers` |
 | `TcAreaTriggerSource` | client `AreaTrigger.db2` (through `IClientLookup`) joined to `areatrigger_scripts`, `areatrigger_teleport` → `world_safe_locs`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `smart_scripts` |
 | `TcInteractionSource` | the `TcTables` creature tables (template, difficulty, gossip, trainers, vendor, quest links, spell clicks); the template, difficulty (including level scaling), vendor, gossip option and greeting, trainer and quest-link rows are editable; `creature_classlevelstats` is read for the stats page; `SearchQuestsAsync` searches `quest_template` |
+| `TcContentSource` | the quest snapshot: `quest_template`, `quest_template_addon`, `quest_request_items`, `quest_offer_reward`, `quest_objectives` (by `QuestID`) and the creature starter/ender links, with creature, object and quest names from the world database and item and spell names from the client; also the creature, object, item, spell and quest search |
 | `TcHotfixSource` | `hotfixes` database: `creature_display_info`, `creature_model_data`, `broadcast_text`, `area_trigger`, `item_sparse` (vendor item name and quality) |
 
-Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has no content (quest, SmartAI) or waypoint source yet; those editors and the waypoint layer are off in TrinityCore mode.
+Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has a quest source (`TcContentSource`) but no SmartAI or waypoint source yet; the quest editor panel is still off for it, as are the behavior editor and the waypoint layer.
 
 ## Draft model: `Foundation/`
 
@@ -71,7 +72,7 @@ Each kind of edit has its own draft type. All of them are backed by `DraftHistor
 | `InteractionDraft` | `InteractionDraft.cs` | Generic row edits (insert, update, delete); several edits undo as one command. Each source's table catalog comes from `SourceDialects` (`sources.json`); an unknown source is AzerothCore |
 | `InteractionRows` | `InteractionRows.cs` | The row model and `AcTables`, the AzerothCore catalog (`InteractionTables` is its legacy static facade); TrinityCore's catalog is `TcTables` (`TcTables.cs`) |
 
-`AcTables` lists the editable AzerothCore tables: `creature_template` (npcflag, gossip_menu_id, subname), `gossip_menu`, `npc_text`, `gossip_menu_option`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `trainer`, `trainer_spell`, `npc_spellclick_spells`, `creature_ai` (a logical name for `creature_template.AIName`), the four quest tables, `smart_scripts`, `creature_text`, and `areatrigger_scripts`. `TcTables` holds only the creature-property tables (see `docs/tc-status.md`), so a TrinityCore quest or SmartAI row is refused.
+`AcTables` lists the editable AzerothCore tables: `creature_template` (npcflag, gossip_menu_id, subname), `gossip_menu`, `npc_text`, `gossip_menu_option`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `trainer`, `trainer_spell`, `npc_spellclick_spells`, `creature_ai` (a logical name for `creature_template.AIName`), the four quest tables, `smart_scripts`, `creature_text`, and `areatrigger_scripts`. `TcTables` holds the creature-property tables and the five quest tables (`quest_template`, `quest_template_addon`, `quest_request_items`, `quest_offer_reward`, `quest_objectives`); a TrinityCore SmartAI row is refused. `TcQuestRules` holds TrinityCore's quest vocabulary (objective types and flags) and the loader checks.
 
 ### Undo, redo and freshness
 

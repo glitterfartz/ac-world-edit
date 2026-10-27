@@ -17,6 +17,7 @@ public sealed class TcDBSource : IDBSource
     readonly TcAreaTriggerSource areaTriggers;
     readonly AcTeleportSource teleports;
     readonly TcInteractionSource interaction;
+    readonly TcContentSource content;
 
     public TcDBSource(WorldConnection connection, IClientLookup? lookup)
     {
@@ -26,6 +27,7 @@ public sealed class TcDBSource : IDBSource
         var hotfixes = new TcHotfixSource(connection.HotfixesSettings);
         areaTriggers = new(database, lookup, hotfixes);
         interaction = new(database, lookup, hotfixes);
+        content = new(database, lookup);
         // game_tele has the same schema in both servers.
         teleports = new(database);
     }
@@ -42,10 +44,10 @@ public sealed class TcDBSource : IDBSource
     public Task<AreaTriggerRegionResult> ReadAreaTriggersAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token) => areaTriggers.ReadAsync(region, point, search, token);
     public Task<TeleportLocation[]> ReadTeleportsAsync(CancellationToken token) => teleports.ReadAsync(token);
     public Task<WaypointRegionResult> ReadWaypointsAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token) => throw Unsupported("Waypoints");
-    public Task<ContentSnapshot> ReadQuestAsync(uint quest, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The quest editor");
+    public Task<ContentSnapshot> ReadQuestAsync(uint quest, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => content.ReadQuestAsync(quest, draftKeys, effective, catalog, token);
     public Task<ContentSnapshot> ReadBehaviorAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
     public Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("The behavior editor");
-    public Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token) => throw Unsupported("Search");
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token) => content.SearchAsync(kind, term, token);
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchBroadcastAsync(string term, CancellationToken token) => interaction.FindBroadcastAsync(term, token);
     public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => throw Unsupported("The behavior editor");
     public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => interaction.ReadAsync(entry, guid, draftKeys, effective, catalog, token);

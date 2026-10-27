@@ -155,7 +155,17 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
     public async Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        return await AcInteractionSource.SearchQuests(session, term, token).ConfigureAwait(false);
+        // TrinityCore has no QuestLevel column; the level reads as 0.
+        await using var command = session.Command($"SELECT ID,COALESCE(LogTitle,'') FROM quest_template WHERE LogTitle LIKE @s ESCAPE '=' OR ID=@id ORDER BY ID=@id DESC, CHAR_LENGTH(LogTitle), ID LIMIT {DbLimits.MaxSearch}");
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
+        List<(uint, string, int)> quests = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            quests.Add((reader.GetUInt32(0), reader.GetString(1), 0));
+        }
+
+        return quests;
     }
 
     /// <summary>The base mana and attack power per level and class are small (about 4 classes x 123 levels), so read them all.</summary>

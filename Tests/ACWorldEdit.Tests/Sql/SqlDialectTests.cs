@@ -45,7 +45,7 @@ public class SqlDialectTests
         var before = Row.Of(("entry", 100u), ("AIName", ""));
         var row = new RowEdit("creature_ai", "100", before, before.With("AIName", "SmartAI"));
         Assert.Contains("TrinityCore", Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [row], Stamp, null, TcSchema.Instance)).Message);
-        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "creature_ai" or "quest_template" or "smart_scripts");
+        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "creature_ai" or "smart_scripts");
     }
 
     [Fact]

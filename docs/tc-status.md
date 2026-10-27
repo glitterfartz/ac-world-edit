@@ -46,7 +46,7 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 
 | Item | Status | Notes |
 |---|---|---|
-| Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | not started | Phase 7. Editor gated off in TC. |
+| Quests: `TcQuestSchema`, `quest_objectives` page, ObjectID lookups, `QuestModel.Check` per dialect | partial | Phase 7. Done: the five quest tables in `TcTables`, `TcContentSource` (read, names, search), `TcQuestRules` (checks). Next: the shared quest panel with TC pages, then enabling the editor. Editor still gated off in TC. |
 | SmartAI: `SmartCatalog.Trinity`, TC `smart_scripts` columns, `creature_text.SoundPlayType` | not started | Phase 8. Editor gated off in TC. |
 | Speech via BroadcastText; hotfix export with `hotfix_data` | not started | Phase 8. |
 | Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. |
