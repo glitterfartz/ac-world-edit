@@ -210,7 +210,7 @@ To add a section: derive from `CreatureSection` (or `AcInteractionSection` for p
 Cross-window wiring is set up in `BuildUi`:
 
 - the creature inspector's Properties button, a short right-click and the Behavior menu entries open the creature window on a section;
-- View → Find creature template… searches `creature_template` by name or ID (for either database, through `IDBSource.SearchAsync`) in the shared `PickerPopup` and opens the creature window on the pick, as a quest giver card does;
+- The "Creature Templates" toolbar button searches `creature_template` by name or ID (for either database, through `IDBSource.SearchAsync`) in the shared `PickerPopup` and opens the creature window on the pick, as a quest giver card does;
 - the creature window and quest givers open the standalone quest editor, and the quest editor's giver cards open the creature window on its Behavior section;
 - the interaction summary updates the creature inspector;
 - the sidebar's review button opens the pending-changes window.

@@ -485,7 +485,7 @@ public partial class TerrainViewer
                 clientShotCreatureStage = 60;
                 return;
             case 60:
-                // View > Find creature template…: search by name, pick, and the creature window opens on it.
+                // Creature Templates toolbar button: search by name, pick, and the creature window opens on it.
                 creatureProps.Visible = false;
                 OpenCreatureTemplateSearch();
                 if (GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible) is not { } templatePicker) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_MISSING"); return; }
