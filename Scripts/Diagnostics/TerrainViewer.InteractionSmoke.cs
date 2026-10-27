@@ -158,9 +158,8 @@ public partial class TerrainViewer
         }),
         ("vendor-page", () =>
         {
-            creatureProps.SmokeShow("Gossip");
-            Require(creatureProps.SmokeFollow(3), "no vendor option to follow");
-            Require(creatureProps.SmokeOnVendorPage, "vendor option did not open the vendor page");
+            creatureProps.SmokeShow("Vendor");
+            Require(creatureProps.SmokeOnVendorPage, "the Vendor section did not open");
             return true;
         }),
         ("vendor-icons", () =>

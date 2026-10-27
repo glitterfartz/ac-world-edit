@@ -111,8 +111,10 @@ public partial class CreaturePropertiesWindow
     /// </summary>
     public bool SmokeRemoveVendorItem(uint item)
     {
-        var row = Live<HBoxContainer>(body).FirstOrDefault(r => r.GetChildren().OfType<Label>().Any(l => l.Text.EndsWith($"({item})", StringComparison.Ordinal)));
-        var remove = row?.GetChildren().OfType<Button>().FirstOrDefault(b => b.Text == "✕");
+        // The item heading is nested in the card's title row, next to its Remove button.
+        var row = Live<HBoxContainer>(body).FirstOrDefault(r => r.GetChildren().OfType<Button>().Any(b => b.Text == "Remove")
+            && r.FindChildren("*", "Label", true, false).OfType<Label>().Any(l => l.Text.EndsWith($"({item})", StringComparison.Ordinal)));
+        var remove = row?.GetChildren().OfType<Button>().FirstOrDefault(b => b.Text == "Remove");
         remove?.EmitSignal(BaseButton.SignalName.Pressed);
         return remove != null;
     }

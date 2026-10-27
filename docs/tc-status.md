@@ -30,7 +30,7 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Quest links | partial | Link availability conditions not shown; quest content is Phase 7. |
 | Stats calculator | partial | Content tuning 0 (the server then uses the map's or area's tuning), Mythic+ modifiers (a modifier limited to start in a season is skipped, one limited to end in a season is kept), `Rate.Creature.*` taken as 1, conditional content tuning redirects, attack power / speed in the damage line. |
 | AC gaps | partial | Gossip `BoxBroadcastTextID`, trainer `ReqAbility1-3` and trainer/quest-link build metadata are outside the catalogs. |
-| `--interaction-smoke` | partial | Reports a window-open failure; the screenshot workflow opens the windows directly. Headless `--behavior-smoke` times out at `pick-template` (passes windowed). |
+| Headless smokes | partial | `--interaction-smoke` passes windowed but, headless, the simulated right-click does not open the window; `--behavior-smoke` times out at `pick-template` headless (passes windowed). |
 
 ### Phases 7–9
 
