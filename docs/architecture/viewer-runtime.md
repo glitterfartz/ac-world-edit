@@ -32,7 +32,7 @@ Client selection:
 
 - `UserSettings` (`Scripts/Ui/UserSettings.cs`) reads and writes `user://settings.cfg`.
 - Environment variables override settings through `SettingsResolver`: `ACWORLD_CLIENT_PROFILE`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_DB_INFO`, `ACWORLD_TC_DB_INFO`, `ACWORLD_LISTFILE`.
-- `ClientPickerDialog` (`Scripts/Ui/ClientPickerDialog.cs`) offers the Wrath and Retail profiles, remembers one folder per profile and validates it with `ClientFolder.Validate`.
+- `ClientPickerDialog` (`Scripts/Ui/ConnectionForm.cs`) offers the Wrath and Retail profiles, remembers one folder per profile and validates it with `ClientFolder.Validate`.
 
 Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pending tile task, then disposes the store and the drafts.
 
@@ -182,7 +182,7 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 
 | Window | File | Role |
 |---|---|---|
-| Client picker | `Ui/ClientPickerDialog.cs` | Profile and folder selection |
+| Client picker | `ClientPickerDialog` in `Ui/ConnectionForm.cs` | Profile and folder selection |
 | Connection | `Ui/ConnectionForm.cs` | Database settings; tested on a worker before saving |
 | Sidebar | `Ui/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
 | Editor base | `Ui/ContentEditorWindow.cs`, `Ui/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
