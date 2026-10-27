@@ -388,6 +388,12 @@ public sealed class AcInteractionSource(WorldDatabase database)
         return Convert.ToInt64(await Scalar(session, "SELECT COUNT(*) FROM gossip_menu WHERE MenuID=@k0", [menuId], token)) > 0;
     }
 
+    public async Task<bool> PoiExistsAsync(uint poi, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        return Convert.ToInt64(await Scalar(session, "SELECT COUNT(*) FROM points_of_interest WHERE ID=@k0", [poi], token)) > 0;
+    }
+
     public async Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);

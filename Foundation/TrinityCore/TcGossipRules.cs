@@ -3,7 +3,7 @@ namespace ACWorldEdit.Foundation;
 /// <summary>TC gossip column and npc_text loader rules. Text weights are relative, not percentages.</summary>
 public static class TcGossipRules
 {
-    public static IEnumerable<InteractionIssue> Check(RowSet rows)
+    public static IEnumerable<InteractionIssue> Check(RowSet rows, Func<ClientRecord, uint, bool>? exists = null, Func<uint, bool>? poiExists = null)
     {
         foreach (var row in rows.All(TcTables.GossipOption))
         {
@@ -14,6 +14,18 @@ public static class TcGossipRules
                 yield return new(true, $"Gossip option {key}: ask for code must be zero or one.");
             if (row.UL("BoxMoney") > uint.MaxValue)
                 yield return new(true, $"Gossip option {key}: confirmation cost must fit an unsigned int.");
+            if (exists != null)
+            {
+                if (row.U("Language") != 0 && !exists(ClientRecord.Language, row.U("Language")))
+                    yield return new(true, $"Gossip option {key}: language {row.U("Language")} does not exist in the client.");
+                if (row.I("SpellID") > 0 && !exists(ClientRecord.Spell, (uint)row.I("SpellID")))
+                    yield return new(true, $"Gossip option {key}: spell {row.I("SpellID")} does not exist in the client.");
+                if (row.I("GossipNpcOptionID") > 0 && !exists(ClientRecord.GossipNpcOption, (uint)row.I("GossipNpcOptionID")))
+                    yield return new(true, $"Gossip option {key}: client option {row.I("GossipNpcOptionID")} does not exist in the client.");
+            }
+
+            if (poiExists != null && row.U("ActionPoiID") != 0 && !poiExists(row.U("ActionPoiID")))
+                yield return new(true, $"Gossip option {key}: point of interest {row.U("ActionPoiID")} does not exist.");
         }
         foreach (var row in rows.All(TcTables.NpcText))
         {

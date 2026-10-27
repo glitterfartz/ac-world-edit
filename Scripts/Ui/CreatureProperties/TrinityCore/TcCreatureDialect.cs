@@ -16,9 +16,9 @@ public sealed class TcCreatureDialect : ICreatureDialect
     }
 
     public IEnumerable<InteractionIssue> Check(InteractionSnapshot snapshot, RowSet rows, IClientLookup? client) =>
-        TcVendorRules.Check(snapshot.Entry, rows, client == null ? null : id => client.Item(id) != null)
-            .Concat(TcGossipRules.Check(rows))
-            .Concat(TcTrainerRules.Check(rows, client == null ? null : id => client.SpellName(id) != null))
+        TcVendorRules.Check(snapshot.Entry, rows, client == null ? null : client.Exists)
+            .Concat(TcGossipRules.Check(rows, client == null ? null : client.Exists, snapshot.Lookup.PoiExists))
+            .Concat(TcTrainerRules.Check(rows, client == null ? null : client.Exists, snapshot.Lookup.TrainerExists))
             .Concat(TcQuestLinkRules.Check(rows, id => snapshot.Lookup.Quest(id) != null))
-            .Concat(TcStatRules.Check(rows));
+            .Concat(TcStatRules.Check(rows, client == null ? null : client.Exists));
 }

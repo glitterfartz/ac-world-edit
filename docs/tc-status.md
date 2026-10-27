@@ -25,13 +25,10 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Item | Status | Notes |
 |---|---|---|
 | Schema-driven section registry and field groups | not started | Sections do not yet take their field groups from the schema. |
-| Gossip | partial | Root assignment, creating greeting rows, shared-menu copying, condition/SmartAI remapping, and language/POI/client-option/spell/icon existence checks. Removing an option keeps trainer bindings and other external references. Broadcast content/hotfix export is Phase 8. |
-| Trainers | partial | Assigning or creating trainers and rebinding gossip options (`creature_trainer`), shared-trainer copying, skill-line existence checks, `VerifiedBuild`. Spell edits apply to every creature sharing the trainer. |
-| Vendor | partial | Currency, extended-cost, bonus-list and player-condition existence checks (lookup catalogs not wired); shared vendor references shown without expansion; item icons, detailed retail tooltips and `hotfixes.item_sparse` overrides. |
+| Gossip | partial | Creating greeting rows (needs broadcast text, Phase 8), condition/SmartAI remapping when a menu is copied, and an existence check for `OverrideIconID`. Removing an option keeps trainer bindings and other external references. |
+| Vendor | partial | Shared vendor references shown without expansion; detailed retail tooltips and `hotfixes.item_sparse` overrides. |
 | Quest links | partial | Link availability conditions not shown; quest content is Phase 7. |
-| Difficulty rows | partial | Check the ID against Difficulty.db2. |
 | Stats calculator | partial | Content tuning 0 (the server then uses the map's or area's tuning), Mythic+ modifiers (a modifier limited to start in a season is skipped, one limited to end in a season is kept), `Rate.Creature.*` taken as 1, conditional content tuning redirects, attack power / speed in the damage line. |
-| Item icons in the TC vendor page | not started | Names and quality only; needs the ItemSparse/Item icon FileDataID wiring. |
 | AC gaps | partial | Gossip `BoxBroadcastTextID`, trainer `ReqAbility1-3` and trainer/quest-link build metadata are outside the catalogs. |
 | `--interaction-smoke` | partial | Reports a window-open failure; the screenshot workflow opens the windows directly. Headless `--behavior-smoke` times out at `pick-template` (passes windowed). |
 

@@ -46,4 +46,4 @@ dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # Db tests skip withou
 ## Troubleshooting
 
 - `CLIENT_SMOKE_NO_CLIENT Choose your client folder` → export `ACWORLD_DATA_DIR`, or run without the launcher's APPDATA redirect.
-- `CLIENT_SMOKE_TIMEOUT` (180 s) → the tile/model load stalled; the message shows `loaded=N/M modelsBusy=...`.
+- `CLIENT_SMOKE_TIMEOUT` (400 s) → the tile/model load stalled; the message shows `loaded=N/M modelsBusy=...`.

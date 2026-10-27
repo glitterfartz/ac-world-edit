@@ -12,7 +12,16 @@ public class TcVendorTests
         rows.Set(TcTables.CreatureTemplate, Row.Of(("entry", 42u), ("npcflag", flags)));
         return rows;
     }
-    static IEnumerable<InteractionIssue> Check(RowSet rows) => TcVendorRules.Check(42, rows, id => id is 100 or 101);
+    static IEnumerable<InteractionIssue> Check(RowSet rows) => TcVendorRules.Check(42, rows, Exists);
+    static bool Exists(ClientRecord kind, uint id) => kind switch
+    {
+        ClientRecord.Item => id is 100 or 101,
+        ClientRecord.Currency => id == 100,
+        ClientRecord.BonusList => id is 1 or 3,
+        ClientRecord.PlayerCondition => id == uint.MaxValue,
+        ClientRecord.ExtendedCost => id == 5,
+        _ => false
+    };
     static string TempPath() => Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "vendor.json");
 
     [Theory]
@@ -26,6 +35,9 @@ public class TcVendorTests
     [InlineData("BonusListIDs", "1 nope", "bonus")]
     [InlineData("BonusListIDs", "2147483648", "bonus")]
     [InlineData("IgnoreFiltering", "2", "filtering")]
+    [InlineData("ExtendedCost", "999", "ItemExtendedCost")]
+    [InlineData("PlayerConditionID", "999", "PlayerCondition")]
+    [InlineData("BonusListIDs", "1 77", "bonus list 77")]
     public void InvalidVendorEditsAreRefusedWithoutChangingHistory(string column, string value, string message)
     {
         var rows = Rows();
@@ -36,6 +48,19 @@ public class TcVendorTests
         Assert.False(result.Ok);
         Assert.Contains(message, result.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(drafts.Draft!.NetEdits());
+    }
+
+    [Fact]
+    public void ACurrencyTheClientDoesNotKnowIsRefused()
+    {
+        var rows = Rows();
+        var currency = Spec.Add(rows, 42, ("item", 999), ("type", 2u), ("maxcount", 1u)).After!;
+        rows.Set(Spec.Table, currency);
+        var issue = Assert.Single(Check(rows));
+        Assert.Contains("CurrencyTypes", issue.Message);
+        var known = Rows();
+        known.Set(Spec.Table, Spec.Add(known, 42, ("item", 100), ("type", 2u), ("maxcount", 1u)).After!);
+        Assert.Empty(Check(known));
     }
 
     [Fact]
@@ -78,7 +103,7 @@ public class TcVendorTests
     public void CurrencyQuantityAndVendorFlagAreRequiredButCurrencyRestockIsIgnored()
     {
         var rows = Rows(0x100);
-        var currency = Spec.Add(rows, 42, ("item", 999), ("type", 2u)).After!;
+        var currency = Spec.Add(rows, 42, ("item", 100), ("type", 2u)).After!;
         rows.Set(Spec.Table, currency);
         Assert.Contains(Check(rows), i => i.Message.Contains("Vendor NPC flag"));
         Assert.Contains(Check(rows), i => i.Message.Contains("quantity"));

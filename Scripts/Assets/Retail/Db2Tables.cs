@@ -52,6 +52,14 @@ public sealed class Db2Tables
         ["ContentTuningXExpected"] = 2976765,
         ["ExpectedStat"] = 1937326,
         ["ExpectedStatMod"] = 1969773,
+        ["CurrencyTypes"] = 1095531,
+        ["ItemExtendedCost"] = 801681,
+        ["PlayerCondition"] = 1045411,
+        ["ItemBonusList"] = 1805807,
+        ["SkillLine"] = 1240935,
+        ["Difficulty"] = 1352127,
+        ["Languages"] = 1135325,
+        ["GossipNPCOption"] = 4278503,
     };
 
     readonly CascFiles files;

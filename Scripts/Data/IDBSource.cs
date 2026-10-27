@@ -39,6 +39,7 @@ public interface IDBSource
     Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token);
     Task<bool> MenuExistsAsync(uint menuId, CancellationToken token);
     Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token);
+    Task<bool> PoiExistsAsync(uint poiId, CancellationToken token);
     Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token);
     Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token);
 }

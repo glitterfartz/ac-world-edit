@@ -13,13 +13,14 @@ public class TcTrainerTests
         rows.Set(TcTables.Trainer, Row.Of(("Id", 7u), ("Type", 0u), ("Greeting", "Hello")));
         return rows;
     }
-    static IEnumerable<InteractionIssue> Check(RowSet rows) => TcTrainerRules.Check(rows, id => id is 100 or 101 or 102);
+    static IEnumerable<InteractionIssue> Check(RowSet rows) => TcTrainerRules.Check(rows, (kind, id) => kind == ClientRecord.Spell ? id is 100 or 101 or 102 : kind == ClientRecord.SkillLine && id == 164);
 
     [Theory]
     [InlineData("SpellId", "0", "spell ID")]
     [InlineData("SpellId", "999", "does not exist")]
     [InlineData("ReqLevel", "256", "unsigned byte")]
     [InlineData("ReqAbility2", "999", "required ability 2")]
+    [InlineData("ReqSkillLine", "999", "skill line")]
     public void InvalidSpellEditsAreRefusedWithoutChangingHistory(string column, string value, string message)
     {
         var rows = Rows();
@@ -71,5 +72,43 @@ public class TcTrainerTests
         Assert.Equal(101u, saved.U("ReqAbility1"));
         Assert.True(reopened.Commit(null, "tc", rows, restored, "Remove", [Page.Spells.Remove(saved)], Check).Ok);
         Assert.Empty(Page.Spells.Select(reopened.Draft.Effective("tc", rows), 7));
+    }
+
+    static Row Link(uint trainer, uint menu = 0, uint option = 0) => Row.Of(("CreatureID", 42u), ("MenuID", menu), ("OptionID", option), ("TrainerID", trainer));
+
+    [Fact]
+    public void ABindingNeedsAnExistingTrainerAndGossipOption()
+    {
+        var rows = Rows();
+        rows.Set(TcTables.CreatureTrainer, Link(99));
+        Assert.Contains(TcTrainerRules.Check(rows, null, id => id == 7), i => i.Message.Contains("trainer 99 does not exist"));
+        Assert.Empty(TcTrainerRules.Check(rows, null, id => id == 99));
+
+        rows = Rows();
+        rows.Set(TcTables.CreatureTrainer, Link(7, 500, 2));
+        Assert.Contains(TcTrainerRules.Check(rows), i => i.Message.Contains("has no option 2"));
+        rows.Set(TcTables.GossipOption, Row.Of(("MenuID", 500u), ("OptionID", 2u)));
+        Assert.Empty(TcTrainerRules.Check(rows, null, id => false));
+    }
+
+    [Fact]
+    public void AssigningCopyingAndRemovingABindingPersistsAndExports()
+    {
+        var rows = Rows();
+        string path = TempPath();
+        using var drafts = new ContentDrafts(path, _ => TcTables.Instance);
+        var link = Link(7);
+        Assert.True(drafts.Commit(null, "tc", rows, rows, "Assign", [InteractionEdits.Insert(TcTables.CreatureTrainer, link)], Check).Ok);
+        var effective = drafts.Draft!.Effective("tc", rows);
+        Assert.Single(effective.All(TcTables.CreatureTrainer));
+        var copy = Row.Of(("Id", 8u), ("Type", 2u), ("Greeting", "Hello"));
+        Assert.True(drafts.Commit(null, "tc", rows, effective, "Copy", [InteractionEdits.Insert(TcTables.Trainer, copy), InteractionEdits.Update(TcTables.CreatureTrainer, link, link.With("TrainerID", 8u))], Check).Ok);
+        effective = drafts.Draft.Effective("tc", rows);
+        Assert.Equal(8u, effective.All(TcTables.CreatureTrainer).Single().U("TrainerID"));
+        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        Assert.Contains("`creature_trainer`", sql.Apply);
+        Assert.Contains("`creature_trainer`", sql.Revert);
+        Assert.True(drafts.Commit(null, "tc", rows, effective, "Remove", [InteractionEdits.Delete(TcTables.CreatureTrainer, effective.All(TcTables.CreatureTrainer).Single())], Check).Ok);
+        Assert.Empty(drafts.Draft.Effective("tc", rows).All(TcTables.CreatureTrainer));
     }
 }

@@ -85,6 +85,10 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         var final = effective(rows);
         var lookup = new InteractionLookupData(catalog, client);
         await AcInteractionSource.ReadCounts(session, "SELECT TrainerID,COUNT(*) FROM creature_trainer WHERE TrainerID IN ({0}) GROUP BY TrainerID", final.All(TcTables.CreatureTrainer).Select(r => r.U("TrainerID")).Distinct().ToArray(), lookup.TrainerUserCounts, token);
+        await AcInteractionSource.ReadIds(session, "SELECT ID FROM points_of_interest WHERE ID IN ({0})", final.All(TcTables.GossipOption).Select(r => r.U("ActionPoiID")).Where(id => id != 0), lookup.Pois, token);
+        await AcInteractionSource.ReadCounts(session, "SELECT MenuID,COUNT(*) FROM creature_template_gossip WHERE MenuID IN ({0}) GROUP BY MenuID", final.All(TcTables.CreatureGossip).Select(r => r.U("MenuID")).Distinct().ToArray(), lookup.MenuUserCounts, token);
+        lookup.MaxMenuId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT GREATEST(COALESCE((SELECT MAX(MenuID) FROM gossip_menu),0),COALESCE((SELECT MAX(MenuID) FROM gossip_menu_option),0))", [], token), CultureInfo.InvariantCulture);
+        lookup.MaxTrainerId = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM trainer", [], token), CultureInfo.InvariantCulture);
         await ReadClassStats(session, lookup, token);
         await ReadQuestTitles(session, final, lookup, token);
         await ReadTexts(final, lookup, token);
@@ -109,6 +113,12 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         if (texts.TryGetValue(id, out var text)) return new[] { (id, text.Male) };
         if (client?.BroadcastText(id) is { } male) return new[] { (id, male) };
         return Array.Empty<(uint, string)>();
+    }
+
+    public async Task<bool> PoiExistsAsync(uint poi, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        return Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM points_of_interest WHERE ID=@k0", [poi], token), CultureInfo.InvariantCulture) > 0;
     }
 
     public async Task<bool> MenuExistsAsync(uint menu, CancellationToken token)

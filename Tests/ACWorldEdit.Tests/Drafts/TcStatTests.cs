@@ -148,6 +148,15 @@ public class TcStatTests
     }
 
     [Fact]
+    public void ADifficultyTheClientDoesNotKnowIsRefused()
+    {
+        var rows = Rows(Difficulty(v => v.Add(("DifficultyID", 200))));
+        var issue = Assert.Single(TcStatRules.Check(rows, (kind, id) => kind == ClientRecord.Difficulty && id == 1));
+        Assert.Contains("Difficulty table", issue.Message);
+        Assert.Empty(TcStatRules.Check(Rows(Difficulty(v => v.Add(("DifficultyID", 1)))), (kind, id) => kind == ClientRecord.Difficulty && id == 1));
+    }
+
+    [Fact]
     public void ValidScalingValuesPass()
     {
         Assert.Empty(TcStatRules.Check(Rows(Difficulty(v => { v.Add(("HealthScalingExpansion", -1)); v.Add(("LevelScalingDeltaMin", -3)); }))));

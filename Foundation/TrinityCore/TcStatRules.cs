@@ -3,7 +3,7 @@ namespace ACWorldEdit.Foundation;
 /// <summary>Checks on the scaling columns of creature_template_difficulty, from ObjectMgr::LoadCreatureTemplateDifficulty and the table's column types.</summary>
 public static class TcStatRules
 {
-    public static IEnumerable<InteractionIssue> Check(RowSet rows)
+    public static IEnumerable<InteractionIssue> Check(RowSet rows, Func<ClientRecord, uint, bool>? exists = null)
     {
         foreach (var row in rows.All(TcTables.CreatureDifficulty))
         {
@@ -18,6 +18,8 @@ public static class TcStatRules
 
             if (row.I("DifficultyID") is < 0 or > byte.MaxValue)
                 yield return new(true, $"{key}: difficulty must be between 0 and {byte.MaxValue}.");
+            else if (row.I("DifficultyID") != 0 && exists != null && !exists(ClientRecord.Difficulty, row.U("DifficultyID")))
+                yield return new(true, $"{key}: difficulty does not exist in the client's Difficulty table.");
         }
     }
 }

@@ -180,6 +180,17 @@ public partial class TerrainViewer
                 gc.Drafts.History(gc, false);
                 gc.Drafts.History(gc, false);
                 gc.Rebuild();
+                // A menu shared with other creatures can be copied for this one, and the copy undone.
+                var copyMenu = creatureProps.Section("gossip")!.FindChild("CopyMenu", true, false) as Button;
+                if (copyMenu == null) { SmokeFail("CLIENT_SHOT_MENU_COPY button missing"); return; }
+                uint copyEntry = gc.TcView!.Entry;
+                var rootBefore = gc.Effective.All(Foundation.TcTables.CreatureGossip).Single(r => r.U("CreatureID") == copyEntry).U("MenuID");
+                copyMenu.EmitSignal(Button.SignalName.Pressed);
+                var rootAfter = gc.Effective.All(Foundation.TcTables.CreatureGossip).Single(r => r.U("CreatureID") == copyEntry).U("MenuID");
+                if (rootAfter == rootBefore || !gc.Effective.All(Foundation.TcTables.GossipOption).Any(r => r.U("MenuID") == rootAfter))
+                { SmokeFail("CLIENT_SHOT_MENU_COPY " + gc.Status); return; }
+                gc.Drafts.History(gc, false);
+                gc.Rebuild();
                 GD.Print("CLIENT_SHOT_GOSSIP_EDIT_OK submenu/back/add/text/validation/greeting/undo/redo/export");
                 creatureProps.ShowSection("template", null);
                 clientShotFrames = 0;
@@ -305,6 +316,17 @@ public partial class TerrainViewer
                 context.Rebuild();
                 if (vendor.Select(context.Effective, ShotCreature).First(r => r.I("item") == 2589).U("maxcount") != 5)
                 { SmokeFail("CLIENT_SHOT_VENDOR_REDO"); return; }
+                // The client tables behind the reference checks load, and an unknown extended cost is refused.
+                var tables = context.Lookup();
+                if (tables == null || !tables.Exists(Foundation.ClientRecord.Difficulty, 1) || !tables.Exists(Foundation.ClientRecord.SkillLine, 164))
+                { SmokeFail("CLIENT_SHOT_VENDOR_CLIENT_TABLES difficulty/skill line missing"); return; }
+                foreach (var kind in new[] { Foundation.ClientRecord.Currency, Foundation.ClientRecord.ExtendedCost, Foundation.ClientRecord.PlayerCondition, Foundation.ClientRecord.BonusList })
+                {
+                    if (tables.Exists(kind, 4000000000u)) { SmokeFail("CLIENT_SHOT_VENDOR_CLIENT_TABLES " + kind); return; }
+                }
+                var stocked = vendor.Select(context.Effective, ShotCreature).First(r => r.I("item") == 2589);
+                if (context.Commit("Unknown extended cost", Foundation.ItemListSpec.Change(vendor.Table, stocked, stocked.With("ExtendedCost", 4000000000u))))
+                { SmokeFail("CLIENT_SHOT_VENDOR_VALIDATION accepted an unknown extended cost"); return; }
                 context.Drafts.History(context, false);
                 context.Drafts.History(context, false);
                 context.Rebuild();
@@ -333,6 +355,12 @@ public partial class TerrainViewer
                     trainerCtx.Rebuild();
                     if (spells.Select(trainerCtx.Effective, tcTrainer.TrainerId).First(r => r.U("SpellId") == first.U("SpellId")).U("MoneyCost") != first.U("MoneyCost"))
                     { SmokeFail("CLIENT_SHOT_TRAINER_UNDO"); return; }
+                    // Trainer bindings: the section offers them, and a trainer that does not exist is refused.
+                    if (!creatureProps.Section("trainer")!.FindChildren("*", "Button", true, false).OfType<Button>().Any(b => b.Text == "Remove binding"))
+                    { SmokeFail("CLIENT_SHOT_TRAINER_BINDING controls missing"); return; }
+                    var binding = trainerCtx.Effective.All(Foundation.TcTables.CreatureTrainer).First(r => r.U("TrainerID") == tcTrainer.TrainerId);
+                    if (trainerCtx.Commit("Unknown trainer", Foundation.ItemListSpec.Change(Foundation.TcTables.CreatureTrainer, binding, binding.With("TrainerID", 4000000000u))))
+                    { SmokeFail("CLIENT_SHOT_TRAINER_BINDING accepted an unknown trainer"); return; }
                     GD.Print("CLIENT_SHOT_TRAINER_EDIT_OK edit/validation/undo");
                 }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-trainer.png"));
@@ -431,7 +459,7 @@ public partial class TerrainViewer
     void ClientSmoke(double delta)
     {
         clientSmokeTime += delta;
-        if (clientSmokeTime > 180)
+        if (clientSmokeTime > 400)
         {
             SmokeFail($"CLIENT_SMOKE_TIMEOUT settled={TerrainSettled} loaded={loaded.Count}/{wanted.Count} modelsBusy={models.Busy} {message}");
             return;

@@ -1,4 +1,5 @@
 using ACWorldEdit.Assets;
+using ACWorldEdit.Foundation;
 using ACWorldEdit.Tests.Support;
 using Xunit;
 
@@ -272,6 +273,20 @@ public class RetailAnimationTests
             Assert.Contains(model.Surfaces, s => s.Texture == appearance.BakedTexture);
             Assert.Contains(model.Surfaces, s => s.Texture == appearance.HairTexture);
             Assert.Contains(model.Surfaces, s => s.Texture == appearance.EyeTexture);
+        }
+    }
+
+    [RetailClientFact]
+    public void ReferenceTablesAnswerExistenceChecks()
+    {
+        var lookup = new RetailClientLookup(RetailData.Tables);
+        Assert.True(lookup.Exists(ClientRecord.Difficulty, 1));
+        Assert.True(lookup.Exists(ClientRecord.SkillLine, 164));
+        Assert.True(lookup.Exists(ClientRecord.Spell, 2575));
+        Assert.True(lookup.Exists(ClientRecord.Item, 2589));
+        foreach (var kind in Enum.GetValues<ClientRecord>())
+        {
+            Assert.False(lookup.Exists(kind, 4000000000u), kind.ToString());
         }
     }
 }

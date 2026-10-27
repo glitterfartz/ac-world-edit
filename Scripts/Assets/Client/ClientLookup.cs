@@ -31,6 +31,9 @@ public interface IClientLookup : ITcStatData
     string? SpellName(uint id);
 
     IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit);
+
+    /// <summary>Whether the client's table for <paramref name="kind"/> has a row with this ID.</summary>
+    bool Exists(ClientRecord kind, uint id);
 }
 
 /// <summary>
@@ -160,6 +163,23 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
 
         return found;
     }
+
+    public bool Exists(ClientRecord kind, uint id) => kind switch
+    {
+        ClientRecord.Item => Item(id) != null,
+        ClientRecord.Spell => SpellName(id) != null,
+        _ => Table(kind switch
+        {
+            ClientRecord.Currency => "CurrencyTypes",
+            ClientRecord.ExtendedCost => "ItemExtendedCost",
+            ClientRecord.PlayerCondition => "PlayerCondition",
+            ClientRecord.BonusList => "ItemBonusList",
+            ClientRecord.SkillLine => "SkillLine",
+            ClientRecord.Language => "Languages",
+            ClientRecord.GossipNpcOption => "GossipNPCOption",
+            _ => "Difficulty"
+        }).ContainsKey((int)id)
+    };
 
     Dictionary<(uint Level, int Expansion), TcExpectedStat>? expectedStats;
     Dictionary<uint, List<TcContentTuningMod>>? tuningMods;

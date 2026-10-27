@@ -137,4 +137,46 @@ public class TcGossipTests
             ItemListSpec.Change(Page.Options.Table, current, current.With("BoxCoded", 1u)), Check).Ok);
         Assert.Empty(Check(drafts.Draft.Effective("tc", rows)));
     }
+
+    [Theory]
+    [InlineData("Language", 999, "language 999")]
+    [InlineData("SpellID", 999, "spell 999")]
+    [InlineData("GossipNpcOptionID", 999, "client option 999")]
+    [InlineData("ActionPoiID", 999, "point of interest 999")]
+    public void ReferencesTheClientOrDatabaseDoesNotKnowAreRefused(string column, int value, string message)
+    {
+        var rows = Rows();
+        var option = Page.Options.Select(rows, 42).Single();
+        bool Known(ClientRecord kind, uint id) => id == 7;
+        var bad = rows;
+        bad.Set(Page.Options.Table, option.With(column, value));
+        Assert.Contains(TcGossipRules.Check(bad, Known, id => id == 7), i => i.Message.Contains(message));
+        bad.Set(Page.Options.Table, option.With(column, 7));
+        Assert.Empty(TcGossipRules.Check(bad, Known, id => id == 7));
+    }
+
+    [Fact]
+    public void AssigningCopyingAndUnassigningAMenuPersistsAndExports()
+    {
+        var rows = Rows();
+        var link = Row.Of(("CreatureID", 5u), ("MenuID", 42u));
+        rows.Set(TcTables.CreatureGossip, link);
+        using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
+        var option = Page.Options.Select(rows, 42).Single();
+        var copy = new[]
+        {
+            InteractionEdits.Insert(TcTables.GossipMenu, rows.Get(TcTables.GossipMenu, "42|100")!.With("MenuID", 43u)),
+            InteractionEdits.Insert(Page.Options.Table, option.With("MenuID", 43u)),
+            InteractionEdits.Delete(TcTables.CreatureGossip, link),
+            InteractionEdits.Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", 5u), ("MenuID", 43u)))
+        };
+        Assert.True(drafts.Commit(null, "tc", rows, rows, "Copy menu", copy, Check).Ok);
+        var effective = drafts.Draft!.Effective("tc", rows);
+        Assert.Equal(43u, effective.All(TcTables.CreatureGossip).Single().U("MenuID"));
+        Assert.Single(effective.All(Page.Options.Table), r => r.U("MenuID") == 43);
+        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        Assert.Contains("`creature_template_gossip`", sql.Apply);
+        drafts.History(null, false);
+        Assert.Equal(42u, drafts.Draft.Effective("tc", rows).All(TcTables.CreatureGossip).Single().U("MenuID"));
+    }
 }
