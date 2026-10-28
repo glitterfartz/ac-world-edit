@@ -101,19 +101,68 @@ public static class UserSettings
 
 /// <summary>
 /// Where the local draft files live (user:// profile, or a throwaway folder for diagnostics) and
-/// the shared content draft opened from there. The draft logic itself is Foundation's ContentDrafts.
+/// the shared content draft opened from there. Each client profile has its own folder, so a Wrath
+/// and a retail viewer can run side by side without fighting over the single-writer locks. The draft
+/// logic itself is Foundation's ContentDrafts.
 /// </summary>
 public static class ContentDraftFiles
 {
+    static ClientKind profile = ClientKind.Wrath335;
+
+    static bool Diagnostic => OS.GetCmdlineUserArgs().Any(a => a.EndsWith("-smoke", StringComparison.Ordinal) || a.StartsWith("--client-shot", StringComparison.Ordinal));
+
+    /// <summary>Files and folders that sat directly in user://drafts before drafts were split by profile.</summary>
+    static readonly string[] LegacyEntries = ["creature-positions.json", "gameobject-positions.json", "graveyards.json", "waypoints.json", "interactions.json", "sources.json", "exported.json", "exports"];
+
+    /// <summary>
+    /// Draft files of this client profile from now on. The first call after an upgrade moves the
+    /// files that predate the split into this profile's folder, so earlier drafts stay with the
+    /// profile in use.
+    /// </summary>
+    public static void UseProfile(ClientKind kind)
+    {
+        profile = kind;
+        sources = null;
+        if (!Diagnostic)
+        {
+            MigrateLegacy();
+        }
+    }
+
+    static void MigrateLegacy()
+    {
+        string root = ProjectSettings.GlobalizePath("user://drafts");
+        string folder = System.IO.Path.Combine(root, SettingsResolver.ProfileName(profile));
+        foreach (string name in LegacyEntries)
+        {
+            string from = System.IO.Path.Combine(root, name);
+            string to = System.IO.Path.Combine(folder, name);
+            try
+            {
+                if (File.Exists(from) && !File.Exists(to))
+                {
+                    Directory.CreateDirectory(folder);
+                    File.Move(from, to);
+                }
+                else if (Directory.Exists(from) && !Directory.Exists(to))
+                {
+                    Directory.CreateDirectory(folder);
+                    Directory.Move(from, to);
+                }
+            }
+            catch (IOException)
+            {
+                // Held open by an older viewer; the next launch moves it.
+            }
+        }
+    }
+
     /// <summary>
     /// Absolute path of a local draft file. Any "*-smoke" or "--client-shot*" run gets a unique
     /// throwaway folder under artifacts/ so diagnostics never open or lock the user's real drafts.
     /// </summary>
-    public static string LocalPath(string file)
-    {
-        bool smoke = OS.GetCmdlineUserArgs().Any(a => a.EndsWith("-smoke", StringComparison.Ordinal) || a.StartsWith("--client-shot", StringComparison.Ordinal));
-        return ProjectSettings.GlobalizePath(smoke ? $"res://artifacts/drafts/{Guid.NewGuid():N}/{file}" : $"user://drafts/{file}");
-    }
+    public static string LocalPath(string file) =>
+        ProjectSettings.GlobalizePath(Diagnostic ? $"res://artifacts/drafts/{Guid.NewGuid():N}/{file}" : $"user://drafts/{SettingsResolver.ProfileName(profile)}/{file}");
 
     static SourceDialects? sources;
 
@@ -122,4 +171,7 @@ public static class ContentDraftFiles
 
     /// <summary>The content draft, validating each source's rows against that source's tables.</summary>
     public static ContentDrafts Open() => new(LocalPath("interactions.json"), source => Sources.SchemaFor(source).Tables);
+
+    /// <summary>Point an open content draft at the current profile's file.</summary>
+    public static void Rebind(ContentDrafts drafts) => drafts.Rebind(LocalPath("interactions.json"));
 }

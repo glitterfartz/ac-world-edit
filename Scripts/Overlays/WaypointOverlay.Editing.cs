@@ -48,6 +48,17 @@ public partial class WaypointOverlay : IPlacementEditor
     /// </summary>
     void OpenDraft()
     {
+        ReopenDraft();
+        gizmo = new TransformGizmo();
+        AddChild(gizmo);
+        gizmo.Changed += MoveSelection;
+    }
+
+    /// <summary>Open the draft file of the current client profile, releasing the previous one.</summary>
+    public void ReopenDraft()
+    {
+        draft?.Dispose();
+        draft = null;
         draftPath = ContentDraftFiles.LocalPath("waypoints.json");
         try
         {
@@ -57,10 +68,6 @@ public partial class WaypointOverlay : IPlacementEditor
         {
             Say("Cannot open waypoint draft. Editing disabled; existing file preserved.");
         }
-
-        gizmo = new TransformGizmo();
-        AddChild(gizmo);
-        gizmo.Changed += MoveSelection;
     }
 
     (WaypointPath Path, WaypointNode Node)? SelectedNode()

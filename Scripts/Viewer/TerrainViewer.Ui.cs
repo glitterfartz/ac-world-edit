@@ -445,9 +445,9 @@ public partial class TerrainViewer
         var dialog = new ClientPickerDialog(profile.Kind, kind => kind == ClientKind.Retail ? retailDirectory : wrathDirectory);
         dialog.Chosen += async (kind, directory) =>
         {
-            if (kind != profile.Kind && !await ConfirmDiscardDrafts(kind))
+            if (kind != profile.Kind)
             {
-                return;
+                SwitchDraftProfile(kind);
             }
 
             profile = ClientProfile.For(kind);
@@ -472,45 +472,19 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// Draft edits belong to the open client's database, so switching profile drops them. Ask first
-    /// when there are any; false means the user kept them and the switch should not happen.
+    /// Each client profile keeps its own draft files, so switching profile closes this profile's
+    /// drafts (they stay on disk) and opens the other's.
     /// </summary>
-    async Task<bool> ConfirmDiscardDrafts(ClientKind target)
+    void SwitchDraftProfile(ClientKind kind)
     {
-        var changes = CollectPending();
-        if (changes.Count == 0)
-        {
-            return true;
-        }
-
-        // The picker is still closing; a popup opened in the same frame is hidden with it.
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        var answer = new TaskCompletionSource<bool>();
-        var ask = new ConfirmationDialog
-        {
-            Title = "Unsaved changes",
-            OkButtonText = "Discard and switch",
-            CancelButtonText = "Keep editing",
-            DialogText = $"You have {changes.Count} unsaved change(s). Switching to the {(target == ClientKind.Retail ? "retail" : "Wrath 3.3.5")} client discards them. Discard and switch?"
-        };
-        ask.Confirmed += () => answer.TrySetResult(true);
-        ask.Canceled += () => answer.TrySetResult(false);
-        ask.Confirmed += ask.QueueFree;
-        ask.Canceled += ask.QueueFree;
-        AddChild(ask);
-        ask.PopupCentered(new Vector2I(420, 0));
-        if (!await answer.Task)
-        {
-            return false;
-        }
-
-        foreach (var change in changes)
-        {
-            DiscardPending(change);
-        }
-
+        ContentDraftFiles.UseProfile(kind);
+        ContentDraftFiles.Rebind(drafts);
+        creatures.ReopenDraft();
+        gameObjects.ReopenDraft();
+        graveyards.ReopenDraft();
+        waypoints.ReopenDraft();
+        pendingStore = null!;
         RefreshPending();
-        return true;
     }
 
     /// <summary>

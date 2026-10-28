@@ -50,6 +50,17 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// </summary>
     void OpenDraft()
     {
+        ReopenDraft();
+        gizmo = new TransformGizmo();
+        AddChild(gizmo);
+        gizmo.Changed += MoveSelection;
+    }
+
+    /// <summary>Open the draft file of the current client profile, releasing the previous one.</summary>
+    public void ReopenDraft()
+    {
+        draft?.Dispose();
+        draft = null;
         try
         {
             draftPath = ContentDraftFiles.LocalPath("gameobject-positions.json");
@@ -59,10 +70,6 @@ public partial class GameObjectOverlay : IPlacementEditor
         {
             Say("Cannot open the GameObject draft. Movement disabled; existing file preserved.");
         }
-
-        gizmo = new TransformGizmo();
-        AddChild(gizmo);
-        gizmo.Changed += MoveSelection;
     }
 
     /// <summary>The selected spawn with its effective placement, when it can be edited.</summary>

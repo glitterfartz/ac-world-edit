@@ -21,8 +21,8 @@ flowchart LR
     client[("WoW client data<br/>3.3.5 MPQ or retail CASC")]
     db[("World database (MySQL)<br/>AzerothCore acore_world, or<br/>TrinityCore world + hotfixes")]
     listfile[("wowdev community listfile<br/>downloaded on request")]
-    drafts[("Local drafts<br/>user://drafts/*.json")]
-    sql[("SQL scripts<br/>user://drafts/exports/")]
+    drafts[("Local drafts<br/>user://drafts/wrath-or-retail/*.json")]
+    sql[("SQL scripts<br/>user://drafts/wrath-or-retail/exports/")]
     dba["Operator reviews and runs SQL"]
 
     user <--> app

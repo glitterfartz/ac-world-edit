@@ -7,6 +7,7 @@ Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, re
 ## Decisions and design
 
 - The dialect follows the client kind: Wrath335 uses AzerothCore and Retail uses TrinityCore. There is no autodetect, so a schema mismatch fails with a dialect-specific error.
+- **Drafts are per client profile** (`user://drafts/wrath/`, `user://drafts/retail/`), so an AzerothCore viewer and a TrinityCore viewer run side by side without sharing a draft lock. Switching client in-app reopens the other profile's drafts instead of discarding them.
 - Hotfixes are read from a second database name on the same connection (default `hotfixes`), falling back to client DB2.
 - Each phase delivers full read and edit/export parity for its area, with its own commit(s), tests, and a visual check where the UI changes.
 - **An export source with no SourceDialects entry is AzerothCore.** The source key is a one-way hash of the connection, and every draft saved before TrinityCore support was made against AzerothCore, so there is nothing to migrate; SourceDialects.DialectOf defaults to AzerothCore.

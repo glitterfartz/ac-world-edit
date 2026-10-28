@@ -8,7 +8,7 @@ namespace ACWorldEdit.Foundation;
 /// </summary>
 public sealed class ContentDrafts : IDisposable
 {
-    readonly string path;
+    string path;
     readonly Func<string, ITableCatalog> catalogFor;
     public InteractionDraft? Draft { get; private set; }
     public string? Error { get; private set; }
@@ -26,6 +26,14 @@ public sealed class ContentDrafts : IDisposable
         this.path = path;
         this.catalogFor = catalogFor ?? (_ => AcTables.Instance);
         Reopen();
+    }
+
+    /// <summary>Switch to another draft file (another client profile) and open it.</summary>
+    public void Rebind(string newPath)
+    {
+        path = newPath;
+        Reopen();
+        Changed?.Invoke(null);
     }
 
     /// <summary>

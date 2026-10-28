@@ -104,6 +104,17 @@ public partial class CreatureOverlay : RegionOverlay
     /// </summary>
     public override void _Ready()
     {
+        ReopenDraft();
+        gizmo = new TransformGizmo();
+        AddChild(gizmo);
+        gizmo.Changed += MoveSelection;
+    }
+
+    /// <summary>Open the draft file of the current client profile, releasing the previous one.</summary>
+    public void ReopenDraft()
+    {
+        draft?.Dispose();
+        draft = null;
         draftPath = ContentDraftFiles.LocalPath("creature-positions.json");
         try
         {
@@ -113,10 +124,6 @@ public partial class CreatureOverlay : RegionOverlay
         {
             Say("Cannot open local draft. Movement disabled; existing file preserved.");
         }
-
-        gizmo = new TransformGizmo();
-        AddChild(gizmo);
-        gizmo.Changed += MoveSelection;
     }
 
     /// <summary>

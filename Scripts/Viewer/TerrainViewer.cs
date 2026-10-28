@@ -107,6 +107,7 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override async void _Ready()
     {
+        ContentDraftFiles.UseProfile(UserSettings.LoadProfile());
         renderer = new TerrainRenderer();
         models = new ModelLibrary();
         objects = new WorldObjectScene(this, models);

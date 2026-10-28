@@ -228,3 +228,29 @@ public class ContentDraftTests
         Check(draft.Effective("src", snapshot).All(table).Select(r => new SmartRule(r)).Single(r => r.Id == 0).Event == 4, "Undo swap");
     }
 }
+
+/// <summary>Two profiles keep separate draft files, so each can hold its lock at the same time.</summary>
+public class ContentDraftsRebindTests
+{
+    [Fact]
+    public void RebindOpensTheOtherFileWhileTheFirstStaysLocked()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"));
+        using var wrath = new ContentDrafts(Path.Combine(root, "wrath", "interactions.json"));
+        using var viewer = new ContentDrafts(Path.Combine(root, "retail", "interactions.json"));
+        Assert.NotNull(wrath.Draft);
+        Assert.NotNull(viewer.Draft);
+
+        string sameFile = Path.Combine(root, "wrath", "interactions.json");
+        using var blocked = new ContentDrafts(sameFile);
+        Assert.Null(blocked.Draft);
+        Assert.NotNull(blocked.Error);
+
+        int changed = 0;
+        blocked.Changed += _ => changed++;
+        blocked.Rebind(Path.Combine(root, "other", "interactions.json"));
+        Assert.NotNull(blocked.Draft);
+        Assert.Null(blocked.Error);
+        Assert.Equal(1, changed);
+    }
+}

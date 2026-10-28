@@ -1,5 +1,6 @@
 ---
 name: run-ac-world-edit
+model: haiku
 description: Build, run, start, test and screenshot the ACWorldEdit Godot viewer (render a WoW 3.3.5 map tile to a PNG, run headless smoke checks). Use when asked to run the viewer, take a screenshot, or confirm a rendering/loading change works in the real app.
 ---
 
@@ -23,7 +24,7 @@ python .claude/skills/run-ac-world-edit/driver.py shot          # same, default 
 python .claude/skills/run-ac-world-edit/driver.py terrain       # any --<name>-smoke: terrain, water, creature, ...
 ```
 
-Success is a `*_SMOKE_OK` / `TERRAIN_SMOKE_PASSED` line and exit 0. `shot` opens a real window briefly (not headless: the screenshot is read from the viewport), hides the UI, frames the largest nearby building, then prints `screenshot: <path>`. Read the PNG to check it: non-black terrain, textured models. `shot X,Y` takes ADT tile coordinates; `--water` frames the largest liquid.
+Success is a `*_SMOKE_OK` / `TERRAIN_SMOKE_PASSED` line and exit 0. `shot` opens a real window briefly (not headless: the screenshot is read from the viewport), hides the UI, frames the largest nearby building, then prints `screenshot: <path>`. Read the PNG only when the task is about rendering (check for non-black terrain, textured models); otherwise report the result line and stop. Run smokes in the background with output redirected to a file and don't poll. `shot X,Y` takes ADT tile coordinates; `--water` frames the largest liquid.
 
 ## Tests
 
@@ -38,9 +39,7 @@ dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # Db tests skip withou
 ## Gotchas
 
 - `launch_viewer.py` redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/`, so Godot's saved settings (client folder, DB login) are not found and the viewer reports "Choose your client folder". The driver does not redirect, so the real saved settings apply; the env vars above override them.
-- The map loaded varied between my runs (Northrend with plain `--client-shot`, Azeroth in the `client` and `shot 33,25` runs); the log line `map=...` says which.
 - Noisy `WARNING: ... Multitexture M2 batch` / `WMO shader N uses base-texture preview` lines are normal; the driver filters them.
-- Running the bash tool: a command mentioning the `wow-data` path is blocked by `.claude/hooks/block_readonly.py` even for read-only `ls`/`grep`.
 - `--client-shot` fails with `CLIENT_SMOKE_NO_CLIENT` if no client folder resolves, after about 5 s.
 
 ## Troubleshooting
