@@ -52,10 +52,10 @@ public class InteractionDbTests
             }
         }
 
-        var source = new AcInteractionSource(config);
+        var source = AcSource(config);
         foreach (var (role, (entry, guid)) in samples)
         {
-            var snapshot = await source.ReadAsync(entry, guid, [], rows => rows, catalog, CancellationToken.None);
+            var snapshot = await source.ReadInteractionAsync(entry, guid, [], rows => rows, catalog, CancellationToken.None);
             var view = NpcInteraction.Build(entry, guid, snapshot.Name, snapshot.ScriptName, snapshot.AIName, snapshot.SpawnCount, snapshot.Rows, snapshot.Rows, snapshot.Lookup, snapshot.Scripts, snapshot.Conditions);
             int options = view.Menus.Values.Sum(m => m.Options.Length);
             Console.WriteLine($"INTERACTION_SAMPLE {role} entry={entry} '{view.Name}' <{view.Subname}> flags=[{string.Join(", ", NpcFlags.Names(view.NpcFlag))}] menus={view.Menus.Count} options={options} hidden={view.Menus.Values.Sum(m => m.Options.Count(o => o.HiddenByFlags))} starts={view.Starts.Length} ends={view.Ends.Length} vendor={view.Vendor.Length} trainerSpells={view.Trainer?.Spells.Length ?? 0} scripts={view.Scripts.Length} conditions={string.Join(",", view.Conditions.Select(c => $"{c.Key}:{c.Value}"))} errors={view.Issues.Count(i => i.Error)} warnings={view.Issues.Count(i => !i.Error)} spawns={view.SpawnCount}");
@@ -78,16 +78,16 @@ public class InteractionDbTests
             }
         }
 
-        var items = await source.SearchItemsAsync("Linen", CancellationToken.None);
-        Check(items.Count is > 0 and <= DbLimits.MaxSearch && items.All(i => i.Name.Contains("Linen", StringComparison.OrdinalIgnoreCase)), "Item search");
-        var wildcard = await source.SearchItemsAsync("%", CancellationToken.None);
-        Check(wildcard.All(i => i.Name.Contains('%')), "Item search escaping");
+        var items = await source.SearchItemDetailsAsync("Linen", CancellationToken.None);
+        Check(items.Count is > 0 and <= DbLimits.MaxSearch && items.All(i => i.Info.Name.Contains("Linen", StringComparison.OrdinalIgnoreCase)), "Item search");
+        var wildcard = await source.SearchItemDetailsAsync("%", CancellationToken.None);
+        Check(wildcard.All(i => i.Info.Name.Contains('%')), "Item search escaping");
         Check((await source.SearchQuestsAsync("Kobold", CancellationToken.None)).Count > 0, "Quest search");
         using var canceled = new CancellationTokenSource();
         canceled.Cancel();
         try
         {
-            await source.ReadAsync(samples["vendor"].Entry, 0, [], rows => rows, catalog, canceled.Token);
+            await source.ReadInteractionAsync(samples["vendor"].Entry, 0, [], rows => rows, catalog, canceled.Token);
             throw new Exception("Canceled interaction read completed");
         }
         catch (OperationCanceledException)

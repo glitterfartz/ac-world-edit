@@ -13,10 +13,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcInteractionSource(WorldDatabase database)
 {
-    public AcInteractionSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
     /// <summary>
     /// Hash of host/port/database (no credentials) identifying drafts made against this source.
     /// </summary>
@@ -420,10 +416,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
     /// <summary>
     /// Bounded picker searches (escaped LIKE, parameterized).
     /// </summary>
-    public async Task<IReadOnlyList<ItemInfo>> SearchItemsAsync(string term, CancellationToken token) =>
-        (await SearchItemDetailsAsync(term, token)).Select(item => item.Info).ToList();
-
-    /// <summary>The same search as <see cref="SearchItemsAsync"/>, with the template fields a tooltip shows.</summary>
+    /// <summary>Items whose name contains the term, or whose entry it is, with the template fields a tooltip shows.</summary>
     public async Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);

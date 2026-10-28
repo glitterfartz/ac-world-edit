@@ -10,10 +10,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcContentSource(WorldDatabase database)
 {
-    public AcContentSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
     public string SourceKey => database.SourceKey;
 
     async Task LoadDraftKeys(WorldReadSession session, RowSet rows, IEnumerable<(TableSchema Table, string Key)> keys, Func<TableSchema, bool> relevant, CancellationToken token)

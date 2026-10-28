@@ -7,9 +7,6 @@ public sealed class AcCreatureSource
 {
     readonly WorldDatabase database;
     public AcCreatureSource(WorldDatabase database) => this.database = database;
-    public AcCreatureSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
 
     public Task<CreatureRegionResult> ReadAsync(CreatureRegion region, CancellationToken token) => ReadAsync(region, new SpawnPreview(), null, "", token);
     public async Task<CreatureRegionResult> ReadAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)

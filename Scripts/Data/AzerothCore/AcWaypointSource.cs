@@ -10,10 +10,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcWaypointSource(WorldDatabase database)
 {
-    public AcWaypointSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
     public const int CreatureLimit = 300, PathLimit = 200, PointLimit = 20000;
 
     public async Task<WaypointRegionResult> ReadAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token)

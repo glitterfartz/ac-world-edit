@@ -1,4 +1,5 @@
 using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 
 /// <summary>
 /// Assertion helpers carried over from the legacy console harness: a failed check throws, which
@@ -10,6 +11,9 @@ public static class Test
     /// ACWORLD_DB_INFO (host;port;user;password;database) for the read-only database tests.
     /// </summary>
     public static DatabaseSettings Config => DatabaseSettings.Parse(Environment.GetEnvironmentVariable("ACWORLD_DB_INFO") ?? throw new InvalidOperationException("Set ACWORLD_DB_INFO=host;port;user;password;database for database tests."));
+
+    /// <summary>The AzerothCore database from <see cref="Config"/>, opened the way the viewer opens it.</summary>
+    public static IDBSource AcSource(DatabaseSettings config) => DBSource.Open(new WorldConnection(config, null, WorldDialect.AzerothCore));
 
     public static void Check(bool condition, string message)
     {

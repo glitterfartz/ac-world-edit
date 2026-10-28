@@ -46,8 +46,8 @@ public class AreaTriggerDbTests
         var (tileX, tileY) = WorldCoordinates.Tile(center);
         var region = new CreatureRegion(575, tileX - 2, tileX + 2, tileY - 2, tileY + 2);
         var point = new SpawnQueryPoint(center.X, center.Y, center.Z);
-        var source = new AcAreaTriggerSource(config);
-        var result = await source.ReadAsync(region, point, "", CancellationToken.None);
+        var source = AcSource(config);
+        var result = await source.ReadAreaTriggersAsync(region, point, "", CancellationToken.None);
         Check(result.Triggers.Length > 0 && result.Triggers.Length <= AcAreaTriggerSource.Limit, "No bounded Utgarde Pinnacle triggers");
         double previous = 0;
         foreach (var t in result.Triggers)
@@ -61,15 +61,15 @@ public class AreaTriggerDbTests
         var svala = result.Triggers.Single(t => t.Entry == 5140);
         Check(svala.Kind == AreaTriggerKind.SmartAI && svala.SmartRows == 1 && !svala.IsSphere && Math.Abs(svala.Length - 37.29) < 0.01 && Math.Abs(svala.Width - 13.79) < 0.01, "5140 shape or link");
         Console.WriteLine($"AREATRIGGER_SOURCE map=575 triggers={result.Triggers.Length} truncated={result.Truncated} kinds={string.Join(",", result.Triggers.GroupBy(t => t.Kind).Select(g => $"{g.Key}:{g.Count()}"))} nearest={result.Triggers[0].Entry} ({result.Triggers[0].Shape})");
-        Check((await source.ReadAsync(region, point, "5140", CancellationToken.None)).Triggers.Single().Entry == 5140, "ID search failed");
-        Check((await source.ReadAsync(region, point, "SmartTrigger", CancellationToken.None)).Triggers.All(t => t.ScriptName == AreaTriggerRecord.SmartTrigger), "Script search failed");
-        Check((await source.ReadAsync(region, point, "%", CancellationToken.None)).Triggers.Length == 0, "Search wildcard not escaped");
+        Check((await source.ReadAreaTriggersAsync(region, point, "5140", CancellationToken.None)).Triggers.Single().Entry == 5140, "ID search failed");
+        Check((await source.ReadAreaTriggersAsync(region, point, "SmartTrigger", CancellationToken.None)).Triggers.All(t => t.ScriptName == AreaTriggerRecord.SmartTrigger), "Script search failed");
+        Check((await source.ReadAreaTriggersAsync(region, point, "%", CancellationToken.None)).Triggers.Length == 0, "Search wildcard not escaped");
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
             try
             {
-                await source.ReadAsync(region, point, "", canceled.Token);
+                await source.ReadAreaTriggersAsync(region, point, "", canceled.Token);
                 throw new Exception("Canceled AreaTrigger query completed");
             }
             catch (OperationCanceledException)
@@ -114,8 +114,7 @@ public class AreaTriggerDbTests
         Console.WriteLine($"AREATRIGGER_VIEW_TRANSFORM volumes={sampled} faces/corners inside and outside agree with Position::IsWithinBox / sphere distance");
 
         // Behavior snapshot: the rule that starts Svala's intro and the script name that runs it.
-        var content = new AcContentSource(config);
-        var snapshot = await content.ReadAreaTriggerBehaviorAsync(new(5140), [], rows => rows, null, CancellationToken.None);
+        var snapshot = await source.ReadAreaTriggerBehaviorAsync(new(5140), [], rows => rows, null, CancellationToken.None);
         var scope = new SmartScope(5140, SmartScope.AreaTrigger);
         var rules = snapshot.Rows.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).Where(r => r.Scope == scope).ToList();
         Check(snapshot.ScriptName == AreaTriggerRecord.SmartTrigger && rules.Count == 1, "5140 behavior snapshot");
@@ -126,7 +125,7 @@ public class AreaTriggerDbTests
         Console.WriteLine($"AREATRIGGER_BEHAVIOR 5140 script={snapshot.ScriptName} rule=\"{SmartCatalog.Ac.Describe(rule, snapshot.Names, 5140)}\" warnings={issues.Count}");
         try
         {
-            await content.ReadAreaTriggerBehaviorAsync(new(999999), [], rows => rows, null, CancellationToken.None);
+            await source.ReadAreaTriggerBehaviorAsync(new(999999), [], rows => rows, null, CancellationToken.None);
             throw new Exception("Unknown AreaTrigger loaded");
         }
         catch (InvalidDataException)

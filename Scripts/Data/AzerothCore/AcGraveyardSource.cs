@@ -9,10 +9,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcGraveyardSource(WorldDatabase database)
 {
-    public AcGraveyardSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
     public const int Limit = 128;
     const uint SpiritHealerFlag = 0x4000;
 

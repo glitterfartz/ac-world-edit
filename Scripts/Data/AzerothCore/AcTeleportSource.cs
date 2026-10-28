@@ -8,10 +8,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcTeleportSource(WorldDatabase database)
 {
-    public AcTeleportSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
 
     public async Task<TeleportLocation[]> ReadAsync(CancellationToken token)
     {

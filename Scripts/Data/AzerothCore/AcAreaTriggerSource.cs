@@ -10,10 +10,6 @@ namespace ACWorldEdit.Data;
 /// </summary>
 public sealed class AcAreaTriggerSource(WorldDatabase database)
 {
-    public AcAreaTriggerSource(DatabaseSettings settings) : this(new WorldDatabase(settings))
-    {
-    }
-
     public const int Limit = 256;
     public string SourceKey => database.SourceKey;
 

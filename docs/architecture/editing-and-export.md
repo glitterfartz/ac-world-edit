@@ -26,7 +26,7 @@ flowchart LR
 
 Reads go through `IDBSource` (`Scripts/Data/IDBSource.cs`), opened with `DBSource.Open`, which picks the dialect and takes the client's `IClientLookup`. AzerothCore lives in `Scripts/Data/AzerothCore/` (`Ac*Source`), TrinityCore in `Scripts/Data/TrinityCore/` (`Tc*Source`). TrinityCore coverage and gaps are tracked in [`docs/tc-status.md`](../tc-status.md); schema differences are in [`docs/DB-DIFFERENCES.md`](../DB-DIFFERENCES.md).
 
-Callers outside `Scripts/Data` use `DBSource.Open` and `IDBSource.Schema`, not the source classes. The `Ac*Source(DatabaseSettings)` constructors are legacy, used only by the AzerothCore Db tests, and are slated for removal.
+Callers outside `Scripts/Data` use `DBSource.Open` and `IDBSource.Schema`, not the source classes. The Db tests do the same (`Test.AcSource` wraps `DBSource.Open`).
 
 ### Source classes and the tables they read
 

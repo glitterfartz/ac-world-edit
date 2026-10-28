@@ -50,10 +50,10 @@ public class GraveyardDbTests
         }
 
         // Elwynn/Goldshire, the same neighborhood the viewer smoke uses.
-        var source = new AcGraveyardSource(config);
+        var source = AcSource(config);
         var region = new CreatureRegion(0, 31, 33, 48, 50);
         var point = new SpawnQueryPoint(-9492.72, 75.6383, 56.1841);
-        var result = await source.ReadAsync(region, point, "", CancellationToken.None);
+        var result = await source.ReadGraveyardsAsync(region, point, "", CancellationToken.None);
         Check(result.Sites.Length > 0 && result.Sites.Length <= AcGraveyardSource.Limit, "No bounded Elwynn graveyards");
         double previous = 0;
         foreach (var site in result.Sites)
@@ -69,15 +69,15 @@ public class GraveyardDbTests
         var nearest = result.Sites[0];
         Check(nearest.Record.Links.Any(l => l.GhostZone == 12), "Nearest Goldshire graveyard has no Elwynn Forest (12) link");
         Console.WriteLine($"GRAVEYARD_SOURCE sites={result.Sites.Length} truncated={result.Truncated} nearest={nearest.Record.Id} '{nearest.Record.Comment}' links={string.Join(",", nearest.Record.Links.Select(l => $"{l.GhostZone}/{l.Faction}"))} healers={string.Join(",", nearest.Healers.Select(h => $"{h.Guid}:{h.Name}"))}");
-        var searched = await source.ReadAsync(region, point, nearest.Record.Id.ToString(), CancellationToken.None);
+        var searched = await source.ReadGraveyardsAsync(region, point, nearest.Record.Id.ToString(), CancellationToken.None);
         Check(searched.Sites.Length == 1 && searched.Sites[0].Record.Id == nearest.Record.Id, "ID search failed");
-        var wildcard = await source.ReadAsync(region, point, "%", CancellationToken.None);
+        var wildcard = await source.ReadGraveyardsAsync(region, point, "%", CancellationToken.None);
         Check(wildcard.Sites.All(s => s.Record.Comment.Contains('%')), "Search wildcard not escaped");
         using var canceled = new CancellationTokenSource();
         canceled.Cancel();
         try
         {
-            await source.ReadAsync(region, point, "", canceled.Token);
+            await source.ReadGraveyardsAsync(region, point, "", canceled.Token);
             throw new Exception("Canceled graveyard query completed");
         }
         catch (OperationCanceledException)
