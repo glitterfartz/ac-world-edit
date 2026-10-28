@@ -215,6 +215,7 @@ public sealed class CascFiles : IClientFiles
         lock (gate)
         {
             ObjectDisposedException.ThrowIf(storage == IntPtr.Zero, this);
+            long held = System.Diagnostics.Stopwatch.GetTimestamp();
             uint flags = skipEncryptedSections ? OpenByFileIdSkipEncrypted : OpenByFileId;
             if (!CascNative.CascOpenFile(storage, new IntPtr(fileId), locale, flags, out var file))
             {
@@ -244,9 +245,18 @@ public sealed class CascFiles : IClientFiles
             finally
             {
                 CascNative.CascCloseFile(file);
+                Interlocked.Add(ref heldTicks, System.Diagnostics.Stopwatch.GetTimestamp() - held);
             }
         }
     }
+
+    static long heldTicks;
+
+    /// <summary>
+    /// Milliseconds all threads together have spent inside the read lock opening and reading files
+    /// (the serialized share of decode work). A diagnostic counter for --perf-smoke.
+    /// </summary>
+    public static double ReadLockMilliseconds => Interlocked.Read(ref heldTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
 
     CascReadException Error(string operation)
     {

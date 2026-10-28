@@ -31,7 +31,41 @@ public sealed record ModelDoodad(string Path, Vector3 Position, Quaternion Rotat
 /// </summary>
 public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null)
 {
-    public long EstimatedBytes => Surfaces.Sum(s => (long)s.Positions.Length * 80 + s.Indices.Length * 4L);
+    /// <summary>
+    /// Bytes held by the surfaces' arrays. Batches of one WMO group share a <see cref="ModelSurface.Positions"/>
+    /// array (and the channels that go with it), which is counted once.
+    /// </summary>
+    public long EstimatedBytes
+    {
+        get
+        {
+            HashSet<Vector3[]> seen = new(ReferenceEqualityComparer.Instance);
+            long bytes = 0;
+            foreach (var s in Surfaces)
+            {
+                bytes += s.Indices.Length * 4L;
+                if (seen.Add(s.Positions))
+                {
+                    bytes += s.Positions.Length * 12L + s.Normals.Length * 12L + s.Uv.Length * 8L + (s.Colors?.Length ?? 0) * 16L + (s.Bones?.Length ?? 0) * 4L + (s.Weights?.Length ?? 0) * 4L;
+                }
+            }
+
+            return bytes;
+        }
+    }
+
+    /// <summary>
+    /// What a viewer keeps once the GPU has the model: the embedded doodads and animation IDs, plus,
+    /// for a WMO, each batch's positions, indices and liquid type for ground probes and liquid
+    /// checks. Everything only upload reads (normals, UVs, colors, skinning, textures, bone tracks,
+    /// warnings) is dropped. Positions arrays stay shared between batches.
+    /// </summary>
+    public ModelData ForProbes(bool keepSurfaces) => this with
+    {
+        Surfaces = keepSurfaces ? [.. Surfaces.Select(s => new ModelSurface(s.Positions, [], [], s.Indices, "", 0, false, LiquidType: s.LiquidType))] : [],
+        Bones = [],
+        Warnings = [],
+    };
 }
 
 /// <summary>

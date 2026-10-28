@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "");
 /// <summary>
-/// Main-thread resource owner with one decode worker. Upload surfaces incrementally, batch
+/// Main-thread resource owner with a few decode workers. Upload surfaces incrementally, batch
 /// placements and animate on the GPU; active resources can exceed the dormant-cache target.
 /// </summary>
 public sealed class ModelLibrary
@@ -33,7 +33,26 @@ public sealed class ModelLibrary
         public int Surface;
         public long LastUsed;
         public double DecodeMilliseconds;
-        public readonly long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
+        /// <summary>
+        /// While decoding, the CPU data waiting for upload. Once published, the retained CPU data
+        /// plus an estimate of the entry's own GPU memory (shared textures are not counted).
+        /// </summary>
+        public long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
+
+        /// <summary>
+        /// Drop what only the upload read (decoded pixels, palette pixels, vertex channels, bone
+        /// tracks) and keep what instances and ground probes still use (see
+        /// <see cref="ModelData.ForProbes"/>). Called when the entry is published.
+        /// </summary>
+        public void ReleaseUploadData(bool isWmo)
+        {
+            long gpu = Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length;
+            Data = Data.ForProbes(isWmo);
+            Decoded = new(StringComparer.OrdinalIgnoreCase);
+            Palette = Palette with { Pixels = [] };
+            Materials = Materials with { Pixels = [], Surfaces = [] };
+            Bytes = gpu + Data.EstimatedBytes;
+        }
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
         public readonly HashSet<MaterialKey> MaterialKeys = [];
@@ -95,11 +114,11 @@ public sealed class ModelLibrary
     readonly ImageTexture fallback;
     IClientFiles? store;
     CancellationTokenSource cancellation = new();
-    // A variant progresses through the one decode worker, a short queue of decoded entries, one
-    // upload slot, then the shared ready cache. Partial GPU resources are never bound to scene
-    // instances. The worker decodes a few nearest variants back to back and runs while earlier
-    // results upload, so decoding never waits on frames (it took about two frames per model before).
-    Task<List<Decoded>>? pending;
+    // A variant progresses through a decode worker, a short queue of decoded entries, one upload
+    // slot, then the shared ready cache. Partial GPU resources are never bound to scene instances.
+    // Each worker decodes a few nearest variants back to back, and up to DecodeWorkers run while
+    // earlier results upload, so decoding never waits on frames. Only the main thread touches the list.
+    readonly List<Task<List<Decoded>>> workers = [];
     readonly Queue<(ModelKey Key, Entry Entry)> decoded = [];
     // Keys in the worker batch, the decoded queue or the upload slot, so scheduling skips them.
     readonly HashSet<ModelKey> queued = [];
@@ -112,6 +131,12 @@ public sealed class ModelLibrary
     /// camera turn re-prioritizes soon.</summary>
     const int DecodeBatch = 4;
     const double DecodeBatchMilliseconds = 100;
+    /// <summary>Concurrent decode workers. CASC reads share one lock, but parsing, BLP decode, palette
+    /// baking and surface merging do not.</summary>
+    const int DecodeWorkers = 3;
+    /// <summary>No worker starts while decoded entries waiting for upload hold this many bytes, which
+    /// bounds the memory a burst of large models can pile up.</summary>
+    const long DecodedByteLimit = 256L * 1024 * 1024;
     long tick;
     /// <summary>
     /// Expose cached parsed WMO liquid surfaces for opt-in smoke placement without archive reads or
@@ -119,8 +144,9 @@ public sealed class ModelLibrary
     /// </summary>
     public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data.Surfaces.Where(s => s.LiquidType != null).ToArray() : [];
     /// <summary>
-    /// Expose a ready variant's decoded CPU data for on-demand ground probes. Null means the
-    /// variant is still decoding/uploading (or failed), not that it has no geometry.
+    /// Expose a ready variant's retained CPU data for on-demand ground probes: a WMO's batch
+    /// positions, indices and liquid types (an M2 keeps no surfaces), plus doodads and animation
+    /// IDs. Null means the variant is still decoding/uploading (or failed), not that it has no geometry.
     /// </summary>
     public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
     public int ReadyModels => cache.Count;
@@ -138,7 +164,7 @@ public sealed class ModelLibrary
     public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
     public long CachedBytes => cachedBytes;
     public double UploadMilliseconds { get; private set; }
-    public bool Busy => pending != null || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
+    public bool Busy => workers.Count > 0 || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public ICreatureCatalog? Catalog { get; private set; }
     /// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
     public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
@@ -162,18 +188,18 @@ public sealed class ModelLibrary
     public async Task SetStore(IClientFiles? next, ICreatureCatalog? creatures = null, IGameObjectCatalog? gameObjects = null)
     {
         cancellation.Cancel();
-        if (pending != null)
+        foreach (var worker in workers.ToArray())
         {
             try
             {
-                await pending;
+                await worker;
             }
             catch
             {
             }
         }
 
-        pending = null;
+        workers.Clear();
         // A reload can interrupt GPU upload before an entry reaches the ready cache.
         // It still owns meshes, the palette and shared texture references at this point.
         if (building != null)
@@ -667,20 +693,29 @@ public sealed class ModelLibrary
     public Task Stop()
     {
         cancellation.Cancel();
-        return pending ?? Task.CompletedTask;
+        return Task.WhenAll(workers.ToArray());
     }
 
     /// <summary>
-    /// Queue a completed worker batch for upload. Canceled batches are dropped; failed variants are
-    /// remembered (and warned about once) to prevent per-frame retries.
+    /// Queue every completed worker batch for upload, in the order the workers started. Canceled
+    /// batches are dropped; failed variants are remembered (and warned about once) to prevent
+    /// per-frame retries.
     /// </summary>
     void ConsumeDecodedModel()
     {
-        if (pending is { IsCompleted: true })
+        for (int w = 0; w < workers.Count;)
         {
+            var worker = workers[w];
+            if (!worker.IsCompleted)
+            {
+                w++;
+                continue;
+            }
+
+            workers.RemoveAt(w);
             try
             {
-                foreach (var result in pending.GetAwaiter().GetResult())
+                foreach (var result in worker.GetAwaiter().GetResult())
                 {
                     if (result.Entry != null)
                     {
@@ -701,8 +736,6 @@ public sealed class ModelLibrary
             {
                 // The store changed; SetStore already cleared the queue.
             }
-
-            pending = null;
         }
     }
 
@@ -767,17 +800,19 @@ public sealed class ModelLibrary
                 return;
             }
 
-            // Merged copies are only needed for the upload; ground probes read the unmerged Data.
-            building.Upload = [];
-            building.UploadMaterials = [];
-
-            cache[buildingKey] = building;
-            cachedBytes += building.Bytes;
-            building.LastUsed = tick;
             foreach (string warning in building.Data.Warnings)
             {
                 GD.PushWarning(buildingKey.Path + ": " + warning);
             }
+
+            // The merged copies and the decoded pixels are only needed for the upload.
+            building.Upload = [];
+            building.UploadMaterials = [];
+            building.ReleaseUploadData(AssetRef.IsWmo(buildingKey.Path));
+
+            cache[buildingKey] = building;
+            cachedBytes += building.Bytes;
+            building.LastUsed = tick;
 
             queued.Remove(buildingKey);
             building = null;
@@ -819,12 +854,24 @@ public sealed class ModelLibrary
 
     /// <summary>
     /// Choose the nearest unbuilt variants and capture the store and cancellation token before
-    /// starting the sole decode worker. It runs while earlier results upload; a new batch starts only
-    /// when at most one decoded entry is still waiting, which bounds decoded memory.
+    /// topping the decode workers up to <see cref="DecodeWorkers"/>, each on the next nearest slice.
+    /// They run while earlier results upload; none starts while fewer than that many decoded entries
+    /// are waiting and their size stays under <see cref="DecodedByteLimit"/>, which bounds decoded memory.
     /// </summary>
     void ScheduleModelDecode(Camera3D camera)
     {
-        if (store == null || pending != null || decoded.Count > 1)
+        if (store == null || workers.Count >= DecodeWorkers || decoded.Count >= DecodeWorkers)
+        {
+            return;
+        }
+
+        long waiting = building?.Bytes ?? 0;
+        foreach (var (_, entry) in decoded)
+        {
+            waiting += entry.Bytes;
+        }
+
+        if (waiting >= DecodedByteLimit)
         {
             return;
         }
@@ -850,11 +897,15 @@ public sealed class ModelLibrary
             return;
         }
 
-        var keys = nearest.OrderBy(p => p.Value).Take(DecodeBatch).Select(p => p.Key).ToArray();
-        queued.UnionWith(keys);
+        var ordered = nearest.OrderBy(p => p.Value).Select(p => p.Key).ToArray();
         var source = store;
         var token = cancellation.Token;
-        pending = Task.Run(() => DecodeBatchOf(keys, source, token), token);
+        for (int start = 0; start < ordered.Length && workers.Count < DecodeWorkers; start += DecodeBatch)
+        {
+            var keys = ordered[start..Math.Min(start + DecodeBatch, ordered.Length)];
+            queued.UnionWith(keys);
+            workers.Add(Task.Run(() => DecodeBatchOf(keys, source, token), token));
+        }
     }
 
     /// <summary>
@@ -891,32 +942,46 @@ public sealed class ModelLibrary
         return results;
     }
 
+    const long DormantLimit = 256L * 1024 * 1024;
+
+    /// <summary>Estimated bytes of the ready entries no instance currently uses.</summary>
+    public long DormantBytes
+    {
+        get
+        {
+            long bytes = 0;
+            foreach (var pair in cache)
+            {
+                if (!liveKeys.ContainsKey(pair.Key))
+                {
+                    bytes += pair.Value.Bytes;
+                }
+            }
+
+            return bytes;
+        }
+    }
+
     /// <summary>
-    /// Reclaim least-recently-used entries until the soft 256 MiB estimate is met. Never evict
-    /// resources referenced by a current instance; active scenes may exceed this target.
+    /// Reclaim least-recently-used dormant entries until they fit the soft 256 MiB estimate. Entries
+    /// a current instance uses are not counted and never evicted, so a busy scene can hold more.
     /// </summary>
     void EvictDormantModels()
     {
-        // Bound retained cache to 256 MiB; in-use resources remain alive, dormant resources evict first.
-        long bytes = CachedBytes;
-        if (bytes <= 256L * 1024 * 1024)
+        long dormant = DormantBytes;
+        if (dormant <= DormantLimit)
         {
             return;
         }
 
-        foreach (var pair in cache.OrderBy(p => p.Value.LastUsed).ToArray())
+        foreach (var pair in cache.Where(p => !liveKeys.ContainsKey(p.Key)).OrderBy(p => p.Value.LastUsed).ToArray())
         {
-            if (bytes <= 256L * 1024 * 1024)
+            if (dormant <= DormantLimit)
             {
                 break;
             }
 
-            if (liveKeys.ContainsKey(pair.Key))
-            {
-                continue;
-            }
-
-            bytes -= pair.Value.Bytes;
+            dormant -= pair.Value.Bytes;
             cachedBytes -= pair.Value.Bytes;
             cache.Remove(pair.Key);
             DisposeEntry(pair.Value);

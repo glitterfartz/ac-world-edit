@@ -17,7 +17,7 @@ It opens Eastern Kingdoms (map 0), turns VSync off, puts the camera over the Tra
 - **FLIGHT**: a fixed path at 70 yd/s (Trade District, Cathedral Square, the Keep, the main gate; tiles 29–31, 47–48), positioned by wall time so runs are comparable.
 - **SETTLE**: until streaming is idle again.
 
-Each phase prints `PERF_<phase>` frame-time percentiles, `_SECTION` main-thread time per `_Process` step, `_RENDER` CPU and GPU render time (`RenderingServer.ViewportGetMeasuredRenderTime*`), `_TILES` tile latency (decode scheduled to tile published), `_DB` region-query latency per overlay, `_MODELS` decode/upload/bind/eviction counts, and `_GC` collections, node count, draw calls and video memory. It ends with `PERF_SMOKE_PASSED`. Discard the first run after a build (shader cache) and compare medians of three.
+Each phase prints `PERF_<phase>` frame-time percentiles, `_SECTION` main-thread time per `_Process` step, `_RENDER` CPU and GPU render time (`RenderingServer.ViewportGetMeasuredRenderTime*`), `_TILES` tile latency (decode scheduled to tile published), `_DB` region-query latency per overlay, `_MODELS` decode/upload/bind/eviction counts, and `_GC` collections, node count, draw calls and video memory. `_MODELS` also prints `dormantMiB` (estimated size of models no instance uses) and `cascLockMs(total)`, the time all threads have held the CASC read lock since the process started (it includes tile decodes, so it bounds the serialized share of model decode from above). It ends with `PERF_SMOKE_PASSED`. Discard the first run after a build (shader cache) and compare medians of three.
 
 `--perf-breakdown` is the second benchmark: static poses, per-category cost. See "Where a settled Stormwind frame goes" below.
 
@@ -63,8 +63,7 @@ Larger work (not started; each needs its own run):
 - **Renderer.** The project moved from Compatibility (OpenGL 3.3) to Forward+ and the frame improved (the change is uncommitted in `project.godot`). The `--perf-smoke` tables below predate it; re-baseline them on Forward+ before comparing new changes.
 - **Building cost.** WMO shells, their embedded doodads and ADT doodads are most of the frame on Forward+, and shadows add about 30 %; the breakdown below lists the candidates.
 - **Shadow cost.** Measure with shadows off for small doodads and far terrain; any change alters pixels and needs the user's decision.
-- **Parallel model decode.** Two or three decode workers (CASC reads are serialized; BLP decode and palette baking are not). Expected: arrival another 1.5–2× faster. Risk: memory spikes, ordering, cancellation.
-- **Model memory.** 1.9 GB of CPU-side model data stays alive because every entry keeps its `ModelData` and decoded BLP pixels after upload. Dropping the pixel copies after upload (keeping what ground probes and liquids need) would cut most of it.
+- **Upload budget.** With three decode workers the workers are idle about 40 % of arrival (34 s of decode work over 19 s of arrival), so the 8-surface, 1.5 ms per-frame upload cap or the decoded-queue limit (three entries, 256 MiB) now gates arrival. Not measured; see "Results".
 - **Database:** add spatial indexes (below); consider a persistent read connection instead of a connection per query (pooling is off by design; needs the user's decision).
 
 Indexes for the user to run on their own server (not applied by the app):
@@ -170,3 +169,23 @@ Fewer draw calls (terrain layer groups and splat atlas, model batch merge, share
 | Video memory (arrival / flight) | 1,645 / 1,510–1,519 MiB | 1,648 / 1,527 MiB |
 
 Render CPU and GPU time roughly halved and video memory did not change. The draw-call monitor samples one frame at the end of each phase and fell less than frame time did. Tiles publish 4–6 times sooner because a tile uploads its atlas and 20–40 group meshes instead of 512 small textures and 256 meshes. The `HEAD` baseline is slower than the e4af540 baseline above (same code path), so compare rows within this table only. A before/after `--client-shot-overlays` capture of Goldshire shows identical terrain and models.
+
+Model memory and parallel model decode (Forward+, retail, windowed, same machine and session). "Before" is the code at the start of the change (two runs; flight frame times from the second). "Memory only" is one run with the memory change and one decode worker. The two- and three-worker columns are two runs each, taken with nothing else running. A first set of three-worker runs was discarded because a game was running during the benchmark.
+
+| Measure | Before | Memory only | 2 workers | 3 workers |
+|---|---|---|---|---|
+| Arrival duration | 30.3 s | 30.3 s | 21.1–21.9 s | 19.1–19.3 s |
+| Arrival decode work (summed over workers) | 23.0–23.2 s | 23.3 s | 28.2–29.0 s | 33.6–34.0 s |
+| Model cache after arrival | 1903 MiB | 318 MiB | 318 MiB | 318 MiB |
+| Flight frame p50 / p95 / p99 | 9.7 / 15.8 / 19.7 ms | 9.5 / 16.8 / 21.5 ms | 10.0–10.1 / 16.5–17.1 / 20.7–21.4 ms | 9.8 / 16.1–16.5 / 20.2–21.4 ms |
+| Flight models decoded in 22 s | 373–375 | 360 | 390–395 | 396 |
+| Flight evictions | 388–392 | 159 | 200–208 | 204–212 |
+| Model cache after flight | 1674 MiB | 420 MiB | 427–433 MiB | 428 MiB |
+| Video memory after flight | 1,790–1,900 MiB | 2,197 MiB | 2,206–2,211 MiB | 2,212–2,255 MiB |
+
+- A published model now keeps only its doodads, animation IDs and (for a WMO) batch positions, indices and liquid types (`ModelData.ForProbes`); decoded BLP pixels, palette pixels and vertex channels are dropped after upload. The cache fell by 83 %, and the 256 MiB limit now covers only models no instance uses, so it applies (`dormantMiB` reaches 255 during a flight).
+- Flight evictions halved but did not vanish: the dormant limit is full while flying, so models behind the camera still leave and come back. A larger limit trades memory for fewer rebuilds.
+- Video memory in flight rose by 300–400 MiB because dormant meshes now stay on the GPU until evicted.
+- Three decode workers cut arrival by 37 % against one. Each decode runs about 45 % slower while three run together (the CASC read lock, allocation and memory bandwidth are shared), so the gain is 1.6× rather than 3×. The workers are idle about 40 % of arrival, which points at the upload cap and the decoded-queue limit as the next constraints.
+- Frame times during the flight stay within run-to-run spread of the baseline with two or three workers.
+- `ParallelModelDecodeCorpusTests` decodes about 60 retail creature models serially and on four threads and compares hashes of the output (textures, palettes, merged geometry).

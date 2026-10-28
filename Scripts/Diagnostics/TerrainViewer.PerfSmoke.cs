@@ -209,7 +209,7 @@ public partial class TerrainViewer
         }
 
         var m = models.Stats;
-        GD.Print($"PERF_{phase}_MODELS decodes={m.Decodes} decodeMs={m.DecodeMilliseconds:F0} uploads={m.Uploads} binds={m.Binds} evictions={m.Evictions} ready={models.ReadyModels} cacheMiB={models.CachedBytes / 1048576}");
+        GD.Print($"PERF_{phase}_MODELS decodes={m.Decodes} decodeMs={m.DecodeMilliseconds:F0} uploads={m.Uploads} binds={m.Binds} evictions={m.Evictions} ready={models.ReadyModels} cacheMiB={models.CachedBytes / 1048576} dormantMiB={models.DormantBytes / 1048576} cascLockMs(total)={ACWorldEdit.Assets.CascFiles.ReadLockMilliseconds:F0}");
         GD.Print($"PERF_{phase}_GC gen0={GC.CollectionCount(0) - perfGc0} gen1={GC.CollectionCount(1) - perfGc1} gen2={GC.CollectionCount(2) - perfGc2} objects={Performance.GetMonitor(Performance.Monitor.ObjectCount)} nodes={Performance.GetMonitor(Performance.Monitor.ObjectNodeCount)} drawCalls={Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame)} videoMiB={Performance.GetMonitor(Performance.Monitor.RenderVideoMemUsed) / 1048576:F0}");
     }
 }
