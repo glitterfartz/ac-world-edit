@@ -54,9 +54,11 @@ Local changes (in order):
 3. Cache the schema column list per connection identity, so overlay queries skip `information_schema`. Expected: about 18 ms less per query (tried; no measurable change, see Results).
 4. Terrain: decode the next tile while the current one uploads. Expected: tile latency down by the decode time (about 200–400 ms per tile). Tried; not proven, see Results.
 
+5. Fewer draw calls (done, see Results). Terrain draws one mesh per distinct layer list per tile (about 20–40 instead of 256 chunk meshes) over a per-tile RGBA splat atlas, sampled so it matches the old per-chunk maps; the decode worker merges a model's opaque batches that share every material input (`SurfaceMerge`); unskinned, unanimated batches share one `ShaderMaterial` per material key. The planned per-tile texture array was not built: it would copy every ground texture into each of up to 25 loaded tiles and force mixed-size textures to one size, while grouping by layer list keeps textures shared and pixels unchanged.
+
 Larger work (not started; each needs its own run):
 
-- **Fewer draw calls (largest frame-time gain).** Merge a model's opaque surfaces that share an identical material into one surface at decode time (worker, pixel-identical); share one `ShaderMaterial` per material key instead of one per surface; build terrain as one mesh per tile with a texture array and a per-tile splat atlas instead of 256 chunk meshes. Expected: draw calls several times lower and render CPU roughly halved. Touches `ModelLibrary.AddSurface`, `MaterialPalette`, `TerrainRenderer` and `terrain.gdshader`. Risk: transparent surface order, per-surface UV/colour animation columns, picking and ground probes that read surfaces.
+- **Renderer.** The project uses the Compatibility (OpenGL 3.3) renderer (`project.godot`), which submits every draw individually. Measuring Forward+ (Vulkan or D3D12) on the same benchmark is the next frame-time experiment; it changes shaders' render paths and needs the user's decision.
 - **Shadow cost.** Measure with shadows off for small doodads and far terrain; any change alters pixels and needs the user's decision.
 - **Parallel model decode.** Two or three decode workers (CASC reads are serialized; BLP decode and palette baking are not). Expected: arrival another 1.5–2× faster. Risk: memory spikes, ordering, cancellation.
 - **Model memory.** 1.9 GB of CPU-side model data stays alive because every entry keeps its `ModelData` and decoded BLP pixels after upload. Dropping the pixel copies after upload (keeping what ground probes and liquids need) would cut most of it.
@@ -92,3 +94,22 @@ The upload budget (8 surfaces, 1.5 ms per frame) is now the limit on arrival: th
 Tried and reverted: caching the schema column list per server and database (skipping the `information_schema` read, about 18 ms by a temporary probe) did not move the measured query latency (creature median 206 → 205 ms, GameObject 183 → 173 ms, both within run-to-run spread), so it was not kept.
 
 Tried and reverted: decoding the next terrain tile while the current one uploads. Arrival time did not change (47.8 s; models are the limit) and per-tile latency from schedule to publish rose (arrival 377 → 624 ms, flight 806 → 1157 ms) because tiles are now scheduled before the upload slot is free. A fair test needs a "terrain complete" time in the probe; until then the change is unproven.
+
+Fewer draw calls (terrain layer groups and splat atlas, model batch merge, shared materials). Baseline: `HEAD` 583a6a7 measured in the same session, median of two runs (a third froze and was closed). After: one complete run (the others were stopped). Treat the after column as indicative until repeated.
+
+| Measure | Before | After |
+|---|---|---|
+| Arrival duration | 57.7 s | 40.9 s |
+| Arrival frame p50 / p95 / p99 | 25.8 / 50.1 / 59.9 ms | 16.8 / 38.8 / 50.2 ms |
+| Arrival render CPU / GPU p50 | 20.5 / 16.2 ms | 12.9 / 9.6 ms |
+| Arrival draw calls / nodes (last frame) | 9,877 / 10,343 | 8,005 / 8,567 |
+| Arrival surfaces uploaded | 4,290 | 3,472 |
+| Arrival tile latency p50 | 622–668 ms | 136 ms |
+| Flight frame p50 / p95 / p99 | 32.3 / 56.0 / 67.4 ms | 17.6 / 34.2 / 46.0 ms |
+| Flight render CPU / GPU p50 | 26.2 / 22.2 ms | 13.8 / 10.8 ms |
+| Flight draw calls (last frame) | 3,865 | 3,159 |
+| Flight tile latency p50 | 1,068–1,247 ms | 199 ms |
+| Flight models decoded in 22 s | 257–270 | 346 |
+| Video memory (arrival / flight) | 1,645 / 1,510–1,519 MiB | 1,648 / 1,527 MiB |
+
+Render CPU and GPU time roughly halved and video memory did not change. The draw-call monitor samples one frame at the end of each phase and fell less than frame time did. Tiles publish 4–6 times sooner because a tile uploads its atlas and 20–40 group meshes instead of 512 small textures and 256 meshes. The `HEAD` baseline is slower than the e4af540 baseline above (same code path), so compare rows within this table only. A before/after `--client-shot-overlays` capture of Goldshire shows identical terrain and models.

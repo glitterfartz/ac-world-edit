@@ -100,7 +100,7 @@ public partial class TerrainViewer : Node3D
     /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
     /// generations cannot be published.
     /// </summary>
-    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices, TerrainRenderer.PreparedChunk?[] Chunks);
+    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices, TerrainRenderer.PreparedTerrain Terrain);
     /// <summary>
     /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
     /// archives.
@@ -613,9 +613,8 @@ public partial class TerrainViewer : Node3D
         }
 
         token.ThrowIfCancellationRequested();
-        var chunks = new TerrainRenderer.PreparedChunk?[tile.Chunks.Count];
-        Parallel.For(0, chunks.Length, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = Math.Max(1, Math.Min(4, System.Environment.ProcessorCount / 2)) }, i => chunks[i] = TerrainRenderer.PrepareChunk(tile.Chunks[i]));
-        return new(version, tile, decoded, errors, notices, chunks);
+        var terrain = TerrainRenderer.PrepareTile(tile, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = Math.Max(1, Math.Min(4, System.Environment.ProcessorCount / 2)) });
+        return new(version, tile, decoded, errors, notices, terrain);
     }
 
     /// <summary>
@@ -660,7 +659,7 @@ public partial class TerrainViewer : Node3D
         zoneLabel.Visible = zone.Length > 0;
         continentLabel.Text = continent;
         var current = CameraTile();
-        int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
+        int cells = renderer.CellCount;
         statusBar.Telemetry = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.Sync(world, loaded.Keys, current, camera.Position);
         PerfMark(2);
@@ -1011,24 +1010,27 @@ public partial class TerrainViewer : Node3D
             var uploadStarted = System.Diagnostics.Stopwatch.GetTimestamp();
             try
             {
-                // Leave 0.5 ms headroom within the proposed 2 ms upload target.
-                // A single indivisible resource upload can still exceed the soft deadline.
-                for (int budget = 0; budget < 8 && buildIndex < building.Tile.Chunks.Count + building.Tile.Liquids.Count && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
+                // Steps: the splat atlas, one per layer group, one per liquid. Leave 0.5 ms headroom
+                // within the 2 ms upload target; one indivisible upload can still exceed it.
+                var groups = building.Terrain.Groups;
+                int steps = 1 + groups.Length + building.Tile.Liquids.Count;
+                for (int budget = 0; budget < 8 && buildIndex < steps && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(uploadStarted).TotalMilliseconds < 1.5); budget++, buildIndex++)
                 {
-                    if (buildIndex < building.Tile.Chunks.Count)
+                    if (buildIndex == 0)
                     {
-                        if (building.Chunks[buildIndex] is { } prepared)
-                        {
-                            renderer.AddChunk(buildingNode, building.Tile.Chunks[buildIndex], prepared, building.Textures, activeWorld.BigAlpha);
-                        }
+                        renderer.BeginTerrain(buildingNode, building.Terrain);
+                    }
+                    else if (buildIndex <= groups.Length)
+                    {
+                        renderer.AddGroup(buildingNode, groups[buildIndex - 1], building.Textures, activeWorld.BigAlpha);
                     }
                     else
                     {
-                        renderer.AddLiquid(buildingNode, building.Tile.Liquids[buildIndex - building.Tile.Chunks.Count], building.Textures);
+                        renderer.AddLiquid(buildingNode, building.Tile.Liquids[buildIndex - 1 - groups.Length], building.Textures);
                     }
                 }
 
-                if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
+                if (buildIndex == steps)
                 {
                     loaded[building.Tile.Key] = buildingNode;
                     PerfTilePublished(building.Tile.Key);

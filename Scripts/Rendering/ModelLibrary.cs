@@ -21,6 +21,12 @@ public sealed class ModelLibrary
         public MaterialPalette Materials = materials;
         public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
         public Dictionary<string, BlpTexture> Decoded = textures;
+        /// <summary>
+        /// The surfaces to upload: <see cref="Data"/> with opaque same-material batches merged
+        /// (<see cref="SurfaceMerge"/>), plus their appearance. Dropped once the entry is published.
+        /// </summary>
+        public ModelSurface[] Upload = data.Surfaces;
+        public SurfaceMaterial[] UploadMaterials = materials.Surfaces;
         public readonly List<ArrayMesh> Meshes = [];
         public ImageTexture? AnimationTexture;
         public ImageTexture? MaterialTexture;
@@ -30,6 +36,7 @@ public sealed class ModelLibrary
         public readonly long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
+        public readonly HashSet<MaterialKey> MaterialKeys = [];
         /// <summary>
         /// Compute reference-pose bounds from distinct source arrays. Selection uses bounding boxes, not
         /// animated triangles or terrain occlusion.
@@ -58,6 +65,20 @@ public sealed class ModelLibrary
         public ImageTexture Texture = texture;
         public int References;
     }
+
+    /// <summary>
+    /// Identity of a material that reads nothing per model: unskinned, unanimated, non-sky,
+    /// non-liquid batches. Equal keys share one ShaderMaterial across all variants.
+    /// </summary>
+    internal readonly record struct MaterialKey(Shader Shader, string Texture, int Blend, int ColorMode, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1);
+
+    sealed class MaterialEntry(ShaderMaterial material)
+    {
+        public ShaderMaterial Material = material;
+        public int References;
+    }
+
+    readonly Dictionary<MaterialKey, MaterialEntry> sharedMaterials = [];
 
     readonly Dictionary<ModelKey, Entry> cache = [];
     long cachedBytes;
@@ -185,6 +206,7 @@ public sealed class ModelLibrary
         cache.Clear();
         cachedBytes = 0;
         textures.Clear();
+        sharedMaterials.Clear();
         failed.Clear();
         store = next;
         Catalog = creatures;
@@ -457,8 +479,8 @@ public sealed class ModelLibrary
     /// </summary>
     void AddSurface(Entry e, int index, bool skybox)
     {
-        var surface = e.Data.Surfaces[index];
-        var appearance = e.Materials.Surfaces[index];
+        var surface = e.Upload[index];
+        var appearance = e.UploadMaterials[index];
         // Batches whose color/weight alpha is constantly zero (closed-door effects, unused burnt
         // tree variants) are invisible in the client; never upload them.
         if (surface.Indices.Length == 0 || appearance.Hidden || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
@@ -514,13 +536,6 @@ public sealed class ModelLibrary
             shaders[shaderKey] = shader;
         }
 
-        var material = new ShaderMaterial
-        {
-            Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader,
-            // Sky layers keep native batch order and draw before translucent world surfaces such
-            // as water.
-            RenderPriority = skybox ? Math.Min((int)Material.RenderPriorityMin + e.Meshes.Sum(m => m.GetSurfaceCount()), -1) : 0
-        };
         ImageTexture texture = fallback;
         if (surface.Texture.Length > 0 && e.Decoded.TryGetValue(surface.Texture, out var blp))
         {
@@ -544,6 +559,31 @@ public sealed class ModelLibrary
             texture = t.Texture;
         }
 
+        var color = new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W);
+        var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
+        var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
+        MaterialKey? key = !skybox && surface.LiquidType == null && surface.Bones == null && appearance.Column < 0
+            ? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1)
+            : null;
+        if (key is { } shared && sharedMaterials.TryGetValue(shared, out var known))
+        {
+            if (e.MaterialKeys.Add(shared))
+            {
+                known.References++;
+            }
+
+            mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, known.Material);
+            mesh.CustomAabb = mesh.GetAabb().Grow(5);
+            return;
+        }
+
+        var material = new ShaderMaterial
+        {
+            Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader,
+            // Sky layers keep native batch order and draw before translucent world surfaces such
+            // as water.
+            RenderPriority = skybox ? Math.Min((int)Material.RenderPriorityMin + e.Meshes.Sum(m => m.GetSurfaceCount()), -1) : 0
+        };
         if (surface.LiquidType != null)
         {
             LiquidRendering.Configure(material, texture, surface.LiquidKind);
@@ -552,21 +592,36 @@ public sealed class ModelLibrary
         }
 
         material.SetShaderParameter("albedo_tex", texture);
-        material.SetShaderParameter("animation_palette", e.AnimationTexture!);
+        // A shared material never samples the palettes; leaving them unset keeps it from holding
+        // one variant's textures alive.
+        if (key == null)
+        {
+            material.SetShaderParameter("animation_palette", e.AnimationTexture!);
+            material.SetShaderParameter("material_palette", e.MaterialTexture!);
+        }
+
         material.SetShaderParameter("skinned", surface.Bones != null);
         material.SetShaderParameter("animation_frames", e.Palette.Height);
         material.SetShaderParameter("animation_duration", e.Palette.Duration);
         material.SetShaderParameter("blend_mode", surface.Blend);
         material.SetShaderParameter("vertex_color", (int)surface.ColorMode);
-        material.SetShaderParameter("material_palette", e.MaterialTexture!);
         material.SetShaderParameter("material_column", appearance.Column);
         material.SetShaderParameter("color_frames", appearance.ColorFrames);
         material.SetShaderParameter("color_period", appearance.ColorPeriod);
         material.SetShaderParameter("uv_frames", appearance.UvFrames);
         material.SetShaderParameter("uv_period", appearance.UvPeriod);
-        material.SetShaderParameter("surface_color", new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W));
-        material.SetShaderParameter("uv_row0", new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z));
-        material.SetShaderParameter("uv_row1", new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z));
+        material.SetShaderParameter("surface_color", color);
+        material.SetShaderParameter("uv_row0", row0);
+        material.SetShaderParameter("uv_row1", row1);
+        if (key is { } added)
+        {
+            sharedMaterials[added] = new(material)
+            {
+                References = 1
+            };
+            e.MaterialKeys.Add(added);
+        }
+
         mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
         // Include sampled animated bounds, rather than culling to only the unanimated pose.
         mesh.CustomAabb = mesh.GetAabb().Grow(5);
@@ -578,6 +633,15 @@ public sealed class ModelLibrary
     /// </summary>
     void DisposeEntry(Entry e)
     {
+        foreach (var key in e.MaterialKeys)
+        {
+            if (sharedMaterials.TryGetValue(key, out var shared) && --shared.References == 0)
+            {
+                sharedMaterials.Remove(key);
+                shared.Material.Dispose();
+            }
+        }
+
         foreach (var path in e.TexturePaths)
         {
             if (textures.TryGetValue(path, out var texture) && --texture.References == 0)
@@ -692,16 +756,20 @@ public sealed class ModelLibrary
 
             // Leave headroom within the soft 2 ms upload target; a single indivisible surface
             // upload can still exceed the deadline.
-            for (; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
+            for (; budget < maxSurfaces && building.Surface < building.Upload.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
             {
                 AddSurface(building, building.Surface++, buildingKey.Skybox);
                 stats.Uploads++;
             }
 
-            if (building.Surface < building.Data.Surfaces.Length || HoldPartialUploads)
+            if (building.Surface < building.Upload.Length || HoldPartialUploads)
             {
                 return;
             }
+
+            // Merged copies are only needed for the upload; ground probes read the unmerged Data.
+            building.Upload = [];
+            building.UploadMaterials = [];
 
             cache[buildingKey] = building;
             cachedBytes += building.Bytes;
@@ -883,9 +951,15 @@ public sealed class ModelLibrary
             }
         }
 
-        return new Entry(data, AnimationPalette.Bake(data, token), MaterialPalette.Bake(data, token), decoded)
+        var materials = MaterialPalette.Bake(data, token);
+        var entry = new Entry(data, AnimationPalette.Bake(data, token), materials, decoded);
+        // Sky batches keep one surface each: their render priority encodes the native draw order.
+        if (!key.Skybox)
         {
-            DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds
-        };
+            (entry.Upload, entry.UploadMaterials) = SurfaceMerge.Merge(data.Surfaces, materials.Surfaces);
+        }
+
+        entry.DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+        return entry;
     }
 }

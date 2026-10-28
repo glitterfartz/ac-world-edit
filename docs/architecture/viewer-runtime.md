@@ -64,12 +64,12 @@ flowchart TB
 
     want --> pick{"Pending decode?"}
     pick -->|none in flight| sched["Schedule nearest missing tile"]
-    sched --> prep["Task.Run Prepare<br/>ReadTile, BLP decode, liquid decode<br/>no Godot objects"]
+    sched --> prep["Task.Run Prepare<br/>ReadTile, BLP decode, liquid decode,<br/>PrepareTile layer groups and splat atlas<br/>no Godot objects"]
     prep --> done["PreparedTile with generation"]
     done --> check{"generation matches<br/>and tile still wanted?"}
     check -->|no| drop["Discard"]
     check -->|yes| up["BeginTile, AddChild"]
-    up --> chunks["AddChunk / AddLiquid<br/>max 8 items, 1.5 ms per frame"]
+    up --> chunks["BeginTerrain / AddGroup / AddLiquid<br/>max 8 items, 1.5 ms per frame"]
     chunks --> pub["Publish into loaded,<br/>chunkAreas, terrainHeights<br/>objects.SetTile"]
 ```
 
@@ -101,7 +101,7 @@ flowchart LR
         mdl["ModelData, palettes"]
     end
     subgraph Main["Main thread (Godot resources)"]
-        tr["TerrainRenderer<br/>Tile_X_Y nodes, Chunk_x_y meshes"]
+        tr["TerrainRenderer<br/>Tile_X_Y nodes, one mesh per layer group"]
         ml["ModelLibrary<br/>ArrayMesh, MultiMesh batches"]
         wos["WorldObjectScene<br/>Reconcile by tile and ModelKey"]
         sky["SkyLighting<br/>DirectionalLight3D, WorldEnvironment, skybox anchor"]
@@ -118,10 +118,10 @@ flowchart LR
     sky --> ml
 ```
 
-- **Terrain** (`Rendering/TerrainRenderer.cs`): one `MeshInstance3D` per MCNK (145 vertices). Each chunk gets a `ShaderMaterial` on `terrain.gdshader` with four layer textures, a 64x64 blend map and a 64x64 shadow map. Liquids are children of a `Liquids` node and use `liquid.gdshader`, one shared material per texture.
-- **Terrain shader**: big-alpha mode uses independent layer weights; legacy mode blends in sequence. Vertex tint and shadow follow, with an optional cell grid.
+- **Terrain** (`Rendering/TerrainRenderer.cs`): the tile worker (`PrepareTile`) groups a tile's MCNKs by their layer list and concatenates each group into one surface, so a tile draws as one `MeshInstance3D` per distinct layer list (about 20–40) instead of 256 chunk meshes. UV is chunk-local; UV2 is the chunk's cell in the tile's 1024x1024 RGBA splat atlas (64x64 per chunk: RGB layer opacity, A baked shadow), uploaded once per tile by `BeginTerrain`. Each group gets a `ShaderMaterial` on `terrain.gdshader` with its four layer textures, which stay shared and reference-counted across tiles (a per-tile texture array would copy them into every tile). `CellCount` feeds the status bar. Liquids are children of a `Liquids` node and use `liquid.gdshader`, one shared material per texture.
+- **Terrain shader**: samples the splat atlas at the chunk-local UV clamped to texel centers inside the chunk's cell, which matches the old per-chunk clamp-to-edge maps. Big-alpha mode uses independent layer weights; legacy mode blends in sequence. Vertex tint and shadow follow, with an optional cell grid.
 - **Liquid shader**: unshaded, no depth writes, animated atlas at 30 fps. Water alpha comes from vertex alpha and Fresnel; lava and slime (kind 2 or higher) are opaque and emissive.
-- **Models** (`Rendering/ModelInstance.cs`, `Rendering/ModelLibrary.cs`): `ModelInstance` is a `Node3D` that holds its transforms. Instanced placements use a `MultiMeshInstance3D` per mesh with visibility range 1600. Single instances use range 400. Skyboxes are unculled and shadowless.
+- **Models** (`Rendering/ModelInstance.cs`, `Rendering/ModelLibrary.cs`): `ModelInstance` is a `Node3D` that holds its transforms. The decode worker merges opaque batches that share every material input (`SurfaceMerge`, skyboxes excepted) and the entry uploads that list, then drops it; `ModelData` stays unmerged for ground probes. Unskinned, unanimated, non-sky batches share one `ShaderMaterial` per material key (shader variant, texture, blend, colour mode, static colour and UV rows), reference-counted per entry. Instanced placements use a `MultiMeshInstance3D` per mesh with visibility range 1600. Single instances use range 400. Skyboxes are unculled and shadowless.
 - **Model shader** (`Shaders/model.gdshader`): GPU skinning from the `animation_palette` texture; batch colour and UV animation from `material_palette`; `vertex_color` mode 1 (interior baked light) or 2 (exterior colour as emission). `ModelLibrary` patches the shader text per variant (`render_mode` and an `ALPHA` line). The skybox variant places vertices on a 7500-yard shell.
 - **WMO placement** (`Rendering/WorldObjectScene.cs`): `SetTile`, `RemoveTile`, `SetGlobals` and `SetLayers` each trigger `Reconcile`. Objects are de-duplicated by `(IsWmo, Id)` with sticky owner tiles, grouped by tile and `ModelKey`, and attached as one batch per group. `FloorHeights` feeds ground probes.
 - **Sky and lighting** (`Viewer/SkyLighting.cs`): `ClientLighting` supplies light regions and profiles. Each frame it blends bands at `tick = hours * 120`, drives the sun, ambient, sky gradient and fog, and attaches the skybox model.

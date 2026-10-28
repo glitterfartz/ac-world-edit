@@ -28,7 +28,11 @@ public sealed class TerrainRenderer
         public int References;
     }
 
+    // Splat atlas per tile node, shared by that tile's group materials.
+    readonly Dictionary<Node3D, ImageTexture> splats = [];
     public int LiquidSurfaceCount => liquids.Values.Sum(e => e.References);
+    /// <summary>Terrain chunks uploaded across loaded and building tiles.</summary>
+    public int CellCount { get; private set; }
     public int TextureCount => textures.Count;
 
     public TerrainRenderer()
@@ -64,12 +68,97 @@ public sealed class TerrainRenderer
     };
     /// <summary>
     /// Everything about a chunk that needs no GPU object: shaded vertex arrays plus the packed blend
-    /// and shadow masks. Pure CPU work, so it runs on the tile worker; AddChunk only uploads it.
+    /// and shadow masks. Pure CPU work, so it runs on the tile worker.
     /// </summary>
-    public sealed record PreparedChunk(Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Color[] Colors, int[] Indices, byte[] Alpha, byte[] Shadow);
+    sealed record PreparedChunk(Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Color[] Colors, int[] Indices, byte[] Alpha, byte[] Shadow);
+
+    /// <summary>
+    /// The chunks of one tile that share an identical layer list, concatenated into one surface.
+    /// UV is chunk-local (layers, grid); UV2 holds the chunk's cell in the tile's splat atlas.
+    /// </summary>
+    public sealed record PreparedGroup(string[] Textures, int Chunks, Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Vector2[] Uv2, Color[] Colors, int[] Indices);
+
+    /// <summary>
+    /// A tile ready for upload: one group per distinct layer list and the 1024x1024 RGBA splat atlas
+    /// (64x64 per chunk; RGB layer opacity, A baked shadow).
+    /// </summary>
+    public sealed record PreparedTerrain(PreparedGroup[] Groups, byte[] Splat);
+
+    const int SplatSize = 16 * 64;
+
+    /// <summary>
+    /// Worker: prepare every chunk, group chunks by layer list (texture names compared without case)
+    /// and pack the splat atlas. A tile draws as one surface per group instead of 256 chunk meshes,
+    /// while base textures stay shared between tiles (a per-tile texture array would copy them).
+    /// </summary>
+    public static PreparedTerrain PrepareTile(TerrainTile tile, ParallelOptions options)
+    {
+        var chunks = new PreparedChunk?[tile.Chunks.Count];
+        Parallel.For(0, chunks.Length, options, i => chunks[i] = PrepareChunk(tile.Chunks[i]));
+        byte[] splat = new byte[SplatSize * SplatSize * 4];
+        Dictionary<string, List<int>> groups = [];
+        for (int i = 0; i < chunks.Length; i++)
+        {
+            var c = tile.Chunks[i];
+            if (chunks[i] is not { } prepared)
+            {
+                continue;
+            }
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    int source = y * 64 + x, target = ((c.Y * 64 + y) * SplatSize + c.X * 64 + x) * 4;
+                    splat[target] = prepared.Alpha[source * 3];
+                    splat[target + 1] = prepared.Alpha[source * 3 + 1];
+                    splat[target + 2] = prepared.Alpha[source * 3 + 2];
+                    splat[target + 3] = prepared.Shadow[source];
+                }
+            }
+
+            string key = string.Join("\n", c.Layers.Select(l => l.Texture.ToLowerInvariant()));
+            if (!groups.TryGetValue(key, out var members))
+            {
+                groups[key] = members = [];
+            }
+
+            members.Add(i);
+        }
+
+        var result = groups.Values.Select(members =>
+        {
+            int vertexCount = members.Sum(i => chunks[i]!.Vertices.Length);
+            var vertices = new Vector3[vertexCount];
+            var normals = new Vector3[vertexCount];
+            var uv = new Vector2[vertexCount];
+            var uv2 = new Vector2[vertexCount];
+            var colors = new Color[vertexCount];
+            var indices = new int[members.Sum(i => chunks[i]!.Indices.Length)];
+            int v = 0, n = 0;
+            foreach (int i in members)
+            {
+                var p = chunks[i]!;
+                p.Vertices.CopyTo(vertices, v);
+                p.Normals.CopyTo(normals, v);
+                p.Uv.CopyTo(uv, v);
+                p.Colors.CopyTo(colors, v);
+                Array.Fill(uv2, new Vector2(tile.Chunks[i].X, tile.Chunks[i].Y), v, p.Vertices.Length);
+                foreach (int index in p.Indices)
+                {
+                    indices[n++] = index + v;
+                }
+
+                v += p.Vertices.Length;
+            }
+
+            return new PreparedGroup(tile.Chunks[members[0]].Layers.Select(l => l.Texture).ToArray(), members.Count, vertices, normals, uv, uv2, colors, indices);
+        }).ToArray();
+        return new(result, splat);
+    }
 
     /// <summary>Build the render arrays for one chunk; null when the chunk is entirely holes.</summary>
-    public static PreparedChunk? PrepareChunk(TerrainChunk c)
+    static PreparedChunk? PrepareChunk(TerrainChunk c)
     {
         var geometry = TerrainGeometry.Build(c);
         var vertices = ModelLibrary.Convert(geometry.Vertices, v => new Vector3(v.X, v.Y, v.Z));
@@ -136,19 +225,28 @@ public sealed class TerrainRenderer
     }
 
     /// <summary>
-    /// Upload native topology/normals/tint and four layers with packed opacity and shadow masks.
-    /// Chunk materials share reference-counted base textures.
+    /// Upload the tile's splat atlas; call once after BeginTile and before AddGroup.
     /// </summary>
-    public void AddChunk(Node3D parent, TerrainChunk c, PreparedChunk prepared, Dictionary<string, BlpTexture> decoded, bool bigAlpha)
+    public void BeginTerrain(Node3D tile, PreparedTerrain terrain)
     {
-        var (vertices, normals, uv, colors, indices, alpha, shadow) = prepared;
+        using var image = Image.CreateFromData(SplatSize, SplatSize, false, Image.Format.Rgba8, terrain.Splat);
+        splats[tile] = ImageTexture.CreateFromImage(image);
+    }
+
+    /// <summary>
+    /// Upload one layer group with its own material over shared, reference-counted base textures
+    /// and the tile's splat atlas. A node per group keeps per-group frustum culling.
+    /// </summary>
+    public void AddGroup(Node3D tile, PreparedGroup group, Dictionary<string, BlpTexture> decoded, bool bigAlpha)
+    {
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
-        arrays[(int)Mesh.ArrayType.Normal] = normals;
-        arrays[(int)Mesh.ArrayType.TexUV] = uv;
-        arrays[(int)Mesh.ArrayType.Color] = colors;
-        arrays[(int)Mesh.ArrayType.Index] = indices;
+        arrays[(int)Mesh.ArrayType.Vertex] = group.Vertices;
+        arrays[(int)Mesh.ArrayType.Normal] = group.Normals;
+        arrays[(int)Mesh.ArrayType.TexUV] = group.Uv;
+        arrays[(int)Mesh.ArrayType.TexUV2] = group.Uv2;
+        arrays[(int)Mesh.ArrayType.Color] = group.Colors;
+        arrays[(int)Mesh.ArrayType.Index] = group.Indices;
         var mesh = new ArrayMesh();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         var material = new ShaderMaterial
@@ -158,9 +256,9 @@ public sealed class TerrainRenderer
         for (int i = 0; i < 4; i++)
         {
             ImageTexture texture = fallback;
-            if (i < c.Layers.Count)
+            if (i < group.Textures.Length)
             {
-                string name = c.Layers[i].Texture;
+                string name = group.Textures[i];
                 if (!textures.TryGetValue(name, out var entry))
                 {
                     entry = new TextureEntry(decoded.TryGetValue(name, out var blp) ? Texture(blp) : fallback);
@@ -174,22 +272,20 @@ public sealed class TerrainRenderer
             material.SetShaderParameter("layer" + i, texture);
         }
 
-        using var alphaImage = Image.CreateFromData(64, 64, false, Image.Format.Rgb8, alpha);
-        material.SetShaderParameter("blend_map", ImageTexture.CreateFromImage(alphaImage));
-        using var shadowImage = Image.CreateFromData(64, 64, false, Image.Format.R8, shadow);
-        material.SetShaderParameter("shadow_map", ImageTexture.CreateFromImage(shadowImage));
+        material.SetShaderParameter("splat_map", splats[tile]);
         material.SetShaderParameter("big_alpha", bigAlpha);
         material.SetShaderParameter("grid", grid);
         materials.Add(material);
         mesh.SurfaceSetMaterial(0, material);
         var instance = new MeshInstance3D
         {
-            Name = $"Chunk_{c.X}_{c.Y}",
             Mesh = mesh,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.On
         };
-        instance.SetMeta("textures", c.Layers.Select(l => l.Texture).ToArray());
-        parent.AddChild(instance);
+        instance.SetMeta("textures", group.Textures);
+        instance.SetMeta("chunks", group.Chunks);
+        CellCount += group.Chunks;
+        tile.AddChild(instance);
     }
 
     /// <summary>
@@ -247,7 +343,11 @@ public sealed class TerrainRenderer
             if (child.Mesh.SurfaceGetMaterial(0) is ShaderMaterial material)
             {
                 materials.Remove(material);
+                material.Dispose();
             }
+
+            CellCount -= child.GetMeta("chunks").AsInt32();
+            child.Mesh.Dispose();
 
             foreach (string name in child.GetMeta("textures").AsStringArray())
             {
@@ -272,6 +372,11 @@ public sealed class TerrainRenderer
 
                 node.Mesh.Dispose();
             }
+        }
+
+        if (splats.Remove(tile, out var splat))
+        {
+            splat.Dispose();
         }
 
         tile.QueueFree();
