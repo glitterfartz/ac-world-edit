@@ -74,11 +74,23 @@ public sealed class ModelLibrary
     readonly ImageTexture fallback;
     IClientFiles? store;
     CancellationTokenSource cancellation = new();
-    // A variant progresses through exactly one decode slot, one upload slot, then
-    // the shared ready cache. Partial GPU resources are never bound to scene instances.
-    Task<Entry>? pending;
-    ModelKey? pendingKey, buildingKey;
+    // A variant progresses through the one decode worker, a short queue of decoded entries, one
+    // upload slot, then the shared ready cache. Partial GPU resources are never bound to scene
+    // instances. The worker decodes a few nearest variants back to back and runs while earlier
+    // results upload, so decoding never waits on frames (it took about two frames per model before).
+    Task<List<Decoded>>? pending;
+    readonly Queue<(ModelKey Key, Entry Entry)> decoded = [];
+    // Keys in the worker batch, the decoded queue or the upload slot, so scheduling skips them.
+    readonly HashSet<ModelKey> queued = [];
+    ModelKey? buildingKey;
     Entry? building;
+    /// <summary>One worker result: the decoded entry, the error that marks the key failed, or neither
+    /// when the batch stopped before reaching the key.</summary>
+    readonly record struct Decoded(ModelKey Key, Entry? Entry, string? Error);
+    /// <summary>Variants per worker batch, and the decode time after which a batch stops early so a
+    /// camera turn re-prioritizes soon.</summary>
+    const int DecodeBatch = 4;
+    const double DecodeBatchMilliseconds = 100;
     long tick;
     /// <summary>
     /// Expose cached parsed WMO liquid surfaces for opt-in smoke placement without archive reads or
@@ -105,7 +117,7 @@ public sealed class ModelLibrary
     public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
     public long CachedBytes => cachedBytes;
     public double UploadMilliseconds { get; private set; }
-    public bool Busy => pending != null || building != null || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
+    public bool Busy => pending != null || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public ICreatureCatalog? Catalog { get; private set; }
     /// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
     public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
@@ -149,7 +161,9 @@ public sealed class ModelLibrary
         }
 
         building = null;
-        pendingKey = buildingKey = null;
+        buildingKey = null;
+        decoded.Clear();
+        queued.Clear();
         cancellation.Dispose();
         cancellation = new();
         foreach (var i in instances)
@@ -593,8 +607,8 @@ public sealed class ModelLibrary
     }
 
     /// <summary>
-    /// Promote a completed CPU decode into the upload slot. Canceled/failed requests are consumed
-    /// once and missing variants are remembered to prevent per-frame retries.
+    /// Queue a completed worker batch for upload. Canceled batches are dropped; failed variants are
+    /// remembered (and warned about once) to prevent per-frame retries.
     /// </summary>
     void ConsumeDecodedModel()
     {
@@ -602,84 +616,104 @@ public sealed class ModelLibrary
         {
             try
             {
-                building = pending.GetAwaiter().GetResult();
-                buildingKey = pendingKey;
-                stats.Decodes++;
-                stats.DecodeMilliseconds += building.DecodeMilliseconds;
+                foreach (var result in pending.GetAwaiter().GetResult())
+                {
+                    if (result.Entry != null)
+                    {
+                        decoded.Enqueue((result.Key, result.Entry));
+                        stats.Decodes++;
+                        stats.DecodeMilliseconds += result.Entry.DecodeMilliseconds;
+                        continue;
+                    }
+
+                    queued.Remove(result.Key);
+                    if (result.Error != null && failed.Add(result.Key))
+                    {
+                        GD.PushWarning($"Model unavailable: {result.Key.Path}: {result.Error}");
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
-            }
-            catch (Exception e)
-            {
-                if (pendingKey != null && failed.Add(pendingKey))
-                {
-                    GD.PushWarning($"Model unavailable: {pendingKey.Path}: {e.Message}");
-                }
+                // The store changed; SetStore already cleared the queue.
             }
 
             pending = null;
-            pendingKey = null;
         }
     }
 
     /// <summary>
-    /// Upload within a soft per-frame time budget rather than exactly one surface, and publish the
-    /// cache entry only after all surfaces are ready. Drop work whose requesting instances have
-    /// disappeared. A multi-surface model (complex creatures, WMOs) that trickled in at one surface
-    /// per frame held the decode worker idle for several extra frames per model, which visibly
-    /// prolonged the fallback-marker period while flying through new areas.
+    /// Upload within a soft per-frame budget (8 surfaces, 1.5 ms) shared by the queued entries, and
+    /// publish each cache entry only after all its surfaces are ready. Drop work whose requesting
+    /// instances have disappeared. A multi-surface model (complex creatures, WMOs) that trickled in at
+    /// one surface per frame held the decode worker idle for several extra frames per model, which
+    /// visibly prolonged the fallback-marker period while flying through new areas.
     /// </summary>
     void UploadPendingModel()
     {
         // HoldPartialUploads (diagnostics only) narrows uploads to one surface per frame and keeps
         // the entry unpublished, so a reload can be timed against a guaranteed partial upload.
-        if (building != null && buildingKey != null)
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        int maxSurfaces = HoldPartialUploads ? 1 : 8;
+        int budget = 0;
+        while (budget < maxSurfaces && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5))
         {
+            if (building == null || buildingKey == null)
+            {
+                if (!decoded.TryDequeue(out var next))
+                {
+                    return;
+                }
+
+                building = next.Entry;
+                buildingKey = next.Key;
+            }
+
             if (!liveKeys.ContainsKey(buildingKey))
             {
+                queued.Remove(buildingKey);
                 DisposeEntry(building);
                 building = null;
                 buildingKey = null;
+                continue;
             }
-            else
+
+            if (building.AnimationTexture == null)
             {
-                if (building.AnimationTexture == null)
-                {
-                    using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
-                    building.AnimationTexture = ImageTexture.CreateFromImage(image);
-                }
-
-                if (building.MaterialTexture == null)
-                {
-                    using var image = Image.CreateFromData(building.Materials.Width, building.Materials.Height, false, Image.Format.Rgbaf, building.Materials.Pixels);
-                    building.MaterialTexture = ImageTexture.CreateFromImage(image);
-                }
-
-                // Leave headroom within the soft 2 ms upload target; a single indivisible surface
-                // upload can still exceed the deadline.
-                var started = System.Diagnostics.Stopwatch.GetTimestamp();
-                int maxSurfaces = HoldPartialUploads ? 1 : 8;
-                for (int budget = 0; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
-                {
-                    AddSurface(building, building.Surface++, buildingKey.Skybox);
-                    stats.Uploads++;
-                }
-
-                if (building.Surface == building.Data.Surfaces.Length && !HoldPartialUploads)
-                {
-                    cache[buildingKey] = building;
-                    cachedBytes += building.Bytes;
-                    building.LastUsed = tick;
-                    foreach (string warning in building.Data.Warnings)
-                    {
-                        GD.PushWarning(buildingKey.Path + ": " + warning);
-                    }
-
-                    building = null;
-                    buildingKey = null;
-                }
+                using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
+                building.AnimationTexture = ImageTexture.CreateFromImage(image);
             }
+
+            if (building.MaterialTexture == null)
+            {
+                using var image = Image.CreateFromData(building.Materials.Width, building.Materials.Height, false, Image.Format.Rgbaf, building.Materials.Pixels);
+                building.MaterialTexture = ImageTexture.CreateFromImage(image);
+            }
+
+            // Leave headroom within the soft 2 ms upload target; a single indivisible surface
+            // upload can still exceed the deadline.
+            for (; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
+            {
+                AddSurface(building, building.Surface++, buildingKey.Skybox);
+                stats.Uploads++;
+            }
+
+            if (building.Surface < building.Data.Surfaces.Length || HoldPartialUploads)
+            {
+                return;
+            }
+
+            cache[buildingKey] = building;
+            cachedBytes += building.Bytes;
+            building.LastUsed = tick;
+            foreach (string warning in building.Data.Warnings)
+            {
+                GD.PushWarning(buildingKey.Path + ": " + warning);
+            }
+
+            queued.Remove(buildingKey);
+            building = null;
+            buildingKey = null;
         }
     }
 
@@ -716,40 +750,77 @@ public sealed class ModelLibrary
     }
 
     /// <summary>
-    /// Choose the nearest unbuilt variant and capture its store/cancellation token before starting
-    /// the sole decode worker. Never overlap decoding and incremental upload slots.
+    /// Choose the nearest unbuilt variants and capture the store and cancellation token before
+    /// starting the sole decode worker. It runs while earlier results upload; a new batch starts only
+    /// when at most one decoded entry is still waiting, which bounds decoded memory.
     /// </summary>
     void ScheduleModelDecode(Camera3D camera)
     {
-        if (store != null && pending == null && building == null)
+        if (store == null || pending != null || decoded.Count > 1)
         {
-            ModelInstance? next = null;
-            float nearest = float.MaxValue;
-            var eye = camera.GlobalPosition;
-            foreach (var i in unbuilt)
-            {
-                if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key))
-                {
-                    continue;
-                }
+            return;
+        }
 
-                float distance = i.GlobalPosition.DistanceSquaredTo(eye);
-                if (next == null || distance < nearest)
-                {
-                    next = i;
-                    nearest = distance;
-                }
+        var eye = camera.GlobalPosition;
+        Dictionary<ModelKey, float> nearest = [];
+        foreach (var i in unbuilt)
+        {
+            if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key) || queued.Contains(i.Key))
+            {
+                continue;
             }
 
-            if (next != null)
+            float distance = i.GlobalPosition.DistanceSquaredTo(eye);
+            if (!nearest.TryGetValue(i.Key, out float known) || distance < known)
             {
-                var key = next.Key;
-                var source = store;
-                var token = cancellation.Token;
-                pendingKey = key;
-                pending = Task.Run(() => DecodeModel(key, source, token), token);
+                nearest[i.Key] = distance;
             }
         }
+
+        if (nearest.Count == 0)
+        {
+            return;
+        }
+
+        var keys = nearest.OrderBy(p => p.Value).Take(DecodeBatch).Select(p => p.Key).ToArray();
+        queued.UnionWith(keys);
+        var source = store;
+        var token = cancellation.Token;
+        pending = Task.Run(() => DecodeBatchOf(keys, source, token), token);
+    }
+
+    /// <summary>
+    /// Worker: decode the keys in order, nearest first, stopping early once the batch has taken
+    /// <see cref="DecodeBatchMilliseconds"/>; keys not reached are handed back for the next schedule.
+    /// </summary>
+    List<Decoded> DecodeBatchOf(ModelKey[] keys, IClientFiles source, CancellationToken token)
+    {
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        List<Decoded> results = [];
+        foreach (var key in keys)
+        {
+            if (results.Count > 0 && System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds > DecodeBatchMilliseconds)
+            {
+                results.Add(new(key, null, null));
+                continue;
+            }
+
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                results.Add(new(key, DecodeModel(key, source, token), null));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                results.Add(new(key, null, e.Message));
+            }
+        }
+
+        return results;
     }
 
     /// <summary>

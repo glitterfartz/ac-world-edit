@@ -74,4 +74,14 @@ ALTER TABLE acore_world.gameobject ADD INDEX idx_map_pos (map, position_x, posit
 
 ## Results
 
-Filled in per change below.
+Medians of three windowed runs; baseline as above.
+
+| Change | Measure | Before | After |
+|---|---|---|---|
+| Model decode queue (decode overlaps upload, batches of 4) | Arrival duration | 66.1 s | 47.3 s |
+| | Arrival frame p50 / p95 / p99 | 21.8 / 37.4 / 41.6 ms | 23.7 / 37.8 / 42.4 ms |
+| | Flight: models decoded in 22 s | 246 | 320 |
+| | Flight frame p50 / p95 / p99 | 21.6 / 36.7 / 42.6 ms | 23.2 / 37.9 / 42.4 ms |
+| | `ModelLibrary.Update` p50 (arrival) | 1.8 ms | 2.7 ms |
+
+The upload budget (8 surfaces, 1.5 ms per frame) is now the limit on arrival: the main thread spends its whole model budget most frames, which costs about 1 ms of frame time while content loads. Flight frames are slightly slower because 30 % more models finish during the same flight.

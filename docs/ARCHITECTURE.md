@@ -126,7 +126,7 @@ Rules that follow from the layering:
 Godot objects are touched only on the main thread. Expensive work runs on worker threads that produce plain CPU data:
 
 - **Terrain:** one decode task at a time (`TerrainViewer.pending`). The worker runs `WorldMap.ReadTile`, texture decode and liquid decode, and creates no Godot resources.
-- **Models:** one decode task at a time in `ModelLibrary`, followed by main-thread upload.
+- **Models:** one decode task at a time in `ModelLibrary`. It decodes up to four nearest variants back to back (stopping after about 100 ms) into a short queue, and runs while earlier results upload on the main thread.
 - **Overlay queries:** `RegionQuery<T>` runs one cancellable query at a time per overlay.
 - **Client open:** `ClientServices.Open` runs on `Task.Run` during `LoadClient`.
 

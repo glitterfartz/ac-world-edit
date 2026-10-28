@@ -84,10 +84,10 @@ State fields in `TerrainViewer`:
 
 Model streaming (`Rendering/ModelLibrary.cs`) follows the same pattern, once per frame in `Update(camera)`:
 
-1. `ConsumeDecodedModel`
-2. `UploadPendingModel` (at most 8 surfaces, 1.5 ms)
+1. `ConsumeDecodedModel` (queues a finished worker batch)
+2. `UploadPendingModel` (at most 8 surfaces, 1.5 ms, shared by the queued entries; each publishes when its last surface is up)
 3. `BindReadyInstances` (at most 8 per frame, 2 ms)
-4. `ScheduleModelDecode` (nearest unbuilt instance, one `Task.Run(DecodeModel)`)
+4. `ScheduleModelDecode` (one `Task.Run` decoding the four nearest unbuilt variants back to back, stopping early after about 100 ms; it starts while earlier results upload, once at most one decoded entry is waiting)
 5. `EvictDormantModels` (LRU, soft limit 256 MiB, never evicts entries with live instances)
 
 Caches: parsed `ModelData`, palettes and uploaded meshes are keyed by `ModelKey` (path, replacement textures, baked texture, doodad set, animation, skybox flag, hair and fur). Shared textures are ref-counted by path. A `failed` set stops retries. Shader variants are cached by blend mode, two-sidedness, unlit and skybox.
