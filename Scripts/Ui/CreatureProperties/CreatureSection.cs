@@ -230,6 +230,61 @@ public abstract partial class CreatureSection : VBoxContainer
         }
     }
 
+    /// <summary>
+    /// What choosing a service option does here: the matching page opens (the returned text is empty) or the
+    /// text says which client window it would open. <paramref name="window"/> names that window.
+    /// </summary>
+    protected string OpenService(GossipService service, string window)
+    {
+        switch (service)
+        {
+            case GossipService.Quests:
+                Ctx.ShowSection(PickerPages.Quests.Id);
+                return "";
+            case GossipService.Vendor:
+                Ctx.ShowSection(PickerPages.Vendor.Id);
+                return "";
+            case GossipService.Trainer:
+                Ctx.ShowSection(PickerPages.Trainer.Id);
+                return "";
+            case GossipService.Taxi:
+                return "Opens the flight map.";
+            case GossipService.Chat:
+                return "Closes the gossip window (no submenu).";
+            default:
+                return $"Opens the client's {window.ToLowerInvariant()} window.";
+        }
+    }
+
+    /// <summary>One line of a picked text: placeholders resolved, line breaks flattened, long text cut.</summary>
+    protected static string Preview(string text, int length = 70)
+    {
+        text = InteractionText.Render(text).ReplaceLineEndings(" ");
+        return text.Length <= length ? text : text[..(length - 1)] + "…";
+    }
+
+    /// <summary>Pick an existing gossip menu by ID or greeting text; <paramref name="chosen"/> gets its ID.</summary>
+    protected void ChooseMenu(Action<uint> chosen, uint? current = null) => Ctx.Try(() =>
+    {
+        var db = DBSource.Open(Ctx.Connection(), Ctx.Lookup());
+        PickerPopup.Show(this, "Choose gossip menu", async term =>
+        {
+            var found = await db.SearchMenusAsync(term, CancellationToken.None);
+            return found.Select(m => (m.Id, $"{m.Id}: {Preview(m.Name)}")).ToList();
+        }, (id, _) => chosen(id), current: current);
+    });
+
+    /// <summary>Pick an existing broadcast text by ID or text; <paramref name="chosen"/> gets its ID.</summary>
+    protected void ChooseBroadcast(Action<uint> chosen, uint? current = null) => Ctx.Try(() =>
+    {
+        var db = DBSource.Open(Ctx.Connection(), Ctx.Lookup());
+        PickerPopup.Show(this, "Choose broadcast text", async term =>
+        {
+            var found = await db.SearchBroadcastAsync(term, CancellationToken.None);
+            return found.Select(b => (b.Id, $"{b.Id}: {Preview(b.Name)}")).ToList();
+        }, (id, _) => chosen(id), current: current);
+    });
+
     protected virtual void Clear()
     {
         foreach (var child in GetChildren())

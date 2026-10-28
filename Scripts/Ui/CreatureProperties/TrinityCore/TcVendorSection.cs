@@ -75,7 +75,7 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
     IEnumerable<VendorEntry> SharedList(Row reference, uint list, bool edited)
     {
         var rows = Ctx.Snapshot?.Lookup.ReferenceVendor(list) ?? [];
-        yield return new(reference, $"-{list}", $"Shared vendor list {list}", ClientStyle.Gold, ClientStyle.GossipIcon(1), $"{rows.Count} item(s). Edit the list on its own vendor.", "", list, edited, null, Header: true);
+        yield return new(reference, $"-{list}", $"Shared vendor list {list} · {rows.Count} item(s)", ClientStyle.Gold, ClientStyle.GossipIcon(1), "Edit the list on its own vendor.", "", list, edited, null, Header: true);
         foreach (var item in rows.Take(SharedShown))
         {
             var (name, color, icon) = Describe(item.U("type"), item.I("item"));

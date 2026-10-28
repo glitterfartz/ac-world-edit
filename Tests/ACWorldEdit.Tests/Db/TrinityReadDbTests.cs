@@ -116,6 +116,23 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task MenuSearchFindsMenusByIdAndByTheTextOfTheirGreeting()
+    {
+        var source = Open();
+        var snapshot = await source.ReadInteractionAsync(295, 0, [], rows => rows, null, CancellationToken.None);
+        uint menu = snapshot.Rows.All(source.Schema.GossipPage.Options.Table).Select(r => r.U("MenuID")).First();
+        var byId = await source.SearchMenusAsync(menu.ToString(System.Globalization.CultureInfo.InvariantCulture), CancellationToken.None);
+        Assert.Equal(menu, byId[0].Id);
+        Assert.True(byId.Count <= DbLimits.MaxSearch);
+
+        string greeting = byId[0].Name;
+        Assert.NotEmpty(greeting);
+        var byText = await source.SearchMenusAsync(greeting[..Math.Min(greeting.Length, 25)], CancellationToken.None);
+        Assert.Contains(byText, m => m.Id == menu);
+        Assert.True(byText.Count <= DbLimits.MaxSearch);
+    }
+
+    [TcDbFact]
     public async Task BroadcastSearchFindsTextFromTheHotfixesTable()
     {
         var source = Open();

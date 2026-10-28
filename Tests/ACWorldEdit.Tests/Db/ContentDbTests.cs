@@ -101,6 +101,18 @@ public class ContentDbTests
     }
 
     [DbFact]
+    public async Task MenuSearchFindsMenusByIdAndByGreetingText()
+    {
+        var source = AcSource(Config);
+        var byText = await source.SearchMenusAsync("Greetings", CancellationToken.None);
+        Assert.NotEmpty(byText);
+        Assert.True(byText.Count <= DbLimits.MaxSearch);
+        var byId = await source.SearchMenusAsync(byText[0].Id.ToString(), CancellationToken.None);
+        Assert.Equal(byText[0].Id, byId[0].Id);
+        Assert.NotEmpty(byId[0].Name);
+    }
+
+    [DbFact]
     public async Task BroadcastSearchFindsByIdAndText()
     {
         var source = AcSource(Config);

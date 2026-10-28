@@ -74,7 +74,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         if (menu.Texts.Length == 0)
         {
             Line("No gossip_menu text: the client shows a default greeting.", ClientStyle.Faded, 12);
-            if (editable) GreetingControls(menu.MenuId, false, v.Entry);
+            if (editable) GreetingControls(menu.MenuId, false, v);
         }
         foreach (var text in menu.Texts)
         {
@@ -98,30 +98,66 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         Heading("Options");
         if (editable)
         {
+            var actions = new HBoxContainer();
+            AddChild(actions);
             var add = new Button { Name = "AddGossipOption", Text = "Add option" };
             add.Pressed += () => Ctx.Try(() => Ctx.Commit("Add gossip option", [page.Options.Add(Ctx.Effective, menu.MenuId)]));
-            AddChild(add);
+            actions.AddChild(add);
+            var withMenu = new Button { Name = "AddSubmenuOption", Text = "Add option → new submenu", TooltipText = "Pick the greeting of a new submenu, then add an option that opens it." };
+            withMenu.Pressed += () => ChooseBroadcast(broadcast => Ctx.Try(() =>
+            {
+                uint text = Ctx.NextId(TcTables.NpcText, "ID", Ctx.Snapshot!.Lookup.MaxTextId);
+                uint submenu = NewMenuId();
+                _ = SaveReference("Add option with new submenu",
+                [
+                    Insert(TcTables.NpcText, TcGossipRules.NewGreeting(text, broadcast)),
+                    Insert(TcTables.GossipMenu, Row.Of(("MenuID", submenu), ("TextID", text))),
+                    page.Options.Add(Ctx.Effective, menu.MenuId, ("OptionText", "Tell me more."), ("ActionMenuID", submenu))
+                ], broadcast, Reference.Broadcast);
+            }));
+            actions.AddChild(withMenu);
         }
+        else
+        {
+            ReadOptions(menu);
+            return;
+        }
+
         new PageRenderer(Ctx).RenderItems(this, page.Options, Ctx.Effective, menu.MenuId, editable,
             row =>
             {
                 var option = menu.Options.First(o => o.OptionId == row.U("OptionID"));
                 string trainer = option.TrainerId is { } id ? $" · trainer {id}" : "";
-                return ClientStyle.Text($"{option.OptionId}. {InteractionText.Render(option.Text)}{trainer}", 13, ClientStyle.Gold);
+                return IconRow(ClientStyle.GossipIcon(page.IconOf(row)), ClientStyle.Text($"{option.OptionId}. {InteractionText.Render(option.Text)}{trainer}", 13, ClientStyle.Gold));
             }, (field, row) =>
             {
-                if (editable && field.Column is "ActionMenuID" or "ActionPoiID" or "OptionBroadcastTextID" or "BoxBroadcastTextID")
+                if (field.Column is "ActionMenuID" or "ActionPoiID" or "OptionBroadcastTextID" or "BoxBroadcastTextID")
                 {
                     var edit = new LineEdit { Text = row.T(field.Column), CustomMinimumSize = new(110, 0) };
-                    edit.TextSubmitted += text => Ctx.Try(() =>
+                    void Save(string text) => Ctx.Try(() =>
                     {
                         uint id = uint.Parse(text, CultureInfo.InvariantCulture);
                         _ = SaveReference($"Change {field.Label.ToLowerInvariant()}", ItemListSpec.Change(page.Options.Table, row, row.With(field.Column, id)),
                             id, field.Column switch { "ActionMenuID" => Reference.Menu, "ActionPoiID" => Reference.Poi, _ => Reference.Broadcast });
                     });
-                    return edit;
+                    edit.TextSubmitted += Save;
+                    if (field.Column == "ActionPoiID") return edit;
+                    // A menu or broadcast text can be searched instead of typed.
+                    var find = new Button { Text = "…", TooltipText = field.Column == "ActionMenuID" ? "Search gossip menus" : "Search broadcast texts" };
+                    uint? current = row.U(field.Column) is var now and not 0 ? now : null;
+                    void Picked(uint id)
+                    {
+                        edit.Text = id.ToString(CultureInfo.InvariantCulture);
+                        Save(edit.Text);
+                    }
+
+                    find.Pressed += () => { if (field.Column == "ActionMenuID") ChooseMenu(Picked, current); else ChooseBroadcast(Picked, current); };
+                    var box = new HBoxContainer();
+                    box.AddChild(edit);
+                    box.AddChild(find);
+                    return box;
                 }
-                if (editable && field.Column is "OptionText" or "BoxText")
+                if (field.Column is "OptionText" or "BoxText")
                 {
                     var edit = new LineEdit { Text = row.T(field.Column), CustomMinimumSize = new(220, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
                     edit.TextSubmitted += text => Ctx.Commit($"Change {field.Label.ToLowerInvariant()}", field.Column == "OptionText" ? page.ChangeText(row, text) : page.ChangeConfirmation(row, text));
@@ -141,6 +177,46 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             }, columns: 2);
     }
 
+    /// <summary>The options as the client lists them: an icon and the option text, which a click follows.</summary>
+    void ReadOptions(TcMenuView menu)
+    {
+        var page = Ctx.Schema.GossipPage;
+        if (menu.Options.Length == 0) Line("No options.", ClientStyle.Faded, 12);
+        var rows = page.Options.Select(Ctx.Effective, menu.MenuId).ToList();
+        foreach (var option in menu.Options)
+        {
+            var row = rows.FirstOrDefault(r => r.U("OptionID") == option.OptionId);
+            string target = option.ActionMenuId != 0 ? $" → menu {option.ActionMenuId}" : option.TrainerId is { } trainer ? $" → trainer {trainer}" : "";
+            var button = new Button
+            {
+                Text = InteractionText.Render(option.Text),
+                Alignment = HorizontalAlignment.Left,
+                TooltipText = $"Option {option.OptionId} · {TcCreatureView.OptionNpcName(option.OptionNpc)}{target}"
+            };
+            button.Pressed += () => Follow(option, row);
+            AddChild(IconRow(ClientStyle.GossipIcon(row == null ? 0 : page.IconOf(row)), button));
+        }
+    }
+
+    /// <summary>
+    /// Do what the client would for an option: open its submenu or the matching service page, or say which
+    /// client window it opens. A confirmation box is shown first.
+    /// </summary>
+    void Follow(TcOptionView option, Row? row)
+    {
+        Ctx.Status = option.BoxText.Length > 0 || option.BoxMoney > 0
+            ? $"Confirmation: \"{InteractionText.Render(option.BoxText)}\"{(option.BoxMoney > 0 ? $" · costs {ClientStyle.Money((long)option.BoxMoney)}" : "")}{(option.Coded ? " · asks for a code" : "")}. "
+            : "";
+        if (option.ActionMenuId != 0)
+        {
+            Navigate(option.ActionMenuId);
+            return;
+        }
+
+        Ctx.Status += OpenService(row == null ? GossipService.Chat : Ctx.Schema.GossipPage.ServiceOf(row), TcCreatureView.OptionNpcName(option.OptionNpc));
+        Ctx.Redraw();
+    }
+
     void BroadcastPreview(Control parent, uint id, string label)
     {
         if (id == 0) return;
@@ -158,16 +234,25 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         Heading("Creature menus");
         var box = new HBoxContainer();
         AddChild(box);
-        GreetingControls(0, true, v.Entry);
+        GreetingControls(0, true, v);
         var id = new LineEdit { Name = "AssignMenuId", PlaceholderText = "Menu ID", CustomMinimumSize = new(110, 0) };
+        var find = new Button { Name = "FindMenu", Text = "Find…", TooltipText = "Search the existing gossip menus by ID or greeting text." };
         var assign = new Button { Name = "AssignMenu", Text = "Assign menu", TooltipText = "Let this creature open the menu." };
         assign.Pressed += () => Ctx.Try(() =>
         {
             uint menuId = uint.Parse(id.Text, CultureInfo.InvariantCulture);
-            _ = SaveReference($"Assign gossip menu {menuId}", [Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", v.Entry), ("MenuID", menuId)))], menuId, Reference.Menu);
+            List<RowEdit> edits = [Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", v.Entry), ("MenuID", menuId)))];
+            EnsureGossipFlag(v, edits);
+            _ = SaveReference($"Assign gossip menu {menuId}", [.. edits], menuId, Reference.Menu);
         });
         id.TextSubmitted += _ => assign.EmitSignal(BaseButton.SignalName.Pressed);
+        find.Pressed += () => ChooseMenu(picked =>
+        {
+            id.Text = picked.ToString(CultureInfo.InvariantCulture);
+            assign.EmitSignal(BaseButton.SignalName.Pressed);
+        });
         box.AddChild(id);
+        box.AddChild(find);
         box.AddChild(assign);
         if (menu is not { Root: true } || RootLink(v.Entry, menu.MenuId) is not { } link) return;
         var remove = new Button { Name = "UnassignMenu", Text = "Unassign menu", TooltipText = "This creature stops opening the menu; the menu itself stays." };
@@ -185,25 +270,45 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
     /// A greeting for a menu with none (a new npc_text row and its gossip_menu link), or, with
     /// <paramref name="newMenu"/>, a whole new menu with that greeting for the creature.
     /// </summary>
-    void GreetingControls(uint menu, bool newMenu, uint entry)
+    void GreetingControls(uint menu, bool newMenu, TcCreatureView v)
     {
         var box = new HBoxContainer();
         AddChild(box);
         var broadcast = new LineEdit { Name = newMenu ? "NewMenuBroadcast" : "AddGreetingBroadcast", PlaceholderText = "Greeting broadcast ID", CustomMinimumSize = new(160, 0), TooltipText = "The broadcast text the greeting plays." };
+        var find = new Button { Name = newMenu ? "ChooseNewMenuBroadcast" : "ChooseGreetingBroadcast", Text = "…", TooltipText = "Search broadcast texts by ID or text." };
         var add = new Button { Name = newMenu ? "NewMenu" : "AddGreeting", Text = newMenu ? "+ New menu" : "Add greeting", TooltipText = newMenu ? "Create a menu with this greeting and let the creature open it." : "Give this menu a greeting." };
         add.Pressed += () => Ctx.Try(() =>
         {
             uint broadcastId = uint.Parse(broadcast.Text, CultureInfo.InvariantCulture);
             uint text = Ctx.NextId(TcTables.NpcText, "ID", Ctx.Snapshot!.Lookup.MaxTextId);
-            uint target = newMenu ? Math.Max(Ctx.NextId(TcTables.GossipMenu, "MenuID", Ctx.Snapshot.Lookup.MaxMenuId), Ctx.NextId(TcTables.GossipOption, "MenuID", 0)) : menu;
+            uint target = newMenu ? NewMenuId() : menu;
             List<RowEdit> edits = [Insert(TcTables.NpcText, TcGossipRules.NewGreeting(text, broadcastId)), Insert(TcTables.GossipMenu, Row.Of(("MenuID", target), ("TextID", text)))];
-            if (newMenu) edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", entry), ("MenuID", target))));
+            if (newMenu)
+            {
+                edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", v.Entry), ("MenuID", target))));
+                EnsureGossipFlag(v, edits);
+            }
+
             _ = SaveReference(newMenu ? $"New gossip menu {target}" : "Add greeting", [.. edits], broadcastId, Reference.Broadcast);
             if (newMenu) selected = target;
         });
         broadcast.TextSubmitted += _ => add.EmitSignal(BaseButton.SignalName.Pressed);
+        find.Pressed += () => ChooseBroadcast(picked => broadcast.Text = picked.ToString(CultureInfo.InvariantCulture));
         box.AddChild(broadcast);
+        box.AddChild(find);
         box.AddChild(add);
+    }
+
+    /// <summary>A MenuID free in both gossip_menu and gossip_menu_option (the options of a menu can exist without a gossip_menu row).</summary>
+    uint NewMenuId() => Math.Max(Ctx.NextId(TcTables.GossipMenu, "MenuID", Ctx.Snapshot!.Lookup.MaxMenuId), Ctx.NextId(TcTables.GossipOption, "MenuID", 0));
+
+    /// <summary>A creature opens gossip only with the gossip npcflag, so a menu given to one without it also sets the flag.</summary>
+    void EnsureGossipFlag(TcCreatureView v, List<RowEdit> edits)
+    {
+        if ((v.NpcFlags & GossipPageSpec.GossipFlag) == 0)
+        {
+            edits.Add(Update(TcTables.CreatureTemplate, v.Template, Ctx.Schema.GossipPage.EnableGossip(v.Template)));
+        }
     }
 
     Row? RootLink(uint entry, uint menu) => Ctx.Effective.All(TcTables.CreatureGossip).FirstOrDefault(r => r.U("CreatureID") == entry && r.U("MenuID") == menu);
@@ -279,7 +384,12 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             save.Pressed += Save;
             id.TextSubmitted += _ => Save();
             weight.TextSubmitted += _ => Save();
-            grid.AddChild(id);
+            var find = new Button { Text = "…", TooltipText = "Search broadcast texts by ID or text." };
+            find.Pressed += () => ChooseBroadcast(picked => id.Text = picked.ToString(CultureInfo.InvariantCulture), row.U($"BroadcastTextID{slot}") is var now and not 0 ? now : null);
+            var pick = new HBoxContainer();
+            pick.AddChild(id);
+            pick.AddChild(find);
+            grid.AddChild(pick);
             grid.AddChild(weight);
             grid.AddChild(save);
         }

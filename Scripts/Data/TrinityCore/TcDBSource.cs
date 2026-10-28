@@ -55,6 +55,7 @@ public sealed class TcDBSource : IDBSource
     public Task<HashSet<int>> UsedActionListsAsync(int from, int to, CancellationToken token) => behavior.UsedActionListsAsync(from, to, token);
     public Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => interaction.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
     public Task<bool> MenuExistsAsync(uint menuId, CancellationToken token) => interaction.MenuExistsAsync(menuId, token);
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchMenusAsync(string term, CancellationToken token) => interaction.SearchMenusAsync(term, token);
     public Task<bool> PoiExistsAsync(uint poiId, CancellationToken token) => interaction.PoiExistsAsync(poiId, token);
     public Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token) => throw Unsupported("The creature property editor");
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => throw Unsupported("Item search");

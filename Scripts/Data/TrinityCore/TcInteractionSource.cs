@@ -153,6 +153,40 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         return found;
     }
 
+    /// <summary>
+    /// Bounded picker search over gossip menus by ID or by what they say. A TrinityCore greeting is only
+    /// broadcast IDs, so the text is searched in broadcast_text first (hotfixes, then the client) and the menus
+    /// whose npc_text uses a match are listed; the name is the greeting's first text.
+    /// </summary>
+    public async Task<IReadOnlyList<(uint Id, string Name)>> SearchMenusAsync(string term, CancellationToken token)
+    {
+        term = term.Trim();
+        var matches = term.Length == 0 ? [] : await FindBroadcastAsync(term, token).ConfigureAwait(false);
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        await using var command = session.Command("");
+        string ids = AcInteractionSource.InList(command, matches.Select(m => m.Id), "b");
+        string slots = string.Join(" OR ", Enumerable.Range(0, 8).Select(i => $"n.BroadcastTextID{i} IN ({ids})"));
+        command.CommandText = $"SELECT g.MenuID,MIN(n.BroadcastTextID0) FROM gossip_menu g LEFT JOIN npc_text n ON n.ID=g.TextID WHERE g.MenuID=@id OR {slots} GROUP BY g.MenuID ORDER BY g.MenuID=@id DESC, g.MenuID LIMIT {DbLimits.MaxSearch}";
+        command.Parameters.AddWithValue("@id", uint.TryParse(term, out uint number) ? number : 0);
+        List<(uint Menu, uint Broadcast)> found = [];
+        await using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
+        {
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                found.Add((Convert.ToUInt32(reader.GetValue(0), CultureInfo.InvariantCulture), reader.IsDBNull(1) ? 0 : Convert.ToUInt32(reader.GetValue(1), CultureInfo.InvariantCulture)));
+            }
+        }
+
+        var texts = matches.ToDictionary(m => m.Id, m => m.Name);
+        var unknown = found.Select(f => f.Broadcast).Where(b => b != 0 && !texts.ContainsKey(b)).Distinct().ToArray();
+        foreach (var (id, text) in await hotfixes.ReadBroadcastTextsAsync(unknown, token).ConfigureAwait(false))
+        {
+            texts[id] = text.Male;
+        }
+
+        return found.Select(f => (f.Menu, texts.TryGetValue(f.Broadcast, out string? said) ? said : client?.BroadcastText(f.Broadcast) ?? "")).ToList();
+    }
+
     public async Task<bool> PoiExistsAsync(uint poi, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);

@@ -38,6 +38,9 @@ public interface IDBSource
     // Interaction (creature property editor)
     Task<InteractionSnapshot> ReadInteractionAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token);
     Task<bool> MenuExistsAsync(uint menuId, CancellationToken token);
+
+    /// <summary>Gossip menus by ID or by the greeting text they show (bounded); the name is the greeting's first text.</summary>
+    Task<IReadOnlyList<(uint Id, string Name)>> SearchMenusAsync(string term, CancellationToken token);
     Task<bool> TrainerExistsAsync(uint trainerId, CancellationToken token);
     Task<bool> PoiExistsAsync(uint poiId, CancellationToken token);
     Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token);

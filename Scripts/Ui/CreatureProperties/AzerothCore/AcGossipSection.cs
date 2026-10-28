@@ -129,28 +129,15 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
         }
         else
         {
-            switch (option.Type)
+            var service = Ctx.Schema.GossipPage.ServiceOf(option.Row);
+            if (service == GossipService.Taxi && catalog != null && target != null)
             {
-                case 2:
-                    Ctx.ShowSection("quests");
-                    break;
-                case 3:
-                case 15:
-                    Ctx.ShowSection("vendor");
-                    break;
-                case 5:
-                    Ctx.ShowSection("trainer");
-                    break;
-                case 4 when catalog != null && target != null:
-                    var node = catalog.NearestTaxiNode(target.Pose.Map, target.Pose.X, target.Pose.Y, target.Pose.Z);
-                    status += node is { } n ? $"Opens the flight map at {n.Name} (node {n.Id}, {n.Distance:0} yd away)." : "Opens the flight map.";
-                    break;
-                case 1:
-                    status += "Closes the gossip window (no submenu).";
-                    break;
-                default:
-                    status += $"Opens the client's {OptionTypeName(option.Type).ToLowerInvariant()} window.";
-                    break;
+                var node = catalog.NearestTaxiNode(target.Pose.Map, target.Pose.X, target.Pose.Y, target.Pose.Z);
+                status += node is { } n ? $"Opens the flight map at {n.Name} (node {n.Id}, {n.Distance:0} yd away)." : "Opens the flight map.";
+            }
+            else
+            {
+                status += OpenService(service, OptionTypeName(option.Type));
             }
         }
 

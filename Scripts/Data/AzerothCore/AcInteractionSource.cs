@@ -389,6 +389,26 @@ public sealed class AcInteractionSource(WorldDatabase database)
         return Convert.ToInt64(await Scalar(session, "SELECT COUNT(*) FROM gossip_menu WHERE MenuID=@k0", [menuId], token)) > 0;
     }
 
+    /// <summary>
+    /// Bounded picker search over gossip menus by ID or by the (escaped LIKE) text of their npc_text; the name is
+    /// that text.
+    /// </summary>
+    public async Task<IReadOnlyList<(uint Id, string Name)>> SearchMenusAsync(string term, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("gossip_menu.MenuID", "gossip_menu.TextID", "npc_text.ID", "npc_text.text0_0", "npc_text.text0_1");
+        await using var command = session.Command($"SELECT g.MenuID,MIN(COALESCE(NULLIF(n.text0_0,''),NULLIF(n.text0_1,''),'')) FROM gossip_menu g LEFT JOIN npc_text n ON n.ID=g.TextID WHERE n.text0_0 LIKE @s ESCAPE '=' OR n.text0_1 LIKE @s ESCAPE '=' OR g.MenuID=@id GROUP BY g.MenuID ORDER BY g.MenuID=@id DESC, g.MenuID LIMIT {DbLimits.MaxSearch}");
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
+        List<(uint, string)> menus = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            menus.Add((Convert.ToUInt32(reader.GetValue(0), CultureInfo.InvariantCulture), reader.GetString(1)));
+        }
+
+        return menus;
+    }
+
     public async Task<bool> PoiExistsAsync(uint poi, CancellationToken token)
     {
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);

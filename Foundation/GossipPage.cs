@@ -1,9 +1,30 @@
 namespace ACWorldEdit.Foundation;
 
-/// <summary>Gossip menu links, option fields and greeting storage for one dialect.
-/// Greetings retain their specialized editor: AC stores text, TC stores eight broadcast variants.</summary>
-public sealed record GossipPageSpec(ItemListSpec Menus, ItemListSpec Options, TableSchema TextTable)
+/// <summary>What the client does when a gossip option is chosen, as far as the editor can follow it.</summary>
+public enum GossipService
 {
+    /// <summary>Plain chat: closes the window unless the option opens a submenu.</summary>
+    Chat,
+    Quests,
+    Vendor,
+    Trainer,
+    Taxi,
+    /// <summary>Another client window (bank, auction house, binder…).</summary>
+    Other
+}
+
+/// <summary>Gossip menu links, option fields and greeting storage for one dialect.
+/// Greetings retain their specialized editor: AC stores text, TC stores eight broadcast variants.
+/// <see cref="IconOf"/> and <see cref="ServiceOf"/> read the dialect's own option columns (AC OptionIcon and
+/// OptionType, TC OptionNpc) so the editors can draw and follow options without knowing which they have.</summary>
+public sealed record GossipPageSpec(ItemListSpec Menus, ItemListSpec Options, TableSchema TextTable, Func<Row, uint> IconOf, Func<Row, GossipService> ServiceOf)
+{
+    /// <summary>UNIT_NPC_FLAG_GOSSIP, the same bit in both servers: a creature opens gossip only with it set.</summary>
+    public const ulong GossipFlag = 1;
+
+    /// <summary>The creature template with the gossip npcflag bit set.</summary>
+    public Row EnableGossip(Row template) => template.With("npcflag", template.UL("npcflag") | GossipFlag);
+
     /// <summary>Writing literal option text must stop the broadcast override hiding it in game.</summary>
     public RowEdit[] ChangeText(Row row, string text) => ItemListSpec.Change(Options.Table, row,
         row.With("OptionText", text).With("OptionBroadcastTextID", 0));
@@ -36,6 +57,33 @@ public static class GossipPage
 {
     public static readonly GossipPageSpec AzerothCore = Build(false);
     public static readonly GossipPageSpec TrinityCore = Build(true);
+
+    /// <summary>
+    /// GOSSIP_ICON value of a TrinityCore option. GossipOptionNpc 1-9 (vendor, taxi, trainer, spirit healer,
+    /// binder, banker, petition, tabard, battlemaster) are the same numbers as the client's gossip icons; the
+    /// other services use the chat icon.
+    /// </summary>
+    static uint TcIcon(Row option) => option.U("OptionNpc") is > 0 and < 10 and var npc ? npc : 0;
+
+    static GossipService TcService(Row option) => option.U("OptionNpc") switch
+    {
+        1 => GossipService.Vendor,
+        2 => GossipService.Taxi,
+        3 => GossipService.Trainer,
+        0 => GossipService.Chat,
+        _ => GossipService.Other
+    };
+
+    /// <summary>GOSSIP_OPTION_* of an AzerothCore option: 1 gossip, 2 quest giver, 3 vendor, 4 taxi, 5 trainer, 15 armorer.</summary>
+    static GossipService AcService(Row option) => option.U("OptionType") switch
+    {
+        1 => GossipService.Chat,
+        2 => GossipService.Quests,
+        3 or 15 => GossipService.Vendor,
+        4 => GossipService.Taxi,
+        5 => GossipService.Trainer,
+        _ => GossipService.Other
+    };
 
     static GossipPageSpec Build(bool retail)
     {
@@ -95,6 +143,8 @@ public static class GossipPage
         return new(new(menus, "MenuID", "TextID", "gossip text link", [],
                 (menu, _) => Row.Of(("MenuID", menu), ("TextID", 0u))),
             new(table, "MenuID", "OptionID", "gossip option", fields.ToArray(), NewOption),
-            retail ? TcTables.NpcText : AcTables.NpcText);
+            retail ? TcTables.NpcText : AcTables.NpcText,
+            retail ? TcIcon : r => r.U("OptionIcon"),
+            retail ? TcService : AcService);
     }
 }
