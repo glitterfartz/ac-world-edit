@@ -136,7 +136,8 @@ public sealed partial class QuestsSection(CreatureContext ctx) : CreatureSection
         int conditions = Conditions(quest.Quest);
         var button = new Button
         {
-            Text = (quest.Info != null ? $"{quest.Info.Title} ({quest.Info.Level})" : $"Quest {quest.Quest} (missing)") + (conditions > 0 ? $" · {conditions} condition(s)" : ""),
+            // TrinityCore quests have no level column (the level reads 0), so it is shown only when there is one.
+            Text = (quest.Info is { } info ? info.Level > 0 ? $"{info.Title} ({info.Level})" : info.Title : $"Quest {quest.Quest} (missing)") + (conditions > 0 ? $" · {conditions} condition(s)" : ""),
             Alignment = HorizontalAlignment.Left
         };
         if (edited)
