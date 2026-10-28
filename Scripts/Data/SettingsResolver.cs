@@ -38,13 +38,25 @@ public static class SettingsResolver
     /// <summary>Saved settings live in [database.wrath] / [database.retail], one section per client profile.</summary>
     public static string DatabaseSection(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? "database.retail" : "database.wrath";
 
+    /// <summary>The section settings were saved in before client profiles existed.</summary>
+    public const string LegacyDatabaseSection = "database";
+
+    static readonly string[] LegacyDatabaseKeys = ["host", "port", "user", "password", "name"];
+
+    /// <summary>
+    /// The values to copy from the pre-profile [database] section into [database.wrath]: every legacy
+    /// key that has a value there and none in the profile section. The caller copies them, then
+    /// deletes [database].
+    /// </summary>
+    public static IReadOnlyList<(string Key, string Value)> LegacyDatabaseMigration(Func<string, string?> legacy, Func<string, bool> profileHas) =>
+        LegacyDatabaseKeys.Where(key => !profileHas(key)).Select(key => (Key: key, Value: legacy(key))).Where(pair => pair.Value != null).Select(pair => (pair.Key, pair.Value!)).ToList();
+
     public static string DatabaseVariableFor(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? TrinityDatabaseVariable : DatabaseVariable;
 
     /// <summary>
     /// The connection for a dialect: its environment override (ACWORLD_DB_INFO, or ACWORLD_TC_DB_INFO for
     /// TrinityCore), else the saved profile section. read(section, key, fallback) returns a saved value
-    /// or the fallback. An AzerothCore profile with nothing saved still finds the pre-profile [database]
-    /// section.
+    /// or the fallback.
     /// </summary>
     public static WorldConnection Connection(WorldDialect dialect, string? environmentValue, Func<string, string, string, string> read)
     {
@@ -61,15 +73,7 @@ public static class SettingsResolver
 
         var empty = DatabaseSettings.DefaultFor(dialect);
         string section = DatabaseSection(dialect);
-        string Read(string key, string fallback)
-        {
-            if (dialect == WorldDialect.AzerothCore)
-            {
-                fallback = read("database", key, fallback);
-            }
-
-            return read(section, key, fallback);
-        }
+        string Read(string key, string fallback) => read(section, key, fallback);
 
         var world = new DatabaseSettings(
             Read("host", empty.Host),

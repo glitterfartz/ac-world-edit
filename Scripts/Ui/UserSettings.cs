@@ -64,7 +64,29 @@ public static class UserSettings
     {
         var file = new ConfigFile();
         file.Load(Path);
+        MigrateLegacyDatabase(file);
         return file;
+    }
+
+    /// <summary>Settings saved before client profiles lived in [database]; move them into [database.wrath] once.</summary>
+    static void MigrateLegacyDatabase(ConfigFile file)
+    {
+        if (!file.HasSection(SettingsResolver.LegacyDatabaseSection))
+        {
+            return;
+        }
+
+        string profile = SettingsResolver.DatabaseSection(WorldDialect.AzerothCore);
+        var moves = SettingsResolver.LegacyDatabaseMigration(
+            key => file.HasSectionKey(SettingsResolver.LegacyDatabaseSection, key) ? file.GetValue(SettingsResolver.LegacyDatabaseSection, key).AsString() : null,
+            key => file.HasSectionKey(profile, key));
+        foreach (var (key, value) in moves)
+        {
+            file.SetValue(profile, key, value);
+        }
+
+        file.EraseSection(SettingsResolver.LegacyDatabaseSection);
+        file.Save(Path);
     }
 
     static string Read(string section, string key, string fallback) => Open().GetValue(section, key, fallback).AsString();

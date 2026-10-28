@@ -123,18 +123,28 @@ public class SettingsResolverTests
     }
 
     [Fact]
-    public void WrathStillFindsTheSettingsSavedBeforeProfiles()
+    public void TheProfilelessSectionIsNoLongerRead()
     {
-        var legacy = SettingsResolver.Connection(WorldDialect.AzerothCore, null, (s, k, f) => s == "database" && k == "host" ? "old-host" : f);
-        Assert.Equal("old-host", legacy.World.Host);
-        Assert.Null(legacy.Hotfixes);
+        Func<string, string, string, string> legacyOnly = (s, k, f) => s == "database" ? "old-value" : f;
+        Assert.Equal(DatabaseSettings.DefaultFor(WorldDialect.AzerothCore), SettingsResolver.Connection(WorldDialect.AzerothCore, null, legacyOnly).World);
+        Assert.Equal(DatabaseSettings.DefaultFor(WorldDialect.TrinityCore), SettingsResolver.Connection(WorldDialect.TrinityCore, null, legacyOnly).World);
     }
 
     [Fact]
-    public void RetailIgnoresTheLegacyAzerothCoreSection()
+    public void LegacySettingsMoveIntoTheWrathProfile()
     {
-        var connection = SettingsResolver.Connection(WorldDialect.TrinityCore, null, (s, k, f) => s == "database" ? "wrath-value" : f);
-        Assert.Equal(DatabaseSettings.DefaultFor(WorldDialect.TrinityCore), connection.World);
+        var legacy = new Dictionary<string, string> { ["host"] = "old-host", ["port"] = "3307", ["password"] = "pw" };
+        var moves = SettingsResolver.LegacyDatabaseMigration(k => legacy.GetValueOrDefault(k), _ => false);
+        Assert.Equal([("host", "old-host"), ("port", "3307"), ("password", "pw")], moves);
+    }
+
+    [Fact]
+    public void MigrationKeepsWhatTheProfileAlreadyHas()
+    {
+        var legacy = new Dictionary<string, string> { ["host"] = "old-host", ["user"] = "old-user" };
+        var moves = SettingsResolver.LegacyDatabaseMigration(k => legacy.GetValueOrDefault(k), k => k == "host");
+        Assert.Equal([("user", "old-user")], moves);
+        Assert.Empty(SettingsResolver.LegacyDatabaseMigration(_ => null, _ => false));
     }
 
     [Fact]
