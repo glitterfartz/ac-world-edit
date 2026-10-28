@@ -1,7 +1,7 @@
 """Generate the SmartAI type arrays from a server's SmartScriptMgr.h enum comments plus curated labels.
 
 Usage:
-  python Tools/generate_smart_catalog.py <azerothcore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/AcSmartTypes.cs
+  python Tools/generate_smart_catalog.py <azerothcore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/AzerothCore/AcSmartTypes.cs
   python Tools/generate_smart_catalog.py --trinity <trinitycore>/src/server/game/AI/SmartScripts/SmartScriptMgr.h Foundation/TrinityCore/TcSmartTypes.cs <azerothcore header>
 Reads the server headers only; never touches the database or client files. The curated labels below
 are keyed by AzerothCore's IDs. TrinityCore reuses one only when the type has the same code name and
