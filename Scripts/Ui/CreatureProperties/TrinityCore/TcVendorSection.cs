@@ -45,10 +45,40 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
             }
 
             var (name, color, icon) = Describe(row.U("type"), row.I("item"));
-            entries.Add(new(row, row.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, row.U("ExtendedCost") != 0 ? $"Extended cost {row.U("ExtendedCost")}" : "", Stock(row), 0, edited, null));
+            entries.Add(new(row, row.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, row.U("ExtendedCost") != 0 ? $"Extended cost {row.U("ExtendedCost")}" : "", Stock(row), 0, edited, TipOf(row.U("type"), row.I("item"))));
         }
 
         return entries;
+    }
+
+    readonly Dictionary<uint, Tooltip?> tips = [];
+
+    /// <summary>The retail tooltip of an item: the client's template, named and graded as the hotfixes say.</summary>
+    Tooltip? TipOf(uint type, int item)
+    {
+        if (type == 2 || item <= 0)
+        {
+            return null;
+        }
+
+        uint id = (uint)item;
+        if (!tips.TryGetValue(id, out var tip))
+        {
+            tip = null;
+            if (Ctx.Lookup()?.ItemDetails(id) is { } details)
+            {
+                if (Ctx.Snapshot?.Lookup.Item(id) is { } shown)
+                {
+                    details = details with { Info = details.Info with { Name = shown.Name is { Length: > 0 } ? shown.Name : details.Info.Name, Quality = shown.Quality } };
+                }
+
+                tip = ItemTooltipBuilder.Build(details, ItemVocabulary.Retail);
+            }
+
+            tips[id] = tip;
+        }
+
+        return tip;
     }
 
     /// <summary>Name, quality colour and icon of an item or currency; name and quality come from the hotfixes, the icon from the client item.</summary>
@@ -79,7 +109,7 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
         foreach (var item in rows.Take(SharedShown))
         {
             var (name, color, icon) = Describe(item.U("type"), item.I("item"));
-            yield return new(null, item.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, "", Stock(item), list, false, null);
+            yield return new(null, item.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, "", Stock(item), list, false, TipOf(item.U("type"), item.I("item")));
         }
     }
 
@@ -116,6 +146,11 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
             if (item.IconFileId > 0)
             {
                 ResultIcons[label] = AssetRef.FromFileId(item.IconFileId);
+            }
+
+            if (TipOf(1, checked((int)item.Id)) is { } tip)
+            {
+                ResultTips[label] = tip;
             }
 
             return (label, (Action)(() => Add(checked((int)item.Id), 1)));

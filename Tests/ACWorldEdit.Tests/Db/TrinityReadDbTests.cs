@@ -486,6 +486,7 @@ public class TrinityReadDbTests
         public IReadOnlyList<(uint Id, string Text)> SearchBroadcastText(string term, int limit) => [];
         public ClientItem? Item(uint id) => null;
         public IReadOnlyList<ClientItem> SearchItems(string term, int limit) => [];
+        public ItemDetails? ItemDetails(uint id) => null;
         public string? SpellName(uint id) => null;
         public IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit) => [];
         public bool Exists(ClientRecord kind, uint id) => false;

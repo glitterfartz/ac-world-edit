@@ -64,6 +64,20 @@ public sealed class Db2Tables
         ["Difficulty"] = 1352127,
         ["Languages"] = 1135325,
         ["GossipNPCOption"] = 4278503,
+        // What an item template does not store: its level squish and the tables its stats, armor, damage and durability come from.
+        ["ItemSquishEra"] = 7322706,
+        ["Curve"] = 892585,
+        ["CurvePoint"] = 892586,
+        ["RandPropPoints"] = 1310245,
+        ["ItemArmorQuality"] = 1283021,
+        ["ItemArmorTotal"] = 1283022,
+        ["ItemArmorShield"] = 1277741,
+        ["ArmorLocation"] = 1284818,
+        ["ItemDamageOneHand"] = 1277743,
+        ["ItemDamageOneHandCaster"] = 1277739,
+        ["ItemDamageTwoHand"] = 1277738,
+        ["ItemDamageTwoHandCaster"] = 1277742,
+        ["ItemDamageAmmo"] = 1277740,
     };
 
     readonly CascFiles files;

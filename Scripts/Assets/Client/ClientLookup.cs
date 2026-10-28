@@ -43,6 +43,14 @@ public interface IClientLookup : ITcStatData
 
     IReadOnlyList<ClientItem> SearchItems(string term, int limit);
 
+    /// <summary>
+    /// The item as the client and the server's formulas describe it: stored fields from ItemSparse and Item,
+    /// and the stat values, armor, weapon damage, durability and squished item level computed by
+    /// <see cref="RetailItemStats"/>. Null for an unknown item. Name and quality are the client's; the
+    /// hotfixes database can override them.
+    /// </summary>
+    ItemDetails? ItemDetails(uint id);
+
     string? SpellName(uint id);
 
     IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit);
@@ -209,6 +217,53 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
         }
 
         return found;
+    }
+
+    RetailItemTables? itemTables;
+
+    /// <summary>The build as the server compares patches: major * 10000 + minor * 100 + bugfix (12.1.5.70448 is 120105).</summary>
+    int ClientPatch
+    {
+        get
+        {
+            string[] part = tables.Build.Split('.');
+            return part.Length >= 3 && int.TryParse(part[0], out int major) && int.TryParse(part[1], out int minor) && int.TryParse(part[2], out int fix) ? major * 10000 + minor * 100 + fix : 0;
+        }
+    }
+
+    public ItemDetails? ItemDetails(uint id)
+    {
+        if (!Table("ItemSparse").TryGetValue((int)id, out var sparse))
+        {
+            return null;
+        }
+
+        var item = Table("Item").TryGetValue((int)id, out var row) ? row : null;
+        var scaling = itemTables ??= new(Table);
+        uint itemClass = item?.FieldAs<uint>("ClassID") ?? 0, subclass = item?.FieldAs<uint>("SubclassID") ?? 0;
+        uint inventory = sparse.FieldAs<uint>("InventoryType"), quality = sparse.FieldAs<uint>("OverallQualityID"), baseLevel = sparse.FieldAs<uint>("ItemLevel");
+        int[] flags = sparse.FieldAs<int[]>("Flags");
+        uint level = RetailItemStats.EffectiveItemLevel(baseLevel, sparse.FieldAs<uint>("ItemSquishEraID"), scaling, ClientPatch);
+
+        int[] types = sparse.FieldAs<int[]>("StatModifier_bonusStat"), percent = sparse.FieldAs<int[]>("StatPercentEditor");
+        var stats = new List<(uint Type, int Value)>();
+        for (int i = 0; i < types.Length; i++)
+        {
+            // Corruption is a flat amount; every other stat is its share of the slot's budget.
+            if (types[i] >= 0)
+            {
+                stats.Add(((uint)types[i], types[i] is 22 or 23 ? percent[i] : RetailItemStats.StatValue(percent[i], level, quality, inventory, subclass, scaling)));
+            }
+        }
+
+        uint delay = sparse.FieldAs<uint>("ItemDelay");
+        var (min, max) = RetailItemStats.Damage(RetailItemStats.Dps(itemClass, subclass, inventory, quality, level, flags.Length > 1 ? flags[1] : 0, scaling), delay, sparse.FieldAs<float>("DmgVariance"));
+        var info = new ItemInfo(id, sparse.Field<string>("Display_lang") ?? "", (int)quality, sparse.FieldAs<long>("BuyPrice"), 0);
+        return new ItemDetails(info, itemClass, subclass, inventory, sparse.FieldAs<uint>("Bonding"), flags.Length > 0 ? (uint)flags[0] : 0, level,
+            sparse.FieldAs<uint>("RequiredLevel"), sparse.FieldAs<uint>("MaxCount"), sparse.FieldAs<int>("AllowableClass"), sparse.FieldAs<int[]>("AllowableRaces")[0],
+            sparse.FieldAs<uint>("ContainerSlots"), stats.ToArray(), max > 0 ? [(min, max, sparse.FieldAs<uint>("DamageType"))] : [], delay,
+            RetailItemStats.Armor(itemClass, subclass, inventory, quality, level, scaling), 0, new int[6],
+            RetailItemStats.MaxDurability(itemClass, subclass, inventory, quality, baseLevel), [], sparse.Field<string>("Description_lang") ?? "", sparse.FieldAs<long>("SellPrice"));
     }
 
     ClientItem Describe(DBCDRow sparse)
