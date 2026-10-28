@@ -51,6 +51,14 @@ public class SmartRuleEditsTests
     }
 
     [Fact]
+    public void NextIdSkipsTheTargetOfADanglingLink()
+    {
+        // A live rule that links to a missing rule 1 must not get its new neighbour chained in as 1.
+        Assert.Equal(2u, SmartRuleEdits.NextId(Rows(Rule(0, link: 1)), Scope));
+        Assert.Equal(8u, SmartRuleEdits.NextId(Rows(Rule(0, link: 7), Rule(3)), Scope));
+    }
+
+    [Fact]
     public void RulesAreScopedBySourceTypeAndSortedById()
     {
         var rows = Rows(Rule(2), Rule(0), Rule(1, scope: new((int)Entry, SmartScope.ActionList)));

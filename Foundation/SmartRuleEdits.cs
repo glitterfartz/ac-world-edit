@@ -61,7 +61,11 @@ public static class SmartRuleEdits
     public static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => rows.All(InteractionTables.SmartScripts)
         .Where(r => r.I("entryorguid") == of.EntryOrGuid && r.U("source_type") == of.SourceType).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
 
-    public static uint NextId(RowSet effective, SmartScope of) => RulesOf(effective, of).Select(r => r.Id + 1).DefaultIfEmpty(0u).Max();
+    /// <summary>
+    /// The ID for a new rule: past every rule and every link target, so a new rule never becomes the
+    /// target of a link that points at a missing rule (the server would then chain into it).
+    /// </summary>
+    public static uint NextId(RowSet effective, SmartScope of) => RulesOf(effective, of).SelectMany(r => r.Link != 0 ? new[] { r.Id + 1, r.Link + 1 } : [r.Id + 1]).DefaultIfEmpty(0u).Max();
 
     public static uint FirstTextGroup(RowSet effective, uint entry) => effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
 
