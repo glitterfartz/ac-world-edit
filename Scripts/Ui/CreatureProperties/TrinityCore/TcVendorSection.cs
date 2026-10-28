@@ -9,8 +9,9 @@ namespace ACWorldEdit;
 /// <summary>TC vendor fields and client item search, with compound-key edits through the shared renderer.</summary>
 public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx)
 {
-    public override string Id => "vendor";
-    public override string Title => "Vendor";
+    public override string Id => PickerPages.Vendor.Id;
+    public override string Title => PickerPages.Vendor.Title;
+    public override string IconPath => PickerPages.Vendor.IconPath;
     public override string Badge => Ctx.TcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.TcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
     readonly SearchState<ClientItem> search = new();

@@ -21,9 +21,9 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         renderer = new PageRenderer(ctx);
     }
 
-    public override string Id => "template";
-    public override string Title => "Template";
-    public override string IconPath => "Interface/Icons/INV_Misc_Book_09.blp";
+    public override string Id => PickerPages.Template.Id;
+    public override string Title => PickerPages.Template.Title;
+    public override string IconPath => PickerPages.Template.IconPath;
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 

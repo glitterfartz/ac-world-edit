@@ -6,9 +6,9 @@ namespace ACWorldEdit;
 
 public sealed partial class AcVendorSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
-    public override string Id => "vendor";
-    public override string Title => "Vendor";
-    public override string IconPath => ClientStyle.GossipIcon(1);
+    public override string Id => PickerPages.Vendor.Id;
+    public override string Title => PickerPages.Vendor.Title;
+    public override string IconPath => PickerPages.Vendor.IconPath;
     public override string Badge => Ctx.AcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString() : "";
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
     const int VendorPageSize = 10;

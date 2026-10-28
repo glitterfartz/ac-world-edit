@@ -8,9 +8,9 @@ namespace ACWorldEdit;
 
 public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
-    public override string Id => "trainer";
-    public override string Title => "Trainer";
-    public override string IconPath => ClientStyle.GossipIcon(3);
+    public override string Id => PickerPages.Trainer.Id;
+    public override string Title => PickerPages.Trainer.Title;
+    public override string IconPath => PickerPages.Trainer.IconPath;
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Trainer != null);
 
     protected override void Populate(AcCreatureView v)

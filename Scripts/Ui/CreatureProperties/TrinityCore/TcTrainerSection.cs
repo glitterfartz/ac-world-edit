@@ -13,8 +13,9 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ctx)
 {
-    public override string Id => "trainer";
-    public override string Title => "Trainer";
+    public override string Id => PickerPages.Trainer.Id;
+    public override string Title => PickerPages.Trainer.Title;
+    public override string IconPath => PickerPages.Trainer.IconPath;
     public override string Badge => Ctx.TcView is { Trainers.Length: > 0 } v ? v.Trainers.Length.ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.Editable || Ctx.TcView is { Trainers.Length: > 0 };
     readonly SearchState<(uint Id, string Name)> search = new();

@@ -13,8 +13,9 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcSection(c
 {
     readonly PageRenderer renderer = new(ctx);
 
-    public override string Id => "template";
-    public override string Title => "Template";
+    public override string Id => PickerPages.Template.Id;
+    public override string Title => PickerPages.Template.Title;
+    public override string IconPath => PickerPages.Template.IconPath;
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 
@@ -41,8 +42,9 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
 
     readonly PageRenderer renderer = new(ctx);
 
-    public override string Id => "stats";
-    public override string Title => "Class / Level / Stats";
+    public override string Id => PickerPages.Stats.Id;
+    public override string Title => PickerPages.Stats.Title;
+    public override string IconPath => PickerPages.Stats.IconPath;
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 

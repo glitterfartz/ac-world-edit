@@ -11,8 +11,9 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed partial class TcQuestsSection(CreatureContext ctx) : TcSection(ctx)
 {
-    public override string Id => "quests";
-    public override string Title => "Quests";
+    public override string Id => PickerPages.Quests.Id;
+    public override string Title => PickerPages.Quests.Title;
+    public override string IconPath => PickerPages.Quests.IconPath;
     public override string Badge => Ctx.TcView is { } v && v.Starts.Length + v.Ends.Length > 0 ? $"{v.Starts.Length}/{v.Ends.Length}" : "";
     public override bool HasContent => Ctx.TcView is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
     readonly SearchState<(uint Id, string Title, int Level)> search = new();

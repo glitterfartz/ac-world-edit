@@ -209,7 +209,7 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 
 Dialect-specific sections live in `Ui/CreatureProperties/AzerothCore/` (`Ac` class/file prefix) and `TrinityCore/` (`Tc` prefix). Common context, registry, base section and rendering stay in `Ui/CreatureProperties/`.
 
-To add a section: derive from `CreatureSection` (or `AcInteractionSection` for pages that draw `AcCreatureView`), implement `Id`, `Title` and `Refresh`, and add one factory to `CreatureSectionRegistry`. Sections with their own data keep it in a `ContentPanel` (as Behavior and Quests do); the context creates and shares those panels. `ctx.ShowSection(id, argument)` navigates between sections.
+To add a section: derive from `CreatureSection` (or `AcInteractionSection` for pages that draw `AcCreatureView`), implement `Id`, `Title` and `Refresh`, and add one factory to `CreatureSectionRegistry`. A page both dialects have (stats, gossip, quests, template, trainer, vendor) reads its id, title and picker icon from the shared `PickerPages` table in `CreatureSection.cs`, so the AzerothCore and TrinityCore entries match. Sections with their own data keep it in a `ContentPanel` (as Behavior and Quests do); the context creates and shares those panels. `ctx.ShowSection(id, argument)` navigates between sections.
 
 Cross-window wiring is set up in `BuildUi`:
 

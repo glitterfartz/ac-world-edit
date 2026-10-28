@@ -7,9 +7,9 @@ namespace ACWorldEdit;
 
 public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
-    public override string Id => "quests";
-    public override string Title => "Quests";
-    public override string IconPath => ClientStyle.AvailableQuestIcon;
+    public override string Id => PickerPages.Quests.Id;
+    public override string Title => PickerPages.Quests.Title;
+    public override string IconPath => PickerPages.Quests.IconPath;
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
     public override string Badge => Ctx.AcView is { } v && v.Starts.Length + v.Ends.Length > 0 ? (v.Starts.Length + v.Ends.Length).ToString() : "";
     public override bool ScrollsItself => true;

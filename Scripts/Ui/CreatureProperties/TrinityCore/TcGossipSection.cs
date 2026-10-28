@@ -9,8 +9,9 @@ namespace ACWorldEdit;
 /// <summary>TC gossip navigation and editing through the dialect's shared descriptors.</summary>
 public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx)
 {
-    public override string Id => "gossip";
-    public override string Title => "Gossip";
+    public override string Id => PickerPages.Gossip.Id;
+    public override string Title => PickerPages.Gossip.Title;
+    public override string IconPath => PickerPages.Gossip.IconPath;
     public override string Badge => Ctx.TcView is { } v && v.Menus.Length > 0 ? v.Menus.Count(m => m.Root).ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.Editable || Ctx.TcView is { Menus.Length: > 0 };
     bool greetingExpanded;

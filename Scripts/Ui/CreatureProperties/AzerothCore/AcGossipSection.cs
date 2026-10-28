@@ -8,9 +8,9 @@ namespace ACWorldEdit;
 
 public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteractionSection(ctx)
 {
-    public override string Id => "gossip";
-    public override string Title => "Gossip";
-    public override string IconPath => ClientStyle.GossipIcon(0);
+    public override string Id => PickerPages.Gossip.Id;
+    public override string Title => PickerPages.Gossip.Title;
+    public override string IconPath => PickerPages.Gossip.IconPath;
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & AcNpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 

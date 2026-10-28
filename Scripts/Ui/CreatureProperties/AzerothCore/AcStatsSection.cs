@@ -16,9 +16,9 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
     static readonly (uint Id, string Name)[] Classes = [(1, "Warrior"), (2, "Paladin"), (4, "Rogue"), (8, "Mage")];
     static readonly string[] Tiers = ["Classic", "Burning Crusade", "Wrath of the Lich King"];
 
-    public override string Id => "stats";
-    public override string Title => "Class / Level / Stats";
-    public override string IconPath => "Interface/Icons/INV_Sword_04.blp";
+    public override string Id => PickerPages.Stats.Id;
+    public override string Title => PickerPages.Stats.Title;
+    public override string IconPath => PickerPages.Stats.IconPath;
 
     /// <summary>The creature_template level, class and stat column group.</summary>
     TableSchema StatsTable => Ctx.Schema.Tables.Find("creature_stats");
