@@ -20,10 +20,9 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
     protected InteractionSnapshot? snapshot => Ctx.Snapshot;
     protected RowSet effective => Ctx.Effective;
     protected InteractionCatalog? catalog => Ctx.Catalog;
-    protected ClientIcons icons => Ctx.Icons;
+    protected ClientIcons icons => Icons;
     protected InteractionDraft? draft => Ctx.Draft;
     protected Row TemplateRow => Ctx.TemplateRow;
-    protected readonly Dictionary<string, SearchState<(string Label, Action Pick)>> searches = [];
 
     protected Func<WorldConnection> Connection => Ctx.Connection;
     protected void Render() => Ctx.Redraw();
@@ -47,64 +46,7 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
         }
     }
 
-    protected static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
-
-    protected HBoxContainer IconRow(string iconPath, Control content, int size = 16, Tooltip? tooltip = null)
-    {
-        var row = new TooltipRow();
-        if (tooltip != null)
-        {
-            row.Source = () => tooltip;
-            row.TooltipText = "Details";
-        }
-
-        row.AddThemeConstantOverride("separation", 6);
-        row.AddChild(new TextureRect
-        {
-            Texture = icons.Get(iconPath) ?? icons.Get(ClientStyle.MissingIcon),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            CustomMinimumSize = new(size, size)
-        });
-        content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        row.AddChild(content);
-        return row;
-    }
-
-    /// <summary>
-    /// Search box with result buttons that survive re-renders; searches are bounded and read-only.
-    /// The box is the shared <see cref="CreatureSection.SearchBox{T}"/>; the picks are drawn after it.
-    /// </summary>
-    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null)
-    {
-        if (!searches.TryGetValue(kind, out var state))
-        {
-            searches[kind] = state = new();
-        }
-
-        SearchBox(body, state, "Search_" + kind, placeholder, kind, false, run);
-        foreach (var (label, pick) in state.Results)
-        {
-            var result = new TooltipButton
-            {
-                Text = "+ " + label,
-                Alignment = HorizontalAlignment.Left
-            };
-            if (tooltipFor?.Invoke(label) is { } tip)
-            {
-                result.Source = () => tip;
-                result.TooltipText = label;
-            }
-
-            result.Pressed += pick;
-            if (iconFor?.Invoke(label) is { } path)
-            {
-                result.Icon = icons.Get(path) ?? icons.Get(ClientStyle.MissingIcon);
-                result.ExpandIcon = true;
-                result.AddThemeConstantOverride("icon_max_width", 24);
-            }
-
-            body.AddChild(result);
-        }
-    }
+    /// <summary>The shared search picker drawn into this page's body.</summary>
+    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null) =>
+        SearchPicker(body, kind, placeholder, run, iconFor, tooltipFor);
 }

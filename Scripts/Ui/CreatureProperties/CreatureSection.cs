@@ -1,3 +1,4 @@
+using System.Globalization;
 using Godot;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
@@ -139,6 +140,94 @@ public abstract partial class CreatureSection : VBoxContainer
         term.TextSubmitted += _ => Search();
         box.AddChild(term);
         box.AddChild(search);
+    }
+
+    protected ClientIcons Icons => Ctx.Icons;
+
+    protected static string Shown(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    /// <summary>A client icon (a missing one shows the question mark) in front of <paramref name="content"/>, with an optional game tooltip on hover.</summary>
+    protected HBoxContainer IconRow(string iconPath, Control content, int size = 16, Tooltip? tooltip = null)
+    {
+        var row = new TooltipRow();
+        if (tooltip != null)
+        {
+            row.Source = () => tooltip;
+            row.TooltipText = "Details";
+        }
+
+        row.AddThemeConstantOverride("separation", 6);
+        row.AddChild(new TextureRect
+        {
+            Texture = Icons.Get(iconPath) ?? Icons.Get(ClientStyle.MissingIcon),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            CustomMinimumSize = new(size, size)
+        });
+        content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(content);
+        return row;
+    }
+
+    /// <summary>"!" for a quest the NPC gives, "?" for one it accepts, both for both, in a fixed-width slot so titles line up.</summary>
+    protected Control QuestIcons(bool gives, bool takes)
+    {
+        var slot = new HBoxContainer
+        {
+            CustomMinimumSize = new(34, 0)
+        };
+        slot.AddThemeConstantOverride("separation", 2);
+        foreach (var path in new[] { gives ? ClientStyle.AvailableQuestIcon : null, takes ? ClientStyle.ActiveQuestIcon : null }.OfType<string>())
+        {
+            slot.AddChild(new TextureRect
+            {
+                Texture = Icons.Get(path) ?? Icons.Get(ClientStyle.MissingIcon),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                CustomMinimumSize = new(16, 16)
+            });
+        }
+
+        return slot;
+    }
+
+    protected readonly Dictionary<string, SearchState<(string Label, Action Pick)>> pickers = [];
+
+    /// <summary>
+    /// A <see cref="SearchBox{T}"/> whose results are "+ label" buttons that survive redraws, each with
+    /// an optional icon and game tooltip looked up by its label. The searches are bounded and read-only.
+    /// </summary>
+    protected void SearchPicker(Control parent, string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null)
+    {
+        if (!pickers.TryGetValue(kind, out var state))
+        {
+            pickers[kind] = state = new();
+        }
+
+        SearchBox(parent, state, "Search_" + kind, placeholder, kind, false, run);
+        foreach (var (label, pick) in state.Results)
+        {
+            var result = new TooltipButton
+            {
+                Text = "+ " + label,
+                Alignment = HorizontalAlignment.Left
+            };
+            if (tooltipFor?.Invoke(label) is { } tip)
+            {
+                result.Source = () => tip;
+                result.TooltipText = label;
+            }
+
+            result.Pressed += pick;
+            if (iconFor?.Invoke(label) is { } path)
+            {
+                result.Icon = Icons.Get(path) ?? Icons.Get(ClientStyle.MissingIcon);
+                result.ExpandIcon = true;
+                result.AddThemeConstantOverride("icon_max_width", 24);
+            }
+
+            parent.AddChild(result);
+        }
     }
 
     protected virtual void Clear()

@@ -19,8 +19,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
     readonly VBoxContainer list = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
     readonly VBoxContainer detail = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
     uint questDetail, openedQuest;
-    string questTerm = "";
-    List<(uint Id, string Title, int Level)> foundQuests = [];
+    readonly SearchState<(uint Id, string Title, int Level)> questSearch = new();
     readonly Dictionary<uint, (bool Gives, bool Takes)> roles = [];
 
     protected override VBoxContainer body => list;
@@ -85,6 +84,8 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
     {
         questDetail = 0;
         openedQuest = 0;
+        questSearch.Reset();
+        roles.Clear();
     }
 
     QuestLinksPageSpec Page => Ctx.Schema.QuestLinksPage;
@@ -111,28 +112,6 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         {
             RenderQuestLinkEditor(v);
         }
-    }
-
-    /// <summary>"!" for a quest the NPC gives, "?" for one it accepts, both for both, in a fixed-width slot so titles line up.</summary>
-    Control QuestIcons(bool gives, bool takes)
-    {
-        var slot = new HBoxContainer
-        {
-            CustomMinimumSize = new(34, 0)
-        };
-        slot.AddThemeConstantOverride("separation", 2);
-        foreach (var path in new[] { gives ? ClientStyle.AvailableQuestIcon : null, takes ? ClientStyle.ActiveQuestIcon : null }.OfType<string>())
-        {
-            slot.AddChild(new TextureRect
-            {
-                Texture = icons.Get(path) ?? icons.Get(ClientStyle.MissingIcon),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                CustomMinimumSize = new(16, 16)
-            });
-        }
-
-        return slot;
     }
 
     Control QuestRow(AcCreatureView v, QuestLinkView quest, bool gives, bool takes, bool edited)
@@ -195,42 +174,9 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
     {
         body.AddChild(new HSeparator());
         body.AddChild(ClientStyle.Text("Link a quest", 16, ClientStyle.Header));
-        var row = new HBoxContainer();
-        body.AddChild(row);
-        var term = new LineEdit
-        {
-            Text = questTerm,
-            PlaceholderText = "Find quest by title or ID…",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            Name = "Search_quest"
-        };
-        var go = new Button
-        {
-            Text = "Search"
-        };
-        async void Search()
-        {
-            questTerm = term.Text;
-            status = "Searching…";
-            Render();
-            try
-            {
-                foundQuests = (await DBSource.Open(Connection()).SearchQuestsAsync(questTerm, CancellationToken.None)).ToList();
-                status = $"{foundQuests.Count} result(s) for \"{questTerm}\".";
-            }
-            catch (Exception error)
-            {
-                status = DbErrors.Safe(error);
-            }
-
-            Render();
-        }
-
-        term.TextSubmitted += _ => Search();
-        go.Pressed += Search;
-        row.AddChild(term);
-        row.AddChild(go);
-        foreach (var quest in foundQuests)
+        SearchBox(body, questSearch, "Search_quest", "Find quest by title or ID…", "quest", false,
+            text => DBSource.Open(Connection()).SearchQuestsAsync(text, CancellationToken.None));
+        foreach (var quest in questSearch.Results)
         {
             body.AddChild(LinkRow(v, quest));
         }
