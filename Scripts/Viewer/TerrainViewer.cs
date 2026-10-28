@@ -733,7 +733,7 @@ public partial class TerrainViewer : Node3D
                     }
                     else if (triggerHit.HasValue && triggerDistance < creatureDistance && triggerDistance < objectDistance && triggerDistance < graveyardDistance)
                     {
-                        areaTriggers.Select(triggerHit.Value.Entry);
+                        areaTriggers.Select(triggerHit.Value.Key);
                     }
                     else if (graveyardHit.HasValue && graveyardDistance <= creatureDistance && graveyardDistance <= objectDistance)
                     {

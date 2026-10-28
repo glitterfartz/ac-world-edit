@@ -183,8 +183,14 @@ public sealed class AcContentSource(WorldDatabase database)
     /// as SmartAIMgr skips rules for unknown triggers. Talk texts belong to target creatures and are
     /// not loaded here.
     /// </summary>
-    public async Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
+    public async Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(AreaTriggerOwner owner, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
     {
+        if (owner.IsEntity)
+        {
+            throw new DatabaseFeatureException("AzerothCore has no server-spawned AreaTriggers.");
+        }
+
+        uint trigger = owner.Id;
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         session.Require("smart_scripts.action_type", "areatrigger.entry", "areatrigger_scripts.ScriptName");
         if (Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM areatrigger WHERE entry=@k0", [trigger], token)) == 0)

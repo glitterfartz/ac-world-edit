@@ -34,7 +34,7 @@ Folders mirror the layers:
 - `Data/`: database settings, read-only guard, settings resolution.
 - `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`).
 - `Drafts/`: creature, graveyard, content and interaction drafts, history, pending changes.
-- `Placement/`: pose text, spawn preview, world coordinates.
+- `Placement/`: AreaTrigger shapes, pose text, spawn preview, world coordinates.
 - `Smart/`: quest model, SmartAI behaviour, catalog and rule edits.
 - `Sql/`: SQL export scripts.
 - `Support/`: attributes, DBC and terrain builders, the read-only guard for test SQL, and the old `Check` helpers.

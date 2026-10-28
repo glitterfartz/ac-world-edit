@@ -162,11 +162,13 @@ Five overlays are children of `TerrainViewer`. They share one shape (`RegionOver
 
 | Overlay | Files | Data source | Editable |
 |---|---|---|---|
-| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens the properties window and (AzerothCore only) the behavior editor |
+| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens the properties window and the behavior editor |
 | `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `GameObjectDraft` |
 | `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
 | `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions and properties through `WaypointDraft`. For TrinityCore the card shows only facing and delay as editable, the path's move type and velocity read-only, and hides smooth transition and actions |
-| `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs` | `IDBSource.ReadAreaTriggersAsync` | No (behavior editor only, AzerothCore) |
+| `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs`, `AreaTriggerShapes.cs` | `IDBSource.ReadAreaTriggersAsync` | No; opens the behavior editor on a client trigger's rules or (TrinityCore) a spawned trigger template's |
+
+AreaTrigger volumes are keyed by `AreaTriggerKey` (a client trigger ID, or a TrinityCore spawn ID; list rows carry `ListId`, which sets the top bit for spawns). `AreaTriggerShapes` builds each shape's fill and outline in the marker's local space: spheres, boxes, bounded planes and cylinders scale unit meshes (so `--areatrigger-smoke` can check rendered corners against `AreaTriggerRecord.Contains`); polygons (a prism triangulated with `Geometry2D.TriangulatePolygon`) and disks (an annulus) are built per trigger. A bound the server leaves open (a client polygon has no floor) is drawn 5 yd below or 20 yd above. Picking tests the unit sphere or the slab of the mesh bounds. Labels, Fly to selection and Copy .go use `AreaTriggerRecord.Focus`, which for a polygon is its corners' centroid: many client polygons sit at the map origin with world-space corners.
 
 Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures within `Preview.ViewDistance`, refreshed every 0.2 s. Creatures with a model hide their capsule placeholder once the model is ready.
 
@@ -189,7 +191,7 @@ A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, befo
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
 | Quest editor | `Ui/QuestEditorWindow.cs` (search and frame; swaps in the open database's panel), `Ui/QuestPanel.cs` + `.Pages.cs` (shared loading, drafting, story, chain and givers), `Ui/AzerothCore/AcQuestPanel.cs`, `Ui/TrinityCore/TcQuestPanel.cs` (overview, objectives, rewards and preview pages) | `quest_template` and related tables, with `QuestModel.Check` (AzerothCore) or `TcQuestRules.Check` (TrinityCore) |
 | Behavior panel | `Ui/BehaviorPanel.cs` (with the speech page), `.Rules.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window by the shared `BehaviorSection` and `SpeechSection`. The same panel serves both databases through `SmartCatalog.For(dialect)`: TrinityCore adds a Difficulties field, text fields for the string parameters and a speech line's sound play type |
-| AreaTrigger behavior | `BehaviorEditorWindow` in `Ui/BehaviorPanel.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature (AzerothCore only) |
+| AreaTrigger behavior | `BehaviorEditorWindow` in `Ui/BehaviorPanel.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature: a client trigger's (source type 2, with its `areatrigger_scripts` name) or a TrinityCore spawned trigger template's (11/12, with the spawn's `areatrigger.ScriptName`), opened with an `AreaTriggerOwner` |
 | Pending changes | `Ui/PendingChangesWindow.cs` (`PendingChangesWindow`, `SqlPreviewWindow`) | Lists pending changes; the viewer performs discard and export. The SQL preview shows the apply or revert script an export would write |
 | Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | Callback-driven menus and mode buttons |
 | Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |
@@ -232,7 +234,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--graveyard-smoke` | Pick, move, undo, comments, links, layer hiding |
 | `--waypoint-smoke` | Live waypoint paths near the start, a viewport click on a point, and the edit workflow |
 | `--gameobject-smoke` | Select a GameObject, drag the real move handle, typed turn, reopen, undo/redo, exported SQL |
-| `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo |
+| `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo. AzerothCore: trigger 5140 in Utgarde Pinnacle; TrinityCore: Stormwind spawn 290 (template 188) |
 | `--interaction-smoke` | Gossip, vendor, quests, edit mode, reopen (run it windowed; headless the right-click does not open the window) |
 | `--content-smoke` | Behavior rules, speech, quest create and validation |
 | `--behavior-smoke` | Behavior editor driven by mouse and key events |

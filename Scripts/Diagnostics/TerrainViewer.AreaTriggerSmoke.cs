@@ -4,18 +4,26 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Opt-in --areatrigger-smoke: open Utgarde Pinnacle (map 575), show the AreaTrigger layer, select
-/// trigger 5140 (Svala's intro) with a real viewport click, check list/inspector agreement and that
-/// the placed volume matches the server's membership test, open its behavior from the inspector,
-/// add and undo a rule in the isolated smoke content draft, hide the layer, then switch maps and
-/// reject stale volumes. A graphical run saves artifacts/areatrigger-preview.png and
+/// Opt-in --areatrigger-smoke: open the smoke trigger's map, show the AreaTrigger layer, select the
+/// trigger with a real viewport click, check list/inspector agreement and that the placed volume
+/// matches the server's membership test, open its behavior from the inspector, add and undo a rule in
+/// the isolated smoke content draft, hide the layer, then switch maps and reject stale volumes.
+/// AzerothCore uses trigger 5140 in Utgarde Pinnacle (map 575, Svala's intro, SmartTrigger);
+/// TrinityCore uses server spawn 290 in Stormwind (a box running custom template 188's rules through
+/// SmartAreaTriggerAI). A graphical run saves artifacts/areatrigger-preview.png and
 /// areatrigger-behavior.png.
 /// </summary>
 public partial class TerrainViewer
 {
-    const uint SmokeTrigger = 5140;
+    /// <summary>The trigger the smoke selects, where it is, and the rules and script it should find.</summary>
+    sealed record AreaTriggerSmokeTarget(AreaTriggerKey Key, ushort Map, int TileX, int TileY, SmartScope Scope, string Script);
+
+    AreaTriggerSmokeTarget SmokeTarget => profile.Dialect == WorldDialect.TrinityCore
+        ? new(new(true, 290), 0, 31, 47, new(188, SmartScope.AreaTriggerEntityCustom), AreaTriggerRecord.SmartEntity)
+        : new(new(false, 5140), 575, 32, 32, new(5140, SmartScope.AreaTrigger), AreaTriggerRecord.SmartTrigger);
+
     bool areaTriggerSmoke, areaTriggerUndone;
-    int areaTriggerStage, areaTriggerWait;
+    int areaTriggerStage, areaTriggerWait, areaTriggerUndoFrames;
     double areaTriggerTime;
 
     void AreaTriggerSmoke(double delta)
@@ -43,7 +51,8 @@ public partial class TerrainViewer
             return;
         }
 
-        var scope = new SmartScope((int)SmokeTrigger, SmartScope.AreaTrigger);
+        var goal = SmokeTarget;
+        var scope = goal.Scope;
         switch (areaTriggerStage)
         {
             case 0:
@@ -53,35 +62,36 @@ public partial class TerrainViewer
                 }
 
                 areaTriggers.SetLayerEnabled(true);
-                maps.Select(mapList.FindIndex(m => m.Id == 575));
-                tileX.Value = 32;
-                tileY.Value = 32;
+                maps.Select(mapList.FindIndex(m => m.Id == goal.Map));
+                tileX.Value = goal.TileX;
+                tileY.Value = goal.TileY;
                 _ = OpenMap();
                 areaTriggerStage = 1;
                 areaTriggerWait = 5;
                 break;
             case 1:
-                if (currentMapId != 575 || !areaTriggers.SmokeQueryIdle || areaTriggers.Triggers.All(t => t.Entry != SmokeTrigger))
+                if (currentMapId != goal.Map || !areaTriggers.SmokeQueryIdle || areaTriggers.Triggers.All(t => t.Key != goal.Key))
                 {
                     return;
                 }
 
-                // Stand outside the 37 x 14 x 35 yd box (FocusPose's 15 yd offset lands inside it,
-                // where picking deliberately ignores the volume) and look at its center.
-                var trigger = areaTriggers.Triggers.First(t => t.Entry == SmokeTrigger);
+                // Stand outside the box (5140 is 37 x 14 x 35 yd, spawn 290 54 x 54 x 80; FocusPose's
+                // 15 yd offset lands inside, where picking deliberately ignores the volume) and look at
+                // its center.
+                var trigger = areaTriggers.Triggers.First(t => t.Key == goal.Key);
                 var center = AreaTriggerOverlay.ViewPosition(trigger);
                 camera.Position = center + new Vector3(0, 30, 70);
                 camera.LookAt(center);
                 yaw = camera.Rotation.Y;
                 pitch = camera.Rotation.X;
                 UpdateWanted();
-                GD.Print($"AREATRIGGER_SMOKE_TARGET {SmokeTrigger} {trigger.Shape} triggers={areaTriggers.Triggers.Count} {areaTriggers.QueryStatus}");
+                GD.Print($"AREATRIGGER_SMOKE_TARGET {goal.Key} {trigger.Shape} triggers={areaTriggers.Triggers.Count} {areaTriggers.QueryStatus}");
                 areaTriggerStage = 2;
                 areaTriggerWait = 30;
                 break;
             case 2:
                 {
-                    var target = areaTriggers.Triggers.First(t => t.Entry == SmokeTrigger);
+                    var target = areaTriggers.Triggers.First(t => t.Key == goal.Key);
                     // Input events carry window pixels; the viewport may be scaled to the window (UI scale).
                     var screen = GetViewport().GetFinalTransform() * camera.UnprojectPosition(AreaTriggerOverlay.ViewPosition(target));
                     // A real click through the viewport picking path, not a direct Select call.
@@ -93,22 +103,22 @@ public partial class TerrainViewer
                 }
             case 3:
                 {
-                    if (areaTriggers.SelectedEntry != SmokeTrigger || areaTriggers.SmokeListSelection != SmokeTrigger || creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || !areaTriggers.SmokeHasOutline)
+                    if (areaTriggers.Selected?.Key != goal.Key || areaTriggers.SmokeListSelection != goal.Key || creatures.SelectedGuid.HasValue || gameObjects.SelectedGuid.HasValue || graveyards.HasSelection || !areaTriggers.SmokeHasOutline)
                     {
-                        SmokeFail("AREATRIGGER", $"pick selected={areaTriggers.SelectedEntry} list={areaTriggers.SmokeListSelection} outline={areaTriggers.SmokeHasOutline}");
+                        SmokeFail("AREATRIGGER", $"pick selected={areaTriggers.Selected?.Key} list={areaTriggers.SmokeListSelection} outline={areaTriggers.SmokeHasOutline}");
                         return;
                     }
 
-                    if (!areaTriggers.SmokeDetails.Contains("SmartTrigger", StringComparison.Ordinal))
+                    if (!areaTriggers.SmokeDetails.Contains(goal.Script, StringComparison.Ordinal))
                     {
-                        SmokeFail("AREATRIGGER", "inspector does not show the SmartTrigger link: " + areaTriggers.SmokeDetails);
+                        SmokeFail("AREATRIGGER", $"inspector does not show the {goal.Script} link: " + areaTriggers.SmokeDetails);
                         return;
                     }
 
                     // The rendered node, not a recomputation: unit-cube corners and face centers just
                     // inside/outside must agree with Position::IsWithinBox on the source row.
-                    var record = areaTriggers.Triggers.First(t => t.Entry == SmokeTrigger);
-                    var transform = areaTriggers.SmokeVolumeTransform(SmokeTrigger)!.Value;
+                    var record = areaTriggers.Triggers.First(t => t.Key == goal.Key);
+                    var transform = areaTriggers.SmokeVolumeTransform(goal.Key)!.Value;
                     foreach (var direction in new[] { Vector3.Right, Vector3.Up, Vector3.Back, Vector3.Left, Vector3.Forward, new Vector3(1, 1, 1), new Vector3(-1, -1, 1) })
                     {
                         foreach (var (factor, inside) in new[] { (0.49f, true), (0.52f, false) })
@@ -136,13 +146,14 @@ public partial class TerrainViewer
                 }
             case 4:
                 {
-                    if (areaBehavior.Panel.IsLoading || !areaBehavior.Panel.IsAreaTrigger || areaBehavior.Panel.Entry != SmokeTrigger || areaBehavior.Panel.SmokeScriptName != AreaTriggerRecord.SmartTrigger)
+                    if (areaBehavior.Panel.IsLoading || !areaBehavior.Panel.IsAreaTrigger || areaBehavior.Panel.Entry != scope.EntryOrGuid || areaBehavior.Panel.SmokeRunningScript != goal.Script)
                     {
                         return;
                     }
 
+                    // TrinityCore's live rule links to a rule that does not exist; only that error is expected.
                     var rules = areaBehavior.Panel.SmokeRules(scope);
-                    if (rules.Count != 1 || !areaBehavior.Panel.SmokeDescribe(rules[0]).Contains("enters the trigger", StringComparison.Ordinal) || areaBehavior.Panel.Issues.Any(i => i.Error))
+                    if (rules.Count != 1 || !areaBehavior.Panel.SmokeDescribe(rules[0]).Contains("enters the", StringComparison.Ordinal) || areaBehavior.Panel.Issues.Any(i => i.Error && !i.Message.Contains("which does not exist", StringComparison.Ordinal)))
                     {
                         SmokeFail("AREATRIGGER", $"behavior rules={rules.Count} issues={string.Join("; ", areaBehavior.Panel.Issues.Select(i => i.Message))}");
                         return;
@@ -182,9 +193,15 @@ public partial class TerrainViewer
                     return;
                 }
 
+                // The undo can start a reload from a remote database; give it a few seconds to settle.
                 if (areaBehavior.Panel.SmokeRules(scope).Count != 1)
                 {
-                    SmokeFail("AREATRIGGER", "undo did not remove the drafted rule");
+                    if (++areaTriggerUndoFrames < 300)
+                    {
+                        return;
+                    }
+
+                    SmokeFail("AREATRIGGER", $"undo did not remove the drafted rule: {areaBehavior.Panel.SmokeRules(scope).Count} rules, status {areaBehavior.Panel.SmokeStatus}");
                     return;
                 }
 

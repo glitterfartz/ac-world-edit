@@ -67,7 +67,8 @@ Schema references for column meanings, flags and enums:
 - `areatrigger`:
   - AC: mirror of AreaTrigger.dbc (entry, map, x, y, z, radius, box, orientation).
   - TC: server-side spawned AreaTrigger entities (SpawnId, AreaTriggerCreatePropertiesId, IsCustom, MapId, SpawnDifficulties, PosX/Y/Z, phases, ScriptName), 291 rows.
-  - TC client triggers come from AreaTrigger.db2 plus `hotfixes.area_trigger`.
+  - TC client triggers come from AreaTrigger.db2 plus `hotfixes.area_trigger`. Besides AC's sphere and box they are polygons (ShapeType 3: corners from Path.db2 `ShapeID`, offsets from the position with the first node dropped, no floor, capped at VolumeHeight; many sit at the map origin with world-space corners) and cylinders (4: Radius, BoxHeight tall from the position); other shapes never fire.
+  - A TC spawn's shape is its `areatrigger_create_properties` `Shape` and `ShapeData0-7` (sphere radius, box half extents, polygon half height with `_polygon_vertex` corners, cylinder and disk radii, height and floor offset, bounded plane half extents), turned by the spawn's orientation.
 - `areatrigger_teleport`: target_map/position/orientation → PortLocID (→ world_safe_locs). `areatrigger_tavern`: faction removed. `areatrigger_scripts`, `areatrigger_involvedrelation`: same.
 - `quest_template`:
   - Removed: QuestLevel, MinLevel, RequiredFactionId/Value1-2, RewardMoney, RewardDisplaySpell, RequiredPlayerKills, RewardTalents, RequiredNpcOrGo(Count)1-4, RequiredItemId/Count1-6, Unknown0, ObjectiveText1-4.
@@ -81,7 +82,7 @@ Schema references for column meanings, flags and enums:
   - Max IDs: AC event 110 / action 242 / target 207; TC master 90 / 159 / 30. Slots TC marks "UNUSED, DO NOT REUSE" (events 12, 14, 18, 30, 39, 66, 67; many actions) fail its loader. The IDs also mean different things (46 is AC `AREATRIGGER_ONTRIGGER`, TC `AREATRIGGER_ENTER`; 40 is AC `ESCORT_REACHED`, TC `WAYPOINT_REACHED`), so the catalogs are separate.
   - Event flags: TC drops the per-difficulty bits (0x2-0x10, cleared with a warning; `Difficulties` lists them) and adds 0x20 "action list waits". Phase mask is 12 bits in both.
   - String parameters: TC `event_param_string` (scene trigger name), `action_param_string`, `target_param_string` (a StringId that narrows creature and object target searches).
-  - TC source_types used: 0,1,2,3,5,9,10,11,12. Type 2 is keyed by AreaTrigger.db2 ID (the editor leaves AreaTrigger rules off for TC).
+  - TC source_types used: 0,1,2,3,5,9,10,11,12. Type 2 is keyed by AreaTrigger.db2 ID (run by `areatrigger_scripts` SmartTrigger, events enter 46, exit 88 and link); 11 and 12 by `areatrigger_template` (IsCustom 0 or 1), run by a spawn's `areatrigger.ScriptName` SmartAreaTriggerAI (else its create properties' `ScriptName`), which also accept the timed updates (1, 60). AC event 46 names the trigger in param1; TC's has no parameter.
   - `creature_text` + SoundPlayType (0 normal, 1 from the creature); Language is unsigned in TC. `BroadcastTextId` links `hotfixes.broadcast_text` (client BroadcastText.db2), not a world table.
 - `conditions`: + ConditionStringValue1. Source types ≥25 diverge. TC uses 25-36: 26 phase, 27 graveyard, 28/30 areatrigger, 29 conversation, 31 trainer spell, 32 object visibility, 33 spawn group…. AC uses 28-30 with different meanings.
 - `points_of_interest`: + PositionZ, WMOGroupID, VerifiedBuild. `page_text`: + PlayerConditionID, Flags.

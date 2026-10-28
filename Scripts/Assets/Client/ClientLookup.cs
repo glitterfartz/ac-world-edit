@@ -3,8 +3,20 @@ using DBCD;
 
 namespace ACWorldEdit.Assets;
 
-/// <summary>An AreaTrigger.db2 row: where the trigger is and how its volume is shaped.</summary>
-public sealed record ClientAreaTrigger(uint Id, uint Map, float X, float Y, float Z, float Radius, float BoxLength, float BoxWidth, float BoxHeight, float BoxYaw, byte ShapeType, uint PhaseId, uint PhaseGroupId, uint PhaseUseFlags);
+/// <summary>
+/// An AreaTrigger.db2 row: where the trigger is and how its volume is shaped. ShapeId names the shape's
+/// own row; for a polygon (ShapeType 3) it is the Path.db2 ID of its corners.
+/// </summary>
+public sealed record ClientAreaTrigger(uint Id, uint Map, float X, float Y, float Z, float Radius, float BoxLength, float BoxWidth, float BoxHeight, float BoxYaw, byte ShapeType, uint PhaseId, uint PhaseGroupId, uint PhaseUseFlags, uint ShapeId = 0);
+
+/// <summary>
+/// A polygon AreaTrigger's corners as offsets from the trigger position, and the height above it the
+/// volume ends at (null when the path sets none), built as ObjectMgr::LoadAreaTriggerPolygons does.
+/// Ground is the corners' mean height, also an offset from the trigger position: the server ignores
+/// it, but many polygons sit at the map origin with world-space corners, so it says where the volume
+/// really is.
+/// </summary>
+public sealed record ClientPolygon(IReadOnlyList<(float X, float Y)> Vertices, float? Height, float Ground);
 
 /// <summary>An item as the client names it (ItemSparse + Item).</summary>
 public sealed record ClientItem(uint Id, string Name, uint Quality, uint IconFileId);
@@ -18,6 +30,9 @@ public sealed record ClientItem(uint Id, string Name, uint Quality, uint IconFil
 public interface IClientLookup : ITcStatData
 {
     IReadOnlyList<ClientAreaTrigger> AreaTriggers();
+
+    /// <summary>The corners of a polygon trigger's path (Path.db2 ID), or null when the path has fewer than four nodes.</summary>
+    ClientPolygon? Polygon(uint pathId);
 
     /// <summary>Broadcast text for an ID, or null when the client has none. Text1 is the female form.</summary>
     string? BroadcastText(uint id, bool female = false);
@@ -69,10 +84,70 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
         foreach (var row in tables.Table("AreaTrigger").Values)
         {
             float[] position = row.FieldAs<float[]>("Pos");
-            list.Add(new((uint)row.ID, row.FieldAs<uint>("ContinentID"), position[0], position[1], position[2], row.FieldAs<float>("Radius"), row.FieldAs<float>("Box_length"), row.FieldAs<float>("Box_width"), row.FieldAs<float>("Box_height"), row.FieldAs<float>("Box_yaw"), row.FieldAs<byte>("ShapeType"), row.FieldAs<uint>("PhaseID"), row.FieldAs<uint>("PhaseGroupID"), row.FieldAs<uint>("PhaseUseFlags")));
+            list.Add(new((uint)row.ID, row.FieldAs<uint>("ContinentID"), position[0], position[1], position[2], row.FieldAs<float>("Radius"), row.FieldAs<float>("Box_length"), row.FieldAs<float>("Box_width"), row.FieldAs<float>("Box_height"), row.FieldAs<float>("Box_yaw"), row.FieldAs<byte>("ShapeType"), row.FieldAs<uint>("PhaseID"), row.FieldAs<uint>("PhaseGroupID"), row.FieldAs<uint>("PhaseUseFlags"), row.FieldAs<uint>("ShapeID")));
         }
 
         return list;
+    }
+
+    Dictionary<uint, ClientPolygon>? polygons;
+
+    public ClientPolygon? Polygon(uint pathId)
+    {
+        lock (gate)
+        {
+            polygons ??= ReadPolygons();
+            return polygons.GetValueOrDefault(pathId);
+        }
+    }
+
+    /// <summary>PathProperty index 5 (PathPropertyIndex::VolumeHeight), stored in thousandths of a yard.</summary>
+    const int VolumeHeight = 5;
+
+    /// <summary>
+    /// Every path as DB2Manager builds it: nodes of a known path and location, ordered by Sequence. A
+    /// polygon drops its first location (the path origin) and needs four or more; its height is the
+    /// VolumeHeight property / 1000 plus the server's 0.02 yd margin.
+    /// </summary>
+    Dictionary<uint, ClientPolygon> ReadPolygons()
+    {
+        var paths = tables.Table("Path");
+        var locations = tables.Table("Location");
+        var nodes = new Dictionary<uint, List<(int Sequence, float X, float Y, float Z)>>();
+        foreach (var node in tables.Table("PathNode").Values)
+        {
+            int path = node.FieldAs<int>("PathID"), location = node.FieldAs<int>("LocationID");
+            if (!paths.ContainsKey(path) || !locations.TryGetValue(location, out var place))
+            {
+                continue;
+            }
+
+            float[] position = place.FieldAs<float[]>("Pos");
+            if (!nodes.TryGetValue((uint)path, out var list))
+            {
+                nodes[(uint)path] = list = [];
+            }
+
+            list.Add((node.FieldAs<int>("Sequence"), position[0], position[1], position[2]));
+        }
+
+        var heights = new Dictionary<uint, float>();
+        foreach (var property in tables.Table("PathProperty").Values)
+        {
+            if (property.FieldAs<byte>("PropertyIndex") == VolumeHeight && paths.ContainsKey(property.FieldAs<int>("PathID")))
+            {
+                heights[(uint)property.FieldAs<int>("PathID")] = property.FieldAs<int>("Value") * 0.001f + 0.02f;
+            }
+        }
+
+        var result = new Dictionary<uint, ClientPolygon>();
+        foreach (var (path, list) in nodes.Where(n => n.Value.Count >= 4))
+        {
+            var corners = list.OrderBy(n => n.Sequence).Skip(1).ToArray();
+            result[path] = new(corners.Select(n => (n.X, n.Y)).ToArray(), heights.TryGetValue(path, out float height) ? height : null, corners.Average(n => n.Z));
+        }
+
+        return result;
     }
 
     public string? BroadcastText(uint id, bool female = false)

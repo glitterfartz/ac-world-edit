@@ -11,14 +11,14 @@ public class SourceCatalogTests
 {
     static string TempPath() => Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json");
 
-    // areatrigger_scripts is an AzerothCore table; TrinityCore's catalog has no such table.
-    static readonly Row Before = Row.Of(("entry", 100), ("ScriptName", ""));
-    static readonly RowEdit Rename = new("areatrigger_scripts", "100", Before, Before.With("ScriptName", "SmartTrigger"));
+    // creature_default_trainer is an AzerothCore table; TrinityCore's catalog has no such table.
+    static readonly Row Before = Row.Of(("CreatureId", 100), ("TrainerId", 0));
+    static readonly RowEdit Rename = new("creature_default_trainer", "100", Before, Before.With("TrainerId", 17));
 
     static RowSet Snapshot()
     {
         var rows = new RowSet();
-        rows.Set(AcTables.AreaTriggerScripts, Before);
+        rows.Set(AcTables.DefaultTrainer, Before);
         return rows;
     }
 

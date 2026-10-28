@@ -86,7 +86,7 @@ public class DatabaseSettingsTests
     public async Task StatusTextKeepsFeatureMessagesAndHidesParserInternals()
     {
         var source = DBSource.Open(new WorldConnection(new DatabaseSettings("h", 3306, "u", "p", "world"), "hotfixes", WorldDialect.TrinityCore));
-        var unsupported = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.ReadAreaTriggerBehaviorAsync(1, [], rows => rows, null, CancellationToken.None));
+        var unsupported = await Assert.ThrowsAsync<DatabaseFeatureException>(() => source.ReadAreaTriggerBehaviorAsync(new(1), [], rows => rows, null, CancellationToken.None));
         Assert.Equal(unsupported.Message, DbErrors.Safe(unsupported));
         Assert.Equal("Enter the world database host, user and database name.", DbErrors.Safe(Record.Exception(() => DBSource.Open(WorldConnection.Empty))!));
         Assert.DoesNotContain("Missing column", DbErrors.Safe(new InvalidDataException("Missing column guid.")));

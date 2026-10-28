@@ -147,6 +147,21 @@ public class RetailClientLookupTests
     }
 
     [RetailClientFact]
+    public void PolygonTriggersTakeTheirCornersFromTheirPath()
+    {
+        var lookup = Lookup();
+        var polygons = lookup.AreaTriggers().Where(t => t.ShapeType == (byte)AreaTriggerShape.Polygon).ToList();
+        Assert.NotEmpty(polygons);
+        var resolved = polygons.Select(t => lookup.Polygon(t.ShapeId)).OfType<ClientPolygon>().ToList();
+        Console.WriteLine($"AREATRIGGER_POLYGONS {polygons.Count} polygon triggers, {resolved.Count} with corners, {resolved.Count(p => p.Height != null)} with a height, {polygons.Count(t => t.X == 0 && t.Y == 0)} placed at the map origin");
+        Assert.True(resolved.Count > polygons.Count / 2, $"only {resolved.Count} of {polygons.Count} polygons have a path");
+        // The path origin is dropped, so corners are the offsets of the remaining (3 or more) nodes.
+        Assert.All(resolved, p => Assert.True(p.Vertices.Count >= 3 && p.Vertices.All(v => float.IsFinite(v.X) && float.IsFinite(v.Y)) && float.IsFinite(p.Ground)));
+        Assert.All(resolved.Where(p => p.Height != null), p => Assert.True(p.Height >= 0.02f));
+        Assert.Null(lookup.Polygon(uint.MaxValue - 1));
+    }
+
+    [RetailClientFact]
     public void ItemsSpellsAndBroadcastTextResolveByIdAndByName()
     {
         var lookup = Lookup();

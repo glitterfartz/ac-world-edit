@@ -388,7 +388,16 @@ public sealed class TcTables : ITableCatalog
         ("comment", ColumnKind.Text, 255)
     ]);
 
-    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText];
+    /// <summary>The script a client AreaTrigger (AreaTrigger.db2 ID) runs; the same table as AzerothCore's.</summary>
+    public static readonly TableSchema AreaTriggerScripts = new("areatrigger_scripts", ["entry"], [("entry", ColumnKind.Int, 0), ("ScriptName", ColumnKind.Text, 64)]);
+
+    /// <summary>
+    /// A server-spawned AreaTrigger's ScriptName, a column of `areatrigger` edited on its own (like
+    /// creature_ai) so switching a spawn to SmartAreaTriggerAI never rewrites its position or shape.
+    /// </summary>
+    public static readonly TableSchema AreaTriggerAI = new("areatrigger_ai", ["SpawnId"], [("SpawnId", ColumnKind.ULong, 0), ("ScriptName", ColumnKind.Text, 64)], "areatrigger");
+
+    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText, AreaTriggerScripts, AreaTriggerAI];
 
     public IReadOnlyList<TableSchema> All => Tables;
 

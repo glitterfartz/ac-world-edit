@@ -183,11 +183,12 @@ public class SmartBehaviorTests
     {
         var scope = new SmartScope(5140, SmartScope.AreaTrigger);
         var trigger = Rule(0, SmartCatalog.AreaTriggerEvent, scope: scope, target: 7);
-        AssertIssue(Check(scope, [Rule(0, Aggro, scope: scope, target: 7)]), true, "only accept");
+        AssertIssue(Check(scope, [Rule(0, Aggro, scope: scope, target: 7)]), true, "only accepts");
         Assert.DoesNotContain(Check(scope, [trigger]), i => i.Error);
-        Assert.True(SmartCatalog.AllowedForAreaTrigger(SmartCatalog.AreaTriggerEvent));
-        Assert.True(SmartCatalog.AllowedForAreaTrigger(SmartCatalog.LinkEvent));
-        Assert.False(SmartCatalog.AllowedForAreaTrigger(Aggro));
+        Assert.True(SmartCatalog.Ac.AllowedForAreaTrigger(scope, SmartCatalog.AreaTriggerEvent));
+        Assert.True(SmartCatalog.Ac.AllowedForAreaTrigger(scope, SmartCatalog.LinkEvent));
+        Assert.False(SmartCatalog.Ac.AllowedForAreaTrigger(scope, Aggro));
+        Assert.False(SmartCatalog.Ac.AllowedForAreaTrigger(scope, SmartCatalog.AreaTriggerExitEvent));
     }
 
     [Fact]
@@ -210,15 +211,15 @@ public class SmartBehaviorTests
     [Fact]
     public void AreaTriggerScriptNameFixes()
     {
-        var missing = Assert.Single(SmartCatalog.CheckAreaTriggerScript(5140, null, true));
+        var missing = Assert.Single(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), null, "", true));
         Assert.Equal(AreaTriggerRecord.SmartTrigger, missing.Fix![0].After!.T("ScriptName"));
         Assert.Null(missing.Fix[0].Before);
-        Assert.Empty(SmartCatalog.CheckAreaTriggerScript(5140, null, false));
+        Assert.Empty(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), null, "", false));
         var cpp = Row.Of(("entry", 5140), ("ScriptName", "at_cpp"));
-        var replace = Assert.Single(SmartCatalog.CheckAreaTriggerScript(5140, cpp, true));
+        var replace = Assert.Single(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), cpp, "", true));
         Assert.Contains("at_cpp", replace.Message);
         Assert.Equal(cpp, replace.Fix![0].Before);
-        Assert.Empty(SmartCatalog.CheckAreaTriggerScript(5140, cpp.With("ScriptName", AreaTriggerRecord.SmartTrigger), true));
+        Assert.Empty(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), cpp.With("ScriptName", AreaTriggerRecord.SmartTrigger), "", true));
     }
 
     [Fact]

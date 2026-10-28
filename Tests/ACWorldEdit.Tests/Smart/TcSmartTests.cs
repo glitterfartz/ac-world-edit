@@ -175,6 +175,89 @@ public class TcSmartTests
         Assert.Throws<InvalidDataException>(() => Tc.NewRow(Scope, 0, 4, 1, 1).Validate(SmartCatalog.Ac.Scripts));
     }
 
+    static readonly SmartScope ClientTrigger = new(1125, SmartScope.AreaTrigger);
+    static readonly SmartScope TriggerTemplate = new(188, SmartScope.AreaTriggerEntityCustom);
+
+    static List<InteractionIssue> CheckRule(SmartScope scope, uint eventType, uint target = 7, uint action = 1) =>
+        Tc.Check(scope, [new SmartRule(Tc.NewRow(scope, 0, eventType, action, target))], new NoNames(), null, (uint)scope.EntryOrGuid).ToList();
+
+    [Fact]
+    public void TrinityCoreAreaTriggersAcceptLeavingAndSpawnsAlsoUpdate()
+    {
+        // SmartAIEventMask: type 2 takes enter, exit and link; the entity types also take the updates.
+        foreach (uint accepted in new[] { SmartCatalog.AreaTriggerEvent, SmartCatalog.AreaTriggerExitEvent, SmartCatalog.LinkEvent })
+        {
+            Assert.True(Tc.AllowedForAreaTrigger(ClientTrigger, accepted));
+            Assert.True(Tc.AllowedForAreaTrigger(TriggerTemplate, accepted));
+        }
+
+        Assert.False(Tc.AllowedForAreaTrigger(ClientTrigger, 60));
+        Assert.True(Tc.AllowedForAreaTrigger(TriggerTemplate, 60));
+        Assert.True(Tc.AllowedForAreaTrigger(TriggerTemplate, 1));
+        Assert.False(Tc.AllowedForAreaTrigger(TriggerTemplate, 4));
+        var refused = Assert.Single(CheckRule(ClientTrigger, 60), i => i.Error);
+        Assert.Contains("\"Area trigger left\"", refused.Message);
+        Assert.DoesNotContain(CheckRule(TriggerTemplate, 60), i => i.Error);
+    }
+
+    [Fact]
+    public void TrinityCoresEnterEventHasNoTriggerParameter()
+    {
+        var scope = ClientTrigger;
+        var rule = new SmartRule(Tc.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 1, 7).With("event_param1", 9999u));
+        Assert.DoesNotContain(Tc.Check(scope, [rule], new NoNames(), null, 1125), i => i.Message.Contains("only fires", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SpawnedTriggersAreObjectsSoSelfIsFine()
+    {
+        Assert.Contains(CheckRule(ClientTrigger, SmartCatalog.AreaTriggerEvent, SmartCatalog.SelfTarget), i => i.Message.Contains("targets Self", StringComparison.Ordinal));
+        Assert.DoesNotContain(CheckRule(TriggerTemplate, SmartCatalog.AreaTriggerEvent, SmartCatalog.SelfTarget, 11), i => i.Message.Contains("targets Self", StringComparison.Ordinal));
+        Assert.DoesNotContain(CheckRule(TriggerTemplate, SmartCatalog.AreaTriggerEvent, SmartCatalog.SelfTarget, SmartCatalog.RunActionList), i => i.Message.Contains("action lists", StringComparison.Ordinal));
+        Assert.Equal("AreaTrigger template 188", TriggerTemplate.Describe(""));
+        Assert.True(TriggerTemplate.IsAreaTrigger && TriggerTemplate.IsTriggerEntity && !ClientTrigger.IsTriggerEntity);
+    }
+
+    [Fact]
+    public void ClientTriggerScriptsUseTheTrinityCoreTable()
+    {
+        var issue = Assert.Single(Tc.CheckAreaTriggerScript(new(1125), null, "", true));
+        var edit = Assert.Single(issue.Fix!);
+        Assert.Equal("areatrigger_scripts", edit.Table);
+        Assert.Equal(AreaTriggerRecord.SmartTrigger, edit.After!.T("ScriptName"));
+        edit.After.Validate(TcTables.AreaTriggerScripts);
+    }
+
+    [Fact]
+    public void ASpawnRunsItsOwnScriptNameBeforeItsCreatePropertiesOne()
+    {
+        var owner = new AreaTriggerOwner(188, SmartScope.AreaTriggerEntityCustom, 290);
+        var spawn = Row.Of(("SpawnId", 290ul), ("ScriptName", ""));
+        // The create properties' SmartAreaTriggerAI runs the rules when the spawn names none.
+        Assert.Empty(Tc.CheckAreaTriggerScript(owner, spawn, AreaTriggerRecord.SmartEntity, true));
+        var none = Assert.Single(Tc.CheckAreaTriggerScript(owner, spawn, "", true));
+        Assert.Contains("no script", none.Message);
+        var cpp = Assert.Single(Tc.CheckAreaTriggerScript(owner, spawn.With("ScriptName", "at_cpp"), AreaTriggerRecord.SmartEntity, true));
+        Assert.Contains("at_cpp", cpp.Message);
+        var edit = Assert.Single(cpp.Fix!);
+        Assert.Equal("areatrigger_ai", edit.Table);
+        Assert.Equal("290", edit.Key);
+        Assert.Equal(AreaTriggerRecord.SmartEntity, edit.After!.T("ScriptName"));
+        Assert.Empty(Tc.CheckAreaTriggerScript(owner, spawn.With("ScriptName", AreaTriggerRecord.SmartEntity), "", true));
+        // Without the spawn's row there is nothing to switch.
+        Assert.Null(Assert.Single(Tc.CheckAreaTriggerScript(owner, null, "", true)).Fix);
+        Assert.Throws<InvalidDataException>(() => SmartCatalog.Ac.EnableTriggerScript(owner, spawn));
+    }
+
+    [Fact]
+    public void ASpawnScriptChangeExportsAsAnAreatriggerUpdate()
+    {
+        var edit = Tc.EnableTriggerScript(new(188, SmartScope.AreaTriggerEntityCustom, 290), Row.Of(("SpawnId", 290ul), ("ScriptName", "")));
+        string apply = SqlExport.Build("src", [], [], [edit], Stamp, null, TcSchema.Instance).Apply;
+        Assert.Contains("UPDATE `areatrigger` SET `ScriptName` = 'SmartAreaTriggerAI' WHERE `SpawnId` = 290", apply);
+        Assert.DoesNotContain("INSERT", apply);
+    }
+
     sealed class NoNames : IContentNames
     {
         public string? Spell(uint id) => null;

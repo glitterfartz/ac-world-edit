@@ -140,6 +140,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         "trainer_spell", "creature_trainer", "npc_spellclick_spells", "smart_scripts", "points_of_interest",
         "quest_template_addon", "quest_request_items", "quest_offer_reward", "creature_text", "creature_classlevelstats",
         "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
+        "areatrigger_template", "areatrigger_create_properties", "areatrigger_create_properties_polygon_vertex",
         "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node"
     ];
 

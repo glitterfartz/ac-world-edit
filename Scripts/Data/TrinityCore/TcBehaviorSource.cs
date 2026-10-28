@@ -8,7 +8,9 @@ namespace ACWorldEdit.Data;
 /// spawn and the timed action lists they run), its AIName and its speech lines, plus every draft-touched
 /// row. Creature, object and quest names come from the world database; items and spells come from the
 /// client, and a speech line's broadcast text from the hotfixes database before the client's
-/// BroadcastText.db2. AreaTrigger scripts are not read (TrinityCore keys them by AreaTrigger.db2).
+/// BroadcastText.db2. AreaTrigger rules are read the same way: a client trigger's (source type 2,
+/// keyed by its AreaTrigger.db2 ID) with its areatrigger_scripts row, or a spawned trigger template's
+/// (source type 11, 12 when custom) with the ScriptName of the spawn it was opened from.
 /// </summary>
 public sealed class TcBehaviorSource(WorldDatabase database, IClientLookup? client, TcHotfixSource hotfixes)
 {
@@ -60,6 +62,70 @@ public sealed class TcBehaviorSource(WorldDatabase database, IClientLookup? clie
 
         uint maxQuest = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
         return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, name, entry, script);
+    }
+
+    /// <summary>
+    /// Behavior snapshot for one AreaTrigger script. The owner must exist, as SmartAIMgr skips rules
+    /// for an unknown AreaTrigger.db2 ID (type 2) or areatrigger_template (types 11 and 12). The script
+    /// name that decides whether the rules run is the areatrigger_scripts row of a client trigger, or
+    /// for a spawn its `areatrigger.ScriptName` row with the create properties' name as
+    /// <see cref="ContentSnapshot.ScriptName"/> (used when the spawn sets none).
+    /// </summary>
+    public async Task<ContentSnapshot> ReadAreaTriggerAsync(AreaTriggerOwner trigger, TcAreaTriggerSource triggers, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token)
+    {
+        // The client check needs no connection, so missing client data is reported before any server error.
+        if (!trigger.IsEntity && !await triggers.ClientTriggerExistsAsync(trigger.Id, token).ConfigureAwait(false))
+        {
+            throw new InvalidDataException($"AreaTrigger {trigger.Id} is not in the client's AreaTrigger.db2.");
+        }
+
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("smart_scripts.action_param7", "smart_scripts.Difficulties", "areatrigger_scripts.ScriptName");
+        var rows = new RowSet();
+        string title, script = "";
+        if (trigger.IsEntity)
+        {
+            session.Require("areatrigger_template.IsCustom", "areatrigger.ScriptName", "areatrigger_create_properties.ScriptName");
+            bool custom = trigger.SourceType == SmartScope.AreaTriggerEntityCustom;
+            if (Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM areatrigger_template WHERE Id=@k0 AND IsCustom=@k1", [trigger.Id, custom ? 1 : 0], token)) == 0)
+            {
+                throw new InvalidDataException($"AreaTrigger template {trigger.Id}{(custom ? " (custom)" : "")} does not exist.");
+            }
+
+            if (trigger.SpawnId != 0)
+            {
+                await AcInteractionSource.Load(session, rows, Smart.AreaTriggerAi!, "SpawnId=@k0", [trigger.SpawnId], token);
+                script = Convert.ToString(await AcInteractionSource.Scalar(session, """
+                    SELECT COALESCE(p.ScriptName,'') FROM areatrigger a
+                    JOIN areatrigger_create_properties p ON p.Id=a.AreaTriggerCreatePropertiesId AND p.IsCustom=a.IsCustom WHERE a.SpawnId=@k0
+                    """, [trigger.SpawnId], token), System.Globalization.CultureInfo.InvariantCulture) ?? "";
+            }
+
+            title = $"AreaTrigger template {trigger.Id}";
+        }
+        else
+        {
+            await AcInteractionSource.Load(session, rows, Smart.AreaTriggerScripts, "entry=@k0", [(int)trigger.Id], token);
+            title = $"AreaTrigger {trigger.Id}";
+        }
+
+        await AcInteractionSource.Load(session, rows, Smart.Scripts, "entryorguid=@k0 AND source_type=@k1", [(long)trigger.Id, trigger.SourceType], token);
+        foreach (var (table, key) in draftKeys.Where(k => k.Table.Name is "smart_scripts" or "areatrigger_scripts" or "areatrigger_ai"))
+        {
+            var parts = key.Split('|');
+            await AcInteractionSource.Load(session, rows, table, string.Join(" AND ", table.Key.Select((k, i) => $"`{k}`=@k{i}")), parts.Cast<object>().ToArray(), token);
+        }
+
+        await LoadActionLists(session, rows, effective, token);
+        var names = new ContentNames(catalog, client);
+        await ResolveSmartNames(session, effective(rows), names, token);
+        if (!trigger.IsEntity)
+        {
+            script = effective(rows).Get(Smart.AreaTriggerScripts, trigger.Id.ToString(System.Globalization.CultureInfo.InvariantCulture))?.T("ScriptName") ?? "";
+        }
+
+        uint maxQuest = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
+        return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, title, trigger.Id, script);
     }
 
     /// <summary>

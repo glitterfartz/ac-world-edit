@@ -5,10 +5,10 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Read-only projection of server `areatrigger` volumes near the streamed region: a translucent
-/// sphere or rotated box per trigger, colored by what it does, with a label and an outline on the
-/// selection. Shapes mirror Player::IsInAreaTriggerRadius; the client's own AreaTrigger.dbc (which
-/// decides when the trigger fires) is not shown. Hidden layers stop queries and free volumes.
+/// Read-only projection of AreaTrigger volumes near the streamed region: AzerothCore `areatrigger`
+/// rows, TrinityCore client triggers (AreaTrigger.db2) and TrinityCore server spawns. Each is a
+/// translucent volume in the shape the server tests (<see cref="AreaTriggerShapes"/>), colored by what
+/// it does, with a label and an outline on the selection. Hidden layers stop queries and free volumes.
 /// </summary>
 public partial class AreaTriggerOverlay : RegionOverlay
 {
@@ -28,7 +28,8 @@ public partial class AreaTriggerOverlay : RegionOverlay
         [AreaTriggerKind.Unlinked] = new("8a8f96")
     };
 
-    public uint? SelectedEntry => selected;
+    /// <summary>The selected trigger's row, null when nothing is selected.</summary>
+    public AreaTriggerRecord? Selected => selected is { } key ? lookup.GetValueOrDefault(key) : null;
     public bool HasSelection => selected.HasValue;
     public IReadOnlyList<AreaTriggerRecord> Triggers => triggers;
     public bool IsLoading => query.IsLoading;
@@ -37,15 +38,12 @@ public partial class AreaTriggerOverlay : RegionOverlay
     /// <summary>Open the behavior editor on this trigger's SmartAI rules.</summary>
     public event Action<AreaTriggerRecord>? BehaviorRequested;
 
-    // Unit shapes scaled per trigger: the box spans ±0.5 on every axis, the sphere has radius 0.5.
-    static readonly BoxMesh UnitBox = new() { Size = Vector3.One };
-    static readonly SphereMesh UnitSphere = new() { Radius = 0.5f, Height = 1, RadialSegments = 32, Rings = 16 };
     readonly Dictionary<AreaTriggerKind, StandardMaterial3D> fills = [];
-    readonly Dictionary<uint, AreaTriggerRecord> lookup = [];
-    readonly Dictionary<uint, (Node3D Node, MeshInstance3D Volume, Label3D Label)> markers = [];
+    readonly Dictionary<AreaTriggerKey, AreaTriggerRecord> lookup = [];
+    readonly Dictionary<AreaTriggerKey, (Node3D Node, MeshInstance3D Volume, Label3D Label, AreaTriggerShapes.Volume Shape)> markers = [];
     AreaTriggerRecord[] triggers = [];
     MeshInstance3D? outline;
-    uint? selected;
+    AreaTriggerKey? selected;
     readonly RegionQuery<AreaTriggerRegionResult> query = new();
     string message = "";
 
@@ -113,10 +111,10 @@ public partial class AreaTriggerOverlay : RegionOverlay
             query.Start(token => DBSource.Open(config, lookup).ReadAreaTriggersAsync(area, center, term, token));
         }
 
-        foreach (var (entry, marker) in markers)
+        foreach (var (key, marker) in markers)
         {
             marker.Node.Visible = LayerEnabled;
-            marker.Label.Visible = LayerEnabled && (selected == entry || camera.GlobalPosition.DistanceSquaredTo(marker.Node.GlobalPosition) < LabelDistance * LabelDistance);
+            marker.Label.Visible = LayerEnabled && (selected == key || camera.GlobalPosition.DistanceSquaredTo(marker.Label.GlobalPosition) < LabelDistance * LabelDistance);
         }
 
         status.Text = queryStatus;
@@ -124,34 +122,36 @@ public partial class AreaTriggerOverlay : RegionOverlay
     }
 
     /// <summary>
-    /// Replace the snapshot and reconcile volumes: keep nodes for surviving entries, free the rest and
+    /// Replace the snapshot and reconcile volumes: keep nodes for surviving keys, free the rest and
     /// create new ones. The selection survives when its trigger is still present.
     /// </summary>
     void Publish(AreaTriggerRegionResult result)
     {
         triggers = result.Triggers;
-        var incoming = result.Triggers.ToDictionary(t => t.Entry);
-        foreach (uint entry in markers.Keys.Where(e => !incoming.ContainsKey(e)).ToArray())
+        var incoming = result.Triggers.ToDictionary(t => t.Key);
+        foreach (var key in markers.Keys.Where(k => !incoming.ContainsKey(k)).ToArray())
         {
-            if (selected == entry)
+            if (selected == key)
             {
                 Deselect();
             }
 
-            markers.Free(entry, m => m.Node);
+            markers.Free(key, m => m.Node);
         }
 
         lookup.Clear();
         foreach (var trigger in result.Triggers)
         {
-            lookup[trigger.Entry] = trigger;
-            markers.Free(trigger.Entry, m => m.Node);
+            lookup[trigger.Key] = trigger;
+            markers.Free(trigger.Key, m => m.Node);
             AddMarker(trigger);
         }
 
         PopulateList();
-        queryStatus = result.Triggers.Length == 0 ? "No AreaTriggers in this region." : result.Truncated ? $"{result.Triggers.Length} nearest AreaTriggers · limit reached" : $"{result.Triggers.Length} AreaTriggers in this region";
-        if (selected is uint current && lookup.ContainsKey(current))
+        int spawned = result.Triggers.Count(t => t.IsSpawn);
+        string count = spawned == 0 ? $"{result.Triggers.Length} AreaTriggers" : $"{result.Triggers.Length} AreaTriggers ({spawned} spawned)";
+        queryStatus = result.Triggers.Length == 0 ? "No AreaTriggers in this region." : result.Truncated ? $"{count} nearest · limit reached" : $"{count} in this region";
+        if (selected is { } current && lookup.ContainsKey(current))
         {
             Select(current);
         }
@@ -159,28 +159,28 @@ public partial class AreaTriggerOverlay : RegionOverlay
 
     /// <summary>
     /// Place the volume: view position from the server center, yaw = orientation (the same mapping as
-    /// creature headings), and for boxes a local scale of (width, height, length) because the server
-    /// measures length along the facing, which is the node's local -Z after the yaw.
+    /// creature headings; polygons carry their turn in their corners), and the shape's mesh under it.
     /// </summary>
     void AddMarker(AreaTriggerRecord trigger)
     {
+        var shape = AreaTriggerShapes.Build(trigger);
         var node = new Node3D
         {
-            Name = "AreaTrigger_" + trigger.Entry,
-            Position = ViewPosition(trigger),
-            Rotation = new(0, (float)trigger.Orientation, 0)
+            Name = trigger.IsSpawn ? "AreaTriggerSpawn_" + trigger.SpawnId : "AreaTrigger_" + trigger.Entry,
+            Position = ViewSpace.ToView(trigger.X, trigger.Y, trigger.Z),
+            Rotation = new(0, AreaTriggerShapes.Yaw(trigger), 0)
         };
         var volume = new MeshInstance3D
         {
-            Mesh = trigger.IsSphere ? UnitSphere : UnitBox,
-            Scale = VolumeScale(trigger),
+            Mesh = shape.Fill,
+            Transform = shape.Local,
             MaterialOverride = Fill(trigger.Kind),
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
         };
         var label = new Label3D
         {
             Text = LabelText(trigger),
-            Position = new(0, (float)(trigger.IsSphere ? trigger.Radius : trigger.Height / 2) + 1.5f, 0),
+            Position = ViewPosition(trigger) - ViewSpace.ToView(trigger.X, trigger.Y, trigger.Z) + new Vector3(0, AreaTriggerShapes.TopOf(trigger) - (float)(trigger.Focus.Z - trigger.Z) + 1.5f, 0),
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             FontSize = 28,
             PixelSize = 0.018f,
@@ -191,19 +191,16 @@ public partial class AreaTriggerOverlay : RegionOverlay
         node.AddChild(volume);
         node.AddChild(label);
         AddChild(node);
-        markers[trigger.Entry] = (node, volume, label);
+        markers[trigger.Key] = (node, volume, label, shape);
     }
 
-    public static Vector3 VolumeScale(AreaTriggerRecord trigger)
-    {
-        // Degenerate rows (zero size) still get a visible sliver so they can be found and selected.
-        static float Size(double value) => (float)Math.Max(value, 0.2);
-        return trigger.IsSphere ? Vector3.One * Size(trigger.Radius * 2) : new(Size(trigger.Width), Size(trigger.Height), Size(trigger.Length));
-    }
+    /// <summary>Where the volume is in view space (its <see cref="AreaTriggerRecord.Focus"/>); the marker node itself sits at the trigger position.</summary>
+    public static Vector3 ViewPosition(AreaTriggerRecord trigger) => ViewSpace.ToView(trigger.Focus.X, trigger.Focus.Y, trigger.Focus.Z);
 
-    public static Vector3 ViewPosition(AreaTriggerRecord trigger) => ViewSpace.ToView(trigger.X, trigger.Y, trigger.Z);
+    static string LabelText(AreaTriggerRecord trigger) => $"{DisplayName(trigger)}\n{Summary(trigger)}";
 
-    static string LabelText(AreaTriggerRecord trigger) => $"AreaTrigger {trigger.Entry}\n{Summary(trigger)}";
+    /// <summary>"AreaTrigger 1125", or "Spawned AreaTrigger 290" for a TrinityCore server spawn.</summary>
+    public static string DisplayName(AreaTriggerRecord trigger) => trigger.IsSpawn ? $"Spawned AreaTrigger {trigger.SpawnId}" : $"AreaTrigger {trigger.Entry}";
 
     /// <summary>One-line description of what the trigger does, for labels and the list.</summary>
     public static string Summary(AreaTriggerRecord trigger) => trigger.Kind switch
@@ -213,23 +210,25 @@ public partial class AreaTriggerOverlay : RegionOverlay
         AreaTriggerKind.Teleport => $"Teleport → map {trigger.Teleport!.Map}{(trigger.Teleport.Name.Length > 0 ? " · " + trigger.Teleport.Name : "")}",
         AreaTriggerKind.Quest => $"Quest {trigger.QuestId}{(trigger.QuestTitle.Length > 0 ? " · " + trigger.QuestTitle : "")}",
         AreaTriggerKind.Tavern => "Tavern" + (trigger.Tavern.Length > 0 ? " · " + trigger.Tavern : ""),
-        _ => "No server link"
+        _ => trigger.IsSpawn ? "No script" : "No server link"
     };
 
-    public void Select(uint entry)
+    public void Select(AreaTriggerKey key)
     {
-        if (!lookup.TryGetValue(entry, out var trigger) || !markers.TryGetValue(entry, out var marker))
+        if (!lookup.TryGetValue(key, out var trigger) || !markers.TryGetValue(key, out var marker))
         {
             return;
         }
 
-        uint? previous = selected;
-        selected = entry;
+        var previous = selected;
+        selected = key;
         outline?.QueueFree();
+        // The shape's edges, drawn without depth testing so a selected trigger stays visible inside
+        // walls and terrain.
         outline = new MeshInstance3D
         {
-            Mesh = Outline(trigger.IsSphere),
-            Scale = marker.Volume.Scale,
+            Mesh = marker.Shape.Outline,
+            Transform = marker.Shape.Local,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             MaterialOverride = new StandardMaterial3D
             {
@@ -239,7 +238,7 @@ public partial class AreaTriggerOverlay : RegionOverlay
             }
         };
         marker.Node.AddChild(outline);
-        if (previous != entry)
+        if (previous != key)
         {
             message = "";
             SelectionChanged?.Invoke();
@@ -261,56 +260,13 @@ public partial class AreaTriggerOverlay : RegionOverlay
     }
 
     /// <summary>
-    /// Edges of the unit shape: the 12 box edges, or three great circles for a sphere. Drawn without
-    /// depth testing so a selected trigger stays visible inside walls and terrain.
-    /// </summary>
-    static ImmediateMesh Outline(bool sphere)
-    {
-        var mesh = new ImmediateMesh();
-        mesh.SurfaceBegin(Mesh.PrimitiveType.Lines);
-        if (sphere)
-        {
-            const int segments = 48;
-            for (int plane = 0; plane < 3; plane++)
-            {
-                for (int i = 0; i < segments; i++)
-                {
-                    foreach (int step in new[] { i, i + 1 })
-                    {
-                        float angle = step * Mathf.Tau / segments;
-                        float a = Mathf.Cos(angle) * 0.5f, b = Mathf.Sin(angle) * 0.5f;
-                        mesh.SurfaceAddVertex(plane == 0 ? new(a, b, 0) : plane == 1 ? new(a, 0, b) : new(0, a, b));
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int axis = 0; axis < 3; axis++)
-            {
-                for (int corner = 0; corner < 4; corner++)
-                {
-                    float u = (corner & 1) == 0 ? -0.5f : 0.5f, v = (corner & 2) == 0 ? -0.5f : 0.5f;
-                    var from = axis == 0 ? new Vector3(-0.5f, u, v) : axis == 1 ? new Vector3(u, -0.5f, v) : new Vector3(u, v, -0.5f);
-                    mesh.SurfaceAddVertex(from);
-                    var to = from;
-                    to[axis] = 0.5f;
-                    mesh.SurfaceAddVertex(to);
-                }
-            }
-        }
-
-        mesh.SurfaceEnd();
-        return mesh;
-    }
-
-    /// <summary>
-    /// Ray test in each volume's local unit space (box slab or unit sphere). The local direction is
-    /// not renormalized, so the returned parameter equals the world ray distance and compares with
+    /// Ray test in each volume's local space: the unit sphere, or the slab of the mesh's bounds (exact
+    /// for boxes and planes, the enclosing box for cylinders, disks and polygons). The local direction
+    /// is not renormalized, so the returned parameter equals the world ray distance and compares with
     /// creature, GameObject and graveyard hits. Volumes containing the camera are skipped so a large
     /// zone-line or tavern trigger does not swallow every click made from inside it.
     /// </summary>
-    public (uint Entry, float Distance)? FindHit(Camera3D camera, Vector2 screen)
+    public (AreaTriggerKey Key, float Distance)? FindHit(Camera3D camera, Vector2 screen)
     {
         if (!LayerEnabled)
         {
@@ -319,23 +275,24 @@ public partial class AreaTriggerOverlay : RegionOverlay
 
         var ray = PickRay.From(camera, screen);
         var (origin, direction) = (ray.Origin, ray.Direction);
-        (uint Entry, float Distance)? best = null;
-        foreach (var (entry, marker) in markers)
+        (AreaTriggerKey Key, float Distance)? best = null;
+        foreach (var (key, marker) in markers)
         {
             var inverse = marker.Volume.GlobalTransform.AffineInverse();
             var localOrigin = inverse * origin;
             var localDirection = inverse.Basis * direction;
-            bool sphere = lookup.TryGetValue(entry, out var trigger) && trigger.IsSphere;
-            bool inside = sphere ? localOrigin.LengthSquared() <= 0.25f : Mathf.Abs(localOrigin.X) <= 0.5f && Mathf.Abs(localOrigin.Y) <= 0.5f && Mathf.Abs(localOrigin.Z) <= 0.5f;
+            bool sphere = marker.Shape.Sphere;
+            var bounds = marker.Shape.Fill.GetAabb();
+            bool inside = sphere ? localOrigin.LengthSquared() <= 0.25f : bounds.HasPoint(localOrigin);
             if (inside)
             {
                 continue;
             }
 
-            float? hit = sphere ? ScenePicking.SphereHit(Vector3.Zero, 0.5f, localOrigin, localDirection) : ScenePicking.BoxHit(new Aabb(-Vector3.One * 0.5f, Vector3.One), localOrigin, localDirection);
+            float? hit = sphere ? ScenePicking.SphereHit(Vector3.Zero, 0.5f, localOrigin, localDirection) : ScenePicking.BoxHit(bounds, localOrigin, localDirection);
             if (hit.HasValue && hit.Value < camera.Far && (best == null || hit.Value < best.Value.Distance))
             {
-                best = (entry, hit.Value);
+                best = (key, hit.Value);
             }
         }
 
@@ -344,9 +301,9 @@ public partial class AreaTriggerOverlay : RegionOverlay
 
     public void FlyToSelection()
     {
-        if (selected is uint entry && lookup.TryGetValue(entry, out var t))
+        if (Selected is { } t)
         {
-            FocusRequested?.Invoke(new WorldPose(t.Map, t.X, t.Y, t.Z, 0));
+            FocusRequested?.Invoke(new WorldPose(t.Map, t.Focus.X, t.Focus.Y, t.Focus.Z, 0));
         }
     }
 
@@ -354,9 +311,7 @@ public partial class AreaTriggerOverlay : RegionOverlay
     /// A GM command that lands on the trigger center. GMs only run AreaTrigger scripts with
     /// `.debug areatriggers` enabled (MiscHandler.cpp HandleAreaTriggerOpcode).
     /// </summary>
-    public string? GoCommand() => selected is uint entry && lookup.TryGetValue(entry, out var t)
-        ? PoseText.GoCommand(t.Map, t.X, t.Y, t.Z)
-        : null;
+    public string? GoCommand() => Selected is { } t ? PoseText.GoCommand(t.Map, t.Focus.X, t.Focus.Y, t.Focus.Z) : null;
 
     public override void _ExitTree() => query.Dispose();
 }

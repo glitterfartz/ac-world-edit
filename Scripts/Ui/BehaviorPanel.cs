@@ -12,8 +12,10 @@ namespace ACWorldEdit;
 /// dialect's <see cref="SmartCatalog"/> supplies the types, columns and loader rules. Rules read as sentences
 /// ("When it enters combat: cast Fireball → its victim"); editing uses searchable pickers instead of
 /// type numbers. Scopes: every spawn of the entry, one spawn (negative GUID) and timed action lists.
-/// With AzerothCore the same panel edits an AreaTrigger's rules (source_type 2) and its areatrigger_scripts
-/// name; then <c>entry</c> holds the trigger ID and the creature-only parts (AI, speech, spawn) are hidden.
+/// The same panel edits an AreaTrigger's rules: a client trigger's (source_type 2) with its
+/// areatrigger_scripts name, or a TrinityCore spawned trigger template's (source_type 11/12) with the
+/// ScriptName of the spawn it was opened from. Then <c>entry</c> holds the trigger or template ID and
+/// the creature-only parts (AI, speech, spawn) are hidden.
 /// Every change is one validated command in the shared local content draft; nothing is written to
 /// the database. Rule cards are in BehaviorPanel.Rules.cs; the speech page is at the end of this file.
 /// </summary>
@@ -34,7 +36,9 @@ public partial class BehaviorPanel : ContentPanel
     int generation;
     uint entry;
     ulong guid;
-    bool areaTrigger;
+    /// <summary>The AreaTrigger whose rules are shown, null for a creature.</summary>
+    AreaTriggerOwner? trigger;
+    bool areaTrigger => trigger.HasValue;
     /// <summary>
     /// Shown scope; null shows the speech page.
     /// </summary>
@@ -97,26 +101,26 @@ public partial class BehaviorPanel : ContentPanel
     /// Show the behavior of a creature entry; a non-zero GUID also offers that spawn's own rules.
     /// Entry 0 opens the window with a hint (toolbar without a selection).
     /// </summary>
-    public void Open(uint creatureEntry, ulong spawnGuid) => Show(creatureEntry, spawnGuid, false);
+    public void Open(uint creatureEntry, ulong spawnGuid) => Show(creatureEntry, spawnGuid, null);
 
     /// <summary>The creature entry or trigger ID shown, 0 when none.</summary>
     public uint OwnerId => entry;
 
-    /// <summary>Show the SmartAI rules (source_type 2) of one AreaTrigger.</summary>
-    public void OpenAreaTrigger(uint trigger) => Show(trigger, 0, trigger != 0);
+    /// <summary>Show the SmartAI rules of one AreaTrigger (source_type 2) or spawned trigger template (11/12).</summary>
+    public void OpenAreaTrigger(AreaTriggerOwner owner) => Show(owner.Id, 0, owner.Id != 0 ? owner : null);
 
-    void Show(uint owner, ulong spawnGuid, bool trigger)
+    void Show(uint owner, ulong spawnGuid, AreaTriggerOwner? at)
     {
-        if (owner != entry || spawnGuid != guid || trigger != areaTrigger)
+        if (owner != entry || spawnGuid != guid || at != trigger)
         {
             entry = owner;
             guid = spawnGuid;
-            areaTrigger = trigger;
+            trigger = at;
             snapshot = null;
             expanded = null;
             pending = null;
             pendingError = "";
-            scope = entry == 0 ? null : new SmartScope((int)entry, trigger ? SmartScope.AreaTrigger : SmartScope.Creature);
+            scope = entry == 0 ? null : new SmartScope((int)entry, at?.SourceType ?? SmartScope.Creature);
             status = "";
         }
 
@@ -138,7 +142,7 @@ public partial class BehaviorPanel : ContentPanel
         IsLoading = true;
         uint loadEntry = entry;
         ulong loadGuid = guid;
-        bool loadTrigger = areaTrigger;
+        var loadTrigger = trigger;
         try
         {
             var source = DBSource.Open(Connection(), Lookup());
@@ -146,8 +150,8 @@ public partial class BehaviorPanel : ContentPanel
             var draft = Drafts.Draft;
             var keys = draft?.Keys(source.SourceKey) ?? [];
             var apply = draft?.Frozen(source.SourceKey) ?? (rows => rows);
-            var result = await Task.Run(() => loadTrigger
-                ? source.ReadAreaTriggerBehaviorAsync(loadEntry, keys, apply, cat, CancellationToken.None)
+            var result = await Task.Run(() => loadTrigger is { } at
+                ? source.ReadAreaTriggerBehaviorAsync(at, keys, apply, cat, CancellationToken.None)
                 : source.ReadBehaviorAsync(loadEntry, loadGuid, keys, apply, cat, CancellationToken.None));
             if (current != generation)
             {
@@ -156,7 +160,7 @@ public partial class BehaviorPanel : ContentPanel
 
             sourceKey = source.SourceKey;
             snapshot = result;
-            var stale = draft?.Conflicts(sourceKey, result.Rows).Where(c => loadTrigger ? c.Table is "smart_scripts" or "areatrigger_scripts" : c.Table is "smart_scripts" or "creature_ai" or "creature_text").ToList() ?? [];
+            var stale = draft?.Conflicts(sourceKey, result.Rows).Where(c => loadTrigger != null ? c.Table is "smart_scripts" or "areatrigger_scripts" or "areatrigger_ai" : c.Table is "smart_scripts" or "creature_ai" or "creature_text").ToList() ?? [];
             if (stale.Count > 0)
             {
                 string rows = string.Join(", ", stale.Take(3).Select(c => $"{c.Table} {c.Key}"));
@@ -199,10 +203,22 @@ public partial class BehaviorPanel : ContentPanel
 
     /// <summary>SMART_TARGET_ACTION_INVOKER: the player who walked into an AreaTrigger.</summary>
     const uint InvokerTarget = SmartRuleEdits.InvokerTarget;
-    SmartScope EntryScope => new((int)entry, areaTrigger ? SmartScope.AreaTrigger : SmartScope.Creature);
+    SmartScope EntryScope => new((int)entry, trigger?.SourceType ?? SmartScope.Creature);
     SmartScope SpawnScope => new(-(int)guid, SmartScope.Creature);
     Row? CreatureAi(RowSet rows) => areaTrigger ? null : rows.Get(smart.CreatureAi, entry.ToString(CultureInfo.InvariantCulture));
-    Row? TriggerScript(RowSet rows) => areaTrigger ? rows.Get(InteractionTables.AreaTriggerScripts, entry.ToString(CultureInfo.InvariantCulture)) : null;
+    /// <summary>The row holding the trigger's script name: its areatrigger_scripts row, or the spawn's `areatrigger` ScriptName.</summary>
+    Row? TriggerScript(RowSet rows) => trigger switch
+    {
+        { IsEntity: true } spawn => smart.AreaTriggerAi is { } table ? rows.Get(table, spawn.SpawnId.ToString(CultureInfo.InvariantCulture)) : null,
+        not null => rows.Get(smart.AreaTriggerScripts, entry.ToString(CultureInfo.InvariantCulture)),
+        _ => null
+    };
+
+    /// <summary>The script a spawn runs when its own ScriptName is empty (its create properties'); none for client triggers.</summary>
+    string FallbackScript => trigger is { IsEntity: true } ? snapshot?.ScriptName ?? "" : "";
+
+    /// <summary>The script name the server runs for the shown trigger.</summary>
+    string RunningScript(RowSet rows) => TriggerScript(rows)?.T("ScriptName") is { Length: > 0 } own ? own : FallbackScript;
 
     static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(rows, of);
 
@@ -271,9 +287,9 @@ public partial class BehaviorPanel : ContentPanel
             }
         }
 
-        if (areaTrigger)
+        if (trigger is { } at)
         {
-            foreach (var issue in SmartCatalog.CheckAreaTriggerScript((int)entry, TriggerScript(rows), RulesOf(rows, EntryScope).Count > 0))
+            foreach (var issue in smart.CheckAreaTriggerScript(at, TriggerScript(rows), FallbackScript, RulesOf(rows, EntryScope).Count > 0))
             {
                 yield return issue;
             }
@@ -405,7 +421,7 @@ public partial class BehaviorPanel : ContentPanel
                 {
                     Text = "Fix"
                 };
-                button.Pressed += () => Commit(fix.Any(f => f.Table == InteractionTables.AreaTriggerScripts.Name) ? "Run SmartAI rules (SmartTrigger)" : "Enable SmartAI", fix);
+                button.Pressed += () => Commit(trigger is { } at ? $"Run SmartAI rules ({SmartCatalog.SmartScriptName(at)})" : "Enable SmartAI", fix);
                 row.AddChild(button);
             }
 
@@ -437,12 +453,12 @@ public partial class BehaviorPanel : ContentPanel
     /// </summary>
     void RenderAiBanner()
     {
-        if (areaTrigger)
+        if (trigger is { } at)
         {
-            string name = TriggerScript(effective)?.T("ScriptName") ?? "";
-            string runs = name == AreaTriggerRecord.SmartTrigger ? ""
-                : name.Length == 0 ? " · no script: the rules below do not run until SmartTrigger is set" : $" · C++ script {name}: the rules below are ignored";
-            subtitle.Text = $"AreaTrigger {entry}{runs}";
+            string name = RunningScript(effective), wanted = SmartCatalog.SmartScriptName(at);
+            string runs = name == wanted ? ""
+                : name.Length == 0 ? $" · no script: the rules below do not run until {wanted} is set" : $" · C++ script {name}: the rules below are ignored";
+            subtitle.Text = (at.IsEntity ? $"Spawned AreaTrigger {at.SpawnId} · template {entry}{(at.SourceType == SmartScope.AreaTriggerEntityCustom ? " (custom)" : "")}" : $"AreaTrigger {entry}") + runs;
             return;
         }
 
@@ -458,11 +474,18 @@ public partial class BehaviorPanel : ContentPanel
     /// </summary>
     RowEdit[] EnableSmartAiIfDefault()
     {
-        // An AreaTrigger without any script gets SmartTrigger with its first rule; a C++ script name
-        // is left alone (the warning offers the switch).
-        if (areaTrigger)
+        // An AreaTrigger without any script gets the SmartAI one with its first rule; a C++ script
+        // name is left alone (the warning offers the switch). A spawn keeps its row; only its empty
+        // name (with no create-properties script behind it) is filled in.
+        if (trigger is { } at)
         {
-            return TriggerScript(effective) == null ? [SmartCatalog.EnableSmartTrigger((int)entry, null)] : [];
+            var script = TriggerScript(effective);
+            if (at.IsEntity)
+            {
+                return script != null && RunningScript(effective).Length == 0 ? [smart.EnableTriggerScript(at, script)] : [];
+            }
+
+            return script == null ? [smart.EnableTriggerScript(at, null)] : [];
         }
 
         if (CreatureAi(effective) is { } ai && ai.T("AIName").Length == 0 && snapshot!.ScriptName.Length == 0)
@@ -629,8 +652,8 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         Panel.SyncHistoryButtons(undo, redo);
     }
 
-    /// <summary>Show the SmartAI rules of one AreaTrigger.</summary>
-    public void OpenAreaTrigger(uint trigger)
+    /// <summary>Show the SmartAI rules of one AreaTrigger or spawned trigger template.</summary>
+    public void OpenAreaTrigger(AreaTriggerOwner trigger)
     {
         Visible = true;
         PlaceOnFirstOpen(40, 90);

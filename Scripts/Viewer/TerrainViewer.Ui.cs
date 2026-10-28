@@ -292,13 +292,9 @@ public partial class TerrainViewer
         };
         areaTriggers.BehaviorRequested += trigger =>
         {
-            if (AreaTriggerBehavior)
+            if (BehaviorEditors)
             {
-                areaBehavior.OpenAreaTrigger(trigger.Entry);
-            }
-            else
-            {
-                statusLog.Post(BehaviorEditorsUnavailable);
+                areaBehavior.OpenAreaTrigger(trigger.Owner);
             }
         };
         BuildMenus();
@@ -308,15 +304,10 @@ public partial class TerrainViewer
     CreaturePropertiesWindow creatureProps = null!;
 
     /// <summary>
-    /// The creature behavior (SmartAI and speech) editor opens for both databases. AreaTrigger rules
-    /// (<see cref="AreaTriggerBehavior"/>) are AzerothCore only: TrinityCore keys source type 2 by
-    /// AreaTrigger.db2 and runs server-side triggers through areatrigger_template.
+    /// The behavior (SmartAI) editors open for both databases: creatures, client AreaTriggers and, for
+    /// TrinityCore, server-spawned AreaTriggers.
     /// </summary>
     bool BehaviorEditors => databaseEnabled;
-
-    bool AreaTriggerBehavior => databaseEnabled && profile.Dialect == WorldDialect.AzerothCore;
-
-    const string BehaviorEditorsUnavailable = "AreaTrigger rules are not available for the TrinityCore database yet.";
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>
@@ -341,15 +332,11 @@ public partial class TerrainViewer
     /// </summary>
     void OpenBehaviorEditor()
     {
-        if (areaTriggers.SelectedEntry is uint trigger)
+        if (areaTriggers.Selected is { } trigger)
         {
-            if (AreaTriggerBehavior)
+            if (BehaviorEditors)
             {
-                areaBehavior.OpenAreaTrigger(trigger);
-            }
-            else
-            {
-                statusLog.Post(BehaviorEditorsUnavailable);
+                areaBehavior.OpenAreaTrigger(trigger.Owner);
             }
         }
         else if (creatures.SelectedSpawn is { } spawn)

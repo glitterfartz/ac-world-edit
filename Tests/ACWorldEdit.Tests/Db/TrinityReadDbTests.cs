@@ -336,6 +336,112 @@ public class TrinityReadDbTests
         }
     }
 
+    /// <summary>The tiles around a server point, the region shape the viewer queries.</summary>
+    static CreatureRegion Around(ushort map, Point3 center)
+    {
+        var (x, y) = WorldCoordinates.Tile(center);
+        return new(map, x - 1, x + 1, y - 1, y + 1);
+    }
+
+    // Stormwind: spawned trigger 290 (a box running custom template 188's SmartAI) and client trigger
+    // 1125 (Cathedral of Light, SmartTrigger with a linked chain).
+    static readonly Point3 StormwindSpawn = new(-8321.21, 288.127, 156.834);
+
+    [TcRetailFact]
+    public async Task ServerSpawnedTriggersLoadWithTheirShapeAndTemplateRules()
+    {
+        var source = Open(new RetailClientLookup(RetailData.Tables));
+        var result = await source.ReadAreaTriggersAsync(Around(0, StormwindSpawn), new(StormwindSpawn.X, StormwindSpawn.Y, StormwindSpawn.Z), "", CancellationToken.None);
+        var spawn = result.Triggers.Single(t => t.IsSpawn && t.SpawnId == 290);
+        Assert.Equal(AreaTriggerShape.Box, spawn.Volume);
+        Assert.Equal(188u, spawn.Entry);
+        Assert.True(spawn.IsCustom);
+        Assert.Equal(AreaTriggerKind.SmartAI, spawn.Kind);
+        Assert.Equal(1, spawn.SmartRows);
+        Assert.True(spawn.Length > 0 && spawn.Width > 0 && spawn.Height > 0);
+        Assert.True(spawn.Contains(StormwindSpawn));
+        Assert.Contains("Stormwind", spawn.Comment);
+        Assert.Equal(new AreaTriggerOwner(188, SmartScope.AreaTriggerEntityCustom, 290), spawn.Owner);
+        Assert.Contains(result.Triggers, t => !t.IsSpawn);
+        // Nearest first across both kinds.
+        Assert.Equal(result.Triggers.OrderBy(t => Math.Pow(t.X - StormwindSpawn.X, 2) + Math.Pow(t.Y - StormwindSpawn.Y, 2) + Math.Pow(t.Z - StormwindSpawn.Z, 2)), result.Triggers);
+        var bySpawn = await source.ReadAreaTriggersAsync(Around(0, StormwindSpawn), null, "290", CancellationToken.None);
+        Assert.Contains(bySpawn.Triggers, t => t.SpawnId == 290);
+        var byComment = await source.ReadAreaTriggersAsync(Around(0, StormwindSpawn), null, "Conversation trigger 10963", CancellationToken.None);
+        Assert.Equal(290ul, Assert.Single(byComment.Triggers, t => t.IsSpawn).SpawnId);
+    }
+
+    [TcRetailFact]
+    public async Task ClientPolygonsAndCylindersLoadInTheShapeTheServerTests()
+    {
+        var lookup = new RetailClientLookup(RetailData.Tables);
+        var source = Open(lookup);
+        foreach (var shape in new[] { AreaTriggerShape.Polygon, AreaTriggerShape.Cylinder })
+        {
+            var row = lookup.AreaTriggers().First(t => t.ShapeType == (byte)shape && t.Map <= ushort.MaxValue && (shape != AreaTriggerShape.Polygon || lookup.Polygon(t.ShapeId) != null) && (shape != AreaTriggerShape.Cylinder || (t.Radius > 0 && t.BoxHeight > 0)));
+            // A polygon is found where its corners are, not at its position (often the map origin).
+            var polygon = shape == AreaTriggerShape.Polygon ? lookup.Polygon(row.ShapeId)! : null;
+            var center = polygon == null ? new Point3(row.X, row.Y, row.Z)
+                : new Point3(row.X + polygon.Vertices.Average(v => v.X), row.Y + polygon.Vertices.Average(v => v.Y), row.Z + polygon.Ground);
+            var result = await source.ReadAreaTriggersAsync(Around((ushort)row.Map, center), null, row.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), CancellationToken.None);
+            var trigger = Assert.Single(result.Triggers, t => !t.IsSpawn);
+            Assert.Equal(shape, trigger.Volume);
+            if (polygon != null)
+            {
+                Assert.Equal(polygon.Vertices.Count, trigger.Vertices.Count);
+                Assert.True(double.IsNegativeInfinity(trigger.Bottom));
+                Assert.Equal(polygon.Height ?? double.PositiveInfinity, trigger.Top, 4);
+                Assert.Equal(center.X, trigger.Focus.X, 2);
+                Assert.Equal(center.Y, trigger.Focus.Y, 2);
+                Assert.Equal(center.Z, trigger.Focus.Z, 2);
+            }
+            else
+            {
+                Assert.Equal(row.Radius, trigger.Radius, 4);
+                Assert.Equal((0.0, (double)row.BoxHeight), (trigger.Bottom, trigger.Top));
+                Assert.True(trigger.Contains(new(row.X, row.Y, row.Z + row.BoxHeight / 2)));
+                Assert.False(trigger.Contains(new(row.X, row.Y, row.Z - 1)));
+            }
+        }
+    }
+
+    [TcRetailFact]
+    public async Task ClientTriggerRulesReadWithTheirScriptName()
+    {
+        var source = Open(new RetailClientLookup(RetailData.Tables));
+        var snapshot = await source.ReadAreaTriggerBehaviorAsync(new(1125), [], rows => rows, null, CancellationToken.None);
+        var scope = new SmartScope(1125, SmartScope.AreaTrigger);
+        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, scope);
+        Assert.Equal(3, rules.Count);
+        Assert.Contains(rules, r => r.Event == SmartCatalog.LinkEvent);
+        Assert.Equal(AreaTriggerRecord.SmartTrigger, snapshot.ScriptName);
+        Assert.Equal("AreaTrigger 1125", snapshot.CreatureName);
+        var smart = SmartCatalog.Trinity;
+        var issues = smart.Check(scope, rules, snapshot.Names, null, 1125)
+            .Concat(smart.CheckAreaTriggerScript(new(1125), snapshot.Rows.Get(smart.AreaTriggerScripts, "1125"), "", true)).ToList();
+        Assert.True(issues.All(i => !i.Error), string.Join("; ", issues.Select(i => i.Message)));
+        await Assert.ThrowsAsync<InvalidDataException>(() => source.ReadAreaTriggerBehaviorAsync(new(uint.MaxValue - 1), [], rows => rows, null, CancellationToken.None));
+    }
+
+    [TcDbFact]
+    public async Task SpawnedTriggerRulesReadWithTheSpawnsScriptName()
+    {
+        var owner = new AreaTriggerOwner(188, SmartScope.AreaTriggerEntityCustom, 290);
+        var snapshot = await Open().ReadAreaTriggerBehaviorAsync(owner, [], rows => rows, null, CancellationToken.None);
+        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, new SmartScope(188, SmartScope.AreaTriggerEntityCustom));
+        Assert.Single(rules);
+        var smart = SmartCatalog.Trinity;
+        var spawn = snapshot.Rows.Get(smart.AreaTriggerAi!, "290");
+        Assert.Equal(AreaTriggerRecord.SmartEntity, spawn!.T("ScriptName"));
+        Assert.Empty(smart.CheckAreaTriggerScript(owner, spawn, snapshot.ScriptName, true));
+        // The live rule links to a rule that does not exist (a data defect the editor reports); the
+        // AreaTrigger-specific checks accept it.
+        var issues = smart.Check(new(188, SmartScope.AreaTriggerEntityCustom), rules, snapshot.Names, null, 188).ToList();
+        Assert.DoesNotContain(issues, i => i.Message.Contains("only accepts", StringComparison.Ordinal) || i.Message.Contains("targets Self", StringComparison.Ordinal));
+        // The template is custom: the non-custom template 188 is a different one (or none).
+        await Assert.ThrowsAsync<InvalidDataException>(() => Open().ReadAreaTriggerBehaviorAsync(new(uint.MaxValue - 1, SmartScope.AreaTriggerEntity, 290), [], rows => rows, null, CancellationToken.None));
+    }
+
     [TcDbFact]
     public async Task AreaTriggersNeedTheClientLookup()
     {
@@ -358,6 +464,7 @@ public class TrinityReadDbTests
     sealed class OneTrigger(ClientAreaTrigger trigger) : IClientLookup
     {
         public IReadOnlyList<ClientAreaTrigger> AreaTriggers() => [trigger];
+        public ClientPolygon? Polygon(uint pathId) => null;
         public string? BroadcastText(uint id, bool female = false) => null;
         public IReadOnlyList<(uint Id, string Text)> SearchBroadcastText(string term, int limit) => [];
         public ClientItem? Item(uint id) => null;

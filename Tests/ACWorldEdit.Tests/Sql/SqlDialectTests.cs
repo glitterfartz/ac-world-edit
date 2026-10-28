@@ -64,11 +64,11 @@ public class SqlDialectTests
     [Fact]
     public void TrinityCoreRefusesRowsItCannotExportYet()
     {
-        // areatrigger_scripts is an AzerothCore table; TrinityCore's catalog has no such table.
-        var before = Row.Of(("entry", 100), ("ScriptName", ""));
-        var row = new RowEdit("areatrigger_scripts", "100", before, before.With("ScriptName", "SmartTrigger"));
+        // creature_default_trainer is an AzerothCore table; TrinityCore's catalog has no such table.
+        var before = Row.Of(("CreatureId", 100), ("TrainerId", 0));
+        var row = new RowEdit("creature_default_trainer", "100", before, before.With("TrainerId", 17));
         Assert.Contains("TrinityCore", Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [row], Stamp, null, TcSchema.Instance)).Message);
-        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "areatrigger_scripts" or "waypoint_data");
+        Assert.DoesNotContain(TcSchema.Instance.Tables.All, t => t.Name is "creature_default_trainer" or "waypoint_data");
     }
 
     [Fact]

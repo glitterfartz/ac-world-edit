@@ -134,14 +134,14 @@ public class ContentDraftTests
         Check(SmartCatalog.Ac.Check(scope, [list], names, null, trigger).Any(i => i.Message.Contains("action lists", StringComparison.Ordinal)), "Action list on the player not warned");
         var other = new SmartRule(svala.Row.With("event_param1", 9999u));
         Check(SmartCatalog.Ac.Check(scope, [other], names, null, trigger).Any(i => !i.Error && i.Message.Contains("9999", StringComparison.Ordinal)), "Foreign trigger ID not warned");
-        Check(SmartCatalog.AllowedForAreaTrigger(SmartCatalog.LinkEvent) && !SmartCatalog.AllowedForAreaTrigger(0), "Allowed AreaTrigger events");
+        Check(SmartCatalog.Ac.AllowedForAreaTrigger(scope, SmartCatalog.LinkEvent) && !SmartCatalog.Ac.AllowedForAreaTrigger(scope, 0), "Allowed AreaTrigger events");
 
-        var missing = SmartCatalog.CheckAreaTriggerScript(trigger, null, true).Single();
+        var missing = SmartCatalog.Ac.CheckAreaTriggerScript(new((uint)trigger), null, "", true).Single();
         Check(missing.Fix![0].Before == null && missing.Fix[0].After!.T("ScriptName") == AreaTriggerRecord.SmartTrigger && missing.Fix[0].Table == "areatrigger_scripts", "SmartTrigger insert fix");
         var cpp = Row.Of(("entry", trigger), ("ScriptName", "at_some_cpp_script"));
-        var replace = SmartCatalog.CheckAreaTriggerScript(trigger, cpp, true).Single();
+        var replace = SmartCatalog.Ac.CheckAreaTriggerScript(new((uint)trigger), cpp, "", true).Single();
         Check(!replace.Error && replace.Message.Contains("at_some_cpp_script", StringComparison.Ordinal) && replace.Fix![0].Before == cpp, "C++ script warning");
-        Check(!SmartCatalog.CheckAreaTriggerScript(trigger, cpp.With("ScriptName", AreaTriggerRecord.SmartTrigger), true).Any() && !SmartCatalog.CheckAreaTriggerScript(trigger, null, false).Any(), "SmartTrigger or no rules needs no fix");
+        Check(!SmartCatalog.Ac.CheckAreaTriggerScript(new((uint)trigger), cpp.With("ScriptName", AreaTriggerRecord.SmartTrigger), "", true).Any() && !SmartCatalog.Ac.CheckAreaTriggerScript(new((uint)trigger), null, "", false).Any(), "SmartTrigger or no rules needs no fix");
 
         var snapshot = new RowSet();
         using (var draft = new InteractionDraft(path))

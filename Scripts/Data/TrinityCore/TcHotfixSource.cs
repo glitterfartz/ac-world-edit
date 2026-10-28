@@ -150,7 +150,7 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return items;
     }
 
-    /// <summary>The server's area_trigger overrides, in the shape the client lookup returns.</summary>
+    /// <summary>The server's area_trigger overrides, in the shape the client lookup returns. Polygon paths are not overridden (path_node and location rows are not read).</summary>
     public async Task<IReadOnlyList<ClientAreaTrigger>> ReadAreaTriggersAsync(CancellationToken token)
     {
         if (!Available)
@@ -160,13 +160,13 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
 
         await using var connection = await OpenAsync(token).ConfigureAwait(false);
         await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
-        await using var command = new MySqlCommand("SELECT ID,ContinentID,PosX,PosY,PosZ,Radius,BoxLength,BoxWidth,BoxHeight,BoxYaw,ShapeType,PhaseID,PhaseGroupID,PhaseUseFlags FROM area_trigger", connection, transaction);
+        await using var command = new MySqlCommand("SELECT ID,ContinentID,PosX,PosY,PosZ,Radius,BoxLength,BoxWidth,BoxHeight,BoxYaw,ShapeType,PhaseID,PhaseGroupID,PhaseUseFlags,ShapeID FROM area_trigger", connection, transaction);
         List<ClientAreaTrigger> rows = [];
         await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             rows.Add(new(Convert.ToUInt32(reader.GetValue(0)), Convert.ToUInt32(reader.GetValue(1)), reader.GetFloat(2), reader.GetFloat(3), reader.GetFloat(4), reader.GetFloat(5), reader.GetFloat(6), reader.GetFloat(7), reader.GetFloat(8), reader.GetFloat(9),
-                (byte)Math.Max(0, Convert.ToInt32(reader.GetValue(10))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(11))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(12))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(13)))));
+                (byte)Math.Max(0, Convert.ToInt32(reader.GetValue(10))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(11))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(12))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(13))), (uint)Math.Max(0, Convert.ToInt32(reader.GetValue(14)))));
         }
 
         return rows;

@@ -54,16 +54,20 @@ public static class ContentNamesExtensions
 }
 
 /// <summary>
-/// Which script a rule belongs to: a creature entry (all spawns), one spawn (negative GUID), an
-/// AreaTrigger (source_type 2) or a timed action list (source_type 9) started by "Run action list".
+/// Which script a rule belongs to: a creature entry (all spawns), one spawn (negative GUID), a client
+/// AreaTrigger (source_type 2), a timed action list (source_type 9) started by "Run action list", or a
+/// TrinityCore server-spawned AreaTrigger's template (source_type 11, 12 for custom templates).
 /// </summary>
 public readonly record struct SmartScope(int EntryOrGuid, uint SourceType)
 {
-    public const uint Creature = 0, AreaTrigger = 2, ActionList = 9;
+    public const uint Creature = 0, AreaTrigger = 2, ActionList = 9, AreaTriggerEntity = 11, AreaTriggerEntityCustom = 12;
     public bool IsSpawn => SourceType == Creature && EntryOrGuid < 0;
-    public bool IsAreaTrigger => SourceType == AreaTrigger;
+
+    /// <summary>Any AreaTrigger script: a client trigger or a spawned trigger's template.</summary>
+    public bool IsAreaTrigger => SourceType is AreaTrigger or AreaTriggerEntity or AreaTriggerEntityCustom;
+    public bool IsTriggerEntity => SourceType is AreaTriggerEntity or AreaTriggerEntityCustom;
     public bool IsActionList => SourceType == ActionList;
-    public string Describe(string creature) => IsActionList ? $"Action list {EntryOrGuid}" : IsAreaTrigger ? $"AreaTrigger {EntryOrGuid}" : IsSpawn ? $"This spawn only (#{-EntryOrGuid})" : $"All {creature} spawns";
+    public string Describe(string creature) => IsActionList ? $"Action list {EntryOrGuid}" : IsTriggerEntity ? $"AreaTrigger template {EntryOrGuid}" : IsAreaTrigger ? $"AreaTrigger {EntryOrGuid}" : IsSpawn ? $"This spawn only (#{-EntryOrGuid})" : $"All {creature} spawns";
 }
 
 /// <summary>
@@ -113,14 +117,14 @@ public sealed class SmartRule(Row row)
 public sealed partial class SmartCatalog
 {
     /// <summary>The 3.3.5 AzerothCore catalog (event_param1-6, action_param1-6).</summary>
-    public static readonly SmartCatalog Ac = new(WorldDialect.AzerothCore, AcSmartTypes.Events, AcSmartTypes.Actions, AcSmartTypes.Targets, 6, 6, AcTables.Instance, AcTables.SmartScripts, AcTables.CreatureText, AcTables.CreatureAI,
+    public static readonly SmartCatalog Ac = new(WorldDialect.AzerothCore, AcSmartTypes.Events, AcSmartTypes.Actions, AcSmartTypes.Targets, 6, 6, AcTables.Instance, AcTables.SmartScripts, AcTables.CreatureText, AcTables.CreatureAI, AcTables.AreaTriggerScripts, null,
         [(0x1, "Only once"), (0x2, "Normal (10)"), (0x4, "Heroic (25)"), (0x8, "Heroic 10"), (0x10, "Heroic 25"), (0x80, "Debug builds only"), (0x100, "Keep after reset"), (0x200, "Also while charmed")], 0);
 
     /// <summary>
     /// The TrinityCore master catalog (event_param1-5, action_param1-7, string parameters and a
     /// Difficulties list instead of the difficulty flags).
     /// </summary>
-    public static readonly SmartCatalog Trinity = new(WorldDialect.TrinityCore, TcSmartTypes.Events, TcSmartTypes.Actions, TcSmartTypes.Targets, 5, 7, TcTables.Instance, TcTables.SmartScripts, TcTables.CreatureText, TcTables.CreatureAI,
+    public static readonly SmartCatalog Trinity = new(WorldDialect.TrinityCore, TcSmartTypes.Events, TcSmartTypes.Actions, TcSmartTypes.Targets, 5, 7, TcTables.Instance, TcTables.SmartScripts, TcTables.CreatureText, TcTables.CreatureAI, TcTables.AreaTriggerScripts, TcTables.AreaTriggerAI,
         [(0x1, "Only once"), (0x20, "Action list waits for it"), (0x80, "Debug builds only"), (0x100, "Keep after reset"), (0x200, "Also while charmed")], 0x1E);
 
     public static SmartCatalog For(WorldDialect dialect) => dialect switch
@@ -133,13 +137,15 @@ public sealed partial class SmartCatalog
     readonly SmartType[] events, actions, targets;
     readonly Dictionary<int, SmartType> eventById, actionById, targetById;
 
-    SmartCatalog(WorldDialect dialect, SmartType[] events, SmartType[] actions, SmartType[] targets, int eventParams, int actionParams, ITableCatalog tables, TableSchema scripts, TableSchema text, TableSchema ai, (uint Bit, string Name)[] eventFlags, uint deprecatedFlags)
+    SmartCatalog(WorldDialect dialect, SmartType[] events, SmartType[] actions, SmartType[] targets, int eventParams, int actionParams, ITableCatalog tables, TableSchema scripts, TableSchema text, TableSchema ai, TableSchema triggerScripts, TableSchema? triggerAi, (uint Bit, string Name)[] eventFlags, uint deprecatedFlags)
     {
         Dialect = dialect;
         Tables = tables;
         Scripts = scripts;
         CreatureText = text;
         CreatureAi = ai;
+        AreaTriggerScripts = triggerScripts;
+        AreaTriggerAi = triggerAi;
         this.events = events;
         this.actions = actions;
         this.targets = targets;
@@ -161,6 +167,12 @@ public sealed partial class SmartCatalog
 
     /// <summary>The creature's AIName, which must be SmartAI for the rules to run.</summary>
     public TableSchema CreatureAi { get; }
+
+    /// <summary>areatrigger_scripts: the script a client AreaTrigger runs (SmartTrigger for its rules).</summary>
+    public TableSchema AreaTriggerScripts { get; }
+
+    /// <summary>A spawned AreaTrigger's ScriptName (TrinityCore `areatrigger`), null where spawns do not exist.</summary>
+    public TableSchema? AreaTriggerAi { get; }
 
     /// <summary>Every type of the server's enums, including range markers and removed slots (see <see cref="IsMarker"/>).</summary>
     public IReadOnlyList<SmartType> Events => events;
@@ -187,39 +199,59 @@ public sealed partial class SmartCatalog
     public const uint LinkEvent = 61, RunActionList = 80, Talk = 1;
     public const uint AreaTriggerEvent = 46, SelfTarget = 1;
 
-    /// <summary>
-    /// Events the loader accepts for an AreaTrigger script: On trigger and Then (SmartAIEventMask,
-    /// SmartScriptMgr.h; checked in SmartAIMgr::IsEventValid).
-    /// </summary>
-    public static bool AllowedForAreaTrigger(uint eventType) => eventType is AreaTriggerEvent or LinkEvent;
+    /// <summary>TrinityCore's "Area trigger left" (SMART_EVENT_AREATRIGGER_EXIT); AzerothCore has no such event.</summary>
+    public const uint AreaTriggerExitEvent = 88;
 
     /// <summary>
-    /// The script name that makes an AreaTrigger's rules run, with a fix row when it is missing.
+    /// Events the loader accepts for an AreaTrigger script (SmartAIEventMask, SmartScriptMgr.h; checked
+    /// in SmartAIMgr::IsEventValid). AzerothCore: On trigger and Then. TrinityCore client triggers add
+    /// "Area trigger left"; its spawned triggers also run timed updates (UPDATE_OOC 1, UPDATE 60).
+    /// </summary>
+    public bool AllowedForAreaTrigger(SmartScope scope, uint eventType) => Dialect == WorldDialect.TrinityCore
+        ? eventType is AreaTriggerEvent or AreaTriggerExitEvent or LinkEvent || (scope.IsTriggerEntity && eventType is 1 or 60)
+        : eventType is AreaTriggerEvent or LinkEvent;
+
+    /// <summary>The script name that makes this trigger's rules run.</summary>
+    public static string SmartScriptName(AreaTriggerOwner trigger) => trigger.IsEntity ? AreaTriggerRecord.SmartEntity : AreaTriggerRecord.SmartTrigger;
+
+    /// <summary>
+    /// The script name that makes an AreaTrigger's rules run, with a fix row when it is missing. A client
+    /// trigger's name is its areatrigger_scripts row; a spawn's is its own `areatrigger.ScriptName`, or
+    /// its create properties' (<paramref name="fallback"/>) when that is empty (AreaTrigger::GetScriptId).
     /// Another name means a C++ script owns the trigger, so its SmartAI rows are ignored; that is a
     /// deliberate choice and gets a warning only (one ScriptName per trigger).
     /// </summary>
-    public static IEnumerable<InteractionIssue> CheckAreaTriggerScript(int trigger, Row? script, bool hasRules)
+    public IEnumerable<InteractionIssue> CheckAreaTriggerScript(AreaTriggerOwner trigger, Row? script, string fallback, bool hasRules)
     {
-        string name = script?.T("ScriptName") ?? "";
-        if (!hasRules || name == AreaTriggerRecord.SmartTrigger)
+        string own = script?.T("ScriptName") ?? "";
+        string name = own.Length > 0 ? own : fallback;
+        string wanted = SmartScriptName(trigger);
+        if (!hasRules || name == wanted)
         {
             yield break;
         }
 
-        if (name.Length == 0)
-        {
-            yield return new(false, "The AreaTrigger has no script, so these rules never run.", [EnableSmartTrigger(trigger, null)]);
-        }
-        else
-        {
-            yield return new(false, $"The AreaTrigger runs the C++ script {name}, so these rules never run.", [EnableSmartTrigger(trigger, script)]);
-        }
+        // A spawn's row is always read with it; without one there is nothing to switch.
+        RowEdit[]? fix = trigger.IsEntity && script == null ? null : [EnableTriggerScript(trigger, script)];
+        string what = trigger.IsEntity ? "The spawned AreaTrigger" : "The AreaTrigger";
+        yield return name.Length == 0
+            ? new(false, $"{what} has no script, so these rules never run.", fix)
+            : new(false, $"{what} runs the C++ script {name}, so these rules never run.", fix);
     }
 
-    public static RowEdit EnableSmartTrigger(int trigger, Row? script)
+    /// <summary>The row edit that sets the trigger's (or spawn's) script to the SmartAI one.</summary>
+    public RowEdit EnableTriggerScript(AreaTriggerOwner trigger, Row? script)
     {
-        string key = trigger.ToString(CultureInfo.InvariantCulture);
-        return new(InteractionTables.AreaTriggerScripts.Name, key, script, script?.With("ScriptName", AreaTriggerRecord.SmartTrigger) ?? Row.Of(("entry", trigger), ("ScriptName", AreaTriggerRecord.SmartTrigger)));
+        string wanted = SmartScriptName(trigger);
+        if (trigger.IsEntity)
+        {
+            var table = AreaTriggerAi ?? throw new InvalidDataException("This database has no spawned AreaTriggers.");
+            string spawn = trigger.SpawnId.ToString(CultureInfo.InvariantCulture);
+            return new(table.Name, spawn, script, (script ?? Row.Of(("SpawnId", trigger.SpawnId), ("ScriptName", ""))).With("ScriptName", wanted));
+        }
+
+        string key = trigger.Id.ToString(CultureInfo.InvariantCulture);
+        return new(AreaTriggerScripts.Name, key, script, script?.With("ScriptName", wanted) ?? Row.Of(("entry", (int)trigger.Id), ("ScriptName", wanted)));
     }
 
     // Range markers and removed slots are not types: looking one up returns null, so validation
@@ -480,19 +512,22 @@ public sealed partial class SmartCatalog
 
             if (scope.IsAreaTrigger)
             {
-                if (!AllowedForAreaTrigger(rule.Event))
+                if (!AllowedForAreaTrigger(scope, rule.Event))
                 {
-                    yield return new(true, $"{where}: AreaTrigger scripts only accept \"On trigger\" and \"Then\" events; the server skips this rule.");
+                    string accepted = string.Join(", ", events.Where(e => !IsMarker(e) && AllowedForAreaTrigger(scope, (uint)e.Id)).Select(e => $"\"{e.Name}\""));
+                    yield return new(true, $"{where}: this AreaTrigger script only accepts {accepted} events; the server skips this rule.");
                 }
-                else if (rule.Event == AreaTriggerEvent && rule.EventParam(1) != 0 && rule.EventParam(1) != (uint)scope.EntryOrGuid)
+                else if (rule.Event == AreaTriggerEvent && Event(AreaTriggerEvent)?.Params.Length > 0 && rule.EventParam(1) != 0 && rule.EventParam(1) != (uint)scope.EntryOrGuid)
                 {
+                    // AzerothCore's On trigger names the trigger it fires for; TrinityCore's has no parameter.
                     yield return new(false, $"{where} only fires for AreaTrigger {rule.EventParam(1)}, not this one ({scope.EntryOrGuid}); use 0 or {scope.EntryOrGuid}.");
                 }
 
-                // An AreaTrigger script has no owner object: Self selects nothing (SmartScript
+                // A client AreaTrigger's script has no owner object: Self selects nothing (SmartScript
                 // GetTargets with a null base object), Talk needs a creature target to speak, and
-                // Run action list starts the list on its SmartAI creature/GameObject target.
-                if (rule.Target == SelfTarget)
+                // Run action list starts the list on its SmartAI creature/GameObject target. A spawned
+                // trigger is an object (SmartAreaTriggerAI), so Self and its own action lists work.
+                if (rule.Target == SelfTarget && !scope.IsTriggerEntity)
                 {
                     yield return new(false, $"{where} targets Self, but an AreaTrigger has no object of its own; pick the invoker or a creature.");
                 }
@@ -500,7 +535,7 @@ public sealed partial class SmartCatalog
                 {
                     yield return new(false, $"{where}: Talk from an AreaTrigger only speaks when the target is a creature.");
                 }
-                else if (rule.Action == RunActionList && Target(rule.Target)?.Code is { } listTarget && !listTarget.Contains("CREATURE", StringComparison.OrdinalIgnoreCase) && !listTarget.Contains("GAMEOBJECT", StringComparison.OrdinalIgnoreCase))
+                else if (!scope.IsTriggerEntity && rule.Action == RunActionList && Target(rule.Target)?.Code is { } listTarget && !listTarget.Contains("CREATURE", StringComparison.OrdinalIgnoreCase) && !listTarget.Contains("GAMEOBJECT", StringComparison.OrdinalIgnoreCase))
                 {
                     yield return new(false, $"{where}: an AreaTrigger runs action lists on a SmartAI creature or GameObject target, not the player.");
                 }
