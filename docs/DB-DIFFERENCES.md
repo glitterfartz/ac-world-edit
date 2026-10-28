@@ -85,7 +85,7 @@ Schema references for column meanings, flags and enums:
   - `creature_text` + SoundPlayType (0 normal, 1 from the creature); Language is unsigned in TC. `BroadcastTextId` links `hotfixes.broadcast_text` (client BroadcastText.db2), not a world table.
 - `conditions`: + ConditionStringValue1. Source types ≥25 diverge. TC uses 25-36: 26 phase, 27 graveyard, 28/30 areatrigger, 29 conversation, 31 trainer spell, 32 object visibility, 33 spawn group…. AC uses 28-30 with different meanings.
 - `points_of_interest`: + PositionZ, WMOGroupID, VerifiedBuild. `page_text`: + PlayerConditionID, Flags.
-- Waypoints: AC `waypoint_data(id,point,position_*,orientation,velocity,delay,smoothTransition,move_type,action,action_chance,wpguid)`. TC `waypoint_path(PathId,MoveType,Flags,Velocity,Comment)` plus `waypoint_path_node(PathId,NodeId,PositionX/Y/Z,Orientation,Delay)`.
+- Waypoints: AC `waypoint_data(id,point,position_*,orientation,velocity,delay,smoothTransition,move_type,action,action_chance,wpguid)`. TC `waypoint_path(PathId,MoveType,Flags,Velocity,Comment)` plus `waypoint_path_node(PathId,NodeId,PositionX/Y/Z,Orientation,Delay)`. TC has no per-node velocity, move type, smooth transition or action: speed and walk/run belong to the whole path (shared by every creature using it). Creatures name the path in `creature_addon.PathId` / `creature_template_addon.PathId` (AC `path_id`). The editor reads each node with its path's values and edits only position, facing and delay.
 - Pools: AC `pool_creature/pool_gameobject(guid,pool_entry,chance,description)`. TC `pool_members(type,spawnId,poolSpawnId,chance,description)`.
 - Loot tables (all `*_loot_template`): Reference → ItemType.
 - Other non-editor tables:

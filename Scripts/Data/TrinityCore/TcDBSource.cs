@@ -5,9 +5,9 @@ namespace ACWorldEdit.Data;
 
 /// <summary>
 /// The TrinityCore world database (with its hotfixes database): one connection shared by the per-area
-/// sources. Spawns, graveyards, teleports, area triggers, creature properties, quests and creature
-/// behavior (SmartAI and speech) are read here; the waypoint tables and AreaTrigger scripts are not
-/// available yet and say so.
+/// sources. Spawns, graveyards, teleports, area triggers, creature properties, quests, creature
+/// behavior (SmartAI and speech) and waypoints are read here; AreaTrigger scripts are not available
+/// yet and say so.
 /// </summary>
 public sealed class TcDBSource : IDBSource
 {
@@ -19,6 +19,7 @@ public sealed class TcDBSource : IDBSource
     readonly TcInteractionSource interaction;
     readonly TcContentSource content;
     readonly TcBehaviorSource behavior;
+    readonly TcWaypointSource waypoints;
 
     public TcDBSource(WorldConnection connection, IClientLookup? lookup)
     {
@@ -30,6 +31,7 @@ public sealed class TcDBSource : IDBSource
         interaction = new(database, lookup, hotfixes);
         content = new(database, lookup);
         behavior = new(database, lookup, hotfixes);
+        waypoints = new(database);
         // game_tele has the same schema in both servers.
         teleports = new(database);
     }
@@ -45,7 +47,7 @@ public sealed class TcDBSource : IDBSource
     public Task<GraveyardRegionResult> ReadGraveyardsAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token) => graveyards.ReadAsync(region, point, search, token);
     public Task<AreaTriggerRegionResult> ReadAreaTriggersAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token) => areaTriggers.ReadAsync(region, point, search, token);
     public Task<TeleportLocation[]> ReadTeleportsAsync(CancellationToken token) => teleports.ReadAsync(token);
-    public Task<WaypointRegionResult> ReadWaypointsAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token) => throw Unsupported("Waypoints");
+    public Task<WaypointRegionResult> ReadWaypointsAsync(CreatureRegion region, SpawnQueryPoint? point, CancellationToken token) => waypoints.ReadAsync(region, point, token);
     public Task<ContentSnapshot> ReadQuestAsync(uint quest, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => content.ReadQuestAsync(quest, draftKeys, effective, catalog, token);
     public Task<ContentSnapshot> ReadBehaviorAsync(uint entry, ulong guid, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => behavior.ReadAsync(entry, guid, draftKeys, effective, catalog, token);
     public Task<ContentSnapshot> ReadAreaTriggerBehaviorAsync(uint trigger, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw Unsupported("AreaTrigger rules");

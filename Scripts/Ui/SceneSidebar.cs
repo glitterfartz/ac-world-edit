@@ -141,8 +141,7 @@ public partial class SceneSidebar : PanelContainer
     /// </summary>
     public void SetDatabaseAvailable(bool available)
     {
-        databaseAvailable = available;
-        foreach (string key in new[] { "creatures", "gameobjects", "graveyards", "areatriggers" })
+        foreach (string key in new[] { "creatures", "gameobjects", "graveyards", "areatriggers", "waypoints" })
         {
             if (FindChild(key, true, false) is CheckButton toggle)
             {
@@ -150,33 +149,7 @@ public partial class SceneSidebar : PanelContainer
             }
         }
 
-        UpdateWaypointToggle();
         databaseNote.Visible = !available;
-    }
-
-    bool databaseAvailable = true, waypointsForcedOff;
-
-    /// <summary>Waypoints read AzerothCore's waypoint_data; the TrinityCore tables are not supported yet, so the layer is off there.</summary>
-    void UpdateWaypointToggle()
-    {
-        if (FindChild("waypoints", true, false) is not CheckButton toggle)
-        {
-            return;
-        }
-
-        bool supported = dialect == WorldDialect.AzerothCore;
-        toggle.Disabled = !databaseAvailable || !supported;
-        toggle.TooltipText = supported ? "" : "Waypoints are not available for the TrinityCore database yet.";
-        if (!supported && toggle.ButtonPressed)
-        {
-            toggle.ButtonPressed = false;
-            waypointsForcedOff = true;
-        }
-        else if (supported && waypointsForcedOff)
-        {
-            toggle.ButtonPressed = true;
-            waypointsForcedOff = false;
-        }
     }
 
     VBoxContainer connectionDetails = null!;
@@ -404,7 +377,6 @@ public partial class SceneSidebar : PanelContainer
         }
 
         dialect = value;
-        UpdateWaypointToggle();
         FillDifficulty();
         bool trinity = dialect == WorldDialect.TrinityCore;
         phaseCaption.Text = trinity ? "Phase ID" : "Phase mask";

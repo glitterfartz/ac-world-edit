@@ -165,7 +165,7 @@ Five overlays are children of `TerrainViewer`. They share one shape (`RegionOver
 | `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens the properties window and (AzerothCore only) the behavior editor |
 | `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `GameObjectDraft` |
 | `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
-| `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions through `WaypointDraft` (AzerothCore only; the layer is off for TrinityCore) |
+| `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions and properties through `WaypointDraft`. For TrinityCore the card shows only facing and delay as editable, the path's move type and velocity read-only, and hides smooth transition and actions |
 | `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs` | `IDBSource.ReadAreaTriggersAsync` | No (behavior editor only, AzerothCore) |
 
 Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures within `Preview.ViewDistance`, refreshed every 0.2 s. Creatures with a model hide their capsule placeholder once the model is ready.

@@ -21,6 +21,14 @@ public readonly record struct WaypointProps(double? Orientation, double Velocity
 {
     public const int MaxMoveType = 3;
 
+    /// <summary>
+    /// True when this differs from <paramref name="other"/> only in properties the dialect can store.
+    /// TrinityCore's waypoint_path_node holds just facing and delay; the rest belongs to the path or
+    /// does not exist.
+    /// </summary>
+    public bool EditableOn(WorldDialect dialect, WaypointProps other) =>
+        dialect != WorldDialect.TrinityCore || this with { Orientation = other.Orientation, Delay = other.Delay } == other;
+
     public WaypointProps ToColumn() => this with { Orientation = Orientation is double o ? (float)o : null, Velocity = (float)Velocity };
 
     /// <summary>

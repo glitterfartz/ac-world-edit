@@ -103,6 +103,19 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task WaypointPathsComeFromTheNodeTableWithThePathsMoveType()
+    {
+        var result = await Open().ReadWaypointsAsync(Elwynn, Goldshire, CancellationToken.None);
+        // A Goldshire creature (guid 280672) walks path 22453760, whose waypoint_path row says walk.
+        var path = Assert.Single(result.Paths, p => p.Id == 22453760);
+        Assert.Equal(WorldDialect.TrinityCore, path.Dialect);
+        Assert.Equal(92, path.Nodes.Length);
+        Assert.Contains(path.Users, u => u.Guid == 280672 && u.Walks);
+        Assert.All(path.Nodes, n => Assert.True(n.MoveType == 0 && n.Velocity == 0 && !n.Smooth && n.Action == 0));
+        Assert.Equal(path.Nodes.Select(n => n.Point).Order(), path.Nodes.Select(n => n.Point));
+    }
+
+    [TcDbFact]
     public async Task BroadcastSearchFindsTextFromTheHotfixesTable()
     {
         var source = Open();

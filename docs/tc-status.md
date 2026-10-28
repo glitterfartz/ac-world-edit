@@ -1,8 +1,8 @@
 # Status
 
-The plan and open work for the TrinityCore database overhaul, and the project's other known gaps. Finished work is described in the architecture docs, not here. Schema differences are in `docs/DB-DIFFERENCES.md`. Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575. Delete the TrinityCore plan sections when Phase 9 lands.
+The plan and open work for the TrinityCore database overhaul, and the project's other known gaps. Finished work is described in the architecture docs, not here. Schema differences are in `docs/DB-DIFFERENCES.md`. Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575.
 
-Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is not started; the waypoint layer and AreaTrigger rules are off in TrinityCore mode (`TerrainViewer.AreaTriggerBehavior`).
+Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is built for TrinityCore: the waypoint layer reads `waypoint_path` and `waypoint_path_node`, and a node's position, facing and delay edit and export, with refinements listed below. All nine phases are built; AreaTrigger rules are the one editor still off in TrinityCore mode (`TerrainViewer.AreaTriggerBehavior`).
 
 ## Decisions and design
 
@@ -67,21 +67,14 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Speech | partial | Lines link an existing broadcast text (hotfixes first, then the client) and edit `Text`, type, language, range, chance, gesture, sound and `SoundPlayType`. Editing a broadcast text itself, which is a `hotfixes.broadcast_text` row plus a `hotfix_data` row with stale checks against both databases, is not started. |
 | Smokes | partial | The TC client smoke (stages 70–72) opens Hogger's behavior and speech, adds a rule, checks validation and `Difficulties`, and undoes. `--behavior-smoke` and `--content-smoke` still run against AzerothCore only; there is no TC copy of the action-list and Then-chain flows beyond unit tests. |
 
-### Phase 9
+### Phase 9 refinements
 
 | Item | Status | Notes |
 |---|---|---|
-| Waypoints: `TcWaypointSource`, per-dialect `WaypointEdit`, `waypoint_path_node` export | not started | Phase 9. Layer disabled in TC. SmartAI waypoint events (`WAYPOINT_REACHED`, path events) are already in the catalog. |
-
-### Phase plans
-
-Phases 6–8 are built; their refinements are in the tables above. Phase 9 is not started:
-
-**Phase 9: waypoints**
-- `TcWaypointSource` reads `waypoint_path(PathId, MoveType, Flags, Velocity, Comment)` and `waypoint_path_node(PathId, NodeId, PositionX/Y/Z, Orientation, Delay)`. Creatures reference paths through `creature_addon`/`creature_template_addon.PathId`.
-- TC has no per-node Action/ActionChance/Smooth and moves MoveType/Velocity to the path, so `WaypointEdit` needs a per-dialect view of which fields are editable.
-- `TcSqlDialect.Waypoint` writes `waypoint_path_node` position edits. Re-enable the waypoint layer in TC mode.
-- Tests: TcDb read of a known path, `SqlExportTests` TC waypoint cases, `--waypoint-smoke` against TC.
+| Path-level properties | not started | TrinityCore keeps `MoveType`, `Velocity` and `Flags` on `waypoint_path`, shared by every creature on the path. The card shows move type and velocity read-only as "Path move type" and "Path velocity", and the export refuses a node edit that changes them; editing them needs a path-level control that warns how many creatures share the path. `Flags` and `Comment` are not read. |
+| Add, delete and reorder nodes | not started | As in AzerothCore, only existing nodes move or change; there is no way to insert, remove or renumber a node or create a path. |
+| Waypoints from other users | not started | Paths are found through `creature_addon` / `creature_template_addon.PathId` only. SmartAI `WAYPOINT_START` paths and `script_waypoint`-style users are not followed. |
+| Smokes | partial | The TC client smoke (stages 80–82) selects a Goldshire path point, checks which fields are editable and runs the move, delay, undo, redo and revert workflow with the TC export. `--waypoint-smoke` still has no TC run of its own. |
 
 ### Foundation, data and overlays
 

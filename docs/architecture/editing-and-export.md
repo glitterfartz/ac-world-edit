@@ -39,6 +39,7 @@ AzerothCore (`Scripts/Data/AzerothCore/`):
 | `AcGraveyardSource` | `game_graveyard`, `graveyard_zone`; spirit healers from `creature` joined to `creature_template` (npcflag) |
 | `AcTeleportSource` | `game_tele` |
 | `AcWaypointSource` | `waypoint_data`; paths found through `creature_addon.path_id`, else `creature_template_addon.path_id` |
+| `TcWaypointSource` | `waypoint_path_node` and `waypoint_path`; paths found through `creature_addon.PathId`, else `creature_template_addon.PathId`. Each node carries its path's move type and velocity; the path is marked `WorldDialect.TrinityCore` |
 | `AcAreaTriggerSource` | `areatrigger`, `areatrigger_scripts`, `areatrigger_teleport`, `areatrigger_involvedrelation`, `areatrigger_tavern`, `quest_template`, `smart_scripts` |
 | `AcInteractionSource` | `creature_template`, `creature`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `npc_spellclick_spells`, `gossip_menu`, `gossip_menu_option`, `npc_text`, `trainer`, `trainer_spell`, `item_template`, `quest_template`, `broadcast_text`, `points_of_interest`, `conditions`, `smart_scripts` |
 | `AcContentSource` | the four quest tables, starter and ender links, `creature_template` (AIName), `smart_scripts` (source types 0, 9, 2), `creature_text`, `areatrigger_scripts`, `areatrigger`, `creature`, `gameobject_template`, `item_template` |
@@ -57,7 +58,7 @@ TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage 
 | `TcBehaviorSource` | the behavior snapshot of one creature: `smart_scripts` (source types 0 and the timed action lists of type 9 they run), `creature_template` (AIName, ScriptName), `creature_text`, with creature, object and quest names from the world database, item and spell names from the client, and each linked broadcast text from the hotfixes database before the client; also the used action list IDs |
 | `TcHotfixSource` | `hotfixes` database: `creature_display_info`, `creature_model_data`, `broadcast_text`, `area_trigger`, `item_sparse` (vendor item name and quality) |
 
-Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has quest and behavior sources (`TcContentSource`, `TcBehaviorSource`) but no waypoint source and no AreaTrigger-rules source yet; the waypoint layer and AreaTrigger rules are off for it.
+Teleports reuse `AcTeleportSource` (same `game_tele` schema). TrinityCore has quest, behavior and waypoint sources (`TcContentSource`, `TcBehaviorSource`, `TcWaypointSource`) but no AreaTrigger-rules source yet; AreaTrigger rules are off for it.
 
 ## Draft model: `Foundation/`
 
@@ -68,7 +69,7 @@ Each kind of edit has its own draft type. All of them are backed by `DraftHistor
 | `CreatureDraft` | `CreatureDraft.cs` | Creature positions. `Move`, `Revert`, `Undo`, `Redo`, `NetMoves()` |
 | `GameObjectDraft` | `GameObjectDraft.cs` | GameObject positions and rotation |
 | `GraveyardDraft` | `GraveyardDraft.cs` | Graveyard location, name and zone links, dialect-neutral (`ISqlDialect.Graveyard` maps them to tables). ID and map cannot change |
-| `WaypointDraft` | `WaypointDraft.cs` | AzerothCore `waypoint_data` point positions and properties |
+| `WaypointDraft` | `WaypointDraft.cs` | Waypoint positions and properties of either dialect (`WaypointProps.EditableOn` says which properties a dialect stores: TrinityCore only facing and delay) |
 | `ContentDrafts` | `ContentDrafts.cs` | One shared `InteractionDraft` for the interaction, quest and behavior editors |
 | `InteractionDraft` | `InteractionDraft.cs` | Generic row edits (insert, update, delete); several edits undo as one command. Each source's table catalog comes from `SourceDialects` (`sources.json`); an unknown source is AzerothCore |
 | `InteractionRows` | `InteractionRows.cs` | The row model and `AcTables`, the AzerothCore catalog (`InteractionTables` is its legacy static facade); TrinityCore's catalog is `TcTables` (`TcTables.cs`) |
@@ -136,7 +137,7 @@ Per change:
 - **GameObject move:** the same pattern on `gameobject`.
 - **Graveyard position or name:** an `UPDATE` guarded by ID, position and comment, on `game_graveyard` (AzerothCore) or `world_safe_locs` (TrinityCore).
 - **Graveyard links:** `INSERT`, `DELETE` or `UPDATE` on `graveyard_zone`, one per changed link. TrinityCore has no `Faction` column; the faction is a team row in `conditions` (source type 27).
-- **Waypoint point:** an `UPDATE` on `waypoint_data` (AzerothCore only; `TcSqlDialect` refuses waypoint edits).
+- **Waypoint point:** an `UPDATE` on `waypoint_data` for AzerothCore, or on `waypoint_path_node` for TrinityCore, keyed by path and point; only the changed columns are set and guarded. `TcSqlDialect` exports position, facing and delay and refuses an edit that changes the path-level move type or velocity, smooth transition or action instead of dropping it.
 - **Content rows:** insert writes every allowed column; delete matches every allowed column; update changes and guards only the key plus the changed columns. Restricting updates this way is what lets `creature_ai` and `creature_template` share a table safely.
 
 Escaping and guards:

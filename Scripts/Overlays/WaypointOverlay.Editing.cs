@@ -130,6 +130,12 @@ public partial class WaypointOverlay : IPlacementEditor
         gizmo.Finish(false);
         var before = StateOf(path, node);
         var after = change(before).ToColumn();
+        if (!before.Props.EditableOn(path.Dialect, after.Props))
+        {
+            Say("Not saved: TrinityCore stores only position, facing and delay on a waypoint.");
+            after = before;
+        }
+
         if (draft != null && after != before)
         {
             try

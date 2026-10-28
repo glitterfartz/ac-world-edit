@@ -575,6 +575,38 @@ public partial class TerrainViewer
                 { SmokeFail("CLIENT_SHOT_SPEECH_LINES lines=" + creatureProps.Context.Behavior.SmokeLineCount); return; }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-speech.png"));
                 GD.Print($"CLIENT_SHOT_BEHAVIOR_OK entry=448 rules=4 lines={creatureProps.Context.Behavior.SmokeLineCount} add/validation/difficulties/undo");
+                // The waypoint layer next: select a path point near Goldshire and edit it.
+                creatureProps.Visible = false;
+                clientShotFrames = 0;
+                clientShotCreatureStage = 80;
+                return;
+            case 80:
+                if (waypoints.SmokeQueryIdle && waypoints.SmokeNodeNear(camera) is { } near)
+                {
+                    waypoints.ShowAll = true;
+                    waypoints.Select(near.Path.Id, near.Node.Point);
+                    clientShotFrames = 0;
+                    clientShotCreatureStage = 81;
+                }
+                else if (clientShotFrames++ > 600)
+                { SmokeFail("CLIENT_SHOT_WAYPOINTS_NONE no followed path near Goldshire " + waypoints.QueryStatus); }
+                return;
+            case 81:
+                if (clientShotFrames++ < 60) return;
+                var fields = waypoints.SmokeFields;
+                // TrinityCore stores facing and delay per node; the rest must not look editable.
+                if (waypoints.SmokeSelected is null || fields.SmoothShown || fields.ActionShown || fields.VelocityEditable || fields.MoveTypeEditable || !fields.DelayEditable || !fields.FacingEditable)
+                { SmokeFail($"CLIENT_SHOT_WAYPOINT_FIELDS {fields}"); return; }
+                if (!waypoints.SmokeEditing())
+                { SmokeFail("CLIENT_SHOT_WAYPOINT_EDIT"); return; }
+                waypoints.SmokeScrollToEnd();
+                clientShotFrames = 0;
+                clientShotCreatureStage = 82;
+                return;
+            case 82:
+                if (clientShotFrames++ < 15) return;
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-waypoint.png"));
+                GD.Print("CLIENT_SHOT_WAYPOINT_OK move/delay/undo/redo/revert export waypoint_path_node; path-level fields read-only");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();
                 return;

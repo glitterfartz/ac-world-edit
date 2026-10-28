@@ -36,11 +36,34 @@ public class SqlDialectTests
     }
 
     [Fact]
-    public void TrinityCoreRefusesWaypointsAndRowsItCannotExportYet()
+    public void TrinityCoreWaypointsUpdateTheNodeRow()
     {
-        var waypoint = new WaypointEdit("src", 5, 1, new(1, 2, 3), new(4, 5, 6));
-        var error = Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [], Stamp, [waypoint], TcSchema.Instance));
-        Assert.Contains("TrinityCore", error.Message);
+        var props = new WaypointProps(null, 0, 0, false, 0, 0, 0);
+        var move = new WaypointEdit("src", 5, 2, new(1, 2, 3), new(4, 5, 6), props, props with { Orientation = 1.5f, Delay = 3000 });
+        var tc = SqlExport.Build("src", [], [], [], Stamp, [move], TcSchema.Instance);
+        Assert.Contains("UPDATE `waypoint_path_node` SET `PositionX` = 4, `PositionY` = 5, `PositionZ` = 6, `Orientation` = 1.5, `Delay` = 3000 WHERE `PathId` = 5 AND `NodeId` = 2", tc.Apply);
+        Assert.Contains("`Orientation` IS NULL AND `Delay` = 0", tc.Apply);
+        Assert.DoesNotContain("waypoint_data", tc.Apply + tc.Revert);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void TrinityCoreRefusesWaypointChangesThatHaveNoNodeColumn(int field)
+    {
+        var props = new WaypointProps(null, 0, 0, false, 0, 0, 0);
+        var changed = field switch { 1 => props with { Velocity = 7 }, 2 => props with { MoveType = 1 }, _ => props with { Smooth = true } };
+        var edit = new WaypointEdit("src", 5, 2, new(1, 2, 3), new(1, 2, 3), props, changed);
+        Assert.Contains("path", Assert.Throws<InvalidDataException>(() => SqlExport.Build("src", [], [], [], Stamp, [edit], TcSchema.Instance)).Message);
+        Assert.False(props.EditableOn(WorldDialect.TrinityCore, changed));
+        Assert.True(props.EditableOn(WorldDialect.AzerothCore, changed));
+        Assert.True(props.EditableOn(WorldDialect.TrinityCore, props with { Delay = 5, Orientation = 2 }));
+    }
+
+    [Fact]
+    public void TrinityCoreRefusesRowsItCannotExportYet()
+    {
         // areatrigger_scripts is an AzerothCore table; TrinityCore's catalog has no such table.
         var before = Row.Of(("entry", 100), ("ScriptName", ""));
         var row = new RowEdit("areatrigger_scripts", "100", before, before.With("ScriptName", "SmartTrigger"));

@@ -37,6 +37,15 @@ public partial class WaypointOverlay
         return best;
     }
 
+    /// <summary>
+    /// Which property controls the card shows and lets the user change for the selected point.
+    /// </summary>
+    public (bool SmoothShown, bool ActionShown, bool VelocityEditable, bool MoveTypeEditable, bool DelayEditable, bool FacingEditable) SmokeFields =>
+        (smooth.Visible,action.GetParent<Control>().Visible, velocity.Editable, !moveType.Disabled, delay.Editable, facing.Editable);
+
+    /// <summary>Scroll the inspector to the bottom so a screenshot shows the property card.</summary>
+    public void SmokeScrollToEnd() => panelScroll.ScrollVertical = int.MaxValue;
+
     public Vector3? SmokeDotPosition(uint path, uint point) =>
         views.TryGetValue(path, out var view) && lookup.TryGetValue(path, out var data) && Array.FindIndex(data.Nodes, n => n.Point == point) is int i and >= 0 ? view.Positions[i] : null;
 
@@ -57,7 +66,7 @@ public partial class WaypointOverlay
         SetPosition(before.X + 2, before.Y, before.Z);
         var moved = PositionOf(path, node);
         var net = NetEdits();
-        if (moved.X != (float)(before.X + 2) || net.Count != 1 || !CanUndo || SqlExport.Build(net[0].Source, [], [], [], null, net).Changes != 1)
+        if (moved.X != (float)(before.X + 2) || net.Count != 1 || !CanUndo || SqlExport.Build(net[0].Source, [], [], [], null, net, WorldSchemas.For(path.Dialect)).Changes != 1)
         {
             GD.PushError($"WAYPOINT_SMOKE_EDIT_FAILED move before={before} moved={moved} edits={net.Count}");
             return false;
@@ -88,8 +97,9 @@ public partial class WaypointOverlay
         var props = StateOf(path, node).Props;
         SetDelay(props.Delay + 7000);
         net = NetEdits();
-        string apply = net.Count == 1 ? SqlExport.Build(net[0].Source, [], [], [], null, net).Apply : "";
-        if (StateOf(path, node).Props.Delay != props.Delay + 7000 || !apply.Contains($"`delay` = {props.Delay + 7000}", StringComparison.Ordinal) || apply.Contains("position_x", StringComparison.Ordinal))
+        bool tc = path.Dialect == WorldDialect.TrinityCore;
+        string apply = net.Count == 1 ? SqlExport.Build(net[0].Source, [], [], [], null, net, WorldSchemas.For(path.Dialect)).Apply : "";
+        if (StateOf(path, node).Props.Delay != props.Delay + 7000 || !apply.Contains($"`{(tc ? "Delay" : "delay")}` = {props.Delay + 7000}", StringComparison.Ordinal) || apply.Contains(tc ? "PositionX" : "position_x", StringComparison.Ordinal))
         {
             GD.PushError($"WAYPOINT_SMOKE_EDIT_FAILED property edits={net.Count}");
             return false;

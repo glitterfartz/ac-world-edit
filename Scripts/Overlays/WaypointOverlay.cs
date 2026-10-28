@@ -5,7 +5,7 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Bounded projection of waypoint_data paths used by the creatures near the streamed region: a
+/// Bounded projection of waypoint paths (waypoint_data, or waypoint_path_node in TrinityCore) used by the creatures near the streamed region: a
 /// direction-shaded line per path (closed back to the first point, as the server repeats the path),
 /// a dot per point and, for the emphasized path, numbered labels. Source rows stay detached and
 /// read-only; WaypointDraft owns durable local moves. A path is emphasized while one of its points

@@ -18,11 +18,13 @@ public partial class WaypointOverlay
     Button fly = null!, drop = null!, reset = null!, copyGo = null!, undo = null!, redo = null!;
     CheckBox all = null!;
     Button preview = null!;
+    ScrollContainer panelScroll = null!;
 
     public Control BuildPanel()
     {
         var page = InspectorUi.Page("Waypoints", out var scroll);
-        (search, list, status, fly) = InspectorUi.ListSection(page, "Waypoints", "waypoint_data paths of the creatures in the streamed region.",
+        panelScroll = scroll;
+        (search, list, status, fly) = InspectorUi.ListSection(page, "Waypoints", "Waypoint paths of the creatures in the streamed region.",
             "Path ID, creature name or GUID…", "Waiting for a world…", id => SelectPath((uint)id), Refresh, FlyToSelection, PopulateList, 170);
         var display = InspectorUi.Card(page, "Pathing");
         all = new CheckBox
@@ -97,7 +99,8 @@ public partial class WaypointOverlay
     }
 
     /// <summary>
-    /// The property card: one labeled field per editable waypoint_data column.
+    /// The property card: one labeled field per editable waypoint column; for TrinityCore only the node's facing and
+    /// delay are editable and the path's move type and velocity are shown read-only.
     /// </summary>
     void BuildProps(VBoxContainer page)
     {
@@ -194,10 +197,23 @@ public partial class WaypointOverlay
     /// <summary>
     /// Fill the property controls from the effective values; null clears and disables them.
     /// </summary>
-    void ShowProps(WaypointProps? props)
+    void ShowProps(WaypointProps? props, WorldDialect dialect = WorldDialect.AzerothCore)
     {
         bool editable = props.HasValue && draft != null;
         var p = props.GetValueOrDefault();
+        // TrinityCore stores facing and delay per node; move type and velocity belong to the whole
+        // path (shown, not editable here) and smooth transition and actions do not exist.
+        bool perNode = dialect == WorldDialect.AzerothCore;
+        Control Row(Control control) => control is CheckBox ? control : (Control)control.GetParent();
+        foreach (var control in new Control[] { smooth, action, actionChance })
+        {
+            Row(control).Visible = perNode;
+        }
+
+        ((Label)Row(velocity).GetChild(0)).Text = perNode ? "Velocity (yd/s)" : "Path velocity";
+        ((Label)Row(moveType).GetChild(0)).Text = perNode ? "Move type" : "Path move type";
+        velocity.TooltipText = perNode ? "Speed to this point; 0 uses the creature's walk or run speed." : "Speed for the whole path, 0 for the creature's own; every creature on this path shares it.";
+        moveType.TooltipText = perNode ? "How the creature travels to this point." : "How the creature travels along the whole path.";
         delay.Text = props.HasValue ? p.Delay.ToString(CultureInfo.InvariantCulture) : "";
         facing.Text = props.HasValue ? FacingText(p.Orientation) : "";
         velocity.Text = props.HasValue ? p.Velocity.ToString("0.####", CultureInfo.InvariantCulture) : "";
@@ -209,12 +225,13 @@ public partial class WaypointOverlay
             moveType.Select(Math.Clamp(p.MoveType, 0, MoveTypes.Length - 1));
         }
 
-        foreach (var edit in new[] { delay, facing, velocity, action, actionChance })
+        foreach (var edit in new[] { delay, facing, action, actionChance })
         {
             edit.Editable = editable;
         }
 
-        moveType.Disabled = !editable;
+        velocity.Editable = editable && perNode;
+        moveType.Disabled = !editable || !perNode;
         smooth.Disabled = !editable;
     }
 
@@ -267,7 +284,7 @@ public partial class WaypointOverlay
             position[i].Editable = draft != null;
         }
 
-        ShowProps(StateOf(path, node).Props);
+        ShowProps(StateOf(path, node).Props, path.Dialect);
         var lines = new List<string>();
         if (draft?.Conflict(sourceKey, path.Id, node.Point, SourceState(node)) == true)
         {
