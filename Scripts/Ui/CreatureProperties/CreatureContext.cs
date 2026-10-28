@@ -29,7 +29,7 @@ public sealed class CreatureContext
     public Action<uint> BehaviorForEntryRequested { get; set; } = _ => { };
 
     BehaviorPanel? behavior;
-    AcQuestPanel? quest;
+    QuestPanel? quest;
     (uint Entry, ulong Guid)? behaviorOpenedFor;
 
     /// <summary>
@@ -45,16 +45,33 @@ public sealed class CreatureContext
         SpeechInScopes = false
     };
 
-    /// <summary>The quest editor body the Quests section embeds for a quest of this creature.</summary>
-    public AcQuestPanel Quest => quest ??= new AcQuestPanel
+    /// <summary>
+    /// The quest editor body the Quests section embeds for a quest of this creature, of the open
+    /// database's dialect. A dialect switch replaces it (the section reparents the panel it hosts).
+    /// </summary>
+    public QuestPanel Quest
     {
-        Connection = () => Connection(),
-        Store = () => Store(),
-        Drafts = Drafts,
-        Areas = () => Areas(),
-        FlyToEntry = (entry, name) => FlyToEntry(entry, name),
-        BehaviorRequested = entry => BehaviorForEntryRequested(entry)
-    };
+        get
+        {
+            bool trinity = Dialect == WorldDialect.TrinityCore;
+            if (quest != null && (quest is TcQuestPanel) == trinity)
+            {
+                return quest;
+            }
+
+            quest?.GetParent()?.RemoveChild(quest);
+            quest?.QueueFree();
+            QuestPanel panel = trinity ? new TcQuestPanel() : new AcQuestPanel();
+            panel.Connection = () => Connection();
+            panel.Store = () => Store();
+            panel.Drafts = Drafts;
+            panel.Areas = () => Areas();
+            panel.Lookup = () => Lookup();
+            panel.FlyToEntry = (entry, name) => FlyToEntry(entry, name);
+            panel.BehaviorRequested = entry => BehaviorForEntryRequested(entry);
+            return quest = panel;
+        }
+    }
 
     /// <summary>Open the behavior panel on the current creature unless it already shows it.</summary>
     public void EnsureBehaviorOpen()

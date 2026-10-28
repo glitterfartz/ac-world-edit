@@ -262,7 +262,7 @@ public class TrinityReadDbTests
     {
         var dughan = await Creature(240);
         Assert.Equal(5, dughan.Starts.Length);
-        Assert.All(dughan.Starts, q => Assert.False(string.IsNullOrEmpty(q.Title)));
+        Assert.All(dughan.Starts, q => Assert.False(string.IsNullOrEmpty(q.Info?.Title)));
     }
 
     [TcDbFact]

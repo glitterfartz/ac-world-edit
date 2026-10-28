@@ -49,4 +49,15 @@ public class TcQuestLinkTests
         Assert.Single(Page.Starts.Select(restored, 5));
         Assert.Empty(Page.Ends.Select(restored, 5));
     }
+
+    [Fact]
+    public void OnlyTheTrinityPageReportsLinkProblems()
+    {
+        var rows = new RowSet();
+        rows.Set(TcTables.QuestStarter, Row.Of(("id", 5u), ("quest", 0u)));
+        Assert.Contains("enter a quest ID", Assert.Single(Page.Check(rows)).Message);
+        var acRows = new RowSet();
+        acRows.Set(AcTables.QuestStarter, Row.Of(("id", 5u), ("quest", 0u)));
+        Assert.Empty(AcSchema.Instance.QuestLinksPage.Check(acRows));
+    }
 }

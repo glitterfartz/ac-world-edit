@@ -13,7 +13,7 @@ public partial class CreaturePropertiesWindow
     public uint SmokeCurrentMenu => (Section("gossip") as AcGossipSection)?.SmokeCurrentMenu ?? 0;
     public bool SmokeOnVendorPage => active?.Id == "vendor";
     public bool SmokeOnQuestDetail => active?.Id == "quests" && SmokeQuestDetail != 0;
-    public uint SmokeQuestDetail => (Section("quests") as AcQuestsSection)?.SmokeQuestDetail ?? 0;
+    public uint SmokeQuestDetail => (Section("quests") as QuestsSection)?.SmokeQuestDetail ?? 0;
     public bool SmokeLoaded => Context.View != null && Context.Snapshot != null;
     AcCreatureView? view => Context.AcView;
     Node body => (Node?)active ?? this;

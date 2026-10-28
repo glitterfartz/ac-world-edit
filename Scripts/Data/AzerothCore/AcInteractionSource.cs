@@ -254,6 +254,11 @@ public sealed class AcInteractionSource(WorldDatabase database)
         await ReadCounts(session, "SELECT gossip_menu_id,COUNT(*) FROM creature_template WHERE gossip_menu_id IN ({0}) GROUP BY gossip_menu_id", menuRefs, lookup.MenuUserCounts, token);
         await ReadCounts(session, "SELECT TextID,COUNT(DISTINCT MenuID) FROM gossip_menu WHERE TextID IN ({0}) GROUP BY TextID", textRefs, lookup.TextUserCounts, token);
         await ReadCounts(session, "SELECT TrainerId,COUNT(*) FROM creature_default_trainer WHERE TrainerId IN ({0}) GROUP BY TrainerId", trainerRefs, lookup.TrainerUserCounts, token);
+        if (session.Has("conditions.SourceTypeOrReferenceId"))
+        {
+            await ReadCounts(session, "SELECT SourceEntry,COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId=19 AND SourceEntry IN ({0}) GROUP BY SourceEntry", quests.Distinct().ToArray(), lookup.QuestConditionCounts, token);
+        }
+
         lookup.MaxMenuId = Convert.ToUInt32(await Scalar(session, "SELECT COALESCE(MAX(MenuID),0) FROM gossip_menu", [], token));
         lookup.MaxTextId = Convert.ToUInt32(await Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM npc_text", [], token));
         lookup.MaxTrainerId = Convert.ToUInt32(await Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM trainer", [], token));

@@ -96,4 +96,20 @@ public class TcCreatureViewTests
         Assert.Equal(ColumnKind.ULong, TcTables.CreatureTemplate.Columns.Single(c => c.Name == "npcflag").Kind);
         Assert.Equal(17, TcTables.NpcText.Columns.Length);
     }
+
+    [Fact]
+    public void QuestLinksCarryTheQuestAndMarkRowsThatDifferFromTheDatabase()
+    {
+        var rows = Rows();
+        var database = rows.Clone();
+        rows.Set(TcTables.QuestStarter, Row.Of(("id", 7u), ("quest", 100u)));
+        var lookup = new InteractionLookupData(null);
+        lookup.Quests[100] = new QuestInfo(100, "Wolves", 5, 0, "", "", 0, []);
+
+        var edited = TcCreatureView.Build(7, rows, lookup, database).Starts;
+        Assert.Equal("Wolves", Assert.Single(edited).Info?.Title);
+        Assert.True(edited[0].Edited);
+        Assert.False(TcCreatureView.Build(7, rows, lookup, rows.Clone()).Starts[0].Edited);
+        Assert.False(TcCreatureView.Build(7, rows, lookup).Starts[0].Edited);
+    }
 }

@@ -25,19 +25,18 @@ public sealed record TcTrainerView(uint TrainerId, uint MenuId, uint OptionId, b
 /// <summary>An npc_vendor row (Type 1 item, 2 currency).</summary>
 public sealed record TcVendorItem(int Item, uint Type, ItemInfo? Info, int Slot, uint MaxCount, uint IncrTime, uint ExtendedCost, string BonusListIds, uint PlayerConditionId);
 
-public sealed record TcQuestLink(uint Quest, string? Title);
-
 /// <summary>
 /// Read model of one TrinityCore creature for the creature properties window, built from the rows of
 /// <see cref="TcTables"/>: the template, its per-difficulty rows, every gossip menu (a creature can have
 /// several), the trainers bound to gossip options, vendor items, quest links and spell clicks.
 /// </summary>
-public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulong NpcFlags, Row Template, TcDifficultyView[] Difficulties, TcMenuView[] Menus, TcTrainerView[] Trainers, TcVendorItem[] Vendor, TcQuestLink[] Starts, TcQuestLink[] Ends, uint[] SpellClicks) : ICreatureView
+public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulong NpcFlags, Row Template, TcDifficultyView[] Difficulties, TcMenuView[] Menus, TcTrainerView[] Trainers, TcVendorItem[] Vendor, QuestLinkView[] Starts, QuestLinkView[] Ends, uint[] SpellClicks) : ICreatureView
 {
     /// <summary>Menus reachable from the root menus are followed up to this many.</summary>
     public const int MaxMenus = 64;
 
-    public static TcCreatureView Build(uint entry, RowSet rows, IInteractionLookup lookup)
+    /// <param name="snapshot">The database rows the edited marks compare against; without them nothing is marked edited.</param>
+    public static TcCreatureView Build(uint entry, RowSet rows, IInteractionLookup lookup, RowSet? snapshot = null)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
         var template = rows.Get(TcTables.CreatureTemplate, key) ?? throw new InvalidDataException($"Creature template {entry} is missing.");
@@ -87,7 +86,7 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
 
         var vendor = rows.All(TcTables.Vendor).Where(r => r.U("entry") == entry).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item"))
             .Select(r => new TcVendorItem(r.I("item"), r.U("type"), r.U("type") == 1 && r.I("item") > 0 ? lookup.Item((uint)r.I("item")) : null, r.I("slot"), r.U("maxcount"), r.U("incrtime"), r.U("ExtendedCost"), r.T("BonusListIDs"), r.U("PlayerConditionID"))).ToArray();
-        TcQuestLink[] Quests(TableSchema table) => rows.All(table).Where(r => r.U("id") == entry).Select(r => r.U("quest")).Order().Select(q => new TcQuestLink(q, lookup.Quest(q)?.Title)).ToArray();
+        QuestLinkView[] Quests(TableSchema table) => rows.All(table).Where(r => r.U("id") == entry).OrderBy(r => r.U("quest")).Select(r => new QuestLinkView(r.U("quest"), lookup.Quest(r.U("quest")), snapshot != null && snapshot.Get(table, table.KeyOf(r)) != r)).ToArray();
         var clicks = rows.All(TcTables.SpellClick).Where(r => r.U("npc_entry") == entry).Select(r => r.U("spell_id")).Order().ToArray();
         return new TcCreatureView(entry, template.T("name"), template.T("subname"), template.UL("npcflag"), template, difficulties, menus.ToArray(), trainers, vendor, Quests(TcTables.QuestStarter), Quests(TcTables.QuestEnder), clicks);
     }

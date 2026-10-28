@@ -11,7 +11,7 @@ public sealed class TcCreatureDialect : ICreatureDialect
 
     public CreatureViews Build(InteractionSnapshot snapshot, RowSet effective)
     {
-        var view = TcCreatureView.Build(snapshot.Entry, effective, snapshot.Lookup);
+        var view = TcCreatureView.Build(snapshot.Entry, effective, snapshot.Lookup, snapshot.Rows);
         return new CreatureViews(view, view.Summary());
     }
 

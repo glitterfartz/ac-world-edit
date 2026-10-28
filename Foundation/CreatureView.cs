@@ -9,4 +9,8 @@ public interface ICreatureView
     uint Entry { get; }
     string Name { get; }
     string Subname { get; }
+
+    /// <summary>The quests the creature gives and accepts, by quest ID.</summary>
+    QuestLinkView[] Starts { get; }
+    QuestLinkView[] Ends { get; }
 }
