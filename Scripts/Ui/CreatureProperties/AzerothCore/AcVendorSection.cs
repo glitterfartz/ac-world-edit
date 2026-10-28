@@ -1,159 +1,54 @@
+using System.Globalization;
 using Godot;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
-public sealed partial class AcVendorSection(CreatureContext ctx) : AcInteractionSection(ctx)
+/// <summary>AzerothCore vendor rows (npc_vendor, with shared lists expanded), priced from item_template and the extended-cost catalog.</summary>
+public sealed partial class AcVendorSection(CreatureContext ctx) : VendorSection(ctx)
 {
-    public override string Id => PickerPages.Vendor.Id;
-    public override string Title => PickerPages.Vendor.Title;
-    public override string IconPath => PickerPages.Vendor.IconPath;
-    public override string Badge => Ctx.AcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString() : "";
-    public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
-    const int VendorPageSize = 10;
-    int vendorPage;
-    readonly Dictionary<string, string> iconPaths = [];
-    readonly Dictionary<string, Tooltip> tooltips = [];
+    protected override IReadOnlyList<VendorEntry> Entries(ICreatureView v) =>
+        v is AcCreatureView ac ? ac.Vendor.Select(Entry).ToList() : [];
 
-    protected override void Populate(AcCreatureView v)
-    {
-        RenderVendor(v);
-    }
+    VendorEntry Entry(VendorView item) => new(item.Row, item.Item.ToString(CultureInfo.InvariantCulture), item.Info?.Name ?? "Missing item",
+        item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Error, IconOf(item.Info), Price(item),
+        item.MaxCount > 0 ? $"stock {item.MaxCount}" : "", item.FromReference, item.Edited, TipOf(item.Item));
 
-    public override void OnShown(object? argument) => vendorPage = 0;
+    string Price(VendorView item) => item.ExtendedCost != 0
+        ? Ctx.Catalog?.DescribeExtendedCost(item.ExtendedCost) ?? $"Extended cost {item.ExtendedCost}"
+        : ClientStyle.Money(item.Info?.BuyPrice ?? 0);
 
-    void RenderVendor(AcCreatureView v)
-    {
-        if (editable)
-        {
-            RenderVendorEditor(v);
-            return;
-        }
-
-        int pages = Math.Max(1, (v.Vendor.Length + VendorPageSize - 1) / VendorPageSize);
-        vendorPage = Math.Clamp(vendorPage, 0, pages - 1);
-        var grid = new GridContainer
-        {
-            Columns = 2
-        };
-        grid.AddThemeConstantOverride("h_separation", 10);
-        grid.AddThemeConstantOverride("v_separation", 8);
-        body.AddChild(grid);
-        foreach (var item in v.Vendor.Skip(vendorPage * VendorPageSize).Take(VendorPageSize))
-        {
-            var cell = new VBoxContainer
-            {
-                SizeFlagsHorizontal = SizeFlags.ExpandFill
-            };
-            var name = ClientStyle.Text(item.Info?.Name ?? $"Item {item.Item} (missing)", 14, item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Error);
-            cell.AddChild(name);
-            string price = item.ExtendedCost != 0 ? catalog?.DescribeExtendedCost(item.ExtendedCost) ?? $"Extended cost {item.ExtendedCost}" : ClientStyle.Money(item.Info?.BuyPrice ?? 0);
-            cell.AddChild(ClientStyle.Text(price + (item.MaxCount > 0 ? $" · stock {item.MaxCount}" : "") + (item.FromReference != 0 ? $" · list {item.FromReference}" : ""), 12, item.Edited ? ClientStyle.Edited : ClientStyle.Faded));
-            string icon = item.Info != null && catalog?.ItemIconPath(item.Info.DisplayId) is { } path ? path : ClientStyle.MissingIcon;
-            var holder = IconRow(icon, cell, 37, ItemTip(item.Item));
-            holder.CustomMinimumSize = new(205, 44);
-            grid.AddChild(holder);
-        }
-
-        int conditions = v.Conditions.GetValueOrDefault(23);
-        body.AddChild(ClientStyle.Text($"Page {vendorPage + 1} of {pages} · {v.Vendor.Length} items{(conditions > 0 ? $" · {conditions} conditional" : "")} · event-only items (game_event_npc_vendor) are not shown.", 11, ClientStyle.Faded));
-        var nav = new HBoxContainer();
-        body.AddChild(nav);
-        var previous = new Button
-        {
-            Text = "◂ Prev",
-            Disabled = vendorPage == 0
-        };
-        previous.Pressed += () =>
-        {
-            vendorPage--;
-            Render();
-        };
-        var next = new Button
-        {
-            Text = "Next ▸",
-            Disabled = vendorPage >= pages - 1
-        };
-        next.Pressed += () =>
-        {
-            vendorPage++;
-            Render();
-        };
-        nav.AddChild(previous);
-        nav.AddChild(next);
-    }
-
-    void RenderVendorEditor(AcCreatureView v)
-    {
-        body.AddChild(ClientStyle.Text("Items for sale", 16, ClientStyle.Header));
-        if (v.Vendor.Length == 0)
-        {
-            body.AddChild(ClientStyle.Text("This creature sells nothing yet. Search below to add items.", 13, ClientStyle.Faded));
-        }
-
-        var renderer = new PageRenderer(Ctx);
-        var spec = Ctx.Schema.VendorPage;
-        renderer.RenderItems(body, spec, effective, v.Entry, editable, row =>
-        {
-            var item = v.Vendor.First(i => i.Row != null && spec.Table.KeyOf(i.Row) == spec.Table.KeyOf(row));
-            return ItemHeading(item);
-        });
-        foreach (var item in v.Vendor.Where(i => i.Row == null))
-        {
-            body.AddChild(ReferenceCard(item));
-        }
-
-        body.AddChild(new HSeparator());
-        body.AddChild(ClientStyle.Text("Add an item", 16, ClientStyle.Header));
-        SearchPicker("item", "Find item by name or ID…", async term =>
-        {
-            var found = await DBSource.Open(Connection()).SearchItemDetailsAsync(term, CancellationToken.None);
-            return found.Select(details =>
-            {
-                var item = details.Info;
-                string label = $"{item.Name} ({item.Id}) · {ClientStyle.Money(item.BuyPrice)}";
-                iconPaths[label] = ItemIconPath(item);
-                tooltips[label] = ItemTooltipBuilder.Build(details);
-                return (label, (Action)(() => AddVendorItem(details)));
-            }).ToList();
-        }, label => iconPaths.GetValueOrDefault(label), label => tooltips.GetValueOrDefault(label));
-    }
+    string IconOf(ItemInfo? info) => info != null && Ctx.Catalog?.ItemIconPath(info.DisplayId) is { } path ? path : ClientStyle.MissingIcon;
 
     /// <summary>The game tooltip of an item the vendor lists, when its template was loaded.</summary>
-    Tooltip? ItemTip(uint id) => snapshot?.Lookup.ItemDetails.TryGetValue(id, out var details) == true ? ItemTooltipBuilder.Build(details) : null;
+    Tooltip? TipOf(uint id) => Ctx.Snapshot?.Lookup.ItemDetails.TryGetValue(id, out var details) == true ? ItemTooltipBuilder.Build(details) : null;
 
-    string ItemIconPath(ItemInfo? info) => info != null && catalog?.ItemIconPath(info.DisplayId) is { } path ? path : ClientStyle.MissingIcon;
-
-    /// <summary>An item that comes from a shared vendor list: shown for context, edited on the list's own vendor.</summary>
-    Control ReferenceCard(VendorView item)
+    protected override string Footnote(ICreatureView v)
     {
-        var text = new VBoxContainer();
-        text.AddChild(ClientStyle.Text(item.Info?.Name ?? $"Item {item.Item} (missing)", 14, item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Error));
-        text.AddChild(ClientStyle.Text($"From shared vendor list {item.FromReference}. Edit that list to change it.", 12, ClientStyle.Faded));
-        return IconRow(ItemIconPath(item.Info), text, 37, ItemTip(item.Item));
+        int conditions = v is AcCreatureView ac ? ac.Conditions.GetValueOrDefault(23) : 0;
+        return $"{(conditions > 0 ? $" · {conditions} conditional" : "")} · event-only items (game_event_npc_vendor) are not shown.";
     }
 
-    Control ItemHeading(VendorView item)
+    protected override async Task<IReadOnlyList<(string Label, Action Pick)>> SearchItems(string term)
     {
-        var text = new VBoxContainer
+        var found = await DBSource.Open(Ctx.Connection()).SearchItemDetailsAsync(term, CancellationToken.None);
+        return found.Select(details =>
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        var name = ClientStyle.Text($"{item.Info?.Name ?? "Missing item"} ({item.Item})", 14, item.Edited ? ClientStyle.Edited : item.Info != null ? ClientStyle.Quality(item.Info.Quality) : ClientStyle.Error);
-        name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        text.AddChild(name);
-        string price = item.ExtendedCost != 0 ? catalog?.DescribeExtendedCost(item.ExtendedCost) ?? $"Extended cost {item.ExtendedCost}" : ClientStyle.Money(item.Info?.BuyPrice ?? 0);
-        text.AddChild(ClientStyle.Text($"Price: {price}", 12, ClientStyle.Faded));
-
-        return IconRow(ItemIconPath(item.Info), text, 37, ItemTip(item.Item));
+            var item = details.Info;
+            string label = $"{item.Name} ({item.Id}) · {ClientStyle.Money(item.BuyPrice)}";
+            ResultIcons[label] = IconOf(item);
+            ResultTips[label] = ItemTooltipBuilder.Build(details);
+            return (label, (Action)(() => Add(details)));
+        }).ToList();
     }
 
-    void AddVendorItem(ItemDetails details)
+    void Add(ItemDetails details)
     {
         var item = details.Info;
-        snapshot!.Lookup.Items.TryAdd(item.Id, item);
+        var snapshot = Ctx.Snapshot!;
+        snapshot.Lookup.Items.TryAdd(item.Id, item);
         snapshot.Lookup.ItemDetails.TryAdd(item.Id, details);
-        Commit($"Add vendor item {item.Id}", [Ctx.Schema.VendorPage.Add(effective, snapshot.Entry, ("item", checked((int)item.Id)))]);
+        Ctx.Commit($"Add vendor item {item.Id}", [Ctx.Schema.VendorPage.Add(Ctx.Effective, snapshot.Entry, ("item", checked((int)item.Id)))]);
     }
 }

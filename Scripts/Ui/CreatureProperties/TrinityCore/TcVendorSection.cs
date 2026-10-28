@@ -1,77 +1,89 @@
 using System.Globalization;
 using Godot;
 using ACWorldEdit.Assets;
-using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
-/// <summary>TC vendor fields and client item search, with compound-key edits through the shared renderer.</summary>
-public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx)
+/// <summary>
+/// TrinityCore vendor rows (npc_vendor, items and currencies), named from the hotfixes over the retail
+/// client, with stock and restock saved together and items added from a client search or by ID.
+/// </summary>
+public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection(ctx)
 {
-    public override string Id => PickerPages.Vendor.Id;
-    public override string Title => PickerPages.Vendor.Title;
-    public override string IconPath => PickerPages.Vendor.IconPath;
-    public override string Badge => Ctx.TcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString(CultureInfo.InvariantCulture) : "";
-    public override bool HasContent => Ctx.TcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
-    readonly SearchState<ClientItem> search = new();
+    /// <summary>Items of a shared vendor list shown under its reference row.</summary>
+    const int SharedShown = 25;
 
-    public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
+    public override bool Supports(WorldDialect dialect) => dialect == WorldDialect.TrinityCore;
 
-    protected override void Populate(TcCreatureView v)
+    protected override int Columns => 2;
+    protected override bool SearchNeedsClient => true;
+
+    // Stock and restock must be saved together to satisfy the server's paired-value rule.
+    protected override ItemListSpec Spec
     {
-        bool editable = Ctx.Editable;
-        if (editable) AddControls(v.Entry);
-        if (v.Vendor.Length == 0) Line("This creature sells nothing.", ClientStyle.Faded);
-        else Heading($"{v.Vendor.Length} item(s) for sale");
-
-        foreach (var issue in TcVendorRules.Check(v.Entry, Ctx.Effective))
-            Line(issue.Message, ClientStyle.Warning, 11);
-
-        var spec = Ctx.Schema.VendorPage;
-        // Stock and restock must be saved together to satisfy the server's paired-value rule.
-        if (editable) spec = spec with { Fields = spec.Fields.Where(f => f.Column != "incrtime").Select(f => f.Column == "maxcount" ? f with { Label = "Stock / restock", Tip = "Item stock (0 unlimited) and restock seconds, or currency quantity. Save both together." } : f).ToArray() };
-        new PageRenderer(Ctx).RenderItems(this, spec, Ctx.Effective, v.Entry, editable, row =>
+        get
         {
-            // Name and quality come from the snapshot (hotfixes over the client); the icon from the client item.
-            var shown = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Snapshot?.Lookup.Item((uint)row.I("item")) : null;
-            var info = row.U("type") == 1 && row.I("item") > 0 ? Ctx.Lookup()?.Item((uint)row.I("item")) : null;
-            if (row.I("item") < 0) return SharedList((uint)-row.I("item"));
-            string name = row.U("type") == 2 ? $"Currency {row.I("item")}" : shown?.Name is { Length: > 0 } known ? $"{known} ({row.I("item")})" : info?.Name is { Length: > 0 } clientName ? $"{clientName} ({row.I("item")})" : $"Item {row.I("item")}";
-            var label = ClientStyle.Text(name, 14, shown != null ? ClientStyle.Quality(shown.Quality) : info != null ? ClientStyle.Quality((int)info.Quality) : ClientStyle.Body);
-            if (info is not { IconFileId: > 0 }) return label;
-            // The client names an item's icon by FileDataID, which the retail file store reads like a path.
-            var line = new HBoxContainer();
-            line.AddThemeConstantOverride("separation", 6);
-            line.AddChild(new TextureRect
-            {
-                Texture = Ctx.Icons.Get(AssetRef.FromFileId(info.IconFileId)),
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-                CustomMinimumSize = new(28, 28)
-            });
-            line.AddChild(label);
-            return line;
-        }, (field, row) => editable && field.Column == "maxcount" ? StockEditor(row) : null, columns: 2);
+            var spec = base.Spec;
+            return spec with { Fields = spec.Fields.Where(f => f.Column != "incrtime").Select(f => f.Column == "maxcount" ? f with { Label = "Stock / restock", Tip = "Item stock (0 unlimited) and restock seconds, or currency quantity. Save both together." } : f).ToArray() };
+        }
     }
 
-    /// <summary>A shared vendor list: its items, read-only (they belong to the list's own entry).</summary>
-    Control SharedList(uint list)
+    protected override IEnumerable<string> Warnings(ICreatureView v) => TcVendorRules.Check(v.Entry, Ctx.Effective).Select(issue => issue.Message);
+
+    protected override IReadOnlyList<VendorEntry> Entries(ICreatureView v)
     {
-        const int Shown = 25;
-        var rows = Ctx.Snapshot?.Lookup.ReferenceVendor(list) ?? [];
-        var box = new VBoxContainer();
-        box.AddChild(ClientStyle.Text($"Shared vendor list {list} · {rows.Count} item(s). Edit the list on its own vendor.", 14, ClientStyle.Gold));
-        foreach (var item in rows.Take(Shown))
+        var spec = Ctx.Schema.VendorPage;
+        List<VendorEntry> entries = [];
+        foreach (var row in spec.Select(Ctx.Effective, v.Entry))
         {
-            uint id = (uint)Math.Max(item.I("item"), 0);
-            string name = item.U("type") == 2 ? $"Currency {id}" : Ctx.Snapshot!.Lookup.Item(id)?.Name is { Length: > 0 } known ? $"{known} ({id})" : $"Item {item.I("item")}";
-            box.AddChild(ClientStyle.Text(name, 12, ClientStyle.Faded));
+            bool edited = Ctx.Snapshot is { } snapshot && snapshot.Rows.Get(spec.Table, spec.Table.KeyOf(row)) != row;
+            if (row.I("item") < 0)
+            {
+                entries.AddRange(SharedList(row, (uint)-row.I("item"), edited));
+                continue;
+            }
+
+            var (name, color, icon) = Describe(row.U("type"), row.I("item"));
+            entries.Add(new(row, row.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, row.U("ExtendedCost") != 0 ? $"Extended cost {row.U("ExtendedCost")}" : "", Stock(row), 0, edited, null));
         }
 
-        if (rows.Count > Shown) box.AddChild(ClientStyle.Text($"and {rows.Count - Shown} more", 12, ClientStyle.Faded));
-        return box;
+        return entries;
     }
+
+    /// <summary>Name, quality colour and icon of an item or currency; name and quality come from the hotfixes, the icon from the client item.</summary>
+    (string Name, Color Color, string Icon) Describe(uint type, int item)
+    {
+        if (type == 2)
+        {
+            return ($"Currency {item}", ClientStyle.Body, ClientStyle.MissingIcon);
+        }
+
+        var shown = item > 0 ? Ctx.Snapshot?.Lookup.Item((uint)item) : null;
+        var client = item > 0 ? Ctx.Lookup()?.Item((uint)item) : null;
+        string name = shown?.Name is { Length: > 0 } known ? known : client?.Name is { Length: > 0 } clientName ? clientName : $"Item {item}";
+        var color = shown != null ? ClientStyle.Quality(shown.Quality) : client != null ? ClientStyle.Quality((int)client.Quality) : ClientStyle.Body;
+        // The client names an item's icon by FileDataID, which the retail file store reads like a path.
+        return (name, color, client is { IconFileId: > 0 } ? AssetRef.FromFileId(client.IconFileId) : ClientStyle.MissingIcon);
+    }
+
+    static string Stock(Row row) => row.U("maxcount") == 0 ? ""
+        : row.U("type") == 2 ? $"quantity {row.U("maxcount")}"
+        : $"stock {row.U("maxcount")} / restock {row.U("incrtime")} s";
+
+    /// <summary>A shared vendor list: the reference row as a header, then its items (read-only: they belong to the list's own entry).</summary>
+    IEnumerable<VendorEntry> SharedList(Row reference, uint list, bool edited)
+    {
+        var rows = Ctx.Snapshot?.Lookup.ReferenceVendor(list) ?? [];
+        yield return new(reference, $"-{list}", $"Shared vendor list {list}", ClientStyle.Gold, ClientStyle.GossipIcon(1), $"{rows.Count} item(s). Edit the list on its own vendor.", "", list, edited, null, Header: true);
+        foreach (var item in rows.Take(SharedShown))
+        {
+            var (name, color, icon) = Describe(item.U("type"), item.I("item"));
+            yield return new(null, item.I("item").ToString(CultureInfo.InvariantCulture), name, color, icon, "", Stock(item), list, false, null);
+        }
+    }
+
+    protected override Control? FieldControl(FieldSpec field, Row row) => field.Column == "maxcount" ? StockEditor(row) : null;
 
     Control StockEditor(Row row)
     {
@@ -90,20 +102,31 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         return box;
     }
 
-    void AddControls(uint entry)
+    protected override async Task<IReadOnlyList<(string Label, Action Pick)>> SearchItems(string term)
     {
-        Heading("Add an item");
-        SearchBox(this, search, "Search_item", "Find item by name or ID…", "item", true, text =>
+        if (Ctx.Lookup() is not { } client)
         {
-            var client = Ctx.Lookup()!;
-            return Task.Run(() => client.SearchItems(text, 30));
-        });
-        if (Ctx.Lookup() == null) Line("Open a retail client to search and validate item IDs.", ClientStyle.Warning, 11);
-        foreach (var item in search.Results)
+            return [];
+        }
+
+        var found = await Task.Run(() => client.SearchItems(term, 30));
+        return found.Select(item =>
         {
-            var add = new Button { Text = $"+ {item.Name} ({item.Id})", Alignment = HorizontalAlignment.Left };
-            add.Pressed += () => Add(entry, checked((int)item.Id), 1);
-            AddChild(add);
+            string label = $"{item.Name} ({item.Id})";
+            if (item.IconFileId > 0)
+            {
+                ResultIcons[label] = AssetRef.FromFileId(item.IconFileId);
+            }
+
+            return (label, (Action)(() => Add(checked((int)item.Id), 1)));
+        }).ToList();
+    }
+
+    protected override void AddControls(ICreatureView v)
+    {
+        if (Ctx.Lookup() == null)
+        {
+            AddChild(ClientStyle.Text("Open a retail client to search and validate item IDs.", 11, ClientStyle.Warning));
         }
 
         var manual = new HBoxContainer();
@@ -113,15 +136,13 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
         type.AddItem("Item", 1);
         type.AddItem("Currency", 2);
         var addId = new Button { Text = "Add ID" };
-        addId.Pressed += () => Ctx.Try(() => Add(entry, int.Parse(id.Text, CultureInfo.InvariantCulture), (uint)type.GetSelectedId()));
+        addId.Pressed += () => Ctx.Try(() => Add(int.Parse(id.Text, CultureInfo.InvariantCulture), (uint)type.GetSelectedId()));
         manual.AddChild(id);
         manual.AddChild(type);
         manual.AddChild(addId);
     }
 
-    void Add(uint entry, int item, uint type) => Ctx.Try(() =>
-    {
-        var spec = Ctx.Schema.VendorPage;
-        Ctx.Commit($"Add vendor {(type == 2 ? "currency" : "item")} {item}", [spec.Add(Ctx.Effective, entry, ("item", item), ("type", type), ("maxcount", type == 2 ? 1u : 0u))]);
-    });
+    void Add(int item, uint type) => Ctx.Try(() =>
+        Ctx.Commit($"Add vendor {(type == 2 ? "currency" : "item")} {item}",
+            [Ctx.Schema.VendorPage.Add(Ctx.Effective, Ctx.View!.Entry, ("item", item), ("type", type), ("maxcount", type == 2 ? 1u : 0u))]));
 }

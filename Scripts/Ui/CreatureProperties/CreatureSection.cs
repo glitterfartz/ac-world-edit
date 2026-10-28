@@ -197,14 +197,14 @@ public abstract partial class CreatureSection : VBoxContainer
     /// A <see cref="SearchBox{T}"/> whose results are "+ label" buttons that survive redraws, each with
     /// an optional icon and game tooltip looked up by its label. The searches are bounded and read-only.
     /// </summary>
-    protected void SearchPicker(Control parent, string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null)
+    protected void SearchPicker(Control parent, string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null, bool needsClient = false)
     {
         if (!pickers.TryGetValue(kind, out var state))
         {
             pickers[kind] = state = new();
         }
 
-        SearchBox(parent, state, "Search_" + kind, placeholder, kind, false, run);
+        SearchBox(parent, state, "Search_" + kind, placeholder, kind, needsClient, run);
         foreach (var (label, pick) in state.Results)
         {
             var result = new TooltipButton
