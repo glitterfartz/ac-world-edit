@@ -99,6 +99,18 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Graveyard: warn when the safe location is a teleport target                        | partial     | Counts `areatrigger_teleport` only; battleground start points not checked.                                                                                  |
 | Graveyard: locked-link controls and teleport line                                  | unverified  | Not inspected visually (e.g. Alterac Valley graveyard 169).                                                                                                 |
 
+### Performance
+
+Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/performance.md`.
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Draw calls | not started | Render CPU and GPU (17–20 ms) dominate the frame: one draw per model surface (each with its own material), 256 chunk meshes per terrain tile, shadows on everything. Merge same-material opaque surfaces at decode, share materials, build one terrain mesh per tile. |
+| Parallel model decode | not started | One decode worker; arrival in Stormwind (1416 models) takes about 47 s. The upload budget (8 surfaces, 1.5 ms) is the next limit. |
+| Model memory | not started | Live models keep their CPU `ModelData` and decoded pixels after upload (1.9 GB in Stormwind), so the 256 MiB soft limit never applies; flights evict and rebuild 260–340 models. |
+| Spawn table indexes | not started | `creature` (map index only) and `gameobject` (no map index) are scanned for every region query (150 ms of about 200 ms). Suggested `(map, position_x, position_y)` indexes are in `docs/performance.md`; the app cannot add them. |
+| Connection per query | not started | Pooling is off by design; each overlay query opens a connection (about 20 ms). |
+
 ### Tests
 
 | Item                                                                                  | Status      | Notes                                                                                                                                         |

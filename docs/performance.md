@@ -52,7 +52,7 @@ Local changes (in order):
 1. Model pipeline: start the next decode as soon as a decoded model enters the upload slot, and let the worker decode a short nearest-first queue back to back, so decode never waits on frames. Still one worker. Expected: arrival bounded by decode time (about 25–30 s instead of 65 s).
 2. Build the retail creature catalog's customization indexes on the client-open worker. Expected: removes the 215 ms hitch.
 3. Cache the schema column list per connection identity, so overlay queries skip `information_schema`. Expected: about 18 ms less per query (tried; no measurable change, see Results).
-4. Terrain: decode the next tile while the current one uploads. Expected: tile latency down by the decode time (about 200–400 ms per tile).
+4. Terrain: decode the next tile while the current one uploads. Expected: tile latency down by the decode time (about 200–400 ms per tile). Tried; not proven, see Results.
 
 Larger work (not started; each needs its own run):
 
@@ -90,3 +90,5 @@ Medians of three windowed runs; baseline as above.
 The upload budget (8 surfaces, 1.5 ms per frame) is now the limit on arrival: the main thread spends its whole model budget most frames, which costs about 1 ms of frame time while content loads. Flight frames are slightly slower because 30 % more models finish during the same flight.
 
 Tried and reverted: caching the schema column list per server and database (skipping the `information_schema` read, about 18 ms by a temporary probe) did not move the measured query latency (creature median 206 → 205 ms, GameObject 183 → 173 ms, both within run-to-run spread), so it was not kept.
+
+Tried and reverted: decoding the next terrain tile while the current one uploads. Arrival time did not change (47.8 s; models are the limit) and per-tile latency from schedule to publish rose (arrival 377 → 624 ms, flight 806 → 1157 ms) because tiles are now scheduled before the upload slot is free. A fair test needs a "terrain complete" time in the probe; until then the change is unproven.
