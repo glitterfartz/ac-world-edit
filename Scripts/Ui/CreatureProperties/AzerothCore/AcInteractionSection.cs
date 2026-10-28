@@ -23,7 +23,7 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
     protected ClientIcons icons => Ctx.Icons;
     protected InteractionDraft? draft => Ctx.Draft;
     protected Row TemplateRow => Ctx.TemplateRow;
-    protected readonly Dictionary<string, (string Term, List<(string Label, Action Pick)> Results)> searches = [];
+    protected readonly Dictionary<string, SearchState<(string Label, Action Pick)>> searches = [];
 
     protected Func<WorldConnection> Connection => Ctx.Connection;
     protected void Render() => Ctx.Redraw();
@@ -73,47 +73,17 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
 
     /// <summary>
     /// Search box with result buttons that survive re-renders; searches are bounded and read-only.
+    /// The box is the shared <see cref="CreatureSection.SearchBox{T}"/>; the picks are drawn after it.
     /// </summary>
     protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null)
     {
-        var current = searches.GetValueOrDefault(kind, ("", []));
-        var row = new HBoxContainer();
-        body.AddChild(row);
-        var term = new LineEdit
+        if (!searches.TryGetValue(kind, out var state))
         {
-            Text = current.Term,
-            PlaceholderText = placeholder,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            Name = "Search_" + kind
-        };
-        var go = new Button
-        {
-            Text = "Search"
-        };
-        async void Search()
-        {
-            string text = term.Text;
-            status = "Searching…";
-            Render();
-            try
-            {
-                var results = await run(text);
-                searches[kind] = (text, results.ToList());
-                status = $"{results.Count} result(s) for \"{text}\".";
-            }
-            catch (Exception error)
-            {
-                status = DbErrors.Safe(error);
-            }
-
-            Render();
+            searches[kind] = state = new();
         }
 
-        term.TextSubmitted += _ => Search();
-        go.Pressed += Search;
-        row.AddChild(term);
-        row.AddChild(go);
-        foreach (var (label, pick) in current.Results)
+        SearchBox(body, state, "Search_" + kind, placeholder, kind, false, run);
+        foreach (var (label, pick) in state.Results)
         {
             var result = new TooltipButton
             {
