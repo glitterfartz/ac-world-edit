@@ -82,7 +82,8 @@ public partial class TerrainViewer
             case 2:
                 {
                     var target = areaTriggers.Triggers.First(t => t.Entry == SmokeTrigger);
-                    var screen = camera.UnprojectPosition(AreaTriggerOverlay.ViewPosition(target));
+                    // Input events carry window pixels; the viewport may be scaled to the window (UI scale).
+                    var screen = GetViewport().GetFinalTransform() * camera.UnprojectPosition(AreaTriggerOverlay.ViewPosition(target));
                     // A real click through the viewport picking path, not a direct Select call.
                     Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen, GlobalPosition = screen });
                     Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = screen, GlobalPosition = screen });
