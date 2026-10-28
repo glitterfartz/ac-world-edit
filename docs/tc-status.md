@@ -106,7 +106,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 | Item | Status | Notes |
 | --- | --- | --- |
 | Draw calls | done | Terrain draws one mesh per layer list per tile over a splat atlas; opaque same-material model batches merge at decode; static materials are shared. Render CPU and GPU roughly halved (one run; see `docs/performance.md`). |
-| Renderer | not started | The project runs the Compatibility (OpenGL 3.3) renderer; measure Forward+ on the benchmark. Needs the user's decision. |
+| Renderer | in progress | The project now runs Forward+ (`project.godot` change not yet committed); the settled Stormwind frame is 8.5-13 ms and CPU-bound, mostly WMO shells, embedded doodads, ADT doodads and shadows (`--perf-breakdown`, see `docs/performance.md`). Re-baseline `--perf-smoke` on Forward+; reducing building and shadow cost needs the user's decision. |
 | Parallel model decode | not started | One decode worker; arrival in Stormwind (1416 models) takes about 47 s. The upload budget (8 surfaces, 1.5 ms) is the next limit. |
 | Model memory | not started | Live models keep their CPU `ModelData` and decoded pixels after upload (1.9 GB in Stormwind), so the 256 MiB soft limit never applies; flights evict and rebuild 260–340 models. |
 | Spawn table indexes | not started | `creature` (map index only) and `gameobject` (no map index) are scanned for every region query (150 ms of about 200 ms). Suggested `(map, position_x, position_y)` indexes are in `docs/performance.md`; the app cannot add them. |

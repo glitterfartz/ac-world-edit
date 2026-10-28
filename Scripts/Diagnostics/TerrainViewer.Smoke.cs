@@ -24,7 +24,7 @@ public partial class TerrainViewer
     void ConfigureSmokeChecks()
     {
         var flags = OS.GetCmdlineUserArgs().ToHashSet();
-        anySmoke = flags.Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal));
+        anySmoke = flags.Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal) || arg == "--perf-breakdown");
         waterInterior = flags.Contains("--water-interior-smoke");
         waterSmoke = flags.Contains("--water-smoke") || waterInterior;
         smoke = flags.Contains("--terrain-smoke");
@@ -43,6 +43,7 @@ public partial class TerrainViewer
         behaviorSmoke = flags.Contains("--behavior-smoke");
         perfSmoke = flags.Contains("--perf-smoke");
         PerfDiagnostics.Enabled = perfSmoke;
+        perfBreakdown = flags.Contains("--perf-breakdown");
         clientShot = flags.Contains("--client-shot");
         if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-tile=", StringComparison.Ordinal)) is { } tileFlag)
         {
@@ -155,6 +156,11 @@ public partial class TerrainViewer
         if (perfSmoke)
         {
             PerfSmoke(delta);
+        }
+
+        if (perfBreakdown)
+        {
+            PerfBreakdownTick();
         }
     }
 
