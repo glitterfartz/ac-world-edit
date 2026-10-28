@@ -18,6 +18,7 @@ Architecture lives in `docs/`, not here. Read the relevant page before working i
 - `docs/DB-DIFFERENCES.md`: AzerothCore vs TrinityCore schema differences. Official schema docs: AzerothCore https://www.azerothcore.org/wiki/database-world, TrinityCore https://trinitycore.info/database/master/world/home.
 - `docs/tc-status.md`: status of the TrinityCore work and the project's other open work and known gaps.
 - `docs/NEEDED-TESTS.md`: tests deferred until their feature works.
+- `docs/performance.md`: the `--perf-smoke` benchmark, measured costs and open performance work.
 
 ## Commands
 

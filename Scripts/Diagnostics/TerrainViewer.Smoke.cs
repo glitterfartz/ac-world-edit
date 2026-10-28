@@ -41,6 +41,8 @@ public partial class TerrainViewer
         contentSmoke = flags.Contains("--content-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
+        perfSmoke = flags.Contains("--perf-smoke");
+        PerfDiagnostics.Enabled = perfSmoke;
         clientShot = flags.Contains("--client-shot");
         if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-tile=", StringComparison.Ordinal)) is { } tileFlag)
         {
@@ -148,6 +150,11 @@ public partial class TerrainViewer
         if (clientSmoke)
         {
             ClientSmoke(delta);
+        }
+
+        if (perfSmoke)
+        {
+            PerfSmoke(delta);
         }
     }
 

@@ -101,7 +101,24 @@ public sealed class RegionQuery<T> : IDisposable
     {
         requested = pendingGeneration = generation;
         var token = cancellation.Token;
-        pending = Task.Run(() => read(token), token);
+        pending = PerfDiagnostics.Enabled ? Task.Run(() => Timed(read, token), token) : Task.Run(() => read(token), token);
+    }
+
+    /// <summary>The query wrapped with a stopwatch for --perf-smoke; never used in normal viewing.</summary>
+    static async Task<T> Timed(Func<CancellationToken, Task<T>> read, CancellationToken token)
+    {
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        bool cancelled = true;
+        try
+        {
+            var result = await read(token).ConfigureAwait(false);
+            cancelled = token.IsCancellationRequested;
+            return result;
+        }
+        finally
+        {
+            PerfDiagnostics.Queries.Enqueue((typeof(T).Name, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds, cancelled));
+        }
     }
 
     public void Dispose()

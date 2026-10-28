@@ -26,6 +26,7 @@ public sealed class ModelLibrary
         public ImageTexture? MaterialTexture;
         public int Surface;
         public long LastUsed;
+        public double DecodeMilliseconds;
         public readonly long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
 
         public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
@@ -106,6 +107,11 @@ public sealed class ModelLibrary
     public double UploadMilliseconds { get; private set; }
     public bool Busy => pending != null || building != null || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
     public ICreatureCatalog? Catalog { get; private set; }
+    /// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
+    public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
+    public ModelStats Stats => stats;
+    ModelStats stats;
+    public void ResetStats() => stats = default;
     public IGameObjectCatalog? GameObjects { get; private set; }
 
     bool embeddedDoodadsVisible = true;
@@ -598,6 +604,8 @@ public sealed class ModelLibrary
             {
                 building = pending.GetAwaiter().GetResult();
                 buildingKey = pendingKey;
+                stats.Decodes++;
+                stats.DecodeMilliseconds += building.DecodeMilliseconds;
             }
             catch (OperationCanceledException)
             {
@@ -655,6 +663,7 @@ public sealed class ModelLibrary
                 for (int budget = 0; budget < maxSurfaces && building.Surface < building.Data.Surfaces.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
                 {
                     AddSurface(building, building.Surface++, buildingKey.Skybox);
+                    stats.Uploads++;
                 }
 
                 if (building.Surface == building.Data.Surfaces.Length && !HoldPartialUploads)
@@ -700,6 +709,7 @@ public sealed class ModelLibrary
                 {
                     BuildInstance(i, e);
                     attached++;
+                    stats.Binds++;
                 }
             }
         }
@@ -771,6 +781,7 @@ public sealed class ModelLibrary
             cachedBytes -= pair.Value.Bytes;
             cache.Remove(pair.Key);
             DisposeEntry(pair.Value);
+            stats.Evictions++;
         }
     }
 
@@ -780,6 +791,7 @@ public sealed class ModelLibrary
     /// </summary>
     Entry DecodeModel(ModelKey key, IClientFiles source, CancellationToken token)
     {
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         token.ThrowIfCancellationRequested();
         var data = AssetRef.IsWmo(key.Path)
             ? WmoModel.Read(source, key.Path, key.DoodadSet, token)
@@ -800,6 +812,9 @@ public sealed class ModelLibrary
             }
         }
 
-        return new Entry(data, AnimationPalette.Bake(data, token), MaterialPalette.Bake(data, token), decoded);
+        return new Entry(data, AnimationPalette.Bake(data, token), MaterialPalette.Bake(data, token), decoded)
+        {
+            DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds
+        };
     }
 }

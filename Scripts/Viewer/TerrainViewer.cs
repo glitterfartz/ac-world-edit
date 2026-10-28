@@ -624,6 +624,7 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _Process(double delta)
     {
+        PerfMark(0);
         if (capture && !busy)
         {
             MoveCamera(delta);
@@ -634,6 +635,7 @@ public partial class TerrainViewer : Node3D
             UpdateTerrainStreaming(world, store);
         }
 
+        PerfMark(1);
         UpdatePendingLocate(delta);
 
         if (startMessage.Length > 0 && Time.GetTicksMsec() - startMessageShown > StartMessageMs)
@@ -661,15 +663,21 @@ public partial class TerrainViewer : Node3D
         int cells = loaded.Values.Sum(n => n.GetChildCount()) + (buildingNode?.GetChildCount() ?? 0);
         statusBar.Telemetry = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.Sync(world, loaded.Keys, current, camera.Position);
+        PerfMark(2);
         creatures.Update(camera);
+        PerfMark(3);
         gameObjects.Update(camera);
+        PerfMark(4);
         graveyards.Update(camera);
         waypoints.Update(camera);
         areaTriggers.Update(camera);
         creatureProps.Track(databaseEnabled ? creatures.SelectedSpawn : null);
+        PerfMark(5);
         models.Update(camera);
+        PerfMark(6);
         sidebar.UpdateCounts();
         PollPending(delta);
+        PerfMark(7);
         RunSmokeChecks(delta);
     }
 
@@ -1023,6 +1031,7 @@ public partial class TerrainViewer : Node3D
                 if (buildIndex == building.Tile.Chunks.Count + building.Tile.Liquids.Count)
                 {
                     loaded[building.Tile.Key] = buildingNode;
+                    PerfTilePublished(building.Tile.Key);
                     var ids = new uint[256];
                     foreach (var c in building.Tile.Chunks)
                     {
@@ -1084,6 +1093,7 @@ public partial class TerrainViewer : Node3D
                 var token = cancellation.Token;
                 // Failed tiles are tracked separately; obsolete requests can be retried when revisited.
                 pendingKey = key;
+                PerfTileScheduled(key);
                 pending = Task.Run(() => Prepare(assets, map, key, version, token));
             }
         }

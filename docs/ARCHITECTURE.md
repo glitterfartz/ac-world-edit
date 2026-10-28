@@ -10,6 +10,7 @@ Detail pages:
 - [Viewer runtime](architecture/viewer-runtime.md): `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, `Shaders`
 - [Editing, data access and SQL export](architecture/editing-and-export.md): `Scripts/Data` and `Foundation`
 - [Testing and tooling](architecture/testing-and-tooling.md): `Tests`, `Tools`, `launch_viewer.py`, build setup
+- [Performance](performance.md): the `--perf-smoke` benchmark, measured costs and open performance work
 
 ## System context
 
