@@ -2,10 +2,10 @@ using ACWorldEdit.Foundation;
 using Xunit;
 
 /// <summary>
-/// QuestModel.Check against the quest loader rules, one rule per test, over in-memory RowSets
+/// AcQuestModel.Check against the quest loader rules, one rule per test, over in-memory RowSets
 /// (no database, no draft files).
 /// </summary>
-public class QuestModelTests
+public class AcQuestModelTests
 {
     const uint Id = 900001;
 
@@ -32,7 +32,7 @@ public class QuestModelTests
     static RowSet Valid(Func<Row, Row>? template = null, Func<Row, Row>? addon = null, bool giver = true, bool ender = true, bool addonRow = true)
     {
         var rows = new RowSet();
-        var fresh = QuestModel.NewQuest(Id, "Test quest");
+        var fresh = AcQuestModel.NewQuest(Id, "Test quest");
         rows.Set(AcTables.QuestTemplate, template?.Invoke(fresh[0]) ?? fresh[0]);
         if (addonRow)
         {
@@ -54,7 +54,7 @@ public class QuestModelTests
         return rows;
     }
 
-    static List<InteractionIssue> Issues(RowSet rows, Func<uint, bool>? zones = null) => QuestModel.Check(Id, rows, Lookup, zones).ToList();
+    static List<InteractionIssue> Issues(RowSet rows, Func<uint, bool>? zones = null) => AcQuestModel.Check(Id, rows, Lookup, zones).ToList();
 
     static void AssertIssue(List<InteractionIssue> issues, bool error, string fragment) =>
         Assert.Contains(issues, i => i.Error == error && i.Message.Contains(fragment, StringComparison.Ordinal));
@@ -68,18 +68,18 @@ public class QuestModelTests
     [Fact]
     public void MissingTemplateRowYieldsNothing()
     {
-        Assert.Empty(QuestModel.Check(Id, new RowSet(), Lookup, null));
+        Assert.Empty(AcQuestModel.Check(Id, new RowSet(), Lookup, null));
     }
 
     [Fact]
     public void NewQuestRowsMatchTheirSchemasAndDefaults()
     {
-        var fresh = QuestModel.NewQuest(Id, "Hello");
-        Assert.Equal(QuestModel.Tables.Length, fresh.Length);
+        var fresh = AcQuestModel.NewQuest(Id, "Hello");
+        Assert.Equal(AcQuestModel.Tables.Length, fresh.Length);
         for (int i = 0; i < fresh.Length; i++)
         {
-            fresh[i].Validate(QuestModel.Tables[i]);
-            Assert.Equal(Id.ToString(), QuestModel.Tables[i].KeyOf(fresh[i]));
+            fresh[i].Validate(AcQuestModel.Tables[i]);
+            Assert.Equal(Id.ToString(), AcQuestModel.Tables[i].KeyOf(fresh[i]));
         }
 
         Assert.Equal("Hello", fresh[0].T("LogTitle"));
@@ -201,7 +201,7 @@ public class QuestModelTests
     [Fact]
     public void RaceMaskWithUnknownBitsWarns()
     {
-        Assert.Empty(Issues(Valid(t => t.With("AllowableRaces", QuestModel.AllianceRaces | QuestModel.HordeRaces))));
+        Assert.Empty(Issues(Valid(t => t.With("AllowableRaces", AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces))));
         Assert.Empty(Issues(Valid(t => t.With("AllowableRaces", 0u))));
         AssertIssue(Issues(Valid(t => t.With("AllowableRaces", 256u))), false, "unknown bits 0x100");
     }
@@ -209,9 +209,9 @@ public class QuestModelTests
     [Fact]
     public void AllianceAndHordeRaceMasksAreDisjointAndInTheRaceList()
     {
-        Assert.Equal(0u, QuestModel.AllianceRaces & QuestModel.HordeRaces);
-        uint listed = QuestModel.Races.Aggregate(0u, (mask, race) => mask | race.Bit);
-        Assert.Equal(listed, QuestModel.AllianceRaces | QuestModel.HordeRaces);
+        Assert.Equal(0u, AcQuestModel.AllianceRaces & AcQuestModel.HordeRaces);
+        uint listed = AcQuestModel.Races.Aggregate(0u, (mask, race) => mask | race.Bit);
+        Assert.Equal(listed, AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces);
     }
 
     [Fact]
@@ -236,13 +236,13 @@ public class QuestModelTests
     [Fact]
     public void FlagTablesHaveUniqueSingleBits()
     {
-        foreach (var table in new[] { QuestModel.Flags, QuestModel.SpecialFlags, QuestModel.Races, QuestModel.Classes })
+        foreach (var table in new[] { AcQuestModel.Flags, AcQuestModel.SpecialFlags, AcQuestModel.Races, AcQuestModel.Classes })
         {
             Assert.All(table, f => Assert.Equal(1, System.Numerics.BitOperations.PopCount(f.Bit)));
             Assert.Equal(table.Length, table.Select(f => f.Bit).Distinct().Count());
         }
 
-        Assert.Equal(QuestModel.Methods.Length, QuestModel.Methods.Select(m => m.Value).Distinct().Count());
-        Assert.Equal(QuestModel.Types.Length, QuestModel.Types.Select(m => m.Value).Distinct().Count());
+        Assert.Equal(AcQuestModel.Methods.Length, AcQuestModel.Methods.Select(m => m.Value).Distinct().Count());
+        Assert.Equal(QuestVocabulary.Types.Length, QuestVocabulary.Types.Select(m => m.Value).Distinct().Count());
     }
 }

@@ -1,19 +1,16 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
-/// Friendly quest vocabulary (server QuestDef.h / SharedDefines.h) and the quest loader's rules
-/// (ObjectMgr::LoadQuests) over editable quest rows. Engine- and database-independent.
+/// AzerothCore's quest vocabulary (server QuestDef.h / SharedDefines.h) and the quest loader's rules
+/// (ObjectMgr::LoadQuests) over editable quest rows. Engine- and database-independent. What both
+/// dialects show the same way is in <see cref="QuestVocabulary"/>.
 /// </summary>
-public static class QuestModel
+public static class AcQuestModel
 {
     /// <summary>
     /// quest_template.QuestType is the quest "method".
     /// </summary>
     public static readonly (uint Value, string Name)[] Methods = [(2, "Normal"), (0, "Auto-complete"), (1, "Disabled")];
-    /// <summary>
-    /// QuestInfoID (QuestInfo.dbc).
-    /// </summary>
-    public static readonly (uint Value, string Name)[] Types = [(0, "Normal"), (1, "Group (elite)"), (21, "Life"), (41, "PvP"), (62, "Raid"), (81, "Dungeon"), (82, "World event"), (83, "Legendary"), (84, "Escort"), (85, "Heroic"), (88, "Raid (10)"), (89, "Raid (25)")];
     public static readonly (uint Bit, string Name)[] Flags =
     [
         (0x1, "Fails on death"), (0x2, "Party accept"), (0x8, "Shareable"), (0x200, "Hidden rewards"), (0x400, "Tracking (auto-rewarded, hidden)"),
@@ -27,10 +24,6 @@ public static class QuestModel
     public static readonly (uint Bit, string Name)[] Races = [(1, "Human"), (2, "Orc"), (4, "Dwarf"), (8, "Night Elf"), (16, "Undead"), (32, "Tauren"), (64, "Gnome"), (128, "Troll"), (512, "Blood Elf"), (1024, "Draenei")];
     public static readonly (uint Bit, string Name)[] Classes = [(1, "Warrior"), (2, "Paladin"), (4, "Hunter"), (8, "Rogue"), (16, "Priest"), (32, "Death Knight"), (64, "Shaman"), (128, "Mage"), (256, "Warlock"), (1024, "Druid")];
     public const uint AllianceRaces = 1 | 4 | 8 | 64 | 1024, HordeRaces = 2 | 16 | 32 | 128 | 512;
-    /// <summary>
-    /// Text placeholders the client substitutes.
-    /// </summary>
-    public static readonly (string Token, string Meaning)[] Placeholders = [("$N", "player name"), ("$C", "class"), ("$R", "race"), ("$B", "new line"), ("$G man:woman;", "gendered word")];
 
     /// <summary>
     /// The four per-quest tables (all keyed by ID), in the order NewQuest returns their rows.

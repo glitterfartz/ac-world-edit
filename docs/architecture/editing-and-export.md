@@ -98,7 +98,7 @@ Freshness uses each row's remaining net change. Discarded or mutually cancelling
 flowchart TB
     snap["Database snapshot<br/>read-only Source"] --> eff["Effective view<br/>draft applied over snapshot"]
     eff --> edit["User edit in overlay or editor"]
-    edit --> rule{"Rule checks<br/>QuestModel.Check, SmartBehavior.Check, InteractionRules"}
+    edit --> rule{"Rule checks<br/>AcQuestModel.Check, SmartBehavior.Check, InteractionRules"}
     rule -->|error| refuse["Refused, shown in UI"]
     rule -->|ok| hist["DraftHistory.Append<br/>saved to user://drafts/*.json"]
     hist --> eff
@@ -157,14 +157,14 @@ Escaping and guards:
 
 ## SmartAI and quest rules
 
-SmartAI is one engine over two catalogs; `QuestModel` and `NpcInteraction` remain AzerothCore static data (TrinityCore has `TcQuestRules` and `TcCreatureView`).
+SmartAI is one engine over two catalogs; `AcQuestModel` and `NpcInteraction` remain AzerothCore static data (TrinityCore has `TcQuestRules` and `TcCreatureView`).
 
 - `SmartCatalog` (`Foundation/SmartBehavior.cs`, `SmartCategories.cs`) is an instance per dialect, `SmartCatalog.Ac` and `SmartCatalog.Trinity` (reached through `IWorldSchema.Smart`). Each holds its event, action and target types, how many parameter columns `smart_scripts` has (events 6/5, actions 6/7, targets 4), the event-flag checkboxes, its tables (`smart_scripts`, `creature_text`, the `creature_ai` AIName group) and the loader rules (`Check`). The ID ranges differ, so nothing is shared by ID.
 - The type arrays are generated: `AcSmartTypes` (`Foundation/AcSmartTypes.cs`) and `TcSmartTypes` (`Foundation/TrinityCore/TcSmartTypes.cs`) come from `Tools/generate_smart_catalog.py` over each server's `SmartScriptMgr.h`, with hand-written names and sentences. TrinityCore reuses an AzerothCore sentence only when the code name and parameter comment match; the rest read their parameters from the comment. `SmartTypes.cs` holds `SmartType`, `SmartParam` and `SmartParamKind`. `SmartCatalog.IsMarker` hides range markers, `RESERVED` slots and slots the server marks "UNUSED".
 - `SmartBehavior` (`Foundation/SmartBehavior.cs`) turns rows into readable sentences, groups linked rows into chains, and checks rules that mirror `SmartScriptMgr.cpp`. `SmartRule` reads a missing parameter column as 0 (and the string parameters as empty), so one routine serves both row shapes.
 - AreaTrigger scripts: `SmartScope.IsAreaTrigger` covers source types 2 (client trigger), 11 and 12 (TrinityCore spawned trigger templates, `IsTriggerEntity`). `SmartCatalog.AllowedForAreaTrigger` follows each core's event masks (AzerothCore: On trigger and Then; TrinityCore adds "Area trigger left", and spawned triggers also run the timed updates); a spawned trigger is an object, so Self and its own action lists are allowed. `CheckAreaTriggerScript` and `EnableTriggerScript` check and fix the script name that runs the rules (SmartTrigger in `areatrigger_scripts`, SmartAreaTriggerAI in the spawn's `areatrigger_ai` row).
 - `SmartRuleEdits` (`Foundation/SmartRuleEdits.cs`) does the row math for add, delete, swap, duplicate and copy-scope; every function takes the dialect's `SmartCatalog` for its tables. Changing a key column becomes a delete plus an insert. `SpeechEdits` does the same for `creature_text` (TrinityCore lines carry `SoundPlayType`).
-- `QuestModel` (`Foundation/QuestModel.cs`) holds the quest vocabulary and checks rules that mirror `ObjectMgr::LoadQuests`.
+- `AcQuestModel` (`Foundation/AcQuestModel.cs`) holds AzerothCore's quest vocabulary and checks rules that mirror `ObjectMgr::LoadQuests`; `QuestVocabulary` (`Foundation/QuestVocabulary.cs`) has the quest types and text placeholders both dialects show.
 - `NpcInteraction` (`Foundation/NpcInteraction.cs`) is a read-only view of one NPC's interaction data and its validation rules.
 
 ## Types by file

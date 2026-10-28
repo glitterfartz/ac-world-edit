@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 public partial class AcQuestPanel : QuestPanel
 {
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
-    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (QuestModel.AllianceRaces, "Alliance only"), (QuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
+    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (AcQuestModel.AllianceRaces, "Alliance only"), (AcQuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
 
     protected override TableSchema Template => AcTables.QuestTemplate;
     protected override TableSchema Addon => AcTables.QuestAddon;
@@ -19,10 +19,10 @@ public partial class AcQuestPanel : QuestPanel
     protected override TableSchema Offer => AcTables.QuestOfferReward;
     protected override TableSchema Starter => AcTables.QuestStarter;
     protected override TableSchema Ender => AcTables.QuestEnder;
-    protected override TableSchema[] Tables => QuestModel.Tables;
-    protected override Row[] NewQuestRows(uint id, string title) => QuestModel.NewQuest(id, title);
+    protected override TableSchema[] Tables => AcQuestModel.Tables;
+    protected override Row[] NewQuestRows(uint id, string title) => AcQuestModel.NewQuest(id, title);
 
-    protected override IEnumerable<InteractionIssue> Check(uint id, RowSet rows, IContentNames names) => QuestModel.Check(id, rows, names, ZoneExists);
+    protected override IEnumerable<InteractionIssue> Check(uint id, RowSet rows, IContentNames names) => AcQuestModel.Check(id, rows, names, ZoneExists);
 
     protected override string Subtitle(Row q) => $"Quest {Key} · level {q.I("QuestLevel")} · requires level {q.U("MinLevel")}";
 
@@ -38,9 +38,9 @@ public partial class AcQuestPanel : QuestPanel
     {
         Heading("Basics");
         Add("Title", EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it"));
-        Add("Kind", EditorFields.Choice(QuestModel.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value))),
+        Add("Kind", EditorFields.Choice(QuestVocabulary.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value))),
             ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "0 = solo"));
-        Add("Availability", EditorFields.Choice(QuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
+        Add("Availability", EditorFields.Choice(AcQuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
         ZoneRow(q);
 
         Heading("Levels", "Quest level sets XP and the con colour; −1 scales with the player. Players outside required…maximum cannot accept it.");
@@ -51,11 +51,11 @@ public partial class AcQuestPanel : QuestPanel
 
         Heading("Who can take it");
         uint races = q.U("AllowableRaces");
-        uint preset = races is 0 or QuestModel.AllianceRaces or QuestModel.HordeRaces ? races : 1;
-        Add("Faction", EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? QuestModel.AllianceRaces | QuestModel.HordeRaces : value))));
+        uint preset = races is 0 or AcQuestModel.AllianceRaces or AcQuestModel.HordeRaces ? races : 1;
+        Add("Faction", EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces : value))));
         if (preset == 1)
         {
-            page.AddChild(EditorFields.Flags(QuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5));
+            page.AddChild(EditorFields.Flags(AcQuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5));
         }
 
         uint classes = RowOf(Addon).U("AllowableClasses");
@@ -68,12 +68,12 @@ public partial class AcQuestPanel : QuestPanel
         Add("Classes", allClasses);
         if (classes != 0)
         {
-            page.AddChild(EditorFields.Flags(QuestModel.Classes, classes, value => Set(Addon, "Change allowed classes", ("AllowableClasses", value)), 5));
+            page.AddChild(EditorFields.Flags(AcQuestModel.Classes, classes, value => Set(Addon, "Change allowed classes", ("AllowableClasses", value)), 5));
         }
 
         Heading("Behavior");
-        page.AddChild(EditorFields.Flags(QuestModel.Flags, q.U("Flags"), value => Set(Template, "Change quest options", ("Flags", value)), 3));
-        page.AddChild(EditorFields.Flags(QuestModel.SpecialFlags, RowOf(Addon).U("SpecialFlags"), value => Set(Addon, "Change special options", ("SpecialFlags", value)), 3));
+        page.AddChild(EditorFields.Flags(AcQuestModel.Flags, q.U("Flags"), value => Set(Template, "Change quest options", ("Flags", value)), 3));
+        page.AddChild(EditorFields.Flags(AcQuestModel.SpecialFlags, RowOf(Addon).U("SpecialFlags"), value => Set(Addon, "Change special options", ("SpecialFlags", value)), 3));
     }
 
     void RenderObjectives(Row q)

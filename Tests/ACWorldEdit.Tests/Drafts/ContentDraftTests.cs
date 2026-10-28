@@ -69,17 +69,17 @@ public class ContentDraftTests
         const uint id = 900001;
         string key = id.ToString();
         var snapshot = new RowSet();
-        var fresh = QuestModel.NewQuest(id, "New quest");
-        Check(fresh.Length == QuestModel.Tables.Length, "New quest row count");
+        var fresh = AcQuestModel.NewQuest(id, "New quest");
+        Check(fresh.Length == AcQuestModel.Tables.Length, "New quest row count");
         for (int i = 0; i < fresh.Length; i++)
         {
-            fresh[i].Validate(QuestModel.Tables[i]);
+            fresh[i].Validate(AcQuestModel.Tables[i]);
         }
 
-        draft.Execute("src", snapshot, "Create quest", fresh.Select((row, i) => new RowEdit(QuestModel.Tables[i].Name, key, null, row)));
+        draft.Execute("src", snapshot, "Create quest", fresh.Select((row, i) => new RowEdit(AcQuestModel.Tables[i].Name, key, null, row)));
         var view = draft.Effective("src", snapshot);
         Check(view.Get(AcTables.QuestTemplate, key)?.T("LogTitle") == "New quest", "Created quest visible");
-        var issues = QuestModel.Check(id, view, names, null).ToList();
+        var issues = AcQuestModel.Check(id, view, names, null).ToList();
         Check(issues.All(i => !i.Error), "Fresh quest has errors: " + string.Join("; ", issues.Where(i => i.Error).Select(i => i.Message)));
         Check(issues.Any(i => i.Message.Contains("starts this quest", StringComparison.Ordinal)), "Missing-giver warning");
 
@@ -87,20 +87,20 @@ public class ContentDraftTests
         var objective = q.With("RequiredNpcOrGo1", 6).With("RequiredNpcOrGoCount1", 8u);
         draft.Execute("src", snapshot, "Set objective", [new RowEdit(AcTables.QuestTemplate.Name, key, q, objective)]);
         view = draft.Effective("src", snapshot);
-        Check(QuestModel.Check(id, view, names, null).All(i => !i.Error), "Valid objective rejected");
+        Check(AcQuestModel.Check(id, view, names, null).All(i => !i.Error), "Valid objective rejected");
         var missing = objective.With("RequiredNpcOrGo1", 99999);
         var probe = view.Clone();
         probe.Set(AcTables.QuestTemplate, missing);
-        Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("99999", StringComparison.Ordinal)), "Missing objective creature not reported");
+        Check(AcQuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("99999", StringComparison.Ordinal)), "Missing objective creature not reported");
         probe.Set(AcTables.QuestTemplate, objective.With("RequiredNpcOrGoCount1", 0u));
-        Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("count", StringComparison.Ordinal)), "Zero objective count not reported");
+        Check(AcQuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("count", StringComparison.Ordinal)), "Zero objective count not reported");
         probe.Set(AcTables.QuestTemplate, objective.With("RewardItem1", 2589u).With("RewardAmount1", 0u));
-        Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("Reward item 1", StringComparison.Ordinal)), "Zero reward amount not reported");
+        Check(AcQuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("Reward item 1", StringComparison.Ordinal)), "Zero reward amount not reported");
 
         var giver = Row.Of(("id", 42u), ("quest", id));
         draft.Execute("src", snapshot, "Add quest giver", [new RowEdit(AcTables.QuestStarter.Name, AcTables.QuestStarter.KeyOf(giver), null, giver)]);
         view = draft.Effective("src", snapshot);
-        Check(!QuestModel.Check(id, view, names, null).Any(i => i.Message.Contains("starts this quest", StringComparison.Ordinal)), "Giver warning stays after adding a giver");
+        Check(!AcQuestModel.Check(id, view, names, null).Any(i => i.Message.Contains("starts this quest", StringComparison.Ordinal)), "Giver warning stays after adding a giver");
         draft.Undo();
         draft.Undo();
         Check(draft.Effective("src", snapshot).Get(AcTables.QuestTemplate, key)?.I("RequiredNpcOrGo1") == 0, "Undo objective");

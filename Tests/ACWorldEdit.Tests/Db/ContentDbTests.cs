@@ -28,10 +28,10 @@ public class ContentDbTests
         Check(q.T("LogTitle") == "Kobold Camp Cleanup", "Quest title");
         Check(q.I("RequiredNpcOrGo1") > 0 && quest.Names.Creature((uint)q.I("RequiredNpcOrGo1")) is { Length: > 0 }, "Objective creature name");
         Check(quest.Rows.All(AcTables.QuestStarter).Any() && quest.Names.Creature(quest.Rows.All(AcTables.QuestStarter).First().U("id")) != null, "Quest giver name");
-        var questIssues = QuestModel.Check(questId, quest.Rows, quest.Names, null).ToArray();
+        var questIssues = AcQuestModel.Check(questId, quest.Rows, quest.Names, null).ToArray();
         Console.WriteLine($"QUEST_SNAPSHOT {questId} '{q.T("LogTitle")}' objective={quest.Names.Creature((uint)q.I("RequiredNpcOrGo1"))}×{q.U("RequiredNpcOrGoCount1")} giver={quest.Names.Creature(quest.Rows.All(AcTables.QuestStarter).First().U("id"))} errors={questIssues.Count(i => i.Error)} warnings={string.Join("; ", questIssues.Where(i => !i.Error).Select(i => i.Message))}");
         Check(questIssues.All(i => !i.Error), "Real quest reported errors: " + string.Join("; ", questIssues.Where(i => i.Error).Select(i => i.Message)));
-        var fresh = QuestModel.NewQuest(quest.MaxQuestId + 1, "Smoke quest");
+        var fresh = AcQuestModel.NewQuest(quest.MaxQuestId + 1, "Smoke quest");
         foreach (var row in fresh)
         {
             row.Validate(AcTables.Tables.First(t => t.Columns.Length == row.Values.Count && t.Columns.All(c => row.Values.ContainsKey(c.Name))));

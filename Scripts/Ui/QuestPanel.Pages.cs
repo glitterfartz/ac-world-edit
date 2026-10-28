@@ -91,7 +91,7 @@ public abstract partial class QuestPanel
     {
         var request = RowOf(Request);
         var offer = RowOf(Offer);
-        page.AddChild(EditorFields.Placeholders(QuestModel.Placeholders));
+        page.AddChild(EditorFields.Placeholders(QuestVocabulary.Placeholders));
         Heading("1 · When offered", "What the quest giver says before the player accepts.");
         page.AddChild(EditorFields.Area(q.T("QuestDescription"), text => Set(Template, "Edit quest text", ("QuestDescription", text)), 120));
         Heading("Objective summary", "One-line goal shown under \"Quest Objectives\" in the log.");
