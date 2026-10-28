@@ -71,7 +71,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         NewGrid();
         Add("Gossip menu", "ID of the gossip menu shown when players talk to it. Zero means no menu. The menu itself is edited on the Gossip page.", v.GossipMenuId.ToString(CultureInfo.InvariantCulture), GossipMenuBox);
 
-        if ((v.NpcFlag & NpcFlags.FlightMaster) != 0 && catalog != null && target != null && catalog.NearestTaxiNode(target.Pose.Map, target.Pose.X, target.Pose.Y, target.Pose.Z) is { } node)
+        if ((v.NpcFlag & AcNpcFlags.FlightMaster) != 0 && catalog != null && target != null && catalog.NearestTaxiNode(target.Pose.Map, target.Pose.X, target.Pose.Y, target.Pose.Z) is { } node)
         {
             body.AddChild(ClientStyle.Text($"Flight master: nearest taxi node {node.Name} ({node.Id}), {node.Distance:0} yd.", 14));
         }

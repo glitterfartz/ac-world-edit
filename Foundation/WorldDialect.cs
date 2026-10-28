@@ -58,7 +58,7 @@ public static class WorldSchemas
     };
 }
 
-/// <summary>The AzerothCore 3.3.5 world schema. AcQuestModel remains its static data.</summary>
+/// <summary>The AzerothCore 3.3.5 world schema. AcQuestModel and AcNpcFlags are AzerothCore-only static data beside it.</summary>
 public sealed class AcSchema : IWorldSchema
 {
     public static readonly AcSchema Instance = new();

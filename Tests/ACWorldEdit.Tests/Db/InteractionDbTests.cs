@@ -58,11 +58,11 @@ public class InteractionDbTests
             var snapshot = await source.ReadInteractionAsync(entry, guid, [], rows => rows, catalog, CancellationToken.None);
             var view = NpcInteraction.Build(entry, guid, snapshot.Name, snapshot.ScriptName, snapshot.AIName, snapshot.SpawnCount, snapshot.Rows, snapshot.Rows, snapshot.Lookup, snapshot.Scripts, snapshot.Conditions);
             int options = view.Menus.Values.Sum(m => m.Options.Length);
-            Console.WriteLine($"INTERACTION_SAMPLE {role} entry={entry} '{view.Name}' <{view.Subname}> flags=[{string.Join(", ", NpcFlags.Names(view.NpcFlag))}] menus={view.Menus.Count} options={options} hidden={view.Menus.Values.Sum(m => m.Options.Count(o => o.HiddenByFlags))} starts={view.Starts.Length} ends={view.Ends.Length} vendor={view.Vendor.Length} trainerSpells={view.Trainer?.Spells.Length ?? 0} scripts={view.Scripts.Length} conditions={string.Join(",", view.Conditions.Select(c => $"{c.Key}:{c.Value}"))} errors={view.Issues.Count(i => i.Error)} warnings={view.Issues.Count(i => !i.Error)} spawns={view.SpawnCount}");
+            Console.WriteLine($"INTERACTION_SAMPLE {role} entry={entry} '{view.Name}' <{view.Subname}> flags=[{string.Join(", ", AcNpcFlags.Names(view.NpcFlag))}] menus={view.Menus.Count} options={options} hidden={view.Menus.Values.Sum(m => m.Options.Count(o => o.HiddenByFlags))} starts={view.Starts.Length} ends={view.Ends.Length} vendor={view.Vendor.Length} trainerSpells={view.Trainer?.Spells.Length ?? 0} scripts={view.Scripts.Length} conditions={string.Join(",", view.Conditions.Select(c => $"{c.Key}:{c.Value}"))} errors={view.Issues.Count(i => i.Error)} warnings={view.Issues.Count(i => !i.Error)} spawns={view.SpawnCount}");
             switch (role)
             {
                 case "innkeeper":
-                    Check((view.NpcFlag & NpcFlags.Innkeeper) != 0 && options > 0 && view.Menus.Values.Any(m => m.Texts.Length > 0 && m.Texts.All(t => t.Male.Length > 0 || t.Female.Length > 0)), "Innkeeper gossip graph");
+                    Check((view.NpcFlag & AcNpcFlags.Innkeeper) != 0 && options > 0 && view.Menus.Values.Any(m => m.Texts.Length > 0 && m.Texts.All(t => t.Male.Length > 0 || t.Female.Length > 0)), "Innkeeper gossip graph");
                     Check(view.Menus.Values.SelectMany(m => m.Options).Any(o => o.Type == 8), "Innkeeper bind option (type 8)");
                     break;
                 case "questgiver":

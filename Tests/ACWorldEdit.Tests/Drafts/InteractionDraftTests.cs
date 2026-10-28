@@ -35,12 +35,12 @@ public class InteractionDraftTests
     {
         string path = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json"));
         var snapshot = new RowSet();
-        var template = Row.Of(("entry", 42u), ("npcflag", NpcFlags.Gossip), ("gossip_menu_id", 50u), ("subname", "Tester"));
+        var template = Row.Of(("entry", 42u), ("npcflag", AcNpcFlags.Gossip), ("gossip_menu_id", 50u), ("subname", "Tester"));
         snapshot.Set(AcTables.CreatureTemplate, template);
         snapshot.Set(AcTables.GossipMenu, Row.Of(("MenuID", 50u), ("TextID", 60u)));
         var text = Row.Of(("ID", 60u), ("text0_0", "Hello $N.$BWelcome."), ("text0_1", ""), ("BroadcastTextID0", 900), ("Probability0", 1f));
         snapshot.Set(AcTables.NpcText, text);
-        var option = Row.Of(("MenuID", 50u), ("OptionID", 0u), ("OptionIcon", 1u), ("OptionText", "Let me browse your goods."), ("OptionBroadcastTextID", 0), ("OptionType", 3u), ("OptionNpcFlag", NpcFlags.Vendor), ("ActionMenuID", 0u), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
+        var option = Row.Of(("MenuID", 50u), ("OptionID", 0u), ("OptionIcon", 1u), ("OptionText", "Let me browse your goods."), ("OptionBroadcastTextID", 0), ("OptionType", 3u), ("OptionNpcFlag", AcNpcFlags.Vendor), ("ActionMenuID", 0u), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
         snapshot.Set(AcTables.GossipOption, option);
         var bread = Row.Of(("entry", 42u), ("item", 4540), ("ExtendedCost", 0u), ("slot", 0), ("maxcount", 0u), ("incrtime", 0u));
         snapshot.Set(AcTables.Vendor, bread);
@@ -57,7 +57,7 @@ public class InteractionDraftTests
             // One command: new submenu (menu + text) and an option leading to it.
             var newText = Row.Of(("ID", 61u), ("text0_0", "Sub menu text"), ("text0_1", ""), ("BroadcastTextID0", 0), ("Probability0", 1f));
             var newMenu = Row.Of(("MenuID", 51u), ("TextID", 61u));
-            var newOption = option.With("OptionID", 1u).With("OptionText", "Tell me more").With("OptionType", 1u).With("OptionIcon", 0u).With("OptionNpcFlag", NpcFlags.Gossip).With("ActionMenuID", 51u);
+            var newOption = option.With("OptionID", 1u).With("OptionText", "Tell me more").With("OptionType", 1u).With("OptionIcon", 0u).With("OptionNpcFlag", AcNpcFlags.Gossip).With("ActionMenuID", 51u);
             draft.Execute("db", snapshot, "Add option", [new("npc_text", "61", null, newText), new("gossip_menu", "51|61", null, newMenu), new("gossip_menu_option", "50|1", null, newOption)]);
             var effective = draft.Effective("db", snapshot);
             view = View(snapshot, effective);
@@ -78,7 +78,7 @@ public class InteractionDraftTests
             var questWarning = view.Issues.Single(i => !i.Error && i.Message.Contains("Quest"));
             draft.Execute("db", snapshot, "Fix flag", questWarning.Fix!);
             view = View(snapshot, draft.Effective("db", snapshot));
-            Check((view.NpcFlag & NpcFlags.QuestGiver) != 0 && !view.Issues.Any(i => i.Message.Contains("Quests are linked")), "Questgiver flag fix");
+            Check((view.NpcFlag & AcNpcFlags.QuestGiver) != 0 && !view.Issues.Any(i => i.Message.Contains("Quests are linked")), "Questgiver flag fix");
             var limited = View(snapshot, Apply(draft.Effective("db", snapshot), AcTables.Vendor, bread.With("item", 2589).With("maxcount", 5u)));
             Check(limited.Issues.Any(i => i.Error && i.Message.Contains("restock")), "maxcount without incrtime rule");
             var missingQuest = View(snapshot, Apply(draft.Effective("db", snapshot), AcTables.QuestStarter, Row.Of(("id", 42u), ("quest", 999u))));
@@ -92,7 +92,7 @@ public class InteractionDraftTests
 
             draft.Undo();
             draft.Undo();
-            Check((View(snapshot, draft.Effective("db", snapshot)).NpcFlag & NpcFlags.QuestGiver) == 0, "Undo command");
+            Check((View(snapshot, draft.Effective("db", snapshot)).NpcFlag & AcNpcFlags.QuestGiver) == 0, "Undo command");
             draft.Redo();
             Check(draft.LastLabel == "Link quest", "Redo label");
         }

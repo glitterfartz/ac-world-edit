@@ -110,7 +110,7 @@ public static class AcCreaturePage
         new(0x40000000, "Immune to knockback", "Cannot be knocked back.")
     ];
 
-    static readonly FlagBit[] NpcServices = NpcFlags.All.Select(f => new FlagBit(f.Bit, f.Name)).ToArray();
+    static readonly FlagBit[] NpcServices = AcNpcFlags.All.Select(f => new FlagBit(f.Bit, f.Name)).ToArray();
 
     static string Money(string copper)
     {

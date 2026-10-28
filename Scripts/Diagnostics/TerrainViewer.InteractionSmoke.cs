@@ -312,13 +312,13 @@ public partial class TerrainViewer
             creatureProps.SmokeShow("Template");
             Require(creatureProps.SmokeToggleFlag("Quest giver", false), "quest giver checkbox missing");
             Require(creatureProps.View!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
-            Require(creatureProps.SmokePress("Fix") && (creatureProps.View.NpcFlag & NpcFlags.QuestGiver) != 0, "fix did not restore the flag");
+            Require(creatureProps.SmokePress("Fix") && (creatureProps.View.NpcFlag & AcNpcFlags.QuestGiver) != 0, "fix did not restore the flag");
             return true;
         }),
         ("edit-undo-redo-reopen", () =>
         {
-            Require(creatureProps.SmokePress("Undo") && (creatureProps.View!.NpcFlag & NpcFlags.QuestGiver) == 0, "undo did not revert the fix");
-            Require(creatureProps.SmokePress("Redo") && (creatureProps.View!.NpcFlag & NpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
+            Require(creatureProps.SmokePress("Undo") && (creatureProps.View!.NpcFlag & AcNpcFlags.QuestGiver) == 0, "undo did not revert the fix");
+            Require(creatureProps.SmokePress("Redo") && (creatureProps.View!.NpcFlag & AcNpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
             creatureProps.SmokeReopenDraft();
             var menu = creatureProps.View!.Menus[smokeRootMenu];
             Require(menu.Options[^1].ActionMenu != 0 && menu.Texts[0].Male == "Smoke greeting, $N.", "edits lost after reopening the draft");

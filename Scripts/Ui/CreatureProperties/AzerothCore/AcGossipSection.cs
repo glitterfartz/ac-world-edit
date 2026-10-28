@@ -11,7 +11,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     public override string Id => "gossip";
     public override string Title => "Gossip";
     public override string IconPath => ClientStyle.GossipIcon(0);
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & NpcFlags.Gossip) != 0);
+    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & AcNpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 
     protected override void Populate(NpcInteraction v)
@@ -172,7 +172,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
             [
                 Insert(Ctx.Schema.GossipPage.TextTable, NewText(text, "Greetings, $N.")),
                 Insert(Ctx.Schema.GossipPage.Menus.Table, Row.Of(("MenuID", menu), ("TextID", text))),
-                Update(Ctx.Schema.Tables.Find("creature_template"), template, template.With("gossip_menu_id", menu).With("npcflag", template.U("npcflag") | NpcFlags.Gossip))
+                Update(Ctx.Schema.Tables.Find("creature_template"), template, template.With("gossip_menu_id", menu).With("npcflag", template.U("npcflag") | AcNpcFlags.Gossip))
             ]);
         };
         body.AddChild(create);

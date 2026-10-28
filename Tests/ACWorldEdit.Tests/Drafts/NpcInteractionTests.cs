@@ -80,7 +80,7 @@ public class NpcInteractionTests
     [Fact]
     public void MenusFollowActionMenusOnceAndStopAtTheBound()
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
         rows.Set(AcTables.GossipOption, Option(1, 0, action: 2));
         rows.Set(AcTables.GossipOption, Option(2, 0, action: 1));
         rows.Set(AcTables.GossipMenu, MenuText(1, 10));
@@ -91,7 +91,7 @@ public class NpcInteractionTests
         Assert.Equal([1u, 2u], view.Menus.Keys.Order());
 
         // A chain longer than the bound is cut, never looped.
-        var long_ = Rows(Template(NpcFlags.Gossip, 1));
+        var long_ = Rows(Template(AcNpcFlags.Gossip, 1));
         for (uint i = 1; i <= NpcInteraction.MaxMenus + 10; i++)
         {
             long_.Set(AcTables.GossipOption, Option(i, 0, action: i + 1));
@@ -103,9 +103,9 @@ public class NpcInteractionTests
     [Fact]
     public void OptionsAreOrderedAndFlagMismatchHidesThem()
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(AcTables.GossipOption, Option(1, 2, flag: NpcFlags.Gossip));
-        rows.Set(AcTables.GossipOption, Option(1, 1, flag: NpcFlags.Vendor));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
+        rows.Set(AcTables.GossipOption, Option(1, 2, flag: AcNpcFlags.Gossip));
+        rows.Set(AcTables.GossipOption, Option(1, 1, flag: AcNpcFlags.Vendor));
         var options = Build(rows, new Lookup()).Menus[1].Options;
         Assert.Equal([1u, 2u], options.Select(o => o.OptionId));
         Assert.True(options[0].HiddenByFlags);
@@ -115,7 +115,7 @@ public class NpcInteractionTests
     [Fact]
     public void BroadcastTextOverridesNpcTextAndOptionText()
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
         rows.Set(AcTables.GossipMenu, MenuText(1, 10));
         rows.Set(AcTables.NpcText, Text(10, "raw", 500));
         rows.Set(AcTables.GossipOption, Option(1, 0, broadcast: 600, text: "raw option"));
@@ -138,7 +138,7 @@ public class NpcInteractionTests
     [Fact]
     public void UnloadedNpcTextIsShownAndReportedUnlessTheDatabaseHasIt()
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
         rows.Set(AcTables.GossipMenu, MenuText(1, 99));
         var view = Build(rows, new Lookup());
         Assert.Contains("not loaded", view.Menus[1].Texts[0].Male);
@@ -151,7 +151,7 @@ public class NpcInteractionTests
     [Fact]
     public void EditedMarksCompareAgainstTheSnapshot()
     {
-        var snapshot = Rows(Template(NpcFlags.Gossip, 1));
+        var snapshot = Rows(Template(AcNpcFlags.Gossip, 1));
         snapshot.Set(AcTables.GossipMenu, MenuText(1, 10));
         snapshot.Set(AcTables.NpcText, Text(10));
         snapshot.Set(AcTables.GossipOption, Option(1, 0));
@@ -176,7 +176,7 @@ public class NpcInteractionTests
     [InlineData(0u, 0u, 77u, "point of interest 77")]
     public void OptionRules(uint type, uint icon, uint poi, string fragment)
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
         rows.Set(AcTables.GossipOption, Option(1, 0, type: type == 0 ? 1 : type, icon: icon, poi: poi));
         var view = Build(rows, new Lookup());
         if (fragment.Length == 0)
@@ -191,7 +191,7 @@ public class NpcInteractionTests
     [Fact]
     public void SubmenuMustExistInRowsOrDatabase()
     {
-        var rows = Rows(Template(NpcFlags.Gossip, 1));
+        var rows = Rows(Template(AcNpcFlags.Gossip, 1));
         rows.Set(AcTables.GossipOption, Option(1, 0, action: 5));
         AssertError(Build(rows, new Lookup()), "submenu 5");
         var lookup = new Lookup();
@@ -202,7 +202,7 @@ public class NpcInteractionTests
     [Fact]
     public void QuestLinksAreSortedAndMissingQuestsAreErrors()
     {
-        var rows = Rows(Template(NpcFlags.QuestGiver));
+        var rows = Rows(Template(AcNpcFlags.QuestGiver));
         rows.Set(AcTables.QuestStarter, Row.Of(("id", Entry), ("quest", 9u)));
         rows.Set(AcTables.QuestStarter, Row.Of(("id", Entry), ("quest", 7u)));
         rows.Set(AcTables.QuestStarter, Row.Of(("id", 99u), ("quest", 3u)));
@@ -217,7 +217,7 @@ public class NpcInteractionTests
     [Fact]
     public void VendorRowsAreOrderedAndReferencesExpand()
     {
-        var rows = Rows(Template(NpcFlags.Vendor));
+        var rows = Rows(Template(AcNpcFlags.Vendor));
         rows.Set(AcTables.Vendor, Vendor(Entry, 2589, slot: 2));
         rows.Set(AcTables.Vendor, Vendor(Entry, -500, slot: 1));
         var lookup = new Lookup();
@@ -237,7 +237,7 @@ public class NpcInteractionTests
     [Fact]
     public void EmptyVendorReferenceIsAnError()
     {
-        var rows = Rows(Template(NpcFlags.Vendor));
+        var rows = Rows(Template(AcNpcFlags.Vendor));
         rows.Set(AcTables.Vendor, Vendor(Entry, -500));
         AssertError(Build(rows, new Lookup()), "reference 500 has no items");
     }
@@ -250,7 +250,7 @@ public class NpcInteractionTests
     [InlineData(0u, 0u, 60u, true, "limited stock")]
     public void VendorItemRules(uint cost, uint max, uint incr, bool error, string fragment)
     {
-        var rows = Rows(Template(NpcFlags.Vendor));
+        var rows = Rows(Template(AcNpcFlags.Vendor));
         rows.Set(AcTables.Vendor, Vendor(Entry, 2589, cost: cost, max: max, incr: incr));
         var lookup = new Lookup();
         lookup.ExtendedCosts.Add(0);
@@ -265,7 +265,7 @@ public class NpcInteractionTests
     [Fact]
     public void UnknownVendorItemIsAnError()
     {
-        var rows = Rows(Template(NpcFlags.Vendor));
+        var rows = Rows(Template(AcNpcFlags.Vendor));
         rows.Set(AcTables.Vendor, Vendor(Entry, 31337));
         AssertError(Build(rows, new Lookup()), "item 31337");
     }
@@ -273,7 +273,7 @@ public class NpcInteractionTests
     [Fact]
     public void TrainerViewAndRules()
     {
-        var rows = Rows(Template(NpcFlags.Trainer));
+        var rows = Rows(Template(AcNpcFlags.Trainer));
         rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
         var lookup = new Lookup();
         AssertError(Build(rows, lookup), "Trainer 8 does not exist");
@@ -292,7 +292,7 @@ public class NpcInteractionTests
     [Fact]
     public void TrainerExistsViaDatabaseWhenNoRowIsLoaded()
     {
-        var rows = Rows(Template(NpcFlags.Trainer));
+        var rows = Rows(Template(AcNpcFlags.Trainer));
         rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
         var lookup = new Lookup();
         lookup.Trainers.Add(8);
@@ -304,7 +304,7 @@ public class NpcInteractionTests
     [Fact]
     public void SpellClickMustReferenceAKnownSpell()
     {
-        var rows = Rows(Template(NpcFlags.SpellClick));
+        var rows = Rows(Template(AcNpcFlags.SpellClick));
         rows.Set(AcTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 134u), ("cast_flags", 1u), ("user_type", 0u)));
         AssertError(Build(rows, new Lookup()), "Spell click 134");
         rows.Set(AcTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 133u), ("cast_flags", 1u), ("user_type", 0u)));
@@ -312,11 +312,11 @@ public class NpcInteractionTests
     }
 
     [Theory]
-    [InlineData("quest", NpcFlags.QuestGiver)]
-    [InlineData("vendor", NpcFlags.Vendor)]
-    [InlineData("trainer", NpcFlags.Trainer)]
-    [InlineData("spellclick", NpcFlags.SpellClick)]
-    [InlineData("gossip", NpcFlags.Gossip)]
+    [InlineData("quest", AcNpcFlags.QuestGiver)]
+    [InlineData("vendor", AcNpcFlags.Vendor)]
+    [InlineData("trainer", AcNpcFlags.Trainer)]
+    [InlineData("spellclick", AcNpcFlags.SpellClick)]
+    [InlineData("gossip", AcNpcFlags.Gossip)]
     public void MissingNpcFlagWarnsWithAFixThatSetsTheBit(string feature, uint bit)
     {
         var rows = Rows(Template(0));
@@ -352,16 +352,16 @@ public class NpcInteractionTests
     [Fact]
     public void FlagFixPreservesExistingBits()
     {
-        var rows = Rows(Template(NpcFlags.Repair));
+        var rows = Rows(Template(AcNpcFlags.Repair));
         rows.Set(AcTables.Vendor, Vendor(Entry, 2589));
         var warning = Assert.Single(Build(rows, new Lookup()).Issues, i => !i.Error);
-        Assert.Equal(NpcFlags.Repair | NpcFlags.Vendor, warning.Fix![0].After!.U("npcflag"));
+        Assert.Equal(AcNpcFlags.Repair | AcNpcFlags.Vendor, warning.Fix![0].After!.U("npcflag"));
     }
 
     [Theory]
-    [InlineData(NpcFlags.Vendor)]
-    [InlineData(NpcFlags.VendorFood)]
-    [InlineData(NpcFlags.VendorReagent)]
+    [InlineData(AcNpcFlags.Vendor)]
+    [InlineData(AcNpcFlags.VendorFood)]
+    [InlineData(AcNpcFlags.VendorReagent)]
     public void AnyVendorVariantSatisfiesTheVendorFlagRule(uint flag)
     {
         var rows = Rows(Template(flag));
@@ -370,9 +370,9 @@ public class NpcInteractionTests
     }
 
     [Theory]
-    [InlineData(NpcFlags.Trainer)]
-    [InlineData(NpcFlags.TrainerClass)]
-    [InlineData(NpcFlags.TrainerProfession)]
+    [InlineData(AcNpcFlags.Trainer)]
+    [InlineData(AcNpcFlags.TrainerClass)]
+    [InlineData(AcNpcFlags.TrainerProfession)]
     public void AnyTrainerVariantSatisfiesTheTrainerFlagRule(uint flag)
     {
         var rows = Rows(Template(flag));
@@ -385,11 +385,11 @@ public class NpcInteractionTests
     [Fact]
     public void FlagNamesAreUniqueSingleBitsAndListedByBit()
     {
-        Assert.All(NpcFlags.All, f => Assert.Equal(1, System.Numerics.BitOperations.PopCount(f.Bit)));
-        Assert.Equal(NpcFlags.All.Length, NpcFlags.All.Select(f => f.Bit).Distinct().Count());
-        Assert.Equal(["Gossip", "Quest giver"], NpcFlags.Names(3));
-        Assert.Empty(NpcFlags.Names(0));
-        Assert.Equal(NpcFlags.Vendor | NpcFlags.VendorAmmo | NpcFlags.VendorFood | NpcFlags.VendorPoison | NpcFlags.VendorReagent, NpcFlags.VendorMask);
+        Assert.All(AcNpcFlags.All, f => Assert.Equal(1, System.Numerics.BitOperations.PopCount(f.Bit)));
+        Assert.Equal(AcNpcFlags.All.Length, AcNpcFlags.All.Select(f => f.Bit).Distinct().Count());
+        Assert.Equal(["Gossip", "Quest giver"], AcNpcFlags.Names(3));
+        Assert.Empty(AcNpcFlags.Names(0));
+        Assert.Equal(AcNpcFlags.Vendor | AcNpcFlags.VendorAmmo | AcNpcFlags.VendorFood | AcNpcFlags.VendorPoison | AcNpcFlags.VendorReagent, AcNpcFlags.VendorMask);
     }
 
     [Theory]

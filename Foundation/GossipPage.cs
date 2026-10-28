@@ -51,7 +51,7 @@ public static class GossipPage
                 ? Field("OptionNpc", "Service", "The client service this option opens.", FieldKind.Choice,
                     TcCreatureView.OptionNpcNames.Select((name, id) => (id, name)).ToArray())
                 : Field("OptionType", "Service", "What the client does when the option is selected.", FieldKind.Choice,
-                    NpcFlags.OptionTypes.Select((name, id) => (id, name)).ToArray()),
+                    AcNpcFlags.OptionTypes.Select((name, id) => (id, name)).ToArray()),
             Field("ActionMenuID", "Submenu", "Menu opened by this option. 0 means none."),
             Field("ActionPoiID", "Point of interest", "Map marker shown by this option. 0 means none."),
             Field("BoxText", "Confirmation text", "Text of the confirmation dialog.", FieldKind.Text),
@@ -74,7 +74,7 @@ public static class GossipPage
         else
         {
             fields.Insert(0, Field("OptionIcon", "Icon", "Icon shown beside this option.", FieldKind.Choice,
-                NpcFlags.OptionIcons.Select((name, id) => (id, name)).ToArray()));
+                AcNpcFlags.OptionIcons.Select((name, id) => (id, name)).ToArray()));
             fields.Insert(4, Field("OptionNpcFlag", "NPC flag", "Shown only when this and the creature's npcflag overlap."));
         }
 
@@ -84,7 +84,7 @@ public static class GossipPage
                 .Select(id => checked(id + 1)).DefaultIfEmpty(0u).Max();
             if (!retail)
             {
-                return InteractionEdits.NewOption(menu, id, "New option", 1, NpcFlags.Gossip, 0, 0);
+                return InteractionEdits.NewOption(menu, id, "New option", 1, AcNpcFlags.Gossip, 0, 0);
             }
 
             return Row.Of(table.Columns.Select(c => (c.Name, (object)(c.Kind == ColumnKind.Text ? "" : "0"))).ToArray())

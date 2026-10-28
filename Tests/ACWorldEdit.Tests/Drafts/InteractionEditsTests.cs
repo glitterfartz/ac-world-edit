@@ -31,10 +31,10 @@ public class InteractionEditsTests
         Assert.Equal("Hello", text.T("text0_0"));
         Assert.Equal(1f, text.F("Probability0"));
 
-        var option = NewOption(50, 3, "Browse", 3, NpcFlags.Vendor, 1, 51);
+        var option = NewOption(50, 3, "Browse", 3, AcNpcFlags.Vendor, 1, 51);
         option.Validate(AcTables.GossipOption);
         Assert.Equal("50|3", AcTables.GossipOption.KeyOf(option));
-        Assert.Equal(NpcFlags.Vendor, option.U("OptionNpcFlag"));
+        Assert.Equal(AcNpcFlags.Vendor, option.U("OptionNpcFlag"));
         Assert.Equal(51u, option.U("ActionMenuID"));
         Assert.Equal(0, option.I("OptionBroadcastTextID"));
     }
@@ -68,7 +68,7 @@ public class InteractionEditsTests
     public void OptionTypeNamesFallBackForUnknownTypes()
     {
         Assert.Equal("Vendor", OptionTypeName(3));
-        Assert.Equal($"Unknown {NpcFlags.OptionTypes.Length}", OptionTypeName((uint)NpcFlags.OptionTypes.Length));
+        Assert.Equal($"Unknown {AcNpcFlags.OptionTypes.Length}", OptionTypeName((uint)AcNpcFlags.OptionTypes.Length));
     }
 
     sealed class NoLookup : IInteractionLookup
@@ -103,7 +103,7 @@ public class InteractionEditsTests
     public void SummaryListsFlagsScriptsDraftEditsAndErrors()
     {
         var snapshot = new RowSet();
-        snapshot.Set(AcTables.CreatureTemplate, Template(NpcFlags.Vendor | NpcFlags.Gossip));
+        snapshot.Set(AcTables.CreatureTemplate, Template(AcNpcFlags.Vendor | AcNpcFlags.Gossip));
         var rows = snapshot.Clone();
         var item = Row.Of(("entry", 42u), ("item", 2589), ("ExtendedCost", 0u), ("slot", 0), ("maxcount", 0u), ("incrtime", 0u));
         rows.Set(AcTables.Vendor, item);

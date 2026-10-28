@@ -22,11 +22,11 @@ public static class InteractionEdits
     /// </summary>
     public static uint ParseUInt(string text) => text.Trim().StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? uint.Parse(text.Trim()[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture) : uint.Parse(text.Trim(), CultureInfo.InvariantCulture);
 
-    public static string OptionTypeName(uint type) => type < NpcFlags.OptionTypes.Length ? NpcFlags.OptionTypes[type] : $"Unknown {type}";
+    public static string OptionTypeName(uint type) => type < AcNpcFlags.OptionTypes.Length ? AcNpcFlags.OptionTypes[type] : $"Unknown {type}";
 
     public static string Summary(NpcInteraction v)
     {
-        var flags = NpcFlags.Names(v.NpcFlag).ToArray();
+        var flags = AcNpcFlags.Names(v.NpcFlag).ToArray();
         string scripts = (v.ScriptName.Length > 0 ? $"\nC++ script: {v.ScriptName}" : "") + (v.Scripts.Length > 0 ? $"\nSmartAI interaction events: {v.Scripts.Length}" : "");
         int edits = v.Menus.Values.Count(m => m.Edited) + v.Vendor.Count(i => i.Edited) + v.Starts.Concat(v.Ends).Count(q => q.Edited);
         return $"{(flags.Length == 0 ? "No NPC flags" : string.Join(" · ", flags))}\n" +
