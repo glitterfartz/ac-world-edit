@@ -12,14 +12,14 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : TcSection(ctx
     public override string Id => "vendor";
     public override string Title => "Vendor";
     public override string Badge => Ctx.TcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString(CultureInfo.InvariantCulture) : "";
-    public override bool HasContent => Ctx.TcView is { } v && (Ctx.TcEditable || v.Vendor.Length > 0);
+    public override bool HasContent => Ctx.TcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
     readonly SearchState<ClientItem> search = new();
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
-        bool editable = Ctx.TcEditable;
+        bool editable = Ctx.Editable;
         if (editable) AddControls(v.Entry);
         if (v.Vendor.Length == 0) Line("This creature sells nothing.", ClientStyle.Faded);
         else Heading($"{v.Vendor.Length} item(s) for sale");

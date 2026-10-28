@@ -15,7 +15,7 @@ public partial class CreaturePropertiesWindow
     public bool SmokeOnQuestDetail => active?.Id == "quests" && SmokeQuestDetail != 0;
     public uint SmokeQuestDetail => (Section("quests") as AcQuestsSection)?.SmokeQuestDetail ?? 0;
     public bool SmokeLoaded => Context.View != null && Context.Snapshot != null;
-    NpcInteraction? view => Context.View;
+    AcCreatureView? view => Context.AcView;
     Node body => (Node?)active ?? this;
 
     IEnumerable<T> Live<T>(Node root) where T : Node => root.FindChildren("*", typeof(T).Name, true, false).OfType<T>().Where(n => !n.IsQueuedForDeletion() && !IsDying(n) && (n is not CanvasItem item || item.IsVisibleInTree()));
@@ -64,7 +64,7 @@ public partial class CreaturePropertiesWindow
             return false;
         }
 
-        return SmokePress(NpcInteraction.Render(option.Text));
+        return SmokePress(InteractionText.Render(option.Text));
     }
 
     public int SmokeIconsShown => Live<TextureRect>(body).Count(t => t.Texture != null && t.CustomMinimumSize.X >= 37);

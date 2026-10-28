@@ -11,10 +11,10 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     public override string Id => "gossip";
     public override string Title => "Gossip";
     public override string IconPath => ClientStyle.GossipIcon(0);
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & AcNpcFlags.Gossip) != 0);
+    public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & AcNpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         RenderGossip(v);
     }
@@ -24,11 +24,11 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     public override void OnCreatureChanged(CreatureSpawn? creature) => menus.Clear();
 
     /// <summary>The menu shown now (smoke tests).</summary>
-    public uint SmokeCurrentMenu => Ctx.View is { } v ? CurrentMenu(v) : 0;
+    public uint SmokeCurrentMenu => Ctx.AcView is { } v ? CurrentMenu(v) : 0;
 
-    uint CurrentMenu(NpcInteraction v) => menus.Count > 0 ? menus.Peek() : v.GossipMenuId;
+    uint CurrentMenu(AcCreatureView v) => menus.Count > 0 ? menus.Peek() : v.GossipMenuId;
 
-    void RenderGossip(NpcInteraction v)
+    void RenderGossip(AcCreatureView v)
     {
         uint menuId = CurrentMenu(v);
         if (!v.Menus.TryGetValue(menuId, out var menu))
@@ -64,7 +64,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
             }
             else
             {
-                body.AddChild(ClientStyle.Text(NpcInteraction.Render(text.Male.Length > 0 ? text.Male : text.Female), 16, text.Edited ? ClientStyle.Edited : null));
+                body.AddChild(ClientStyle.Text(InteractionText.Render(text.Male.Length > 0 ? text.Male : text.Female), 16, text.Edited ? ClientStyle.Edited : null));
             }
         }
 
@@ -78,7 +78,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
 
             var button = new Button
             {
-                Text = NpcInteraction.Render(option.Text),
+                Text = InteractionText.Render(option.Text),
                 Alignment = HorizontalAlignment.Left,
                 Disabled = option.HiddenByFlags,
                 TooltipText = $"Option {option.OptionId} · {OptionTypeName(option.Type)}{(option.ActionMenu != 0 ? $" → menu {option.ActionMenu}" : "")}{(option.HiddenByFlags ? $"\nHidden in game: OptionNpcFlag {option.NpcFlag:X} not in npcflag" : "")}"
@@ -119,9 +119,9 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     /// Do what the client would for an option: open a submenu or the matching service page, or say
     /// which client window it opens (bind, bank, auction…). Confirmation boxes are shown first.
     /// </summary>
-    void Follow(NpcInteraction v, OptionView option)
+    void Follow(AcCreatureView v, OptionView option)
     {
-        string box = option.BoxText.Length > 0 || option.BoxMoney > 0 ? $"Confirmation: \"{NpcInteraction.Render(option.BoxText)}\"{(option.BoxMoney > 0 ? $" · costs {ClientStyle.Money(option.BoxMoney)}" : "")}{(option.BoxCoded ? " · asks for a code" : "")}. " : "";
+        string box = option.BoxText.Length > 0 || option.BoxMoney > 0 ? $"Confirmation: \"{InteractionText.Render(option.BoxText)}\"{(option.BoxMoney > 0 ? $" · costs {ClientStyle.Money(option.BoxMoney)}" : "")}{(option.BoxCoded ? " · asks for a code" : "")}. " : "";
         status = box;
         if (option.ActionMenu != 0)
         {
@@ -157,7 +157,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
         Render();
     }
 
-    void RenderCreateMenu(NpcInteraction v)
+    void RenderCreateMenu(AcCreatureView v)
     {
         var create = new Button
         {
@@ -182,7 +182,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     /// Copy a shared menu (its texts and options) under new IDs and point this NPC (or the parent
     /// option) at the copy. Submenus the options lead to stay shared.
     /// </summary>
-    void RenderForkMenu(NpcInteraction v, MenuView menu)
+    void RenderForkMenu(AcCreatureView v, MenuView menu)
     {
         // Gossip conditions are keyed by MenuID and are not editable here, so a copy loses them.
         int conditions = v.Conditions.GetValueOrDefault(14) + v.Conditions.GetValueOrDefault(15);
@@ -372,7 +372,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
         Commit("Reorder options", Ctx.Schema.GossipPage.SwapOptions(option.Row, other.Row));
     }
 
-    void RenderAddOption(NpcInteraction v, MenuView menu)
+    void RenderAddOption(AcCreatureView v, MenuView menu)
     {
         var row = new HBoxContainer();
         body.AddChild(row);

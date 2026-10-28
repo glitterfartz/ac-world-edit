@@ -56,7 +56,7 @@ public class InteractionDbTests
         foreach (var (role, (entry, guid)) in samples)
         {
             var snapshot = await source.ReadInteractionAsync(entry, guid, [], rows => rows, catalog, CancellationToken.None);
-            var view = NpcInteraction.Build(entry, guid, snapshot.Name, snapshot.ScriptName, snapshot.AIName, snapshot.SpawnCount, snapshot.Rows, snapshot.Rows, snapshot.Lookup, snapshot.Scripts, snapshot.Conditions);
+            var view = AcCreatureView.Build(entry, guid, snapshot.Name, snapshot.ScriptName, snapshot.AIName, snapshot.SpawnCount, snapshot.Rows, snapshot.Rows, snapshot.Lookup, snapshot.Scripts, snapshot.Conditions);
             int options = view.Menus.Values.Sum(m => m.Options.Length);
             Console.WriteLine($"INTERACTION_SAMPLE {role} entry={entry} '{view.Name}' <{view.Subname}> flags=[{string.Join(", ", AcNpcFlags.Names(view.NpcFlag))}] menus={view.Menus.Count} options={options} hidden={view.Menus.Values.Sum(m => m.Options.Count(o => o.HiddenByFlags))} starts={view.Starts.Length} ends={view.Ends.Length} vendor={view.Vendor.Length} trainerSpells={view.Trainer?.Spells.Length ?? 0} scripts={view.Scripts.Length} conditions={string.Join(",", view.Conditions.Select(c => $"{c.Key}:{c.Value}"))} errors={view.Issues.Count(i => i.Error)} warnings={view.Issues.Count(i => !i.Error)} spawns={view.SpawnCount}");
             switch (role)

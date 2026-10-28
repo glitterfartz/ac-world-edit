@@ -1,60 +1,10 @@
-using System.Text.RegularExpressions;
-
 namespace ACWorldEdit.Foundation;
-
-public sealed record ItemInfo(uint Id, string Name, int Quality, long BuyPrice, uint DisplayId);
-public sealed record QuestInfo(uint Id, string Title, int Level, int MinLevel, string Details, string Objectives, int RewardMoney, string[] RewardItems);
-/// <summary>
-/// SmartAI row that reacts to interaction (event 64 gossip hello, 62 gossip select, 19 quest
-/// accepted, 20 quest rewarded). Shown as a warning; never simulated.
-/// </summary>
-public sealed record ScriptHook(int EventType, int ActionType, int EventParam1, int EventParam2, string Comment);
-
-/// <summary>
-/// Read-only facts the editor needs beyond the editable rows: names, existence checks for server
-/// validation, sharing counts and script/condition context. Implemented by the database/client
-/// layer; Foundation stays engine- and database-independent.
-/// </summary>
-public interface IInteractionLookup
-{
-    ItemInfo? Item(uint id);
-    QuestInfo? Quest(uint id);
-    string? SpellName(uint id);
-    bool ExtendedCostExists(uint id);
-    (string Male, string Female)? BroadcastText(uint id);
-    bool PoiExists(uint id);
-    /// <summary>
-    /// Database rows outside this NPC's loaded scope (another NPC's menu, an existing trainer).
-    /// </summary>
-    bool MenuExists(uint menuId);
-    bool TextExists(uint textId);
-    bool TrainerExists(uint id);
-    IReadOnlyList<Row> ReferenceVendor(uint entry);
-    int MenuUsers(uint menuId);
-    int TextUsers(uint textId);
-    int TrainerUsers(uint trainerId);
-}
-
-public sealed record TextView(uint TextId, string Male, string Female, bool FromBroadcast, uint BroadcastId, float Probability, bool Edited);
-public sealed record OptionView(Row Row, uint OptionId, uint Icon, string Text, bool FromBroadcast, uint Type, uint NpcFlag, uint ActionMenu, uint Poi, bool BoxCoded, uint BoxMoney, string BoxText, bool HiddenByFlags, bool Edited);
-public sealed record MenuView(uint MenuId, TextView[] Texts, OptionView[] Options, int SharedBy, bool Edited);
-public sealed record VendorView(Row? Row, uint Item, uint ExtendedCost, int Slot, uint MaxCount, uint IncrTime, ItemInfo? Info, uint FromReference, bool Edited);
-public sealed record TrainerSpellView(Row Row, uint SpellId, string Name, uint Cost, uint ReqSkillLine, uint ReqSkillRank, uint ReqLevel, bool Edited);
-public sealed record TrainerView(uint Id, uint Type, uint Requirement, string Greeting, TrainerSpellView[] Spells, int SharedBy, bool Exists);
-public sealed record QuestLinkView(uint Quest, QuestInfo? Info, bool Edited);
-public sealed record SpellClickView(Row Row, uint SpellId, string Name, uint CastFlags, uint UserType, bool Edited);
-
-/// <summary>
-/// Problem found by validation. Errors block a command; warnings mirror what the server logs and
-/// may carry a one-click fix.
-/// </summary>
-public sealed record InteractionIssue(bool Error, string Message, RowEdit[]? Fix = null);
 
 /// <summary>
 /// Effective interaction view of one creature entry: database rows plus the local draft, with
 /// names resolved. Rebuilt after every edit; never mutated.
 /// </summary>
-public sealed record NpcInteraction(
+public sealed record AcCreatureView(
     uint Entry,
     ulong Guid,
     string Name,
@@ -70,7 +20,7 @@ public sealed record NpcInteraction(
     SpellClickView[] SpellClicks,
     ScriptHook[] Scripts,
     IReadOnlyDictionary<int, int> Conditions,
-    InteractionIssue[] Issues)
+    InteractionIssue[] Issues) : ICreatureView
 {
     public uint NpcFlag => Template.U("npcflag");
     public uint GossipMenuId => Template.U("gossip_menu_id");
@@ -84,7 +34,7 @@ public sealed record NpcInteraction(
     /// <summary>
     /// Build the view from effective rows. Edited marks compare against the database snapshot.
     /// </summary>
-    public static NpcInteraction Build(uint entry, ulong guid, string name, string scriptName, string aiName, int spawnCount, RowSet snapshot, RowSet rows, IInteractionLookup lookup, ScriptHook[] scripts, IReadOnlyDictionary<int, int> conditions)
+    public static AcCreatureView Build(uint entry, ulong guid, string name, string scriptName, string aiName, int spawnCount, RowSet snapshot, RowSet rows, IInteractionLookup lookup, ScriptHook[] scripts, IReadOnlyDictionary<int, int> conditions)
     {
         bool Edited(TableSchema table, Row row) => snapshot.Get(table, table.KeyOf(row)) != row;
         var template = rows.Get(AcTables.CreatureTemplate, entry.ToString()) ?? throw new InvalidDataException($"Creature template {entry} is missing.");
@@ -170,18 +120,8 @@ public sealed record NpcInteraction(
         }
 
         var clicks = rows.All(AcTables.SpellClick).Where(r => r.U("npc_entry") == entry).Select(r => new SpellClickView(r, r.U("spell_id"), lookup.SpellName(r.U("spell_id")) ?? $"Spell {r.U("spell_id")}", r.U("cast_flags"), r.U("user_type"), Edited(AcTables.SpellClick, r))).ToArray();
-        var view = new NpcInteraction(entry, guid, name, template, scriptName, aiName, spawnCount, menus, Quests(AcTables.QuestStarter), Quests(AcTables.QuestEnder), vendor.ToArray(), trainer, clicks, scripts, conditions, []);
-        return view with { Issues = InteractionRules.Check(view, rows, lookup).ToArray() };
-    }
-
-    /// <summary>
-    /// Render client text placeholders for preview: $B newline, $N/$C/$R name/class/race tokens,
-    /// $g male:female; picks the male form. Raw text stays in the rows.
-    /// </summary>
-    public static string Render(string text)
-    {
-        text = Regex.Replace(text, @"\$[gG]\s*([^:;]*):([^;]*);", m => m.Groups[1].Value);
-        return text.Replace("$B", "\n").Replace("$b", "\n").Replace("$N", "<name>").Replace("$n", "<name>").Replace("$C", "<class>").Replace("$c", "<class>").Replace("$R", "<race>").Replace("$r", "<race>");
+        var view = new AcCreatureView(entry, guid, name, template, scriptName, aiName, spawnCount, menus, Quests(AcTables.QuestStarter), Quests(AcTables.QuestEnder), vendor.ToArray(), trainer, clicks, scripts, conditions, []);
+        return view with { Issues = AcInteractionRules.Check(view, rows, lookup).ToArray() };
     }
 }
 
@@ -189,9 +129,9 @@ public sealed record NpcInteraction(
 /// Server loading rules (ObjectMgr Load*), as errors, and server-logged npcflag inconsistencies, as
 /// warnings with fixes. Only rows in this NPC's effective scope are checked.
 /// </summary>
-public static class InteractionRules
+public static class AcInteractionRules
 {
-    public static IEnumerable<InteractionIssue> Check(NpcInteraction view, RowSet rows, IInteractionLookup lookup)
+    public static IEnumerable<InteractionIssue> Check(AcCreatureView view, RowSet rows, IInteractionLookup lookup)
     {
         uint entry = view.Entry, flags = view.NpcFlag;
         bool MenuExists(uint id) => rows.All(AcTables.GossipMenu).Any(r => r.U("MenuID") == id) || lookup.MenuExists(id);

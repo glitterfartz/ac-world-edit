@@ -61,7 +61,7 @@ flowchart TB
     subgraph Shared_logic["Foundation (Godot-free)"]
         drafts["Drafts<br/>CreatureDraft, GraveyardDraft, ContentDrafts, DraftHistory"]
         export["PendingChanges, SqlExport"]
-        rules["Rules and catalogs<br/>SmartCatalog, SmartBehavior, AcQuestModel, InteractionRules"]
+        rules["Rules and catalogs<br/>SmartCatalog, SmartBehavior, AcQuestModel, AcInteractionRules"]
         coords["WorldCoordinates, SpawnPreview"]
     end
 

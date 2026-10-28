@@ -37,7 +37,7 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
 
     public bool IsOpen => Visible;
     public uint? Entry => Context?.Target?.TemplateId;
-    public NpcInteraction? View => Context?.View;
+    public AcCreatureView? View => Context?.AcView;
     public string ActiveSection => active?.Id ?? "";
     public IReadOnlyList<CreatureSection> Sections => sections;
     public event Action<string>? SummaryChanged;
@@ -321,11 +321,10 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
     {
         SyncListed();
         var view = Context.View;
-        var tc = Context.TcView;
-        string? name = view?.Name ?? tc?.Name;
-        string subname = view?.Subname ?? tc?.Subname ?? "";
+        string? name = view?.Name;
+        string subname = view?.Subname ?? "";
         title.Text = name ?? (Context.Target != null ? "Loading…" : "No creature selected");
-        subtitle.Text = name == null ? "" : (subname.Length > 0 ? $"<{subname}>   " : "") + $"Entry {view?.Entry ?? tc!.Entry} · {view?.SpawnCount ?? Context.Snapshot?.SpawnCount ?? 0} spawn(s)";
+        subtitle.Text = name == null ? "" : (subname.Length > 0 ? $"<{subname}>   " : "") + $"Entry {view!.Entry} · {Context.Snapshot?.SpawnCount ?? 0} spawn(s)";
         statusLabel.Text = Context.Status;
         statusLabel.Visible = Context.Status.Length > 0;
         for (int i = 0; i < listed.Count; i++)

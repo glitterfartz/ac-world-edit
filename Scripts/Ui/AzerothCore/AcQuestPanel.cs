@@ -206,7 +206,7 @@ public partial class AcQuestPanel : QuestPanel
         var offer = RowOf(AcTables.QuestOfferReward);
         void Text(string text, int size = 14, Color? color = null)
         {
-            var label = ClientStyle.Text(NpcInteraction.Render(text), size, color ?? ClientStyle.Body);
+            var label = ClientStyle.Text(InteractionText.Render(text), size, color ?? ClientStyle.Body);
             label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             page.AddChild(label);
         }

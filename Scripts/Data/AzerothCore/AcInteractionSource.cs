@@ -124,7 +124,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
             queue.Enqueue(option.U("ActionMenuID"));
         }
 
-        while (queue.Count > 0 && seen.Count < NpcInteraction.MaxMenus)
+        while (queue.Count > 0 && seen.Count < AcCreatureView.MaxMenus)
         {
             uint menu = queue.Dequeue();
             if (seen.Add(menu))

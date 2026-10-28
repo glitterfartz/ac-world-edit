@@ -74,7 +74,7 @@ public partial class TerrainViewer
                 clientShotCreatureStage = 2;
                 return;
             case 2:
-                if (creatureProps.Context.TcView == null && creatureProps.Context.View == null)
+                if (creatureProps.Context.View == null)
                 {
                     if (clientShotFrames++ > 600)
                     {
@@ -97,7 +97,7 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-gossip.png"));
-                if (creatureProps.Context.TcEditable)
+                if (creatureProps.Context.Editable)
                 {
                     var openMenu = creatureProps.Section("gossip")!.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text.StartsWith("Open menu "));
                     if (openMenu == null) { SmokeFail("CLIENT_SHOT_GOSSIP_SUBMENU_MISSING"); return; }
@@ -207,7 +207,7 @@ public partial class TerrainViewer
                 }
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
-                if (creatureProps.Context.TcEditable)
+                if (creatureProps.Context.Editable)
                 {
                     var addDifficulty = creatureProps.Section("template")!.FindChild("AddDifficulty", true, false) as OptionButton;
                     if (addDifficulty == null || addDifficulty.ItemCount < 2) { SmokeFail("CLIENT_SHOT_DIFFICULTY_ADD_MISSING"); return; }
@@ -274,7 +274,7 @@ public partial class TerrainViewer
 
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
                 GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
-                if (creatureProps.Context.TcEditable)
+                if (creatureProps.Context.Editable)
                 {
                     var search = creatureProps.Section("vendor")!.FindChild("Search_item", true, false) as LineEdit;
                     if (search == null) { SmokeFail("CLIENT_SHOT_VENDOR_SEARCH_MISSING"); return; }
@@ -365,13 +365,13 @@ public partial class TerrainViewer
                 return;
             case 5:
                 if (!ShotCreatureReady(514)) return;
-                bool hasSpells = creatureProps.Context.View?.Trainer?.Spells.Length > 0 || creatureProps.Context.TcView?.Trainers.Any(t => t.Spells.Length > 0) == true;
+                bool hasSpells = creatureProps.Context.AcView?.Trainer?.Spells.Length > 0 || creatureProps.Context.TcView?.Trainers.Any(t => t.Spells.Length > 0) == true;
                 if (!hasSpells)
                 {
                     SmokeFail("CLIENT_SHOT_TRAINER_EMPTY Smith Argus has no trainer spells");
                     return;
                 }
-                if (creatureProps.Context.TcEditable && creatureProps.Context.TcView?.Trainers.FirstOrDefault(t => t.Spells.Length > 0) is { } tcTrainer)
+                if (creatureProps.Context.Editable && creatureProps.Context.TcView?.Trainers.FirstOrDefault(t => t.Spells.Length > 0) is { } tcTrainer)
                 {
                     var trainerCtx = creatureProps.Context;
                     var spells = trainerCtx.Schema.TrainerPage.Spells;
@@ -399,7 +399,7 @@ public partial class TerrainViewer
             case 7:
                 if (!ShotCreatureReady(240)) return;
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-stats.png"));
-                if (creatureProps.Context.TcEditable)
+                if (creatureProps.Context.Editable)
                 {
                     var sc = creatureProps.Context;
                     var captions = creatureProps.Section("stats")!.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
@@ -512,7 +512,7 @@ public partial class TerrainViewer
                     return;
                 }
                 GD.Print($"CLIENT_SHOT_TEMPLATE_SEARCH_OK entry={found.TemplateId} name={found.Name}");
-                if (creatureProps.Context.TcEditable)
+                if (creatureProps.Context.Editable)
                 {
                     // The behavior editor on Hogger (4 rules, one linked, speech linked to broadcast text).
                     questEditor.Visible = false;
@@ -612,7 +612,7 @@ public partial class TerrainViewer
                 return;
             default:
                 if (!ShotCreatureReady(240)) return;
-                int quests = creatureProps.Context.View is { } ac ? ac.Starts.Length + ac.Ends.Length
+                int quests = creatureProps.Context.AcView is { } ac ? ac.Starts.Length + ac.Ends.Length
                     : creatureProps.Context.TcView is { } tc ? tc.Starts.Length + tc.Ends.Length : 0;
                 if (quests == 0)
                 {
@@ -620,7 +620,7 @@ public partial class TerrainViewer
                     return;
                 }
                 GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-quests.png"));
-                if (creatureProps.Context.TcEditable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
+                if (creatureProps.Context.Editable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
                 {
                     // Unlink the first quest he starts, then undo: the link must come back unchanged.
                     var qc = creatureProps.Context;
@@ -673,7 +673,7 @@ public partial class TerrainViewer
 
     bool ShotCreatureReady(uint entry)
     {
-        if (creatureProps.Context.View?.Entry != entry && creatureProps.Context.TcView?.Entry != entry)
+        if (creatureProps.Context.View?.Entry != entry)
         {
             if (clientShotFrames++ > 600) SmokeFail("CLIENT_SHOT_CREATURE_NOT_LOADED " + creatureProps.Context.Status);
             return false;

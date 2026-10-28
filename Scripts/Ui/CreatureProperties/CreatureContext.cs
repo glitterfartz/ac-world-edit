@@ -76,9 +76,10 @@ public sealed class CreatureContext
     /// <summary>The selected creature spawn (null when nothing is selected).</summary>
     public CreatureSpawn? Target { get; private set; }
     public InteractionSnapshot? Snapshot { get; private set; }
-    public NpcInteraction? View { get; private set; }
-    /// <summary>The TrinityCore read model; set instead of <see cref="View"/> when the database is TrinityCore.</summary>
-    public TcCreatureView? TcView { get; private set; }
+    /// <summary>The loaded creature in the open database's read model.</summary>
+    public ICreatureView? View { get; private set; }
+    public AcCreatureView? AcView => View as AcCreatureView;
+    public TcCreatureView? TcView => View as TcCreatureView;
     public WorldDialect Dialect => Connection().Dialect;
     public RowSet Effective { get; private set; } = new();
     public InteractionCatalog? Catalog { get; private set; }
@@ -90,12 +91,8 @@ public sealed class CreatureContext
 
     /// <summary>
     /// The sections show editors whenever a content draft is open; otherwise they are read-only.
-    /// AzerothCore sections use this gate, TrinityCore sections <see cref="TcEditable"/>.
     /// </summary>
-    public bool Editable => Draft != null && Dialect == WorldDialect.AzerothCore;
-
-    /// <summary>The TrinityCore sections' editing gate (template, stats, gossip, vendor, trainer, quest links).</summary>
-    public bool TcEditable => Draft != null && Dialect == WorldDialect.TrinityCore;
+    public bool Editable => Draft != null;
 
     public IWorldSchema Schema => WorldSchemas.For(Dialect);
 
@@ -150,7 +147,6 @@ public sealed class CreatureContext
         Target = spawn;
         Snapshot = null;
         View = null;
-        TcView = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(spawn);
         if (spawn == null)
@@ -173,7 +169,6 @@ public sealed class CreatureContext
         Target = null;
         Snapshot = null;
         View = null;
-        TcView = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(null);
         Redraw();
@@ -253,8 +248,7 @@ public sealed class CreatureContext
 
         Effective = Draft?.Effective(SourceKey, Snapshot.Rows) ?? Snapshot.Rows;
         var built = CreatureDialects.For(Dialect).Build(Snapshot, Effective);
-        View = built.Ac;
-        TcView = built.Tc;
+        View = built.View;
         SummaryChanged?.Invoke(built.Summary);
         Redraw();
     }
@@ -265,7 +259,7 @@ public sealed class CreatureContext
     /// </summary>
     public bool Commit(string label, IEnumerable<RowEdit> edits)
     {
-        if (Draft == null || Snapshot == null || (View == null && TcView == null))
+        if (Draft == null || Snapshot == null || View == null)
         {
             return false;
         }

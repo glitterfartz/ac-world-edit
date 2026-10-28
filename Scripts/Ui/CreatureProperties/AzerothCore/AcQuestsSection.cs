@@ -10,8 +10,8 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
     public override string Id => "quests";
     public override string Title => "Quests";
     public override string IconPath => ClientStyle.AvailableQuestIcon;
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
-    public override string Badge => Ctx.View is { } v && v.Starts.Length + v.Ends.Length > 0 ? (v.Starts.Length + v.Ends.Length).ToString() : "";
+    public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
+    public override string Badge => Ctx.AcView is { } v && v.Starts.Length + v.Ends.Length > 0 ? (v.Starts.Length + v.Ends.Length).ToString() : "";
     public override bool ScrollsItself => true;
 
     // The list scrolls inside the section; the opened quest is the quest editor panel, which scrolls itself.
@@ -52,7 +52,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         }
     }
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         bool showDetail = questDetail != 0;
         listScroll.Visible = !showDetail;
@@ -89,7 +89,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
 
     QuestLinksPageSpec Page => Ctx.Schema.QuestLinksPage;
 
-    void RenderQuests(NpcInteraction v)
+    void RenderQuests(AcCreatureView v)
     {
         body.AddChild(ClientStyle.Text("Linked quests", 16, ClientStyle.Header));
         var linked = v.Starts.Concat(v.Ends).Select(q => q.Quest).Distinct()
@@ -135,7 +135,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         return slot;
     }
 
-    Control QuestRow(NpcInteraction v, QuestLinkView quest, bool gives, bool takes, bool edited)
+    Control QuestRow(AcCreatureView v, QuestLinkView quest, bool gives, bool takes, bool edited)
     {
         var button = new Button
         {
@@ -191,7 +191,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         return row;
     }
 
-    void RenderQuestLinkEditor(NpcInteraction v)
+    void RenderQuestLinkEditor(AcCreatureView v)
     {
         body.AddChild(new HSeparator());
         body.AddChild(ClientStyle.Text("Link a quest", 16, ClientStyle.Header));
@@ -236,7 +236,7 @@ public sealed partial class AcQuestsSection(CreatureContext ctx) : AcInteraction
         }
     }
 
-    Control LinkRow(NpcInteraction v, (uint Id, string Title, int Level) quest)
+    Control LinkRow(AcCreatureView v, (uint Id, string Title, int Level) quest)
     {
         var (gives, takes) = roles.GetValueOrDefault(quest.Id, (true, false));
         var row = new HBoxContainer();

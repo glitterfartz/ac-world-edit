@@ -24,7 +24,7 @@ public static class InteractionEdits
 
     public static string OptionTypeName(uint type) => type < AcNpcFlags.OptionTypes.Length ? AcNpcFlags.OptionTypes[type] : $"Unknown {type}";
 
-    public static string Summary(NpcInteraction v)
+    public static string Summary(AcCreatureView v)
     {
         var flags = AcNpcFlags.Names(v.NpcFlag).ToArray();
         string scripts = (v.ScriptName.Length > 0 ? $"\nC++ script: {v.ScriptName}" : "") + (v.Scripts.Length > 0 ? $"\nSmartAI interaction events: {v.Scripts.Length}" : "");

@@ -32,12 +32,12 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
     protected void Try(Action action) => Ctx.Try(action);
 
     /// <summary>Fill the section for a loaded creature (called by <see cref="Refresh"/>).</summary>
-    protected abstract void Populate(NpcInteraction v);
+    protected abstract void Populate(AcCreatureView v);
 
     public override void Refresh()
     {
         Clear();
-        if (Ctx.View is { } v)
+        if (Ctx.AcView is { } v)
         {
             Populate(v);
         }

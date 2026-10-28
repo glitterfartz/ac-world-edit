@@ -27,7 +27,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         var details = effective.Get(Ctx.Schema.Tables.Find("creature_details"),v.Entry.ToString(CultureInfo.InvariantCulture));
         if (details == null)
@@ -66,7 +66,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
     }
 
     /// <summary>The parts of the Interaction group that are not template columns: gossip menu, taxi node and spell clicks.</summary>
-    void RenderInteraction(NpcInteraction v)
+    void RenderInteraction(AcCreatureView v)
     {
         NewGrid();
         Add("Gossip menu", "ID of the gossip menu shown when players talk to it. Zero means no menu. The menu itself is edited on the Gossip page.", v.GossipMenuId.ToString(CultureInfo.InvariantCulture), GossipMenuBox);
@@ -104,7 +104,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         return edit;
     }
 
-    void RenderIssues(NpcInteraction v)
+    void RenderIssues(AcCreatureView v)
     {
         if (v.Issues.Length == 0)
         {
@@ -150,7 +150,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
 
     TableSchema SpellClick => Ctx.Schema.Tables.Find("npc_spellclick_spells");
 
-    void RenderSpellClickEditor(NpcInteraction v)
+    void RenderSpellClickEditor(AcCreatureView v)
     {
         foreach (var click in v.SpellClicks)
         {

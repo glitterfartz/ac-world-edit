@@ -16,14 +16,14 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
     public override string Id => "trainer";
     public override string Title => "Trainer";
     public override string Badge => Ctx.TcView is { Trainers.Length: > 0 } v ? v.Trainers.Length.ToString(CultureInfo.InvariantCulture) : "";
-    public override bool HasContent => Ctx.TcEditable || Ctx.TcView is { Trainers.Length: > 0 };
+    public override bool HasContent => Ctx.Editable || Ctx.TcView is { Trainers.Length: > 0 };
     readonly SearchState<(uint Id, string Name)> search = new();
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => search.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
-        if (Ctx.TcEditable) AssignControls(v);
+        if (Ctx.Editable) AssignControls(v);
         if (v.Trainers.Length == 0)
         {
             Line("This creature trains nothing.", ClientStyle.Faded);
@@ -44,12 +44,12 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
                 continue;
             }
 
-            bool editable = Ctx.TcEditable;
+            bool editable = Ctx.Editable;
             if (trainer.SharedBy > 1)
                 Line($"Shared by {trainer.SharedBy} creature bindings: changes here affect all of them.", ClientStyle.Warning, 12, block);
             if (editable) BindingControls(trainer, block);
             if (editable) TrainerFields(trainer, block);
-            else Facts([("Type", trainer.Type < TcTrainerRules.TypeNames.Length ? TcTrainerRules.TypeNames[trainer.Type] : trainer.Type.ToString(CultureInfo.InvariantCulture)), ("Greeting", trainer.Greeting.Length > 0 ? NpcInteraction.Render(trainer.Greeting) : "None")], block);
+            else Facts([("Type", trainer.Type < TcTrainerRules.TypeNames.Length ? TcTrainerRules.TypeNames[trainer.Type] : trainer.Type.ToString(CultureInfo.InvariantCulture)), ("Greeting", trainer.Greeting.Length > 0 ? InteractionText.Render(trainer.Greeting) : "None")], block);
             Line($"{trainer.Spells.Length} spell(s)", ClientStyle.Header, 13, block);
             if (editable) AddSpellControls(trainer, block);
             new PageRenderer(Ctx).RenderItems(block, Ctx.Schema.TrainerPage.Spells, Ctx.Effective, trainer.TrainerId, editable,
@@ -73,7 +73,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ct
         foreach (var menu in v.Menus)
         {
             foreach (var option in menu.Options.Where(o => o.OptionNpc == TrainerOptionNpc && o.TrainerId == null))
-                slots.Add((menu.MenuId, option.OptionId, $"Menu {menu.MenuId} option {option.OptionId}: {NpcInteraction.Render(option.Text)}"));
+                slots.Add((menu.MenuId, option.OptionId, $"Menu {menu.MenuId} option {option.OptionId}: {InteractionText.Render(option.Text)}"));
         }
 
         return slots;

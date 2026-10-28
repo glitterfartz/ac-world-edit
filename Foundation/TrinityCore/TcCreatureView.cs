@@ -32,7 +32,7 @@ public sealed record TcQuestLink(uint Quest, string? Title);
 /// <see cref="TcTables"/>: the template, its per-difficulty rows, every gossip menu (a creature can have
 /// several), the trainers bound to gossip options, vendor items, quest links and spell clicks.
 /// </summary>
-public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulong NpcFlags, Row Template, TcDifficultyView[] Difficulties, TcMenuView[] Menus, TcTrainerView[] Trainers, TcVendorItem[] Vendor, TcQuestLink[] Starts, TcQuestLink[] Ends, uint[] SpellClicks)
+public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulong NpcFlags, Row Template, TcDifficultyView[] Difficulties, TcMenuView[] Menus, TcTrainerView[] Trainers, TcVendorItem[] Vendor, TcQuestLink[] Starts, TcQuestLink[] Ends, uint[] SpellClicks) : ICreatureView
 {
     /// <summary>Menus reachable from the root menus are followed up to this many.</summary>
     public const int MaxMenus = 64;

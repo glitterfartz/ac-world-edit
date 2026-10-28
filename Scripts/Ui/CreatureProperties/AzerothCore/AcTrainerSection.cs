@@ -11,16 +11,16 @@ public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractio
     public override string Id => "trainer";
     public override string Title => "Trainer";
     public override string IconPath => ClientStyle.GossipIcon(3);
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Trainer != null);
+    public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Trainer != null);
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         RenderTrainer(v);
     }
 
     TrainerPageSpec Page => Ctx.Schema.TrainerPage;
 
-    void RenderTrainer(NpcInteraction v)
+    void RenderTrainer(AcCreatureView v)
     {
         if (v.Trainer is not { } trainer)
         {
@@ -30,7 +30,7 @@ public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractio
         {
             if (trainer.Greeting.Length > 0)
             {
-                body.AddChild(ClientStyle.Text(NpcInteraction.Render(trainer.Greeting), 15));
+                body.AddChild(ClientStyle.Text(InteractionText.Render(trainer.Greeting), 15));
             }
 
             body.AddChild(ClientStyle.Text($"Trainer {trainer.Id} · type {trainer.Type} · requirement {trainer.Requirement}{(trainer.SharedBy > 1 ? $" · shared by {trainer.SharedBy} creatures" : "")}", 12, trainer.SharedBy > 1 ? ClientStyle.Warning : ClientStyle.Faded));
@@ -46,7 +46,7 @@ public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractio
         }
     }
 
-    void RenderTrainerEditor(NpcInteraction v)
+    void RenderTrainerEditor(AcCreatureView v)
     {
         body.AddChild(new HSeparator());
         var assign = new HBoxContainer();

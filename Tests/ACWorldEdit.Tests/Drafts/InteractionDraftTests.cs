@@ -29,7 +29,7 @@ public class InteractionDraftTests
         public int TrainerUsers(uint trainerId) => 1;
     }
 
-    static NpcInteraction View(RowSet snapshot, RowSet rows) => NpcInteraction.Build(42, 1, "Test NPC", "", "", 1, snapshot, rows, new FakeLookup(), [], new Dictionary<int, int>());
+    static AcCreatureView View(RowSet snapshot, RowSet rows) => AcCreatureView.Build(42, 1, "Test NPC", "", "", 1, snapshot, rows, new FakeLookup(), [], new Dictionary<int, int>());
 
     static void Core()
     {
@@ -50,7 +50,7 @@ public class InteractionDraftTests
         Check(view.Menus[50].Texts[0].Male == "Broadcast hello" && view.Menus[50].Texts[0].FromBroadcast, "Broadcast text precedence");
         Check(view.Menus[50].Options[0].HiddenByFlags && view.Menus[50].SharedBy == 3, "Option NpcFlag gate / shared count");
         Check(view.Issues.Any(i => !i.Error && i.Message.Contains("Vendor") && i.Fix != null), "Missing vendor flag warning");
-        Check(NpcInteraction.Render("Hello $N.$BYou are a $g lad:lass;.") == "Hello <name>.\nYou are a lad.", "Placeholder rendering");
+        Check(InteractionText.Render("Hello $N.$BYou are a $g lad:lass;.") == "Hello <name>.\nYou are a lad.", "Placeholder rendering");
 
         using (var draft = new InteractionDraft(path))
         {

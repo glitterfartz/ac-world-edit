@@ -11,7 +11,7 @@ flowchart LR
     settings["DatabaseSettings<br/>SettingsResolver: env over saved"] --> sess["WorldDatabase.OpenAsync<br/>RepeatableRead, read-only transaction"]
     sess --> ws["WorldReadSession<br/>schema probe, Restrictions, parameter binding"]
     ws --> src["*Source classes"]
-    src --> recs["Foundation records<br/>CreatureSpawn, GraveyardRecord, NpcInteraction, ..."]
+    src --> recs["Foundation records<br/>CreatureSpawn, GraveyardRecord, AcCreatureView, ..."]
     recs --> ov["Overlays and editors"]
 ```
 
@@ -90,7 +90,7 @@ Each draft holds a `DraftHistory<T>` (`Foundation/DraftHistory.cs`):
 
 Freshness uses each row's remaining net change. Discarded or mutually cancelling edits keep their undo history but neither report conflicts nor replace database values in the effective view. A later edit of that row starts a new baseline from the current snapshot; SQL export uses that baseline too. `InteractionConflictTests` covers discarded template changes, cancelled inserts/deletes, reopen, frozen views and subsequent edits for both dialects. Every edit records the value it replaced (`Before`). A new edit is refused if the current effective value no longer matches. Per-row staleness shows up as a conflict, and the database value is displayed instead of the draft value.
 
-`ContentDrafts.Commit` also refuses edits that introduce a new rule error, using `InteractionRules` and the quest and SmartAI checks. TC creature commits use `TrinityCore/TcGossipRules` for service IDs, confirmation booleans/costs, greeting weights and, when the client or database can answer, language, spell, client-option and point-of-interest references (the gossip section also assigns, unassigns, copies and creates a creature's menus and greetings), `TrinityCore/TcTrainerRules` for trainer type, spell and skill-line existence (when the client is open), required level and required abilities, and each `creature_trainer` binding (trainer exists, gossip option exists; the trainer section assigns, rebinds, copies and removes bindings), `TrinityCore/TcQuestLinkRules` for quest IDs that must exist in `quest_template`, and `TrinityCore/TcVendorRules` for vendor checks: vendor flag, signed slot range, item/type validity, paired item stock/restock, positive currency quantity, bonus-list integer syntax and filtering boolean. Item, currency, extended cost, player condition and bonus list existence is checked against the retail client when available (`IClientLookup.Exists`, `ClientRecord`), and `TcStatRules` checks the difficulty ID the same way. Shared-reference expansion remains a gap. Stock and restock are one command so a valid limited-stock row can be created from unlimited stock.
+`ContentDrafts.Commit` also refuses edits that introduce a new rule error, using `AcInteractionRules` and the quest and SmartAI checks. TC creature commits use `TrinityCore/TcGossipRules` for service IDs, confirmation booleans/costs, greeting weights and, when the client or database can answer, language, spell, client-option and point-of-interest references (the gossip section also assigns, unassigns, copies and creates a creature's menus and greetings), `TrinityCore/TcTrainerRules` for trainer type, spell and skill-line existence (when the client is open), required level and required abilities, and each `creature_trainer` binding (trainer exists, gossip option exists; the trainer section assigns, rebinds, copies and removes bindings), `TrinityCore/TcQuestLinkRules` for quest IDs that must exist in `quest_template`, and `TrinityCore/TcVendorRules` for vendor checks: vendor flag, signed slot range, item/type validity, paired item stock/restock, positive currency quantity, bonus-list integer syntax and filtering boolean. Item, currency, extended cost, player condition and bonus list existence is checked against the retail client when available (`IClientLookup.Exists`, `ClientRecord`), and `TcStatRules` checks the difficulty ID the same way. Shared-reference expansion remains a gap. Stock and restock are one command so a valid limited-stock row can be created from unlimited stock.
 
 ## Draft lifecycle
 
@@ -98,7 +98,7 @@ Freshness uses each row's remaining net change. Discarded or mutually cancelling
 flowchart TB
     snap["Database snapshot<br/>read-only Source"] --> eff["Effective view<br/>draft applied over snapshot"]
     eff --> edit["User edit in overlay or editor"]
-    edit --> rule{"Rule checks<br/>AcQuestModel.Check, SmartBehavior.Check, InteractionRules"}
+    edit --> rule{"Rule checks<br/>AcQuestModel.Check, SmartBehavior.Check, AcInteractionRules"}
     rule -->|error| refuse["Refused, shown in UI"]
     rule -->|ok| hist["DraftHistory.Append<br/>saved to user://drafts/*.json"]
     hist --> eff
@@ -157,7 +157,7 @@ Escaping and guards:
 
 ## SmartAI and quest rules
 
-SmartAI is one engine over two catalogs; `AcQuestModel` and `NpcInteraction` remain AzerothCore static data (TrinityCore has `TcQuestRules` and `TcCreatureView`).
+SmartAI is one engine over two catalogs; `AcQuestModel` and `AcCreatureView` are the AzerothCore data and read model (TrinityCore has `TcQuestRules` and `TcCreatureView`); both read models implement `ICreatureView`.
 
 - `SmartCatalog` (`Foundation/SmartBehavior.cs`, `SmartCategories.cs`) is an instance per dialect, `SmartCatalog.Ac` and `SmartCatalog.Trinity` (reached through `IWorldSchema.Smart`). Each holds its event, action and target types, how many parameter columns `smart_scripts` has (events 6/5, actions 6/7, targets 4), the event-flag checkboxes, its tables (`smart_scripts`, `creature_text`, the `creature_ai` AIName group) and the loader rules (`Check`). The ID ranges differ, so nothing is shared by ID.
 - The type arrays are generated: `AcSmartTypes` (`Foundation/AzerothCore/AcSmartTypes.cs`) and `TcSmartTypes` (`Foundation/TrinityCore/TcSmartTypes.cs`) come from `Tools/generate_smart_catalog.py` over each server's `SmartScriptMgr.h`, with hand-written names and sentences. TrinityCore reuses an AzerothCore sentence only when the code name and parameter comment match; the rest read their parameters from the comment. `SmartTypes.cs` holds `SmartType`, `SmartParam` and `SmartParamKind`. `SmartCatalog.IsMarker` hides range markers, `RESERVED` slots and slots the server marks "UNUSED".
@@ -165,7 +165,7 @@ SmartAI is one engine over two catalogs; `AcQuestModel` and `NpcInteraction` rem
 - AreaTrigger scripts: `SmartScope.IsAreaTrigger` covers source types 2 (client trigger), 11 and 12 (TrinityCore spawned trigger templates, `IsTriggerEntity`). `SmartCatalog.AllowedForAreaTrigger` follows each core's event masks (AzerothCore: On trigger and Then; TrinityCore adds "Area trigger left", and spawned triggers also run the timed updates); a spawned trigger is an object, so Self and its own action lists are allowed. `CheckAreaTriggerScript` and `EnableTriggerScript` check and fix the script name that runs the rules (SmartTrigger in `areatrigger_scripts`, SmartAreaTriggerAI in the spawn's `areatrigger_ai` row).
 - `SmartRuleEdits` (`Foundation/SmartRuleEdits.cs`) does the row math for add, delete, swap, duplicate and copy-scope; every function takes the dialect's `SmartCatalog` for its tables. Changing a key column becomes a delete plus an insert. `SpeechEdits` does the same for `creature_text` (TrinityCore lines carry `SoundPlayType`).
 - `AcQuestModel` (`Foundation/AzerothCore/AcQuestModel.cs`) holds AzerothCore's quest vocabulary and checks rules that mirror `ObjectMgr::LoadQuests`; `QuestVocabulary` (`Foundation/QuestVocabulary.cs`) has the quest types and text placeholders both dialects show.
-- `NpcInteraction` (`Foundation/NpcInteraction.cs`) is a read-only view of one NPC's interaction data and its validation rules.
+- `AcCreatureView` (`Foundation/AzerothCore/AcCreatureView.cs`) is a read-only view of one NPC's interaction data; `AcInteractionRules` in the same file are its validation rules. `InteractionViews.cs` holds the row views both dialects share and `InteractionText.Render`, which previews client text placeholders.
 
 ## Types by file
 

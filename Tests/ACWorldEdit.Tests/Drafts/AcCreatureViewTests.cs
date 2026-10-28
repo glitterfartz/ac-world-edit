@@ -2,10 +2,10 @@ using ACWorldEdit.Foundation;
 using Xunit;
 
 /// <summary>
-/// NpcInteraction.Build view assembly (menus, vendors, trainers, edited marks) and the
-/// InteractionRules server loading rules, over in-memory rows and a fake lookup.
+/// AcCreatureView.Build view assembly (menus, vendors, trainers, edited marks) and the
+/// AcInteractionRules server loading rules, over in-memory rows and a fake lookup.
 /// </summary>
-public class NpcInteractionTests
+public class AcCreatureViewTests
 {
     const uint Entry = 42;
 
@@ -46,8 +46,8 @@ public class NpcInteractionTests
         return rows;
     }
 
-    static NpcInteraction Build(RowSet rows, Lookup lookup, RowSet? snapshot = null) =>
-        NpcInteraction.Build(Entry, 1, "Test NPC", "", "", 1, snapshot ?? rows.Clone(), rows, lookup, [], new Dictionary<int, int>());
+    static AcCreatureView Build(RowSet rows, Lookup lookup, RowSet? snapshot = null) =>
+        AcCreatureView.Build(Entry, 1, "Test NPC", "", "", 1, snapshot ?? rows.Clone(), rows, lookup, [], new Dictionary<int, int>());
 
     static Row Option(uint menu, uint id, uint action = 0, uint type = 1, uint icon = 0, uint flag = 1, uint poi = 0, int broadcast = 0, string text = "Hi") =>
         Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", broadcast), ("OptionType", type), ("OptionNpcFlag", flag), ("ActionMenuID", action), ("ActionPoiID", poi), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
@@ -58,7 +58,7 @@ public class NpcInteractionTests
 
     static Row Vendor(uint entry, int item, uint cost = 0, int slot = 0, uint max = 0, uint incr = 0) => Row.Of(("entry", entry), ("item", item), ("ExtendedCost", cost), ("slot", slot), ("maxcount", max), ("incrtime", incr));
 
-    static void AssertError(NpcInteraction view, string fragment) =>
+    static void AssertError(AcCreatureView view, string fragment) =>
         Assert.Contains(view.Issues, i => i.Error && i.Message.Contains(fragment, StringComparison.Ordinal));
 
     [Fact]
@@ -92,12 +92,12 @@ public class NpcInteractionTests
 
         // A chain longer than the bound is cut, never looped.
         var long_ = Rows(Template(AcNpcFlags.Gossip, 1));
-        for (uint i = 1; i <= NpcInteraction.MaxMenus + 10; i++)
+        for (uint i = 1; i <= AcCreatureView.MaxMenus + 10; i++)
         {
             long_.Set(AcTables.GossipOption, Option(i, 0, action: i + 1));
         }
 
-        Assert.Equal(NpcInteraction.MaxMenus, Build(long_, new Lookup()).Menus.Count);
+        Assert.Equal(AcCreatureView.MaxMenus, Build(long_, new Lookup()).Menus.Count);
     }
 
     [Fact]
@@ -401,14 +401,14 @@ public class NpcInteractionTests
     [InlineData("", "")]
     public void RenderExpandsClientPlaceholders(string raw, string expected)
     {
-        Assert.Equal(expected, NpcInteraction.Render(raw));
+        Assert.Equal(expected, InteractionText.Render(raw));
     }
 
     [Fact]
     public void RenderPicksTheMaleFormOfGenderedText()
     {
-        Assert.Equal("brother", NpcInteraction.Render("$g brother:sister;"));
-        Assert.Equal("brother", NpcInteraction.Render("$G brother:sister;"));
-        Assert.Equal("Hello brother, friend", NpcInteraction.Render("Hello $gbrother:sister;, friend"));
+        Assert.Equal("brother", InteractionText.Render("$g brother:sister;"));
+        Assert.Equal("brother", InteractionText.Render("$G brother:sister;"));
+        Assert.Equal("Hello brother, friend", InteractionText.Render("Hello $gbrother:sister;, friend"));
     }
 }

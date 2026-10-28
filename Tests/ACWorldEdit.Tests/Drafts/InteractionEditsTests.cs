@@ -88,8 +88,8 @@ public class InteractionEditsTests
         public int TrainerUsers(uint trainerId) => 1;
     }
 
-    static NpcInteraction Build(RowSet rows, RowSet? snapshot = null, string script = "", ScriptHook[]? hooks = null) =>
-        NpcInteraction.Build(42, 1, "Test", script, "", 1, snapshot ?? rows.Clone(), rows, new NoLookup(), hooks ?? [], new Dictionary<int, int>());
+    static AcCreatureView Build(RowSet rows, RowSet? snapshot = null, string script = "", ScriptHook[]? hooks = null) =>
+        AcCreatureView.Build(42, 1, "Test", script, "", 1, snapshot ?? rows.Clone(), rows, new NoLookup(), hooks ?? [], new Dictionary<int, int>());
 
     [Fact]
     public void SummaryOfAPlainNpc()

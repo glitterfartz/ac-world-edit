@@ -23,7 +23,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
     /// <summary>The creature_template level, class and stat column group.</summary>
     TableSchema StatsTable => Ctx.Schema.Tables.Find("creature_stats");
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         var stats = effective.Get(StatsTable, v.Entry.ToString(CultureInfo.InvariantCulture));
         if (stats == null)

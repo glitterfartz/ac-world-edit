@@ -9,21 +9,21 @@ public sealed partial class AcVendorSection(CreatureContext ctx) : AcInteraction
     public override string Id => "vendor";
     public override string Title => "Vendor";
     public override string IconPath => ClientStyle.GossipIcon(1);
-    public override string Badge => Ctx.View is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString() : "";
-    public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Vendor.Length > 0);
+    public override string Badge => Ctx.AcView is { Vendor.Length: > 0 } v ? v.Vendor.Length.ToString() : "";
+    public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Vendor.Length > 0);
     const int VendorPageSize = 10;
     int vendorPage;
     readonly Dictionary<string, string> iconPaths = [];
     readonly Dictionary<string, Tooltip> tooltips = [];
 
-    protected override void Populate(NpcInteraction v)
+    protected override void Populate(AcCreatureView v)
     {
         RenderVendor(v);
     }
 
     public override void OnShown(object? argument) => vendorPage = 0;
 
-    void RenderVendor(NpcInteraction v)
+    void RenderVendor(AcCreatureView v)
     {
         if (editable)
         {
@@ -84,7 +84,7 @@ public sealed partial class AcVendorSection(CreatureContext ctx) : AcInteraction
         nav.AddChild(next);
     }
 
-    void RenderVendorEditor(NpcInteraction v)
+    void RenderVendorEditor(AcCreatureView v)
     {
         body.AddChild(ClientStyle.Text("Items for sale", 16, ClientStyle.Header));
         if (v.Vendor.Length == 0)

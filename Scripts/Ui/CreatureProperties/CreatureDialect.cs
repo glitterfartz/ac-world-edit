@@ -4,8 +4,8 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
-/// <summary>What a dialect built from one creature's effective rows: exactly one of the two views is set.</summary>
-public sealed record CreatureViews(NpcInteraction? Ac, TcCreatureView? Tc, string Summary);
+/// <summary>What a dialect built from one creature's effective rows: its read model and the one-line summary.</summary>
+public sealed record CreatureViews(ICreatureView View, string Summary);
 
 /// <summary>
 /// The per-dialect steps of <see cref="CreatureContext"/>: the catalog it loads, the view it builds

@@ -20,12 +20,12 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcSection(c
 
     protected override void Populate(TcCreatureView v)
     {
-        if (Ctx.TcEditable)
+        if (Ctx.Editable)
         {
             Line($"The template applies to every spawn of entry {v.Entry}.", ClientStyle.Warning, 11);
         }
 
-        renderer.Render(this, Ctx.Schema.TemplatePage, Ctx.Effective, v.Entry, Ctx.TcEditable);
+        renderer.Render(this, Ctx.Schema.TemplatePage, Ctx.Effective, v.Entry, Ctx.Editable);
     }
 }
 
@@ -48,13 +48,13 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
 
     protected override void Populate(TcCreatureView v)
     {
-        if (Ctx.TcEditable)
+        if (Ctx.Editable)
         {
             Line($"These apply to every spawn of entry {v.Entry}.", ClientStyle.Warning, 11);
         }
 
         renderer.After["multipliers"] = () => Results(v);
-        renderer.Render(this, TcStatsPage.Page, Ctx.Effective, v.Entry, Ctx.TcEditable);
+        renderer.Render(this, TcStatsPage.Page, Ctx.Effective, v.Entry, Ctx.Editable);
     }
 
     void Results(TcCreatureView v)
