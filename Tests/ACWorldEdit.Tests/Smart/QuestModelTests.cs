@@ -33,22 +33,22 @@ public class QuestModelTests
     {
         var rows = new RowSet();
         var fresh = QuestModel.NewQuest(Id, "Test quest");
-        rows.Set(InteractionTables.QuestTemplate, template?.Invoke(fresh[0]) ?? fresh[0]);
+        rows.Set(AcTables.QuestTemplate, template?.Invoke(fresh[0]) ?? fresh[0]);
         if (addonRow)
         {
-            rows.Set(InteractionTables.QuestAddon, addon?.Invoke(fresh[1]) ?? fresh[1]);
+            rows.Set(AcTables.QuestAddon, addon?.Invoke(fresh[1]) ?? fresh[1]);
         }
 
-        rows.Set(InteractionTables.QuestRequestItems, fresh[2]);
-        rows.Set(InteractionTables.QuestOfferReward, fresh[3]);
+        rows.Set(AcTables.QuestRequestItems, fresh[2]);
+        rows.Set(AcTables.QuestOfferReward, fresh[3]);
         if (giver)
         {
-            rows.Set(InteractionTables.QuestStarter, Row.Of(("id", 6u), ("quest", Id)));
+            rows.Set(AcTables.QuestStarter, Row.Of(("id", 6u), ("quest", Id)));
         }
 
         if (ender)
         {
-            rows.Set(InteractionTables.QuestEnder, Row.Of(("id", 6u), ("quest", Id)));
+            rows.Set(AcTables.QuestEnder, Row.Of(("id", 6u), ("quest", Id)));
         }
 
         return rows;
@@ -222,7 +222,7 @@ public class QuestModelTests
         Assert.Empty(Issues(Valid(t => t.With("Flags", 0x400u), giver: false)));
         // A giver row for a different quest does not count.
         var other = Valid(giver: false);
-        other.Set(InteractionTables.QuestStarter, Row.Of(("id", 6u), ("quest", Id + 1)));
+        other.Set(AcTables.QuestStarter, Row.Of(("id", 6u), ("quest", Id + 1)));
         AssertIssue(Issues(other), false, "starts this quest");
     }
 

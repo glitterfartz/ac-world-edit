@@ -328,38 +328,6 @@ public sealed class AcTables : ITableCatalog
 }
 
 /// <summary>
-/// The AzerothCore tables as statics, so existing code keeps compiling. Dialect-aware code takes an
-/// <see cref="ITableCatalog"/> instead.
-/// </summary>
-public static class InteractionTables
-{
-    public static readonly TableSchema CreatureTemplate = AcTables.CreatureTemplate;
-    public static readonly TableSchema GossipMenu = AcTables.GossipMenu;
-    public static readonly TableSchema NpcText = AcTables.NpcText;
-    public static readonly TableSchema GossipOption = AcTables.GossipOption;
-    public static readonly TableSchema QuestStarter = AcTables.QuestStarter;
-    public static readonly TableSchema QuestEnder = AcTables.QuestEnder;
-    public static readonly TableSchema Vendor = AcTables.Vendor;
-    public static readonly TableSchema DefaultTrainer = AcTables.DefaultTrainer;
-    public static readonly TableSchema Trainer = AcTables.Trainer;
-    public static readonly TableSchema TrainerSpell = AcTables.TrainerSpell;
-    public static readonly TableSchema SpellClick = AcTables.SpellClick;
-    public static readonly TableSchema CreatureAI = AcTables.CreatureAI;
-    public static readonly TableSchema CreatureStats = AcTables.CreatureStats;
-    public static readonly TableSchema CreatureDetails = AcTables.CreatureDetails;
-    public static readonly TableSchema QuestTemplate = AcTables.QuestTemplate;
-    public static readonly TableSchema QuestAddon = AcTables.QuestAddon;
-    public static readonly TableSchema QuestRequestItems = AcTables.QuestRequestItems;
-    public static readonly TableSchema QuestOfferReward = AcTables.QuestOfferReward;
-    public static readonly TableSchema SmartScripts = AcTables.SmartScripts;
-    public static readonly TableSchema CreatureText = AcTables.CreatureText;
-    public static readonly TableSchema AreaTriggerScripts = AcTables.AreaTriggerScripts;
-    public static readonly TableSchema[] All = AcTables.Tables;
-
-    public static TableSchema Find(string name) => ((ITableCatalog)AcTables.Instance).Find(name);
-}
-
-/// <summary>
 /// One table row as invariant-culture strings keyed by column. Value equality, sorted columns and
 /// string storage keep drafts stable in JSON and comparable with database rows.
 /// </summary>

@@ -15,7 +15,7 @@ public class SmartEditorFlowTests : IDisposable
     static readonly SmartScope Scope = new((int)Entry, SmartScope.Creature);
     static readonly SmartScope TriggerScope = new(77, SmartScope.AreaTrigger);
     static readonly SmartScope ListScope = new(29500, SmartScope.ActionList);
-    static readonly TableSchema Smart = InteractionTables.SmartScripts;
+    static readonly TableSchema Smart = AcTables.SmartScripts;
 
     sealed class Names : IContentNames
     {
@@ -41,8 +41,8 @@ public class SmartEditorFlowTests : IDisposable
     public SmartEditorFlowTests()
     {
         drafts = new ContentDrafts(Path.Combine(dir, "content.json"));
-        snapshot.Set(InteractionTables.CreatureAI, Row.Of(("entry", Entry), ("AIName", "SmartAI")));
-        snapshot.Set(InteractionTables.CreatureText, SpeechEdits.NewLine(SmartCatalog.Ac, snapshot, Entry, 0, "Test").Edit.After!);
+        snapshot.Set(AcTables.CreatureAI, Row.Of(("entry", Entry), ("AIName", "SmartAI")));
+        snapshot.Set(AcTables.CreatureText, SpeechEdits.NewLine(SmartCatalog.Ac, snapshot, Entry, 0, "Test").Edit.After!);
         effective = snapshot.Clone();
     }
 
@@ -62,7 +62,7 @@ public class SmartEditorFlowTests : IDisposable
     {
         foreach (var scope in new[] { Scope, TriggerScope, ListScope })
         {
-            foreach (var issue in SmartCatalog.Ac.Check(scope, SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, scope), new Names(), rows.Get(InteractionTables.CreatureAI, Entry.ToString()), Entry))
+            foreach (var issue in SmartCatalog.Ac.Check(scope, SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, scope), new Names(), rows.Get(AcTables.CreatureAI, Entry.ToString()), Entry))
             {
                 yield return issue;
             }
@@ -87,7 +87,7 @@ public class SmartEditorFlowTests : IDisposable
     static RowSet WithTemplate(Row row)
     {
         var rows = new RowSet();
-        rows.Set(InteractionTables.CreatureTemplate, row);
+        rows.Set(AcTables.CreatureTemplate, row);
         return rows;
     }
 
@@ -95,7 +95,7 @@ public class SmartEditorFlowTests : IDisposable
     void LeaveDraftElsewhere()
     {
         var before = CreatureTemplate();
-        drafts.Draft!.Execute(Source, WithTemplate(before), "elsewhere", [new RowEdit(InteractionTables.CreatureTemplate.Name, "9001", before, CreatureTemplate(1))]);
+        drafts.Draft!.Execute(Source, WithTemplate(before), "elsewhere", [new RowEdit(AcTables.CreatureTemplate.Name, "9001", before, CreatureTemplate(1))]);
         effective = drafts.Draft!.Effective(Source, snapshot);
     }
 
@@ -133,7 +133,7 @@ public class SmartEditorFlowTests : IDisposable
     public void EditingTheStaleRowItselfStillFails()
     {
         var before = CreatureTemplate();
-        var table = InteractionTables.CreatureTemplate.Name;
+        var table = AcTables.CreatureTemplate.Name;
         drafts.Draft!.Execute(Source, WithTemplate(before), "elsewhere", [new RowEdit(table, "9001", before, CreatureTemplate(1))]);
         var changedInDb = WithTemplate(CreatureTemplate(8));
         var error = Assert.Throws<InvalidDataException>(() => drafts.Draft!.Execute(Source, changedInDb, "again", [new RowEdit(table, "9001", before, CreatureTemplate(0, "x"))]));

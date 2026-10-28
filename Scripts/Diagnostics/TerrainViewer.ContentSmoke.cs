@@ -110,7 +110,7 @@ public partial class TerrainViewer
         {
             behaviorEditor.ShowScope(null);
             int before = behaviorEditor.SmokeLineCount;
-            smokeGroup = behaviorEditor.SmokeEffective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == SmokeInnkeeper).Select(t => t.U("GroupID") + 1).DefaultIfEmpty(0u).Max();
+            smokeGroup = behaviorEditor.SmokeEffective.All(AcTables.CreatureText).Where(t => t.U("CreatureID") == SmokeInnkeeper).Select(t => t.U("GroupID") + 1).DefaultIfEmpty(0u).Max();
             behaviorEditor.SmokeAddLine(smokeGroup, "Welcome to the Lion's Pride, $n!");
             Require(behaviorEditor.SmokeLineCount == before + 1, "speech line not added: " + behaviorEditor.SmokeStatus);
             Require(behaviorEditor.SmokeUpdate(RuleById(smokeTalkRule), "Change text group", ("action_param1", smokeGroup)), "talk group not set: " + behaviorEditor.SmokeStatus);
@@ -246,7 +246,7 @@ public partial class TerrainViewer
 
             Require(quest.T("LogTitle") == "New quest", "new quest title");
             smokeNewQuest = questEditor.QuestId!.Value;
-            Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Rename quest", ("LogTitle", "A Warm Welcome")), "rename: " + questEditor.SmokeStatus);
+            Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Rename quest", ("LogTitle", "A Warm Welcome")), "rename: " + questEditor.SmokeStatus);
             Screenshot("quest-overview");
             return true;
         }),
@@ -281,23 +281,23 @@ public partial class TerrainViewer
             var quest = questEditor.SmokeQuest!;
             Require(quest.I("RequiredNpcOrGo1") > 0 && quest.U("RequiredNpcOrGoCount1") == 1, "picker did not set the objective: " + questEditor.SmokeStatus);
             Require(questEditor.SmokeObjectiveName(1) == "Kobold Vermin", "picker chose the wrong creature: " + questEditor.SmokeObjectiveName(1));
-            Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change objective count", ("RequiredNpcOrGoCount1", 8u)), "count: " + questEditor.SmokeStatus);
+            Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Change objective count", ("RequiredNpcOrGoCount1", 8u)), "count: " + questEditor.SmokeStatus);
             Screenshot("quest-objectives");
             return true;
         }),
         ("quest-story", () =>
         {
             questEditor.ShowTab(QuestPanel.Tab.Story);
-            Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Edit quest text", ("QuestDescription", "Those kobolds keep scaring my guests, $n.$B$BThin them out, would you?"), ("LogDescription", "Kill 8 Kobold Vermin.")), "story: " + questEditor.SmokeStatus);
-            Require(questEditor.SmokeSet(InteractionTables.QuestOfferReward, "Edit turn-in text", ("RewardText", "My guests can finally sleep. Thank you, $n.")), "turn-in: " + questEditor.SmokeStatus);
+            Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Edit quest text", ("QuestDescription", "Those kobolds keep scaring my guests, $n.$B$BThin them out, would you?"), ("LogDescription", "Kill 8 Kobold Vermin.")), "story: " + questEditor.SmokeStatus);
+            Require(questEditor.SmokeSet(AcTables.QuestOfferReward, "Edit turn-in text", ("RewardText", "My guests can finally sleep. Thank you, $n.")), "turn-in: " + questEditor.SmokeStatus);
             Screenshot("quest-story");
             return true;
         }),
         ("quest-rewards", () =>
         {
             questEditor.ShowTab(QuestPanel.Tab.Rewards);
-            Require(questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change money reward", ("RewardMoney", 1500)), "money: " + questEditor.SmokeStatus);
-            Require(!questEditor.SmokeSet(InteractionTables.QuestTemplate, "Change reward item", ("RewardItem1", 99999999u), ("RewardAmount1", 1u)) && questEditor.SmokeStatus.StartsWith("Not saved", StringComparison.Ordinal), "missing reward item was accepted");
+            Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Change money reward", ("RewardMoney", 1500)), "money: " + questEditor.SmokeStatus);
+            Require(!questEditor.SmokeSet(AcTables.QuestTemplate, "Change reward item", ("RewardItem1", 99999999u), ("RewardAmount1", 1u)) && questEditor.SmokeStatus.StartsWith("Not saved", StringComparison.Ordinal), "missing reward item was accepted");
             Screenshot("quest-rewards");
             return true;
         }),
@@ -305,10 +305,10 @@ public partial class TerrainViewer
         {
             questEditor.ShowTab(QuestPanel.Tab.Givers);
             var link = Row.Of(("id", SmokeInnkeeper), ("quest", smokeNewQuest));
-            var table = InteractionTables.QuestStarter;
+            var table = AcTables.QuestStarter;
             Require(questEditor.SmokeCommit("Add quest giver", new RowEdit(table.Name, table.KeyOf(link), null, link)), "giver: " + questEditor.SmokeStatus);
             Require(questEditor.SmokePress("Givers also complete it"), "no 'Givers also complete it' shortcut");
-            Require(questEditor.SmokeEffective.All(InteractionTables.QuestEnder).Any(r => r.U("quest") == smokeNewQuest && r.U("id") == SmokeInnkeeper), "ender not added");
+            Require(questEditor.SmokeEffective.All(AcTables.QuestEnder).Any(r => r.U("quest") == smokeNewQuest && r.U("id") == SmokeInnkeeper), "ender not added");
             Require(!questEditor.SmokeIssues.Any(i => i.Error), "new quest has errors: " + string.Join("; ", questEditor.SmokeIssues.Select(i => i.Message)));
             Screenshot("quest-givers");
             return true;
@@ -337,7 +337,7 @@ public partial class TerrainViewer
                 return false;
             }
 
-            Require(!questEditor.SmokeEffective.All(InteractionTables.QuestEnder).Any(r => r.U("quest") == smokeNewQuest), "undo kept the ender");
+            Require(!questEditor.SmokeEffective.All(AcTables.QuestEnder).Any(r => r.U("quest") == smokeNewQuest), "undo kept the ender");
             drafts.Reopen();
             _ = questEditor.Load(smokeNewQuest);
             return true;

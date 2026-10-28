@@ -78,35 +78,35 @@ public class ContentDraftTests
 
         draft.Execute("src", snapshot, "Create quest", fresh.Select((row, i) => new RowEdit(QuestModel.Tables[i].Name, key, null, row)));
         var view = draft.Effective("src", snapshot);
-        Check(view.Get(InteractionTables.QuestTemplate, key)?.T("LogTitle") == "New quest", "Created quest visible");
+        Check(view.Get(AcTables.QuestTemplate, key)?.T("LogTitle") == "New quest", "Created quest visible");
         var issues = QuestModel.Check(id, view, names, null).ToList();
         Check(issues.All(i => !i.Error), "Fresh quest has errors: " + string.Join("; ", issues.Where(i => i.Error).Select(i => i.Message)));
         Check(issues.Any(i => i.Message.Contains("starts this quest", StringComparison.Ordinal)), "Missing-giver warning");
 
-        var q = view.Get(InteractionTables.QuestTemplate, key)!;
+        var q = view.Get(AcTables.QuestTemplate, key)!;
         var objective = q.With("RequiredNpcOrGo1", 6).With("RequiredNpcOrGoCount1", 8u);
-        draft.Execute("src", snapshot, "Set objective", [new RowEdit(InteractionTables.QuestTemplate.Name, key, q, objective)]);
+        draft.Execute("src", snapshot, "Set objective", [new RowEdit(AcTables.QuestTemplate.Name, key, q, objective)]);
         view = draft.Effective("src", snapshot);
         Check(QuestModel.Check(id, view, names, null).All(i => !i.Error), "Valid objective rejected");
         var missing = objective.With("RequiredNpcOrGo1", 99999);
         var probe = view.Clone();
-        probe.Set(InteractionTables.QuestTemplate, missing);
+        probe.Set(AcTables.QuestTemplate, missing);
         Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("99999", StringComparison.Ordinal)), "Missing objective creature not reported");
-        probe.Set(InteractionTables.QuestTemplate, objective.With("RequiredNpcOrGoCount1", 0u));
+        probe.Set(AcTables.QuestTemplate, objective.With("RequiredNpcOrGoCount1", 0u));
         Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("count", StringComparison.Ordinal)), "Zero objective count not reported");
-        probe.Set(InteractionTables.QuestTemplate, objective.With("RewardItem1", 2589u).With("RewardAmount1", 0u));
+        probe.Set(AcTables.QuestTemplate, objective.With("RewardItem1", 2589u).With("RewardAmount1", 0u));
         Check(QuestModel.Check(id, probe, names, null).Any(i => i.Error && i.Message.Contains("Reward item 1", StringComparison.Ordinal)), "Zero reward amount not reported");
 
         var giver = Row.Of(("id", 42u), ("quest", id));
-        draft.Execute("src", snapshot, "Add quest giver", [new RowEdit(InteractionTables.QuestStarter.Name, InteractionTables.QuestStarter.KeyOf(giver), null, giver)]);
+        draft.Execute("src", snapshot, "Add quest giver", [new RowEdit(AcTables.QuestStarter.Name, AcTables.QuestStarter.KeyOf(giver), null, giver)]);
         view = draft.Effective("src", snapshot);
         Check(!QuestModel.Check(id, view, names, null).Any(i => i.Message.Contains("starts this quest", StringComparison.Ordinal)), "Giver warning stays after adding a giver");
         draft.Undo();
         draft.Undo();
-        Check(draft.Effective("src", snapshot).Get(InteractionTables.QuestTemplate, key)?.I("RequiredNpcOrGo1") == 0, "Undo objective");
+        Check(draft.Effective("src", snapshot).Get(AcTables.QuestTemplate, key)?.I("RequiredNpcOrGo1") == 0, "Undo objective");
         draft.Redo();
         draft.Redo();
-        Check(draft.MaxReserved("src", InteractionTables.QuestTemplate, "ID") == id, "Quest ID reservation");
+        Check(draft.MaxReserved("src", AcTables.QuestTemplate, "ID") == id, "Quest ID reservation");
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class ContentDraftTests
         Check(scope.Describe("") == "AreaTrigger 5140" && !scope.IsSpawn && scope.IsAreaTrigger, "AreaTrigger scope identity");
         // The Utgarde Pinnacle row: On trigger -> set data 1 1 on creature spawn 126115 (Svala).
         var svala = new SmartRule(SmartCatalog.Ac.NewRow(scope, 0, SmartCatalog.AreaTriggerEvent, 45, 10).With("action_param1", 1u).With("action_param2", 1u).With("target_param1", 126115u).With("target_param2", 42u));
-        svala.Row.Validate(InteractionTables.SmartScripts);
+        svala.Row.Validate(AcTables.SmartScripts);
         var clean = SmartCatalog.Ac.Check(scope, [svala], names, null, trigger).ToList();
         Check(clean.All(i => !i.Error && i.Fix == null && !i.Message.Contains("AI is", StringComparison.Ordinal)), "Valid AreaTrigger rule reported: " + string.Join("; ", clean.Select(i => i.Message)));
         var aggro = new SmartRule(SmartCatalog.Ac.NewRow(scope, 1, 4, 11, 7));
@@ -146,20 +146,20 @@ public class ContentDraftTests
         var snapshot = new RowSet();
         using (var draft = new InteractionDraft(path))
         {
-            var edits = new List<RowEdit> { new(InteractionTables.SmartScripts.Name, SmartCatalog.Ac.Scripts.KeyOf(svala.Row), null, svala.Row) };
+            var edits = new List<RowEdit> { new(AcTables.SmartScripts.Name, SmartCatalog.Ac.Scripts.KeyOf(svala.Row), null, svala.Row) };
             edits.AddRange(missing.Fix);
             draft.Execute("src", snapshot, "Add rule", edits);
             var view = draft.Effective("src", snapshot);
-            Check(view.All(InteractionTables.SmartScripts).Count == 1 && view.Get(InteractionTables.AreaTriggerScripts, "5140")?.T("ScriptName") == AreaTriggerRecord.SmartTrigger, "AreaTrigger rule and script drafted");
+            Check(view.All(AcTables.SmartScripts).Count == 1 && view.Get(AcTables.AreaTriggerScripts, "5140")?.T("ScriptName") == AreaTriggerRecord.SmartTrigger, "AreaTrigger rule and script drafted");
             draft.Undo();
-            Check(draft.Effective("src", snapshot).All(InteractionTables.AreaTriggerScripts).Count == 0, "Undo AreaTrigger rule");
+            Check(draft.Effective("src", snapshot).All(AcTables.AreaTriggerScripts).Count == 0, "Undo AreaTrigger rule");
             draft.Redo();
         }
 
         using (var reopened = new InteractionDraft(path))
         {
             var view = reopened.Effective("src", snapshot);
-            Check(view.Get(InteractionTables.AreaTriggerScripts, "5140") != null && new SmartRule(view.All(InteractionTables.SmartScripts).Single()).TargetParam(1) == 126115, "AreaTrigger draft reopen");
+            Check(view.Get(AcTables.AreaTriggerScripts, "5140") != null && new SmartRule(view.All(AcTables.SmartScripts).Single()).TargetParam(1) == 126115, "AreaTrigger draft reopen");
         }
     }
 
@@ -173,12 +173,12 @@ public class ContentDraftTests
         var ai = Row.Of(("entry", 42u), ("AIName", ""));
         foreach (var row in new[] { aggro, then, timer })
         {
-            row.Validate(InteractionTables.SmartScripts);
-            snapshot.Set(InteractionTables.SmartScripts, row);
+            row.Validate(AcTables.SmartScripts);
+            snapshot.Set(AcTables.SmartScripts, row);
         }
 
-        snapshot.Set(InteractionTables.CreatureAI, ai);
-        var rules = snapshot.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
+        snapshot.Set(AcTables.CreatureAI, ai);
+        var rules = snapshot.All(AcTables.SmartScripts).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
         string first = SmartCatalog.Ac.Describe(rules[0], names, 42);
         string second = SmartCatalog.Ac.Describe(rules[1], names, 42);
         string third = SmartCatalog.Ac.Describe(rules[2], names, 42);
@@ -195,7 +195,7 @@ public class ContentDraftTests
         draft.Execute("src", snapshot, "Enable SmartAI", fix.Fix!);
 
         // Swapping rule order changes keys (id) and the link pointing at the moved rule.
-        var table = InteractionTables.SmartScripts;
+        var table = AcTables.SmartScripts;
         var swapped = new[]
         {
             (aggro, aggro.With("id", 2u).With("link", 1u)),
@@ -206,7 +206,7 @@ public class ContentDraftTests
         var view = draft.Effective("src", snapshot);
         var after = view.All(table).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
         Check(after.Count == 3 && after[0].Event == 0 && after[2].Event == 4 && after[2].Link == 1, "Rekeyed swap");
-        Check(SmartCatalog.Ac.Check(scope, after, names, view.Get(InteractionTables.CreatureAI, "42"), 42).All(i => !i.Error && i.Fix == null), "Swap broke the rules or AI fix stayed");
+        Check(SmartCatalog.Ac.Check(scope, after, names, view.Get(AcTables.CreatureAI, "42"), 42).All(i => !i.Error && i.Fix == null), "Swap broke the rules or AI fix stayed");
 
         var broken = after.Select(r => r.Id == 2 ? new SmartRule(r.Row.With("link", 7u)) : r).ToList();
         Check(SmartCatalog.Ac.Check(scope, broken, names, null, 42).Any(i => i.Error && i.Message.Contains("does not exist", StringComparison.Ordinal)), "Missing link target not reported");
@@ -220,9 +220,9 @@ public class ContentDraftTests
         Check(SmartCatalog.Ac.Describe(step, names, 42) == "After 2 s: play emote wave", "Action list step sentence: " + SmartCatalog.Ac.Describe(step, names, 42));
 
         var line = Row.Of(("CreatureID", 42u), ("GroupID", 0u), ("ID", 0u), ("Text", "For the Alliance!"), ("Type", 14u), ("Language", 0), ("Probability", 100f), ("Emote", 0u), ("Duration", 0u), ("Sound", 0u), ("BroadcastTextId", 0), ("TextRange", 0u), ("comment", "Test NPC"));
-        line.Validate(InteractionTables.CreatureText);
-        draft.Execute("src", snapshot, "Add line", [new RowEdit(InteractionTables.CreatureText.Name, InteractionTables.CreatureText.KeyOf(line), null, line)]);
-        Check(draft.Effective("src", snapshot).All(InteractionTables.CreatureText).Count == 1, "Speech line drafted");
+        line.Validate(AcTables.CreatureText);
+        draft.Execute("src", snapshot, "Add line", [new RowEdit(AcTables.CreatureText.Name, AcTables.CreatureText.KeyOf(line), null, line)]);
+        Check(draft.Effective("src", snapshot).All(AcTables.CreatureText).Count == 1, "Speech line drafted");
         draft.Undo();
         draft.Undo();
         Check(draft.Effective("src", snapshot).All(table).Select(r => new SmartRule(r)).Single(r => r.Id == 0).Event == 4, "Undo swap");

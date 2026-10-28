@@ -42,7 +42,7 @@ public class NpcInteractionTests
     static RowSet Rows(Row template)
     {
         var rows = new RowSet();
-        rows.Set(InteractionTables.CreatureTemplate, template);
+        rows.Set(AcTables.CreatureTemplate, template);
         return rows;
     }
 
@@ -81,10 +81,10 @@ public class NpcInteractionTests
     public void MenusFollowActionMenusOnceAndStopAtTheBound()
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipOption, Option(1, 0, action: 2));
-        rows.Set(InteractionTables.GossipOption, Option(2, 0, action: 1));
-        rows.Set(InteractionTables.GossipMenu, MenuText(1, 10));
-        rows.Set(InteractionTables.NpcText, Text(10));
+        rows.Set(AcTables.GossipOption, Option(1, 0, action: 2));
+        rows.Set(AcTables.GossipOption, Option(2, 0, action: 1));
+        rows.Set(AcTables.GossipMenu, MenuText(1, 10));
+        rows.Set(AcTables.NpcText, Text(10));
         var lookup = new Lookup();
         lookup.Menus.Add(2);
         var view = Build(rows, lookup);
@@ -94,7 +94,7 @@ public class NpcInteractionTests
         var long_ = Rows(Template(NpcFlags.Gossip, 1));
         for (uint i = 1; i <= NpcInteraction.MaxMenus + 10; i++)
         {
-            long_.Set(InteractionTables.GossipOption, Option(i, 0, action: i + 1));
+            long_.Set(AcTables.GossipOption, Option(i, 0, action: i + 1));
         }
 
         Assert.Equal(NpcInteraction.MaxMenus, Build(long_, new Lookup()).Menus.Count);
@@ -104,8 +104,8 @@ public class NpcInteractionTests
     public void OptionsAreOrderedAndFlagMismatchHidesThem()
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipOption, Option(1, 2, flag: NpcFlags.Gossip));
-        rows.Set(InteractionTables.GossipOption, Option(1, 1, flag: NpcFlags.Vendor));
+        rows.Set(AcTables.GossipOption, Option(1, 2, flag: NpcFlags.Gossip));
+        rows.Set(AcTables.GossipOption, Option(1, 1, flag: NpcFlags.Vendor));
         var options = Build(rows, new Lookup()).Menus[1].Options;
         Assert.Equal([1u, 2u], options.Select(o => o.OptionId));
         Assert.True(options[0].HiddenByFlags);
@@ -116,9 +116,9 @@ public class NpcInteractionTests
     public void BroadcastTextOverridesNpcTextAndOptionText()
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipMenu, MenuText(1, 10));
-        rows.Set(InteractionTables.NpcText, Text(10, "raw", 500));
-        rows.Set(InteractionTables.GossipOption, Option(1, 0, broadcast: 600, text: "raw option"));
+        rows.Set(AcTables.GossipMenu, MenuText(1, 10));
+        rows.Set(AcTables.NpcText, Text(10, "raw", 500));
+        rows.Set(AcTables.GossipOption, Option(1, 0, broadcast: 600, text: "raw option"));
         var lookup = new Lookup();
         lookup.Broadcast[500] = ("from broadcast", "f");
         lookup.Broadcast[600] = ("option broadcast", "f");
@@ -139,7 +139,7 @@ public class NpcInteractionTests
     public void UnloadedNpcTextIsShownAndReportedUnlessTheDatabaseHasIt()
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipMenu, MenuText(1, 99));
+        rows.Set(AcTables.GossipMenu, MenuText(1, 99));
         var view = Build(rows, new Lookup());
         Assert.Contains("not loaded", view.Menus[1].Texts[0].Male);
         AssertError(view, "npc_text 99");
@@ -152,18 +152,18 @@ public class NpcInteractionTests
     public void EditedMarksCompareAgainstTheSnapshot()
     {
         var snapshot = Rows(Template(NpcFlags.Gossip, 1));
-        snapshot.Set(InteractionTables.GossipMenu, MenuText(1, 10));
-        snapshot.Set(InteractionTables.NpcText, Text(10));
-        snapshot.Set(InteractionTables.GossipOption, Option(1, 0));
+        snapshot.Set(AcTables.GossipMenu, MenuText(1, 10));
+        snapshot.Set(AcTables.NpcText, Text(10));
+        snapshot.Set(AcTables.GossipOption, Option(1, 0));
         var rows = snapshot.Clone();
         var lookup = new Lookup();
         Assert.False(Build(rows, lookup, snapshot).Menus[1].Edited);
-        rows.Set(InteractionTables.GossipOption, Option(1, 0, text: "changed"));
+        rows.Set(AcTables.GossipOption, Option(1, 0, text: "changed"));
         var view = Build(rows, lookup, snapshot).Menus[1];
         Assert.True(view.Edited);
         Assert.True(view.Options[0].Edited);
         Assert.False(view.Texts[0].Edited);
-        rows.Set(InteractionTables.NpcText, Text(10, "changed"));
+        rows.Set(AcTables.NpcText, Text(10, "changed"));
         Assert.True(Build(rows, lookup, snapshot).Menus[1].Texts[0].Edited);
     }
 
@@ -177,7 +177,7 @@ public class NpcInteractionTests
     public void OptionRules(uint type, uint icon, uint poi, string fragment)
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipOption, Option(1, 0, type: type == 0 ? 1 : type, icon: icon, poi: poi));
+        rows.Set(AcTables.GossipOption, Option(1, 0, type: type == 0 ? 1 : type, icon: icon, poi: poi));
         var view = Build(rows, new Lookup());
         if (fragment.Length == 0)
         {
@@ -192,7 +192,7 @@ public class NpcInteractionTests
     public void SubmenuMustExistInRowsOrDatabase()
     {
         var rows = Rows(Template(NpcFlags.Gossip, 1));
-        rows.Set(InteractionTables.GossipOption, Option(1, 0, action: 5));
+        rows.Set(AcTables.GossipOption, Option(1, 0, action: 5));
         AssertError(Build(rows, new Lookup()), "submenu 5");
         var lookup = new Lookup();
         lookup.Menus.Add(5);
@@ -203,10 +203,10 @@ public class NpcInteractionTests
     public void QuestLinksAreSortedAndMissingQuestsAreErrors()
     {
         var rows = Rows(Template(NpcFlags.QuestGiver));
-        rows.Set(InteractionTables.QuestStarter, Row.Of(("id", Entry), ("quest", 9u)));
-        rows.Set(InteractionTables.QuestStarter, Row.Of(("id", Entry), ("quest", 7u)));
-        rows.Set(InteractionTables.QuestStarter, Row.Of(("id", 99u), ("quest", 3u)));
-        rows.Set(InteractionTables.QuestEnder, Row.Of(("id", Entry), ("quest", 7u)));
+        rows.Set(AcTables.QuestStarter, Row.Of(("id", Entry), ("quest", 9u)));
+        rows.Set(AcTables.QuestStarter, Row.Of(("id", Entry), ("quest", 7u)));
+        rows.Set(AcTables.QuestStarter, Row.Of(("id", 99u), ("quest", 3u)));
+        rows.Set(AcTables.QuestEnder, Row.Of(("id", Entry), ("quest", 7u)));
         var view = Build(rows, new Lookup());
         Assert.Equal([7u, 9u], view.Starts.Select(q => q.Quest));
         Assert.Single(view.Ends);
@@ -218,8 +218,8 @@ public class NpcInteractionTests
     public void VendorRowsAreOrderedAndReferencesExpand()
     {
         var rows = Rows(Template(NpcFlags.Vendor));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, 2589, slot: 2));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, -500, slot: 1));
+        rows.Set(AcTables.Vendor, Vendor(Entry, 2589, slot: 2));
+        rows.Set(AcTables.Vendor, Vendor(Entry, -500, slot: 1));
         var lookup = new Lookup();
         lookup.References[500] = [Vendor(500, 2589), Vendor(500, -3)];
         var view = Build(rows, lookup);
@@ -238,7 +238,7 @@ public class NpcInteractionTests
     public void EmptyVendorReferenceIsAnError()
     {
         var rows = Rows(Template(NpcFlags.Vendor));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, -500));
+        rows.Set(AcTables.Vendor, Vendor(Entry, -500));
         AssertError(Build(rows, new Lookup()), "reference 500 has no items");
     }
 
@@ -251,7 +251,7 @@ public class NpcInteractionTests
     public void VendorItemRules(uint cost, uint max, uint incr, bool error, string fragment)
     {
         var rows = Rows(Template(NpcFlags.Vendor));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, 2589, cost: cost, max: max, incr: incr));
+        rows.Set(AcTables.Vendor, Vendor(Entry, 2589, cost: cost, max: max, incr: incr));
         var lookup = new Lookup();
         lookup.ExtendedCosts.Add(0);
         var view = Build(rows, lookup);
@@ -266,7 +266,7 @@ public class NpcInteractionTests
     public void UnknownVendorItemIsAnError()
     {
         var rows = Rows(Template(NpcFlags.Vendor));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, 31337));
+        rows.Set(AcTables.Vendor, Vendor(Entry, 31337));
         AssertError(Build(rows, new Lookup()), "item 31337");
     }
 
@@ -274,12 +274,12 @@ public class NpcInteractionTests
     public void TrainerViewAndRules()
     {
         var rows = Rows(Template(NpcFlags.Trainer));
-        rows.Set(InteractionTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
+        rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
         var lookup = new Lookup();
         AssertError(Build(rows, lookup), "Trainer 8 does not exist");
-        rows.Set(InteractionTables.Trainer, Row.Of(("Id", 8u), ("Type", 1u), ("Requirement", 0u), ("Greeting", "Hi")));
-        rows.Set(InteractionTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 133u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 5u)));
-        rows.Set(InteractionTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 134u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 1u)));
+        rows.Set(AcTables.Trainer, Row.Of(("Id", 8u), ("Type", 1u), ("Requirement", 0u), ("Greeting", "Hi")));
+        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 133u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 5u)));
+        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 134u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 1u)));
         var view = Build(rows, lookup);
         Assert.Equal("Hi", view.Trainer!.Greeting);
         Assert.True(view.Trainer.Exists);
@@ -293,7 +293,7 @@ public class NpcInteractionTests
     public void TrainerExistsViaDatabaseWhenNoRowIsLoaded()
     {
         var rows = Rows(Template(NpcFlags.Trainer));
-        rows.Set(InteractionTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
+        rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
         var lookup = new Lookup();
         lookup.Trainers.Add(8);
         var view = Build(rows, lookup);
@@ -305,9 +305,9 @@ public class NpcInteractionTests
     public void SpellClickMustReferenceAKnownSpell()
     {
         var rows = Rows(Template(NpcFlags.SpellClick));
-        rows.Set(InteractionTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 134u), ("cast_flags", 1u), ("user_type", 0u)));
+        rows.Set(AcTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 134u), ("cast_flags", 1u), ("user_type", 0u)));
         AssertError(Build(rows, new Lookup()), "Spell click 134");
-        rows.Set(InteractionTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 133u), ("cast_flags", 1u), ("user_type", 0u)));
+        rows.Set(AcTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 133u), ("cast_flags", 1u), ("user_type", 0u)));
         Assert.Equal(2, Build(rows, new Lookup()).SpellClicks.Length);
     }
 
@@ -325,19 +325,19 @@ public class NpcInteractionTests
         switch (feature)
         {
             case "quest":
-                rows.Set(InteractionTables.QuestStarter, Row.Of(("id", Entry), ("quest", 7u)));
+                rows.Set(AcTables.QuestStarter, Row.Of(("id", Entry), ("quest", 7u)));
                 break;
             case "vendor":
-                rows.Set(InteractionTables.Vendor, Vendor(Entry, 2589));
+                rows.Set(AcTables.Vendor, Vendor(Entry, 2589));
                 break;
             case "trainer":
-                rows.Set(InteractionTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
+                rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
                 break;
             case "spellclick":
-                rows.Set(InteractionTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 133u), ("cast_flags", 1u), ("user_type", 0u)));
+                rows.Set(AcTables.SpellClick, Row.Of(("npc_entry", Entry), ("spell_id", 133u), ("cast_flags", 1u), ("user_type", 0u)));
                 break;
             default:
-                rows.Set(InteractionTables.CreatureTemplate, Template(0, 3));
+                rows.Set(AcTables.CreatureTemplate, Template(0, 3));
                 break;
         }
 
@@ -353,7 +353,7 @@ public class NpcInteractionTests
     public void FlagFixPreservesExistingBits()
     {
         var rows = Rows(Template(NpcFlags.Repair));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, 2589));
+        rows.Set(AcTables.Vendor, Vendor(Entry, 2589));
         var warning = Assert.Single(Build(rows, new Lookup()).Issues, i => !i.Error);
         Assert.Equal(NpcFlags.Repair | NpcFlags.Vendor, warning.Fix![0].After!.U("npcflag"));
     }
@@ -365,7 +365,7 @@ public class NpcInteractionTests
     public void AnyVendorVariantSatisfiesTheVendorFlagRule(uint flag)
     {
         var rows = Rows(Template(flag));
-        rows.Set(InteractionTables.Vendor, Vendor(Entry, 2589));
+        rows.Set(AcTables.Vendor, Vendor(Entry, 2589));
         Assert.Empty(Build(rows, new Lookup()).Issues);
     }
 
@@ -376,7 +376,7 @@ public class NpcInteractionTests
     public void AnyTrainerVariantSatisfiesTheTrainerFlagRule(uint flag)
     {
         var rows = Rows(Template(flag));
-        rows.Set(InteractionTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
+        rows.Set(AcTables.DefaultTrainer, Row.Of(("CreatureId", Entry), ("TrainerId", 8u)));
         var lookup = new Lookup();
         lookup.Trainers.Add(8);
         Assert.Empty(Build(rows, lookup).Issues);

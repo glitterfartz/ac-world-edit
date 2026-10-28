@@ -7,7 +7,7 @@ namespace ACWorldEdit.Data;
 
 /// <summary>
 /// Read-only database snapshot of one creature entry's interaction rows plus the lookup data the
-/// view and validation need. Rows are captured with InteractionTables' column whitelist only.
+/// view and validation need. Rows are captured with AcTables' column whitelist only.
 /// </summary>
 public sealed class InteractionSnapshot(uint entry, ulong guid, string name, string scriptName, string aiName, int spawnCount, RowSet rows, ScriptHook[] scripts, Dictionary<int, int> conditions, InteractionLookupData lookup, string sourceKey)
 {

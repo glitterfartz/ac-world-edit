@@ -26,14 +26,14 @@ public sealed class AcContentSource(WorldDatabase database)
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         session.Require("quest_template.LogTitle", "quest_template_addon.PrevQuestID", "quest_request_items.CompletionText", "quest_offer_reward.RewardText", "creature_queststarter.quest");
         var rows = new RowSet();
-        foreach (var table in new[] { InteractionTables.QuestTemplate, InteractionTables.QuestAddon, InteractionTables.QuestRequestItems, InteractionTables.QuestOfferReward })
+        foreach (var table in new[] { AcTables.QuestTemplate, AcTables.QuestAddon, AcTables.QuestRequestItems, AcTables.QuestOfferReward })
         {
             await AcInteractionSource.Load(session, rows, table, "ID=@k0", [quest], token);
         }
 
-        await AcInteractionSource.Load(session, rows, InteractionTables.QuestStarter, "quest=@k0", [quest], token);
-        await AcInteractionSource.Load(session, rows, InteractionTables.QuestEnder, "quest=@k0", [quest], token);
-        await LoadDraftKeys(session, rows, draftKeys, t => t == InteractionTables.QuestTemplate || t == InteractionTables.QuestAddon || t == InteractionTables.QuestRequestItems || t == InteractionTables.QuestOfferReward || t == InteractionTables.QuestStarter || t == InteractionTables.QuestEnder, token);
+        await AcInteractionSource.Load(session, rows, AcTables.QuestStarter, "quest=@k0", [quest], token);
+        await AcInteractionSource.Load(session, rows, AcTables.QuestEnder, "quest=@k0", [quest], token);
+        await LoadDraftKeys(session, rows, draftKeys, t => t == AcTables.QuestTemplate || t == AcTables.QuestAddon || t == AcTables.QuestRequestItems || t == AcTables.QuestOfferReward || t == AcTables.QuestStarter || t == AcTables.QuestEnder, token);
         var names = new ContentNames(catalog);
         await ResolveQuestNames(session, effective(rows), quest, names, token);
         uint max = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
@@ -43,7 +43,7 @@ public sealed class AcContentSource(WorldDatabase database)
     async Task ResolveQuestNames(WorldReadSession session, RowSet view, uint quest, ContentNames names, CancellationToken token)
     {
         List<uint> creatures = [], objects = [], items = [], quests = [];
-        foreach (var q in view.All(InteractionTables.QuestTemplate))
+        foreach (var q in view.All(AcTables.QuestTemplate))
         {
             for (int i = 1; i <= 4; i++)
             {
@@ -64,13 +64,13 @@ public sealed class AcContentSource(WorldDatabase database)
             quests.Add(q.U("ID"));
         }
 
-        foreach (var addon in view.All(InteractionTables.QuestAddon))
+        foreach (var addon in view.All(AcTables.QuestAddon))
         {
             quests.Add((uint)Math.Abs(addon.I("PrevQuestID")));
             quests.Add(addon.U("NextQuestID"));
         }
 
-        creatures.AddRange(view.All(InteractionTables.QuestStarter).Concat(view.All(InteractionTables.QuestEnder)).Select(r => r.U("id")));
+        creatures.AddRange(view.All(AcTables.QuestStarter).Concat(view.All(AcTables.QuestEnder)).Select(r => r.U("id")));
         await ResolveNames(session, names, creatures, objects, items, quests, token);
     }
 
@@ -121,24 +121,24 @@ public sealed class AcContentSource(WorldDatabase database)
                 throw new InvalidDataException($"Creature template {entry} does not exist.");
             }
 
-            rows.Set(InteractionTables.CreatureAI, Row.Of(("entry", reader.GetUInt32(0)), ("AIName", reader.GetString(1))));
+            rows.Set(AcTables.CreatureAI, Row.Of(("entry", reader.GetUInt32(0)), ("AIName", reader.GetString(1))));
             name = reader.GetString(2);
             script = reader.GetString(3);
         }
 
-        await AcInteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=0", [(int)entry], token);
+        await AcInteractionSource.Load(session, rows, AcTables.SmartScripts, "entryorguid=@k0 AND source_type=0", [(int)entry], token);
         if (guid != 0)
         {
-            await AcInteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=0", [-(long)guid], token);
+            await AcInteractionSource.Load(session, rows, AcTables.SmartScripts, "entryorguid=@k0 AND source_type=0", [-(long)guid], token);
         }
 
-        await LoadDraftKeys(session, rows, draftKeys, t => t == InteractionTables.SmartScripts || t == InteractionTables.CreatureAI || t == InteractionTables.CreatureText, token);
+        await LoadDraftKeys(session, rows, draftKeys, t => t == AcTables.SmartScripts || t == AcTables.CreatureAI || t == AcTables.CreatureText, token);
         await LoadActionLists(session, rows, effective, token);
         var names = new ContentNames(catalog);
         var view = effective(rows);
         await ResolveSmartNames(session, view, names, token);
         names.Creatures.TryAdd(entry, name);
-        await AcInteractionSource.Load(session, rows, InteractionTables.CreatureText, "CreatureID=@k0", [entry], token);
+        await AcInteractionSource.Load(session, rows, AcTables.CreatureText, "CreatureID=@k0", [entry], token);
         ContentNames.FillTexts(names, effective(rows), AcTables.CreatureText, entry);
         await ReadBroadcasts(session, effective(rows), entry, names, token);
         if (guid != 0 && Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
@@ -159,7 +159,7 @@ public sealed class AcContentSource(WorldDatabase database)
         var loadedLists = new HashSet<uint>();
         for (int pass = 0; pass < 6; pass++)
         {
-            var lists = effective(rows).All(InteractionTables.SmartScripts).Select(r => new SmartRule(r))
+            var lists = effective(rows).All(AcTables.SmartScripts).Select(r => new SmartRule(r))
                 .Where(r => r.Action == SmartCatalog.RunActionList && r.ActionParam(1) != 0).Select(r => r.ActionParam(1)).Where(loadedLists.Add).Take(32).ToArray();
             if (lists.Length == 0)
             {
@@ -168,7 +168,7 @@ public sealed class AcContentSource(WorldDatabase database)
 
             foreach (uint list in lists)
             {
-                await AcInteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=9", [(int)list], token);
+                await AcInteractionSource.Load(session, rows, AcTables.SmartScripts, "entryorguid=@k0 AND source_type=9", [(int)list], token);
             }
         }
     }
@@ -195,13 +195,13 @@ public sealed class AcContentSource(WorldDatabase database)
         }
 
         var rows = new RowSet();
-        await AcInteractionSource.Load(session, rows, InteractionTables.SmartScripts, "entryorguid=@k0 AND source_type=2", [(int)trigger], token);
-        await AcInteractionSource.Load(session, rows, InteractionTables.AreaTriggerScripts, "entry=@k0", [(int)trigger], token);
-        await LoadDraftKeys(session, rows, draftKeys, t => t == InteractionTables.SmartScripts || t == InteractionTables.AreaTriggerScripts, token);
+        await AcInteractionSource.Load(session, rows, AcTables.SmartScripts, "entryorguid=@k0 AND source_type=2", [(int)trigger], token);
+        await AcInteractionSource.Load(session, rows, AcTables.AreaTriggerScripts, "entry=@k0", [(int)trigger], token);
+        await LoadDraftKeys(session, rows, draftKeys, t => t == AcTables.SmartScripts || t == AcTables.AreaTriggerScripts, token);
         await LoadActionLists(session, rows, effective, token);
         var names = new ContentNames(catalog);
         await ResolveSmartNames(session, effective(rows), names, token);
-        string script = effective(rows).Get(InteractionTables.AreaTriggerScripts, trigger.ToString(System.Globalization.CultureInfo.InvariantCulture))?.T("ScriptName") ?? "";
+        string script = effective(rows).Get(AcTables.AreaTriggerScripts, trigger.ToString(System.Globalization.CultureInfo.InvariantCulture))?.T("ScriptName") ?? "";
         uint maxQuest = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
         return new ContentSnapshot(rows, names, database.SourceKey, maxQuest, $"AreaTrigger {trigger}", trigger, script);
     }
@@ -253,7 +253,7 @@ public sealed class AcContentSource(WorldDatabase database)
     async Task ResolveSmartNames(WorldReadSession session, RowSet view, ContentNames names, CancellationToken token)
     {
         List<uint> creatures = [], objects = [], items = [], quests = [];
-        foreach (var rule in view.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)))
+        foreach (var rule in view.All(AcTables.SmartScripts).Select(r => new SmartRule(r)))
         {
             foreach (var (type, param) in new[] { (SmartCatalog.Ac.Event(rule.Event), (Func<int, uint>)rule.EventParam), (SmartCatalog.Ac.Action(rule.Action), rule.ActionParam), (SmartCatalog.Ac.Target(rule.Target), i => i <= 4 ? rule.TargetParam(i) : 0) })
             {
@@ -277,7 +277,7 @@ public sealed class AcContentSource(WorldDatabase database)
 
     static async Task ReadBroadcasts(WorldReadSession session, RowSet view, uint entry, ContentNames names, CancellationToken token)
     {
-        var ids = view.All(InteractionTables.CreatureText).Where(r => r.U("CreatureID") == entry).Select(r => r.I("BroadcastTextId")).Where(id => id > 0).Select(id => (uint)id).Distinct().ToArray();
+        var ids = view.All(AcTables.CreatureText).Where(r => r.U("CreatureID") == entry).Select(r => r.I("BroadcastTextId")).Where(id => id > 0).Select(id => (uint)id).Distinct().ToArray();
         if (ids.Length == 0 || !session.Has("broadcast_text.ID"))
         {
             return;

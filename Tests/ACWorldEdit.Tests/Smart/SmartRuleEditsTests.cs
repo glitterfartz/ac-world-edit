@@ -11,7 +11,7 @@ public class SmartRuleEditsTests
 {
     const uint Entry = 295;
     static readonly SmartScope Scope = new((int)Entry, SmartScope.Creature);
-    static readonly TableSchema Table = InteractionTables.SmartScripts;
+    static readonly TableSchema Table = AcTables.SmartScripts;
 
     static Row Rule(uint id, uint link = 0, uint eventType = 4, uint action = 1, SmartScope? scope = null) =>
         SmartCatalog.Ac.NewRow(scope ?? Scope, id, eventType, action, 1).With("link", link);
@@ -100,9 +100,9 @@ public class SmartRuleEditsTests
     public void TalkTemplateUsesTheCreaturesFirstTextGroup()
     {
         var rows = Rows();
-        rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 4u), ("ID", 0u)));
-        rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 2u), ("ID", 0u)));
-        rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", 777u), ("GroupID", 1u), ("ID", 0u)));
+        rows.Set(AcTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 4u), ("ID", 0u)));
+        rows.Set(AcTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 2u), ("ID", 0u)));
+        rows.Set(AcTables.CreatureText, Row.Of(("CreatureID", 777u), ("GroupID", 1u), ("ID", 0u)));
         Assert.Equal(2u, SmartRuleEdits.FirstTextGroup(SmartCatalog.Ac, rows, Entry));
         Assert.Equal(0u, SmartRuleEdits.FirstTextGroup(SmartCatalog.Ac, Rows(), Entry));
         var say = SmartRuleEdits.FromTemplate(SmartCatalog.Ac, rows, Scope, Entry, "N", SmartRuleEdits.RuleTemplates[0]);
@@ -210,7 +210,7 @@ public class SmartRuleEditsTests
     public void ChangingToTalkSelectsTheFirstTextGroup()
     {
         var rows = Rows();
-        rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 3u), ("ID", 0u)));
+        rows.Set(AcTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 3u), ("ID", 0u)));
         var values = SmartRuleEdits.ChangeTypeValues(SmartCatalog.Ac, new SmartRule(Rule(0)), "action", SmartCatalog.Talk, rows, Entry);
         Assert.Equal(("action_param1", (object)3u), values[^1]);
         Assert.Equal(8, values.Length);

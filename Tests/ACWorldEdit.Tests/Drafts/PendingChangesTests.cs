@@ -87,18 +87,18 @@ public class RowDraftNetChangeTests
 
     static Row Template(uint npcflag = 0) => Row.Of(("entry", 42u), ("npcflag", npcflag), ("gossip_menu_id", 0u), ("subname", ""));
 
-    static RowEdit Edit(Row? before, Row? after) => new(InteractionTables.CreatureTemplate.Name, "42", before, after);
+    static RowEdit Edit(Row? before, Row? after) => new(AcTables.CreatureTemplate.Name, "42", before, after);
 
     static RowSet Snapshot()
     {
         var rows = new RowSet();
-        rows.Set(InteractionTables.CreatureTemplate, Template());
+        rows.Set(AcTables.CreatureTemplate, Template());
         return rows;
     }
 
     static readonly Row Starter = Row.Of(("id", 42u), ("quest", 7u));
 
-    static RowEdit AddStarter(Row? before, Row? after) => new(InteractionTables.QuestStarter.Name, InteractionTables.QuestStarter.KeyOf(Starter), before, after);
+    static RowEdit AddStarter(Row? before, Row? after) => new(AcTables.QuestStarter.Name, AcTables.QuestStarter.KeyOf(Starter), before, after);
 
     [Fact]
     public void RepeatedEditsCollapseToFirstBeforeAndLastAfter()
@@ -155,16 +155,16 @@ public class RowDraftNetChangeTests
         var snapshot = Snapshot();
         draft.Execute("s", snapshot, "up", [Edit(Template(), Template(5))]);
         draft.Execute("s", snapshot, "starter", [AddStarter(null, Starter)]);
-        var net = draft.NetEdits().Single(e => e.Edit.Table == InteractionTables.CreatureTemplate.Name);
+        var net = draft.NetEdits().Single(e => e.Edit.Table == AcTables.CreatureTemplate.Name);
         draft.Revert(net.Source, net.Edit);
         var view = draft.Effective("s", snapshot);
-        Assert.Equal(Template(), view.Get(InteractionTables.CreatureTemplate, "42"));
-        Assert.NotNull(view.Get(InteractionTables.QuestStarter, InteractionTables.QuestStarter.KeyOf(Starter)));
+        Assert.Equal(Template(), view.Get(AcTables.CreatureTemplate, "42"));
+        Assert.NotNull(view.Get(AcTables.QuestStarter, AcTables.QuestStarter.KeyOf(Starter)));
         Assert.Equal("Discard creature_template 42", draft.LastLabel);
         Assert.Single(draft.NetEdits());
 
         draft.Undo();
-        Assert.Equal(Template(5), draft.Effective("s", snapshot).Get(InteractionTables.CreatureTemplate, "42"));
+        Assert.Equal(Template(5), draft.Effective("s", snapshot).Get(AcTables.CreatureTemplate, "42"));
         Assert.Equal(2, draft.NetEdits().Count);
     }
 
@@ -176,7 +176,7 @@ public class RowDraftNetChangeTests
         draft.Execute("s", snapshot, "add", [AddStarter(null, Starter)]);
         var net = Assert.Single(draft.NetEdits());
         draft.Revert(net.Source, net.Edit);
-        Assert.Null(draft.Effective("s", snapshot).Get(InteractionTables.QuestStarter, InteractionTables.QuestStarter.KeyOf(Starter)));
+        Assert.Null(draft.Effective("s", snapshot).Get(AcTables.QuestStarter, AcTables.QuestStarter.KeyOf(Starter)));
         Assert.Empty(draft.NetEdits());
     }
 
@@ -187,7 +187,7 @@ public class RowDraftNetChangeTests
         var snapshot = Snapshot();
         draft.Execute("s", snapshot, "up", [Edit(Template(), Template(5))]);
         var changed = Snapshot();
-        changed.Set(InteractionTables.CreatureTemplate, Template(9));
+        changed.Set(AcTables.CreatureTemplate, Template(9));
         Assert.Single(draft.Conflicts("s", changed));
         Assert.Throws<InvalidDataException>(() => draft.Execute("s", changed, "more", [Edit(Template(9), Template(10))]));
         var net = Assert.Single(draft.NetEdits());

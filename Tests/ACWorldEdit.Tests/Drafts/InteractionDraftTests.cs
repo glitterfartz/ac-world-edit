@@ -36,14 +36,14 @@ public class InteractionDraftTests
         string path = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json"));
         var snapshot = new RowSet();
         var template = Row.Of(("entry", 42u), ("npcflag", NpcFlags.Gossip), ("gossip_menu_id", 50u), ("subname", "Tester"));
-        snapshot.Set(InteractionTables.CreatureTemplate, template);
-        snapshot.Set(InteractionTables.GossipMenu, Row.Of(("MenuID", 50u), ("TextID", 60u)));
+        snapshot.Set(AcTables.CreatureTemplate, template);
+        snapshot.Set(AcTables.GossipMenu, Row.Of(("MenuID", 50u), ("TextID", 60u)));
         var text = Row.Of(("ID", 60u), ("text0_0", "Hello $N.$BWelcome."), ("text0_1", ""), ("BroadcastTextID0", 900), ("Probability0", 1f));
-        snapshot.Set(InteractionTables.NpcText, text);
+        snapshot.Set(AcTables.NpcText, text);
         var option = Row.Of(("MenuID", 50u), ("OptionID", 0u), ("OptionIcon", 1u), ("OptionText", "Let me browse your goods."), ("OptionBroadcastTextID", 0), ("OptionType", 3u), ("OptionNpcFlag", NpcFlags.Vendor), ("ActionMenuID", 0u), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
-        snapshot.Set(InteractionTables.GossipOption, option);
+        snapshot.Set(AcTables.GossipOption, option);
         var bread = Row.Of(("entry", 42u), ("item", 4540), ("ExtendedCost", 0u), ("slot", 0), ("maxcount", 0u), ("incrtime", 0u));
-        snapshot.Set(InteractionTables.Vendor, bread);
+        snapshot.Set(AcTables.Vendor, bread);
 
         // Builder: broadcast text wins over npc_text; option hidden while VENDOR flag is missing.
         var view = View(snapshot, snapshot);
@@ -62,7 +62,7 @@ public class InteractionDraftTests
             var effective = draft.Effective("db", snapshot);
             view = View(snapshot, effective);
             Check(view.Menus.ContainsKey(51) && view.Menus[50].Options.Length == 2 && view.Menus[50].Options[1].Edited && view.Menus[51].Texts[0].Male == "Sub menu text", "Submenu command");
-            Check(draft.MaxReserved("db", InteractionTables.GossipMenu, "MenuID") == 51, "Reserved ID");
+            Check(draft.MaxReserved("db", AcTables.GossipMenu, "MenuID") == 51, "Reserved ID");
 
             // Text edit clears the broadcast ID so the custom text applies in game.
             draft.Execute("db", snapshot, "Edit greeting", [new("npc_text", "60", text, text.With("text0_0", "Custom hi").With("BroadcastTextID0", 0))]);
@@ -79,9 +79,9 @@ public class InteractionDraftTests
             draft.Execute("db", snapshot, "Fix flag", questWarning.Fix!);
             view = View(snapshot, draft.Effective("db", snapshot));
             Check((view.NpcFlag & NpcFlags.QuestGiver) != 0 && !view.Issues.Any(i => i.Message.Contains("Quests are linked")), "Questgiver flag fix");
-            var limited = View(snapshot, Apply(draft.Effective("db", snapshot), InteractionTables.Vendor, bread.With("item", 2589).With("maxcount", 5u)));
+            var limited = View(snapshot, Apply(draft.Effective("db", snapshot), AcTables.Vendor, bread.With("item", 2589).With("maxcount", 5u)));
             Check(limited.Issues.Any(i => i.Error && i.Message.Contains("restock")), "maxcount without incrtime rule");
-            var missingQuest = View(snapshot, Apply(draft.Effective("db", snapshot), InteractionTables.QuestStarter, Row.Of(("id", 42u), ("quest", 999u))));
+            var missingQuest = View(snapshot, Apply(draft.Effective("db", snapshot), AcTables.QuestStarter, Row.Of(("id", 42u), ("quest", 999u))));
             Check(missingQuest.Issues.Any(i => i.Error && i.Message.Contains("999")), "Missing quest rule");
 
             // Guards: whitelist, primary key, stale Before.
@@ -104,12 +104,12 @@ public class InteractionDraftTests
 
             // Database changed under the draft: the edited text changed and a drafted menu row was already applied.
             var changed = snapshot.Clone();
-            changed.Set(InteractionTables.NpcText, text.With("text0_0", "Changed in DB"));
-            changed.Set(InteractionTables.GossipMenu, Row.Of(("MenuID", 51u), ("TextID", 61u)));
+            changed.Set(AcTables.NpcText, text.With("text0_0", "Changed in DB"));
+            changed.Set(AcTables.GossipMenu, Row.Of(("MenuID", 51u), ("TextID", 61u)));
             var conflicts = draft.Conflicts("db", changed);
             Check(conflicts.Contains(("npc_text", "60")), "Conflict detection");
             Check(!conflicts.Contains(("gossip_menu", "51|61")), "A row already holding the drafted value is not a conflict");
-            Check(draft.Effective("db", changed).Get(InteractionTables.NpcText, "60")!.T("text0_0") == "Changed in DB", "Conflicting rows keep database value");
+            Check(draft.Effective("db", changed).Get(AcTables.NpcText, "60")!.T("text0_0") == "Changed in DB", "Conflicting rows keep database value");
             Rejects(() => draft.Execute("db", changed, "blocked", [new("npc_text", "60", text.With("text0_0", "Changed in DB"), text.With("text0_0", "x"))]), "Edit over a conflicting row accepted");
             // Conflicts elsewhere do not block an unrelated row (other editors' stale rows must not stop a SmartAI save).
             draft.Execute("db", changed, "unrelated", [new("creature_template", "42", template, template.With("subname", "x"))]);

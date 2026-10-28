@@ -24,17 +24,17 @@ public class ContentDbTests
         Check(quests.Count > 0, "Quest search found nothing");
         uint questId = quests[0].Id;
         var quest = await source.ReadQuestAsync(questId, [], rows => rows, catalog, CancellationToken.None);
-        var q = quest.Rows.Get(InteractionTables.QuestTemplate, questId.ToString())!;
+        var q = quest.Rows.Get(AcTables.QuestTemplate, questId.ToString())!;
         Check(q.T("LogTitle") == "Kobold Camp Cleanup", "Quest title");
         Check(q.I("RequiredNpcOrGo1") > 0 && quest.Names.Creature((uint)q.I("RequiredNpcOrGo1")) is { Length: > 0 }, "Objective creature name");
-        Check(quest.Rows.All(InteractionTables.QuestStarter).Any() && quest.Names.Creature(quest.Rows.All(InteractionTables.QuestStarter).First().U("id")) != null, "Quest giver name");
+        Check(quest.Rows.All(AcTables.QuestStarter).Any() && quest.Names.Creature(quest.Rows.All(AcTables.QuestStarter).First().U("id")) != null, "Quest giver name");
         var questIssues = QuestModel.Check(questId, quest.Rows, quest.Names, null).ToArray();
-        Console.WriteLine($"QUEST_SNAPSHOT {questId} '{q.T("LogTitle")}' objective={quest.Names.Creature((uint)q.I("RequiredNpcOrGo1"))}×{q.U("RequiredNpcOrGoCount1")} giver={quest.Names.Creature(quest.Rows.All(InteractionTables.QuestStarter).First().U("id"))} errors={questIssues.Count(i => i.Error)} warnings={string.Join("; ", questIssues.Where(i => !i.Error).Select(i => i.Message))}");
+        Console.WriteLine($"QUEST_SNAPSHOT {questId} '{q.T("LogTitle")}' objective={quest.Names.Creature((uint)q.I("RequiredNpcOrGo1"))}×{q.U("RequiredNpcOrGoCount1")} giver={quest.Names.Creature(quest.Rows.All(AcTables.QuestStarter).First().U("id"))} errors={questIssues.Count(i => i.Error)} warnings={string.Join("; ", questIssues.Where(i => !i.Error).Select(i => i.Message))}");
         Check(questIssues.All(i => !i.Error), "Real quest reported errors: " + string.Join("; ", questIssues.Where(i => i.Error).Select(i => i.Message)));
         var fresh = QuestModel.NewQuest(quest.MaxQuestId + 1, "Smoke quest");
         foreach (var row in fresh)
         {
-            row.Validate(InteractionTables.All.First(t => t.Columns.Length == row.Values.Count && t.Columns.All(c => row.Values.ContainsKey(c.Name))));
+            row.Validate(AcTables.Tables.First(t => t.Columns.Length == row.Values.Count && t.Columns.All(c => row.Values.ContainsKey(c.Name))));
         }
 
         var database = new WorldDatabase(config);
@@ -64,12 +64,12 @@ public class ContentDbTests
         foreach (uint entry in new[] { goldshire, withList })
         {
             var snapshot = await source.ReadBehaviorAsync(entry, entry == goldshire ? goldshireGuid : 0, [], rows => rows, catalog, CancellationToken.None);
-            var rules = snapshot.Rows.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).ToList();
+            var rules = snapshot.Rows.All(AcTables.SmartScripts).Select(r => new SmartRule(r)).ToList();
             var scopes = rules.GroupBy(r => r.Scope).ToList();
-            Console.WriteLine($"BEHAVIOR_SNAPSHOT entry={entry} '{snapshot.CreatureName}' ai={snapshot.Rows.All(InteractionTables.CreatureAI).First().T("AIName")} rules={rules.Count} scopes={string.Join(",", scopes.Select(s => s.Key.Describe(snapshot.CreatureName)))}");
+            Console.WriteLine($"BEHAVIOR_SNAPSHOT entry={entry} '{snapshot.CreatureName}' ai={snapshot.Rows.All(AcTables.CreatureAI).First().T("AIName")} rules={rules.Count} scopes={string.Join(",", scopes.Select(s => s.Key.Describe(snapshot.CreatureName)))}");
             foreach (var scope in scopes)
             {
-                var issues = SmartCatalog.Ac.Check(scope.Key, scope.ToList(), snapshot.Names, snapshot.Rows.All(InteractionTables.CreatureAI).First(), entry).ToArray();
+                var issues = SmartCatalog.Ac.Check(scope.Key, scope.ToList(), snapshot.Names, snapshot.Rows.All(AcTables.CreatureAI).First(), entry).ToArray();
                 foreach (var chain in SmartCatalog.Chains(scope).Take(6))
                 {
                     Console.WriteLine("  " + string.Join("\n    ", chain.Select(r => SmartCatalog.Ac.Describe(r, snapshot.Names, entry))));
@@ -79,10 +79,10 @@ public class ContentDbTests
             }
 
             Check(rules.Count > 0, "No rules loaded");
-            var lines = snapshot.Rows.All(InteractionTables.CreatureText).ToList();
+            var lines = snapshot.Rows.All(AcTables.CreatureText).ToList();
             foreach (var line in lines)
             {
-                line.Validate(InteractionTables.CreatureText);
+                line.Validate(AcTables.CreatureText);
             }
 
             var used = await source.UsedActionListsAsync((int)entry * 100, (int)entry * 100 + 99, CancellationToken.None);

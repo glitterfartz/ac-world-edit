@@ -116,11 +116,11 @@ public class AreaTriggerDbTests
         // Behavior snapshot: the rule that starts Svala's intro and the script name that runs it.
         var snapshot = await source.ReadAreaTriggerBehaviorAsync(new(5140), [], rows => rows, null, CancellationToken.None);
         var scope = new SmartScope(5140, SmartScope.AreaTrigger);
-        var rules = snapshot.Rows.All(InteractionTables.SmartScripts).Select(r => new SmartRule(r)).Where(r => r.Scope == scope).ToList();
+        var rules = snapshot.Rows.All(AcTables.SmartScripts).Select(r => new SmartRule(r)).Where(r => r.Scope == scope).ToList();
         Check(snapshot.ScriptName == AreaTriggerRecord.SmartTrigger && rules.Count == 1, "5140 behavior snapshot");
         var rule = rules[0];
         Check(rule.Event == SmartCatalog.AreaTriggerEvent && rule.Action == 45 && rule.ActionParam(1) == 1 && rule.ActionParam(2) == 1 && rule.Target == 10 && rule.TargetParam(1) == 126115, "5140 rule is not set data 1 1 on spawn 126115");
-        var issues = SmartCatalog.Ac.Check(scope, rules, snapshot.Names, null, 5140).Concat(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), snapshot.Rows.Get(InteractionTables.AreaTriggerScripts, "5140"), "", true)).ToList();
+        var issues = SmartCatalog.Ac.Check(scope, rules, snapshot.Names, null, 5140).Concat(SmartCatalog.Ac.CheckAreaTriggerScript(new(5140), snapshot.Rows.Get(AcTables.AreaTriggerScripts, "5140"), "", true)).ToList();
         Check(issues.All(i => !i.Error), "5140 rules report errors: " + string.Join("; ", issues.Select(i => i.Message)));
         Console.WriteLine($"AREATRIGGER_BEHAVIOR 5140 script={snapshot.ScriptName} rule=\"{SmartCatalog.Ac.Describe(rule, snapshot.Names, 5140)}\" warnings={issues.Count}");
         try

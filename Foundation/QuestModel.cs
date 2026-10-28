@@ -35,7 +35,7 @@ public static class QuestModel
     /// <summary>
     /// The four per-quest tables (all keyed by ID), in the order NewQuest returns their rows.
     /// </summary>
-    public static readonly TableSchema[] Tables = [InteractionTables.QuestTemplate, InteractionTables.QuestAddon, InteractionTables.QuestRequestItems, InteractionTables.QuestOfferReward];
+    public static readonly TableSchema[] Tables = [AcTables.QuestTemplate, AcTables.QuestAddon, AcTables.QuestRequestItems, AcTables.QuestOfferReward];
 
     /// <summary>
     /// Complete default rows for a new quest (all whitelisted columns), ready to insert.
@@ -43,8 +43,8 @@ public static class QuestModel
     public static Row[] NewQuest(uint id, string title)
     {
         Row Defaults(TableSchema table) => new(table.Columns.Select(c => new KeyValuePair<string, string>(c.Name, c.Name == table.Key[0] ? id.ToString() : c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? "0" : "0")));
-        var template = Defaults(InteractionTables.QuestTemplate).With("QuestType", 2u).With("QuestLevel", 1).With("MinLevel", 1u).With("LogTitle", title).With("RewardXPDifficulty", 1u).With("Flags", 0x8u);
-        return [template, Defaults(InteractionTables.QuestAddon), Defaults(InteractionTables.QuestRequestItems), Defaults(InteractionTables.QuestOfferReward)];
+        var template = Defaults(AcTables.QuestTemplate).With("QuestType", 2u).With("QuestLevel", 1).With("MinLevel", 1u).With("LogTitle", title).With("RewardXPDifficulty", 1u).With("Flags", 0x8u);
+        return [template, Defaults(AcTables.QuestAddon), Defaults(AcTables.QuestRequestItems), Defaults(AcTables.QuestOfferReward)];
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public static class QuestModel
     /// </summary>
     public static IEnumerable<InteractionIssue> Check(uint id, RowSet rows, IContentNames names, Func<uint, bool>? zoneExists)
     {
-        var q = rows.Get(InteractionTables.QuestTemplate, id.ToString());
+        var q = rows.Get(AcTables.QuestTemplate, id.ToString());
         if (q == null)
         {
             yield break;
@@ -147,7 +147,7 @@ public static class QuestModel
             yield return new(true, $"Follow-up quest {q.U("RewardNextQuest")} does not exist.");
         }
 
-        if (rows.Get(InteractionTables.QuestAddon, key) is { } addon)
+        if (rows.Get(AcTables.QuestAddon, key) is { } addon)
         {
             int prev = addon.I("PrevQuestID");
             if (prev != 0 && names.Quest((uint)Math.Abs(prev)) == null)
@@ -180,13 +180,13 @@ public static class QuestModel
             yield return new(false, $"Race mask has unknown bits 0x{q.U("AllowableRaces") & ~(AllianceRaces | HordeRaces):X}.");
         }
 
-        bool hasGiver = rows.All(InteractionTables.QuestStarter).Any(r => r.U("quest") == id);
+        bool hasGiver = rows.All(AcTables.QuestStarter).Any(r => r.U("quest") == id);
         if (!hasGiver && q.U("StartItem") == 0 && (q.U("Flags") & 0x400) == 0)
         {
             yield return new(false, "No creature starts this quest (it may be started by an item, object or script).");
         }
 
-        if (!rows.All(InteractionTables.QuestEnder).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
+        if (!rows.All(AcTables.QuestEnder).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
         {
             yield return new(false, "No creature completes this quest.");
         }

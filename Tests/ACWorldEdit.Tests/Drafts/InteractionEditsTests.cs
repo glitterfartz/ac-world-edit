@@ -12,7 +12,7 @@ public class InteractionEditsTests
     [Fact]
     public void UpdateInsertDeleteBuildKeyedEdits()
     {
-        var table = InteractionTables.CreatureTemplate;
+        var table = AcTables.CreatureTemplate;
         var update = Update(table, Template(), Template(1));
         Assert.Equal(("creature_template", "42"), (update.Table, update.Key));
         Assert.Equal(Template(), update.Before);
@@ -26,14 +26,14 @@ public class InteractionEditsTests
     public void NewTextAndNewOptionAreCompleteRowsMatchingTheirSchemas()
     {
         var text = NewText(61, "Hello");
-        text.Validate(InteractionTables.NpcText);
-        Assert.Equal("61", InteractionTables.NpcText.KeyOf(text));
+        text.Validate(AcTables.NpcText);
+        Assert.Equal("61", AcTables.NpcText.KeyOf(text));
         Assert.Equal("Hello", text.T("text0_0"));
         Assert.Equal(1f, text.F("Probability0"));
 
         var option = NewOption(50, 3, "Browse", 3, NpcFlags.Vendor, 1, 51);
-        option.Validate(InteractionTables.GossipOption);
-        Assert.Equal("50|3", InteractionTables.GossipOption.KeyOf(option));
+        option.Validate(AcTables.GossipOption);
+        Assert.Equal("50|3", AcTables.GossipOption.KeyOf(option));
         Assert.Equal(NpcFlags.Vendor, option.U("OptionNpcFlag"));
         Assert.Equal(51u, option.U("ActionMenuID"));
         Assert.Equal(0, option.I("OptionBroadcastTextID"));
@@ -95,7 +95,7 @@ public class InteractionEditsTests
     public void SummaryOfAPlainNpc()
     {
         var rows = new RowSet();
-        rows.Set(InteractionTables.CreatureTemplate, Template());
+        rows.Set(AcTables.CreatureTemplate, Template());
         Assert.Equal("No NPC flags\nGossip options 0 · Quests 0/0 · Vendor 0 · Trainer 0", Summary(Build(rows)));
     }
 
@@ -103,11 +103,11 @@ public class InteractionEditsTests
     public void SummaryListsFlagsScriptsDraftEditsAndErrors()
     {
         var snapshot = new RowSet();
-        snapshot.Set(InteractionTables.CreatureTemplate, Template(NpcFlags.Vendor | NpcFlags.Gossip));
+        snapshot.Set(AcTables.CreatureTemplate, Template(NpcFlags.Vendor | NpcFlags.Gossip));
         var rows = snapshot.Clone();
         var item = Row.Of(("entry", 42u), ("item", 2589), ("ExtendedCost", 0u), ("slot", 0), ("maxcount", 0u), ("incrtime", 0u));
-        rows.Set(InteractionTables.Vendor, item);
-        rows.Set(InteractionTables.QuestStarter, Row.Of(("id", 42u), ("quest", 999u)));
+        rows.Set(AcTables.Vendor, item);
+        rows.Set(AcTables.QuestStarter, Row.Of(("id", 42u), ("quest", 999u)));
         var hooks = new[] { new ScriptHook(64, 1, 0, 0, "hello") };
         string summary = Summary(Build(rows, snapshot, "npc_script", hooks));
         Assert.StartsWith("Gossip · Vendor\n", summary);

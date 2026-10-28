@@ -40,11 +40,11 @@ public class SqlExportScriptTests
         // creature_text has Text/Type/Language-style names; npc_text and creature_template cover the rest.
         var before = Row.Of(("entry", 5u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", "a"));
         var after = before.With("npcflag", 3u);
-        string apply = Rows(Update(InteractionTables.CreatureTemplate, before, after)).Apply;
+        string apply = Rows(Update(AcTables.CreatureTemplate, before, after)).Apply;
         string update = Statements(apply, "UPDATE").Single();
         Assert.Contains("`creature_template` SET `npcflag` = 3 WHERE `entry` = 5 AND `npcflag` = 1;", update);
-        var text = Row.Of(InteractionTables.CreatureText.Columns.Select(c => (c.Name, c.Name == "Text" ? "hi" : c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0u)).ToArray());
-        string insert = Statements(Rows(new RowEdit(InteractionTables.CreatureText.Name, InteractionTables.CreatureText.KeyOf(text), null, text)).Apply, "INSERT").Single();
+        var text = Row.Of(AcTables.CreatureText.Columns.Select(c => (c.Name, c.Name == "Text" ? "hi" : c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0u)).ToArray());
+        string insert = Statements(Rows(new RowEdit(AcTables.CreatureText.Name, AcTables.CreatureText.KeyOf(text), null, text)).Apply, "INSERT").Single();
         Assert.Contains("(`CreatureID`, `GroupID`, `ID`, `Text`", insert);
     }
 
@@ -60,7 +60,7 @@ public class SqlExportScriptTests
     {
         var before = Row.Of(("ID", 1u), ("text0_0", ""), ("text0_1", ""), ("BroadcastTextID0", 0), ("Probability0", "0.1"));
         var after = before.With("Probability0", "0.7");
-        var scripts = Rows(Update(InteractionTables.NpcText, before, after));
+        var scripts = Rows(Update(AcTables.NpcText, before, after));
         string update = Statements(scripts.Apply, "UPDATE").Single();
         Assert.Contains("ABS(`Probability0` - (0.1)) < 0.0001", update);
         Assert.DoesNotContain("`Probability0` = 0.1", update);
@@ -84,7 +84,7 @@ public class SqlExportScriptTests
     {
         var before = Row.Of(("entry", 5u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", ""));
         var after = before.With("subname", "Innkeeper");
-        string update = Statements(Rows(Update(InteractionTables.CreatureTemplate, before, after)).Apply, "UPDATE").Single();
+        string update = Statements(Rows(Update(AcTables.CreatureTemplate, before, after)).Apply, "UPDATE").Single();
         Assert.Contains("BINARY COALESCE(`subname`, '') = BINARY ''", update);
         Assert.Contains("SET `subname` = 'Innkeeper'", update);
     }
@@ -94,7 +94,7 @@ public class SqlExportScriptTests
     {
         var a = Row.Of(("entry", 1u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", ""));
         var b = Row.Of(("entry", 2u), ("npcflag", 5u), ("gossip_menu_id", 0u), ("subname", ""));
-        var scripts = Rows(Update(InteractionTables.CreatureTemplate, a, a.With("npcflag", 2u)), Update(InteractionTables.CreatureTemplate, b, b.With("npcflag", 6u)));
+        var scripts = Rows(Update(AcTables.CreatureTemplate, a, a.With("npcflag", 2u)), Update(AcTables.CreatureTemplate, b, b.With("npcflag", 6u)));
         var apply = Statements(scripts.Apply, "UPDATE").ToList();
         var revert = Statements(scripts.Revert, "UPDATE").ToList();
         Assert.Equal(2, apply.Count);
@@ -109,7 +109,7 @@ public class SqlExportScriptTests
     public void InsertIsUnguardedAndRevertDeletesTheFullRow()
     {
         var row = Row.Of(("MenuID", 9u), ("TextID", 1u));
-        var scripts = Rows(new RowEdit(InteractionTables.GossipMenu.Name, InteractionTables.GossipMenu.KeyOf(row), null, row));
+        var scripts = Rows(new RowEdit(AcTables.GossipMenu.Name, AcTables.GossipMenu.KeyOf(row), null, row));
         string insert = Statements(scripts.Apply, "INSERT").Single();
         Assert.DoesNotContain("WHERE", insert);
         Assert.Contains("DELETE FROM `gossip_menu` WHERE `MenuID` = 9 AND `TextID` = 1;", scripts.Revert);
@@ -131,7 +131,7 @@ public class SqlExportScriptTests
     {
         var before = Row.Of(("entry", 5u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", ""));
         var after = before.With("subname", "evil\n'; DELETE FROM creature; --\r\nmore");
-        string apply = Rows(Update(InteractionTables.CreatureTemplate, before, after)).Apply;
+        string apply = Rows(Update(AcTables.CreatureTemplate, before, after)).Apply;
         Assert.DoesNotContain(apply.Split('\n'), l => l.StartsWith("DELETE FROM `creature`", StringComparison.Ordinal));
         Assert.Single(Statements(apply, "UPDATE"));
     }

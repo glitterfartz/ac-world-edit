@@ -44,19 +44,19 @@ public sealed class AcInteractionSource(WorldDatabase database)
                 throw new InvalidDataException($"Creature template {entry} does not exist.");
             }
 
-            rows.Set(InteractionTables.CreatureTemplate, Row.Of(("entry", reader.GetUInt32(0)), ("npcflag", reader.GetUInt32(1)), ("gossip_menu_id", reader.GetUInt32(2)), ("subname", reader.GetString(3))));
+            rows.Set(AcTables.CreatureTemplate, Row.Of(("entry", reader.GetUInt32(0)), ("npcflag", reader.GetUInt32(1)), ("gossip_menu_id", reader.GetUInt32(2)), ("subname", reader.GetString(3))));
             name = reader.GetString(4);
             scriptName = reader.GetString(5);
             aiName = reader.GetString(6);
         }
 
-        await Load(session, rows, InteractionTables.CreatureStats, "entry=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.CreatureDetails, "entry=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.QuestStarter, "id=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.QuestEnder, "id=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.Vendor, "entry=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.DefaultTrainer, "CreatureId=@k0", [entry], token);
-        await Load(session, rows, InteractionTables.SpellClick, "npc_entry=@k0", [entry], token);
+        await Load(session, rows, AcTables.CreatureStats, "entry=@k0", [entry], token);
+        await Load(session, rows, AcTables.CreatureDetails, "entry=@k0", [entry], token);
+        await Load(session, rows, AcTables.QuestStarter, "id=@k0", [entry], token);
+        await Load(session, rows, AcTables.QuestEnder, "id=@k0", [entry], token);
+        await Load(session, rows, AcTables.Vendor, "entry=@k0", [entry], token);
+        await Load(session, rows, AcTables.DefaultTrainer, "CreatureId=@k0", [entry], token);
+        await Load(session, rows, AcTables.SpellClick, "npc_entry=@k0", [entry], token);
         foreach (var (table, key) in draftKeys)
         {
             var parts = key.Split('|');
@@ -73,22 +73,22 @@ public sealed class AcInteractionSource(WorldDatabase database)
             var menus = ReachableMenus(view).Where(loadedMenus.Add).ToArray();
             foreach (uint menu in menus)
             {
-                await Load(session, rows, InteractionTables.GossipMenu, "MenuID=@k0", [menu], token);
-                await Load(session, rows, InteractionTables.GossipOption, "MenuID=@k0", [menu], token);
+                await Load(session, rows, AcTables.GossipMenu, "MenuID=@k0", [menu], token);
+                await Load(session, rows, AcTables.GossipOption, "MenuID=@k0", [menu], token);
             }
 
             view = effective(rows);
-            var texts = view.All(InteractionTables.GossipMenu).Select(r => r.U("TextID")).Distinct().Where(loadedTexts.Add).ToArray();
+            var texts = view.All(AcTables.GossipMenu).Select(r => r.U("TextID")).Distinct().Where(loadedTexts.Add).ToArray();
             foreach (uint text in texts)
             {
-                await Load(session, rows, InteractionTables.NpcText, "ID=@k0", [text], token);
+                await Load(session, rows, AcTables.NpcText, "ID=@k0", [text], token);
             }
 
-            var trainers = view.All(InteractionTables.DefaultTrainer).Select(r => r.U("TrainerId")).Where(loadedTrainers.Add).ToArray();
+            var trainers = view.All(AcTables.DefaultTrainer).Select(r => r.U("TrainerId")).Where(loadedTrainers.Add).ToArray();
             foreach (uint trainer in trainers)
             {
-                await Load(session, rows, InteractionTables.Trainer, "Id=@k0", [trainer], token);
-                await Load(session, rows, InteractionTables.TrainerSpell, "TrainerId=@k0", [trainer], token);
+                await Load(session, rows, AcTables.Trainer, "Id=@k0", [trainer], token);
+                await Load(session, rows, AcTables.TrainerSpell, "TrainerId=@k0", [trainer], token);
             }
 
             if (menus.Length == 0 && texts.Length == 0 && trainers.Length == 0)
@@ -111,7 +111,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
     /// </summary>
     static IEnumerable<uint> ReachableMenus(RowSet view)
     {
-        var template = view.All(InteractionTables.CreatureTemplate).First();
+        var template = view.All(AcTables.CreatureTemplate).First();
         var seen = new HashSet<uint>();
         var queue = new Queue<uint>();
         if (template.U("gossip_menu_id") != 0)
@@ -119,7 +119,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
             queue.Enqueue(template.U("gossip_menu_id"));
         }
 
-        foreach (var option in view.All(InteractionTables.GossipOption).Where(o => o.U("ActionMenuID") != 0))
+        foreach (var option in view.All(AcTables.GossipOption).Where(o => o.U("ActionMenuID") != 0))
         {
             queue.Enqueue(option.U("ActionMenuID"));
         }
@@ -203,15 +203,15 @@ public sealed class AcInteractionSource(WorldDatabase database)
         }
 
         // Reference vendor lists (negative items), one level deep like the view.
-        var references = view.All(InteractionTables.Vendor).Where(r => r.I("item") < 0).Select(r => (uint)-r.I("item")).Distinct().ToArray();
+        var references = view.All(AcTables.Vendor).Where(r => r.I("item") < 0).Select(r => (uint)-r.I("item")).Distinct().ToArray();
         foreach (uint reference in references)
         {
             var referenced = new RowSet();
-            await Load(session, referenced, InteractionTables.Vendor, "entry=@k0", [reference], token);
-            lookup.ReferenceVendors[reference] = referenced.All(InteractionTables.Vendor).ToList();
+            await Load(session, referenced, AcTables.Vendor, "entry=@k0", [reference], token);
+            lookup.ReferenceVendors[reference] = referenced.All(AcTables.Vendor).ToList();
         }
 
-        var items = view.All(InteractionTables.Vendor).Where(r => r.I("item") > 0).Select(r => (uint)r.I("item"))
+        var items = view.All(AcTables.Vendor).Where(r => r.I("item") > 0).Select(r => (uint)r.I("item"))
             .Concat(lookup.ReferenceVendors.Values.SelectMany(l => l).Where(r => r.I("item") > 0).Select(r => (uint)r.I("item")));
         await using (var command = session.Command(""))
         {
@@ -225,13 +225,13 @@ public sealed class AcInteractionSource(WorldDatabase database)
             }
         }
 
-        var quests = view.All(InteractionTables.QuestStarter).Concat(view.All(InteractionTables.QuestEnder)).Select(r => r.U("quest"));
+        var quests = view.All(AcTables.QuestStarter).Concat(view.All(AcTables.QuestEnder)).Select(r => r.U("quest"));
         foreach (var quest in await ReadQuests(session, quests, token))
         {
             lookup.Quests[quest.Id] = quest;
         }
 
-        var broadcasts = view.All(InteractionTables.NpcText).Select(r => r.I("BroadcastTextID0")).Concat(view.All(InteractionTables.GossipOption).Select(r => r.I("OptionBroadcastTextID"))).Where(id => id > 0).Select(id => (uint)id);
+        var broadcasts = view.All(AcTables.NpcText).Select(r => r.I("BroadcastTextID0")).Concat(view.All(AcTables.GossipOption).Select(r => r.I("OptionBroadcastTextID"))).Where(id => id > 0).Select(id => (uint)id);
         await using (var command = session.Command(""))
         {
             command.CommandText = $"SELECT ID,COALESCE(MaleText,''),COALESCE(FemaleText,'') FROM broadcast_text WHERE ID IN ({InList(command, broadcasts, "b")})";
@@ -243,13 +243,13 @@ public sealed class AcInteractionSource(WorldDatabase database)
             }
         }
 
-        var pois = view.All(InteractionTables.GossipOption).Select(r => r.U("ActionPoiID")).Where(id => id != 0);
+        var pois = view.All(AcTables.GossipOption).Select(r => r.U("ActionPoiID")).Where(id => id != 0);
         await ReadIds(session, "SELECT ID FROM points_of_interest WHERE ID IN ({0})", pois, lookup.Pois, token);
-        var menuRefs = view.All(InteractionTables.GossipOption).Select(r => r.U("ActionMenuID")).Concat(view.All(InteractionTables.GossipMenu).Select(r => r.U("MenuID"))).Where(id => id != 0).ToArray();
+        var menuRefs = view.All(AcTables.GossipOption).Select(r => r.U("ActionMenuID")).Concat(view.All(AcTables.GossipMenu).Select(r => r.U("MenuID"))).Where(id => id != 0).ToArray();
         await ReadIds(session, "SELECT DISTINCT MenuID FROM gossip_menu WHERE MenuID IN ({0})", menuRefs, lookup.Menus, token);
-        var textRefs = view.All(InteractionTables.GossipMenu).Select(r => r.U("TextID")).ToArray();
+        var textRefs = view.All(AcTables.GossipMenu).Select(r => r.U("TextID")).ToArray();
         await ReadIds(session, "SELECT ID FROM npc_text WHERE ID IN ({0})", textRefs, lookup.Texts, token);
-        var trainerRefs = view.All(InteractionTables.DefaultTrainer).Select(r => r.U("TrainerId")).ToArray();
+        var trainerRefs = view.All(AcTables.DefaultTrainer).Select(r => r.U("TrainerId")).ToArray();
         await ReadIds(session, "SELECT Id FROM trainer WHERE Id IN ({0})", trainerRefs, lookup.Trainers, token);
         await ReadCounts(session, "SELECT gossip_menu_id,COUNT(*) FROM creature_template WHERE gossip_menu_id IN ({0}) GROUP BY gossip_menu_id", menuRefs, lookup.MenuUserCounts, token);
         await ReadCounts(session, "SELECT TextID,COUNT(DISTINCT MenuID) FROM gossip_menu WHERE TextID IN ({0}) GROUP BY TextID", textRefs, lookup.TextUserCounts, token);
@@ -355,8 +355,8 @@ public sealed class AcInteractionSource(WorldDatabase database)
         }
 
         await using var command = session.Command("");
-        string menus = InList(command, view.All(InteractionTables.GossipMenu).Select(r => r.U("MenuID")), "m");
-        string quests = InList(command, view.All(InteractionTables.QuestStarter).Select(r => r.U("quest")), "q");
+        string menus = InList(command, view.All(AcTables.GossipMenu).Select(r => r.U("MenuID")), "m");
+        string quests = InList(command, view.All(AcTables.QuestStarter).Select(r => r.U("quest")), "q");
         command.Parameters.AddWithValue("@entry", entry);
         command.CommandText = $"""
             SELECT SourceTypeOrReferenceId,COUNT(*) FROM conditions

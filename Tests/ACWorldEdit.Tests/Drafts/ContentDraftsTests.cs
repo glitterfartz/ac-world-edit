@@ -16,7 +16,7 @@ public class ContentDraftsTests
     static RowSet Snapshot()
     {
         var rows = new RowSet();
-        rows.Set(InteractionTables.CreatureTemplate, Template());
+        rows.Set(AcTables.CreatureTemplate, Template());
         return rows;
     }
 
@@ -27,7 +27,7 @@ public class ContentDraftsTests
     /// </summary>
     static IEnumerable<InteractionIssue> HighFlagIsError(RowSet rows)
     {
-        if (rows.Get(InteractionTables.CreatureTemplate, "42")!.U("npcflag") >= 0x8000)
+        if (rows.Get(AcTables.CreatureTemplate, "42")!.U("npcflag") >= 0x8000)
         {
             yield return new(true, "flag too high");
         }
@@ -51,7 +51,7 @@ public class ContentDraftsTests
         Assert.Contains("Set flag", message);
         Assert.Same(sender, seen);
         Assert.Equal(1, calls);
-        Assert.Equal(3u, drafts.Draft!.Effective("s", snapshot).Get(InteractionTables.CreatureTemplate, "42")!.U("npcflag"));
+        Assert.Equal(3u, drafts.Draft!.Effective("s", snapshot).Get(AcTables.CreatureTemplate, "42")!.U("npcflag"));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class ContentDraftsTests
     {
         using var drafts = new ContentDrafts(TempPath());
         var snapshot = new RowSet();
-        snapshot.Set(InteractionTables.CreatureTemplate, Template(0x8000));
+        snapshot.Set(AcTables.CreatureTemplate, Template(0x8000));
         var (ok, _) = drafts.Commit(null, "s", snapshot, snapshot, "Still high", [Edit(0x8000, 0x8001)], HighFlagIsError);
         Assert.True(ok);
     }
@@ -95,7 +95,7 @@ public class ContentDraftsTests
         var snapshot = Snapshot();
         var effective = snapshot.Clone();
         drafts.Commit(null, "s", snapshot, effective, "x", [Edit(0, 3)], NoIssues);
-        Assert.Equal(0u, effective.Get(InteractionTables.CreatureTemplate, "42")!.U("npcflag"));
+        Assert.Equal(0u, effective.Get(AcTables.CreatureTemplate, "42")!.U("npcflag"));
     }
 
     [Fact]

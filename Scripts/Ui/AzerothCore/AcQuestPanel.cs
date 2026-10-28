@@ -13,12 +13,12 @@ public partial class AcQuestPanel : QuestPanel
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
     static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (QuestModel.AllianceRaces, "Alliance only"), (QuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
 
-    protected override TableSchema Template => InteractionTables.QuestTemplate;
-    protected override TableSchema Addon => InteractionTables.QuestAddon;
-    protected override TableSchema Request => InteractionTables.QuestRequestItems;
-    protected override TableSchema Offer => InteractionTables.QuestOfferReward;
-    protected override TableSchema Starter => InteractionTables.QuestStarter;
-    protected override TableSchema Ender => InteractionTables.QuestEnder;
+    protected override TableSchema Template => AcTables.QuestTemplate;
+    protected override TableSchema Addon => AcTables.QuestAddon;
+    protected override TableSchema Request => AcTables.QuestRequestItems;
+    protected override TableSchema Offer => AcTables.QuestOfferReward;
+    protected override TableSchema Starter => AcTables.QuestStarter;
+    protected override TableSchema Ender => AcTables.QuestEnder;
     protected override TableSchema[] Tables => QuestModel.Tables;
     protected override Row[] NewQuestRows(uint id, string title) => QuestModel.NewQuest(id, title);
 
@@ -202,8 +202,8 @@ public partial class AcQuestPanel : QuestPanel
     /// </summary>
     void RenderPreview(Row q)
     {
-        var request = RowOf(InteractionTables.QuestRequestItems);
-        var offer = RowOf(InteractionTables.QuestOfferReward);
+        var request = RowOf(AcTables.QuestRequestItems);
+        var offer = RowOf(AcTables.QuestOfferReward);
         void Text(string text, int size = 14, Color? color = null)
         {
             var label = ClientStyle.Text(NpcInteraction.Render(text), size, color ?? ClientStyle.Body);

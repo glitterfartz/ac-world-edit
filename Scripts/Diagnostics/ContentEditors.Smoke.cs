@@ -156,7 +156,7 @@ public partial class BehaviorPanel
     public void SmokeAddLine(uint group, string text)
     {
         AddLine(group);
-        var table = InteractionTables.CreatureText;
+        var table = AcTables.CreatureText;
         var line = effective.All(table).Where(t => t.U("CreatureID") == entry && t.U("GroupID") == group).OrderByDescending(t => t.U("ID")).FirstOrDefault();
         if (line != null)
         {

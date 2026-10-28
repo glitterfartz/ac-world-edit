@@ -37,7 +37,7 @@ public class SqlExportTests
         var gnet = graveyards.NetEdits();
         Check(gnet.Count == 1 && gnet[0].Before == graveyard.Normalized() && gnet[0].After == edited.Normalized(), "Graveyard net edit");
 
-        var template = InteractionTables.CreatureTemplate;
+        var template = AcTables.CreatureTemplate;
         var before = Row.Of(("entry", 100u), ("npcflag", 1u), ("gossip_menu_id", 0u), ("subname", "Old \"sub\""));
         var middle = before.With("gossip_menu_id", 7u);
         var after = before.With("subname", "It's a \\ trick\nline").With("gossip_menu_id", 7u);
@@ -47,7 +47,7 @@ public class SqlExportTests
         using var content = new InteractionDraft(Path.Combine(root, "i.json"));
         var snapshot = new RowSet();
         snapshot.Set(template, before);
-        snapshot.Set(InteractionTables.CreatureAI, ai);
+        snapshot.Set(AcTables.CreatureAI, ai);
         content.Execute("db", snapshot, "edit", [new("creature_template", "100", before, middle), new("gossip_menu", "9|1", null, menu)]);
         content.Execute("db", snapshot, "edit again", [new("creature_template", "100", middle, after), new("creature_ai", "100", ai, ai.With("AIName", "SmartAI")), new("gossip_menu", "9|2", null, transient)]);
         content.Execute("db", snapshot, "remove", [new("gossip_menu", "9|2", transient, null)]);

@@ -341,7 +341,7 @@ public class SmartBehaviorTests
     public void NewRowHasEveryWhitelistedColumnAndDefaultsToFullChance()
     {
         var row = SmartCatalog.Ac.NewRow(Entry, 3, Aggro, Cast, Victim, "note");
-        row.Validate(InteractionTables.SmartScripts);
+        row.Validate(AcTables.SmartScripts);
         var rule = new SmartRule(row);
         Assert.Equal(100u, rule.Chance);
         Assert.Equal(0u, rule.Link);
