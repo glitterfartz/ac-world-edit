@@ -96,6 +96,19 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
 
     public IReadOnlyDictionary<ushort, string> AnimationNames { get; } = new Dictionary<ushort, string>();
 
+    /// <summary>
+    /// Build the humanoid customization indexes now. Call on the client-open worker: built lazily, they
+    /// cost a 200 ms frame on the main thread the first time a humanoid creature is shown.
+    /// </summary>
+    public RetailCreatureCatalog PrepareIndexes()
+    {
+        _ = materialFiles.Value;
+        _ = choicesByExtra.Value;
+        _ = elementsByChoice.Value;
+        _ = targetTypes.Value;
+        return this;
+    }
+
     /// <summary>Replace client display rows with hotfix rows.</summary>
     public void Override(uint displayId, CreatureDisplayOverride row) => overrides[displayId] = row;
 
