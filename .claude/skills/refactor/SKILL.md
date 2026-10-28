@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # Refactor
 
-Simplify the production code in one area without changing behavior. Scope: `$ARGUMENTS`. If it is empty, pick the area with the most AC/TC duplication from `docs/tc-status.md` ("Coexisting forms"). If it says `recent` (or names commits), limit yourself to the code changed in the working tree or those commits (`git diff`, `git show`) and the code those changes duplicate.
+Simplify the production code in one area without changing behavior. Scope: `$ARGUMENTS`. If it is empty, pick the area with the most AC/TC duplication from `docs/tc-status.md` ("Foundation, data and overlays"). If it says `recent` (or names commits), limit yourself to the code changed in the working tree or those commits (`git diff`, `git show`) and the code those changes duplicate.
 
 Test code is out of scope except to keep it compiling and covering what it covered; test-suite cleanup is the `consolidate-tests` skill.
 
@@ -24,7 +24,7 @@ Favor readable, explicit code over compact code. The goal is code that is easier
 
 - **Dialect duplication.** An `Ac*` and a `Tc*` class that differ only in table or column names, or in a few rules, become one shared class driven by a descriptor (`IWorldSchema`, `TableSchema`, `*Spec`) or by a small interface with the two implementations. Differences that affect the editors go in `docs/DB-DIFFERENCES.md`.
 - **Missing interfaces.** Code that branches on dialect (`if dialect == ...`, type tests, parallel switch statements) calls an interface method instead. The interface lives in the common directory, unprefixed.
-- **Legacy forms.** Uses of the forms listed under "Coexisting forms" (whatever the page lists now). Moving a caller to the target form is in scope when the area reaches it. Never add a new use of a legacy form.
+- **Legacy forms.** Uses of any form `docs/tc-status.md` marks as legacy or deviating (AzerothCore statics used from shared or TrinityCore code, `Ac*` classes outside `AzerothCore/` folders). Moving a caller to the target form is in scope when the area reaches it. Never add a new use of a legacy form.
 - **Naming and layout.** Dialect-specific classes carry the `Ac`/`Tc` prefix, including the file name, and live in `AzerothCore/`/`TrinityCore/` under their feature or layer. Shared interfaces, descriptors, context and renderers stay unprefixed in the common directory. Rename and move with the `.cs.uid` companion (`git mv` both).
 - **Dead and redundant code.** Unused members, one-implementation abstractions with no second caller, copy-pasted helpers. Remove only after grepping the whole repo, including `Tests/`, `.tscn`/`.tres` files and the smoke code in `Scripts/Diagnostics` (smoke flags and signal names are matched by string).
 - **File count.** Merge tiny single-purpose classes into their closest related file, fold one-use helpers into their only caller, and delete empty wrappers. Never merge `Ac*`/`Tc*` files into one another. Don't build files so large they are hard to navigate. Delete the `.cs.uid` of every removed file and fix scene or resource references.

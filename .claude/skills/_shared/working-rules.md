@@ -5,7 +5,7 @@ Shared by `refactor`, `consolidate-tests`, `optimize` and `sync-docs` (and the r
 ## Scope and plan
 
 - Work on one area per run. Take the scope from the skill's arguments. If none was given, pick one by the skill's rule and say which you chose and why.
-- Before the first edit, read `CLAUDE.md`, the docs page for the area (`docs/ARCHITECTURE.md`, then the matching `docs/architecture/*.md`) and `docs/tc-status.md` (known gaps, "Coexisting forms", "Open work").
+- Before the first edit, read `CLAUDE.md`, the docs page for the area (`docs/ARCHITECTURE.md`, then the matching `docs/architecture/*.md`) and `docs/tc-status.md` (known gaps, "Open work").
 - Record a baseline (the skill says which), then show the user a short plan (at most ~10 items, lowest risk first, each with how it will be checked) and wait for a go-ahead before editing.
 - If `artifacts/audit.md` exists and is recent, use its findings for the area as a starting point, but re-verify each against the code.
 
