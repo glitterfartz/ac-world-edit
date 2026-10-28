@@ -62,7 +62,7 @@ public class SmartEditorFlowTests : IDisposable
     {
         foreach (var scope in new[] { Scope, TriggerScope, ListScope })
         {
-            foreach (var issue in SmartCatalog.Ac.Check(scope, SmartRuleEdits.RulesOf(rows, scope), new Names(), rows.Get(InteractionTables.CreatureAI, Entry.ToString()), Entry))
+            foreach (var issue in SmartCatalog.Ac.Check(scope, SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, scope), new Names(), rows.Get(InteractionTables.CreatureAI, Entry.ToString()), Entry))
             {
                 yield return issue;
             }
@@ -115,18 +115,18 @@ public class SmartEditorFlowTests : IDisposable
         LeaveDraftElsewhere();
         Assert.NotEmpty(drafts.Draft!.Conflicts(Source, snapshot));
         AddRule(Scope, SmartRuleEdits.RuleTemplates[0]);
-        Assert.Single(SmartRuleEdits.RulesOf(effective, Scope));
+        Assert.Single(SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope));
     }
 
     [Fact]
     public void DraftOnAnotherTableDoesNotBlockSpeech()
     {
         LeaveDraftElsewhere();
-        var (label, group) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, SpeechEdits.NextGroup(effective, Entry), "Test");
+        var (label, group) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, SpeechEdits.NextGroup(SmartCatalog.Ac, effective, Entry), "Test");
         SaveOk(label, group);
         var (lineLabel, line) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, 0, "Test");
         SaveOk(lineLabel, line);
-        Assert.Equal(3, SpeechEdits.LinesOf(effective, Entry).Count());
+        Assert.Equal(3, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Count());
     }
 
     [Fact]
@@ -152,11 +152,11 @@ public class SmartEditorFlowTests : IDisposable
         var scope = kind switch { 0 => Scope, 1 => TriggerScope, _ => ListScope };
         var template = SmartRuleEdits.TemplatesFor(scope).Single(t => t.Label == label);
         var rule = AddRule(scope, template);
-        Assert.Contains(SmartRuleEdits.RulesOf(effective, scope), r => r.Id == rule.Id);
+        Assert.Contains(SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, scope), r => r.Id == rule.Id);
         // It survives reopening the draft file (the single-writer lock is released first).
         drafts.Dispose();
         using var reopened = new ContentDrafts(Path.Combine(dir, "content.json"));
-        Assert.Contains(SmartRuleEdits.RulesOf(reopened.Draft!.Effective(Source, snapshot), scope), r => r.Id == rule.Id);
+        Assert.Contains(SmartRuleEdits.RulesOf(SmartCatalog.Ac, reopened.Draft!.Effective(Source, snapshot), scope), r => r.Id == rule.Id);
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class SmartEditorFlowTests : IDisposable
     {
         var first = AddRule(Scope, SmartRuleEdits.RuleTemplates[0]);
         var then = AddRule(Scope, SmartRuleEdits.ThenTemplate(Scope), first.Id);
-        Assert.Equal(then.Id, SmartRuleEdits.RulesOf(effective, Scope).Single(r => r.Id == first.Id).Link);
+        Assert.Equal(then.Id, SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope).Single(r => r.Id == first.Id).Link);
     }
 
     [Fact]
@@ -192,20 +192,20 @@ public class SmartEditorFlowTests : IDisposable
     {
         AddRule(Scope, SmartRuleEdits.RuleTemplates[0]);
         var second = AddRule(Scope, SmartRuleEdits.RuleTemplates[3]);
-        var (_, duplicate) = SmartRuleEdits.DuplicateEdits(effective, Scope, second);
+        var (_, duplicate) = SmartRuleEdits.DuplicateEdits(SmartCatalog.Ac, effective, Scope, second);
         SaveOk("Duplicate", duplicate);
-        Assert.Equal(3, SmartRuleEdits.RulesOf(effective, Scope).Count);
-        var rules = SmartRuleEdits.RulesOf(effective, Scope);
-        SaveOk("Swap", SmartRuleEdits.SwapEdits(effective, Scope, rules[0], rules[1]).Edits);
-        var (label, delete) = SmartRuleEdits.DeleteEdits(effective, Scope, SmartRuleEdits.RulesOf(effective, Scope)[0]);
+        Assert.Equal(3, SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope).Count);
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope);
+        SaveOk("Swap", SmartRuleEdits.SwapEdits(SmartCatalog.Ac, effective, Scope, rules[0], rules[1]).Edits);
+        var (label, delete) = SmartRuleEdits.DeleteEdits(SmartCatalog.Ac, effective, Scope, SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope)[0]);
         SaveOk(label, delete);
-        Assert.Equal(2, SmartRuleEdits.RulesOf(effective, Scope).Count);
+        Assert.Equal(2, SmartRuleEdits.RulesOf(SmartCatalog.Ac, effective, Scope).Count);
     }
 
     [Fact]
     public void NewSpeechGroupAndLineSave()
     {
-        uint group = SpeechEdits.NextGroup(effective, Entry);
+        uint group = SpeechEdits.NextGroup(SmartCatalog.Ac, effective, Entry);
         Assert.Equal(1u, group);
         var (label, edit) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, group, "Test");
         Assert.StartsWith("Add speech group", label);
@@ -213,40 +213,40 @@ public class SmartEditorFlowTests : IDisposable
         var (lineLabel, second) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, group, "Test");
         Assert.StartsWith("Add line to group", lineLabel);
         SaveOk(lineLabel, second);
-        Assert.Equal([0u, 1u], SpeechEdits.LinesOf(effective, Entry).Where(t => t.U("GroupID") == group).Select(t => t.U("ID")).OrderBy(i => i));
+        Assert.Equal([0u, 1u], SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Where(t => t.U("GroupID") == group).Select(t => t.U("ID")).OrderBy(i => i));
     }
 
     [Fact]
     public void EverySpeechColumnEditsAndSaves()
     {
-        var line = SpeechEdits.LinesOf(effective, Entry).Single();
+        var line = SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single();
         foreach (var (column, value) in new (string, object)[]
         {
             ("Text", "Hello, $n!"), ("Type", 14u), ("Language", 7), ("Probability", 40f), ("Emote", 3u), ("Duration", 2000u), ("Sound", 5u), ("TextRange", 2u), ("comment", "note")
         })
         {
-            var edit = SpeechEdits.Change(effective, line, (column, value));
+            var edit = SpeechEdits.Change(SmartCatalog.Ac, effective, line, (column, value));
             Assert.NotNull(edit);
             SaveOk($"Edit {column}", edit!);
-            line = SpeechEdits.LinesOf(effective, Entry).Single();
+            line = SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single();
         }
 
         Assert.Equal("Hello, $n!", line.T("Text"));
         Assert.Equal(14u, line.U("Type"));
         Assert.Equal(40f, line.F("Probability"));
-        Assert.Null(SpeechEdits.Change(effective, line, ("Text", "Hello, $n!")));
+        Assert.Null(SpeechEdits.Change(SmartCatalog.Ac, effective, line, ("Text", "Hello, $n!")));
     }
 
     [Fact]
     public void BroadcastTextLinksChangesAndUnlinks()
     {
-        var line = SpeechEdits.LinesOf(effective, Entry).Single();
-        SaveOk("Link", SpeechEdits.SetBroadcast(effective, line, 12345)!);
-        Assert.Equal(12345, SpeechEdits.LinesOf(effective, Entry).Single().I("BroadcastTextId"));
-        SaveOk("Link another", SpeechEdits.SetBroadcast(effective, SpeechEdits.LinesOf(effective, Entry).Single(), 777)!);
-        Assert.Equal(777, SpeechEdits.LinesOf(effective, Entry).Single().I("BroadcastTextId"));
-        SaveOk("Unlink", SpeechEdits.SetBroadcast(effective, SpeechEdits.LinesOf(effective, Entry).Single(), 0)!);
-        Assert.Equal(0, SpeechEdits.LinesOf(effective, Entry).Single().I("BroadcastTextId"));
+        var line = SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single();
+        SaveOk("Link", SpeechEdits.SetBroadcast(SmartCatalog.Ac, effective, line, 12345)!);
+        Assert.Equal(12345, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single().I("BroadcastTextId"));
+        SaveOk("Link another", SpeechEdits.SetBroadcast(SmartCatalog.Ac, effective, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single(), 777)!);
+        Assert.Equal(777, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single().I("BroadcastTextId"));
+        SaveOk("Unlink", SpeechEdits.SetBroadcast(SmartCatalog.Ac, effective, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single(), 0)!);
+        Assert.Equal(0, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single().I("BroadcastTextId"));
     }
 
     [Fact]
@@ -254,8 +254,8 @@ public class SmartEditorFlowTests : IDisposable
     {
         var (label, add) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, 0, "Test");
         SaveOk(label, add);
-        SaveOk("Remove", SpeechEdits.Remove(SpeechEdits.LinesOf(effective, Entry).First()));
-        Assert.Single(SpeechEdits.LinesOf(effective, Entry));
+        SaveOk("Remove", SpeechEdits.Remove(SmartCatalog.Ac, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).First()));
+        Assert.Single(SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry));
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public class SmartEditorFlowTests : IDisposable
         AddRule(Scope, SmartRuleEdits.RuleTemplates[0]);
         var (label, edit) = SpeechEdits.NewLine(SmartCatalog.Ac, effective, Entry, 1, "Test");
         SaveOk(label, edit);
-        SaveOk("Link", SpeechEdits.SetBroadcast(effective, SpeechEdits.LinesOf(effective, Entry).Single(t => t.U("GroupID") == 1), 99)!);
+        SaveOk("Link", SpeechEdits.SetBroadcast(SmartCatalog.Ac, effective, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single(t => t.U("GroupID") == 1), 99)!);
         var net = drafts.Draft!.NetEdits();
         var scripts = SqlExport.Build(Source, [], [], net.Select(n => n.Edit), new DateTime(2026, 1, 1));
         Assert.Contains("INSERT INTO `smart_scripts`", scripts.Apply);

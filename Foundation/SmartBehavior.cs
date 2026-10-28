@@ -105,7 +105,6 @@ public sealed class SmartRule(Row row)
     public float Z => row.F("target_z");
     public float O => row.F("target_o");
     public SmartScope Scope => new(EntryOrGuid, SourceType);
-    public string Key => InteractionTables.SmartScripts.KeyOf(row);
 }
 
 /// <summary>

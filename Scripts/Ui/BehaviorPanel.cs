@@ -196,7 +196,7 @@ public partial class BehaviorPanel : ContentPanel
         }
 
         effective = Drafts.Draft?.Effective(sourceKey, snapshot.Rows) ?? snapshot.Rows;
-        ContentNames.FillTexts(snapshot.Names, effective, entry);
+        ContentNames.FillTexts(snapshot.Names, effective, smart.CreatureText, entry);
         issues = CheckAll(effective).ToArray();
         Render();
     }
@@ -220,7 +220,7 @@ public partial class BehaviorPanel : ContentPanel
     /// <summary>The script name the server runs for the shown trigger.</summary>
     string RunningScript(RowSet rows) => TriggerScript(rows)?.T("ScriptName") is { Length: > 0 } own ? own : FallbackScript;
 
-    static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(rows, of);
+    List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(smart, rows, of);
 
     /// <summary>
     /// The creature's scopes: entry, spawn (when opened from one), then every action list reachable
@@ -532,7 +532,7 @@ public partial class BehaviorPanel : ContentPanel
             page.AddChild(ClientStyle.Text("This creature has no lines yet.", 14, ClientStyle.Faded));
         }
 
-        uint nextGroup = SpeechEdits.NextGroup(effective, entry);
+        uint nextGroup = SpeechEdits.NextGroup(smart, effective, entry);
         var add = ButtonOf("+ New group", () => AddLine(nextGroup));
         add.Name = "AddSpeechGroup";
         page.AddChild(add);
@@ -544,7 +544,7 @@ public partial class BehaviorPanel : ContentPanel
         bool edited = snapshot!.Rows.Get(table, table.KeyOf(line)) != line;
         void Put(string label, params (string Column, object Value)[] values)
         {
-            if (SpeechEdits.Change(effective, line, values) is { } edit)
+            if (SpeechEdits.Change(smart, effective, line, values) is { } edit)
             {
                 Commit(label, edit);
             }
@@ -556,7 +556,7 @@ public partial class BehaviorPanel : ContentPanel
             text.AddThemeColorOverride("font_color", ClientStyle.Edited);
         }
 
-        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(effective.Get(table, table.KeyOf(line)) ?? line)))));
+        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(smart, effective.Get(table, table.KeyOf(line)) ?? line)))));
         var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
         page.AddChild(EditorFields.Row("",
             EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value))),

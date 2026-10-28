@@ -32,14 +32,14 @@ public sealed class ContentNames(InteractionCatalog? catalog, IClientLookup? cli
     /// Refresh the creature's text-group previews (first line of each group) from a view, so drafted
     /// lines show in "Talk" sentences.
     /// </summary>
-    public static void FillTexts(ContentNames names, RowSet view, uint entry)
+    public static void FillTexts(ContentNames names, RowSet view, TableSchema creatureText, uint entry)
     {
         foreach (var key in names.Texts.Keys.Where(k => k.Entry == entry).ToList())
         {
             names.Texts.Remove(key);
         }
 
-        foreach (var line in view.All(InteractionTables.CreatureText).Where(r => r.U("CreatureID") == entry).OrderBy(r => r.U("ID")))
+        foreach (var line in view.All(creatureText).Where(r => r.U("CreatureID") == entry).OrderBy(r => r.U("ID")))
         {
             names.Texts.TryAdd((entry, line.U("GroupID")), line.T("Text"));
         }

@@ -139,7 +139,7 @@ public sealed class AcContentSource(WorldDatabase database)
         await ResolveSmartNames(session, view, names, token);
         names.Creatures.TryAdd(entry, name);
         await AcInteractionSource.Load(session, rows, InteractionTables.CreatureText, "CreatureID=@k0", [entry], token);
-        ContentNames.FillTexts(names, effective(rows), entry);
+        ContentNames.FillTexts(names, effective(rows), AcTables.CreatureText, entry);
         await ReadBroadcasts(session, effective(rows), entry, names, token);
         if (guid != 0 && Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
         {

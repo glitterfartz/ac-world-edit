@@ -347,7 +347,6 @@ public class SmartBehaviorTests
         Assert.Equal(0u, rule.Link);
         Assert.Equal("note", rule.Comment);
         Assert.Equal(Entry, rule.Scope);
-        Assert.Equal(InteractionTables.SmartScripts.KeyOf(row), rule.Key);
     }
 
     [Fact]

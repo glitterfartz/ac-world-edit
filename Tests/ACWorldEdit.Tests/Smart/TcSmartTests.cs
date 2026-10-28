@@ -89,6 +89,22 @@ public class TcSmartTests
     }
 
     [Fact]
+    public void RowHelpersReadTheDialectsOwnTables()
+    {
+        // The helpers take the dialect's tables (rows are keyed by table name, which both dialects share).
+        var rows = new RowSet();
+        rows.Set(Tc.Scripts, Tc.NewRow(Scope, 1, 4, 1, 1));
+        rows.Set(Tc.Scripts, Tc.NewRow(Scope, 0, 4, 1, 1));
+        var (_, insert) = SpeechEdits.NewLine(Tc, rows, 448, 3, "line");
+        rows.Set(Tc.CreatureText, insert.After!);
+
+        Assert.Equal([0u, 1u], SmartRuleEdits.RulesOf(Tc, rows, Scope).Select(r => r.Id));
+        Assert.Equal(2u, SmartRuleEdits.NextId(Tc, rows, Scope));
+        Assert.Equal(3u, SmartRuleEdits.FirstTextGroup(Tc, rows, 448));
+        Assert.Single(SpeechEdits.LinesOf(Tc, rows, 448));
+    }
+
+    [Fact]
     public void AColumnTheDialectLacksReadsAsZero()
     {
         // A TrinityCore row has no event_param6 and an AzerothCore row no action_param7.

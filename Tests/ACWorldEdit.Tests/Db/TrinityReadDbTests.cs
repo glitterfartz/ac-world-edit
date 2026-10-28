@@ -62,7 +62,7 @@ public class TrinityReadDbTests
         var smart = source.Schema.Smart;
         var snapshot = await source.ReadBehaviorAsync(448, 0, [], rows => rows, null, CancellationToken.None);
         var scope = new SmartScope(448, SmartScope.Creature);
-        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, scope);
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Trinity, snapshot.Rows, scope);
         Assert.Equal("Hogger", snapshot.CreatureName);
         Assert.Equal(4, rules.Count);
         Assert.Contains(rules, r => r.Event == SmartCatalog.LinkEvent && r.Id != 0);
@@ -411,7 +411,7 @@ public class TrinityReadDbTests
         var source = Open(new RetailClientLookup(RetailData.Tables));
         var snapshot = await source.ReadAreaTriggerBehaviorAsync(new(1125), [], rows => rows, null, CancellationToken.None);
         var scope = new SmartScope(1125, SmartScope.AreaTrigger);
-        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, scope);
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Trinity, snapshot.Rows, scope);
         Assert.Equal(3, rules.Count);
         Assert.Contains(rules, r => r.Event == SmartCatalog.LinkEvent);
         Assert.Equal(AreaTriggerRecord.SmartTrigger, snapshot.ScriptName);
@@ -428,7 +428,7 @@ public class TrinityReadDbTests
     {
         var owner = new AreaTriggerOwner(188, SmartScope.AreaTriggerEntityCustom, 290);
         var snapshot = await Open().ReadAreaTriggerBehaviorAsync(owner, [], rows => rows, null, CancellationToken.None);
-        var rules = SmartRuleEdits.RulesOf(snapshot.Rows, new SmartScope(188, SmartScope.AreaTriggerEntityCustom));
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Trinity, snapshot.Rows, new SmartScope(188, SmartScope.AreaTriggerEntityCustom));
         Assert.Single(rules);
         var smart = SmartCatalog.Trinity;
         var spawn = snapshot.Rows.Get(smart.AreaTriggerAi!, "290");

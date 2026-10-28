@@ -58,21 +58,21 @@ public static class SmartRuleEdits
     /// <summary>The empty link-event step that follows another rule.</summary>
     public static RuleTemplate ThenTemplate(SmartScope shown) => new("Then", SmartCatalog.LinkEvent, [], 0, [], shown.IsAreaTrigger ? InvokerTarget : SmartCatalog.SelfTarget);
 
-    public static List<SmartRule> RulesOf(RowSet rows, SmartScope of) => rows.All(InteractionTables.SmartScripts)
+    public static List<SmartRule> RulesOf(SmartCatalog smart, RowSet rows, SmartScope of) => rows.All(smart.Scripts)
         .Where(r => r.I("entryorguid") == of.EntryOrGuid && r.U("source_type") == of.SourceType).Select(r => new SmartRule(r)).OrderBy(r => r.Id).ToList();
 
     /// <summary>
     /// The ID for a new rule: past every rule and every link target, so a new rule never becomes the
     /// target of a link that points at a missing rule (the server would then chain into it).
     /// </summary>
-    public static uint NextId(RowSet effective, SmartScope of) => RulesOf(effective, of).SelectMany(r => r.Link != 0 ? new[] { r.Id + 1, r.Link + 1 } : [r.Id + 1]).DefaultIfEmpty(0u).Max();
+    public static uint NextId(SmartCatalog smart, RowSet effective, SmartScope of) => RulesOf(smart, effective, of).SelectMany(r => r.Link != 0 ? new[] { r.Id + 1, r.Link + 1 } : [r.Id + 1]).DefaultIfEmpty(0u).Max();
 
-    public static uint FirstTextGroup(RowSet effective, uint entry) => effective.All(InteractionTables.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
+    public static uint FirstTextGroup(SmartCatalog smart, RowSet effective, uint entry) => effective.All(smart.CreatureText).Where(t => t.U("CreatureID") == entry).Select(t => t.U("GroupID")).DefaultIfEmpty(0u).Min();
 
     /// <summary>The pending row for a template: a fresh id, the template's parameters and an automatic note.</summary>
     public static Row FromTemplate(SmartCatalog smart, RowSet effective, SmartScope of, uint entry, string creatureName, RuleTemplate template)
     {
-        var row = smart.NewRow(of, NextId(effective, of), template.Event, template.Action, template.Target);
+        var row = smart.NewRow(of, NextId(smart, effective, of), template.Event, template.Action, template.Target);
         for (int i = 0; i < template.EventParams.Length; i++)
         {
             row = row.With($"event_param{i + 1}", template.EventParams[i]);
@@ -85,7 +85,7 @@ public static class SmartRuleEdits
 
         if (template.Action == SmartCatalog.Talk && template.ActionParams.Length > 0 && template.ActionParams[0] == 0)
         {
-            row = row.With("action_param1", FirstTextGroup(effective, entry));
+            row = row.With("action_param1", FirstTextGroup(smart, effective, entry));
         }
 
         return row.With("comment", smart.AutoComment(new SmartRule(row), creatureName));
@@ -95,9 +95,9 @@ public static class SmartRuleEdits
     /// Edits replacing rows whose key may change: all deletes first, then all inserts, so swapped
     /// keys never collide inside the command.
     /// </summary>
-    public static RowEdit[] Rekey(IEnumerable<(Row Before, Row After)> changes)
+    public static RowEdit[] Rekey(SmartCatalog smart, IEnumerable<(Row Before, Row After)> changes)
     {
-        var table = InteractionTables.SmartScripts;
+        var table = smart.Scripts;
         var list = changes.Where(c => c.Before != c.After).ToList();
         if (list.All(c => table.KeyOf(c.Before) == table.KeyOf(c.After)))
         {
@@ -116,8 +116,8 @@ public static class SmartRuleEdits
     /// </summary>
     public static (Row Row, RowEdit[] Edits) PendingEdits(SmartCatalog smart, RowSet effective, SmartScope scope, Row pendingRow, uint? after, string creatureName, Func<RowEdit[]> enableSmartAi)
     {
-        var table = InteractionTables.SmartScripts;
-        uint id = NextId(effective, scope);
+        var table = smart.Scripts;
+        uint id = NextId(smart, effective, scope);
         var row = pendingRow.With("id", id).With("link", 0u);
         if (row.T("comment").Length == 0)
         {
@@ -126,13 +126,13 @@ public static class SmartRuleEdits
 
         if (after is uint predecessor)
         {
-            if (RulesOf(effective, scope).FirstOrDefault(r => r.Id == predecessor) is not { } before)
+            if (RulesOf(smart, effective, scope).FirstOrDefault(r => r.Id == predecessor) is not { } before)
             {
                 return (row, []);
             }
 
             row = row.With("link", before.Link);
-            return (row, Rekey([(before.Row, before.Row.With("link", id))]).Append(new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray());
+            return (row, Rekey(smart, [(before.Row, before.Row.With("link", id))]).Append(new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray());
         }
 
         var edits = new List<RowEdit> { new(table.Name, table.KeyOf(row), null, row) };
@@ -194,7 +194,7 @@ public static class SmartRuleEdits
 
         if (part == "action" && id == SmartCatalog.Talk)
         {
-            values.Add(("action_param1", FirstTextGroup(effective, entry)));
+            values.Add(("action_param1", FirstTextGroup(smart, effective, entry)));
         }
 
         return values.ToArray();
@@ -204,19 +204,19 @@ public static class SmartRuleEdits
     /// Delete a rule. A root takes its "Then" chain with it (those never run alone); a "Then" step
     /// is unlinked and its predecessor re-linked to whatever followed it.
     /// </summary>
-    public static (string Label, RowEdit[] Edits) DeleteEdits(RowSet effective, SmartScope of, SmartRule rule)
+    public static (string Label, RowEdit[] Edits) DeleteEdits(SmartCatalog smart, RowSet effective, SmartScope of, SmartRule rule)
     {
-        var rules = RulesOf(effective, of);
+        var rules = RulesOf(smart, effective, of);
         var chain = SmartCatalog.Chains(rules).FirstOrDefault(c => c.Any(r => r.Id == rule.Id)) ?? [rule];
-        var table = InteractionTables.SmartScripts;
+        var table = smart.Scripts;
         if (chain[0].Id == rule.Id)
         {
-            return (chain.Count > 1 ? $"Delete rule and {chain.Count - 1} \"Then\" step(s)" : "Delete rule", chain.Select(r => new RowEdit(table.Name, r.Key, r.Row, null)).ToArray());
+            return (chain.Count > 1 ? $"Delete rule and {chain.Count - 1} \"Then\" step(s)" : "Delete rule", chain.Select(r => new RowEdit(table.Name, table.KeyOf(r.Row), r.Row, null)).ToArray());
         }
 
         var before = chain[chain.FindIndex(r => r.Id == rule.Id) - 1];
-        var edits = Rekey([(before.Row, before.Row.With("link", rule.Link))]).ToList();
-        edits.Insert(0, new RowEdit(table.Name, rule.Key, rule.Row, null));
+        var edits = Rekey(smart, [(before.Row, before.Row.With("link", rule.Link))]).ToList();
+        edits.Insert(0, new RowEdit(table.Name, table.KeyOf(rule.Row), rule.Row, null));
         return ("Delete \"Then\" step", edits.ToArray());
     }
 
@@ -224,23 +224,23 @@ public static class SmartRuleEdits
     /// Swap the order of two root rules (ids), rewriting any link that points at either. The map
     /// (old id to new id) lets the caller follow a pending "Then" step or the expanded card.
     /// </summary>
-    public static (Dictionary<uint, uint> Map, RowEdit[] Edits) SwapEdits(RowSet effective, SmartScope of, SmartRule a, SmartRule b)
+    public static (Dictionary<uint, uint> Map, RowEdit[] Edits) SwapEdits(SmartCatalog smart, RowSet effective, SmartScope of, SmartRule a, SmartRule b)
     {
         var map = new Dictionary<uint, uint> { [a.Id] = b.Id, [b.Id] = a.Id };
-        var changes = RulesOf(effective, of).Where(r => map.ContainsKey(r.Id) || map.ContainsKey(r.Link))
+        var changes = RulesOf(smart, effective, of).Where(r => map.ContainsKey(r.Id) || map.ContainsKey(r.Link))
             .Select(r => (r.Row, r.Row.With("id", map.GetValueOrDefault(r.Id, r.Id)).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, r.Link))));
-        return (map, Rekey(changes));
+        return (map, Rekey(smart, changes));
     }
 
     /// <summary>
     /// Copy a rule and its "Then" chain under fresh ids at the end; <c>First</c> is the new root id.
     /// </summary>
-    public static (uint First, RowEdit[] Edits) DuplicateEdits(RowSet effective, SmartScope of, SmartRule rule)
+    public static (uint First, RowEdit[] Edits) DuplicateEdits(SmartCatalog smart, RowSet effective, SmartScope of, SmartRule rule)
     {
-        var chain = SmartCatalog.Chains(RulesOf(effective, of)).First(c => c[0].Id == rule.Id);
-        uint next = NextId(effective, of);
+        var chain = SmartCatalog.Chains(RulesOf(smart, effective, of)).First(c => c[0].Id == rule.Id);
+        uint next = NextId(smart, effective, of);
         var map = chain.Select((r, i) => (r.Id, New: next + (uint)i)).ToDictionary(p => p.Id, p => p.New);
-        var table = InteractionTables.SmartScripts;
+        var table = smart.Scripts;
         var edits = chain.Select(r => r.Row.With("id", map[r.Id]).With("link", r.Link == 0 ? 0u : map.GetValueOrDefault(r.Link, 0u)))
             .Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row)).ToArray();
         return (next, edits);
@@ -250,10 +250,10 @@ public static class SmartRuleEdits
     /// Give a spawn its own copy of the entry rules (a spawn with rules ignores the entry's). Like
     /// any first rule, this enables SmartAI when the creature uses the default AI.
     /// </summary>
-    public static RowEdit[] CopyScopeEdits(RowSet effective, SmartScope from, SmartScope to, RowEdit[] enableSmartAi)
+    public static RowEdit[] CopyScopeEdits(SmartCatalog smart, RowSet effective, SmartScope from, SmartScope to, RowEdit[] enableSmartAi)
     {
-        var table = InteractionTables.SmartScripts;
-        var edits = RulesOf(effective, from).Select(r => r.Row.With("entryorguid", to.EntryOrGuid)).Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row));
+        var table = smart.Scripts;
+        var edits = RulesOf(smart, effective, from).Select(r => r.Row.With("entryorguid", to.EntryOrGuid)).Select(row => new RowEdit(table.Name, table.KeyOf(row), null, row));
         return edits.Concat(enableSmartAi).ToArray();
     }
 }

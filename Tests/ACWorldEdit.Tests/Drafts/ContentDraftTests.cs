@@ -146,7 +146,7 @@ public class ContentDraftTests
         var snapshot = new RowSet();
         using (var draft = new InteractionDraft(path))
         {
-            var edits = new List<RowEdit> { new(InteractionTables.SmartScripts.Name, svala.Key, null, svala.Row) };
+            var edits = new List<RowEdit> { new(InteractionTables.SmartScripts.Name, SmartCatalog.Ac.Scripts.KeyOf(svala.Row), null, svala.Row) };
             edits.AddRange(missing.Fix);
             draft.Execute("src", snapshot, "Add rule", edits);
             var view = draft.Effective("src", snapshot);

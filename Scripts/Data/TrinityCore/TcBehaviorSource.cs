@@ -53,7 +53,7 @@ public sealed class TcBehaviorSource(WorldDatabase database, IClientLookup? clie
         await ResolveSmartNames(session, effective(rows), names, token);
         names.Creatures.TryAdd(entry, name);
         await AcInteractionSource.Load(session, rows, Smart.CreatureText, "CreatureID=@k0", [entry], token);
-        ContentNames.FillTexts(names, effective(rows), entry);
+        ContentNames.FillTexts(names, effective(rows), Smart.CreatureText, entry);
         await ReadBroadcasts(effective(rows), entry, names, token);
         if (guid != 0 && Convert.ToInt64(await AcInteractionSource.Scalar(session, "SELECT COUNT(*) FROM creature WHERE guid=@k0", [guid], token)) > 0)
         {

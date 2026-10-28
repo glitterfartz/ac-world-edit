@@ -123,7 +123,7 @@ public partial class BehaviorPanel
         card.AddChild(box);
         var header = new HBoxContainer();
         box.AddChild(header);
-        bool edited = snapshot!.Rows.Get(smart.Scripts, rule.Key) != rule.Row;
+        bool edited = snapshot!.Rows.Get(smart.Scripts, smart.Scripts.KeyOf(rule.Row)) != rule.Row;
         string sentence = (linked ? "↳ " : "") + smart.Describe(rule, snapshot.Names, entry);
         var label = ClientStyle.Text(sentence, 14, edited ? ClientStyle.Edited : ClientStyle.Body);
         label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -591,7 +591,7 @@ public partial class BehaviorPanel
                 return;
             }
 
-            var current = effective.Get(smart.Scripts, rule.Key);
+            var current = effective.Get(smart.Scripts, smart.Scripts.KeyOf(rule.Row));
             if (current == null)
             {
                 return;
@@ -599,7 +599,7 @@ public partial class BehaviorPanel
 
             var list = new SmartScope(id, SmartScope.ActionList);
             var step = smart.NewRow(list, 0, 0, 0, 1, "First step");
-            if (Commit($"Create action list #{id}", new RowEdit(smart.Scripts.Name, rule.Key, current, current.With("action_param1", (uint)id)), new RowEdit(smart.Scripts.Name, smart.Scripts.KeyOf(step), null, step)))
+            if (Commit($"Create action list #{id}", new RowEdit(smart.Scripts.Name, smart.Scripts.KeyOf(rule.Row), current, current.With("action_param1", (uint)id)), new RowEdit(smart.Scripts.Name, smart.Scripts.KeyOf(step), null, step)))
             {
                 ShowScope(list);
                 expanded = 0;
@@ -646,7 +646,7 @@ public partial class BehaviorPanel
     /// </summary>
     bool Update(SmartRule rule, string label, params (string Column, object Value)[] values)
     {
-        var current = effective.Get(smart.Scripts, rule.Key);
+        var current = effective.Get(smart.Scripts, smart.Scripts.KeyOf(rule.Row));
         if (current == null)
         {
             return false;
@@ -665,7 +665,7 @@ public partial class BehaviorPanel
     /// Edits replacing rows whose key may change: all deletes first, then all inserts, so swapped
     /// keys never collide inside the command.
     /// </summary>
-    static RowEdit[] Rekey(IEnumerable<(Row Before, Row After)> changes) => SmartRuleEdits.Rekey(changes);
+    RowEdit[] Rekey(IEnumerable<(Row Before, Row After)> changes) => SmartRuleEdits.Rekey(smart, changes);
 
     /// <summary>
     /// A new event/action/target type resets its parameters (their meaning changes), except timer
@@ -679,7 +679,7 @@ public partial class BehaviorPanel
     /// </summary>
     void Delete(SmartScope of, SmartRule rule)
     {
-        var (label, edits) = SmartRuleEdits.DeleteEdits(effective, of, rule);
+        var (label, edits) = SmartRuleEdits.DeleteEdits(smart, effective, of, rule);
         Commit(label, edits);
     }
 
@@ -688,7 +688,7 @@ public partial class BehaviorPanel
     /// </summary>
     void Swap(SmartScope of, SmartRule a, SmartRule b)
     {
-        var (map, edits) = SmartRuleEdits.SwapEdits(effective, of, a, b);
+        var (map, edits) = SmartRuleEdits.SwapEdits(smart, effective, of, a, b);
         // A pending "Then" step follows its rule to the new id.
         uint? after = pending?.After is uint id && pending.Scope == of && map.TryGetValue(id, out uint moved) ? moved : pending?.After;
         if (Commit(of.IsActionList ? "Reorder steps" : "Reorder rules", edits))
@@ -708,7 +708,7 @@ public partial class BehaviorPanel
     /// </summary>
     void Duplicate(SmartScope of, SmartRule rule)
     {
-        var (next, edits) = SmartRuleEdits.DuplicateEdits(effective, of, rule);
+        var (next, edits) = SmartRuleEdits.DuplicateEdits(smart, effective, of, rule);
         if (Commit("Duplicate rule", edits))
         {
             reveal = next;
@@ -720,7 +720,7 @@ public partial class BehaviorPanel
     /// Give a spawn its own copy of the entry rules (a spawn with rules ignores the entry's). Like
     /// any first rule, this enables SmartAI when the creature uses the default AI.
     /// </summary>
-    void CopyScope(SmartScope from, SmartScope to) => Commit("Copy rules to this spawn", SmartRuleEdits.CopyScopeEdits(effective, from, to, EnableSmartAiIfDefault()));
+    void CopyScope(SmartScope from, SmartScope to) => Commit("Copy rules to this spawn", SmartRuleEdits.CopyScopeEdits(smart, effective, from, to, EnableSmartAiIfDefault()));
 
     /// <summary>
     /// Scroll a card into view once it has been laid out (positions are only valid next frame).

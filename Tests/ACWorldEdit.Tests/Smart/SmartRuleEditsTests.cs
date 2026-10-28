@@ -40,29 +40,29 @@ public class SmartRuleEditsTests
 
     static string Shape(RowEdit e) => $"{(e.Before == null ? "+" : e.After == null ? "-" : "~")}{(e.After ?? e.Before)!.U("id")}";
 
-    static List<(uint Id, uint Link)> Ids(RowSet rows, SmartScope? scope = null) => SmartRuleEdits.RulesOf(rows, scope ?? Scope).Select(r => (r.Id, r.Link)).ToList();
+    static List<(uint Id, uint Link)> Ids(RowSet rows, SmartScope? scope = null) => SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, scope ?? Scope).Select(r => (r.Id, r.Link)).ToList();
 
     [Fact]
     public void NextIdIsZeroForEmptyScopeAndMaxPlusOneWithGaps()
     {
-        Assert.Equal(0u, SmartRuleEdits.NextId(Rows(), Scope));
-        Assert.Equal(6u, SmartRuleEdits.NextId(Rows(Rule(0), Rule(1), Rule(5)), Scope));
-        Assert.Equal(0u, SmartRuleEdits.NextId(Rows(Rule(3, scope: new(999, 0))), Scope));
+        Assert.Equal(0u, SmartRuleEdits.NextId(SmartCatalog.Ac, Rows(), Scope));
+        Assert.Equal(6u, SmartRuleEdits.NextId(SmartCatalog.Ac, Rows(Rule(0), Rule(1), Rule(5)), Scope));
+        Assert.Equal(0u, SmartRuleEdits.NextId(SmartCatalog.Ac, Rows(Rule(3, scope: new(999, 0))), Scope));
     }
 
     [Fact]
     public void NextIdSkipsTheTargetOfADanglingLink()
     {
         // A live rule that links to a missing rule 1 must not get its new neighbour chained in as 1.
-        Assert.Equal(2u, SmartRuleEdits.NextId(Rows(Rule(0, link: 1)), Scope));
-        Assert.Equal(8u, SmartRuleEdits.NextId(Rows(Rule(0, link: 7), Rule(3)), Scope));
+        Assert.Equal(2u, SmartRuleEdits.NextId(SmartCatalog.Ac, Rows(Rule(0, link: 1)), Scope));
+        Assert.Equal(8u, SmartRuleEdits.NextId(SmartCatalog.Ac, Rows(Rule(0, link: 7), Rule(3)), Scope));
     }
 
     [Fact]
     public void RulesAreScopedBySourceTypeAndSortedById()
     {
         var rows = Rows(Rule(2), Rule(0), Rule(1, scope: new((int)Entry, SmartScope.ActionList)));
-        Assert.Equal([0u, 2u], SmartRuleEdits.RulesOf(rows, Scope).Select(r => r.Id));
+        Assert.Equal([0u, 2u], SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, Scope).Select(r => r.Id));
     }
 
     [Fact]
@@ -103,8 +103,8 @@ public class SmartRuleEditsTests
         rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 4u), ("ID", 0u)));
         rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", Entry), ("GroupID", 2u), ("ID", 0u)));
         rows.Set(InteractionTables.CreatureText, Row.Of(("CreatureID", 777u), ("GroupID", 1u), ("ID", 0u)));
-        Assert.Equal(2u, SmartRuleEdits.FirstTextGroup(rows, Entry));
-        Assert.Equal(0u, SmartRuleEdits.FirstTextGroup(Rows(), Entry));
+        Assert.Equal(2u, SmartRuleEdits.FirstTextGroup(SmartCatalog.Ac, rows, Entry));
+        Assert.Equal(0u, SmartRuleEdits.FirstTextGroup(SmartCatalog.Ac, Rows(), Entry));
         var say = SmartRuleEdits.FromTemplate(SmartCatalog.Ac, rows, Scope, Entry, "N", SmartRuleEdits.RuleTemplates[0]);
         Assert.Equal(2u, new SmartRule(say).ActionParam(1));
     }
@@ -114,7 +114,7 @@ public class SmartRuleEditsTests
     {
         var a = Rule(0);
         var edited = a.With("comment", "x");
-        var edits = SmartRuleEdits.Rekey([(a, edited), (Rule(1), Rule(1))]);
+        var edits = SmartRuleEdits.Rekey(SmartCatalog.Ac, [(a, edited), (Rule(1), Rule(1))]);
         var only = Assert.Single(edits);
         Assert.Equal(a, only.Before);
         Assert.Equal(edited, only.After);
@@ -125,7 +125,7 @@ public class SmartRuleEditsTests
     {
         var a = Rule(0);
         var b = Rule(1);
-        var edits = SmartRuleEdits.Rekey([(a, a.With("id", 1u)), (b, b.With("id", 0u))]);
+        var edits = SmartRuleEdits.Rekey(SmartCatalog.Ac, [(a, a.With("id", 1u)), (b, b.With("id", 0u))]);
         Assert.Equal(["-0", "-1", "+1", "+0"], edits.Select(Shape));
     }
 
@@ -220,19 +220,19 @@ public class SmartRuleEditsTests
     public void DeletingARootRemovesItsWholeChain()
     {
         var rows = Rows(Rule(0, link: 1), Rule(1, link: 2, eventType: SmartCatalog.LinkEvent), Rule(2, eventType: SmartCatalog.LinkEvent), Rule(3));
-        var (label, edits) = SmartRuleEdits.DeleteEdits(rows, Scope, new SmartRule(Rule(0, link: 1)));
+        var (label, edits) = SmartRuleEdits.DeleteEdits(SmartCatalog.Ac, rows, Scope, new SmartRule(Rule(0, link: 1)));
         Assert.Equal("Delete rule and 2 \"Then\" step(s)", label);
         Assert.Equal(["-0", "-1", "-2"], edits.Select(Shape));
         Assert.Equal([(3u, 0u)], Ids(Apply(rows, edits)));
-        Assert.Equal("Delete rule", SmartRuleEdits.DeleteEdits(rows, Scope, new SmartRule(Rule(3))).Label);
+        Assert.Equal("Delete rule", SmartRuleEdits.DeleteEdits(SmartCatalog.Ac, rows, Scope, new SmartRule(Rule(3))).Label);
     }
 
     [Fact]
     public void DeletingAMiddleStepRelinksItsPredecessor()
     {
         var rows = Rows(Rule(0, link: 1), Rule(1, link: 2, eventType: SmartCatalog.LinkEvent), Rule(2, eventType: SmartCatalog.LinkEvent));
-        var middle = SmartRuleEdits.RulesOf(rows, Scope)[1];
-        var (label, edits) = SmartRuleEdits.DeleteEdits(rows, Scope, middle);
+        var middle = SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, Scope)[1];
+        var (label, edits) = SmartRuleEdits.DeleteEdits(SmartCatalog.Ac, rows, Scope, middle);
         Assert.Equal("Delete \"Then\" step", label);
         Assert.Equal("-1", Shape(edits[0]));
         Assert.Equal([(0u, 2u), (2u, 0u)], Ids(Apply(rows, edits)));
@@ -243,8 +243,8 @@ public class SmartRuleEditsTests
     {
         // 0 -> 1 chain and a separate root 2; swap roots 0 and 2.
         var rows = Rows(Rule(0, link: 1), Rule(1, link: 0, eventType: SmartCatalog.LinkEvent), Rule(2));
-        var rules = SmartRuleEdits.RulesOf(rows, Scope);
-        var (map, edits) = SmartRuleEdits.SwapEdits(rows, Scope, rules[0], rules[2]);
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, Scope);
+        var (map, edits) = SmartRuleEdits.SwapEdits(SmartCatalog.Ac, rows, Scope, rules[0], rules[2]);
         Assert.Equal(new Dictionary<uint, uint> { [0] = 2, [2] = 0 }, map);
         // Keys change, so all deletes come first.
         Assert.StartsWith("-", Shape(edits[0]));
@@ -256,8 +256,8 @@ public class SmartRuleEditsTests
     public void SwapRemapsLinksToSwappedIds()
     {
         var rows = Rows(Rule(1, link: 2), Rule(2));
-        var rules = SmartRuleEdits.RulesOf(rows, Scope);
-        var (_, edits) = SmartRuleEdits.SwapEdits(rows, Scope, rules[0], rules[1]);
+        var rules = SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, Scope);
+        var (_, edits) = SmartRuleEdits.SwapEdits(SmartCatalog.Ac, rows, Scope, rules[0], rules[1]);
         Assert.Equal([(1u, 0u), (2u, 1u)], Ids(Apply(rows, edits)));
     }
 
@@ -265,7 +265,7 @@ public class SmartRuleEditsTests
     public void DuplicateCopiesTheChainUnderFreshIdsWithRemappedLinks()
     {
         var rows = Rows(Rule(0, link: 1), Rule(1, link: 2, eventType: SmartCatalog.LinkEvent), Rule(2, eventType: SmartCatalog.LinkEvent), Rule(3));
-        var (first, edits) = SmartRuleEdits.DuplicateEdits(rows, Scope, new SmartRule(Rule(0, link: 1)));
+        var (first, edits) = SmartRuleEdits.DuplicateEdits(SmartCatalog.Ac, rows, Scope, new SmartRule(Rule(0, link: 1)));
         Assert.Equal(4u, first);
         Assert.Equal(["+4", "+5", "+6"], edits.Select(Shape));
         Assert.Equal([(4u, 5u), (5u, 6u), (6u, 0u)], Ids(Apply(rows, edits)).Where(x => x.Id >= 4));
@@ -275,7 +275,7 @@ public class SmartRuleEditsTests
     public void DuplicatingANonRootThrows()
     {
         var rows = Rows(Rule(0, link: 1), Rule(1, eventType: SmartCatalog.LinkEvent));
-        Assert.ThrowsAny<InvalidOperationException>(() => SmartRuleEdits.DuplicateEdits(rows, Scope, SmartRuleEdits.RulesOf(rows, Scope)[1]));
+        Assert.ThrowsAny<InvalidOperationException>(() => SmartRuleEdits.DuplicateEdits(SmartCatalog.Ac, rows, Scope, SmartRuleEdits.RulesOf(SmartCatalog.Ac, rows, Scope)[1]));
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class SmartRuleEditsTests
         var rows = Rows(Rule(0), Rule(1));
         var spawn = new SmartScope(-42, SmartScope.Creature);
         var enable = new RowEdit("creature_template", "295", null, Row.Of(("entry", 295u)));
-        var edits = SmartRuleEdits.CopyScopeEdits(rows, Scope, spawn, [enable]);
+        var edits = SmartRuleEdits.CopyScopeEdits(SmartCatalog.Ac, rows, Scope, spawn, [enable]);
         Assert.Equal(3, edits.Length);
         Assert.All(edits.Take(2), e => Assert.Equal(-42, e.After!.I("entryorguid")));
         Assert.Same(enable, edits[2]);
