@@ -1,12 +1,15 @@
 ---
 name: audit
-description: Read-only audit of the whole codebase written to docs/audit.md - module map, duplication, inconsistencies, dead code, test coverage and a risk-ranked list of simplifications. Explores each area with parallel subagents, then combines and verifies their findings. Use when asked to audit, survey or map the codebase, or to find duplication, dead code or simplification opportunities across it.
+description: Read-only audit of the whole codebase (or named areas) written to artifacts/audit.md - module map, duplication, inconsistencies, dead code, test coverage and a risk-ranked list of fixes, each routed to the skill that makes it (refactor, consolidate-tests, sync-docs, optimize). Explores each area with parallel subagents, then combines and verifies their findings.
+argument-hint: "[area ...]"
 disable-model-invocation: true
 ---
 
 # Audit
 
-Writes `docs/audit.md`, a read-only audit of the repo. The only file this skill writes is `docs/audit.md`: change no code, tests, config or other docs, even when a finding has an obvious fix. Fixes are for later, once the user has read the audit.
+Writes `artifacts/audit.md` (git-ignored), a read-only audit of the repo. It is the survey step: it finds and ranks work, and the editing skills do it, one area per run (`/refactor`, `/consolidate-tests`, `/sync-docs`, `/optimize`; they read this file as a starting point). The only file this skill writes is `artifacts/audit.md`: change no code, tests, config or docs, even when a finding has an obvious fix.
+
+Scope: `$ARGUMENTS`. If it names areas from the split below, audit only those (and skip subagents if one or two areas are small enough to read directly). Otherwise audit everything. The shared rules in `.claude/skills/_shared/working-rules.md` (Subagents, Boundaries) apply.
 
 ## 1. Ask before starting subagents
 
@@ -43,7 +46,7 @@ Give each agent this prompt with its area filled in:
 
 ```
 Read-only audit of <AREA> in ac-world-edit
-(Godot 4.7 C# world editor for AzerothCore; read CLAUDE.md first for the
+(Godot 4.7 C# world editor for AzerothCore and TrinityCore; read CLAUDE.md first for the
 architecture). Do not edit, create or delete any file. Do not run builds.
 
 Report, citing path:line for every claim:
@@ -75,7 +78,7 @@ When all the agents are done:
 2. **Find what no single agent could see.** Look for duplication and inconsistencies across areas, for example the same parsing helper in `Scripts/Assets` and `Foundation`, the same status-reporting pattern done differently in `Overlays` and `Ui`, or `Ac*`/`Tc*` sources that differ in more than the schema.
 3. **Build the dependency picture** from the agents' uses and used-by lists, and check it against the assembly split in `CLAUDE.md`: Foundation, Assets and Data must stay Godot-free.
 
-## 5. Write docs/audit.md
+## 5. Write artifacts/audit.md
 
 Use this structure. Cite `path:line` (or just `path` for whole-file claims) on every claim:
 
@@ -105,12 +108,15 @@ a covered-vs-uncovered table by area, NEEDED-TESTS.md status.
 
 ## 6. Simplification opportunities
 A numbered list, highest value-to-risk first. Each entry gives: the change,
-the files involved, its risk (low/med/high) and why, and the tests to have
-in place before making it (existing ones, or what to write).
+the files involved, its risk (low/med/high) and why, the tests to have
+in place before making it (existing ones, or what to write), and the skill
+and argument that would make it (e.g. `/refactor Scripts/Data/Quests`,
+`/consolidate-tests Tests/ACWorldEdit.Tests/Data`, `/sync-docs viewer`,
+`/optimize creature overlay`).
 ```
 
 Rate risk by what can break: **low** for local changes with existing tests, or dead code with no uses; **med** for changes across several files, or code covered only by Corpus/Db tests or smokes; **high** for changes to shared rendering/parsing paths, the draft/SQL export model, or anything with no test and only visual checks.
 
 ## 6. Report back
 
-Give the user the path, a few lines on the top findings, and how many claims are still unverified. Don't paste the whole audit into chat.
+Give the user the path, a few lines on the top findings with the skill invocation for each, and how many claims are still unverified. Don't paste the whole audit into chat. Open work worth keeping beyond this run belongs in `docs/tc-status.md`; offer to add the top items there rather than adding them unasked.
