@@ -202,6 +202,8 @@ public sealed class InteractionDraft : IDisposable
     /// <summary>
     /// Largest ID the draft has reserved for a table column (for allocating the next new ID).
     /// </summary>
+    public ulong MaxStaged(string source, TableSchema table, string column) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Where(e => e.Table == table.Name && e.After != null && !e.After.IsNull(column)).Select(e => e.After!.UL(column)).DefaultIfEmpty(0UL).Max();
+
     public uint MaxReserved(string source, TableSchema table, string column) => state.History.Where(c => c.Source == source).SelectMany(c => c.Edits).Where(e => e.Table == table.Name && e.After != null).Select(e => e.After!.U(column)).DefaultIfEmpty(0u).Max();
 
     /// <summary>
