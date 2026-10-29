@@ -69,7 +69,8 @@ public static class WmoModel
                 throw new InvalidDataException("Short WMO group header.");
             }
 
-            var sub = Chunks.Read(gb.Bytes, gp.Data + 68, gp.Data + gp.Size).GroupBy(c => c.Tag).ToDictionary(g => g.Key, g => g.First());
+            var subChunks = Chunks.Read(gb.Bytes, gp.Data + 68, gp.Data + gp.Size).ToList();
+            var sub = subChunks.GroupBy(c => c.Tag).ToDictionary(g => g.Key, g => g.First());
             // Group liquid IDs can use legacy numbering. The root flag determines
             // interpretation; a legacy zero derives its category from visible tile flags.
             // Retail liquid types come from the LiquidType DB2 table; without it the liquid is skipped.
@@ -107,11 +108,16 @@ public static class WmoModel
             var nr = sub.GetValueOrDefault("MONR");
             var uv = sub.GetValueOrDefault("MOTV");
             var colors = sub.GetValueOrDefault("MOCV");
+            // Retail groups repeat MOCV and MOTV for a second vertex-color and UV set; composite shaders read them.
+            var colors2 = subChunks.Where(c => c.Tag == "MOCV").Skip(1).FirstOrDefault();
+            var uvChunk2 = subChunks.Where(c => c.Tag == "MOTV").Skip(1).FirstOrDefault();
             bool interior = (gb.U(gp.Data + 8) & 0x2000) != 0;
             var colorMode = colors.Size == 0 ? VertexColorMode.None : interior ? VertexColorMode.BakedInterior : VertexColorMode.ExteriorEmissive;
             Vector3[] positions = new Vector3[vertices], normals = new Vector3[vertices];
             Vector2[] uvs = new Vector2[vertices];
             Vector4[] tint = new Vector4[vertices];
+            Vector2[] uvs2 = new Vector2[vertices];
+            float[] alpha2 = new float[vertices];
             for (int i = 0; i < vertices; i++)
             {
                 positions[i] = BinaryAsset.View(gb.V(vt.Data + i * 12));
@@ -131,7 +137,12 @@ public static class WmoModel
                 }
 
                 int p = colors.Data + i * 4;
-                tint[i] = colors.Size >= vertices * 4 ? new(gb.Bytes[p + 2] / 255f, gb.Bytes[p + 1] / 255f, gb.Bytes[p] / 255f, 1) : Vector4.One;
+                tint[i] = colors.Size >= vertices * 4 ? new(gb.Bytes[p + 2] / 255f, gb.Bytes[p + 1] / 255f, gb.Bytes[p] / 255f, gb.Bytes[p + 3] / 255f) : Vector4.One;
+                alpha2[i] = colors2.Size >= vertices * 4 ? gb.Bytes[colors2.Data + i * 4 + 3] / 255f : 1f;
+                // Without a second UV set the layers reuse the first.
+                uvs2[i] = uvChunk2.Size >= vertices * 8 && float.IsFinite(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8)) && float.IsFinite(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8 + 4))
+                    ? new(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8), LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8 + 4))
+                    : uvs[i];
             }
 
             // MOBA is a 24-byte render-batch record. A flag redirects the material ID
@@ -146,21 +157,29 @@ public static class WmoModel
                 }
 
                 int m = materials.Data + mat * 64;
-                string texture;
-                if (names.Size == 0)
+                // A material's texture slots hold a MOTX offset, or a FileDataID in retail roots.
+                string Slot(int field)
                 {
-                    uint fileId = b.U(m + 12);
-                    texture = fileId == 0 ? "" : AssetRef.FromFileId(fileId);
-                }
-                else
-                {
-                    int texOffset = b.I(m + 12);
+                    if (names.Size == 0)
+                    {
+                        uint fileId = b.U(m + field);
+                        return fileId == 0 ? "" : AssetRef.FromFileId(fileId);
+                    }
+
+                    int texOffset = b.I(m + field);
                     if (texOffset < 0 || texOffset >= names.Size)
                     {
                         throw new InvalidDataException("Invalid WMO texture offset.");
                     }
 
-                    texture = b.Str(names.Data + texOffset).Replace('\\', '/');
+                    return b.Str(names.Data + texOffset).Replace('\\', '/');
+                }
+
+                string texture = Slot(12);
+                // The DF shader (23) leaves texture_1 empty and keeps its diffuse in texture_2.
+                if (texture.Length == 0 && b.U(m + 4) == 23)
+                {
+                    texture = Slot(24);
                 }
 
                 int[] indices = new int[count];
@@ -178,11 +197,40 @@ public static class WmoModel
                     (indices[j + 1], indices[j + 2]) = (indices[j + 2], indices[j + 1]);
                 }
 
-                surfaces.Add(new(positions, normals, uvs, indices, texture, b.I(m + 8), (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode));
-                if (b.U(m + 4) != 0)
+                int blend = b.I(m + 8);
+                SurfaceLayers? layers = null;
+                if (WmoCombiners.Resolve((int)b.U(m + 4)) is not { } info)
                 {
-                    warnings.Add($"WMO shader {b.U(m + 4)} uses base-texture preview.");
+                    warnings.Add($"WMO shader {b.U(m + 4)} is not implemented and uses its base texture.");
                 }
+                else
+                {
+                    if (info.Opaque)
+                    {
+                        blend = 0;
+                    }
+
+                    // Texture slots 2 and 3 are at +24 and +36; a slot the shader needs but the material leaves empty keeps the base texture.
+                    string[] extra = [.. new[] { 24, 36 }.Take(info.Units - 1).Select(Slot)];
+                    // A two-layer environment shader whose environment map is empty is the plain two-layer shader.
+                    if (info.Combiner == LayerCombiner.WmoTwoLayerEnvMetal && extra[0].Length > 0 && extra[1].Length == 0 && WmoCombiners.Resolve(6) is { } twoLayer)
+                    {
+                        info = twoLayer;
+                        extra = extra[..1];
+                    }
+
+                    if (info.Combiner != LayerCombiner.None && extra.All(t => t.Length > 0))
+                    {
+                        layers = new(info.Combiner, extra, info.Coords, uvs2, Alpha2: alpha2);
+                    }
+                    else if (info.Combiner is not (LayerCombiner.None or LayerCombiner.WmoEnv or LayerCombiner.WmoEnvMetal) && extra.Any(t => t.Length > 0))
+                    {
+                        // A reflection shader without its reflection map adds nothing, and a layered one with every extra slot empty has nothing to blend, so the base texture is exact; only a partly filled set warns.
+                        warnings.Add($"WMO shader {b.U(m + 4)} has an empty texture slot and uses its base texture.");
+                    }
+                }
+
+                surfaces.Add(new(positions, normals, uvs, indices, texture, blend, (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode, Layers: layers));
             }
         }
 
@@ -250,11 +298,13 @@ public static class WmoModel
 
         // Compact render batches and merge by material. Exported group arrays otherwise repeat
         // thousands of unused vertices for every tiny batch (especially Stormwind).
-        var merged = surfaces.Where(s => s.LiquidType == null).GroupBy(s => (s.Texture, s.Blend, s.TwoSided, s.Unlit, s.ColorMode)).Select(group =>
+        var merged = surfaces.Where(s => s.LiquidType == null).GroupBy(s => (s.Texture, s.Blend, s.TwoSided, s.Unlit, s.ColorMode, Layers: s.Layers?.Signature ?? "")).Select(group =>
         {
             List<Vector3> positions = [], normals = [];
-            List<Vector2> uv = [];
+            List<Vector2> uv = [], uv2 = [];
             List<Vector4> colors = [];
+            List<float> alpha2 = [];
+            var layers = group.First().Layers;
             List<int> indices = [];
             var remap = new Dictionary<(Vector3[] Source, int Index), int>();
             foreach (var surface in group)
@@ -270,13 +320,18 @@ public static class WmoModel
                         normals.Add(surface.Normals[index]);
                         uv.Add(surface.Uv[index]);
                         colors.Add(surface.Colors![index]);
+                        if (layers != null)
+                        {
+                            uv2.Add(surface.Layers!.Uv2![index]);
+                            alpha2.Add(surface.Layers.Alpha2![index]);
+                        }
                     }
 
                     indices.Add(target);
                 }
             }
 
-            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode);
+            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode, Layers: layers == null ? null : layers with { Uv2 = uv2.ToArray(), Alpha2 = alpha2.ToArray() });
         }).ToArray();
         return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
     }

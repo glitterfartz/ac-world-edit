@@ -25,6 +25,7 @@ public partial class TerrainViewer
     {
         var flags = OS.GetCmdlineUserArgs().ToHashSet();
         anySmoke = flags.Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal) || arg == "--perf-breakdown");
+        ConfigureTeleSmoke(flags);
         waterInterior = flags.Contains("--water-interior-smoke");
         waterSmoke = flags.Contains("--water-smoke") || waterInterior;
         smoke = flags.Contains("--terrain-smoke");
@@ -157,6 +158,11 @@ public partial class TerrainViewer
         if (clientSmoke)
         {
             ClientSmoke(delta);
+        }
+
+        if (teleSmoke)
+        {
+            TeleSmoke(delta);
         }
 
         if (perfSmoke)

@@ -224,6 +224,52 @@ public static class M2Model
             return found;
         }
 
+        // Texture units 2 and up of a multi-texture batch (unit k reads lookup entry combo + k), with
+        // the combiner and coordinate sources the batch's shader_id selects. Null when the shader is
+        // not implemented or a unit has no file texture, so the batch keeps its base texture.
+        SurfaceLayers? Layers(int shaderId, int count, int combo, List<Vector2> uv2)
+        {
+            if (M2Combiners.Resolve(shaderId, count) is not var (combiner, coords, edgeFade))
+            {
+                return null;
+            }
+
+            string[] units = new string[count - 1];
+            for (int unit = 1; unit < count; unit++)
+            {
+                if (combo + unit >= textureLookup.Count)
+                {
+                    return null;
+                }
+
+                int tex = b.H(textureLookup.Offset + (combo + unit) * 2);
+                if (tex >= textures.Count)
+                {
+                    return null;
+                }
+
+                int t = textures.Offset + tex * 16;
+                uint unitType = b.U(t);
+                // A replaceable unit takes the same customization texture the base batch would; hair and eyes
+                // units stay unresolved here (the base batch hides them when they have none).
+                units[unit - 1] = unitType switch
+                {
+                    0 => b.U(t + 8) != 0 ? b.Str(b.I(t + 12)).Replace('\\', '/') : tex < textureIds.Length && textureIds[tex] != 0 ? AssetRef.FromFileId(textureIds[tex]) : "",
+                    1 => baked ?? "",
+                    8 => fur ?? "",
+                    20 => extra ?? "",
+                    >= 11 and <= 13 => replacements?[unitType - 11] ?? "",
+                    _ => ""
+                };
+                if (units[unit - 1].Length == 0)
+                {
+                    return null;
+                }
+            }
+
+            return new(combiner, units, coords, coords.Contains(LayerCoord.T2) ? uv2.ToArray() : null, edgeFade);
+        }
+
         ModelBone[] skeleton = new ModelBone[bones.Count];
         for (int i = 0; i < bones.Count; i++)
         {
@@ -343,7 +389,7 @@ public static class M2Model
             skin.Range(triangles.Offset + first * 2, count, 2);
             var remap = new Dictionary<int, int>();
             List<Vector3> pos = [], norm = [];
-            List<Vector2> uv = [];
+            List<Vector2> uv = [], uv2 = [];
             List<int> bi = [], indices = [];
             List<float> weights = [];
             for (int j = 0; j < count; j++)
@@ -368,6 +414,7 @@ public static class M2Model
                     pos.Add(BinaryAsset.View(b.V(v)));
                     norm.Add(BinaryAsset.View(b.V(v + 20)));
                     uv.Add(new(b.F(v + 32), b.F(v + 36)));
+                    uv2.Add(new(b.F(v + 40), b.F(v + 44)));
                     for (int k = 0; k < 4; k++)
                     {
                         // Skin properties map vertex influences through this submesh's bone combo.
@@ -400,10 +447,11 @@ public static class M2Model
                 (indices[j + 1], indices[j + 2]) = (indices[j + 2], indices[j + 1]);
             }
 
-            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0, Material: Appearance(skin.S(p + 8), skin.H(p + 20), skin.H(p + 22))));
-            if (skin.H(p + 14) > 1)
+            var layers = skin.H(p + 14) > 1 ? Layers(skin.H(p + 2), skin.H(p + 14), combo, uv2) : null;
+            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0, Material: Appearance(skin.S(p + 8), skin.H(p + 20), skin.H(p + 22)), Layers: layers));
+            if (skin.H(p + 14) > 1 && layers == null)
             {
-                warnings.Add("Multitexture M2 batch currently uses its base texture.");
+                warnings.Add($"M2 shader 0x{skin.H(p + 2):X4} with {skin.H(p + 14)} textures uses its base texture.");
             }
         }
 

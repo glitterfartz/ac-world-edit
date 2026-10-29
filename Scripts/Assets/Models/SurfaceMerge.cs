@@ -29,7 +29,7 @@ public static class SurfaceMerge
                 continue;
             }
 
-            var key = new MergeKey(s.Texture.ToLowerInvariant(), s.Blend, s.TwoSided, s.Unlit, s.ColorMode, s.Bones != null && s.Weights != null, s.Colors != null, m.Color, m.UvRow0, m.UvRow1);
+            var key = new MergeKey(s.Texture.ToLowerInvariant(), s.Blend, s.TwoSided, s.Unlit, s.ColorMode, s.Bones != null && s.Weights != null, s.Colors != null, m.Color, m.UvRow0, m.UvRow1, s.Layers?.Signature ?? "");
             if (!groups.TryGetValue(key, out var members))
             {
                 groups[key] = members = [];
@@ -59,7 +59,7 @@ public static class SurfaceMerge
         return (merged.ToArray(), appearance.ToArray());
     }
 
-    readonly record struct MergeKey(string Texture, int Blend, bool TwoSided, bool Unlit, VertexColorMode ColorMode, bool Skinned, bool Colored, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1);
+    readonly record struct MergeKey(string Texture, int Blend, bool TwoSided, bool Unlit, VertexColorMode ColorMode, bool Skinned, bool Colored, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1, string Layers);
 
     /// <summary>
     /// Concatenate vertex channels once per distinct source array (batches of one WMO group or M2
@@ -87,6 +87,8 @@ public static class SurfaceMerge
         int[]? bones = skinned ? new int[vertexCount * 4] : null;
         float[]? weights = skinned ? new float[vertexCount * 4] : null;
         Vector4[]? colors = first.Colors != null ? new Vector4[vertexCount] : null;
+        Vector2[]? uv2 = first.Layers?.Uv2 != null ? new Vector2[vertexCount] : null;
+        float[]? alpha2 = first.Layers?.Alpha2 != null ? new float[vertexCount] : null;
         foreach (var s in sources)
         {
             int at = offsets[s.Positions];
@@ -96,6 +98,8 @@ public static class SurfaceMerge
             s.Bones?.CopyTo(bones!, at * 4);
             s.Weights?.CopyTo(weights!, at * 4);
             s.Colors?.CopyTo(colors!, at);
+            s.Layers?.Uv2?.CopyTo(uv2!, at);
+            s.Layers?.Alpha2?.CopyTo(alpha2!, at);
         }
 
         var indices = new int[members.Sum(s => s.Indices.Length)];
@@ -117,7 +121,8 @@ public static class SurfaceMerge
             Indices = indices,
             Bones = bones,
             Weights = weights,
-            Colors = colors
+            Colors = colors,
+            Layers = first.Layers == null ? null : first.Layers with { Uv2 = uv2, Alpha2 = alpha2 }
         };
     }
 }

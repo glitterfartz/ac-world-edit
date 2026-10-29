@@ -89,7 +89,7 @@ public sealed class ModelLibrary
     /// Identity of a material that reads nothing per model: unskinned, unanimated, non-sky,
     /// non-liquid batches. Equal keys share one ShaderMaterial across all variants.
     /// </summary>
-    internal readonly record struct MaterialKey(Shader Shader, string Texture, int Blend, int ColorMode, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1);
+    internal readonly record struct MaterialKey(Shader Shader, string Texture, int Blend, int ColorMode, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1, string Layers);
 
     sealed class MaterialEntry(ShaderMaterial material)
     {
@@ -273,6 +273,11 @@ public sealed class ModelLibrary
         arrays[(int)Mesh.ArrayType.Normal] = Convert(surface.Normals, v => new Vector3(v.X, v.Y, v.Z));
         arrays[(int)Mesh.ArrayType.TexUV] = Convert(surface.Uv, v => new Vector2(v.X, v.Y));
         arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
+        if (surface.Layers?.Uv2 is { } uv2)
+        {
+            arrays[(int)Mesh.ArrayType.TexUV2] = Convert(uv2, v => new Vector2(v.X, v.Y));
+        }
+
         if (surface.Colors != null)
         {
             arrays[(int)Mesh.ArrayType.Color] = Convert(surface.Colors, v => new Color(v.X, v.Y, v.Z, v.W));
@@ -523,6 +528,13 @@ public sealed class ModelLibrary
             flags = (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom0Shift | (ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom1Shift);
         }
 
+        if (surface.Layers?.Alpha2 is { } alpha2)
+        {
+            // A WMO's second vertex-color alpha rides in custom channel 2 (the skin channels are 0 and 1).
+            arrays[(int)Mesh.ArrayType.Custom2] = alpha2;
+            flags |= (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RFloat << (int)Mesh.ArrayFormat.FormatCustom2Shift);
+        }
+
         if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
         {
             e.Meshes.Add(new ArrayMesh());
@@ -562,10 +574,16 @@ public sealed class ModelLibrary
             shaders[shaderKey] = shader;
         }
 
-        ImageTexture texture = fallback;
-        if (surface.Texture.Length > 0 && e.Decoded.TryGetValue(surface.Texture, out var blp))
+        // Decoded texture shared across entries and reference counted once per entry; a texture that
+        // failed to decode draws the fallback.
+        ImageTexture TextureOf(string path)
         {
-            if (!textures.TryGetValue(surface.Texture, out var t))
+            if (path.Length == 0 || !e.Decoded.TryGetValue(path, out var blp))
+            {
+                return fallback;
+            }
+
+            if (!textures.TryGetValue(path, out var t))
             {
                 using var image = Image.CreateFromData(blp.Width, blp.Height, false, Image.Format.Rgba8, blp.Rgba);
                 if (surface.LiquidType == null)
@@ -574,22 +592,27 @@ public sealed class ModelLibrary
                 }
 
                 t = new(ImageTexture.CreateFromImage(image));
-                textures[surface.Texture] = t;
+                textures[path] = t;
             }
 
-            if (e.TexturePaths.Add(surface.Texture))
+            if (e.TexturePaths.Add(path))
             {
                 t.References++;
             }
 
-            texture = t.Texture;
+            return t.Texture;
         }
+
+        ImageTexture texture = TextureOf(surface.Texture);
+        // Resolved before the shared-material early return below: every entry that draws a layer counts
+        // its reference, whether or not it builds the material.
+        ImageTexture[] layerTextures = surface.Layers == null ? [] : [.. surface.Layers.Textures.Select(TextureOf)];
 
         var color = new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W);
         var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
         var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
         MaterialKey? key = !skybox && surface.LiquidType == null && surface.Bones == null && appearance.Column < 0
-            ? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1)
+            ? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1, surface.Layers?.Signature ?? "")
             : null;
         if (key is { } shared && sharedMaterials.TryGetValue(shared, out var known))
         {
@@ -618,6 +641,19 @@ public sealed class ModelLibrary
         }
 
         material.SetShaderParameter("albedo_tex", texture);
+        if (surface.Layers is { } layers)
+        {
+            material.SetShaderParameter("combiner", (int)layers.Combiner);
+            material.SetShaderParameter("edge_fade", layers.EdgeFade);
+            for (int i = 0; i < layers.Textures.Length; i++)
+            {
+                material.SetShaderParameter("layer_tex" + (i + 2), layerTextures[i]);
+            }
+
+            int[] sources = [.. layers.Coords.Select(c => (int)c), 0, 0, 0, 0];
+            material.SetShaderParameter("layer_coords", new Vector4I(sources[0], sources[1], sources[2], sources[3]));
+        }
+
         // A shared material never samples the palettes; leaving them unset keeps it from holding
         // one variant's textures alive.
         if (key == null)
@@ -1003,7 +1039,7 @@ public sealed class ModelLibrary
                 key.Baked.Length == 0 ? null : key.Baked, token, key.Animation, key.Hair.Length == 0 ? null : key.Hair, key.Fur.Length == 0 ? null : key.Fur, key.HairGeoset,
                 key.Eyes.Length == 0 ? null : key.Eyes, key.Geosets, key.Extra.Length == 0 ? null : key.Extra);
         Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in data.Surfaces.Select(s => s.Texture).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (string path in data.Surfaces.SelectMany(s => s.Layers == null ? [s.Texture] : s.Layers.Textures.Prepend(s.Texture)).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             token.ThrowIfCancellationRequested();
             try

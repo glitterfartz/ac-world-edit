@@ -19,7 +19,7 @@ public enum VertexColorMode
 /// Detached batch with viewer-space vertices, material metadata and optional four-influence
 /// skinning, color or liquid channels. Format readers validate array/index relationships.
 /// </summary>
-public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0, SurfaceAnimation? Material = null, VertexColorMode ColorMode = VertexColorMode.None);
+public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector2[] Uv, int[] Indices, string Texture, int Blend, bool TwoSided, int[]? Bones = null, float[]? Weights = null, Vector4[]? Colors = null, bool Unlit = false, uint? LiquidType = null, uint LiquidKind = 0, SurfaceAnimation? Material = null, VertexColorMode ColorMode = VertexColorMode.None, SurfaceLayers? Layers = null);
 /// <summary>
 /// Embedded WMO M2 placement in viewer-space local coordinates. Its parent WMO transform
 /// composes with this pose when binding instances.
