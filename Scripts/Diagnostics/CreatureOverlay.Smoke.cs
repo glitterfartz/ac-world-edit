@@ -412,4 +412,17 @@ public partial class CreatureOverlay
     }
 
     public string SmokeMeta => selectionMeta.Text;
+
+    /// <summary>Scroll the inspector so the spawn fields are on screen, as the user would.</summary>
+    public void SmokeRevealFields()
+    {
+        for (Node node = spawnFields.GetParent(); node != null; node = node.GetParent())
+        {
+            if (node is ScrollContainer scroll)
+            {
+                scroll.EnsureControlVisible(spawnFields);
+                return;
+            }
+        }
+    }
 }

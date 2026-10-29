@@ -13,6 +13,8 @@ public sealed partial class PlaceCard : VBoxContainer
     readonly LineEdit search = new() { PlaceholderText = "Name or ID…", ClearButtonEnabled = true };
     readonly ItemList results = new() { CustomMinimumSize = new(0, 110), AllowReselect = true };
     readonly Label hint = InspectorUi.Text("", 11, true);
+    readonly VBoxContainer body = new();
+    readonly Button header = new() { ToggleMode = true, Flat = true, Alignment = HorizontalAlignment.Left };
     readonly Godot.Timer debounce = new() { OneShot = true, WaitTime = 0.25 };
     readonly List<(uint Id, string Name)> shown = [];
     ulong generation;
@@ -29,10 +31,19 @@ public sealed partial class PlaceCard : VBoxContainer
         Name = "PlaceCard";
         search.Name = "PlaceSearch";
         results.Name = "PlaceResults";
-        AddChild(InspectorUi.Text($"Place a {noun}", 12, true));
-        AddChild(search);
-        AddChild(results);
-        AddChild(hint);
+        // Collapsed until wanted: the card is tall and would push the selection and its fields out of view.
+        header.Text = $"▸ Place a {noun}";
+        header.Toggled += open =>
+        {
+            body.Visible = open;
+            header.Text = (open ? "▾ " : "▸ ") + $"Place a {noun}";
+        };
+        body.Visible = false;
+        body.AddChild(search);
+        body.AddChild(results);
+        body.AddChild(hint);
+        AddChild(header);
+        AddChild(body);
         AddChild(debounce);
         Idle();
         search.TextChanged += _ => debounce.Start();
@@ -54,7 +65,7 @@ public sealed partial class PlaceCard : VBoxContainer
         }
         else
         {
-            hint.Text = $"Placing {name}: click the ground. Shift-click keeps placing, Esc stops.";
+            hint.Text = $"Placing {name}. Click the ground; Shift-click keeps placing, Esc stops.";
         }
     }
 
@@ -114,6 +125,7 @@ public sealed partial class PlaceCard : VBoxContainer
     /// <summary>Search and wait for the list, as typing and pressing Enter does.</summary>
     public async Task SmokeSearchAsync(string term)
     {
+        header.ButtonPressed = true;
         search.Text = term;
         generation++;
         Fill(Search == null || term.Length == 0 ? [] : await Search(term));

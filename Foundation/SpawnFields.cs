@@ -34,9 +34,12 @@ public enum SpawnInherit
 /// </summary>
 public sealed record SpawnField(string Column, string Label, string Section, SpawnFieldKind Kind, string Tip = "",
     SpawnInherit Inherit = SpawnInherit.None, string? TemplateColumn = null, (uint Value, string Label)[]? Choices = null,
-    double Min = 0, double Max = double.MaxValue)
+    double Min = 0, double Max = double.MaxValue, bool BlankMeansZero = false)
 {
     public bool Inheritable => Inherit != SpawnInherit.None;
+
+    /// <summary>What an empty field says when it has no template value behind it.</summary>
+    public string EmptyHint => TemplateColumn != null ? "template" : Column == "StringId" ? "none" : "default";
 
     /// <summary>True when the spawn sets its own value instead of using the template's.</summary>
     public bool IsOverridden(Row row) => Inherit switch
@@ -54,6 +57,11 @@ public sealed record SpawnField(string Column, string Label, string Section, Spa
             return "";
         }
 
+        if (row.IsNull(Column))
+        {
+            return "";
+        }
+
         string value = row[Column];
         return Kind == SpawnFieldKind.Choice && Choices?.FirstOrDefault(c => c.Value.ToString(CultureInfo.InvariantCulture) == value) is { Label: { } label } ? label : value;
     }
@@ -65,6 +73,11 @@ public sealed record SpawnField(string Column, string Label, string Section, Spa
     public (bool Ok, object? Value, string Error) Parse(string text)
     {
         text = text.Trim();
+        if (text.Length == 0 && BlankMeansZero)
+        {
+            return (true, 0L, "");
+        }
+
         if (text.Length == 0 && Inheritable)
         {
             return (true, InheritedValue, "");
@@ -126,8 +139,8 @@ public static class SpawnFields
         if (tc)
         {
             fields.Add(new("spawnDifficulties", "Difficulties", VisibilitySection, SpawnFieldKind.Text, "Comma-separated difficulty IDs; 0 is the open world."));
-            fields.Add(new("PhaseId", "Phase", VisibilitySection, SpawnFieldKind.Number, "Empty: the spawn is in every phase.", SpawnInherit.Null, Max: uint.MaxValue));
-            fields.Add(new("PhaseGroup", "Phase group", VisibilitySection, SpawnFieldKind.Number, "Use a phase or a group, not both.", SpawnInherit.Null, Max: uint.MaxValue));
+            fields.Add(new("PhaseId", "Phase", VisibilitySection, SpawnFieldKind.Number, "0 or empty: the spawn is in every phase.", Max: uint.MaxValue, BlankMeansZero: true));
+            fields.Add(new("PhaseGroup", "Phase group", VisibilitySection, SpawnFieldKind.Number, "Use a phase or a group, not both. 0 or empty: none.", Max: uint.MaxValue, BlankMeansZero: true));
             fields.Add(new("phaseUseFlags", "Phase flags", VisibilitySection, SpawnFieldKind.Flags, "1 always visible, 2 inverse.", Max: 3));
         }
         else

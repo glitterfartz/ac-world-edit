@@ -141,4 +141,25 @@ public class SpawnFieldsTests
         Assert.Contains("at least one difficulty", message);
         Assert.Empty(drafts.Draft!.NetEdits());
     }
+
+    [Fact]
+    public void PhaseHasNoTemplateToFallBackToAndEmptyHintsSayWhatEmptyMeans()
+    {
+        var fields = SpawnFields.For(WorldDialect.TrinityCore, SpawnKind.Creature).ToDictionary(f => f.Column);
+        var row = NewRow(WorldDialect.TrinityCore, SpawnKind.Creature);
+        foreach (string column in new[] { "PhaseId", "PhaseGroup" })
+        {
+            // 0 means no phase: no "Use template" control, and a NULL column reads as an empty field that saves as 0.
+            Assert.False(fields[column].Inheritable);
+            Assert.False(fields[column].IsOverridden(row));
+            Assert.Equal("", fields[column].Show(row.With(column, null)));
+            Assert.Equal(0L, fields[column].Parse("").Value);
+        }
+
+        Assert.Equal("template", fields["npcflag"].EmptyHint);
+        Assert.Equal("default", fields["curHealthPct"].EmptyHint);
+        Assert.Equal("none", fields["StringId"].EmptyHint);
+        // An ordinary number is still not allowed to be blank.
+        Assert.False(fields["spawntimesecs"].Parse("").Ok);
+    }
 }

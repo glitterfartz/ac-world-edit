@@ -321,6 +321,12 @@ public partial class TerrainViewer
             authoringRespawn = row["spawntimesecs"];
             return true;
         }),
+        ("fields-are-on-screen", () =>
+        {
+            creatures.SmokeRevealFields();
+            Screenshot("fields");
+            return true;
+        }),
         ("fields-edit-respawn", () =>
         {
             creatures.SmokeFields.SmokeType("spawntimesecs", "777");
@@ -408,8 +414,23 @@ public partial class TerrainViewer
                 return false;
             }
 
+            // The viewer lifts a camera that sits low over the ground, so wait until it has stopped; the ghost
+            // is then recomputed for the final camera on the following frame.
+            if (camera.GlobalTransform != authoringCamera)
+            {
+                authoringCamera = camera.GlobalTransform;
+                authoringSettle = 0;
+                return false;
+            }
+
+            if (++authoringSettle < 3)
+            {
+                return false;
+            }
+
             Require(placement.Ghost.Visible, "the ghost is hidden although the cursor is over ground");
             authoringTarget = target;
+            Screenshot("ghost");
             Require(Math.Abs((GroundAt(target + Vector3.Up * 0.5f).Height ?? target.Y) - target.Y) < 0.1f, "the ghost is not on the ground");
             var projected = camera.UnprojectPosition(target);
             Require(projected.DistanceTo(authoringScreen) < 8, $"the ghost is not under the cursor: cursor {authoringScreen}, ghost at {projected}, ground {target}, camera {camera.GlobalPosition}, viewport {GetViewport().GetVisibleRect().Size}, transform {GetViewport().GetFinalTransform()}, fresh ray hit {PlacementTool.RayGround(camera, authoringScreen, TerrainHeightAt)}, rotation {camera.Rotation}, fov {camera.Fov} keep {camera.KeepAspect}, rayDir {camera.ProjectRayNormal(authoringScreen)}, unproject(fresh) {camera.UnprojectPosition(PlacementTool.RayGround(camera, authoringScreen, TerrainHeightAt) ?? Vector3.Zero)}");
@@ -440,6 +461,7 @@ public partial class TerrainViewer
             Require(creatures.PlaceCard.SmokeHint.StartsWith("Search ", StringComparison.Ordinal), "the card still says it is placing");
             Require(AuthoringScript(creatures.SmokeSourceKey).Contains("INSERT INTO `creature`", StringComparison.Ordinal), "the export lacks the INSERT");
             authoringCopy = guid;
+            Screenshot("placed");
             return true;
         }),
         ("place-shift-click-keeps-placing", () =>
@@ -565,6 +587,7 @@ public partial class TerrainViewer
             Require(creatures.Group.SequenceEqual(authoringGroup), "the group is not the primary followed by the two Ctrl-clicked creatures");
             Require(creatures.SmokeMeta.Contains("(+2 selected)", StringComparison.Ordinal), "the inspector does not say two more are selected: " + creatures.SmokeMeta);
             Require(!creatures.SmokeFields.Visible, "the spawn fields should hide while several creatures are selected");
+            Screenshot("group");
             // A second Ctrl-click on a member takes it out again.
             SmokeClick(camera.UnprojectPosition(creatures.PickPointOf(authoringGroup[2])), shift: false, ctrl: true);
             return true;
@@ -711,6 +734,7 @@ public partial class TerrainViewer
                 Require(text.Contains(item.Reference.Table, StringComparison.Ordinal), $"the dialog lacks {item.Reference.Table}");
             }
 
+            Screenshot("delete-dialog");
             Require(creatures.SmokeRecord(authoringReferenced) != null && drafts.Draft!.NetEdits().Count == 0, "the spawn was deleted before the answer");
             Require(creatures.SmokeAnswerDelete(false), "could not answer the dialog");
             return true;
@@ -1056,6 +1080,7 @@ public partial class TerrainViewer
     ulong[] authoringObjectGroup = [];
     bool authoringSkipObjectGroup;
     int authoringSettle;
+    Transform3D authoringCamera;
     Vector2 authoringBoxMin, authoringBoxMax;
     ulong[] authoringCopies = [];
     WorldPose[] authoringBefore = [];

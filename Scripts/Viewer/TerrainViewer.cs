@@ -154,7 +154,7 @@ public partial class TerrainViewer : Node3D
             gameObjects.PlaceCard.SetPlacing(template?.Kind == SpawnKind.GameObject ? template.Name : null);
             if (template != null)
             {
-                statusLog.Post($"Placing {template.Name}: click the ground. Shift-click keeps placing, Esc stops.");
+                statusLog.Post($"Placing {template.Name}. Esc stops.");
             }
         };
         BuildUi();

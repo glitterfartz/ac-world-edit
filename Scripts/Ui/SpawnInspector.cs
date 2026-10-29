@@ -75,7 +75,7 @@ public sealed partial class SpawnInspector : VBoxContainer
                     }
 
                     line.Editable = editable;
-                    line.PlaceholderText = field.Inheritable ? "template" : "";
+                    line.PlaceholderText = field.Inheritable ? field.EmptyHint : "";
                     break;
             }
 
@@ -117,7 +117,7 @@ public sealed partial class SpawnInspector : VBoxContainer
             editor.TooltipText = field.Tip;
             editor.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             line.AddChild(editor);
-            var reset = new Button { Text = "↺", TooltipText = "Use the template's value", Visible = false, FocusMode = FocusModeEnum.None };
+            var reset = new Button { Text = "↺", TooltipText = field.TemplateColumn != null ? "Use the template's value" : "Clear it and use the default", Visible = false, FocusMode = FocusModeEnum.None };
             reset.Pressed += () => Edited?.Invoke(field, "");
             line.AddChild(reset);
             body.AddChild(line);
