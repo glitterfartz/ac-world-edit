@@ -116,7 +116,12 @@ public partial class GraveyardOverlay
         var report = Report;
         Report = m => said = m;
         AddLink(zone, GraveyardLink.Neutral);
-        AddLink(9999999, GraveyardLink.Neutral);
+        if (Areas() != null)
+        {
+            // The retail profile has no client AreaTable yet, so an unknown area cannot be refused there.
+            AddLink(9999999, GraveyardLink.Neutral);
+        }
+
         Report = report;
         if (Current(id) != beforeInvalid || said?.StartsWith("Not saved", StringComparison.Ordinal) != true)
         {
