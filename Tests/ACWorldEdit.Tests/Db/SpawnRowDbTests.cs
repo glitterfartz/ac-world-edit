@@ -138,4 +138,31 @@ public class SpawnRowDbTests
 
     [TcDbFact]
     public async Task TrinityCoreCreatureAddonRowsComeWithTheSpawn() => await CheckAddonRows(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore, SpawnKind.Creature);
+
+    /// <summary>The rules mirror the server loader, so real rows should almost all satisfy them.</summary>
+    static async Task CheckRulesOnRealRows(IDBSource source, WorldDialect dialect, SpawnKind kind)
+    {
+        var preview = new SpawnPreview { Dialect = dialect };
+        var guids = kind == SpawnKind.Creature
+            ? (await source.ReadCreaturesAsync(Elwynn, preview, null, "", default)).Spawns.Select(s => s.Guid).ToArray()
+            : (await source.ReadGameObjectsAsync(Elwynn, preview, null, "", default)).Spawns.Select(s => s.Guid).ToArray();
+        var rows = await source.ReadSpawnRowsAsync(kind, guids.Take(500).ToArray(), default);
+        var table = SpawnEdits.SpawnTable(source.Schema, kind);
+        var all = rows.All(table);
+        Assert.NotEmpty(all);
+        var failing = SpawnRules.Check(dialect, kind, rows, table).Where(i => i.Error).Select(i => i.Message).ToArray();
+        Assert.True(failing.Length * 20 <= all.Count, $"{failing.Length} of {all.Count} real rows fail the rules, e.g. {string.Join(" | ", failing.Take(3))}");
+    }
+
+    [DbFact]
+    public async Task AzerothCoreRealCreaturesSatisfyTheRules() => await CheckRulesOnRealRows(AcSource(Config), WorldDialect.AzerothCore, SpawnKind.Creature);
+
+    [TcDbFact]
+    public async Task TrinityCoreRealCreaturesSatisfyTheRules() => await CheckRulesOnRealRows(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore, SpawnKind.Creature);
+
+    [DbFact]
+    public async Task AzerothCoreRealGameObjectsSatisfyTheRules() => await CheckRulesOnRealRows(AcSource(Config), WorldDialect.AzerothCore, SpawnKind.GameObject);
+
+    [TcDbFact]
+    public async Task TrinityCoreRealGameObjectsSatisfyTheRules() => await CheckRulesOnRealRows(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore, SpawnKind.GameObject);
 }

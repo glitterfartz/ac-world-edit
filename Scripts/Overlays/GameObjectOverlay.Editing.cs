@@ -62,7 +62,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     public void Attach(ContentDrafts drafts)
     {
         content = drafts;
-        poses = new SpawnPoses(drafts, SpawnKind.GameObject);
+        poses = new SpawnPoses(drafts, SpawnKind.GameObject, ContentDraftFiles.Sources.DialectOf);
         drafts.Changed += _ =>
         {
             if (IsInsideTree() && gizmo != null)

@@ -19,10 +19,17 @@ public sealed class SpawnPoses
     readonly Dictionary<string, RowSet> snapshots = [];
     Dictionary<(string Source, ulong Guid), RowEdit>? net;
 
-    public SpawnPoses(ContentDrafts drafts, SpawnKind kind)
+    readonly Func<string, WorldDialect>? dialectOf;
+
+    /// <summary>What the editor knows about the world; the rules that need a lookup run only when it is set.</summary>
+    public SpawnFacts Facts { get; set; } = new();
+
+    /// <param name="dialectOf">The dialect of a source, so each command is checked against that server's loader rules; without it nothing is checked.</param>
+    public SpawnPoses(ContentDrafts drafts, SpawnKind kind, Func<string, WorldDialect>? dialectOf = null)
     {
         this.drafts = drafts;
         this.kind = kind;
+        this.dialectOf = dialectOf;
         drafts.Changed += _ => net = null;
     }
 
@@ -35,6 +42,11 @@ public sealed class SpawnPoses
     TableSchema Table(string source) => drafts.Draft!.Tables(source).Find(TableName);
 
     RowSet Snapshot(string source) => snapshots.TryGetValue(source, out var rows) ? rows : snapshots[source] = new RowSet();
+
+    /// <summary>The rules of the source's server, applied to every spawn row; none without a dialect.</summary>
+    Func<RowSet, IEnumerable<InteractionIssue>> Rules(string source) => dialectOf == null
+        ? _ => []
+        : rows => SpawnRules.Check(dialectOf(source), kind, rows, Table(source), Facts);
 
     /// <summary>Remember database rows as the baseline of later edits (replaces a row loaded before).</summary>
     public void Load(string source, IEnumerable<Row> rows)
@@ -219,7 +231,7 @@ public sealed class SpawnPoses
         try
         {
             var edit = InteractionEdits.Update(table, before, apply(before));
-            return drafts.Commit(sender, source, snapshot, effective, label, [edit], _ => []);
+            return drafts.Commit(sender, source, snapshot, effective, label, [edit], Rules(source));
         }
         catch (InvalidDataException error)
         {
@@ -236,7 +248,7 @@ public sealed class SpawnPoses
         }
 
         var snapshot = Snapshot(source);
-        return drafts.Commit(sender, source, snapshot, drafts.Draft.Effective(source, snapshot), label, edits, _ => []);
+        return drafts.Commit(sender, source, snapshot, drafts.Draft.Effective(source, snapshot), label, edits, Rules(source));
     }
 
     /// <summary>Delete a spawn and its addon row as one undoable command. The spawn's row must be loaded (or staged in the draft).</summary>
