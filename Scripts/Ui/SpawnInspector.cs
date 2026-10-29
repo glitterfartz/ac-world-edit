@@ -21,7 +21,6 @@ public sealed partial class SpawnInspector : VBoxContainer
 
     readonly Dictionary<string, Entry> entries = [];
     readonly VBoxContainer body = new();
-    readonly Button header = new() { ToggleMode = true, ButtonPressed = true, Flat = true, Alignment = HorizontalAlignment.Left };
     WorldDialect? dialect;
     SpawnKind? kind;
     bool showing;
@@ -36,17 +35,10 @@ public sealed partial class SpawnInspector : VBoxContainer
     public event Action<SpawnField, string>? Edited;
 
     /// <param name="appearanceOnly">Show only the appearance fields, for the template's own addon page.</param>
-    public SpawnInspector(bool appearanceOnly = false, string title = "Spawn fields")
+    public SpawnInspector(bool appearanceOnly = false)
     {
         this.appearanceOnly = appearanceOnly;
         Name = "SpawnInspector";
-        header.Text = "▾ " + title;
-        header.Toggled += open =>
-        {
-            body.Visible = open;
-            header.Text = (open ? "▾ " : "▸ ") + title;
-        };
-        AddChild(header);
         AddChild(body);
         Visible = false;
     }
@@ -236,8 +228,6 @@ public sealed partial class SpawnInspector : VBoxContainer
     }
 
     public void SmokePressReset(string column) => entries[column].Reset.EmitSignal(BaseButton.SignalName.Pressed);
-
-    public bool SmokeOpen => body.Visible;
 
     /// <summary>The note under the Appearance header, for tests: which appearance is in force.</summary>
     public string SmokeNote => appearanceNote is { Visible: true } ? appearanceNote.Text : "";

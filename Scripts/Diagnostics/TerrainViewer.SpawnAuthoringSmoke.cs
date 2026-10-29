@@ -303,7 +303,7 @@ public partial class TerrainViewer
             }
 
             var fields = creatures.SmokeFields;
-            Require(fields.Visible && fields.SmokeOpen, "the spawn fields are not shown for a selected creature");
+            Require(fields.Visible, "the spawn fields are not shown for a selected creature");
             var respawn = fields.Field("spawntimesecs");
             Require(respawn?.Text == row["spawntimesecs"], $"respawn shows '{respawn?.Text}' but the row holds {row["spawntimesecs"]}");
             var flags = fields.Field("npcflag")!.Value;

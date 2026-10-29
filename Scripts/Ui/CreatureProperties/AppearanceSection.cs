@@ -12,7 +12,7 @@ namespace ACWorldEdit;
 public sealed partial class AppearanceSection : CreatureSection
 {
     readonly Label use = ClientStyle.Text("", 14, ClientStyle.Body);
-    readonly SpawnInspector fields = new(appearanceOnly: true, title: "Template appearance");
+    readonly SpawnInspector fields = new(appearanceOnly: true);
     TemplateAddons? addons;
     TemplateUse? templateUse;
     uint useFor;
