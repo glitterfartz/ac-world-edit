@@ -354,6 +354,7 @@ public partial class GameObjectOverlay : RegionOverlay
         selectionLabel.Text = spawn.Name;
         selectionLabel.Position = ViewPosition(spawn) + Vector3.Up * 2;
         ShowPose(spawn.Pose);
+        RefreshSpawnFields();
     }
 
     public void Deselect()
@@ -373,6 +374,7 @@ public partial class GameObjectOverlay : RegionOverlay
             identity.Text = "Click a model or choose one above";
             details.Text = "Selection details appear here.";
             ShowPose(null);
+            RefreshSpawnFields();
         }
     }
 

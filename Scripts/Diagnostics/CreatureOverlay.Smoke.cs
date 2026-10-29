@@ -383,4 +383,9 @@ public partial class CreatureOverlay
         var guids = records.Select(s => s.Guid).Take(500).ToArray();
         return SpawnImpact.Orphaned(Task.Run(() => source.ReadSpawnPathsAsync(guids, default)).GetAwaiter().GetResult()).FirstOrDefault();
     }
+
+    public SpawnInspector SmokeFields => spawnFields;
+
+    /// <summary>The selected creature's row with the draft applied.</summary>
+    public Row? SmokeRow() => selectedGuid.HasValue ? poses?.RowOf(sourceKey, selectedGuid.Value) : null;
 }

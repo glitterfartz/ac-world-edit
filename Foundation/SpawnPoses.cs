@@ -213,6 +213,23 @@ public sealed class SpawnPoses
         });
     }
 
+    /// <summary>The spawn's row with the draft applied, or null while its row is still loading.</summary>
+    public Row? RowOf(string source, ulong guid) => drafts.Draft?.Effective(source, Snapshot(source)).Get(Table(source), Key(guid));
+
+    /// <summary>
+    /// Change some columns of a spawn row as one undoable command named <paramref name="label"/>. A
+    /// change that leaves the row as it was records nothing.
+    /// </summary>
+    public (bool Ok, string Message) Edit(object? sender, string source, ulong guid, string label, Func<Row, Row> change)
+    {
+        if (RowOf(source, guid) is { } current && change(current) == current)
+        {
+            return (true, "");
+        }
+
+        return Change(sender, source, guid, label, change);
+    }
+
     (bool Ok, string Message) Change(object? sender, string source, ulong guid, string label, Func<Row, Row> apply)
     {
         if (drafts.Draft == null)

@@ -51,6 +51,7 @@ public partial class GameObjectOverlay
         }
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
+        BuildSpawnFields(card);
         return scroll;
     }
 

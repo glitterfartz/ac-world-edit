@@ -36,6 +36,9 @@ public interface IDBSource
     /// <summary>The waypoint paths these creatures walk, with node counts and how many others use each path; creatures without a path are left out.</summary>
     Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>The named columns of one creature or GameObject template, as text; a column the database lacks, or a template it lacks, is left out.</summary>
+    Task<IReadOnlyDictionary<string, string>> ReadTemplateColumnsAsync(SpawnKind kind, uint entry, IReadOnlyList<string> columns, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 

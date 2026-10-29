@@ -173,4 +173,8 @@ public partial class GameObjectOverlay
     public string? SmokeDeleteDialog => SpawnSmoke.Text(deleteDialog);
 
     public bool SmokeAnswerDelete(bool delete) => SpawnSmoke.Answer(deleteDialog, delete);
+
+    public SpawnInspector SmokeFields => spawnFields;
+
+    public Row? SmokeRow() => selected.HasValue ? poses?.RowOf(sourceKey, selected.Value) : null;
 }

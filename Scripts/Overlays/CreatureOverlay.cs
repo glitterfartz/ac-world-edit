@@ -28,7 +28,14 @@ public partial class CreatureOverlay : RegionOverlay
     /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
     public Action<string>? Report { get; set; }
 
-    void Say(string message) => Report?.Invoke(message);
+    /// <summary>The last status message, so a test can read what the user was told.</summary>
+    public string LastMessage { get; private set; } = "";
+
+    void Say(string message)
+    {
+        LastMessage = message;
+        Report?.Invoke(message);
+    }
     TransformGizmo gizmo = null!;
     OptionButton animation = null!;
     ushort previewAnimation;
@@ -85,6 +92,7 @@ public partial class CreatureOverlay : RegionOverlay
         selectionMeta.Text = "Click a model or choose one above";
         details.Text = "Selection details appear here.";
         ShowPose(null);
+        RefreshSpawnFields();
     }
 
     // The query may finish after cancellation; RegionQuery publishes only the current generation
@@ -144,6 +152,7 @@ public partial class CreatureOverlay : RegionOverlay
         {
             var rows = await DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.Creature, [guid], default);
             poses.Load(key, rows);
+            RefreshSpawnFields();
         }
         catch (Exception)
         {
@@ -643,6 +652,7 @@ public partial class CreatureOverlay : RegionOverlay
         ShowPose(pose);
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid);
+        RefreshSpawnFields();
     }
 
     /// <summary>

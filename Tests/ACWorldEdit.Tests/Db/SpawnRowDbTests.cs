@@ -165,4 +165,29 @@ public class SpawnRowDbTests
 
     [TcDbFact]
     public async Task TrinityCoreRealGameObjectsSatisfyTheRules() => await CheckRulesOnRealRows(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore, SpawnKind.GameObject);
+
+    static async Task CheckTemplateColumns(IDBSource source, WorldDialect dialect)
+    {
+        var region = await source.ReadCreaturesAsync(Elwynn, new SpawnPreview { Dialect = dialect }, null, "", default);
+        var spawn = region.Spawns.First();
+        var wanted = SpawnFields.TemplateColumns(dialect, SpawnKind.Creature);
+        var values = await source.ReadTemplateColumnsAsync(SpawnKind.Creature, spawn.TemplateId, wanted, default);
+        // Every column the inspector shows a template value for exists, and flags read back as numbers.
+        Assert.Equal(wanted.OrderBy(c => c), values.Keys.OrderBy(c => c));
+        foreach (string flag in wanted.Where(c => c != "ScriptName"))
+        {
+            Assert.True(long.TryParse(values[flag], out _), $"{flag}: '{values[flag]}'");
+        }
+
+        Assert.Equal(["ScriptName"], (await source.ReadTemplateColumnsAsync(SpawnKind.Creature, spawn.TemplateId, ["ScriptName", "no_such_column"], default)).Keys);
+        Assert.Empty(await source.ReadTemplateColumnsAsync(SpawnKind.Creature, uint.MaxValue, wanted, default));
+        Assert.Empty(await source.ReadTemplateColumnsAsync(SpawnKind.Creature, spawn.TemplateId, [], default));
+        Assert.Contains("ScriptName", (await source.ReadTemplateColumnsAsync(SpawnKind.GameObject, (await source.ReadGameObjectsAsync(Elwynn, new SpawnPreview { Dialect = dialect }, null, "", default)).Spawns.First().TemplateId, ["ScriptName"], default)).Keys);
+    }
+
+    [DbFact]
+    public async Task AzerothCoreTemplateColumnsBehindTheOverridesRead() => await CheckTemplateColumns(AcSource(Config), WorldDialect.AzerothCore);
+
+    [TcDbFact]
+    public async Task TrinityCoreTemplateColumnsBehindTheOverridesRead() => await CheckTemplateColumns(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore);
 }

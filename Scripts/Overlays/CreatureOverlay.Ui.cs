@@ -63,6 +63,7 @@ public partial class CreatureOverlay
         }
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
+        BuildSpawnFields(card);
         var interactions = InspectorUi.Card(page, "Interactions");
         interactionSummary = InspectorUi.Text("Select a creature to see its interactions.", 12, true);
         interactions.AddChild(interactionSummary);

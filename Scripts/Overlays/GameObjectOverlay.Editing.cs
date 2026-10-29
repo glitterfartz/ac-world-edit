@@ -20,7 +20,14 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
     public Action<string>? Report { get; set; }
 
-    void Say(string message) => Report?.Invoke(message);
+    /// <summary>The last status message, so a test can read what the user was told.</summary>
+    public string LastMessage { get; private set; } = "";
+
+    void Say(string message)
+    {
+        LastMessage = message;
+        Report?.Invoke(message);
+    }
 
     /// <summary>Viewer-supplied probe over loaded terrain and ready WMO floors; unset means no snapping.</summary>
     public Func<Vector3, GroundHit>? GroundAt { get; set; }
@@ -91,6 +98,7 @@ public partial class GameObjectOverlay : IPlacementEditor
         {
             var rows = await DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.GameObject, [guid], default);
             poses.Load(key, rows);
+            RefreshSpawnFields();
         }
         catch (Exception)
         {

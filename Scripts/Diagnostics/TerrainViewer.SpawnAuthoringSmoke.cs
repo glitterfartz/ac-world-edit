@@ -294,6 +294,85 @@ public partial class TerrainViewer
             Require(creatures.SmokeRecord(authoringTemplate.Guid) != null && drafts.Draft!.NetEdits().Count == 0, "undo did not restore the deleted creature");
             return true;
         }),
+        ("fields-show-the-row", () =>
+        {
+            creatures.Select(authoringTemplate!.Guid);
+            if (creatures.SelectedGuid != authoringTemplate.Guid || !creatures.CanDelete || creatures.SmokeRow() is not { } row)
+            {
+                return false;
+            }
+
+            var fields = creatures.SmokeFields;
+            Require(fields.Visible && fields.SmokeOpen, "the spawn fields are not shown for a selected creature");
+            var respawn = fields.Field("spawntimesecs");
+            Require(respawn?.Text == row["spawntimesecs"], $"respawn shows '{respawn?.Text}' but the row holds {row["spawntimesecs"]}");
+            var flags = fields.Field("npcflag")!.Value;
+            bool tc = ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore;
+            if (tc)
+            {
+                // Most TrinityCore spawns inherit their flags: the field is empty and the template's value shows through.
+                Require(row.IsNull("npcflag") == (flags.Text == ""), "the npcflag field disagrees with the row's NULL");
+                if (flags.Text == "" && !flags.Template.StartsWith("Template: ", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            authoringRespawn = row["spawntimesecs"];
+            return true;
+        }),
+        ("fields-edit-respawn", () =>
+        {
+            creatures.SmokeFields.SmokeType("spawntimesecs", "777");
+            return true;
+        }),
+        ("fields-respawn-saved-and-exported", () =>
+        {
+            Require(creatures.SmokeRow()?["spawntimesecs"] == "777", "the respawn was not saved");
+            Require(creatures.LastMessage == "Saved.", "the user was told: " + creatures.LastMessage);
+            Require(drafts.Draft!.NetEdits().Count == 1, "one field edit should be one net change");
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("UPDATE `creature` SET `spawntimesecs` = 777", StringComparison.Ordinal), "the export lacks the respawn update");
+            creatures.SmokeFields.SmokeType("wander_distance", "6");
+            return true;
+        }),
+        ("fields-radius-makes-it-wander", () =>
+        {
+            var row = creatures.SmokeRow()!;
+            Require(row["MovementType"] == "1" && row.F("wander_distance") == 6, "a wander radius should switch the creature to wandering");
+            Require(creatures.SmokeFields.Field("MovementType")!.Value.Text == "Wanders", "the movement field does not show the change");
+            creatures.SmokeFields.SmokeType("spawntimesecs", "-5");
+            return true;
+        }),
+        ("fields-refused-value-snaps-back", () =>
+        {
+            Require(creatures.SmokeRow()!["spawntimesecs"] == "777", "an invalid respawn changed the row");
+            Require(creatures.SmokeFields.Field("spawntimesecs")!.Value.Text == "777", "the field kept the refused text");
+            Require(creatures.LastMessage.Contains("Respawn after", StringComparison.Ordinal), "the user was not told why: " + creatures.LastMessage);
+            creatures.SmokeFields.SmokeType("npcflag", "3");
+            return true;
+        }),
+        ("fields-override-then-use-template", () =>
+        {
+            var flags = creatures.SmokeFields.Field("npcflag")!.Value;
+            Require(creatures.SmokeRow()!["npcflag"] == "3" && flags.Text == "3" && flags.CanReset, "the override did not stick or no reset is offered");
+            creatures.SmokeFields.SmokePressReset("npcflag");
+            return true;
+        }),
+        ("fields-reset-and-undo-everything", () =>
+        {
+            var row = creatures.SmokeRow()!;
+            bool tc = ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore;
+            Require(tc ? row.IsNull("npcflag") : row["npcflag"] == "0", "Use template did not clear the override");
+            Require(!creatures.SmokeFields.Field("npcflag")!.Value.CanReset, "Use template is still offered");
+            for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
+            {
+                creatures.SmokeHistory(false);
+            }
+
+            Require(drafts.Draft!.NetEdits().Count == 0 && creatures.SmokeRow()!["spawntimesecs"] == authoringRespawn, "undo did not restore the row");
+            Require(creatures.SmokeFields.Field("spawntimesecs")!.Value.Text == authoringRespawn, "the field does not show the restored value");
+            return true;
+        }),
         ("referenced-creature-select", () =>
         {
             if (authoringReferenced == 0)
@@ -471,6 +550,39 @@ public partial class TerrainViewer
             Require(drafts.Draft!.NetEdits().Count == 0, "placing then deleting a copy should leave nothing to export");
             return true;
         }),
+        ("object-fields", () =>
+        {
+            gameObjects.SmokeSelect(authoringObject!.Guid);
+            if (gameObjects.SmokeSelected != authoringObject.Guid || !gameObjects.CanDelete || gameObjects.SmokeRow() is not { } row)
+            {
+                return false;
+            }
+
+            var fields = gameObjects.SmokeFields;
+            Require(fields.Visible && fields.Field("state") != null && fields.Field("animprogress") != null, "the GameObject fields are not shown");
+            Require(fields.Field("spawntimesecs")!.Value.Text == row["spawntimesecs"], "respawn does not show the row");
+            fields.SmokeType("state", "Active (open)");
+            return true;
+        }),
+        ("object-state-saved-and-bad-animation-refused", () =>
+        {
+            Require(gameObjects.SmokeRow()!["state"] == "0" && gameObjects.SmokeFields.Field("state")!.Value.Text == "Active (open)", "the state was not saved");
+            Require(AuthoringScript(gameObjects.SmokeSourceKey).Contains("`state` = 0", StringComparison.Ordinal), "the export lacks the state update");
+            gameObjects.SmokeFields.SmokeType("animprogress", "300");
+            return true;
+        }),
+        ("object-refused-and-undone", () =>
+        {
+            Require(gameObjects.SmokeRow()!["animprogress"] != "300" && gameObjects.SmokeFields.Field("animprogress")!.Value.Text != "300", "an out-of-range animation progress was accepted");
+            Require(gameObjects.LastMessage.Contains("Animation progress", StringComparison.Ordinal), "the user was not told why: " + gameObjects.LastMessage);
+            for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
+            {
+                gameObjects.SmokeHistory(false);
+            }
+
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
+            return true;
+        }),
         ("referenced-gameobject", () =>
         {
             if (authoringReferenced == 0 || authoringKind != SpawnKind.GameObject)
@@ -537,6 +649,7 @@ public partial class TerrainViewer
     IReadOnlyList<SpawnImpactItem> authoringItems = [];
     SpawnKind authoringKind = SpawnKind.Creature;
     bool authoringSkipObject;
+    string authoringRespawn = "";
     SpawnPathUse? authoringPath;
     bool authoringSkipPath;
 
