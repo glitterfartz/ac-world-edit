@@ -24,6 +24,12 @@ public interface IPlacementEditor
     void ResetToSource();
     void CopyGoCommand();
     void FlyToSelection();
+    /// <summary>True when the selection can be copied (spawns); graveyards and waypoints cannot yet.</summary>
+    bool CanDuplicate => false;
+    /// <summary>True when the selection can be removed (spawns).</summary>
+    bool CanDelete => false;
+    void Duplicate() { }
+    void Delete() { }
     bool BeginDrag(Camera3D camera, Vector2 screen);
     void Drag(Camera3D camera, Vector2 screen);
     void EndDrag(bool commit);

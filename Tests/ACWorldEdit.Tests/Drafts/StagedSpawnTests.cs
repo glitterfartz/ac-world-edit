@@ -114,4 +114,82 @@ public class StagedSpawnTests
         Assert.Equal(MathF.Sin(1.0f), spawn.Rotation.Z, 4);
         Assert.Equal(System.Numerics.Quaternion.Zero, spawn.StoredRotation);
     }
+
+    static (ContentDrafts Drafts, SpawnPoses Poses, Row Spawn, Row Addon) LoadedCreature()
+    {
+        var drafts = Open(TcTables.Instance);
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature);
+        var spawn = SpawnEdits.NewCreature(TcSchema.Instance, 5, 1234, Here, 1, 0);
+        var addon = Row.Of(TcTables.SpawnCreatureAddon.Columns.Select(c => (c.Name, c.Name == "guid" ? 5ul : c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0)).ToArray());
+        addon = addon.With("auras", null);
+        var rows = new RowSet();
+        rows.Set(TcTables.SpawnCreature, spawn);
+        rows.Set(TcTables.SpawnCreatureAddon, addon);
+        poses.Load(Source, rows);
+        return (drafts, poses, spawn, addon);
+    }
+
+    [Fact]
+    public void DeletingASpawnRemovesItsAddonFirstAndUndoRestoresBoth()
+    {
+        var (drafts, poses, spawn, addon) = LoadedCreature();
+        var (ok, message) = poses.Delete(null, TcSchema.Instance, Source, 5);
+        Assert.True(ok, message);
+        Assert.True(poses.Deleted(Source, 5));
+        var edits = drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray();
+        Assert.Equal(["creature_addon", "creature"], edits.Select(e => e.Table));
+        Assert.Equal(spawn, edits[1].Before);
+        string apply = SqlExport.Build(Source, [], edits, null, null, TcSchema.Instance).Apply;
+        Assert.True(apply.IndexOf("DELETE FROM `creature_addon`", StringComparison.Ordinal) < apply.IndexOf("DELETE FROM `creature` WHERE", StringComparison.Ordinal));
+
+        poses.Undo(null);
+        Assert.False(poses.Deleted(Source, 5));
+        Assert.Empty(drafts.Draft.NetEdits());
+        _ = addon;
+    }
+
+    [Fact]
+    public void DeletingAPlacedSpawnLeavesNothingToExport()
+    {
+        using var drafts = Open(TcTables.Instance);
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature);
+        var row = SpawnEdits.NewCreature(TcSchema.Instance, 9_000_001, 1234, Here, 0, 0);
+        poses.Commit(null, Source, "Place", SpawnEdits.Place(TcSchema.Instance, SpawnKind.Creature, row));
+
+        var (ok, message) = poses.Delete(null, TcSchema.Instance, Source, 9_000_001);
+        Assert.True(ok, message);
+        Assert.Empty(drafts.Draft!.NetEdits());
+        Assert.Empty(poses.Inserted(Source));
+    }
+
+    [Fact]
+    public void ADuplicateKeepsEquipmentAndAddonUnderANewGuid()
+    {
+        var (drafts, poses, spawn, _) = LoadedCreature();
+        var target = Here with { X = Here.X + 2 };
+        var (ok, message) = poses.Duplicate(null, TcSchema.Instance, Source, 5, 6, target);
+        Assert.True(ok, message);
+
+        var copy = Assert.Single(poses.Inserted(Source));
+        Assert.Equal((6ul, 1234u, 1), (copy.UL("guid"), copy.U("id"), copy.I("equipment_id")));
+        Assert.Equal(target, SpawnEdits.PoseOf(copy));
+        Assert.Equal(["creature", "creature_addon"], drafts.Draft!.NetEdits().Select(e => e.Edit.Table).OrderByDescending(t => t == "creature"));
+        Assert.Equal("6", drafts.Draft.NetEdits().Single(e => e.Edit.Table == "creature_addon").Edit.Key);
+
+        poses.Undo(null);
+        Assert.Empty(poses.Inserted(Source));
+        _ = spawn;
+    }
+
+    [Fact]
+    public void ADuplicateCannotLeaveTheMapAndAnUnloadedSpawnIsRefused()
+    {
+        var (_, poses, _, _) = LoadedCreature();
+        var (ok, message) = poses.Duplicate(null, TcSchema.Instance, Source, 5, 6, Here with { Map = 1 });
+        Assert.False(ok);
+        Assert.Contains("map", message);
+
+        Assert.Contains("loading", poses.Delete(null, TcSchema.Instance, Source, 777).Message);
+        Assert.Contains("loading", poses.Duplicate(null, TcSchema.Instance, Source, 777, 778, Here).Message);
+    }
 }

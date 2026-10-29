@@ -337,4 +337,12 @@ public partial class CreatureOverlay
     public void SmokeHistory(bool redo) => History(redo);
 
     public Vector3 SmokeViewPosition(WorldPose pose) => ViewPosition(pose);
+
+    /// <summary>Whether the inspector's Duplicate and Delete buttons are enabled.</summary>
+    public (bool Duplicate, bool Delete) SmokeCopyButtons => (!duplicate.Disabled, !remove.Disabled);
+
+    /// <summary>Press the inspector's Delete button through its signal.</summary>
+    public void SmokePressDelete() => remove.EmitSignal(BaseButton.SignalName.Pressed);
+
+    public void SmokePressDuplicate() => duplicate.EmitSignal(BaseButton.SignalName.Pressed);
 }

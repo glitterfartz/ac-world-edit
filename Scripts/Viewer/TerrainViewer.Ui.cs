@@ -402,6 +402,9 @@ public partial class TerrainViewer
         toolbar.Action("Undo", "Undo the last local change for the selected kind (Ctrl+Z)", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging);
         toolbar.Action("Redo", "Redo (Ctrl+Y)", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, EditorToolbar.Shortcut(Key.Z, ctrl: true, shift: true));
         toolbar.Separator();
+        toolbar.Action("Duplicate", "Copy the selected spawn two yards ahead of it (Ctrl+D)", () => ActiveEditor.Duplicate(), () => ActiveEditor.CanDuplicate && !ActiveEditor.IsDragging);
+        toolbar.Action("Delete", "Delete the selected spawn (Del)", () => ActiveEditor.Delete(), () => ActiveEditor.CanDelete && !ActiveEditor.IsDragging);
+        toolbar.Separator();
         toolbar.Action("Drop to ground", "Snap the selection to terrain or a building floor below it (End)", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit);
         toolbar.Toggle("Snap on drop", "Snap to the ground when you release a move drag", value =>
         {

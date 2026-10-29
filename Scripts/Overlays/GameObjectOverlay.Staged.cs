@@ -82,6 +82,68 @@ public partial class GameObjectOverlay
         Populate();
     }
 
+    /// <summary>The selected GameObject has its row loaded (or is staged), so it can be copied or deleted.</summary>
+    bool RowReady => poses?.Available == true && selected is ulong guid && (poses.Has(sourceKey, guid) || IsStaged(guid));
+
+    public bool CanDuplicate => RowReady;
+    public bool CanDelete => RowReady;
+
+    /// <summary>Delete the selected GameObject and its addon as one undoable command.</summary>
+    public void Delete()
+    {
+        if (poses == null || !selected.HasValue || !lookup.TryGetValue(selected.Value, out var spawn))
+        {
+            return;
+        }
+
+        gizmo.Finish(false);
+        var (ok, message) = poses.Delete(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, spawn.Guid);
+        Say(ok ? $"Deleted {spawn.Name}." : message);
+    }
+
+    /// <summary>Copy the selected GameObject two yards ahead of it, on the ground, and select the copy.</summary>
+    public async void Duplicate() => await DuplicateAsync();
+
+    public async Task<ulong?> DuplicateAsync()
+    {
+        if (poses == null || !selected.HasValue || !lookup.TryGetValue(selected.Value, out var source))
+        {
+            return null;
+        }
+
+        gizmo.Finish(false);
+        var config = Connection();
+        var database = DBSource.Open(config);
+        string key = sourceKey;
+        try
+        {
+            ulong max = await database.MaxIdAsync(SpawnEdits.SpawnTable(database.Schema, SpawnKind.GameObject), "guid", default);
+            ulong guid = poses.NextGuid(key, max);
+            RememberLook(source.TemplateId, new GameObjectLook(source.Name, source.DisplayId, source.Scale, source.Type));
+            var (ok, message) = poses.Duplicate(this, database.Schema, key, source.Guid, guid, CopyPose(Effective(source).Pose));
+            Say(ok ? $"Duplicated {source.Name}." : message);
+            if (!ok)
+            {
+                return null;
+            }
+
+            Select(guid);
+            return guid;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            Say("Could not duplicate the GameObject: " + error.Message);
+            return null;
+        }
+    }
+
+    /// <summary>Two yards along the facing, dropped to the ground when the probe finds one.</summary>
+    WorldPose CopyPose(WorldPose pose)
+    {
+        var ahead = pose with { X = pose.X + 2 * Math.Cos(pose.Heading), Y = pose.Y + 2 * Math.Sin(pose.Heading) };
+        return GroundAt?.Invoke(ViewSpace.ToView(ahead.X, ahead.Y, ahead.Z)).Height is float height ? ahead with { Z = height } : ahead;
+    }
+
     /// <summary>True for a spawn only the draft holds, so there is no database row to read.</summary>
     bool IsStaged(ulong guid) => poses?.Inserted(sourceKey).Any(r => r.UL("guid") == guid) == true;
 

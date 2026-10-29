@@ -153,4 +153,13 @@ public partial class GameObjectOverlay
 
     /// <summary>Undo or redo through the same path as the toolbar buttons and shortcuts.</summary>
     public void SmokeHistory(bool redo) => History(redo);
+
+    /// <summary>Whether the inspector's Duplicate and Delete buttons are enabled.</summary>
+    public (bool Duplicate, bool Delete) SmokeCopyButtons => (!duplicate.Disabled, !remove.Disabled);
+
+    public void SmokePressDelete() => remove.EmitSignal(BaseButton.SignalName.Pressed);
+
+    public void SmokePressDuplicate() => duplicate.EmitSignal(BaseButton.SignalName.Pressed);
+
+    public void SmokeSelect(ulong guid) => Select(guid);
 }

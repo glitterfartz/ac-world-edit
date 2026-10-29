@@ -115,4 +115,27 @@ public class SpawnRowDbTests
 
     [TcDbFact]
     public async Task TrinityCoreGameObjectLooksMatchTheRegionRead() => await CheckGameObjectLooks(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore);
+
+    /// <summary>A spawn read for editing brings its addon row, so a delete or a copy can carry it.</summary>
+    static async Task CheckAddonRows(IDBSource source, WorldDialect dialect, SpawnKind kind)
+    {
+        var preview = new SpawnPreview { Dialect = dialect };
+        IReadOnlyList<ulong> guids = kind == SpawnKind.Creature
+            ? (await source.ReadCreaturesAsync(Elwynn, preview, null, "", default)).Spawns.Select(s => s.Guid).ToArray()
+            : (await source.ReadGameObjectsAsync(Elwynn, preview, null, "", default)).Spawns.Select(s => s.Guid).ToArray();
+        var rows = await source.ReadSpawnRowsAsync(kind, guids.Take(300).ToArray(), default);
+        var addons = rows.All(SpawnEdits.AddonTable(source.Schema, kind));
+        Assert.NotEmpty(addons);
+        foreach (var addon in addons)
+        {
+            addon.Validate(SpawnEdits.AddonTable(source.Schema, kind));
+            Assert.NotNull(rows.Get(SpawnEdits.SpawnTable(source.Schema, kind), addon["guid"]));
+        }
+    }
+
+    [DbFact]
+    public async Task AzerothCoreCreatureAddonRowsComeWithTheSpawn() => await CheckAddonRows(AcSource(Config), WorldDialect.AzerothCore, SpawnKind.Creature);
+
+    [TcDbFact]
+    public async Task TrinityCoreCreatureAddonRowsComeWithTheSpawn() => await CheckAddonRows(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore, SpawnKind.Creature);
 }

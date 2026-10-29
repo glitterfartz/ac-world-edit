@@ -71,6 +71,9 @@ public partial class TerrainViewer
         menu.Command(edit, "Undo", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging, ctrl | Key.Z);
         menu.Command(edit, "Redo", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, ctrl | Key.Y);
         edit.AddSeparator();
+        menu.Command(edit, "Duplicate", () => ActiveEditor.Duplicate(), () => ActiveEditor.CanDuplicate && !ActiveEditor.IsDragging, ctrl | Key.D);
+        menu.Command(edit, "Delete", () => ActiveEditor.Delete(), () => ActiveEditor.CanDelete && !ActiveEditor.IsDragging, Key.Delete);
+        edit.AddSeparator();
         menu.Command(edit, "Drop to ground", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit, Key.End);
         menu.Command(edit, "Reset to source", () => ActiveEditor.ResetToSource(), () => ActiveEditor.CanEdit);
         menu.Command(edit, "Copy .go command", () => ActiveEditor.CopyGoCommand(), () => ActiveEditor.HasSelection, ctrl | shift | Key.C);

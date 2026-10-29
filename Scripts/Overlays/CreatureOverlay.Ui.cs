@@ -5,6 +5,7 @@ namespace ACWorldEdit;
 /// <summary>Focused entity page; scene visibility and external connection settings live on the Scene tab.</summary>
 public partial class CreatureOverlay
 {
+    Button duplicate = null!, remove = null!;
     Button fly = null!, undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!, properties = null!;
     Label interactionSummary = null!;
     // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
@@ -45,6 +46,14 @@ public partial class CreatureOverlay
         redo = InspectorUi.Button("Redo move", () => History(true));
         history.AddChild(undo);
         history.AddChild(redo);
+        var copies = new HBoxContainer();
+        card.AddChild(copies);
+        duplicate = InspectorUi.Button("Duplicate", Duplicate);
+        duplicate.TooltipText = "Copy two yards ahead (Ctrl+D)";
+        remove = InspectorUi.Button("Delete", Delete);
+        remove.TooltipText = "Delete this spawn (Del)";
+        copies.AddChild(duplicate);
+        copies.AddChild(remove);
         card.AddChild(new HSeparator());
         card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
         EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], poseFields, SubmitPose);
@@ -130,5 +139,7 @@ public partial class CreatureOverlay
         fly.Disabled = !LayerEnabled || !selectedGuid.HasValue || !markers.ContainsKey(selectedGuid.Value);
         undo.Disabled = !CanUndo;
         redo.Disabled = !CanRedo;
+        duplicate.Disabled = !CanDuplicate;
+        remove.Disabled = !CanDelete;
     }
 }

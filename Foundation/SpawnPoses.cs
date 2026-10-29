@@ -54,9 +54,17 @@ public sealed class SpawnPoses
     /// <summary>Remember the spawn rows of a database read as the baseline of later edits.</summary>
     public void Load(string source, RowSet rows)
     {
-        if (Available)
+        if (!Available)
         {
-            Load(source, rows.All(Table(source)));
+            return;
+        }
+
+        Load(source, rows.All(Table(source)));
+        // The addon row is part of the spawn: a delete or a copy must carry it along.
+        var addon = drafts.Draft!.Tables(source).Find(kind == SpawnKind.Creature ? "creature_addon" : "gameobject_addon");
+        foreach (var row in rows.All(addon))
+        {
+            Snapshot(source).Set(addon, row);
         }
     }
 
@@ -229,6 +237,46 @@ public sealed class SpawnPoses
 
         var snapshot = Snapshot(source);
         return drafts.Commit(sender, source, snapshot, drafts.Draft.Effective(source, snapshot), label, edits, _ => []);
+    }
+
+    /// <summary>Delete a spawn and its addon row as one undoable command. The spawn's row must be loaded (or staged in the draft).</summary>
+    public (bool Ok, string Message) Delete(object? sender, IWorldSchema schema, string source, ulong guid, string label = "Delete")
+    {
+        if (drafts.Draft == null)
+        {
+            return (false, drafts.Error ?? "Editing is disabled.");
+        }
+
+        var snapshot = Snapshot(source);
+        var effective = drafts.Draft.Effective(source, snapshot);
+        return effective.Get(Table(source), Key(guid)) is not { } row
+            ? (false, "The spawn is still loading; try again.")
+            : Commit(sender, source, label, SpawnEdits.Delete(schema, kind, effective, row));
+    }
+
+    /// <summary>Copy a spawn, with its addon, to <paramref name="pose"/> under <paramref name="newGuid"/> as one undoable command.</summary>
+    public (bool Ok, string Message) Duplicate(object? sender, IWorldSchema schema, string source, ulong guid, ulong newGuid, WorldPose pose, string label = "Duplicate")
+    {
+        if (drafts.Draft == null)
+        {
+            return (false, drafts.Error ?? "Editing is disabled.");
+        }
+
+        var snapshot = Snapshot(source);
+        var effective = drafts.Draft.Effective(source, snapshot);
+        if (effective.Get(Table(source), Key(guid)) is not { } row)
+        {
+            return (false, "The spawn is still loading; try again.");
+        }
+
+        try
+        {
+            return Commit(sender, source, label, SpawnEdits.Duplicate(schema, kind, effective, row, newGuid, pose));
+        }
+        catch (InvalidDataException error)
+        {
+            return (false, "Not saved: " + error.Message);
+        }
     }
 
     public string Undo(object? sender) => drafts.History(sender, false);

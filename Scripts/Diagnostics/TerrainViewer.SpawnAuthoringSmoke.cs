@@ -207,6 +207,147 @@ public partial class TerrainViewer
             gameObjects.SmokeHistory(false);
             Require(drafts.Draft!.NetEdits().Count == 0, "the draft should be empty again");
             return true;
+        }),
+        ("copy-select-creature", () =>
+        {
+            creatures.Select(authoringTemplate!.Guid);
+            if (creatures.SelectedGuid != authoringTemplate.Guid || !creatures.CanDuplicate)
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeCopyButtons == (true, true), "the Duplicate and Delete buttons should be enabled for a loaded creature");
+            authoringCount = creatures.Records.Count;
+            return true;
+        }),
+        ("copy-creature-ctrl-d", () =>
+        {
+            SmokeKey(Key.D, ctrl: true);
+            return true;
+        }),
+        ("copy-creature-drawn", () =>
+        {
+            if (creatures.Records.Count != authoringCount + 1 || creatures.SelectedGuid == authoringTemplate!.Guid || creatures.SelectedGuid is not ulong copy)
+            {
+                return false;
+            }
+
+            authoringCopy = copy;
+            var record = creatures.SmokeRecord(copy)!;
+            Require(record.TemplateId == authoringTemplate.TemplateId && record.Name == authoringTemplate.Name, "the copy is another creature");
+            double distance = Math.Sqrt(Math.Pow(record.Pose.X - authoringTemplate.Pose.X, 2) + Math.Pow(record.Pose.Y - authoringTemplate.Pose.Y, 2));
+            Require(Math.Abs(distance - 2) < 0.1, $"the copy is {distance:F2} yd from its source, expected 2");
+            Require(creatures.SmokeListed(copy), "the copy is not in the list");
+            string apply = AuthoringScript(creatures.SmokeSourceKey);
+            Require(apply.Contains("INSERT INTO `creature`", StringComparison.Ordinal) && apply.Contains(copy.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal), "the export lacks the copy's INSERT");
+            return true;
+        }),
+        ("delete-copy-with-the-key", () =>
+        {
+            SmokeKey(Key.Delete);
+            return true;
+        }),
+        ("copy-gone-and-nothing-to-export", () =>
+        {
+            if (creatures.SmokeRecord(authoringCopy) != null)
+            {
+                return false;
+            }
+
+            Require(!creatures.SmokeDrawn(authoringCopy) && !creatures.SmokeListed(authoringCopy), "the deleted copy is still drawn or listed");
+            Require(creatures.SelectedGuid == null, "a deleted spawn must not stay selected");
+            Require(drafts.Draft!.NetEdits().Count == 0, "placing then deleting a copy should leave nothing to export");
+            return true;
+        }),
+        ("delete-source-with-the-button", () =>
+        {
+            creatures.Select(authoringTemplate!.Guid);
+            if (!creatures.CanDelete)
+            {
+                return false;
+            }
+
+            creatures.SmokePressDelete();
+            return true;
+        }),
+        ("source-gone-and-exports-a-delete", () =>
+        {
+            if (creatures.SmokeRecord(authoringTemplate!.Guid) != null)
+            {
+                return false;
+            }
+
+            Require(!creatures.SmokeDrawn(authoringTemplate.Guid), "the deleted creature is still drawn");
+            string apply = AuthoringScript(creatures.SmokeSourceKey);
+            Require(apply.Contains("DELETE FROM `creature` WHERE", StringComparison.Ordinal) && apply.Contains(authoringTemplate.Guid.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal), "the export lacks the DELETE");
+            creatures.SmokeHistory(false);
+            return true;
+        }),
+        ("delete-undone", () =>
+        {
+            if (!creatures.SmokeDrawn(authoringTemplate!.Guid))
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeRecord(authoringTemplate.Guid) != null && drafts.Draft!.NetEdits().Count == 0, "undo did not restore the deleted creature");
+            return true;
+        }),
+        ("copy-select-gameobject", () =>
+        {
+            gameObjects.SmokeSelect(authoringObject!.Guid);
+            if (gameObjects.SmokeSelected != authoringObject.Guid || !gameObjects.CanDuplicate)
+            {
+                return false;
+            }
+
+            Require(gameObjects.SmokeCopyButtons == (true, true), "the Duplicate and Delete buttons should be enabled for a loaded GameObject");
+            authoringCount = gameObjects.Records.Count;
+            gameObjects.SmokePressDuplicate();
+            return true;
+        }),
+        ("copy-gameobject-drawn", () =>
+        {
+            if (gameObjects.Records.Count != authoringCount + 1 || gameObjects.SmokeSelected == authoringObject!.Guid || gameObjects.SmokeSelected is not ulong copy)
+            {
+                return false;
+            }
+
+            authoringCopy = copy;
+            var record = gameObjects.SmokeRecord(copy)!;
+            Require(record.TemplateId == authoringObject.TemplateId && record.Name == authoringObject.Name && record.DisplayId == authoringObject.DisplayId, "the copy is another GameObject");
+            Require(record.Rotation == authoringObject.Rotation, "the copy lost its facing");
+            Require(gameObjects.SmokeListed(copy), "the copy is not in the list");
+            Require(AuthoringScript(gameObjects.SmokeSourceKey).Contains("INSERT INTO `gameobject`", StringComparison.Ordinal), "the export lacks the copy's INSERT");
+            return true;
+        }),
+        ("delete-gameobject-with-the-button", () =>
+        {
+            gameObjects.SmokePressDelete();
+            return true;
+        }),
+        ("gameobject-copy-gone", () =>
+        {
+            if (gameObjects.SmokeRecord(authoringCopy) != null)
+            {
+                return false;
+            }
+
+            Require(gameObjects.SmokeSelected == null && !gameObjects.SmokeListed(authoringCopy), "the deleted GameObject is still selected or listed");
+            Require(drafts.Draft!.NetEdits().Count == 0, "placing then deleting a copy should leave nothing to export");
+            return true;
         })
     ];
+
+    int authoringCount;
+    ulong authoringCopy;
+
+    /// <summary>Send a key press and release through the viewport, the way the keyboard does, so menu accelerators run.</summary>
+    void SmokeKey(Key key, bool ctrl = false)
+    {
+        foreach (bool pressed in new[] { true, false })
+        {
+            Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = pressed, CtrlPressed = ctrl });
+        }
+    }
 }

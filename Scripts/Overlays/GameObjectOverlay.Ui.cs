@@ -6,6 +6,7 @@ namespace ACWorldEdit;
 /// <summary>Read-only GameObject inspector; filtering/source settings live on the shared Scene page.</summary>
 public partial class GameObjectOverlay
 {
+    Button duplicate = null!, remove = null!;
     Button undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!;
     // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
     readonly LineEdit[] poseFields = new LineEdit[4];
@@ -33,6 +34,14 @@ public partial class GameObjectOverlay
         redo = InspectorUi.Button("Redo move", () => History(true));
         history.AddChild(undo);
         history.AddChild(redo);
+        var copies = new HBoxContainer();
+        card.AddChild(copies);
+        duplicate = InspectorUi.Button("Duplicate", Duplicate);
+        duplicate.TooltipText = "Copy two yards ahead (Ctrl+D)";
+        remove = InspectorUi.Button("Delete", Delete);
+        remove.TooltipText = "Delete this spawn (Del)";
+        copies.AddChild(duplicate);
+        copies.AddChild(remove);
         card.AddChild(new HSeparator());
         card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
         EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], poseFields, SubmitPose);
@@ -77,6 +86,8 @@ public partial class GameObjectOverlay
         copyGo.Disabled = !selected.HasValue;
         undo.Disabled = !CanUndo;
         redo.Disabled = !CanRedo;
+        duplicate.Disabled = !CanDuplicate;
+        remove.Disabled = !CanDelete;
     }
 
     /// <summary>
