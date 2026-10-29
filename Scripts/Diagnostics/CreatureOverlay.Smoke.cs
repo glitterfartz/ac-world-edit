@@ -375,4 +375,12 @@ public partial class CreatureOverlay
     public string? SmokeDeleteDialog => SpawnSmoke.Text(deleteDialog);
 
     public bool SmokeAnswerDelete(bool delete) => SpawnSmoke.Answer(deleteDialog, delete);
+
+    /// <summary>A creature on screen whose waypoint path nothing else uses.</summary>
+    public SpawnPathUse? SmokeOrphanPath()
+    {
+        var source = DBSource.Open(Connection());
+        var guids = records.Select(s => s.Guid).Take(500).ToArray();
+        return SpawnImpact.Orphaned(Task.Run(() => source.ReadSpawnPathsAsync(guids, default)).GetAwaiter().GetResult()).FirstOrDefault();
+    }
 }

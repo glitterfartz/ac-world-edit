@@ -148,6 +148,11 @@ UX:
 
 Implementation: extend `WaypointDraft` or move waypoints onto `RowEdit` for node insert/delete/renumber (renumbering = delete + insert in one command). Add path creation through `IdAllocator` and the creature's `creature_addon.PathId` plus `MovementType=2` together. AC: `waypoint_data` / `creature_addon.path_id`. Follow SmartAI `WAYPOINT_START` users (tc-status gap). Formations go in both catalogs (same schema).
 
+Path links and orphans (added after the spawn delete shipped):
+- **Orphan warning on delete (Phase 11, built).** Deleting a creature also deletes its `creature_addon` row, which is the only link to its path, so a path nothing else uses is left behind. The delete dialog says "walks waypoint path N (X nodes) that nothing else uses" and counts other users in `creature_addon` and `creature_template_addon`.
+- **Link to path… (Phase 14).** An action on a selected creature that points it at an existing path, picked from a list or by clicking the path in the viewport, and sets the path ID and movement type "path" in one command. It also covers re-attaching a path whose creature was deleted, and the template-level link in `creature_template_addon`.
+- **Unused paths list (Phase 14).** Lists the paths no creature, template or SmartAI `WAYPOINT_START` uses, so an orphan can be re-linked or deleted, and warns before deleting a path other creatures still use.
+
 ---
 
 ## Phase 15: Loot editor

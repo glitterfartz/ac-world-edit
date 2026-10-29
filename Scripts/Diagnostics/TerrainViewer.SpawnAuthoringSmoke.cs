@@ -365,6 +365,68 @@ public partial class TerrainViewer
             Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
             return true;
         }),
+        ("pathed-creature-select", () =>
+        {
+            if (authoringPath == null && !authoringSkipPath)
+            {
+                authoringPath = creatures.SmokeOrphanPath();
+                if (authoringPath == null)
+                {
+                    GD.Print("SPAWN_AUTHORING_NOTE no creature near Goldshire walks a path of its own; the path warning is covered by the unit and database tests");
+                    authoringSkipPath = true;
+                    return true;
+                }
+
+                GD.Print($"SPAWN_AUTHORING_PATHED creature {authoringPath.Guid}: path {authoringPath.PathId}, {authoringPath.Nodes} nodes");
+            }
+
+            if (authoringSkipPath)
+            {
+                return true;
+            }
+
+            creatures.Select(authoringPath!.Guid);
+            if (creatures.SelectedGuid != authoringPath.Guid || !creatures.CanDelete)
+            {
+                return false;
+            }
+
+            creatures.SmokePressDelete();
+            return true;
+        }),
+        ("pathed-creature-names-its-path", () =>
+        {
+            if (authoringSkipPath)
+            {
+                return true;
+            }
+
+            if (creatures.SmokeDeleteDialog is not { } text)
+            {
+                return false;
+            }
+
+            Require(text.Contains($"waypoint path {authoringPath!.PathId} ({authoringPath.Nodes} node", StringComparison.Ordinal), "the dialog does not name the path that would be left unused: " + text);
+            Require(creatures.SmokeRecord(authoringPath.Guid) != null && drafts.Draft!.NetEdits().Count == 0, "the creature was deleted before the answer");
+            creatures.SmokeAnswerDelete(true);
+            return true;
+        }),
+        ("pathed-creature-gone-and-undone", () =>
+        {
+            if (authoringSkipPath)
+            {
+                return true;
+            }
+
+            if (creatures.SmokeRecord(authoringPath!.Guid) != null)
+            {
+                return false;
+            }
+
+            creatures.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
+            return true;
+        }),
         ("copy-select-gameobject", () =>
         {
             gameObjects.SmokeSelect(authoringObject!.Guid);
@@ -475,6 +537,8 @@ public partial class TerrainViewer
     IReadOnlyList<SpawnImpactItem> authoringItems = [];
     SpawnKind authoringKind = SpawnKind.Creature;
     bool authoringSkipObject;
+    SpawnPathUse? authoringPath;
+    bool authoringSkipPath;
 
     int authoringCount;
     ulong authoringCopy;

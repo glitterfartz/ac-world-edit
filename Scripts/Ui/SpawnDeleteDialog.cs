@@ -10,12 +10,12 @@ namespace ACWorldEdit;
 public static class SpawnDeleteDialog
 {
     /// <summary>Open the dialog on <paramref name="host"/>; <paramref name="confirmed"/> runs only on "Delete anyway".</summary>
-    public static ConfirmationDialog Ask(Node host, string subject, IReadOnlyList<SpawnImpactItem> items, Action confirmed)
+    public static ConfirmationDialog Ask(Node host, string subject, IReadOnlyList<SpawnImpactItem> items, Action confirmed, IReadOnlyList<SpawnPathUse>? paths = null)
     {
         var dialog = new ConfirmationDialog
         {
             Title = "Delete " + subject,
-            DialogText = SpawnImpact.Prompt(subject, items),
+            DialogText = SpawnImpact.Prompt(subject, items, paths),
             OkButtonText = "Delete anyway",
             CancelButtonText = "Keep"
         };

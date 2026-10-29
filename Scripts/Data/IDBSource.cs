@@ -33,6 +33,9 @@ public interface IDBSource
     /// <summary>The rows in other tables that still name these spawn GUIDs (pools, groups, events, links, formations, SmartAI); tables with no match are left out.</summary>
     Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>The waypoint paths these creatures walk, with node counts and how many others use each path; creatures without a path are left out.</summary>
+    Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 

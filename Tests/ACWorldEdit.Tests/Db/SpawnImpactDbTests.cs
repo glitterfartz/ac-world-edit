@@ -54,4 +54,32 @@ public class SpawnImpactDbTests
 
     [TcDbFact]
     public async Task TrinityCoreReportsWhatAnExportedDeleteWouldLeaveBehind() => await Check(Environments.TrinityConnection()!);
+
+    /// <summary>A creature whose path nothing else uses is reported as an orphan-to-be; a shared path is not.</summary>
+    static async Task CheckPaths(WorldConnection connection)
+    {
+        var source = DBSource.Open(connection);
+        bool tc = connection.Dialect == WorldDialect.TrinityCore;
+        string column = tc ? "PathId" : "path_id", nodes = tc ? "waypoint_path_node" : "waypoint_data", key = tc ? "PathId" : "id";
+        string others = $"(SELECT COUNT(*) FROM creature_addon o WHERE o.{column}=a.{column} AND o.guid<>a.guid)+(SELECT COUNT(*) FROM creature_template_addon t WHERE t.{column}=a.{column})";
+        string from = $"FROM creature_addon a WHERE a.{column}<>0 AND EXISTS(SELECT 1 FROM {nodes} n WHERE n.{key}=a.{column})";
+
+        ulong alone = await Find(connection, $"SELECT a.guid {from} AND {others}=0 LIMIT 1") ?? throw new InvalidOperationException("No creature with a path of its own to test with.");
+        var use = Assert.Single(await source.ReadSpawnPathsAsync([alone], default));
+        Assert.Equal((alone, 0), (use.Guid, use.OtherUsers));
+        Assert.True(use.Nodes > 0 && use.PathId > 0 && use.WouldBeOrphaned);
+
+        ulong shared = await Find(connection, $"SELECT a.guid {from} AND {others}>0 LIMIT 1") ?? throw new InvalidOperationException("No creature on a shared path to test with.");
+        var common = Assert.Single(await source.ReadSpawnPathsAsync([shared], default));
+        Assert.True(common.OtherUsers > 0 && !common.WouldBeOrphaned);
+
+        Assert.Empty(await source.ReadSpawnPathsAsync([4_000_000_000UL], default));
+        Assert.Empty(await source.ReadSpawnPathsAsync([], default));
+    }
+
+    [DbFact]
+    public async Task AzerothCoreReportsThePathADeletedCreatureWouldLeaveUnused() => await CheckPaths(new WorldConnection(Config, null, WorldDialect.AzerothCore));
+
+    [TcDbFact]
+    public async Task TrinityCoreReportsThePathADeletedCreatureWouldLeaveUnused() => await CheckPaths(Environments.TrinityConnection()!);
 }

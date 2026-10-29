@@ -186,4 +186,23 @@ public class SpawnEditsTests
         Assert.DoesNotContain("pool", prompt);
         Assert.EndsWith("Delete anyway?", prompt);
     }
+
+    [Fact]
+    public void OnlyAPathNothingElseUsesIsReportedAsLeftBehind()
+    {
+        var alone = new SpawnPathUse(5, 700, 8, 0);
+        var shared = new SpawnPathUse(6, 701, 4, 3);
+        var broken = new SpawnPathUse(7, 702, 0, 0);
+        Assert.Equal([alone], SpawnImpact.Orphaned([alone, shared, broken]));
+        Assert.Empty(SpawnImpact.Orphaned(null));
+
+        Assert.False(SpawnImpact.Any([], [shared, broken]));
+        Assert.True(SpawnImpact.Any([], [alone]));
+        Assert.Equal(["waypoint path 700 (8 nodes) that nothing else uses stays in the database unused"], SpawnImpact.Lines([], [alone, shared]));
+        Assert.Contains("1 node)", SpawnImpact.Lines([], [new SpawnPathUse(8, 9, 1, 0)])[0]);
+
+        string prompt = SpawnImpact.Prompt("Guard", [new(new("game_event_creature", "guid", "game event spawn"), 1)], [alone]);
+        Assert.Contains("• 1 game event spawn (game_event_creature)", prompt);
+        Assert.Contains("• waypoint path 700 (8 nodes)", prompt);
+    }
 }

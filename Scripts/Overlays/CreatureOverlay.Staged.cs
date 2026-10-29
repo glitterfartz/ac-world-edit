@@ -134,11 +134,14 @@ public partial class CreatureOverlay
         ulong guid = marker.Spawn.Guid;
         string name = marker.Spawn.Name;
         IReadOnlyList<SpawnImpactItem> items = [];
+        IReadOnlyList<SpawnPathUse> paths = [];
         if (!IsStaged(guid))
         {
             try
             {
-                items = await DBSource.Open(Connection()).CountSpawnReferencesAsync(SpawnKind.Creature, [guid], default);
+                var source = DBSource.Open(Connection());
+                items = await source.CountSpawnReferencesAsync(SpawnKind.Creature, [guid], default);
+                paths = await source.ReadSpawnPathsAsync([guid], default);
             }
             catch (Exception)
             {
@@ -147,13 +150,13 @@ public partial class CreatureOverlay
             }
         }
 
-        if (items.Count == 0)
+        if (!SpawnImpact.Any(items, paths))
         {
             DeleteNow(guid, name);
             return;
         }
 
-        deleteDialog = SpawnDeleteDialog.Ask(this, $"{name} ({guid})", items, () => DeleteNow(guid, name));
+        deleteDialog = SpawnDeleteDialog.Ask(this, $"{name} ({guid})", items, () => DeleteNow(guid, name), paths);
     }
 
     void DeleteNow(ulong guid, string name)
