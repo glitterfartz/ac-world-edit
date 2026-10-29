@@ -164,7 +164,7 @@ Five overlays are children of `TerrainViewer`. They share one shape (`RegionOver
 
 | Overlay | Files | Data source | Editable |
 |---|---|---|---|
-| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `SpawnPoses`; opens the properties window and the behavior editor |
+| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Staged.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `SpawnPoses`; opens the properties window and the behavior editor |
 | `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `SpawnPoses` |
 | `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
 | `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions and properties through `WaypointDraft`. For TrinityCore the card shows only facing and delay as editable, the path's move type and velocity read-only, and hides smooth transition and actions |
@@ -238,6 +238,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--gameobject-smoke` | Select a GameObject, drag the real move handle, typed turn, reopen, undo/redo, exported SQL |
 | `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo. AzerothCore: trigger 5140 in Utgarde Pinnacle; TrinityCore: Stormwind spawn 290 (template 188) |
 | `--interaction-smoke` | Gossip, vendor, quests, edit mode, reopen (run it windowed; headless the right-click does not open the window) |
+| `--spawn-authoring-smoke` | Spawn authoring in Goldshire on an isolated draft (headless works). Creatures: `PlaceAsync` draws, lists and selects the new spawn with the template's name and model, exports an INSERT, undo removes it, redo restores it, and a new spawn after an undo gets a fresh GUID. Separate from `--interaction-smoke`; grows with each spawn-authoring slice |
 | `--content-smoke` | Behavior rules, speech, quest create and validation |
 | `--behavior-smoke` | Behavior editor driven by mouse and key events |
 | `--perf-breakdown` | Parks the camera at five Stormwind poses once streaming is idle and measures render CPU/GPU time and main/shadow-pass draw counts with each scene category (terrain, liquid, WMO shells, embedded doodads, ADT doodads, creatures, GameObjects, markers) hidden or shadow-less, plus sun shadows off. Run windowed; method and results in [`performance.md`](../performance.md) |

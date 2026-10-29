@@ -313,4 +313,28 @@ public partial class CreatureOverlay
         GD.Print("GROUND_SMOKE_FAIL_CLOSED " + below.Message);
         return true;
     }
+
+    public string SmokeSourceKey => sourceKey;
+
+    public bool SmokeDrawn(ulong guid) => markers.ContainsKey(guid);
+
+    public CreatureSpawn? SmokeRecord(ulong guid) => records.FirstOrDefault(s => s.Guid == guid);
+
+    public bool SmokeListed(ulong guid)
+    {
+        for (int i = 0; i < list.ItemCount; i++)
+        {
+            if (list.GetItemMetadata(i).AsString() == guid.ToString())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Undo or redo through the same path as the toolbar buttons and shortcuts.</summary>
+    public void SmokeHistory(bool redo) => History(redo);
+
+    public Vector3 SmokeViewPosition(WorldPose pose) => ViewPosition(pose);
 }

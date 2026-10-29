@@ -60,23 +60,56 @@ public sealed class SpawnPoses
         }
     }
 
+    /// <summary>The GUID for a new spawn: past every database row and every spawn the draft has staged, undone ones included.</summary>
+    public ulong NextGuid(string source, ulong databaseMax) => IdAllocator.Next(databaseMax, drafts.Draft?.MaxStaged(source, Table(source), "guid") ?? 0);
+
     /// <summary>Whether the database row of a spawn is loaded, so it can be edited.</summary>
     public bool Has(string source, ulong guid) => Available && Snapshot(source).Get(Table(source), Key(guid)) != null;
 
     static string Key(ulong guid) => guid.ToString(CultureInfo.InvariantCulture);
 
-    RowEdit? Net(string source, ulong guid)
+    Dictionary<(string Source, ulong Guid), RowEdit> NetMap()
     {
         if (drafts.Draft is not { } draft)
         {
-            return null;
+            return [];
         }
 
-        net ??= draft.NetEdits()
+        return net ??= draft.NetEdits()
             .Where(e => e.Edit.Table == TableName && ulong.TryParse(e.Edit.Key, NumberStyles.None, CultureInfo.InvariantCulture, out _))
             .ToDictionary(e => (e.Source, ulong.Parse(e.Edit.Key, CultureInfo.InvariantCulture)), e => e.Edit);
-        return net.GetValueOrDefault((source, guid));
     }
+
+    RowEdit? Net(string source, ulong guid) => NetMap().GetValueOrDefault((source, guid));
+
+    /// <summary>The spawn rows the draft adds to <paramref name="source"/> (placed or duplicated, not yet exported), in key order.</summary>
+    public IReadOnlyList<Row> Inserted(string source) => NetMap()
+        .Where(n => n.Key.Source == source && n.Value is { Before: null, After: not null })
+        .OrderBy(n => n.Key.Guid).Select(n => n.Value.After!).ToArray();
+
+    /// <summary>True when the draft deletes this spawn's database row.</summary>
+    public bool Deleted(string source, ulong guid) => Net(source, guid) is { After: null, Before: not null };
+
+    /// <summary>
+    /// A creature spawn row as the overlay draws it. A TrinityCore row carries a difficulty list and a
+    /// phase (NULL phase columns read as 0); an AzerothCore row carries masks. The model is the row's
+    /// own override or the template's.
+    /// </summary>
+    public static CreatureSpawn CreatureOf(Row row, CreatureLook look, WorldDialect dialect)
+    {
+        var pose = SpawnEdits.PoseOf(row);
+        ulong guid = ulong.Parse(row["guid"], CultureInfo.InvariantCulture);
+        if (dialect != WorldDialect.TrinityCore)
+        {
+            return new(guid, row.U("id"), look.Name, pose, row.U("spawnMask"), row.U("phaseMask"), look.DisplayId, look.Scale);
+        }
+
+        uint display = row.U("modelid") != 0 ? row.U("modelid") : look.DisplayId;
+        return new(guid, row.U("id"), look.Name, pose, 0, 0, display, look.Scale, null,
+            new SpawnPhasing(row["spawnDifficulties"], OrZero(row, "PhaseId"), OrZero(row, "PhaseGroup"), row.U("phaseUseFlags")));
+    }
+
+    static uint OrZero(Row row, string column) => row.IsNull(column) ? 0 : (uint)Math.Max(0, row.I(column));
 
     static bool Same(WorldPose a, WorldPose b) => a.Map == b.Map && Math.Abs(a.X - b.X) < Tolerance && Math.Abs(a.Y - b.Y) < Tolerance && Math.Abs(a.Z - b.Z) < Tolerance && Math.Abs(a.Heading - b.Heading) < Tolerance;
 
@@ -153,6 +186,18 @@ public sealed class SpawnPoses
         {
             return (false, "Not saved: " + error.Message);
         }
+    }
+
+    /// <summary>Record edits built by <see cref="SpawnEdits"/> (place, duplicate, delete) as one undoable command.</summary>
+    public (bool Ok, string Message) Commit(object? sender, string source, string label, IReadOnlyList<RowEdit> edits)
+    {
+        if (drafts.Draft == null)
+        {
+            return (false, drafts.Error ?? "Editing is disabled.");
+        }
+
+        var snapshot = Snapshot(source);
+        return drafts.Commit(sender, source, snapshot, drafts.Draft.Effective(source, snapshot), label, edits, _ => []);
     }
 
     public string Undo(object? sender) => drafts.History(sender, false);

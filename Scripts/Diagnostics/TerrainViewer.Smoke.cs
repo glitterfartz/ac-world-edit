@@ -39,6 +39,7 @@ public partial class TerrainViewer
         waypointSmoke = flags.Contains("--waypoint-smoke");
         interactionSmoke = flags.Contains("--interaction-smoke");
         contentSmoke = flags.Contains("--content-smoke");
+        spawnAuthoringSmoke = flags.Contains("--spawn-authoring-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
         perfSmoke = flags.Contains("--perf-smoke");
@@ -126,6 +127,11 @@ public partial class TerrainViewer
         if (waypointSmoke)
         {
             WaypointSmoke(delta);
+        }
+
+        if (spawnAuthoringSmoke)
+        {
+            SpawnAuthoringSmoke(delta);
         }
 
         if (interactionSmoke)

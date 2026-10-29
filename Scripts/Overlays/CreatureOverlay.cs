@@ -131,7 +131,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// </summary>
     async void LoadRow(ulong guid)
     {
-        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || !loadingRows.Add(guid))
+        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || IsStaged(guid) || !loadingRows.Add(guid))
         {
             return;
         }
@@ -246,7 +246,8 @@ public partial class CreatureOverlay : RegionOverlay
         sourceKey = result.SourceKey;
         EventCatalog = result.Events ?? [];
         truncated = result.Truncated;
-        ReconcileSpawns(result.Spawns);
+        databaseSpawns = result.Spawns;
+        ReconcileSpawns(WithDraft());
         if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
         {
             Deselect();
@@ -301,6 +302,12 @@ public partial class CreatureOverlay : RegionOverlay
 
             if (pendingMarkers.Count == 0)
             {
+                if (selectWhenDrawn is ulong placed && markers.ContainsKey(placed))
+                {
+                    selectWhenDrawn = null;
+                    Select(placed);
+                }
+
                 if (selectedGuid.HasValue)
                 {
                     if (markers.ContainsKey(selectedGuid.Value))
@@ -786,7 +793,19 @@ public partial class CreatureOverlay : RegionOverlay
 
     void Resync()
     {
-        foreach (var guid in markers.Keys)
+        // The draft may have placed or deleted spawns: redraw the set before posing what is left.
+        if (sourceKey.Length > 0)
+        {
+            ReconcileSpawns(WithDraft());
+            if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
+            {
+                Deselect();
+            }
+
+            PopulateList();
+        }
+
+        foreach (var guid in markers.Keys.ToArray())
         {
             ApplyPose(guid);
         }
