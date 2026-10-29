@@ -148,9 +148,42 @@ public class SpawnEditsTests
         var ac = SpawnEdits.References(WorldDialect.AzerothCore, SpawnKind.Creature).Select(r => r.Table).ToArray();
         Assert.Contains("spawn_group", tc);
         Assert.Contains("pool_members", tc);
-        Assert.DoesNotContain("spawn_group", ac);
+        Assert.Contains("spawn_group", ac);
         Assert.Contains("pool_creature", ac);
         Assert.Contains("pool_gameobject", SpawnEdits.References(WorldDialect.AzerothCore, SpawnKind.GameObject).Select(r => r.Table));
         Assert.DoesNotContain("creature_formations", SpawnEdits.References(WorldDialect.TrinityCore, SpawnKind.GameObject).Select(r => r.Table));
+    }
+
+    [Fact]
+    public void PerSpawnSmartAiIsStoredNegatedAndBothDialectsListSpawnGroups()
+    {
+        foreach (var dialect in new[] { WorldDialect.AzerothCore, WorldDialect.TrinityCore })
+        {
+            var creature = SpawnEdits.References(dialect, SpawnKind.Creature);
+            var gameObject = SpawnEdits.References(dialect, SpawnKind.GameObject);
+            Assert.True(creature.Single(r => r.Table == "smart_scripts").Negated);
+            Assert.Equal("source_type = 0", creature.Single(r => r.Table == "smart_scripts").Where);
+            Assert.Equal("source_type = 1", gameObject.Single(r => r.Table == "smart_scripts").Where);
+            Assert.Equal("spawnType = 0", creature.Single(r => r.Table == "spawn_group").Where);
+            Assert.Equal("spawnType = 1", gameObject.Single(r => r.Table == "spawn_group").Where);
+        }
+    }
+
+    [Fact]
+    public void ImpactLinesNameTheRowsAndTheTablesThatHoldThem()
+    {
+        var items = new SpawnImpactItem[]
+        {
+            new(new("game_event_creature", "guid", "game event spawn"), 2),
+            new(new("pool_members", "spawnId", "pool membership"), 0),
+            new(new("smart_scripts", "entryorguid", "SmartAI rules written for this one spawn", Negated: true), 1)
+        };
+        Assert.Equal(3, SpawnImpact.Total(items));
+        Assert.Equal(["2 game event spawn (game_event_creature)", "1 SmartAI rules written for this one spawn (smart_scripts)"], SpawnImpact.Lines(items));
+        string prompt = SpawnImpact.Prompt("Hogger", items);
+        Assert.StartsWith("Hogger is still referenced:", prompt);
+        Assert.Contains("• 2 game event spawn (game_event_creature)", prompt);
+        Assert.DoesNotContain("pool", prompt);
+        Assert.EndsWith("Delete anyway?", prompt);
     }
 }

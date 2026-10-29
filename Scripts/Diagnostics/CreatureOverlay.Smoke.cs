@@ -363,4 +363,16 @@ public partial class CreatureOverlay
     public void SmokePressDelete() => remove.EmitSignal(BaseButton.SignalName.Pressed);
 
     public void SmokePressDuplicate() => duplicate.EmitSignal(BaseButton.SignalName.Pressed);
+
+    /// <summary>A spawn on screen that other tables still name, with the rows that name it.</summary>
+    public (ulong Guid, IReadOnlyList<SpawnImpactItem> Items)? SmokeReferenced()
+    {
+        var source = DBSource.Open(Connection());
+        var guids = records.Select(s => s.Guid).Take(500).ToArray();
+        return Task.Run(() => SpawnSmoke.FindReferenced(source, SpawnKind.Creature, guids)).GetAwaiter().GetResult();
+    }
+
+    public string? SmokeDeleteDialog => SpawnSmoke.Text(deleteDialog);
+
+    public bool SmokeAnswerDelete(bool delete) => SpawnSmoke.Answer(deleteDialog, delete);
 }

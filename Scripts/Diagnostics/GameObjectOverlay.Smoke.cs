@@ -162,4 +162,15 @@ public partial class GameObjectOverlay
     public void SmokePressDuplicate() => duplicate.EmitSignal(BaseButton.SignalName.Pressed);
 
     public void SmokeSelect(ulong guid) => Select(guid);
+
+    public (ulong Guid, IReadOnlyList<SpawnImpactItem> Items)? SmokeReferenced()
+    {
+        var source = Data.DBSource.Open(Connection());
+        var guids = records.Select(s => s.Guid).Take(500).ToArray();
+        return Task.Run(() => SpawnSmoke.FindReferenced(source, SpawnKind.GameObject, guids)).GetAwaiter().GetResult();
+    }
+
+    public string? SmokeDeleteDialog => SpawnSmoke.Text(deleteDialog);
+
+    public bool SmokeAnswerDelete(bool delete) => SpawnSmoke.Answer(deleteDialog, delete);
 }

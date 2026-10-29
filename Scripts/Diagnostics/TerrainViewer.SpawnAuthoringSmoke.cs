@@ -14,7 +14,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool spawnAuthoringSmoke;
-    readonly SmokeSteps spawnAuthoringRun = new("SPAWN_AUTHORING", 60, 240, 3);
+    readonly SmokeSteps spawnAuthoringRun = new("SPAWN_AUTHORING", 60, 420, 3);
     List<(string Name, Func<bool> Step)>? spawnAuthoringSteps;
     CreatureSpawn? authoringTemplate;
     Task<ulong?>? authoringPlace;
@@ -272,6 +272,7 @@ public partial class TerrainViewer
         }),
         ("source-gone-and-exports-a-delete", () =>
         {
+            creatures.SmokeAnswerDelete(true);
             if (creatures.SmokeRecord(authoringTemplate!.Guid) != null)
             {
                 return false;
@@ -291,6 +292,77 @@ public partial class TerrainViewer
             }
 
             Require(creatures.SmokeRecord(authoringTemplate.Guid) != null && drafts.Draft!.NetEdits().Count == 0, "undo did not restore the deleted creature");
+            return true;
+        }),
+        ("referenced-creature-select", () =>
+        {
+            if (authoringReferenced == 0)
+            {
+                var found = creatures.SmokeReferenced();
+                Require(found != null, "no creature near Goldshire is referenced by a pool, event, group, link or SmartAI rule; the dialog cannot be tested");
+                authoringReferenced = found!.Value.Guid;
+                authoringItems = found.Value.Items;
+                GD.Print($"SPAWN_AUTHORING_REFERENCED creature {authoringReferenced}: {string.Join("; ", SpawnImpact.Lines(authoringItems))}");
+            }
+
+            creatures.Select(authoringReferenced);
+            if (creatures.SelectedGuid != authoringReferenced || !creatures.CanDelete)
+            {
+                return false;
+            }
+
+            creatures.SmokePressDelete();
+            return true;
+        }),
+        ("referenced-creature-asks-first", () =>
+        {
+            if (creatures.SmokeDeleteDialog is not { } text)
+            {
+                return false;
+            }
+
+            Require(text.Contains("is still referenced", StringComparison.Ordinal), "the dialog does not say the spawn is referenced");
+            foreach (var item in authoringItems)
+            {
+                Require(text.Contains(item.Reference.Table, StringComparison.Ordinal), $"the dialog lacks {item.Reference.Table}");
+            }
+
+            Require(creatures.SmokeRecord(authoringReferenced) != null && drafts.Draft!.NetEdits().Count == 0, "the spawn was deleted before the answer");
+            Require(creatures.SmokeAnswerDelete(false), "could not answer the dialog");
+            return true;
+        }),
+        ("referenced-creature-kept", () =>
+        {
+            if (creatures.SmokeDeleteDialog != null)
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeRecord(authoringReferenced) != null && creatures.SmokeDrawn(authoringReferenced), "Keep still removed the creature");
+            Require(drafts.Draft!.NetEdits().Count == 0, "Keep still staged a change");
+            creatures.SmokePressDelete();
+            return true;
+        }),
+        ("referenced-creature-deleted-anyway", () =>
+        {
+            if (creatures.SmokeDeleteDialog == null)
+            {
+                return false;
+            }
+
+            creatures.SmokeAnswerDelete(true);
+            return true;
+        }),
+        ("referenced-creature-gone-and-undone", () =>
+        {
+            if (creatures.SmokeRecord(authoringReferenced) != null)
+            {
+                return false;
+            }
+
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("DELETE FROM `creature` WHERE", StringComparison.Ordinal), "the export lacks the DELETE");
+            creatures.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
             return true;
         }),
         ("copy-select-gameobject", () =>
@@ -336,8 +408,73 @@ public partial class TerrainViewer
             Require(gameObjects.SmokeSelected == null && !gameObjects.SmokeListed(authoringCopy), "the deleted GameObject is still selected or listed");
             Require(drafts.Draft!.NetEdits().Count == 0, "placing then deleting a copy should leave nothing to export");
             return true;
+        }),
+        ("referenced-gameobject", () =>
+        {
+            if (authoringReferenced == 0 || authoringKind != SpawnKind.GameObject)
+            {
+                authoringKind = SpawnKind.GameObject;
+                var found = gameObjects.SmokeReferenced();
+                if (found == null)
+                {
+                    GD.Print("SPAWN_AUTHORING_NOTE no GameObject near Goldshire is referenced; the dialog is covered by the creature steps");
+                    authoringSkipObject = true;
+                    return true;
+                }
+
+                authoringReferenced = found.Value.Guid;
+                authoringItems = found.Value.Items;
+                GD.Print($"SPAWN_AUTHORING_REFERENCED gameobject {authoringReferenced}: {string.Join("; ", SpawnImpact.Lines(authoringItems))}");
+            }
+
+            gameObjects.SmokeSelect(authoringReferenced);
+            if (gameObjects.SmokeSelected != authoringReferenced || !gameObjects.CanDelete)
+            {
+                return false;
+            }
+
+            gameObjects.SmokePressDelete();
+            return true;
+        }),
+        ("referenced-gameobject-asks-then-deletes", () =>
+        {
+            if (authoringSkipObject)
+            {
+                return true;
+            }
+
+            if (gameObjects.SmokeDeleteDialog is not { } text)
+            {
+                return false;
+            }
+
+            Require(text.Contains("is still referenced", StringComparison.Ordinal) && authoringItems.All(i => text.Contains(i.Reference.Table, StringComparison.Ordinal)), "the dialog does not list the references");
+            Require(gameObjects.SmokeRecord(authoringReferenced) != null, "the GameObject was deleted before the answer");
+            gameObjects.SmokeAnswerDelete(true);
+            return true;
+        }),
+        ("referenced-gameobject-gone-and-undone", () =>
+        {
+            if (authoringSkipObject)
+            {
+                return true;
+            }
+
+            if (gameObjects.SmokeRecord(authoringReferenced) != null)
+            {
+                return false;
+            }
+
+            gameObjects.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
+            return true;
         })
     ];
+
+    ulong authoringReferenced;
+    IReadOnlyList<SpawnImpactItem> authoringItems = [];
+    SpawnKind authoringKind = SpawnKind.Creature;
+    bool authoringSkipObject;
 
     int authoringCount;
     ulong authoringCopy;

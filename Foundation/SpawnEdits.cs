@@ -7,7 +7,8 @@ public enum SpawnKind
 }
 
 /// <summary>A table that names a spawn by its GUID, listed so a delete can show what it leaves behind.</summary>
-public sealed record SpawnReference(string Table, string Column, string Meaning, string? Where = null);
+/// <param name="Negated">True when the table stores the GUID negated (SmartAI rules written for one spawn use entryorguid = -guid).</param>
+public sealed record SpawnReference(string Table, string Column, string Meaning, string? Where = null, bool Negated = false);
 
 /// <summary>
 /// Row edits for placing, duplicating, moving and deleting creature and GameObject spawns, as
@@ -151,13 +152,13 @@ public static class SpawnEdits
         string smartSource = creature ? "0" : "1";
         var shared = new List<SpawnReference>
         {
-            new("smart_scripts", "entryorguid", "SmartAI rules written for this one spawn (a negative GUID)", $"source_type = {smartSource} AND entryorguid < 0"),
+            new("smart_scripts", "entryorguid", "SmartAI rules written for this one spawn", $"source_type = {smartSource}", Negated: true),
+            new("spawn_group", "spawnId", "spawn group membership", $"spawnType = {(creature ? 0 : 1)}"),
             new("linked_respawn", "guid", "respawn linked to a boss or leader"),
             new("linked_respawn", "linkedGuid", "spawns whose respawn follows this one")
         };
         if (dialect == WorldDialect.TrinityCore)
         {
-            shared.Add(new("spawn_group", "spawnId", "spawn group membership", $"spawnType = {(creature ? 0 : 1)}"));
             shared.Add(new("pool_members", "spawnId", "pool membership", $"type = {(creature ? 0 : 1)}"));
         }
         else

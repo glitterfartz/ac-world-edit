@@ -88,17 +88,51 @@ public partial class GameObjectOverlay
     public bool CanDuplicate => RowReady;
     public bool CanDelete => RowReady;
 
-    /// <summary>Delete the selected GameObject and its addon as one undoable command.</summary>
-    public void Delete()
+    Godot.ConfirmationDialog? deleteDialog;
+
+    /// <summary>
+    /// Delete the selected GameObject and its addon as one undoable command. When other tables still
+    /// name it, a dialog lists them first, because the exported delete would leave those rows behind.
+    /// </summary>
+    public async void Delete() => await DeleteAsync();
+
+    public async Task DeleteAsync()
     {
-        if (poses == null || !selected.HasValue || !lookup.TryGetValue(selected.Value, out var spawn))
+        if (poses == null || !selected.HasValue || !lookup.TryGetValue(selected.Value, out var spawn) || (deleteDialog != null && Godot.GodotObject.IsInstanceValid(deleteDialog)))
         {
             return;
         }
 
         gizmo.Finish(false);
-        var (ok, message) = poses.Delete(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, spawn.Guid);
-        Say(ok ? $"Deleted {spawn.Name}." : message);
+        ulong guid = spawn.Guid;
+        string name = spawn.Name;
+        IReadOnlyList<SpawnImpactItem> items = [];
+        if (!IsStaged(guid))
+        {
+            try
+            {
+                items = await DBSource.Open(Connection()).CountSpawnReferencesAsync(SpawnKind.GameObject, [guid], default);
+            }
+            catch (Exception)
+            {
+                Say($"Could not check what references {name}; not deleted.");
+                return;
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            DeleteNow(guid, name);
+            return;
+        }
+
+        deleteDialog = SpawnDeleteDialog.Ask(this, $"{name} ({guid})", items, () => DeleteNow(guid, name));
+    }
+
+    void DeleteNow(ulong guid, string name)
+    {
+        var (ok, message) = poses!.Delete(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guid);
+        Say(ok ? $"Deleted {name}." : message);
     }
 
     /// <summary>Copy the selected GameObject two yards ahead of it, on the ground, and select the copy.</summary>

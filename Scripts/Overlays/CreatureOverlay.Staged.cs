@@ -115,17 +115,51 @@ public partial class CreatureOverlay
     public bool CanDuplicate => RowReady;
     public bool CanDelete => RowReady;
 
-    /// <summary>Delete the selected creature and its addon as one undoable command.</summary>
-    public void Delete()
+    ConfirmationDialog? deleteDialog;
+
+    /// <summary>
+    /// Delete the selected creature and its addon as one undoable command. When other tables still
+    /// name it, a dialog lists them first, because the exported delete would leave those rows behind.
+    /// </summary>
+    public async void Delete() => await DeleteAsync();
+
+    public async Task DeleteAsync()
     {
-        if (poses == null || !selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
+        if (poses == null || !selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker) || (deleteDialog != null && GodotObject.IsInstanceValid(deleteDialog)))
         {
             return;
         }
 
         gizmo.Finish(false);
-        var (ok, message) = poses.Delete(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, selectedGuid.Value);
-        Say(ok ? $"Deleted {marker.Spawn.Name}." : message);
+        ulong guid = marker.Spawn.Guid;
+        string name = marker.Spawn.Name;
+        IReadOnlyList<SpawnImpactItem> items = [];
+        if (!IsStaged(guid))
+        {
+            try
+            {
+                items = await DBSource.Open(Connection()).CountSpawnReferencesAsync(SpawnKind.Creature, [guid], default);
+            }
+            catch (Exception)
+            {
+                Say($"Could not check what references {name}; not deleted.");
+                return;
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            DeleteNow(guid, name);
+            return;
+        }
+
+        deleteDialog = SpawnDeleteDialog.Ask(this, $"{name} ({guid})", items, () => DeleteNow(guid, name));
+    }
+
+    void DeleteNow(ulong guid, string name)
+    {
+        var (ok, message) = poses!.Delete(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guid);
+        Say(ok ? $"Deleted {name}." : message);
     }
 
     /// <summary>Copy the selected creature two yards ahead of it, on the ground, and select the copy.</summary>

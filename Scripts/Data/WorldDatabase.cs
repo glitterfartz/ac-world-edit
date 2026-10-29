@@ -125,7 +125,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         "trainer_spell", "creature_default_trainer", "npc_spellclick_spells", "smart_scripts", "points_of_interest",
         "quest_template_addon", "quest_request_items", "quest_offer_reward", "creature_text", "creature_classlevelstats",
         "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
-        "creature_addon", "creature_template_addon", "waypoint_data"
+        "creature_addon", "creature_template_addon", "waypoint_data",
+        "linked_respawn", "spawn_group", "game_event_model_equip", "creature_formations", "gameobject_addon"
     ];
 
     // Tables TrinityCore replaced (pool_members, world_safe_locs, waypoint_path(_node),
@@ -141,7 +142,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         "quest_template_addon", "quest_request_items", "quest_offer_reward", "creature_text", "creature_classlevelstats",
         "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
         "areatrigger_template", "areatrigger_create_properties", "areatrigger_create_properties_polygon_vertex",
-        "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node"
+        "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node",
+        "linked_respawn", "spawn_group", "game_event_model_equip", "creature_formations", "gameobject_addon"
     ];
 
     /// <summary>

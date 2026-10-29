@@ -46,6 +46,7 @@ public sealed class TcDBSource : IDBSource
     public Task<RowSet> ReadSpawnRowsAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnRows.ReadAsync(database, TcTables.Instance, kind, guids, token);
     public Task<IReadOnlyDictionary<uint, CreatureLook>> ReadCreatureLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbCreatureLooks.ReadAsync(database, WorldDialect.TrinityCore, entries, token);
     public Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbGameObjectLooks.ReadAsync(database, entries, token);
+    public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnImpact.CountAsync(database, WorldDialect.TrinityCore, kind, guids, token);
     public Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token) => DbIds.MaxAsync(database, table, column, token);
     public Task<GraveyardRegionResult> ReadGraveyardsAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token) => graveyards.ReadAsync(region, point, search, token);
     public Task<AreaTriggerRegionResult> ReadAreaTriggersAsync(CreatureRegion region, SpawnQueryPoint? point, string search, CancellationToken token) => areaTriggers.ReadAsync(region, point, search, token);

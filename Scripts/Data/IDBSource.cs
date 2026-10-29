@@ -30,6 +30,9 @@ public interface IDBSource
     /// <summary>The name, model, size and type of these GameObject templates (bounded); a template the database lacks is absent.</summary>
     Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
 
+    /// <summary>The rows in other tables that still name these spawn GUIDs (pools, groups, events, links, formations, SmartAI); tables with no match are left out.</summary>
+    Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 
