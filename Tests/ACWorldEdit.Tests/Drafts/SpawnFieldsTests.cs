@@ -23,17 +23,25 @@ public class SpawnFieldsTests
     [MemberData(nameof(Cases))]
     public void EveryFieldIsAColumnOfTheSpawnTableAndShowsAndParsesItsOwnDefault(WorldDialect dialect, SpawnKind kind)
     {
-        var table = SpawnEdits.SpawnTable(WorldSchemas.For(dialect), kind);
-        var row = NewRow(dialect, kind);
-        var fields = SpawnFields.For(dialect, kind);
-        Assert.Equal(fields.Count, fields.Select(f => f.Column).Distinct().Count());
+        var schema = WorldSchemas.For(dialect);
+        var spawnTable = SpawnEdits.SpawnTable(schema, kind);
+        var addonTable = SpawnEdits.AddonTable(schema, kind);
+        var spawnRow = NewRow(dialect, kind);
+        var addonRow = SpawnEdits.NewAddon(schema, kind, 5);
+        addonRow.Validate(addonTable);
+        var fields = SpawnFields.All(dialect, kind);
+        Assert.Equal(fields.Count, fields.Select(f => (f.Addon, f.Column)).Distinct().Count());
         foreach (var field in fields)
         {
-            Assert.True(table.Has(field.Column), $"{dialect} {kind}: {field.Column} is not a column");
+            var table = field.Addon ? addonTable : spawnTable;
+            var row = field.Addon ? addonRow : spawnRow;
+            Assert.True(table.Has(field.Column), $"{dialect} {kind}: {field.Column} is not a column of {table.Name}");
             // What the row shows must be accepted back, unchanged, by the same field.
             var (ok, value, error) = field.Parse(field.Show(row));
             Assert.True(ok, $"{field.Column}: {error}");
-            Assert.Equal(row.With(field.Column, value)[field.Column], row[field.Column]);
+            var (changed, problem) = SpawnFields.Apply(field, row, field.Show(row));
+            Assert.True(changed != null, $"{field.Column}: {problem}");
+            Assert.Equal(row[field.Column], changed![field.Column]);
         }
     }
 
@@ -161,5 +169,100 @@ public class SpawnFieldsTests
         Assert.Equal("none", fields["StringId"].EmptyHint);
         // An ordinary number is still not allowed to be blank.
         Assert.False(fields["spawntimesecs"].Parse("").Ok);
+    }
+
+    static (ContentDrafts Drafts, SpawnPoses Poses) Loaded(WorldDialect dialect, Row spawn, Row? addon = null)
+    {
+        string path = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "content.json"));
+        var drafts = new ContentDrafts(path, _ => dialect == WorldDialect.TrinityCore ? TcTables.Instance : AcTables.Instance);
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature, _ => dialect);
+        var rows = new RowSet();
+        var schema = WorldSchemas.For(dialect);
+        rows.Set(SpawnEdits.SpawnTable(schema, SpawnKind.Creature), spawn);
+        if (addon != null)
+        {
+            rows.Set(SpawnEdits.AddonTable(schema, SpawnKind.Creature), addon);
+        }
+
+        poses.Load("src", rows);
+        return (drafts, poses);
+    }
+
+    [Fact]
+    public void ASpawnWithoutAnAddonGetsOneWhenAnAppearanceFieldIsSetAndLosesItOnUndo()
+    {
+        var spawn = NewRow(WorldDialect.TrinityCore, SpawnKind.Creature);
+        var (drafts, poses) = Loaded(WorldDialect.TrinityCore, spawn);
+        using var _ = drafts;
+        Assert.Null(poses.AddonOf("src", 5));
+        var field = SpawnFields.AddonFor(WorldDialect.TrinityCore, SpawnKind.Creature).Single(f => f.Column == "emote");
+        var blank = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5);
+
+        // Setting a field to what a blank addon already holds records nothing.
+        Assert.True(poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "0").Row!).Ok);
+        Assert.Empty(drafts.Draft!.NetEdits());
+
+        var (ok, message) = poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "69").Row!);
+        Assert.True(ok, message);
+        var edit = Assert.Single(drafts.Draft.NetEdits()).Edit;
+        Assert.Equal(("creature_addon", null), (edit.Table, edit.Before));
+        Assert.Equal(69u, poses.AddonOf("src", 5)!.U("emote"));
+        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build("src", [], [edit], null, null, TcSchema.Instance).Apply);
+
+        // A second edit updates the staged row: still one insert.
+        Assert.True(poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "70").Row!).Ok);
+        Assert.Equal(70u, SpawnEdits.AddonTable(TcSchema.Instance, SpawnKind.Creature) is { } t ? drafts.Draft.NetEdits().Single().Edit.After!.U("emote") : 0);
+        poses.Undo(null);
+        poses.Undo(null);
+        Assert.Null(poses.AddonOf("src", 5));
+    }
+
+    [Fact]
+    public void AnExistingAddonRowIsUpdatedNotReplaced()
+    {
+        var addon = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5).With("mount", 14337u);
+        var (drafts, poses) = Loaded(WorldDialect.TrinityCore, NewRow(WorldDialect.TrinityCore, SpawnKind.Creature), addon);
+        using var _ = drafts;
+        var stance = SpawnFields.AddonFor(WorldDialect.TrinityCore, SpawnKind.Creature).Single(f => f.Column == "StandState");
+        var blank = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5);
+
+        Assert.True(poses.EditAddon(null, "src", 5, "Set stance", blank, r => SpawnFields.Apply(stance, r, "Sleeping").Row!).Ok);
+        string apply = SqlExport.Build("src", [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, TcSchema.Instance).Apply;
+        Assert.Contains("UPDATE `creature_addon` SET `StandState` = 3", apply);
+        Assert.DoesNotContain("mount`", apply.Split('\n').Single(l => l.StartsWith("UPDATE `creature_addon`", StringComparison.Ordinal)).Split("WHERE")[0]);
+    }
+
+    [Fact]
+    public void AzerothCoreKeepsTheOtherBytesWhenStanceAndWeaponsAreSet()
+    {
+        // bytes1 and bytes2 pack more than the stance and the weapons: only the low byte is the field's.
+        var addon = SpawnEdits.NewAddon(AcSchema.Instance, SpawnKind.Creature, 5).With("bytes1", 0x01020300u).With("bytes2", 0x0000_0100u);
+        var fields = SpawnFields.AddonFor(WorldDialect.AzerothCore, SpawnKind.Creature).ToDictionary(f => f.Column);
+        Assert.Equal("Standing", fields["bytes1"].Show(addon));
+        Assert.Equal("Hands free", fields["bytes2"].Show(addon));
+
+        var sitting = SpawnFields.Apply(fields["bytes1"], addon, "Sitting").Row!;
+        Assert.Equal(0x01020301u, sitting.U("bytes1"));
+        Assert.Equal("Sitting", fields["bytes1"].Show(sitting));
+        var drawn = SpawnFields.Apply(fields["bytes2"], sitting, "Melee weapon drawn").Row!;
+        Assert.Equal(0x0000_0101u, drawn.U("bytes2"));
+        Assert.Equal(0x01020301u, drawn.U("bytes1"));
+    }
+
+    [Fact]
+    public void TheLoadersAddonChecksRefuseABadStanceAndRepeatedOrNonNumericAuras()
+    {
+        var (drafts, poses) = Loaded(WorldDialect.TrinityCore, NewRow(WorldDialect.TrinityCore, SpawnKind.Creature));
+        using var _ = drafts;
+        var blank = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5);
+        var fields = SpawnFields.AddonFor(WorldDialect.TrinityCore, SpawnKind.Creature).ToDictionary(f => f.Column);
+
+        Assert.Contains("listed twice", poses.EditAddon(null, "src", 5, "Set auras", blank, r => SpawnFields.Apply(fields["auras"], r, "12345 12345").Row!).Message);
+        Assert.Contains("not a spell ID", poses.EditAddon(null, "src", 5, "Set auras", blank, r => SpawnFields.Apply(fields["auras"], r, "12345 fire").Row!).Message);
+        Assert.Contains("stance 12", poses.EditAddon(null, "src", 5, "Set stance", blank, r => r.With("StandState", 12u)).Message);
+        Assert.Empty(drafts.Draft!.NetEdits());
+
+        Assert.True(poses.EditAddon(null, "src", 5, "Set auras", blank, r => SpawnFields.Apply(fields["auras"], r, "12345 67890").Row!).Ok);
+        Assert.Equal("12345 67890", poses.AddonOf("src", 5)!["auras"]);
     }
 }

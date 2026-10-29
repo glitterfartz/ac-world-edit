@@ -425,4 +425,25 @@ public partial class CreatureOverlay
             }
         }
     }
+
+    /// <summary>The selected creature's addon row with the draft applied, or null when it has none.</summary>
+    public Row? SmokeAddon() => selectedGuid.HasValue ? poses?.AddonOf(sourceKey, selectedGuid.Value) : null;
+
+    /// <summary>Scroll the inspector so one spawn field is on screen.</summary>
+    public void SmokeRevealField(string column)
+    {
+        if (spawnFields.Field(column) is not { } field)
+        {
+            return;
+        }
+
+        for (Node node = spawnFields.GetParent(); node != null; node = node.GetParent())
+        {
+            if (node is ScrollContainer scroll)
+            {
+                scroll.EnsureControlVisible(field.Editor);
+                return;
+            }
+        }
+    }
 }

@@ -37,8 +37,8 @@ public sealed partial class SpawnInspector : VBoxContainer
         Visible = false;
     }
 
-    /// <summary>Show a spawn row, or hide the control when there is none. <paramref name="template"/> holds the template's text for each overriding column.</summary>
-    public void Show(WorldDialect dialect, SpawnKind kind, Row? row, IReadOnlyDictionary<string, string>? template, bool editable, bool force = false)
+    /// <summary>Show a spawn row and its addon row (a spawn without one passes a blank), or hide the control when there is no row. <paramref name="template"/> holds the template's text for each overriding column.</summary>
+    public void Show(WorldDialect dialect, SpawnKind kind, Row? row, Row? addon, IReadOnlyDictionary<string, string>? template, bool editable, bool force = false)
     {
         Visible = row != null;
         if (row == null)
@@ -54,7 +54,7 @@ public sealed partial class SpawnInspector : VBoxContainer
         showing = true;
         foreach (var (field, editor, hint, reset) in entries.Values)
         {
-            string text = field.Show(row);
+            string text = field.Show(field.Addon && addon != null ? addon : row);
             switch (editor)
             {
                 case OptionButton choice:
@@ -79,7 +79,7 @@ public sealed partial class SpawnInspector : VBoxContainer
                     break;
             }
 
-            bool inherits = field.Inheritable && !field.IsOverridden(row);
+            bool inherits = field.Inheritable && !field.IsOverridden(field.Addon && addon != null ? addon : row);
             hint.Visible = field.TemplateColumn != null && inherits;
             hint.Text = template != null && template.TryGetValue(field.TemplateColumn ?? "", out string value) ? $"Template: {(value.Length == 0 ? "none" : value)}" : "Template: …";
             reset.Visible = field.Inheritable && !inherits;
@@ -100,7 +100,7 @@ public sealed partial class SpawnInspector : VBoxContainer
         }
 
         string? section = null;
-        foreach (var field in SpawnFields.For(dialect, kind))
+        foreach (var field in SpawnFields.All(dialect, kind))
         {
             if (field.Section != section)
             {

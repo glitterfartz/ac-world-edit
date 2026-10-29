@@ -46,7 +46,7 @@ public sealed class SpawnPoses
     /// <summary>The rules of the source's server, applied to every spawn row; none without a dialect.</summary>
     Func<RowSet, IEnumerable<InteractionIssue>> Rules(string source) => dialectOf == null
         ? _ => []
-        : rows => SpawnRules.Check(dialectOf(source), kind, rows, Table(source), Facts);
+        : rows => SpawnRules.Check(dialectOf(source), kind, rows, Table(source), Facts).Concat(SpawnRules.CheckAddons(dialectOf(source), kind, rows, AddonTable(source)));
 
     /// <summary>Remember database rows as the baseline of later edits (replaces a row loaded before).</summary>
     public void Load(string source, IEnumerable<Row> rows)
@@ -215,6 +215,40 @@ public sealed class SpawnPoses
 
     /// <summary>The spawn's row with the draft applied, or null while its row is still loading.</summary>
     public Row? RowOf(string source, ulong guid) => drafts.Draft?.Effective(source, Snapshot(source)).Get(Table(source), Key(guid));
+
+    TableSchema AddonTable(string source) => drafts.Draft!.Tables(source).Find(kind == SpawnKind.Creature ? "creature_addon" : "gameobject_addon");
+
+    /// <summary>The spawn's addon row with the draft applied, or null when it has none.</summary>
+    public Row? AddonOf(string source, ulong guid) => drafts.Draft?.Effective(source, Snapshot(source)).Get(AddonTable(source), Key(guid));
+
+    /// <summary>
+    /// Change a spawn's addon row as one undoable command. A spawn that has no addon row starts from
+    /// <paramref name="blank"/> and gets the row inserted; a change that leaves the row as it was records nothing.
+    /// </summary>
+    public (bool Ok, string Message) EditAddon(object? sender, string source, ulong guid, string label, Row blank, Func<Row, Row> change)
+    {
+        if (drafts.Draft == null)
+        {
+            return (false, drafts.Error ?? "Editing is disabled.");
+        }
+
+        var table = AddonTable(source);
+        var existing = AddonOf(source, guid);
+        try
+        {
+            var after = change(existing ?? blank);
+            if (after == (existing ?? blank))
+            {
+                return (true, "");
+            }
+
+            return Commit(sender, source, label, [existing == null ? InteractionEdits.Insert(table, after) : InteractionEdits.Update(table, existing, after)]);
+        }
+        catch (InvalidDataException error)
+        {
+            return (false, "Not saved: " + error.Message);
+        }
+    }
 
     /// <summary>
     /// Change some columns of a spawn row as one undoable command named <paramref name="label"/>. A

@@ -177,6 +177,14 @@ public static class SpawnEdits
         return shared;
     }
 
+    /// <summary>An addon row with nothing set, for a spawn that has none yet: every column zero or empty, auras NULL where the column allows it.</summary>
+    public static Row NewAddon(IWorldSchema schema, SpawnKind kind, ulong guid)
+    {
+        var table = AddonTable(schema, kind);
+        var row = Defaults(table).With("guid", guid);
+        return table.IsNullable("auras") ? row.With("auras", null) : row;
+    }
+
     /// <summary>A row of the table with every column zero or empty; callers set the columns that matter.</summary>
     static Row Defaults(TableSchema table) => Row.Of(table.Columns.Select(c => (c.Name, c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0)).ToArray());
 }

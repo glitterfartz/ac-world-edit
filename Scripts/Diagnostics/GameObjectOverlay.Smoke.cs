@@ -177,4 +177,6 @@ public partial class GameObjectOverlay
     public SpawnInspector SmokeFields => spawnFields;
 
     public Row? SmokeRow() => selected.HasValue ? poses?.RowOf(sourceKey, selected.Value) : null;
+
+    public Row? SmokeAddon() => selected.HasValue ? poses?.AddonOf(sourceKey, selected.Value) : null;
 }

@@ -34,9 +34,15 @@ public enum SpawnInherit
 /// </summary>
 public sealed record SpawnField(string Column, string Label, string Section, SpawnFieldKind Kind, string Tip = "",
     SpawnInherit Inherit = SpawnInherit.None, string? TemplateColumn = null, (uint Value, string Label)[]? Choices = null,
-    double Min = 0, double Max = double.MaxValue, bool BlankMeansZero = false)
+    double Min = 0, double Max = double.MaxValue, bool BlankMeansZero = false, bool Addon = false, long Mask = 0, int Shift = 0, bool BlankIsNull = false)
 {
     public bool Inheritable => Inherit != SpawnInherit.None;
+
+    /// <summary>The bits of a packed column this field owns (AzerothCore keeps stand and sheath state in the low bytes of `bytes1` and `bytes2`), or the whole column when there is no mask.</summary>
+    public long Part(Row row) => Mask == 0 ? long.Parse(row[Column], CultureInfo.InvariantCulture) : (long)((ulong.Parse(row[Column], CultureInfo.InvariantCulture) >> Shift) & (ulong)Mask);
+
+    /// <summary>The column value with this field's bits set to <paramref name="part"/>, the rest unchanged.</summary>
+    public ulong Merge(Row row, long part) => (ulong.Parse(row[Column], CultureInfo.InvariantCulture) & ~((ulong)Mask << Shift)) | (((ulong)part & (ulong)Mask) << Shift);
 
     /// <summary>What an empty field says when it has no template value behind it.</summary>
     public string EmptyHint => TemplateColumn != null ? "template" : Column == "StringId" ? "none" : "default";
@@ -62,7 +68,7 @@ public sealed record SpawnField(string Column, string Label, string Section, Spa
             return "";
         }
 
-        string value = row[Column];
+        string value = Mask != 0 ? Part(row).ToString(CultureInfo.InvariantCulture) : row[Column];
         return Kind == SpawnFieldKind.Choice && Choices?.FirstOrDefault(c => c.Value.ToString(CultureInfo.InvariantCulture) == value) is { Label: { } label } ? label : value;
     }
 
@@ -86,7 +92,7 @@ public sealed record SpawnField(string Column, string Label, string Section, Spa
         switch (Kind)
         {
             case SpawnFieldKind.Text:
-                return (true, text, "");
+                return (true, text.Length == 0 && BlankIsNull ? null : text, "");
             case SpawnFieldKind.Choice:
                 var choice = Choices?.FirstOrDefault(c => string.Equals(c.Label, text, StringComparison.OrdinalIgnoreCase) || c.Value.ToString(CultureInfo.InvariantCulture) == text);
                 return choice is { Label: not null } ? (true, choice.Value.Value, "") : (false, null, $"{Label}: choose {string.Join(", ", Choices?.Select(c => c.Label) ?? [])}.");
@@ -178,6 +184,50 @@ public static class SpawnFields
         return fields;
     }
 
+    static readonly (uint, string)[] StandStates = [(0, "Standing"), (1, "Sitting"), (2, "Sitting on a chair"), (3, "Sleeping"), (4, "Sitting on a low chair"), (5, "Sitting on a medium chair"), (6, "Sitting on a high chair"), (7, "Dead"), (8, "Kneeling"), (9, "Submerged")];
+    static readonly (uint, string)[] SheathStates = [(0, "Hands free"), (1, "Melee weapon drawn"), (2, "Ranged weapon drawn")];
+    public const string AppearanceSection = "Appearance";
+
+    /// <summary>
+    /// The fields of the spawn's addon row (`creature_addon`, `gameobject_addon`): how it stands, what it
+    /// wears, rides and casts. A spawn without an addon row shows defaults and gets a row when one is set.
+    /// </summary>
+    public static IReadOnlyList<SpawnField> AddonFor(WorldDialect dialect, SpawnKind kind)
+    {
+        bool tc = dialect == WorldDialect.TrinityCore;
+        if (kind == SpawnKind.GameObject)
+        {
+            return
+            [
+                new("invisibilityType", "Invisibility type", AppearanceSection, SpawnFieldKind.Number, "0 visible to everyone; other types hide it from players without the matching invisibility.", Max: 31, Addon: true),
+                new("invisibilityValue", "Invisibility value", AppearanceSection, SpawnFieldKind.Number, "How strong the invisibility is.", Max: uint.MaxValue, Addon: true)
+            ];
+        }
+
+        var fields = new List<SpawnField>
+        {
+            new("mount", "Mount model", AppearanceSection, SpawnFieldKind.Number, "Display ID of the mount it rides; 0 none.", Max: uint.MaxValue, Addon: true)
+        };
+        if (tc)
+        {
+            fields.Add(new("MountCreatureID", "Mount creature", AppearanceSection, SpawnFieldKind.Number, "Creature entry whose model it rides; 0 none.", Max: uint.MaxValue, Addon: true));
+            fields.Add(new("StandState", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How it stands when idle.", Choices: StandStates, Addon: true));
+            fields.Add(new("SheathState", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons it has drawn.", Choices: SheathStates, Addon: true));
+        }
+        else
+        {
+            fields.Add(new("bytes1", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How it stands when idle (low byte of bytes1).", Choices: StandStates, Addon: true, Mask: 0xFF));
+            fields.Add(new("bytes2", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons it has drawn (low byte of bytes2).", Choices: SheathStates, Addon: true, Mask: 0xFF));
+        }
+
+        fields.Add(new("emote", "Emote", AppearanceSection, SpawnFieldKind.Number, "Emote ID it plays while idle; 0 none.", Max: uint.MaxValue, Addon: true));
+        fields.Add(new("auras", "Auras", AppearanceSection, SpawnFieldKind.Text, "Spell IDs it has on spawn, separated by spaces.", Addon: true, BlankIsNull: tc));
+        return fields;
+    }
+
+    /// <summary>The spawn fields followed by the addon fields: everything the inspector shows.</summary>
+    public static IReadOnlyList<SpawnField> All(WorldDialect dialect, SpawnKind kind) => [.. For(dialect, kind), .. AddonFor(dialect, kind)];
+
     /// <summary>The template columns to read so the inspector can show what an empty override would use.</summary>
     public static IReadOnlyList<string> TemplateColumns(WorldDialect dialect, SpawnKind kind) => For(dialect, kind).Where(f => f.TemplateColumn != null).Select(f => f.TemplateColumn!).ToArray();
 
@@ -194,7 +244,7 @@ public static class SpawnFields
             return (null, error);
         }
 
-        var changed = row.With(field.Column, value);
+        var changed = field.Mask != 0 ? row.With(field.Column, field.Merge(row, Convert.ToInt64(value, CultureInfo.InvariantCulture))) : row.With(field.Column, value);
         if (field.Column == "wander_distance")
         {
             double radius = Convert.ToDouble(value, CultureInfo.InvariantCulture);

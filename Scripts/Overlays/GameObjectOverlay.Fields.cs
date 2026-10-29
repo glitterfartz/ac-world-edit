@@ -28,13 +28,14 @@ public partial class GameObjectOverlay
 
         if (!selected.HasValue || poses == null || !poses.Available || group.Members.Count > 0 || !lookup.TryGetValue(selected.Value, out var spawn))
         {
-            spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.GameObject, null, null, false);
+            spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.GameObject, null, null, null, false);
             return;
         }
 
         var dialect = ContentDraftFiles.Sources.DialectOf(sourceKey);
         uint entry = spawn.TemplateId;
-        spawnFields.Show(dialect, SpawnKind.GameObject, poses.RowOf(sourceKey, selected.Value), templateValues.GetValueOrDefault(entry), true, force);
+        ulong guid = selected.Value;
+        spawnFields.Show(dialect, SpawnKind.GameObject, poses.RowOf(sourceKey, guid), poses.AddonOf(sourceKey, guid) ?? SpawnEdits.NewAddon(WorldSchemas.For(dialect), SpawnKind.GameObject, guid), templateValues.GetValueOrDefault(entry), true, force);
         LoadTemplateValues(entry, dialect);
     }
 
@@ -71,12 +72,16 @@ public partial class GameObjectOverlay
 
         ulong guid = selected.Value;
         string error = "";
-        var (ok, message) = poses.Edit(this, sourceKey, guid, "Set " + field.Label.ToLowerInvariant(), row =>
+        Func<Row, Row> change = row =>
         {
             var (changed, problem) = SpawnFields.Apply(field, row, text);
             error = problem;
             return changed ?? row;
-        });
+        };
+        string label = "Set " + field.Label.ToLowerInvariant();
+        var (ok, message) = field.Addon
+            ? poses.EditAddon(this, sourceKey, guid, label, SpawnEdits.NewAddon(ContentDraftFiles.Sources.SchemaFor(sourceKey), SpawnKind.GameObject, guid), change)
+            : poses.Edit(this, sourceKey, guid, label, change);
         Say(error.Length > 0 ? error : ok ? "Saved." : message);
         RefreshSpawnFields(true);
     }

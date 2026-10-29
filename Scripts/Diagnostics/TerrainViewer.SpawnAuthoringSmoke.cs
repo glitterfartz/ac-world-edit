@@ -701,6 +701,53 @@ public partial class TerrainViewer
             creatures.Deselect();
             return true;
         }),
+        ("appearance-set-emote-and-stance", () =>
+        {
+            creatures.Select(authoringTemplate!.Guid);
+            if (creatures.SelectedGuid != authoringTemplate.Guid || !creatures.CanDelete || creatures.SmokeRow() == null)
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeFields.Field("emote") != null && creatures.SmokeFields.Field("auras") != null, "the Appearance fields are not shown");
+            authoringAddonBefore = creatures.SmokeAddon();
+            creatures.SmokeFields.SmokeType("emote", "69");
+            return true;
+        }),
+        ("appearance-emote-saved", () =>
+        {
+            Require(creatures.SmokeAddon()?.U("emote") == 69 && creatures.LastMessage == "Saved.", "the emote was not saved: " + creatures.LastMessage);
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("`creature_addon`", StringComparison.Ordinal), "the export lacks the addon change");
+            creatures.SmokeRevealField("emote");
+            Screenshot("appearance");
+            creatures.SmokeFields.SmokeType("Stance".Length > 0 && ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore ? "StandState" : "bytes1", "Sleeping");
+            return true;
+        }),
+        ("appearance-stance-saved-keeping-the-other-bits", () =>
+        {
+            bool tc = ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore;
+            var addon = creatures.SmokeAddon()!;
+            Require(tc ? addon.U("StandState") == 3 : (addon.U("bytes1") & 0xFF) == 3, "the stance was not saved");
+            if (!tc && authoringAddonBefore != null)
+            {
+                Require((addon.U("bytes1") & ~0xFFu) == (authoringAddonBefore.U("bytes1") & ~0xFFu), "setting the stance changed the other bytes of bytes1");
+            }
+
+            creatures.SmokeFields.SmokeType("auras", "12345 12345");
+            return true;
+        }),
+        ("appearance-bad-auras-refused-then-undone", () =>
+        {
+            Require(creatures.LastMessage.Contains("listed twice", StringComparison.Ordinal), "the user was not told why the auras were refused: " + creatures.LastMessage);
+            Require(creatures.SmokeFields.Field("auras")!.Value.Text == "" || creatures.SmokeFields.Field("auras")!.Value.Text == (creatures.SmokeAddon()?.IsNull("auras") == false ? creatures.SmokeAddon()!["auras"] : ""), "the field kept the refused text");
+            for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
+            {
+                creatures.SmokeHistory(false);
+            }
+
+            Require(drafts.Draft!.NetEdits().Count == 0 && creatures.SmokeAddon() == authoringAddonBefore, "undo did not restore the addon");
+            return true;
+        }),
         ("referenced-creature-select", () =>
         {
             if (authoringReferenced == 0)
@@ -893,10 +940,22 @@ public partial class TerrainViewer
             fields.SmokeType("state", "Active (open)");
             return true;
         }),
-        ("object-state-saved-and-bad-animation-refused", () =>
+        ("object-state-saved", () =>
         {
             Require(gameObjects.SmokeRow()!["state"] == "0" && gameObjects.SmokeFields.Field("state")!.Value.Text == "Active (open)", "the state was not saved");
             Require(AuthoringScript(gameObjects.SmokeSourceKey).Contains("`state` = 0", StringComparison.Ordinal), "the export lacks the state update");
+            return true;
+        }),
+        ("object-invisibility-creates-an-addon", () =>
+        {
+            Require(gameObjects.SmokeAddon() == null || gameObjects.SmokeAddon()!.U("invisibilityType") == 0, "this GameObject already has an invisibility; pick another for the test");
+            gameObjects.SmokeFields.SmokeType("invisibilityType", "3");
+            return true;
+        }),
+        ("object-invisibility-saved", () =>
+        {
+            Require(gameObjects.SmokeAddon()?.U("invisibilityType") == 3 && gameObjects.LastMessage == "Saved.", "the invisibility was not saved: " + gameObjects.LastMessage);
+            Require(AuthoringScript(gameObjects.SmokeSourceKey).Contains("`gameobject_addon`", StringComparison.Ordinal), "the export lacks the addon change");
             gameObjects.SmokeFields.SmokeType("animprogress", "300");
             return true;
         }),
@@ -1090,6 +1149,7 @@ public partial class TerrainViewer
     Vector2 authoringScreen;
     Vector3 authoringTarget;
     string authoringRespawn = "";
+    Row? authoringAddonBefore;
     SpawnPathUse? authoringPath;
     bool authoringSkipPath;
 
