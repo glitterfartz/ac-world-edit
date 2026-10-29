@@ -39,3 +39,13 @@ public static class SpawnImpact
     public static string Prompt(string subject, IEnumerable<SpawnImpactItem> items, IEnumerable<SpawnPathUse>? paths = null) =>
         $"{subject} is still referenced:\n\n{string.Join('\n', Lines(items, paths).Select(l => "• " + l))}\n\nDeleting it leaves these rows behind. Delete anyway?";
 }
+
+/// <summary>
+/// How a creature template's spawns relate to its addon: how many spawns it has, and how many of those
+/// have their own addon row (which replaces the template's, so they would not change with it).
+/// </summary>
+public sealed record TemplateUse(int Spawns, int WithOwnAppearance)
+{
+    /// <summary>The spawns an edit of the template's appearance reaches.</summary>
+    public int Affected => Spawns - WithOwnAppearance;
+}

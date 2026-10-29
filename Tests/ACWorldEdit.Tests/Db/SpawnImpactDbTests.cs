@@ -82,4 +82,42 @@ public class SpawnImpactDbTests
 
     [TcDbFact]
     public async Task TrinityCoreReportsThePathADeletedCreatureWouldLeaveUnused() => await CheckPaths(Environments.TrinityConnection()!);
+
+    /// <summary>The scalar of a statement, as a number.</summary>
+    static async Task<long> Scalar(WorldConnection connection, string sql)
+    {
+        await using var session = await new WorldDatabase(connection).OpenAsync(CancellationToken.None);
+        await using var command = session.ReadOnly(sql);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    static async Task CheckTemplateAddon(WorldConnection connection)
+    {
+        var source = DBSource.Open(connection);
+        var schema = source.Schema;
+        uint entry = (uint)(await Find(connection, "SELECT t.entry FROM creature_template_addon t WHERE EXISTS(SELECT 1 FROM creature c WHERE c.id=t.entry) ORDER BY t.entry LIMIT 1") ?? throw new InvalidOperationException("No creature template with an addon and spawns."));
+
+        var row = await source.ReadTemplateAddonAsync(entry, default);
+        Assert.NotNull(row);
+        row!.Validate(SpawnEdits.TemplateAddonTable(schema));
+        Assert.Equal(entry.ToString(), row["entry"]);
+        // The override of a spawn starts as exactly this appearance.
+        var copy = SpawnEdits.AddonFromTemplate(schema, row, 5);
+        copy.Validate(SpawnEdits.AddonTable(schema, SpawnKind.Creature));
+        Assert.All(SpawnEdits.AddonTable(schema, SpawnKind.Creature).Columns.Select(c => c.Name).Where(n => n != "guid"), c => Assert.Equal(row[c], copy[c]));
+
+        Assert.Null(await source.ReadTemplateAddonAsync(uint.MaxValue, default));
+
+        var use = await source.CountTemplateUseAsync(entry, default);
+        Assert.Equal(await Scalar(connection, $"SELECT COUNT(*) FROM creature WHERE id={entry}"), use.Spawns);
+        Assert.Equal(await Scalar(connection, $"SELECT COUNT(*) FROM creature c JOIN creature_addon a ON a.guid=c.guid WHERE c.id={entry}"), use.WithOwnAppearance);
+        Assert.Equal(use.Spawns - use.WithOwnAppearance, use.Affected);
+        Assert.Equal(new TemplateUse(0, 0), await source.CountTemplateUseAsync(uint.MaxValue, default));
+    }
+
+    [DbFact]
+    public async Task AzerothCoreReadsATemplateAddonAndHowItsSpawnsShareIt() => await CheckTemplateAddon(new WorldConnection(Config, null, WorldDialect.AzerothCore));
+
+    [TcDbFact]
+    public async Task TrinityCoreReadsATemplateAddonAndHowItsSpawnsShareIt() => await CheckTemplateAddon(Environments.TrinityConnection()!);
 }

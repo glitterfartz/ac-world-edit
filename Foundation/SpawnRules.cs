@@ -171,34 +171,54 @@ public static class SpawnRules
 
         foreach (var row in rows.All(addonTable))
         {
-            string who = $"Creature spawn {row["guid"]}'s appearance";
-            bool tc = dialect == WorldDialect.TrinityCore;
-            uint stand = tc ? row.U("StandState") : (uint)(ulong.Parse(row["bytes1"], CultureInfo.InvariantCulture) & 0xFF);
-            uint sheath = tc ? row.U("SheathState") : (uint)(ulong.Parse(row["bytes2"], CultureInfo.InvariantCulture) & 0xFF);
-            if (stand > MaxStandState)
+            foreach (var issue in CheckAddonRow(dialect, row, $"Creature spawn {row["guid"]}'s appearance"))
             {
-                yield return Error($"{who}: stance {stand} is not one of 0 to {MaxStandState}.");
-            }
-
-            if (sheath > MaxSheathState)
-            {
-                yield return Error($"{who}: weapon state {sheath} is not one of 0 to {MaxSheathState}.");
-            }
-
-            string auras = row.IsNull("auras") ? "" : row["auras"];
-            var seen = new HashSet<uint>();
-            foreach (string token in auras.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                if (!uint.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out uint spell) || spell == 0)
-                {
-                    yield return Error($"{who}: aura \"{token}\" is not a spell ID.");
-                }
-                else if (!seen.Add(spell))
-                {
-                    yield return Error($"{who}: aura {spell} is listed twice.");
-                }
+                yield return issue;
             }
         }
     }
+
+    /// <summary>The same checks on the rows of `creature_template_addon`, which the server loads with the same rules.</summary>
+    public static IEnumerable<InteractionIssue> CheckTemplateAddons(WorldDialect dialect, RowSet rows, TableSchema templateAddonTable)
+    {
+        foreach (var row in rows.All(templateAddonTable))
+        {
+            foreach (var issue in CheckAddonRow(dialect, row, $"Creature template {row["entry"]}'s appearance"))
+            {
+                yield return issue;
+            }
+        }
+    }
+
+    static IEnumerable<InteractionIssue> CheckAddonRow(WorldDialect dialect, Row row, string who)
+    {
+        bool tc = dialect == WorldDialect.TrinityCore;
+        uint stand = tc ? row.U("StandState") : (uint)(ulong.Parse(row["bytes1"], CultureInfo.InvariantCulture) & 0xFF);
+        uint sheath = tc ? row.U("SheathState") : (uint)(ulong.Parse(row["bytes2"], CultureInfo.InvariantCulture) & 0xFF);
+        if (stand > MaxStandState)
+        {
+            yield return Error($"{who}: stance {stand} is not one of 0 to {MaxStandState}.");
+        }
+
+        if (sheath > MaxSheathState)
+        {
+            yield return Error($"{who}: weapon state {sheath} is not one of 0 to {MaxSheathState}.");
+        }
+
+        string auras = row.IsNull("auras") ? "" : row["auras"];
+        var seen = new HashSet<uint>();
+        foreach (string token in auras.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!uint.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out uint spell) || spell == 0)
+            {
+                yield return Error($"{who}: aura \"{token}\" is not a spell ID.");
+            }
+            else if (!seen.Add(spell))
+            {
+                yield return Error($"{who}: aura {spell} is listed twice.");
+            }
+        }
+    }
+
     static InteractionIssue Error(string message) => new(true, message);
 }

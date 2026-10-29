@@ -177,6 +177,26 @@ public static class SpawnEdits
         return shared;
     }
 
+    public static TableSchema TemplateAddonTable(IWorldSchema schema) => schema.Tables.Find("creature_template_addon");
+
+    /// <summary>A template addon row with nothing set, for a template that has none yet.</summary>
+    public static Row NewTemplateAddon(IWorldSchema schema, uint entry)
+    {
+        var table = TemplateAddonTable(schema);
+        var row = Defaults(table).With("entry", entry);
+        return table.IsNullable("auras") ? row.With("auras", null) : row;
+    }
+
+    /// <summary>
+    /// The spawn addon row that starts as a copy of the template's: every column the same, keyed by the spawn.
+    /// A spawn with its own addon row ignores the template's entirely, so an override has to begin from it.
+    /// </summary>
+    public static Row AddonFromTemplate(IWorldSchema schema, Row template, ulong guid)
+    {
+        var table = AddonTable(schema, SpawnKind.Creature);
+        return Row.Of(table.Columns.Select(c => (c.Name, c.Name == "guid" ? (object)guid : template[c.Name])).ToArray());
+    }
+
     /// <summary>An addon row with nothing set, for a spawn that has none yet: every column zero or empty, auras NULL where the column allows it.</summary>
     public static Row NewAddon(IWorldSchema schema, SpawnKind kind, ulong guid)
     {

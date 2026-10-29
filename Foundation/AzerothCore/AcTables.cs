@@ -353,6 +353,18 @@ public sealed class AcTables : ITableCatalog
         ("auras", ColumnKind.Text, 0)
     ]);
 
+
+    /// <summary>What every spawn of a creature template looks like (mount, stance, weapons, emote, auras) unless the spawn has its own `creature_addon` row, which replaces this one entirely.</summary>
+    public static readonly TableSchema CreatureTemplateAddon = new("creature_template_addon", ["entry"], [
+        ("entry", ColumnKind.UInt, 0),
+        ("path_id", ColumnKind.UInt, 0),
+        ("mount", ColumnKind.UInt, 0),
+        ("bytes1", ColumnKind.UInt, 0),
+        ("bytes2", ColumnKind.UInt, 0),
+        ("emote", ColumnKind.UInt, 0),
+        ("visibilityDistanceType", ColumnKind.UInt, 0),
+        ("auras", ColumnKind.Text, 0)
+    ]);
     public static readonly TableSchema SpawnGameObjectAddon = new("gameobject_addon", ["guid"], [
         ("guid", ColumnKind.UInt, 0),
         ("parent_rotation0", ColumnKind.Float, 0),
@@ -363,7 +375,7 @@ public sealed class AcTables : ITableCatalog
         ("invisibilityValue", ColumnKind.UInt, 0)
     ]);
 
-    public static readonly TableSchema[] Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon];
+    public static readonly TableSchema[] Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon];
 
     IReadOnlyList<TableSchema> ITableCatalog.All => Tables;
     TableSchema ITableCatalog.Find(string name) => Tables.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");

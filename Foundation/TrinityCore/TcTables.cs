@@ -481,6 +481,26 @@ public sealed class TcTables : ITableCatalog
         ("auras", ColumnKind.Text, 0)
     ], Nullable: ["auras"]);
 
+
+    /// <summary>What every spawn of a creature template looks like (mount, stance, weapons, emote, auras) unless the spawn has its own `creature_addon` row, which replaces this one entirely.</summary>
+    public static readonly TableSchema CreatureTemplateAddon = new("creature_template_addon", ["entry"],
+    [
+        ("entry", ColumnKind.UInt, 0),
+        ("PathId", ColumnKind.UInt, 0),
+        ("mount", ColumnKind.UInt, 0),
+        ("MountCreatureID", ColumnKind.UInt, 0),
+        ("StandState", ColumnKind.UInt, 0),
+        ("AnimTier", ColumnKind.UInt, 0),
+        ("VisFlags", ColumnKind.UInt, 0),
+        ("SheathState", ColumnKind.UInt, 0),
+        ("PvPFlags", ColumnKind.UInt, 0),
+        ("emote", ColumnKind.UInt, 0),
+        ("aiAnimKit", ColumnKind.UInt, 0),
+        ("movementAnimKit", ColumnKind.UInt, 0),
+        ("meleeAnimKit", ColumnKind.UInt, 0),
+        ("visibilityDistanceType", ColumnKind.UInt, 0),
+        ("auras", ColumnKind.Text, 0)
+    ], Nullable: ["auras"]);
     public static readonly TableSchema SpawnGameObjectAddon = new("gameobject_addon", ["guid"],
     [
         ("guid", ColumnKind.ULong, 0),
@@ -494,7 +514,7 @@ public sealed class TcTables : ITableCatalog
         ("AIAnimKitID", ColumnKind.UInt, 0)
     ]);
 
-    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText, AreaTriggerScripts, AreaTriggerAI, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon];
+    public static readonly TableSchema[] Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText, AreaTriggerScripts, AreaTriggerAI, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon];
 
     public IReadOnlyList<TableSchema> All => Tables;
 

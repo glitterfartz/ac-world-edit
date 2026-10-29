@@ -251,6 +251,26 @@ public sealed class SpawnPoses
     }
 
     /// <summary>
+    /// Give a spawn its own appearance, starting as a copy of its template's (a spawn with its own addon row
+    /// ignores the template's, so starting blank would hide the template's mount, auras and emote). Does
+    /// nothing when the spawn already has its own.
+    /// </summary>
+    public (bool Ok, string Message) OverrideAddon(object? sender, IWorldSchema schema, string source, ulong guid, Row? templateAddon)
+    {
+        if (AddonOf(source, guid) != null)
+        {
+            return (true, "");
+        }
+
+        var copy = templateAddon != null ? SpawnEdits.AddonFromTemplate(schema, templateAddon, guid) : SpawnEdits.NewAddon(schema, kind, guid);
+        return Commit(sender, source, "Give this spawn its own appearance", [InteractionEdits.Insert(AddonTable(source), copy)]);
+    }
+
+    /// <summary>Remove the spawn's own appearance, so it shows its template's again. Does nothing when it has none.</summary>
+    public (bool Ok, string Message) RemoveAddon(object? sender, string source, ulong guid) =>
+        AddonOf(source, guid) is { } row ? Commit(sender, source, "Use the template's appearance", [InteractionEdits.Delete(AddonTable(source), row)]) : (true, "");
+
+    /// <summary>
     /// Change some columns of a spawn row as one undoable command named <paramref name="label"/>. A
     /// change that leaves the row as it was records nothing.
     /// </summary>
