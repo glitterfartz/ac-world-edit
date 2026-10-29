@@ -20,7 +20,38 @@ public sealed partial class LightBand
 /// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-17
 /// (secondary accents and water-specific colors) are unused future fidelity work.
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog);
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, (uint Time, float End, float Scaler)[]? FogDistance = null)
+{
+    /// <summary>
+    /// Retail fog distance at a tick: the client fades linearly from End * Scaler to End, so End is where the
+    /// fog is complete. Null for Wrath profiles and for samples without a usable distance.
+    /// </summary>
+    public float? FogEndAt(double tick)
+    {
+        if (FogDistance is not { Length: > 0 } samples)
+        {
+            return null;
+        }
+
+        if (samples.Length == 1)
+        {
+            return samples[0].End > 0 ? samples[0].End : null;
+        }
+
+        int next = Array.FindIndex(samples, s => s.Time > tick);
+        var (before, after) = next switch
+        {
+            < 0 => (samples[^1], samples[0]),
+            0 => (samples[^1], samples[0]),
+            _ => (samples[next - 1], samples[next])
+        };
+        double span = (after.Time + (after.Time <= before.Time ? LightBand.CycleLength : 0)) - before.Time;
+        double at = tick < before.Time ? tick + LightBand.CycleLength : tick;
+        float t = span <= 0 ? 0f : (float)Math.Clamp((at - before.Time) / span, 0, 1);
+        float end = before.End + (after.End - before.End) * t;
+        return end > 0 ? end : null;
+    }
+}
 
 /// <summary>
 /// One Light.dbc region: a falloff circle (or, with FalloffEnd 0, a map-wide default) referencing a
@@ -122,7 +153,8 @@ public sealed class ClientLighting
                     Band(rows, "AmbientColor"),
                     Band(rows, "SkyTopColor"),
                     Band(rows, "SkySmogColor"),
-                    Band(rows, "SkyFogColor"));
+                    Band(rows, "SkyFogColor"),
+                    [.. rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogEnd"]), Convert.ToSingle(r["FogScaler"]))).OrderBy(s => s.Item1)]);
             }
 
             return new(regions, profiles, skyboxPaths);

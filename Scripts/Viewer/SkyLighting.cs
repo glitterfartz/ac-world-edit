@@ -183,7 +183,10 @@ public sealed partial class SkyLighting : Node3D
         skyMaterial.GroundBottomColor = skyHorizon.Darkened(0.3f);
         environment.Environment.FogEnabled = true;
         environment.Environment.FogLightColor = fog;
-        environment.Environment.FogDensity = 0.0035f;
+        // Retail fog is complete at the light's FogEnd; the exponential falloff reaches about 3 % transmittance there.
+        float? backgroundEnd = backgroundProfile.FogEndAt(tick), foregroundEnd = foregroundProfile?.FogEndAt(tick);
+        float? fogEnd = backgroundEnd is { } be && foregroundEnd is { } fe && bestWeight > 0 ? Mathf.Lerp(be, fe, bestWeight) : backgroundEnd ?? foregroundEnd;
+        environment.Environment.FogDensity = fogEnd is { } end ? 3.5f / Math.Max(end, 10f) : 0.0035f;
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
         SetSkybox(table.SkyboxPath(table.Profile(activeParamsId)?.SkyboxId ?? 0));
         skyboxAnchor.Position = camera.Position;
