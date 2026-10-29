@@ -21,6 +21,9 @@ public interface IDBSource
     /// <summary>Spawns of a creature entry (guid, map, server position), bounded.</summary>
     Task<IReadOnlyList<(ulong Guid, uint Map, double X, double Y, double Z)>> FindSpawnsAsync(uint entry, CancellationToken token);
 
+    /// <summary>The `creature` or `gameobject` rows of these GUIDs (bounded): the baseline of a spawn edit.</summary>
+    Task<RowSet> ReadSpawnRowsAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 
