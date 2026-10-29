@@ -234,6 +234,8 @@ public partial class TerrainViewer
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, waypoints, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
         drafts = ContentDraftFiles.Open();
+        creatures.Attach(drafts);
+        gameObjects.Attach(drafts);
         creatureProps = new CreaturePropertiesWindow
         {
             Connection = () => DatabaseConnection(),
@@ -479,8 +481,6 @@ public partial class TerrainViewer
     {
         ContentDraftFiles.UseProfile(kind);
         ContentDraftFiles.Rebind(drafts);
-        creatures.ReopenDraft();
-        gameObjects.ReopenDraft();
         graveyards.ReopenDraft();
         waypoints.ReopenDraft();
         pendingStore = null!;

@@ -66,8 +66,7 @@ Each kind of edit has its own draft type. All of them are backed by `DraftHistor
 
 | Draft | File | Covers |
 |---|---|---|
-| `CreatureDraft` | `CreatureDraft.cs` | Creature positions. `Move`, `Revert`, `Undo`, `Redo`, `NetMoves()` |
-| `GameObjectDraft` | `GameObjectDraft.cs` | GameObject positions and rotation |
+| `SpawnPoses` | `SpawnPoses.cs` | Spawn poses as `creature` / `gameobject` row edits on `ContentDrafts` (`Effective`, `Conflict`, `Move`, `Undo`, `Redo`); `GameObjectPlacement` holds the placement maths. Rows of existing spawns come from `IDBSource.ReadSpawnRowsAsync` |
 | `GraveyardDraft` | `GraveyardDraft.cs` | Graveyard location, name and zone links, dialect-neutral (`ISqlDialect.Graveyard` maps them to tables). ID and map cannot change |
 | `WaypointDraft` | `WaypointDraft.cs` | Waypoint positions and properties of either dialect (`WaypointProps.EditableOn` says which properties a dialect stores: TrinityCore only facing and delay) |
 | `ContentDrafts` | `ContentDrafts.cs` | One shared `InteractionDraft` for the interaction, quest and behavior editors |
@@ -122,7 +121,7 @@ Details:
 - **Net changes.** Draft entries are collapsed per source, GUID or key: the first `Before` to the last `After`. Changes that end up at the baseline are dropped.
 - **Pending changes** (`Foundation/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. The set of exported IDs is saved as a JSON array.
 - **Discard** calls the owning draft's `Revert`. Reverts are themselves undoable entries.
-- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict, and the second has editing disabled). `UseProfile` picks the folder at startup and on a client switch, which reopens the overlay drafts (`ReopenDraft`) and rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. The first launch after the split moves the old flat files into the profile in use. Files: `creature-positions.json`, `gameobject-positions.json`, `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
+- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict, and the second has editing disabled). `UseProfile` picks the folder at startup and on a client switch, which rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. The first launch after the split moves the old flat files into the profile in use. Files: `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
 
 ## SQL generation: `Foundation/SqlExport.cs`
 

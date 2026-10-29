@@ -82,7 +82,7 @@ public class TcGossipTests
             Assert.Equal(2, Page.Options.Select(Effective(), 42).Count());
             drafts.History(null, true);
             Assert.Single(Page.Options.Select(Effective(), 42));
-            var sql = SqlExport.Build("tc", [], [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+            var sql = SqlExport.Build("tc", [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
             Assert.Contains("`Probability7` = 0.125", sql.Apply);
             Assert.Contains("`BroadcastTextID7` = 130", sql.Apply);
             Assert.Contains("`BroadcastTextID7` = 0", sql.Revert);
@@ -103,7 +103,7 @@ public class TcGossipTests
         var before = Page.Options.Select(rows, 42).Single();
         using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
         Assert.True(drafts.Commit(null, "tc", rows, rows, "Remove", [Page.Options.Remove(before)], Check).Ok);
-        var sql = SqlExport.Build("tc", [], [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        var sql = SqlExport.Build("tc", [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
         Assert.Contains("DELETE FROM `gossip_menu_option`", sql.Apply);
         Assert.Contains("INSERT INTO `gossip_menu_option`", sql.Revert);
         Assert.Contains("`MenuID` = 42", sql.Apply);
@@ -174,7 +174,7 @@ public class TcGossipTests
         var effective = drafts.Draft!.Effective("tc", rows);
         Assert.Equal(43u, effective.All(TcTables.CreatureGossip).Single().U("MenuID"));
         Assert.Single(effective.All(Page.Options.Table), r => r.U("MenuID") == 43);
-        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
         Assert.Contains("`creature_template_gossip`", sql.Apply);
         drafts.History(null, false);
         Assert.Equal(42u, drafts.Draft.Effective("tc", rows).All(TcTables.CreatureGossip).Single().U("MenuID"));
@@ -194,7 +194,7 @@ public class TcGossipTests
             InteractionEdits.Insert(TcTables.GossipMenu, Row.Of(("MenuID", 900u), ("TextID", 500u))),
             InteractionEdits.Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", 5u), ("MenuID", 900u)))
         ], Check).Ok);
-        var sql = SqlExport.Build("tc", [], [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        var sql = SqlExport.Build("tc", [], drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
         Assert.Contains("`npc_text`", sql.Apply);
         Assert.Contains("`gossip_menu`", sql.Apply);
         Assert.Contains("`creature_template_gossip`", sql.Revert);

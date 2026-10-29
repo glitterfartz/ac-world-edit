@@ -5,8 +5,9 @@ using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
 /// <summary>
-/// Transient scene/list projection of bounded database records. CreatureDraft owns durable moves
-/// and ModelLibrary shared resources; unloading markers never changes rows.
+/// Transient scene/list projection of bounded database records. SpawnPoses keeps moves as `creature`
+/// row edits on the shared content draft and ModelLibrary shared resources; unloading markers never
+/// changes rows.
 /// </summary>
 public partial class CreatureOverlay : RegionOverlay
 {
@@ -21,8 +22,8 @@ public partial class CreatureOverlay : RegionOverlay
     long modelUpdate;
     // Source records are immutable baselines. Markers/native transforms show effective
     // draft poses; neither a streaming refresh nor a failed save replaces source rows.
-    CreatureDraft? draft;
-    string draftPath = "";
+    SpawnPoses? poses;
+    readonly HashSet<ulong> loadingRows = [];
     string sourceKey = "";
     /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
     public Action<string>? Report { get; set; }
@@ -99,30 +100,58 @@ public partial class CreatureOverlay : RegionOverlay
 
     public event Action<WorldPose>? FocusRequested;
     /// <summary>
-    /// Open a durable local draft, isolated for movement smoke checks, and attach the gizmo.
-    /// Recovery failures preserve the file and disable movement.
+    /// Attach the gizmo.
     /// </summary>
     public override void _Ready()
     {
-        ReopenDraft();
         gizmo = new TransformGizmo();
         AddChild(gizmo);
         gizmo.Changed += MoveSelection;
     }
 
-    /// <summary>Open the draft file of the current client profile, releasing the previous one.</summary>
-    public void ReopenDraft()
+    /// <summary>
+    /// Keep creature poses on the shared content draft, and redraw whenever any editor changes it
+    /// (an undo, a discard in Pending Changes, a profile switch). A draft that cannot open disables movement.
+    /// </summary>
+    public void Attach(ContentDrafts drafts)
     {
-        draft?.Dispose();
-        draft = null;
-        draftPath = ContentDraftFiles.LocalPath("creature-positions.json");
+        poses = new SpawnPoses(drafts, SpawnKind.Creature);
+        drafts.Changed += _ =>
+        {
+            if (IsInsideTree() && gizmo != null)
+            {
+                Resync();
+            }
+        };
+    }
+
+    /// <summary>
+    /// Load the selected creature's database row in the background: a pose edit replaces the whole row,
+    /// but the region read only carries the pose. Selecting comes before dragging, so it is ready by then.
+    /// </summary>
+    async void LoadRow(ulong guid)
+    {
+        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || !loadingRows.Add(guid))
+        {
+            return;
+        }
+
+        string key = sourceKey;
+        var config = Connection();
+        // Rows are validated against the source's dialect, which the pending-changes poll may not have noted yet.
+        ContentDraftFiles.Sources.Remember(key, config.Dialect);
         try
         {
-            draft = new CreatureDraft(draftPath);
+            var rows = await DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.Creature, [guid], default);
+            poses.Load(key, rows);
         }
         catch (Exception)
         {
-            Say("Cannot open local draft. Movement disabled; existing file preserved.");
+            Say("Could not read the creature's row; it cannot be moved yet.");
+        }
+        finally
+        {
+            loadingRows.Remove(guid);
         }
     }
 
@@ -598,11 +627,12 @@ public partial class CreatureOverlay : RegionOverlay
         selectedGuid = guid;
         marker.Body.MaterialOverride = selected;
         SelectionChanged?.Invoke();
+        LoadRow(guid);
         var spawn = marker.Spawn;
         var pose = PoseOf(spawn);
         selectionName.Text = spawn.Name;
         selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
-        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility?.Description}\n{(draft?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
+        details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility?.Description}\n{(poses?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
         ShowPose(pose);
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid);
@@ -612,11 +642,11 @@ public partial class CreatureOverlay : RegionOverlay
     /// Resolve the effective local pose while retaining the immutable source baseline for conflict
     /// detection.
     /// </summary>
-    WorldPose PoseOf(CreatureSpawn spawn) => draft?.Effective(sourceKey, spawn.Guid, spawn.Pose) ?? spawn.Pose;
+    WorldPose PoseOf(CreatureSpawn spawn) => poses?.Effective(sourceKey, spawn.Guid, spawn.Pose) ?? spawn.Pose;
     /// <summary>
     /// Require a writable local draft, selection and a hit on a gizmo handle before moving.
     /// </summary>
-    public bool BeginDrag(Camera3D camera, Vector2 screen) => draft != null && selectedGuid.HasValue && gizmo.Begin(camera, screen);
+    public bool BeginDrag(Camera3D camera, Vector2 screen) => poses?.Available == true && selectedGuid.HasValue && gizmo.Begin(camera, screen);
     /// <summary>
     /// Update visual movement; persistence waits for completion of the gesture.
     /// </summary>
@@ -689,7 +719,7 @@ public partial class CreatureOverlay : RegionOverlay
     /// </summary>
     void Commit(CreatureSpawn spawn, WorldPose after, string success)
     {
-        if (draft == null)
+        if (poses == null)
         {
             return;
         }
@@ -701,16 +731,8 @@ public partial class CreatureOverlay : RegionOverlay
             return;
         }
 
-        try
-        {
-            draft.Move(sourceKey, spawn.Guid, spawn.Pose, after);
-            Say(success);
-        }
-        catch (Exception)
-        {
-            Say("Could not save change or source changed. Previous draft preserved.");
-        }
-
+        var (ok, message) = poses.Move(this, sourceKey, spawn.Guid, after);
+        Say(ok ? success : message);
         ApplyPose(spawn.Guid);
         Select(spawn.Guid);
     }
@@ -748,64 +770,17 @@ public partial class CreatureOverlay : RegionOverlay
     void History(bool redo)
     {
         gizmo.Finish(false);
-        try
+        if (poses == null)
         {
-            if (redo)
-            {
-                draft?.Redo();
-            }
-            else
-            {
-                draft?.Undo();
-            }
-        }
-        catch (Exception)
-        {
-            Say("Could not save draft history. Previous draft preserved.");
             return;
         }
 
-        Say(redo ? "Redid last local change." : "Undid last local change.");
-        Resync();
-    }
-
-    /// <summary>
-    /// Discard one creature's net move (Pending Changes window) as an undoable command.
-    /// </summary>
-    public void Revert(CreatureMove net)
-    {
-        gizmo.Finish(false);
-        try
+        string message = redo ? poses.Redo(this) : poses.Undo(this);
+        if (message.Length > 0)
         {
-            draft?.Revert(net);
-        }
-        catch (Exception)
-        {
-            Say("Could not save draft history. Previous draft preserved.");
-            return;
+            Say(message);
         }
 
-        Say("Discarded the move; back to the source position.");
-        Resync();
-    }
-
-    /// <summary>
-    /// Drop all saved moves and their undo history; every creature returns to its source position.
-    /// </summary>
-    public void ClearDraft()
-    {
-        gizmo.Finish(false);
-        try
-        {
-            draft?.Clear();
-        }
-        catch (Exception)
-        {
-            Say("Could not clear the draft history.");
-            return;
-        }
-
-        Say("Cleared the draft history.");
         Resync();
     }
 
@@ -870,11 +845,10 @@ public partial class CreatureOverlay : RegionOverlay
     }
 
     /// <summary>
-    /// Cancel read-only queries and release the draft writer lock on scene exit.
+    /// Cancel read-only queries on scene exit.
     /// </summary>
     public override void _ExitTree()
     {
         query.Dispose();
-        draft?.Dispose();
     }
 }

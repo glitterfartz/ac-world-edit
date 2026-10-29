@@ -1,4 +1,5 @@
 using Godot;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -10,9 +11,10 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class GameObjectOverlay : IPlacementEditor
 {
-    GameObjectDraft? draft;
+    SpawnPoses? poses;
+    ContentDrafts? content;
+    readonly HashSet<ulong> loadingRows = [];
     string sourceKey = "";
-    string draftPath = "";
     TransformGizmo gizmo = null!;
 
     /// <summary>Where editing feedback goes (the status bar); never the inspector.</summary>
@@ -28,9 +30,8 @@ public partial class GameObjectOverlay : IPlacementEditor
     public bool SupportsRotation => true;
     public bool IsDragging => gizmo.Dragging;
     public bool CanEdit => EditableSpawn() != null;
-    public bool CanUndo => draft?.CanUndo == true;
-    public bool CanRedo => draft?.CanRedo == true;
-    public IReadOnlyList<GameObjectMove> NetMoves() => draft?.NetMoves() ?? [];
+    public bool CanUndo => poses?.CanUndo == true;
+    public bool CanRedo => poses?.CanRedo == true;
 
     public GizmoMode Mode
     {
@@ -45,38 +46,67 @@ public partial class GameObjectOverlay : IPlacementEditor
     }
 
     /// <summary>
-    /// Open the durable draft (isolated under artifacts/ for smoke runs) and attach the gizmo.
-    /// Recovery failures keep the file and disable movement.
+    /// Attach the gizmo.
     /// </summary>
-    void OpenDraft()
+    void CreateGizmo()
     {
-        ReopenDraft();
         gizmo = new TransformGizmo();
         AddChild(gizmo);
         gizmo.Changed += MoveSelection;
     }
 
-    /// <summary>Open the draft file of the current client profile, releasing the previous one.</summary>
-    public void ReopenDraft()
+    /// <summary>
+    /// Keep GameObject placements on the shared content draft, and redraw whenever any editor changes
+    /// it (an undo, a discard in Pending Changes, a profile switch).
+    /// </summary>
+    public void Attach(ContentDrafts drafts)
     {
-        draft?.Dispose();
-        draft = null;
+        content = drafts;
+        poses = new SpawnPoses(drafts, SpawnKind.GameObject);
+        drafts.Changed += _ =>
+        {
+            if (IsInsideTree() && gizmo != null)
+            {
+                Resync();
+            }
+        };
+    }
+
+    /// <summary>
+    /// Load the selected GameObject's database row in the background: a placement edit replaces the
+    /// whole row, but the region read only carries the placement.
+    /// </summary>
+    async void LoadRow(ulong guid)
+    {
+        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || !loadingRows.Add(guid))
+        {
+            return;
+        }
+
+        string key = sourceKey;
+        var config = Connection();
+        // Rows are validated against the source's dialect, which the pending-changes poll may not have noted yet.
+        ContentDraftFiles.Sources.Remember(key, config.Dialect);
         try
         {
-            draftPath = ContentDraftFiles.LocalPath("gameobject-positions.json");
-            draft = new GameObjectDraft(draftPath);
+            var rows = await DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.GameObject, [guid], default);
+            poses.Load(key, rows);
         }
         catch (Exception)
         {
-            Say("Cannot open the GameObject draft. Movement disabled; existing file preserved.");
+            Say("Could not read the GameObject's row; it cannot be moved yet.");
+        }
+        finally
+        {
+            loadingRows.Remove(guid);
         }
     }
 
     /// <summary>The selected spawn with its effective placement, when it can be edited.</summary>
     GameObjectSpawn? EditableSpawn() =>
-        draft != null && selected.HasValue && lookup.TryGetValue(selected.Value, out var source) ? Effective(source) : null;
+        poses?.Available == true && selected.HasValue && lookup.TryGetValue(selected.Value, out var source) ? Effective(source) : null;
 
-    GameObjectPlacement PlacementOf(GameObjectSpawn source) => draft?.Effective(sourceKey, source.Guid, GameObjectPlacement.From(source)) ?? GameObjectPlacement.From(source);
+    GameObjectPlacement PlacementOf(GameObjectSpawn source) => poses?.Effective(sourceKey, source.Guid, GameObjectPlacement.From(source)) ?? GameObjectPlacement.From(source);
 
     /// <summary>The spawn as it stands with the draft applied: pose and facing replaced, the rest unchanged.</summary>
     GameObjectSpawn Effective(GameObjectSpawn source) => With(source, PlacementOf(source));
@@ -193,7 +223,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// </summary>
     void Commit(GameObjectSpawn source, GameObjectPlacement after, string success)
     {
-        if (draft == null)
+        if (poses == null)
         {
             return;
         }
@@ -206,16 +236,8 @@ public partial class GameObjectOverlay : IPlacementEditor
             return;
         }
 
-        try
-        {
-            draft.Move(sourceKey, source.Guid, GameObjectPlacement.From(source), after);
-            Say(success);
-        }
-        catch (Exception)
-        {
-            Say("Could not save change or source changed. Previous draft preserved.");
-        }
-
+        var (ok, message) = poses.Move(this, sourceKey, source.Guid, after);
+        Say(ok ? success : message);
         ShowPlacement(source, PlacementOf(source));
         ShowSelection();
     }
@@ -230,7 +252,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// </summary>
     public void DropToGround()
     {
-        if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var source) || draft == null)
+        if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var source) || poses?.Available != true)
         {
             return;
         }
@@ -262,7 +284,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// <summary>Commit typed coordinates (server space) and heading in degrees.</summary>
     public void SetPose(double x, double y, double z, double headingDegrees)
     {
-        if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var source) || draft == null)
+        if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var source) || poses?.Available != true)
         {
             return;
         }
@@ -288,65 +310,22 @@ public partial class GameObjectOverlay : IPlacementEditor
     void History(bool redo)
     {
         gizmo.Finish(false);
-        try
+        if (poses == null)
         {
-            if (redo)
-            {
-                draft?.Redo();
-            }
-            else
-            {
-                draft?.Undo();
-            }
-        }
-        catch (Exception)
-        {
-            Say("Could not save draft history. Previous draft preserved.");
             return;
         }
 
-        Say(redo ? "Redid last local change." : "Undid last local change.");
+        string message = redo ? poses.Redo(this) : poses.Undo(this);
+        if (message.Length > 0)
+        {
+            Say(message);
+        }
+
         Resync();
     }
 
     public void Undo() => History(false);
     public void Redo() => History(true);
-
-    /// <summary>Discard one GameObject's net move (Pending Changes window) as an undoable command.</summary>
-    public void Revert(GameObjectMove net)
-    {
-        gizmo.Finish(false);
-        try
-        {
-            draft?.Revert(net);
-        }
-        catch (Exception)
-        {
-            Say("Could not save draft history. Previous draft preserved.");
-            return;
-        }
-
-        Say("Discarded the move; back to the source placement.");
-        Resync();
-    }
-
-    /// <summary>Drop all saved moves and their undo history.</summary>
-    public void ClearDraft()
-    {
-        gizmo.Finish(false);
-        try
-        {
-            draft?.Clear();
-        }
-        catch (Exception)
-        {
-            Say("Could not clear the draft history.");
-            return;
-        }
-
-        Say("Cleared the draft history.");
-        Resync();
-    }
 
     /// <summary>GM teleport for comparing the effective pose in the client: `.go xyz X Y Z MAP O`.</summary>
     public string? GoCommand()

@@ -25,24 +25,15 @@ public static class SqlExport
     const string Tolerance = "0.0001";
 
     /// <summary>
-    /// Build the scripts for one database source. Creature moves, graveyards and interaction rows
-    /// may each be empty. The schema is the source's dialect (AzerothCore when omitted): its table
-    /// catalog validates the rows and its <see cref="ISqlDialect"/> writes the other statements.
+    /// Build the scripts for one database source. Graveyards, content rows (which include spawn moves,
+    /// placements and deletes) and waypoints may each be empty. The schema is the source's dialect
+    /// (AzerothCore when omitted): its table catalog validates the rows and its
+    /// <see cref="ISqlDialect"/> writes the other statements.
     /// </summary>
-    public static SqlScripts Build(string source, IEnumerable<CreatureMove> creatures, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, IWorldSchema? schema = null, IEnumerable<GameObjectMove>? gameObjects = null)
+    public static SqlScripts Build(string source, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, IWorldSchema? schema = null)
     {
         schema ??= AcSchema.Instance;
         var steps = new List<SqlStep>();
-        foreach (var move in creatures.OrderBy(m => m.Guid))
-        {
-            steps.Add(schema.Sql.CreatureMove(move));
-        }
-
-        foreach (var move in (gameObjects ?? []).OrderBy(m => m.Guid))
-        {
-            steps.Add(schema.Sql.GameObjectMove(move));
-        }
-
         foreach (var edit in graveyards.OrderBy(e => e.Id))
         {
             steps.AddRange(schema.Sql.Graveyard(edit));

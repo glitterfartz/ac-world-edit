@@ -78,7 +78,7 @@ public class TcVendorTests
             var currency = Spec.Add(effective, 42, ("item", 100), ("type", 2u), ("maxcount", 1u));
             Assert.True(drafts.Commit(null, "tc", rows, effective, "Add currency", [currency], Check).Ok);
             Assert.Equal(2, Spec.Select(drafts.Draft.Effective("tc", rows), 42).Count());
-            var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+            var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
             Assert.Contains("`type` = 1", sql.Apply);
             Assert.Contains("`BonusListIDs`", sql.Apply);
             Assert.Contains("`PlayerConditionID`", sql.Revert);

@@ -57,7 +57,7 @@ public partial class GameObjectOverlay : RegionOverlay
             Visible = false
         };
         AddChild(selectionLabel);
-        OpenDraft();
+        CreateGizmo();
     }
 
     protected override void OnRegionChanged(bool mapChanged)
@@ -344,6 +344,7 @@ public partial class GameObjectOverlay : RegionOverlay
         selected = guid;
         modelUpdate = 0;
         SelectionChanged?.Invoke();
+        LoadRow(guid);
         ShowSelection();
         list.DeselectAll();
         InspectorUi.SelectRow(list, guid, reveal: false);
@@ -360,7 +361,7 @@ public partial class GameObjectOverlay : RegionOverlay
         var spawn = Effective(source);
         title.Text = spawn.Name;
         identity.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
-        string conflict = draft?.Conflict(sourceKey, spawn.Guid, GameObjectPlacement.From(source)) == true ? "\nSource placement changed; draft requires review." : "";
+        string conflict = poses?.Conflict(sourceKey, spawn.Guid, GameObjectPlacement.From(source)) == true ? "\nSource placement changed; draft requires review." : "";
         details.Text = FormattableString.Invariant($"Map {spawn.Pose.Map} · Display {spawn.DisplayId} · Type {spawn.Type}\nX {spawn.Pose.X:F2}    Y {spawn.Pose.Y:F2}    Z {spawn.Pose.Z:F2}\nHeading {PoseText.HeadingText(spawn.Pose.Heading)}\nScale {spawn.Scale:F2} · DB state {spawn.State}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility.Description}{conflict}");
         selectionLabel.Text = spawn.Name;
         selectionLabel.Position = ViewPosition(spawn) + Vector3.Up * 2;
@@ -418,6 +419,5 @@ public partial class GameObjectOverlay : RegionOverlay
     public override void _ExitTree()
     {
         query.Dispose();
-        draft?.Dispose();
     }
 }

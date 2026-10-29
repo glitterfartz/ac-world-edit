@@ -66,7 +66,7 @@ public partial class WaypointOverlay
         SetPosition(before.X + 2, before.Y, before.Z);
         var moved = PositionOf(path, node);
         var net = NetEdits();
-        if (moved.X != (float)(before.X + 2) || net.Count != 1 || !CanUndo || SqlExport.Build(net[0].Source, [], [], [], null, net, WorldSchemas.For(path.Dialect)).Changes != 1)
+        if (moved.X != (float)(before.X + 2) || net.Count != 1 || !CanUndo || SqlExport.Build(net[0].Source, [], [], null, net, WorldSchemas.For(path.Dialect)).Changes != 1)
         {
             GD.PushError($"WAYPOINT_SMOKE_EDIT_FAILED move before={before} moved={moved} edits={net.Count}");
             return false;
@@ -98,7 +98,7 @@ public partial class WaypointOverlay
         SetDelay(props.Delay + 7000);
         net = NetEdits();
         bool tc = path.Dialect == WorldDialect.TrinityCore;
-        string apply = net.Count == 1 ? SqlExport.Build(net[0].Source, [], [], [], null, net, WorldSchemas.For(path.Dialect)).Apply : "";
+        string apply = net.Count == 1 ? SqlExport.Build(net[0].Source, [], [], null, net, WorldSchemas.For(path.Dialect)).Apply : "";
         if (StateOf(path, node).Props.Delay != props.Delay + 7000 || !apply.Contains($"`{(tc ? "Delay" : "delay")}` = {props.Delay + 7000}", StringComparison.Ordinal) || apply.Contains(tc ? "PositionX" : "position_x", StringComparison.Ordinal))
         {
             GD.PushError($"WAYPOINT_SMOKE_EDIT_FAILED property edits={net.Count}");

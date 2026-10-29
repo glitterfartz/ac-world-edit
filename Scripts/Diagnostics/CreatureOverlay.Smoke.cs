@@ -54,17 +54,30 @@ public partial class CreatureOverlay
     }
 
     /// <summary>
-    /// Check real handle pick/drag, model positions and reopen/undo/redo using the smoke setup&apos;s
+    /// Load a creature's database row now. The viewer loads it in the background on selection, but a
+    /// smoke drives the gizmo in one synchronous step. Task.Run keeps the read off the main thread's
+    /// synchronization context, so blocking on it cannot deadlock.
+    /// </summary>
+    void SmokeLoadRow(ulong guid)
+    {
+        var config = Connection();
+        var rows = Task.Run(() => Data.DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.Creature, [guid], default)).GetAwaiter().GetResult();
+        poses?.Load(sourceKey, rows);
+    }
+
+    /// <summary>
+    /// Check real handle pick/drag, model positions and undo/redo using the smoke setup&apos;s
     /// isolated draft.
     /// </summary>
     public bool SmokeGizmo(Camera3D camera)
     {
-        if (!selectedGuid.HasValue || draft == null)
+        if (!selectedGuid.HasValue || poses?.Available != true)
         {
             return false;
         }
 
         ulong guid = selectedGuid.Value;
+        SmokeLoadRow(guid);
         var original = markers[guid].Node.Position;
         if (!Pick(camera, camera.UnprojectPosition(original + Vector3.Up)) || selectedGuid != guid)
         {
@@ -96,8 +109,6 @@ public partial class CreatureOverlay
             }
         }
 
-        draft.Dispose();
-        draft = new CreatureDraft(draftPath);
         if (ViewPosition(PoseOf(markers[guid].Spawn)).DistanceTo(moved) > 0.01f)
         {
             return false;

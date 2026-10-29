@@ -100,11 +100,14 @@ public partial class PendingChangesWindow : ContentEditorWindow
             row.AddThemeConstantOverride("separation", 8);
             row.AddChild(ClientStyle.Tag(change.Kind switch
             {
-                PendingKind.Creature => "CREATURE",
-                PendingKind.GameObject => "GAMEOBJECT",
                 PendingKind.Graveyard => "GRAVEYARD",
                 PendingKind.Waypoint => "WAYPOINT",
-                _ => "ROW"
+                _ => change.Row?.Table switch
+                {
+                    "creature" or "creature_addon" => "CREATURE",
+                    "gameobject" or "gameobject_addon" => "GAMEOBJECT",
+                    _ => "ROW"
+                }
             }));
             var text = ClientStyle.Text(change.Label, 13);
             text.TooltipText = change.Label;

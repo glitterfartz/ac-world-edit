@@ -65,7 +65,7 @@ public partial class GameObjectOverlay
         for (int i = 0; i < 4; i++)
         {
             poseFields[i].Text = pose == null ? "" : values[i].ToString(i == 3 ? "F2" : "F4", System.Globalization.CultureInfo.InvariantCulture);
-            poseFields[i].Editable = pose != null && draft != null;
+            poseFields[i].Editable = pose != null && poses?.Available == true;
         }
     }
 
@@ -75,8 +75,8 @@ public partial class GameObjectOverlay
         drop.Disabled = !editable || GroundAt == null;
         reset.Disabled = !editable;
         copyGo.Disabled = !selected.HasValue;
-        undo.Disabled = draft == null || !draft.CanUndo;
-        redo.Disabled = draft == null || !draft.CanRedo;
+        undo.Disabled = !CanUndo;
+        redo.Disabled = !CanRedo;
     }
 
     /// <summary>

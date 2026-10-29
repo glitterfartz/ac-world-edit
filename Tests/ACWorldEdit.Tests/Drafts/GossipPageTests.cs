@@ -112,6 +112,6 @@ public class GossipPageTests
     static InteractionDraft Draft(IWorldSchema schema) => new(
         Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "gossip.json"), schema.Tables);
 
-    static SqlScripts Export(IWorldSchema schema, InteractionDraft draft) => SqlExport.Build("source", [], [],
+    static SqlScripts Export(IWorldSchema schema, InteractionDraft draft) => SqlExport.Build("source", [],
         draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: schema);
 }

@@ -10,7 +10,12 @@ public class PendingChangesTests
 
     static readonly WorldPose Base = new(0, 100, 200, 30, 1);
 
-    static CreatureMove Move(uint guid, double x = 110, string source = "s") => new(source, guid, Base, Base with { X = x });
+    /// <summary>A creature spawn moved along X: a row edit of the `creature` table, as the overlays record it.</summary>
+    static (string Source, RowEdit Edit) Move(ulong guid, double x = 110, string source = "s")
+    {
+        var before = SpawnEdits.NewCreature(AcSchema.Instance, guid, 1, Base, 0, 0);
+        return (source, InteractionEdits.Update(AcTables.SpawnCreature, before, SpawnEdits.WithPose(before, Base with { X = x })));
+    }
 
     static GraveyardEdit Edit(uint id)
     {
@@ -18,16 +23,16 @@ public class PendingChangesTests
         return new("s", id, before, before with { X = 9 });
     }
 
-    static List<PendingChange> Collect(PendingChanges pending, IEnumerable<CreatureMove> moves) => pending.Collect(moves, [], []);
+    static List<PendingChange> Collect(PendingChanges pending, IEnumerable<(string Source, RowEdit Edit)> moves) => pending.Collect([], moves, []);
 
     [Fact]
-    public void ListsCreaturesByGuidThenGraveyardsById()
+    public void ListsGraveyardsByIdThenRowsInDraftOrder()
     {
         var pending = new PendingChanges(TempPath());
-        var list = pending.Collect([Move(9), Move(2)], [Edit(7), Edit(3)], []);
-        Assert.Equal([PendingKind.Creature, PendingKind.Creature, PendingKind.Graveyard, PendingKind.Graveyard], list.Select(c => c.Kind));
-        Assert.Equal([2u, 9u], list.Take(2).Select(c => c.Move!.Guid));
-        Assert.Equal([3u, 7u], list.Skip(2).Select(c => c.Graveyard!.Id));
+        var list = pending.Collect([Edit(7), Edit(3)], [Move(9), Move(2)], []);
+        Assert.Equal([PendingKind.Graveyard, PendingKind.Graveyard, PendingKind.Row, PendingKind.Row], list.Select(c => c.Kind));
+        Assert.Equal([3u, 7u], list.Take(2).Select(c => c.Graveyard!.Id));
+        Assert.Equal(["9", "2"], list.Skip(2).Select(c => c.Row!.Key));
         Assert.All(list, c => Assert.False(string.IsNullOrEmpty(c.Label)));
     }
 
@@ -48,7 +53,7 @@ public class PendingChangesTests
         var pending = new PendingChanges(TempPath());
         var all = Collect(pending, [Move(1), Move(2)]);
         pending.MarkExported([all[0]]);
-        Assert.Equal(2u, Assert.Single(Collect(pending, [Move(1), Move(2)])).Move!.Guid);
+        Assert.Equal("2", Assert.Single(Collect(pending, [Move(1), Move(2)])).Row!.Key);
         // A further edit to the exported creature gets a new fingerprint and is pending again.
         Assert.Equal(2, Collect(pending, [Move(1, 150), Move(2)]).Count);
     }
@@ -77,6 +82,7 @@ public class PendingChangesTests
         Assert.Empty(new PendingChanges(TempPath()).Collect([], [], []));
     }
 }
+
 
 /// <summary>
 /// Row (interaction/content) net changes, discard and their appearance in PendingChanges.
@@ -203,18 +209,17 @@ public class RowDraftNetChangeTests
         draft.Execute("s", snapshot, "up", [Edit(Template(), Template(5))]);
         string exportedPath = Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "exported.json");
         var pending = new PendingChanges(exportedPath);
-        var change = Assert.Single(pending.Collect([], [], draft.NetEdits()));
+        var change = Assert.Single(pending.Collect([], draft.NetEdits()));
         Assert.Equal(PendingKind.Row, change.Kind);
         Assert.Equal("s", change.Source);
         Assert.NotNull(change.Row);
-        Assert.Null(change.Move);
         Assert.Null(change.Graveyard);
 
         pending.MarkExported([change]);
-        Assert.Empty(pending.Collect([], [], draft.NetEdits()));
+        Assert.Empty(pending.Collect([], draft.NetEdits()));
         // Discarding after export leaves nothing pending either.
         draft.Revert("s", draft.NetEdits().Single().Edit);
-        Assert.Empty(pending.Collect([], [], draft.NetEdits()));
+        Assert.Empty(pending.Collect([], draft.NetEdits()));
     }
 
     [Fact]
@@ -224,8 +229,8 @@ public class RowDraftNetChangeTests
         var snapshot = Snapshot();
         var pending = new PendingChanges(Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "exported.json"));
         draft.Execute("s", snapshot, "up", [Edit(Template(), Template(5))]);
-        string first = pending.Collect([], [], draft.NetEdits()).Single().Id;
+        string first = pending.Collect([], draft.NetEdits()).Single().Id;
         draft.Execute("s", snapshot, "more", [Edit(Template(5), Template(6))]);
-        Assert.NotEqual(first, pending.Collect([], [], draft.NetEdits()).Single().Id);
+        Assert.NotEqual(first, pending.Collect([], draft.NetEdits()).Single().Id);
     }
 }

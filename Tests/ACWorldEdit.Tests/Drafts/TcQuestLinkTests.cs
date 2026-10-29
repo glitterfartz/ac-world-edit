@@ -37,7 +37,7 @@ public class TcQuestLinkTests
             Assert.Empty(Page.SetRoles(effective, 5, 100, true, true));
             Assert.True(drafts.Commit(null, "tc", rows, effective, "Unlink end", Page.SetRoles(effective, 5, 100, true, false), Check).Ok);
             Assert.Empty(Page.Ends.Select(drafts.Draft.Effective("tc", rows), 5));
-            var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+            var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
             Assert.Contains("`creature_queststarter`", sql.Apply);
             drafts.History(null, false);
             Assert.Single(Page.Ends.Select(drafts.Draft.Effective("tc", rows), 5));

@@ -174,7 +174,7 @@ public partial class TerrainViewer
                 var gc = creatureProps.Context;
                 if (!gc.Effective.All(gc.Schema.GossipPage.TextTable).Any(r => r.F("Probability0") == .75f))
                 { SmokeFail("CLIENT_SHOT_GREETING_SAVE " + gc.Status); return; }
-                var gossipSql = Foundation.SqlExport.Build(gc.SourceKey, [], [], gc.Draft!.NetEdits().Select(e => e.Edit).ToArray(), schema: gc.Schema);
+                var gossipSql = Foundation.SqlExport.Build(gc.SourceKey, [], gc.Draft!.NetEdits().Select(e => e.Edit).ToArray(), schema: gc.Schema);
                 if (!gossipSql.Apply.Contains("Probability0") || !gossipSql.Revert.Contains("gossip_menu_option"))
                 { SmokeFail("CLIENT_SHOT_GOSSIP_EXPORT"); return; }
                 // Restore all three successful commands before continuing the other service checks.

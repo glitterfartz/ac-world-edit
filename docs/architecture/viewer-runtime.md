@@ -164,8 +164,8 @@ Five overlays are children of `TerrainViewer`. They share one shape (`RegionOver
 
 | Overlay | Files | Data source | Editable |
 |---|---|---|---|
-| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `CreatureDraft`; opens the properties window and the behavior editor |
-| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `GameObjectDraft` |
+| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `SpawnPoses`; opens the properties window and the behavior editor |
+| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `SpawnPoses` |
 | `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
 | `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions and properties through `WaypointDraft`. For TrinityCore the card shows only facing and delay as editable, the path's move type and velocity read-only, and hides smooth transition and actions |
 | `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs`, `AreaTriggerShapes.cs` | `IDBSource.ReadAreaTriggersAsync` | No; opens the behavior editor on a client trigger's rules or (TrinityCore) a spawned trigger template's |
@@ -180,7 +180,7 @@ Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures w
 
 `TransformGizmo` (`Overlays/TransformGizmo.cs`) draws three axis arrows and a yaw ring. It has Select, Move and Rotate modes, and emits `Changed(GizmoEdit)` events. Preview events have `Commit = false`; exactly one commit fires per gesture. Rotation snaps in steps, or 15° with Ctrl held.
 
-A committed creature move goes through `CreatureDraft.Move(sourceKey, guid, before, after)`. The displayed pose is `draft.Effective(...)`, and `draft.Conflict` flags a change in the source database.
+A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before, after)`, a row edit on the content draft. The displayed pose is `poses.Effective(...)`, and `poses.Conflict` flags a change in the source database.
 
 ## Ui windows
 

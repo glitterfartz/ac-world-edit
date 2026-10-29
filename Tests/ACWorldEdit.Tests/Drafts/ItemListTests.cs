@@ -38,7 +38,7 @@ public class ItemListTests
         using var draft = new InteractionDraft(path, schema.Tables);
         draft.Execute("source", rows, "Change price", ItemListSpec.Change(spec.Table, before, after));
         Assert.Equal(after, Assert.Single(spec.Select(draft.Effective("source", rows), 42)));
-        var sql = SqlExport.Build("source", [], [], draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: schema);
+        var sql = SqlExport.Build("source", [], draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: schema);
         Assert.Contains("DELETE FROM `npc_vendor`", sql.Apply);
         Assert.Contains("INSERT INTO `npc_vendor`", sql.Apply);
         Assert.Contains("`ExtendedCost` = 0", sql.Apply);

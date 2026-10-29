@@ -14,7 +14,7 @@ public class TcGraveyardExportTests
     static readonly GraveyardRecord Goldshire = new(106, 0, -9339.72, 170.2, 67.8, "Elwynn Forest, Goldshire", [new(12, GraveyardLink.Alliance, "Elwynn Forest")]);
 
     static SqlScripts Export(GraveyardRecord after) =>
-        SqlExport.Build("src", [], [new GraveyardEdit("src", Goldshire.Id, Goldshire, after)], [], Stamp, null, TcSchema.Instance);
+        SqlExport.Build("src", [new GraveyardEdit("src", Goldshire.Id, Goldshire, after)], [], Stamp, null, TcSchema.Instance);
 
     static string[] Statements(string script) =>
         script.Split('\n').Where(l => l.StartsWith("UPDATE ", StringComparison.Ordinal) || l.StartsWith("INSERT ", StringComparison.Ordinal) || l.StartsWith("DELETE ", StringComparison.Ordinal)).ToArray();
@@ -36,7 +36,7 @@ public class TcGraveyardExportTests
     public void NeutralToAllianceInsertsATeamRowThatTheRevertDeletes()
     {
         var neutral = WithFaction(GraveyardLink.Neutral);
-        var scripts = SqlExport.Build("src", [], [new GraveyardEdit("src", 106, neutral, Goldshire)], [], Stamp, null, TcSchema.Instance);
+        var scripts = SqlExport.Build("src", [new GraveyardEdit("src", 106, neutral, Goldshire)], [], Stamp, null, TcSchema.Instance);
         string insert = Assert.Single(Statements(scripts.Apply));
         Assert.StartsWith("INSERT INTO `conditions`", insert);
         Assert.Contains("VALUES (27, 12, 106, 0, 0, 6, 0, 469, 0, 0, '', 0, 0, 0, '', 'Graveyard - 106 - 12 - Elwynn Forest, Goldshire - Elwynn Forest - Team Alliance');", insert);
@@ -64,7 +64,7 @@ public class TcGraveyardExportTests
     public void HordeToNeutralDeletesTheTeamRow()
     {
         var horde = WithFaction(GraveyardLink.Horde);
-        var scripts = SqlExport.Build("src", [], [new GraveyardEdit("src", 106, horde, WithFaction(GraveyardLink.Neutral))], [], Stamp, null, TcSchema.Instance);
+        var scripts = SqlExport.Build("src", [new GraveyardEdit("src", 106, horde, WithFaction(GraveyardLink.Neutral))], [], Stamp, null, TcSchema.Instance);
         Assert.StartsWith("DELETE FROM `conditions`", Assert.Single(Statements(scripts.Apply)));
         Assert.Contains("Team Horde", Assert.Single(Statements(scripts.Revert)));
     }

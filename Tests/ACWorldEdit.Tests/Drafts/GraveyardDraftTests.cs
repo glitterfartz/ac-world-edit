@@ -72,17 +72,6 @@ public class GraveyardDraftTests
         File.WriteAllText(path, File.ReadAllText(path).Replace("Sentinel Hill\\u0022", "Tampered\\u0022").Replace("Sentinel Hill", "Tampered"));
         Rejects(() => new GraveyardDraft(path), "Tampered graveyard draft accepted");
 
-        // A creature draft envelope built exactly as the pre-extraction code wrote it must still load.
-        string legacy = Path.Combine(root, "creature-positions.json");
-        var pose = new WorldPose(0, 1, 2, 3, 0.5);
-        string payload = JsonSerializer.Serialize(new DraftSnapshot<CreatureMove>(1, [new CreatureMove("db", 9, pose, pose with { X = 5 })], 1));
-        string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
-        File.WriteAllText(legacy, JsonSerializer.Serialize(new[] { payload, hash }));
-        using (var creatures = new CreatureDraft(legacy))
-        {
-            Check(creatures.Effective("db", 9, pose).X == 5, "Pre-extraction creature draft did not load");
-        }
-
-        Console.WriteLine("GRAVEYARD_DRAFT_CHECKS_PASSED edit/links/comment/reopen/undo/redo/branch/conflict/faction/duplicate/zone/length/map/checksum/legacy-creature-envelope");
+        Console.WriteLine("GRAVEYARD_DRAFT_CHECKS_PASSED edit/links/comment/reopen/undo/redo/branch/conflict/faction/duplicate/zone/length/map/checksum");
     }
 }

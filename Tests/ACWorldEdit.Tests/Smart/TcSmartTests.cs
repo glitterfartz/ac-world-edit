@@ -172,7 +172,7 @@ public class TcSmartTests
         var rule = SmartRuleEdits.FromTemplate(Tc, new RowSet(), Scope, 448, "Hogger", SmartRuleEdits.RuleTemplates[0]).With("Difficulties", "0,1").With("action_param_string", "it's");
         var ai = Row.Of(("entry", 448u), ("AIName", ""));
         var (_, speech) = SpeechEdits.NewLine(Tc, new RowSet(), 448, 0, "Hogger");
-        var scripts = SqlExport.Build("src", [], [], [new RowEdit("smart_scripts", Tc.Scripts.KeyOf(rule), null, rule), new RowEdit("creature_ai", "448", ai, ai.With("AIName", "SmartAI")), speech], Stamp, null, TcSchema.Instance);
+        var scripts = SqlExport.Build("src", [], [new RowEdit("smart_scripts", Tc.Scripts.KeyOf(rule), null, rule), new RowEdit("creature_ai", "448", ai, ai.With("AIName", "SmartAI")), speech], Stamp, null, TcSchema.Instance);
         Assert.Contains("INSERT INTO `smart_scripts`", scripts.Apply);
         Assert.Contains("`Difficulties`", scripts.Apply);
         Assert.Contains("'0,1'", scripts.Apply);
@@ -269,7 +269,7 @@ public class TcSmartTests
     public void ASpawnScriptChangeExportsAsAnAreatriggerUpdate()
     {
         var edit = Tc.EnableTriggerScript(new(188, SmartScope.AreaTriggerEntityCustom, 290), Row.Of(("SpawnId", 290ul), ("ScriptName", "")));
-        string apply = SqlExport.Build("src", [], [], [edit], Stamp, null, TcSchema.Instance).Apply;
+        string apply = SqlExport.Build("src", [], [edit], Stamp, null, TcSchema.Instance).Apply;
         Assert.Contains("UPDATE `areatrigger` SET `ScriptName` = 'SmartAreaTriggerAI' WHERE `SpawnId` = 290", apply);
         Assert.DoesNotContain("INSERT", apply);
     }

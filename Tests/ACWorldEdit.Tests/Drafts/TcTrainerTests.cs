@@ -58,7 +58,7 @@ public class TcTrainerTests
             Assert.True(drafts.Commit(null, "tc", rows, effective, "Edit", ItemListSpec.Change(Page.Spells.Table, spell, changed), Check).Ok);
             // A second spell with the same key is a collision, not a silent overwrite.
             Assert.False(drafts.Commit(null, "tc", rows, drafts.Draft.Effective("tc", rows), "Duplicate", [Page.Spells.Add(effective, 7, ("SpellId", 100u))], Check).Ok);
-            var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+            var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
             Assert.Contains("`ReqAbility1`", sql.Apply);
             Assert.Contains("`trainer_spell`", sql.Revert);
             drafts.History(null, false);
@@ -105,7 +105,7 @@ public class TcTrainerTests
         Assert.True(drafts.Commit(null, "tc", rows, effective, "Copy", [InteractionEdits.Insert(TcTables.Trainer, copy), InteractionEdits.Update(TcTables.CreatureTrainer, link, link.With("TrainerID", 8u))], Check).Ok);
         effective = drafts.Draft.Effective("tc", rows);
         Assert.Equal(8u, effective.All(TcTables.CreatureTrainer).Single().U("TrainerID"));
-        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
         Assert.Contains("`creature_trainer`", sql.Apply);
         Assert.Contains("`creature_trainer`", sql.Revert);
         Assert.True(drafts.Commit(null, "tc", rows, effective, "Remove", [InteractionEdits.Delete(TcTables.CreatureTrainer, effective.All(TcTables.CreatureTrainer).Single())], Check).Ok);

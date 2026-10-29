@@ -2,7 +2,7 @@
 
 ## Context
 
-ACWorldEdit can already **inspect** most of a zone and **deeply edit** four things: creature properties (template, stats, vendor, gossip, trainer, quest links), quests (the five quest tables), SmartAI and speech (`smart_scripts`, `creature_text`, AreaTrigger rules), and graveyards, with waypoint nodes editable in a limited way. Everything else is read-only or invisible. The most important gap is that **nothing can be created or removed in the world**: creatures and GameObjects can only be *moved* (`CreatureDraft` and `GameObjectDraft` record poses only), and no spawn-level column (respawn, wander, phase, equipment, overrides) is editable.
+ACWorldEdit can already **inspect** most of a zone and **deeply edit** four things: creature properties (template, stats, vendor, gossip, trainer, quest links), quests (the five quest tables), SmartAI and speech (`smart_scripts`, `creature_text`, AreaTrigger rules), and graveyards, with waypoint nodes editable in a limited way. Everything else is read-only or invisible. The most important gap is that **nothing can be created or removed in the world**: creatures and GameObjects can only be *moved* (before Phase 10 the pose drafts recorded poses only), and no spawn-level column (respawn, wander, phase, equipment, overrides) is editable.
 
 TrinityCore's `world` has about 230 tables (TDB 1210.26091; counts below come from the live DB). This plan sorts them by domain, separates what designers touch from server configuration, and plans the missing editors as **viewport-first tools** in the spirit of Unity and Unreal: a content browser, drag-to-place, prefab/instance overrides, gizmos, graphs and timelines. The plan deliberately avoids table grids.
 
@@ -297,7 +297,6 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 ## Verification (per phase)
 
 - `dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false`; Db tests with `ACWORLD_DB_INFO` (AC) and `ACWORLD_TC_DB_INFO` (TC); unit tests for each new descriptor, rules and export after the feature works.
-- `check-layering` after any Foundation, Data or Assets edit.
 - Visual check in Godot in **both** client profiles: open the new editor, run the create/edit/delete/undo flow, and screenshot via a smoke stage (extend the TC client smoke and `--content-smoke`).
 - Export from Pending Changes, run apply then revert against a scratch copy of `world` (and `hotfixes` for 23–24), and confirm the server loads the rows without `sql.sql` errors (the rules phases mirror those loader checks).
 - Update `tc-status.md`, the matching architecture page and `DB-DIFFERENCES.md` in the same change.

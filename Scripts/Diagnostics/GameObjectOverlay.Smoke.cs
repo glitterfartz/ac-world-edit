@@ -35,18 +35,24 @@ public partial class GameObjectOverlay
         return null;
     }
 
+    /// <summary>The apply script of the content draft's net edits, written in the source's dialect.</summary>
+    string ExportNet() => SqlExport.Build(sourceKey, [], content!.Draft!.NetEdits().Select(e => e.Edit), null, null, ContentDraftFiles.Sources.SchemaFor(sourceKey)).Apply;
+
     /// <summary>
-    /// Drag the real move handle, then check the draft, the drawn transform, reopen, undo/redo, a typed
+    /// Drag the real move handle, then check the draft, the drawn transform, undo/redo, a typed
     /// turn that keeps the rotation a unit quaternion, and the SQL the net move exports.
     /// </summary>
     public bool SmokeEditing(Camera3D camera)
     {
-        if (!selected.HasValue || draft == null || !lookup.TryGetValue(selected.Value, out var source))
+        if (!selected.HasValue || poses?.Available != true || content?.Draft == null || !lookup.TryGetValue(selected.Value, out var source))
         {
             return Fail("no editable selection");
         }
 
         ulong guid = source.Guid;
+        // The viewer loads the row in the background on selection; a smoke drives the gizmo in one step.
+        var config = Connection();
+        poses.Load(sourceKey, Task.Run(() => Data.DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.GameObject, [guid], default)).GetAwaiter().GetResult());
         var original = PlacementOf(source);
         var start = ViewPosition(With(source, original));
         Mode = GizmoMode.Move;
@@ -81,13 +87,6 @@ public partial class GameObjectOverlay
             return Fail("drawn transform after commit");
         }
 
-        draft.Dispose();
-        draft = new GameObjectDraft(draftPath);
-        if (PlacementOf(source) != moved)
-        {
-            return Fail("reopen lost the move");
-        }
-
         History(false);
         if (PlacementOf(source) != original || DrawnOrigin(guid) is not Vector3 undone || undone.DistanceTo(start) > 0.01f)
         {
@@ -100,8 +99,8 @@ public partial class GameObjectOverlay
             return Fail("redo");
         }
 
-        string sql = SqlExport.Build("smoke", [], [], [], null, null, null, NetMoves()).Apply;
-        if (NetMoves().Count != 1 || !sql.Contains("UPDATE `gameobject` SET", StringComparison.Ordinal) || sql.Contains("rotation0", StringComparison.Ordinal))
+        string sql = ExportNet();
+        if (content.Draft.NetEdits().Count != 1 || !sql.Contains("UPDATE `gameobject` SET", StringComparison.Ordinal) || sql.Contains("rotation0", StringComparison.Ordinal))
         {
             return Fail("export");
         }
@@ -116,7 +115,7 @@ public partial class GameObjectOverlay
             return Fail($"typed turn heading error={error:F4} norm={norm:F6}");
         }
 
-        if (!SqlExport.Build("smoke", [], [], [], null, null, null, NetMoves()).Apply.Contains("rotation3", StringComparison.Ordinal))
+        if (!ExportNet().Contains("rotation3", StringComparison.Ordinal))
         {
             return Fail("turn export lacks the rotation columns");
         }

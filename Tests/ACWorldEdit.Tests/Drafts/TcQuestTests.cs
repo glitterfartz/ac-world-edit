@@ -128,18 +128,18 @@ public class TcQuestTests
         var when = new DateTime(2026, 1, 1);
         var objective = Objective(77, TcQuestRules.Monster, 6);
         var created = new RowEdit("quest_objectives", "77", null, objective);
-        var sql = SqlExport.Build("tc", [], [], [created], when, null, TcSchema.Instance).Apply;
+        var sql = SqlExport.Build("tc", [], [created], when, null, TcSchema.Instance).Apply;
         // `Order` is a reserved word, so every identifier is quoted; the new row carries every whitelisted column.
         Assert.Contains("INSERT INTO `quest_objectives`", sql);
         Assert.Contains("`Order`", sql);
         Assert.Contains("`StorageIndex`", sql);
 
         var edit = new RowEdit("quest_objectives", "77", objective, objective.With("Amount", 8));
-        Assert.Contains("UPDATE `quest_objectives` SET `Amount` = 8 WHERE `ID` = 77 AND `Amount` = 1;", SqlExport.Build("tc", [], [], [edit], when, null, TcSchema.Instance).Apply);
+        Assert.Contains("UPDATE `quest_objectives` SET `Amount` = 8 WHERE `ID` = 77 AND `Amount` = 1;", SqlExport.Build("tc", [], [edit], when, null, TcSchema.Instance).Apply);
 
         var template = TcQuestRules.NewQuest(Id, "Old title")[0];
         var rename = new RowEdit("quest_template", Id.ToString(), template, template.With("LogTitle", "New title").With("AllowableRaces", TcQuestRules.HordeRaces));
-        var renamed = SqlExport.Build("tc", [], [], [rename], when, null, TcSchema.Instance).Apply;
+        var renamed = SqlExport.Build("tc", [], [rename], when, null, TcSchema.Instance).Apply;
         Assert.Contains("`LogTitle` = 'New title'", renamed);
         Assert.Contains($"`AllowableRaces` = {TcQuestRules.HordeRaces}", renamed);
     }

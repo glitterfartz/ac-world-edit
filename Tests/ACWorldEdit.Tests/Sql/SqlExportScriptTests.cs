@@ -11,7 +11,7 @@ public class SqlExportScriptTests
 {
     static readonly DateTime Stamp = new(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
 
-    static SqlScripts Rows(params RowEdit[] edits) => SqlExport.Build("src", [], [], edits, Stamp);
+    static SqlScripts Rows(params RowEdit[] edits) => SqlExport.Build("src", [], edits, Stamp);
 
     static RowEdit Update(TableSchema table, Row before, Row after) => new(table.Name, table.KeyOf(before), before, after);
 
@@ -21,7 +21,7 @@ public class SqlExportScriptTests
     [Fact]
     public void EmptyDiffProducesAHeaderAndNoStatements()
     {
-        var scripts = SqlExport.Build("src", [], [], [], Stamp);
+        var scripts = SqlExport.Build("src", [], [], Stamp);
         Assert.Equal(0, scripts.Changes);
         Assert.Empty(scripts.Summary);
         foreach (string script in new[] { scripts.Apply, scripts.Revert })
@@ -70,12 +70,13 @@ public class SqlExportScriptTests
     [Fact]
     public void CreaturePositionUsesRoundTripNumbersAndToleranceGuards()
     {
-        var before = new WorldPose(0, 1e-5, -2.5, 3, 0.25);
-        var after = before with { X = 1234.5678901234567 };
-        var scripts = SqlExport.Build("src", [new("db", 9, before, after)], [], [], Stamp);
+        // The columns are FLOAT, so a position round-trips as a float: 1234.5678901234567 is 1234.5679.
+        var before = SpawnEdits.NewCreature(AcSchema.Instance, 9, 1, new WorldPose(0, 1e-5, -2.5, 3, 0.25), 0, 0);
+        var after = SpawnEdits.WithPose(before, new WorldPose(0, 1234.5678901234567, -2.5, 3, 0.25));
+        var scripts = Rows(Update(AcTables.SpawnCreature, before, after));
         string apply = Statements(scripts.Apply, "UPDATE").Single();
         Assert.Contains("ABS(`position_x` - (1E-05)) < 0.0001", apply);
-        Assert.Contains("`position_x` = 1234.5678901234567", apply);
+        Assert.Contains("`position_x` = 1234.5679", apply);
         Assert.DoesNotContain("NaN", apply);
     }
 

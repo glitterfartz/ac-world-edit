@@ -107,7 +107,7 @@ public class WaypointDraftTests
         var net = Assert.Single(draft.NetEdits());
         Check(net.BeforeProps == source.Props && net.AfterProps!.Value.Delay == 9000 && net.After == new WaypointPosition(4, 5, 6), "Legacy and property edits did not combine");
         // The legacy export is unchanged, so moves exported earlier keep their identity.
-        var legacy = SqlExport.Build("db", [], [], [], null, [new WaypointEdit("db", 5, 1, new(1, 2, 3), new(4, 5, 6))]);
+        var legacy = SqlExport.Build("db", [], [], null, [new WaypointEdit("db", 5, 1, new(1, 2, 3), new(4, 5, 6))]);
         Check(legacy.Apply.Contains("UPDATE `waypoint_data` SET `position_x` = 4, `position_y` = 5, `position_z` = 6 WHERE `id` = 5 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;", StringComparison.Ordinal), "Legacy export changed");
         Check(legacy.Summary[0] == "waypoint path 5 point 1: (1, 2, 3) -> (4, 5, 6)", "Legacy label changed");
     }
@@ -130,7 +130,7 @@ public class WaypointDraftTests
     {
         var stamp = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var move = new WaypointEdit("db", 1234, 7, new(-100.5, 20.25, 3), new(-101.5, 21.25, 4));
-        var scripts = SqlExport.Build("db", [], [], [], stamp, [move]);
+        var scripts = SqlExport.Build("db", [], [], stamp, [move]);
         Check(scripts.Changes == 1, "Expected one change");
         Check(scripts.Apply.Contains("UPDATE `waypoint_data` SET `position_x` = -101.5, `position_y` = 21.25, `position_z` = 4 WHERE `id` = 1234 AND `point` = 7 AND ABS(`position_x` - (-100.5)) < 0.0001", StringComparison.Ordinal), "Apply statement or guard wrong");
         Check(scripts.Revert.Contains("UPDATE `waypoint_data` SET `position_x` = -100.5, `position_y` = 20.25, `position_z` = 3 WHERE `id` = 1234 AND `point` = 7 AND ABS(`position_x` - (-101.5)) < 0.0001", StringComparison.Ordinal), "Revert statement or guard wrong");
@@ -138,13 +138,13 @@ public class WaypointDraftTests
 
         var before = SourceProps with { Delay = 1000, Orientation = null };
         var props = new WaypointEdit("db", 1234, 7, new(1, 2, 3), new(1, 2, 3), before, before with { Delay = 4000, Orientation = 1.25, Smooth = true, MoveType = 1, Action = 12, ActionChance = 50, Velocity = 3.5 });
-        var edited = SqlExport.Build("db", [], [], [], stamp, [props]);
+        var edited = SqlExport.Build("db", [], [], stamp, [props]);
         Check(edited.Apply.Contains("SET `orientation` = 1.25, `velocity` = 3.5, `delay` = 4000, `smoothTransition` = 1, `move_type` = 1, `action` = 12, `action_chance` = 50 WHERE `id` = 1234 AND `point` = 7 AND `orientation` IS NULL AND ABS(`velocity` - (0)) < 0.0001 AND `delay` = 1000 AND `smoothTransition` = 0 AND `move_type` = 0 AND `action` = 0 AND `action_chance` = 0;", StringComparison.Ordinal), "Property apply statement wrong: " + edited.Apply);
         Check(edited.Revert.Contains("SET `orientation` = NULL, `velocity` = 0, `delay` = 1000", StringComparison.Ordinal) && edited.Revert.Contains("ABS(`orientation` - (1.25)) < 0.0001", StringComparison.Ordinal), "Property revert statement wrong");
         Check(!edited.Apply.Contains("position_x", StringComparison.Ordinal), "Property export touches the position");
 
         var delayOnly = new WaypointEdit("db", 1234, 7, new(1, 2, 3), new(1, 2, 3), before, before with { Delay = 0 });
-        var single = SqlExport.Build("db", [], [], [], stamp, [delayOnly]);
+        var single = SqlExport.Build("db", [], [], stamp, [delayOnly]);
         Check(single.Apply.Contains("SET `delay` = 0 WHERE `id` = 1234 AND `point` = 7 AND `delay` = 1000;", StringComparison.Ordinal), "Single property statement wrong: " + single.Apply);
     }
 
@@ -154,11 +154,11 @@ public class WaypointDraftTests
         var edit = new WaypointEdit("db", 9, 2, new(1, 2, 3), new(4, 5, 6));
         string file = Path.Combine(Path.GetDirectoryName(TempDraft())!, "exported.json");
         var store = new PendingChanges(file);
-        var changes = store.Collect([], [], [], [edit]);
+        var changes = store.Collect([], [], [edit]);
         var change = Assert.Single(changes);
         Check(change.Kind == PendingKind.Waypoint && change.Waypoint == edit, "Waypoint change not listed");
         store.MarkExported(changes);
-        Check(new PendingChanges(file).Collect([], [], [], [edit]).Count == 0, "Exported waypoint still pending");
-        Check(store.Collect([], [], [], [edit with { After = new(7, 8, 9) }]).Count == 1, "Changed waypoint stayed hidden");
+        Check(new PendingChanges(file).Collect([], [], [edit]).Count == 0, "Exported waypoint still pending");
+        Check(store.Collect([], [], [edit with { After = new(7, 8, 9) }]).Count == 1, "Changed waypoint stayed hidden");
     }
 }

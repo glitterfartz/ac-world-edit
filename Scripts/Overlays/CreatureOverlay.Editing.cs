@@ -29,9 +29,8 @@ public partial class CreatureOverlay : IPlacementEditor
     /// </summary>
     public bool SnapOnDrop { get; set; }
     public bool CanEdit => EditableMarker() != null;
-    public bool CanUndo => draft?.CanUndo == true;
-    public IReadOnlyList<CreatureMove> NetMoves() => draft?.NetMoves() ?? [];
-    public bool CanRedo => draft?.CanRedo == true;
+    public bool CanUndo => poses?.CanUndo == true;
+    public bool CanRedo => poses?.CanRedo == true;
 
     public GizmoMode Mode
     {
@@ -70,7 +69,7 @@ public partial class CreatureOverlay : IPlacementEditor
     public void Redo() => History(true);
 
     (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)? EditableMarker() =>
-        draft != null && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker : null;
+        poses?.Available == true && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker : null;
 
     /// <summary>
     /// Snap the selected creature's Z to the ground below its effective pose. Probe failures leave

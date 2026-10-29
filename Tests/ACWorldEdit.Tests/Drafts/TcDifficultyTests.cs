@@ -56,7 +56,7 @@ public class TcDifficultyTests
         {
             Assert.True(drafts.Commit(null, "tc", rows, rows, "Add", [Spec.Add(rows, 5, 1)], NoIssues).Ok);
             Assert.Single(Spec.Select(drafts.Draft!.Effective("tc", rows), 5));
-            var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+            var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
             Assert.Contains("`creature_template_difficulty`", sql.Apply);
             Assert.Contains("`HealthModifier`", sql.Apply);
             drafts.History(null, false);
@@ -78,7 +78,7 @@ public class TcDifficultyTests
         using var drafts = new ContentDrafts(TempPath(), _ => TcTables.Instance);
         Assert.True(drafts.Commit(null, "tc", rows, rows, "Remove", [Spec.Remove(heroic)], NoIssues).Ok);
         Assert.Equal([0], Spec.Select(drafts.Draft!.Effective("tc", rows), 5).Select(r => r.I("DifficultyID")));
-        var sql = SqlExport.Build("tc", [], [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
+        var sql = SqlExport.Build("tc", [], drafts.Draft.NetEdits().Select(e => e.Edit).ToArray(), DateTime.UnixEpoch, schema: TcSchema.Instance);
         Assert.Contains("DELETE FROM `creature_template_difficulty` WHERE `Entry` = 5 AND `DifficultyID` = 2", sql.Apply);
         Assert.Contains("INSERT INTO `creature_template_difficulty`", sql.Revert);
         drafts.History(null, false);

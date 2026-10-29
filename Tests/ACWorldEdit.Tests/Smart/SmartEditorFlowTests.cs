@@ -273,11 +273,11 @@ public class SmartEditorFlowTests : IDisposable
         SaveOk(label, edit);
         SaveOk("Link", SpeechEdits.SetBroadcast(SmartCatalog.Ac, effective, SpeechEdits.LinesOf(SmartCatalog.Ac, effective, Entry).Single(t => t.U("GroupID") == 1), 99)!);
         var net = drafts.Draft!.NetEdits();
-        var scripts = SqlExport.Build(Source, [], [], net.Select(n => n.Edit), new DateTime(2026, 1, 1));
+        var scripts = SqlExport.Build(Source, [], net.Select(n => n.Edit), new DateTime(2026, 1, 1));
         Assert.Contains("INSERT INTO `smart_scripts`", scripts.Apply);
         Assert.Contains("INSERT INTO `creature_text`", scripts.Apply);
         Assert.Contains("DELETE FROM `creature_text`", scripts.Revert);
         Assert.Contains("DELETE FROM `smart_scripts`", scripts.Revert);
-        Assert.Equal(net.Count, new PendingChanges(Path.Combine(dir, "exported.json")).Collect([], [], net).Count);
+        Assert.Equal(net.Count, new PendingChanges(Path.Combine(dir, "exported.json")).Collect([], net).Count);
     }
 }
