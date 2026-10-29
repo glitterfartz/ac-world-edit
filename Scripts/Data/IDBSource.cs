@@ -24,6 +24,9 @@ public interface IDBSource
     /// <summary>The `creature` or `gameobject` rows of these GUIDs (bounded): the baseline of a spawn edit.</summary>
     Task<RowSet> ReadSpawnRowsAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>The name, model and scale of these creature templates (bounded); a template the database lacks is absent.</summary>
+    Task<IReadOnlyDictionary<uint, CreatureLook>> ReadCreatureLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 
