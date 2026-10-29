@@ -126,6 +126,7 @@ public partial class CreatureOverlay : RegionOverlay
     public void Attach(ContentDrafts drafts)
     {
         poses = new SpawnPoses(drafts, SpawnKind.Creature, ContentDraftFiles.Sources.DialectOf);
+        templateAddons = new TemplateAddons(drafts, ContentDraftFiles.Sources.DialectOf);
         drafts.Changed += _ =>
         {
             if (IsInsideTree() && gizmo != null)

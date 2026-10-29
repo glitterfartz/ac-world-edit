@@ -202,8 +202,8 @@ public class SpawnFieldsTests
         Assert.True(poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "0").Row!).Ok);
         Assert.Empty(drafts.Draft!.NetEdits());
 
-        var (ok, message) = poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "69").Row!);
-        Assert.True(ok, message);
+        var result = poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "69").Row!);
+        Assert.True(result.Ok, result.Message);
         var edit = Assert.Single(drafts.Draft.NetEdits()).Edit;
         Assert.Equal(("creature_addon", null), (edit.Table, edit.Before));
         Assert.Equal(69u, poses.AddonOf("src", 5)!.U("emote"));

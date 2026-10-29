@@ -13,32 +13,46 @@ public sealed partial class SpawnInspector : VBoxContainer
 {
     sealed record Entry(SpawnField Field, Control Editor, Label Template, Button Reset);
 
+    /// <summary>
+    /// Where the spawn's appearance comes from: still loading the template's, inherited from it, or the spawn's own row,
+    /// which replaces the template's completely.
+    /// </summary>
+    public enum AppearanceState { Loading, Inherited, Own }
+
     readonly Dictionary<string, Entry> entries = [];
     readonly VBoxContainer body = new();
     readonly Button header = new() { ToggleMode = true, ButtonPressed = true, Flat = true, Alignment = HorizontalAlignment.Left };
     WorldDialect? dialect;
     SpawnKind? kind;
     bool showing;
+    readonly bool appearanceOnly;
+    Label? appearanceNote;
+    Button? useTemplate;
+
+    /// <summary>The user asked the spawn to show its template's appearance again.</summary>
+    public event Action? UseTemplateRequested;
 
     /// <summary>The user typed or chose a value for a field.</summary>
     public event Action<SpawnField, string>? Edited;
 
-    public SpawnInspector()
+    /// <param name="appearanceOnly">Show only the appearance fields, for the template's own addon page.</param>
+    public SpawnInspector(bool appearanceOnly = false, string title = "Spawn fields")
     {
+        this.appearanceOnly = appearanceOnly;
         Name = "SpawnInspector";
-        header.Text = "▾ Spawn fields";
+        header.Text = "▾ " + title;
         header.Toggled += open =>
         {
             body.Visible = open;
-            header.Text = (open ? "▾ " : "▸ ") + "Spawn fields";
+            header.Text = (open ? "▾ " : "▸ ") + title;
         };
         AddChild(header);
         AddChild(body);
         Visible = false;
     }
 
-    /// <summary>Show a spawn row and its addon row (a spawn without one passes a blank), or hide the control when there is no row. <paramref name="template"/> holds the template's text for each overriding column.</summary>
-    public void Show(WorldDialect dialect, SpawnKind kind, Row? row, Row? addon, IReadOnlyDictionary<string, string>? template, bool editable, bool force = false)
+    /// <summary>Show a spawn row and the addon values to display (its own row, or what it inherits from its template), or hide the control when there is no row. <paramref name="template"/> holds the template's text for each overriding column.</summary>
+    public void Show(WorldDialect dialect, SpawnKind kind, Row? row, Row? addon, AppearanceState? appearance, IReadOnlyDictionary<string, string>? template, bool editable, bool force = false)
     {
         Visible = row != null;
         if (row == null)
@@ -52,8 +66,25 @@ public sealed partial class SpawnInspector : VBoxContainer
         }
 
         showing = true;
+        if (appearanceNote != null && useTemplate != null)
+        {
+            appearanceNote.Visible = appearance != null;
+            appearanceNote.Text = appearance switch
+            {
+                AppearanceState.Loading => "Loading the template's appearance…",
+                AppearanceState.Inherited => "Uses the template's appearance (shown faded). Setting a field gives this spawn its own.",
+                AppearanceState.Own => "Has its own appearance, which replaces the template's.",
+                _ => ""
+            };
+            useTemplate.Visible = appearance == AppearanceState.Own;
+            useTemplate.Disabled = !editable;
+        }
+
         foreach (var (field, editor, hint, reset) in entries.Values)
         {
+            // The spawn's appearance is read-only until the template's is known, and faded while it is only inherited.
+            bool fieldEditable = editable && !(field.Addon && appearance == AppearanceState.Loading);
+            editor.Modulate = field.Addon && appearance == AppearanceState.Inherited ? new Color(1, 1, 1, 0.6f) : Colors.White;
             string text = field.Show(field.Addon && addon != null ? addon : row);
             switch (editor)
             {
@@ -66,7 +97,7 @@ public sealed partial class SpawnInspector : VBoxContainer
                         }
                     }
 
-                    choice.Disabled = !editable;
+                    choice.Disabled = !fieldEditable;
                     break;
                 case LineEdit line:
                     if (line.Text != text && (force || !line.HasFocus()))
@@ -74,7 +105,7 @@ public sealed partial class SpawnInspector : VBoxContainer
                         line.Text = text;
                     }
 
-                    line.Editable = editable;
+                    line.Editable = fieldEditable;
                     line.PlaceholderText = field.Inheritable ? field.EmptyHint : "";
                     break;
             }
@@ -83,7 +114,7 @@ public sealed partial class SpawnInspector : VBoxContainer
             hint.Visible = field.TemplateColumn != null && inherits;
             hint.Text = template != null && template.TryGetValue(field.TemplateColumn ?? "", out string value) ? $"Template: {(value.Length == 0 ? "none" : value)}" : "Template: …";
             reset.Visible = field.Inheritable && !inherits;
-            reset.Disabled = !editable;
+            reset.Disabled = !fieldEditable;
         }
 
         showing = false;
@@ -99,13 +130,25 @@ public sealed partial class SpawnInspector : VBoxContainer
             child.QueueFree();
         }
 
+        appearanceNote = null;
+        useTemplate = null;
         string? section = null;
-        foreach (var field in SpawnFields.All(dialect, kind))
+        foreach (var field in appearanceOnly ? SpawnFields.AddonFor(dialect, kind) : SpawnFields.All(dialect, kind))
         {
             if (field.Section != section)
             {
                 section = field.Section;
                 body.AddChild(InspectorUi.Text(section, 12, true));
+                if (section == SpawnFields.AppearanceSection && !appearanceOnly && kind == SpawnKind.Creature)
+                {
+                    // A spawn's own addon row replaces its template's completely, so say which one is in force.
+                    appearanceNote = InspectorUi.Text("", 11, true);
+                    appearanceNote.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                    body.AddChild(appearanceNote);
+                    useTemplate = new Button { Text = "Use the template's appearance", Visible = false, FocusMode = FocusModeEnum.None, TooltipText = "Remove this spawn's own appearance so it follows the template again" };
+                    useTemplate.Pressed += () => UseTemplateRequested?.Invoke();
+                    body.AddChild(useTemplate);
+                }
             }
 
             var line = new HBoxContainer();
@@ -195,4 +238,11 @@ public sealed partial class SpawnInspector : VBoxContainer
     public void SmokePressReset(string column) => entries[column].Reset.EmitSignal(BaseButton.SignalName.Pressed);
 
     public bool SmokeOpen => body.Visible;
+
+    /// <summary>The note under the Appearance header, for tests: which appearance is in force.</summary>
+    public string SmokeNote => appearanceNote is { Visible: true } ? appearanceNote.Text : "";
+
+    public bool SmokeUseTemplateVisible => useTemplate?.Visible == true;
+
+    public void SmokePressUseTemplate() => useTemplate!.EmitSignal(BaseButton.SignalName.Pressed);
 }

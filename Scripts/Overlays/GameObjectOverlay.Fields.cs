@@ -28,14 +28,14 @@ public partial class GameObjectOverlay
 
         if (!selected.HasValue || poses == null || !poses.Available || group.Members.Count > 0 || !lookup.TryGetValue(selected.Value, out var spawn))
         {
-            spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.GameObject, null, null, null, false);
+            spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.GameObject, null, null, null, null, false);
             return;
         }
 
         var dialect = ContentDraftFiles.Sources.DialectOf(sourceKey);
         uint entry = spawn.TemplateId;
         ulong guid = selected.Value;
-        spawnFields.Show(dialect, SpawnKind.GameObject, poses.RowOf(sourceKey, guid), poses.AddonOf(sourceKey, guid) ?? SpawnEdits.NewAddon(WorldSchemas.For(dialect), SpawnKind.GameObject, guid), templateValues.GetValueOrDefault(entry), true, force);
+        spawnFields.Show(dialect, SpawnKind.GameObject, poses.RowOf(sourceKey, guid), poses.AddonOf(sourceKey, guid) ?? SpawnEdits.NewAddon(WorldSchemas.For(dialect), SpawnKind.GameObject, guid), null, templateValues.GetValueOrDefault(entry), true, force);
         LoadTemplateValues(entry, dialect);
     }
 
@@ -79,10 +79,20 @@ public partial class GameObjectOverlay
             return changed ?? row;
         };
         string label = "Set " + field.Label.ToLowerInvariant();
-        var (ok, message) = field.Addon
-            ? poses.EditAddon(this, sourceKey, guid, label, SpawnEdits.NewAddon(ContentDraftFiles.Sources.SchemaFor(sourceKey), SpawnKind.GameObject, guid), change)
-            : poses.Edit(this, sourceKey, guid, label, change);
-        Say(error.Length > 0 ? error : ok ? "Saved." : message);
+        // A GameObject has no template addon, so its appearance row exists only while something in it is set.
+        bool ok;
+        string message;
+        if (field.Addon)
+        {
+            var result = poses.EditAddon(this, sourceKey, guid, label, SpawnEdits.NewAddon(ContentDraftFiles.Sources.SchemaFor(sourceKey), SpawnKind.GameObject, guid), change);
+            (ok, message) = (result.Ok, result.Removed ? "Cleared." : result.Message);
+        }
+        else
+        {
+            (ok, message) = poses.Edit(this, sourceKey, guid, label, change);
+        }
+
+        Say(error.Length > 0 ? error : ok ? (message == "Cleared." ? message : "Saved.") : message);
         RefreshSpawnFields(true);
     }
 }

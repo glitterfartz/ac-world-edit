@@ -205,6 +205,38 @@ public static class SpawnEdits
         return table.IsNullable("auras") ? row.With("auras", null) : row;
     }
 
+
+    /// <summary>
+    /// What a spawn shows when it has no addon row of its own: the template's addon copied under the spawn's GUID,
+    /// or nothing set when the template has none (and always nothing for a GameObject, which has no template addon).
+    /// </summary>
+    public static Row AddonBaseline(IWorldSchema schema, SpawnKind kind, Row? templateAddon, ulong guid) =>
+        kind == SpawnKind.Creature && templateAddon != null ? AddonFromTemplate(schema, templateAddon, guid) : NewAddon(schema, kind, guid);
+
+    /// <summary>
+    /// True when two addon rows make the server do the same thing: every column but the key equal, with NULL and
+    /// empty auras counted as the same. A spawn row equal to its baseline adds nothing, so it should not exist.
+    /// </summary>
+    public static bool SameAddon(TableSchema table, Row a, Row b)
+    {
+        foreach (var column in table.Columns)
+        {
+            if (table.Key.Contains(column.Name))
+            {
+                continue;
+            }
+
+            string x = a.IsNull(column.Name) ? "" : a[column.Name], y = b.IsNull(column.Name) ? "" : b[column.Name];
+            if (column.Name == "auras" ? NormalizeAuras(x) != NormalizeAuras(y) : x != y)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static string NormalizeAuras(string auras) => string.Join(' ', auras.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     /// <summary>A row of the table with every column zero or empty; callers set the columns that matter.</summary>
     static Row Defaults(TableSchema table) => Row.Of(table.Columns.Select(c => (c.Name, c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0)).ToArray());
 }

@@ -225,6 +225,20 @@ public static class SpawnFields
         return fields;
     }
 
+
+    /// <summary>
+    /// The row with every appearance field set to the template's value, and every other column (a waypoint path,
+    /// an animation kit) left alone. A packed AzerothCore field copies only its own bits.
+    /// </summary>
+    public static Row CopyAppearance(WorldDialect dialect, SpawnKind kind, Row row, Row template)
+    {
+        foreach (var field in AddonFor(dialect, kind))
+        {
+            row = field.Mask != 0 ? row.With(field.Column, field.Merge(row, field.Part(template))) : row.With(field.Column, template.IsNull(field.Column) ? null : template[field.Column]);
+        }
+
+        return row;
+    }
     /// <summary>The spawn fields followed by the addon fields: everything the inspector shows.</summary>
     public static IReadOnlyList<SpawnField> All(WorldDialect dialect, SpawnKind kind) => [.. For(dialect, kind), .. AddonFor(dialect, kind)];
 

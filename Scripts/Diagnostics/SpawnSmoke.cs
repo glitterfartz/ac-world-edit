@@ -46,4 +46,29 @@ internal static class SpawnSmoke
 
     public static string? Text(Godot.ConfirmationDialog? dialog) =>
         dialog != null && Godot.GodotObject.IsInstanceValid(dialog) && !dialog.IsQueuedForDeletion() ? dialog.DialogText : null;
+
+    /// <summary>
+    /// A creature on screen whose template has an addon row and which has none of its own: the case where a spawn's
+    /// first appearance edit must start from the template's values. Null when none is near.
+    /// </summary>
+    public static async Task<ulong?> FindInheriting(IDBSource source, IReadOnlyList<CreatureSpawn> spawns)
+    {
+        var table = SpawnEdits.AddonTable(source.Schema, SpawnKind.Creature);
+        foreach (var group in spawns.GroupBy(s => s.TemplateId).Take(80))
+        {
+            if (await source.ReadTemplateAddonAsync(group.Key, default) is null)
+            {
+                continue;
+            }
+
+            var rows = await source.ReadSpawnRowsAsync(SpawnKind.Creature, group.Select(s => s.Guid).Take(100).ToArray(), default);
+            var own = rows.All(table).Select(r => r.UL("guid")).ToHashSet();
+            if (group.FirstOrDefault(s => !own.Contains(s.Guid)) is { } pick)
+            {
+                return pick.Guid;
+            }
+        }
+
+        return null;
+    }
 }

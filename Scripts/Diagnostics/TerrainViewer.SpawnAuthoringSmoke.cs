@@ -701,23 +701,52 @@ public partial class TerrainViewer
             creatures.Deselect();
             return true;
         }),
-        ("appearance-set-emote-and-stance", () =>
+        ("appearance-waits-for-the-template", () =>
         {
-            creatures.Select(authoringTemplate!.Guid);
-            if (creatures.SelectedGuid != authoringTemplate.Guid || !creatures.CanDelete || creatures.SmokeRow() == null)
+            // Prefer a creature that inherits from a template that has an addon: that is where the first edit must copy it.
+            if (authoringAppearance == 0)
+            {
+                var inheriting = creatures.SmokeFindInheriting();
+                GD.Print(inheriting == null ? "SPAWN_AUTHORING_NOTE no nearby creature inherits an addon from its template; the copy is covered by the unit and database tests" : $"SPAWN_AUTHORING_APPEARANCE creature {inheriting} inherits its template's addon");
+                authoringAppearance = inheriting ?? authoringTemplate!.Guid;
+            }
+
+            creatures.Select(authoringAppearance);
+            if (creatures.SelectedGuid != authoringAppearance || !creatures.CanDelete || creatures.SmokeRow() == null)
             {
                 return false;
             }
 
             Require(creatures.SmokeFields.Field("emote") != null && creatures.SmokeFields.Field("auras") != null, "the Appearance fields are not shown");
+            // Read-only until the template's addon has been read: a blank baseline would drop the template's values.
+            string note = creatures.SmokeFields.SmokeNote;
+            if (note.StartsWith("Loading", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            Require(note.StartsWith("Uses the template's appearance", StringComparison.Ordinal) || note.StartsWith("Has its own appearance", StringComparison.Ordinal), "the Appearance header does not say which appearance is in force: " + note);
             authoringAddonBefore = creatures.SmokeAddon();
+            authoringTemplateAddon = creatures.SmokeTemplateAddon();
             creatures.SmokeFields.SmokeType("emote", "69");
             return true;
         }),
-        ("appearance-emote-saved", () =>
+        ("appearance-first-edit-keeps-the-templates-values", () =>
         {
-            Require(creatures.SmokeAddon()?.U("emote") == 69 && creatures.LastMessage == "Saved.", "the emote was not saved: " + creatures.LastMessage);
+            var own = creatures.SmokeAddon();
+            Require(own?.U("emote") == 69 && creatures.LastMessage == "Saved.", "the emote was not saved: " + creatures.LastMessage);
             Require(AuthoringScript(creatures.SmokeSourceKey).Contains("`creature_addon`", StringComparison.Ordinal), "the export lacks the addon change");
+            if (authoringTemplateAddon != null && authoringAddonBefore == null)
+            {
+                // The spawn's row replaces the template's, so every value the template supplied must have been copied.
+                Require(own!.U("mount") == authoringTemplateAddon.U("mount"), $"the spawn's new row lost the template's mount ({authoringTemplateAddon.U("mount")} became {own.U("mount")})");
+                Require((own.IsNull("auras") ? "" : own["auras"]) == (authoringTemplateAddon.IsNull("auras") ? "" : authoringTemplateAddon["auras"]), "the spawn's new row lost the template's auras");
+                var schema = WorldSchemas.For(ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey));
+                var expected = SpawnEdits.AddonFromTemplate(schema, authoringTemplateAddon, own!.UL("guid")).With("emote", 69u);
+                Require(SpawnEdits.SameAddon(SpawnEdits.AddonTable(schema, SpawnKind.Creature), own, expected), "the spawn's new row is not the template's addon with only the emote changed");
+            }
+
+            Require(creatures.SmokeFields.SmokeNote.StartsWith("Has its own appearance", StringComparison.Ordinal) && creatures.SmokeFields.SmokeUseTemplateVisible, "the header and the Use template button do not show the spawn has its own appearance");
             creatures.SmokeRevealField("emote");
             Screenshot("appearance");
             creatures.SmokeFields.SmokeType("Stance".Length > 0 && ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore ? "StandState" : "bytes1", "Sleeping");
@@ -728,18 +757,35 @@ public partial class TerrainViewer
             bool tc = ContentDraftFiles.Sources.DialectOf(creatures.SmokeSourceKey) == WorldDialect.TrinityCore;
             var addon = creatures.SmokeAddon()!;
             Require(tc ? addon.U("StandState") == 3 : (addon.U("bytes1") & 0xFF) == 3, "the stance was not saved");
-            if (!tc && authoringAddonBefore != null)
+            if (!tc && authoringTemplateAddon != null && authoringAddonBefore == null)
             {
-                Require((addon.U("bytes1") & ~0xFFu) == (authoringAddonBefore.U("bytes1") & ~0xFFu), "setting the stance changed the other bytes of bytes1");
+                Require((addon.U("bytes1") & ~0xFFu) == (authoringTemplateAddon.U("bytes1") & ~0xFFu), "setting the stance changed the other bytes of bytes1");
             }
 
             creatures.SmokeFields.SmokeType("auras", "12345 12345");
             return true;
         }),
-        ("appearance-bad-auras-refused-then-undone", () =>
+        ("appearance-bad-auras-refused", () =>
         {
             Require(creatures.LastMessage.Contains("listed twice", StringComparison.Ordinal), "the user was not told why the auras were refused: " + creatures.LastMessage);
-            Require(creatures.SmokeFields.Field("auras")!.Value.Text == "" || creatures.SmokeFields.Field("auras")!.Value.Text == (creatures.SmokeAddon()?.IsNull("auras") == false ? creatures.SmokeAddon()!["auras"] : ""), "the field kept the refused text");
+            Require(creatures.SmokeFields.Field("auras")!.Value.Text != "12345 12345", "the field kept the refused text");
+            creatures.SmokeFields.SmokePressUseTemplate();
+            return true;
+        }),
+        ("appearance-use-the-templates-removes-or-keeps-the-row", () =>
+        {
+            // The row goes when nothing but appearance differs; one that also holds a waypoint path stays and says why.
+            var after = creatures.SmokeAddon();
+            if (authoringAddonBefore == null && after != null)
+            {
+                Require(creatures.LastMessage.StartsWith("Kept its own row: it holds ", StringComparison.Ordinal), "the row stayed without saying why: " + creatures.LastMessage);
+            }
+            else
+            {
+                Require(after == null && creatures.LastMessage == "Uses the template's appearance again.", "the spawn did not go back to its template: " + creatures.LastMessage);
+                Require(creatures.SmokeFields.SmokeNote.StartsWith("Uses the template's appearance", StringComparison.Ordinal) && !creatures.SmokeFields.SmokeUseTemplateVisible, "the header still says the spawn has its own appearance");
+            }
+
             for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
             {
                 creatures.SmokeHistory(false);
@@ -1150,6 +1196,8 @@ public partial class TerrainViewer
     Vector3 authoringTarget;
     string authoringRespawn = "";
     Row? authoringAddonBefore;
+    Row? authoringTemplateAddon;
+    ulong authoringAppearance;
     SpawnPathUse? authoringPath;
     bool authoringSkipPath;
 

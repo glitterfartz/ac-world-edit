@@ -446,4 +446,17 @@ public partial class CreatureOverlay
             }
         }
     }
+
+    /// <summary>The selected creature's template addon row with the draft applied, or null when it has none or is not read yet.</summary>
+    public Row? SmokeTemplateAddon() => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && templateAddons?.IsLoaded(sourceKey, marker.Spawn.TemplateId) == true
+        ? templateAddons.RowOf(sourceKey, marker.Spawn.TemplateId)
+        : null;
+
+    /// <summary>A creature on screen that inherits its appearance from a template that has one, or null.</summary>
+    public ulong? SmokeFindInheriting()
+    {
+        var source = DBSource.Open(Connection());
+        var spawns = records.Take(400).ToArray();
+        return Task.Run(() => SpawnSmoke.FindInheriting(source, spawns)).GetAwaiter().GetResult();
+    }
 }
