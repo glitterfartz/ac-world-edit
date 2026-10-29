@@ -187,6 +187,12 @@ public partial class TerrainViewer
                         throw new Exception("Phase mismatch leaked through");
                     }
 
+                    string said = VisibilityControl<Label>("VisibilitySummary").Text;
+                    if (!said.Contains("phase 2", StringComparison.Ordinal) || !VisibilityControl<HFlowContainer>("PhaseChecklist").GetChild<CheckBox>(1).ButtonPressed)
+                    {
+                        throw new Exception("The visibility summary or phase checklist does not follow the typed mask: " + said);
+                    }
+
                     var phaseOne = VisibilityControl<LineEdit>("PhaseMask");
                     phaseOne.Text = "0x1";
                     phaseOne.EmitSignal(LineEdit.SignalName.TextSubmitted, "0x1");
@@ -210,6 +216,27 @@ public partial class TerrainViewer
                     break;
                 case 9:
                     VisibilityCapture("visibility-event-creature");
+                    sidebar.ShowSceneTab();
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 91;
+                    break;
+                case 91:
+                    // The visibility card sits below the layers card: scroll it into view for the screenshot.
+                    var card = VisibilityControl<Control>("VisibilityPreview");
+                    for (Node up = card; up != null; up = up.GetParent())
+                    {
+                        if (up is ScrollContainer scroll)
+                        {
+                            scroll.ScrollVertical = (int)(card.GlobalPosition.Y - scroll.GlobalPosition.Y + scroll.ScrollVertical) - 60;
+                            break;
+                        }
+                    }
+
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 92;
+                    break;
+                case 92:
+                    VisibilityCapture("visibility-card");
                     VisibilityPreset(1);
                     VisibilityPreset(0);
                     VisibilityControl<LineEdit>("CreatureSearch").Text = "";

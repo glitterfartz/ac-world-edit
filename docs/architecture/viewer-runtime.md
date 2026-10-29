@@ -197,6 +197,7 @@ A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before,
 | Client picker | `ClientPickerDialog` in `Ui/ConnectionForm.cs` | Profile and folder selection |
 | Connection | `Ui/ConnectionForm.cs` | Database settings; tested on a worker before saving |
 | Sidebar | `Ui/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
+| Visibility preview | `Ui/VisibilityPreview/VisibilityPreviewPanel*.cs` | The sidebar's visibility card: preset with a description and a one-sentence summary (`Foundation/PreviewSummary`), then "Who is looking" (AzerothCore: quick buttons, a wrapping per-phase checklist and the typed mask, `Foundation/AzerothCore/AcPhaseMasks`; TrinityCore: phase ID), "Events" and "Also show". The panel builds the visibility rules and the sidebar merges in the display budget |
 | Editor base | `Ui/ContentEditorWindow.cs`, `Ui/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
 | Quest editor | `Ui/QuestEditorWindow.cs` (search and frame; swaps in the open database's panel), `Ui/QuestPanel.cs` + `.Pages.cs` (shared loading, drafting, story, chain and givers), `Ui/AzerothCore/AcQuestPanel.cs`, `Ui/TrinityCore/TcQuestPanel.cs` (overview, objectives, rewards and preview pages) | `quest_template` and related tables, with `AcQuestModel.Check` (AzerothCore) or `TcQuestRules.Check` (TrinityCore) |
@@ -239,7 +240,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--water-smoke`, `--water-interior-smoke` | Aim at the largest native liquid; frame timing (p50, p95) |
 | `--creature-smoke`, `--visual-smoke`, `--gizmo-smoke` | Ray pick, gizmo editing, shortcuts, animation preview, map switching |
 | `--reload-smoke` | Force a partial model upload, reload the client, check recovery |
-| `--visibility-smoke` | Layers, preview policies, events, phase |
+| `--visibility-smoke` | Layers, preview policies, events, phase (the summary sentence and checklist follow the typed mask); a windowed run also saves `artifacts/visibility-card.png` |
 | `--skybox-smoke` | Checks that the skybox does not overwrite opaque pixels |
 | `--graveyard-smoke` | Pick, move, undo, comments, links, layer hiding |
 | `--waypoint-smoke` | Live waypoint paths near the start, a viewport click on a point, and the edit workflow |
