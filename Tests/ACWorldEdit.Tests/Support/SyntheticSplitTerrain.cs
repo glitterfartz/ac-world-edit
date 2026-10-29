@@ -26,6 +26,12 @@ public static class SyntheticSplitTerrain
         public bool NoLayers { get; init; }
         public uint Version { get; init; } = 18;
 
+        /// <summary>MTXP texture flags (16 bytes per texture in MDID order); null emits no MTXP.</summary>
+        public uint[]? TextureFlags { get; init; }
+
+        /// <summary>MHID/MTXP height inputs per texture: (FileDataID, scale, offset); null emits no MHID.</summary>
+        public (uint Id, float Scale, float Offset)[]? Heights { get; init; }
+
         /// <summary>MH2O payload for the root file (see <see cref="Mh2o"/>); null emits none.</summary>
         public byte[]? Liquid { get; init; }
     }
@@ -132,6 +138,32 @@ public static class SyntheticSplitTerrain
             }
 
             Chunk(w, "MDID", ids);
+        }
+
+        if (options.Heights != null)
+        {
+            byte[] mhid = new byte[options.Heights.Length * 4];
+            byte[] heightParams = new byte[options.Heights.Length * 16];
+            for (int i = 0; i < options.Heights.Length; i++)
+            {
+                BitConverter.GetBytes(options.Heights[i].Id).CopyTo(mhid, i * 4);
+                BitConverter.GetBytes(options.Heights[i].Scale).CopyTo(heightParams, i * 16 + 4);
+                BitConverter.GetBytes(options.Heights[i].Offset).CopyTo(heightParams, i * 16 + 8);
+            }
+
+            Chunk(w, "MHID", mhid);
+            Chunk(w, "MTXP", heightParams);
+        }
+
+        if (options.TextureFlags != null)
+        {
+            byte[] mtxp = new byte[options.TextureFlags.Length * 16];
+            for (int i = 0; i < options.TextureFlags.Length; i++)
+            {
+                BitConverter.GetBytes(options.TextureFlags[i]).CopyTo(mtxp, i * 16);
+            }
+
+            Chunk(w, "MTXP", mtxp);
         }
 
         for (int i = 0; i < options.ChunkCount; i++)

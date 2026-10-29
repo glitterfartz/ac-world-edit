@@ -9,9 +9,12 @@ namespace ACWorldEdit.Assets;
 public readonly record struct TileKey(int X, int Y);
 /// <summary>
 /// Terrain texture and decoded 64-by-64 opacity. The first layer supplies base color and
-/// therefore has no alpha map.
+/// therefore has no alpha map. Scale divides the texture repeats per chunk (retail MTXP: 1, 2, 4, 8).
 /// </summary>
-public sealed record TerrainLayer(string Texture, byte[] Alpha);
+public sealed record TerrainLayer(string Texture, byte[] Alpha, float Scale = 1f, string HeightTexture = "", float HeightScale = 0f, float HeightOffset = 1f);
+
+/// <summary>Retail per-texture terrain parameters (MTXP, MHID): texture scale and the height-blend inputs.</summary>
+public readonly record struct TerrainTextureParams(float Scale, string HeightTexture, float HeightScale, float HeightOffset);
 /// <summary>
 /// One MCNK height/normal/color/shadow/layer payload. X/Y locate it in the tile; Height is
 /// absolute elevation and Heights are relative native samples.
@@ -229,7 +232,7 @@ public sealed class TerrainTile
     /// Wrath allows four layers; retail files may define up to eight, of which the shader blends the
     /// first four and the rest are counted in <see cref="TerrainChunk.DroppedLayers"/>.
     /// </summary>
-    internal static void AddLayers(TerrainChunk chunk, byte[] layers, byte[] alpha, IReadOnlyList<string> textures, bool bigAlpha, int maxDefined = 4)
+    internal static void AddLayers(TerrainChunk chunk, byte[] layers, byte[] alpha, IReadOnlyList<string> textures, bool bigAlpha, int maxDefined = 4, IReadOnlyList<TerrainTextureParams>? parameters = null)
     {
         int count = layers.Length / 16;
         // Shipped ADTs contain untextured chunks with an empty MCLY (for example
@@ -251,7 +254,8 @@ public sealed class TerrainTile
 
             uint flags = LittleEndian.U32(layers, p + 4);
             byte[] map = i == 0 ? [] : DecodeAlpha(alpha, (int)LittleEndian.U32(layers, p + 8), flags, bigAlpha, (chunk.Flags & 0x8000) == 0);
-            chunk.Layers.Add(new(textures[texture], map));
+            var extra = parameters != null && texture < parameters.Count ? parameters[texture] : new TerrainTextureParams(1f, "", 0f, 1f);
+            chunk.Layers.Add(new(textures[texture], map, extra.Scale, extra.HeightTexture, extra.HeightScale, extra.HeightOffset));
         }
     }
 

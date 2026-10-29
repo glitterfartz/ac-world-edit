@@ -40,6 +40,31 @@ public class SplitTerrainTests
     }
 
     [Fact]
+    public void MtxpFlagsGivePerLayerTextureScale()
+    {
+        // Texture 0 carries scale nibble 0 (no extra scaling); texture 1 nibble 3 (1 << 3 = 8).
+        var chunk = Read(Alpha(new byte[4096]) with { TextureFlags = [0x00, 0x30] }).Chunks[0];
+        Assert.Equal([1f, 8f], chunk.Layers.Select(l => l.Scale).ToArray());
+    }
+
+    [Fact]
+    public void MhidAndMtxpGiveHeightBlendInputsOnlyWhenTheTextureHasThem()
+    {
+        // Texture 0 has a height map with scale 5; texture 1 has the disabled pair (scale 0, offset 1).
+        var layers = Read(Alpha(new byte[4096]) with { Heights = [(2000, 5f, 1f), (2001, 0f, 1f)] }).Chunks[0].Layers;
+        Assert.Equal("fdid:2000", layers[0].HeightTexture);
+        Assert.Equal(5f, layers[0].HeightScale);
+        Assert.Equal("", layers[1].HeightTexture);
+        Assert.Equal(1f, layers[1].HeightOffset);
+    }
+
+    [Fact]
+    public void LayersDefaultToUnitScaleWithoutMtxp()
+    {
+        Assert.All(Read(Alpha(new byte[4096])).Chunks[0].Layers, l => Assert.Equal(1f, l.Scale));
+    }
+
+    [Fact]
     public void UncompressedBigAlphaIsCopiedAs64By64()
     {
         byte[] alpha = new byte[4096];

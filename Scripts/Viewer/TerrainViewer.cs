@@ -575,7 +575,7 @@ public partial class TerrainViewer : Node3D
             notices.Add("Some chunks define more than 4 texture layers; the extra layers are not drawn.");
         }
 
-        var layerPaths = tile.Chunks.SelectMany(c => c.Layers).Select(l => l.Texture).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var layerPaths = tile.Chunks.SelectMany(c => c.Layers).SelectMany(l => new[] { l.Texture, l.HeightTexture }).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (layerPaths.Contains(""))
         {
             notices.Add("Some terrain layers name FileDataID 0; they are drawn with the fallback texture.");

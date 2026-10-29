@@ -32,6 +32,7 @@ public static class RetailTerrain
             throw new InvalidDataException($"Expected 256 MCNK chunks in each file, found {rootChunks.Count} and {textureChunks.Count}");
         }
 
+        var parameters = TextureParams(textures, textureTop, textureIds.Length);
         var seen = new HashSet<(int X, int Y)>();
         var result = new List<TerrainChunk>(256);
         for (int i = 0; i < 256; i++)
@@ -44,7 +45,7 @@ public static class RetailTerrain
 
             var layers = SubChunk(textures, textureChunks[i], 0, "MCLY");
             var alpha = SubChunk(textures, textureChunks[i], 0, "MCAL");
-            TerrainTile.AddLayers(chunk, layers ?? [], alpha ?? [], textureIds, bigAlpha, MaxDefinedLayers);
+            TerrainTile.AddLayers(chunk, layers ?? [], alpha ?? [], textureIds, bigAlpha, MaxDefinedLayers, parameters);
             result.Add(chunk);
         }
 
@@ -83,6 +84,36 @@ public static class RetailTerrain
         }
 
         return names;
+    }
+
+    /// <summary>
+    /// MTXP holds 16 bytes per texture (flags, height scale, height offset, padding). The flags' high
+    /// nibble is a power-of-two texture scale: the layer repeats 8 / scale times across a chunk. MHID
+    /// names each texture's height map (its alpha channel); a height scale of 0 with offset 1 means the
+    /// texture has none, so the layer blends by opacity alone.
+    /// </summary>
+    static TerrainTextureParams[] TextureParams(byte[] textures, List<ChunkHeader> top, int count)
+    {
+        var result = new TerrainTextureParams[count];
+        var mtxp = top.FirstOrDefault(c => c.Tag == "MTXP");
+        var mhid = top.FirstOrDefault(c => c.Tag == "MHID");
+        for (int i = 0; i < count; i++)
+        {
+            float scale = 1f, heightScale = 0f, heightOffset = 1f;
+            if ((i + 1) * 16 <= mtxp.Size)
+            {
+                int p = mtxp.Data + i * 16;
+                scale = 1 << (int)((LittleEndian.U32(textures, p) >> 4) & 0xF);
+                heightScale = LittleEndian.F32(textures, p + 4);
+                heightOffset = LittleEndian.F32(textures, p + 8);
+            }
+
+            uint height = (i + 1) * 4 <= mhid.Size ? LittleEndian.U32(textures, mhid.Data + i * 4) : 0;
+            bool blended = height != 0 && (heightScale != 0f || heightOffset != 1f);
+            result[i] = new(scale, blended ? AssetRef.FromFileId(height) : "", blended ? heightScale : 0f, blended ? heightOffset : 1f);
+        }
+
+        return result;
     }
 
     static TerrainChunk ReadGeometry(byte[] b, ChunkHeader c)

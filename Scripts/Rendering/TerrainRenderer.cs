@@ -76,7 +76,7 @@ public sealed class TerrainRenderer
     /// The chunks of one tile that share an identical layer list, concatenated into one surface.
     /// UV is chunk-local (layers, grid); UV2 holds the chunk's cell in the tile's splat atlas.
     /// </summary>
-    public sealed record PreparedGroup(string[] Textures, int Chunks, Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Vector2[] Uv2, Color[] Colors, int[] Indices);
+    public sealed record PreparedGroup(string[] Textures, float[] Scales, string[] Heights, float[] HeightScales, float[] HeightOffsets, int Chunks, Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Vector2[] Uv2, Color[] Colors, int[] Indices);
 
     /// <summary>
     /// A tile ready for upload: one group per distinct layer list and the 1024x1024 RGBA splat atlas
@@ -117,7 +117,7 @@ public sealed class TerrainRenderer
                 }
             }
 
-            string key = string.Join("\n", c.Layers.Select(l => l.Texture.ToLowerInvariant()));
+            string key = string.Join("\n", c.Layers.Select(l => l.Texture.ToLowerInvariant() + "@" + l.Scale + "|" + l.HeightTexture.ToLowerInvariant() + "@" + l.HeightScale + "@" + l.HeightOffset));
             if (!groups.TryGetValue(key, out var members))
             {
                 groups[key] = members = [];
@@ -152,7 +152,7 @@ public sealed class TerrainRenderer
                 v += p.Vertices.Length;
             }
 
-            return new PreparedGroup(tile.Chunks[members[0]].Layers.Select(l => l.Texture).ToArray(), members.Count, vertices, normals, uv, uv2, colors, indices);
+            return new PreparedGroup(tile.Chunks[members[0]].Layers.Select(l => l.Texture).ToArray(), tile.Chunks[members[0]].Layers.Select(l => l.Scale).ToArray(), tile.Chunks[members[0]].Layers.Select(l => l.HeightTexture).ToArray(), tile.Chunks[members[0]].Layers.Select(l => l.HeightScale).ToArray(), tile.Chunks[members[0]].Layers.Select(l => l.HeightOffset).ToArray(), members.Count, vertices, normals, uv, uv2, colors, indices);
         }).ToArray();
         return new(result, splat);
     }
@@ -270,8 +270,41 @@ public sealed class TerrainRenderer
             }
 
             material.SetShaderParameter("layer" + i, texture);
+            // A layer without a height map keeps the neutral fallback; its scale 0 / offset 1 leaves the weight untouched.
+            ImageTexture heightTexture = fallback;
+            if (i < group.Heights.Length && group.Heights[i].Length > 0 && decoded.ContainsKey(group.Heights[i]))
+            {
+                string name = group.Heights[i];
+                if (!textures.TryGetValue(name, out var entry))
+                {
+                    entry = new TextureEntry(Texture(decoded[name]));
+                    textures.Add(name, entry);
+                }
+
+                entry.References++;
+                heightTexture = entry.Texture;
+            }
+
+            material.SetShaderParameter("height" + i, heightTexture);
         }
 
+        float[] heightScales = new float[4], heightOffsets = [1f, 1f, 1f, 1f];
+        for (int i = 0; i < Math.Min(4, group.Heights.Length); i++)
+        {
+            if (group.Heights[i].Length > 0 && decoded.ContainsKey(group.Heights[i]))
+            {
+                heightScales[i] = group.HeightScales[i];
+                heightOffsets[i] = group.HeightOffsets[i];
+            }
+        }
+
+        material.SetShaderParameter("height_blend", heightScales.Any(s => s != 0f) || heightOffsets.Any(o => o != 1f));
+        material.SetShaderParameter("height_scales", new Vector4(heightScales[0], heightScales[1], heightScales[2], heightScales[3]));
+        material.SetShaderParameter("height_offsets", new Vector4(heightOffsets[0], heightOffsets[1], heightOffsets[2], heightOffsets[3]));
+
+        material.SetShaderParameter("layer_scales", new Vector4(
+            group.Scales.Length > 0 ? group.Scales[0] : 1f, group.Scales.Length > 1 ? group.Scales[1] : 1f,
+            group.Scales.Length > 2 ? group.Scales[2] : 1f, group.Scales.Length > 3 ? group.Scales[3] : 1f));
         material.SetShaderParameter("splat_map", splats[tile]);
         material.SetShaderParameter("big_alpha", bigAlpha);
         material.SetShaderParameter("grid", grid);
@@ -282,7 +315,7 @@ public sealed class TerrainRenderer
             Mesh = mesh,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.On
         };
-        instance.SetMeta("textures", group.Textures);
+        instance.SetMeta("textures", group.Textures.Concat(group.Heights.Take(4).Where(h => h.Length > 0 && decoded.ContainsKey(h))).ToArray());
         instance.SetMeta("chunks", group.Chunks);
         CellCount += group.Chunks;
         tile.AddChild(instance);
