@@ -334,7 +334,7 @@ public partial class TerrainViewer
         }),
         ("fields-respawn-saved-and-exported", () =>
         {
-            Require(creatures.SmokeRow()?["spawntimesecs"] == "777", "the respawn was not saved");
+            Require(creatures.SmokeRow()?["spawntimesecs"] == "777", "the respawn was not saved: " + creatures.LastMessage);
             Require(creatures.LastMessage == "Saved.", "the user was told: " + creatures.LastMessage);
             Require(drafts.Draft!.NetEdits().Count == 1, "one field edit should be one net change");
             Require(AuthoringScript(creatures.SmokeSourceKey).Contains("UPDATE `creature` SET `spawntimesecs` = 777", StringComparison.Ordinal), "the export lacks the respawn update");
@@ -562,7 +562,8 @@ public partial class TerrainViewer
             var reachable = creatures.Records
                 .Where(s => s.Guid != authoringTemplate.Guid)
                 .Select(s => (s.Guid, Screen: camera.UnprojectPosition(creatures.PickPointOf(s.Guid)), Behind: camera.IsPositionBehind(creatures.PickPointOf(s.Guid))))
-                .Where(c => !c.Behind && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen) && creatures.FindHit(camera, c.Screen)?.Guid == c.Guid)
+                // A Ctrl-press on the primary's gizmo starts its drag instead of toggling, so keep the targets clear of it.
+                .Where(c => !c.Behind && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen) && !OverPanel(c.Screen) && c.Screen.DistanceTo(camera.UnprojectPosition(creatures.PickPointOf(authoringTemplate.Guid))) > 150 && creatures.FindHit(camera, c.Screen)?.Guid == c.Guid)
                 .Take(2).ToArray();
             if (reachable.Length < 2)
             {
@@ -792,6 +793,58 @@ public partial class TerrainViewer
             }
 
             Require(drafts.Draft!.NetEdits().Count == 0 && creatures.SmokeAddon() == authoringAddonBefore, "undo did not restore the addon");
+            return true;
+        }),
+        ("template-window-opens-on-appearance", () =>
+        {
+            if (!authoringWindowOpened)
+            {
+                creatureProps.Open(creatures.SmokeRecord(authoringAppearance)!, "appearance");
+                authoringWindowOpened = true;
+                return false;
+            }
+
+            if (creatureProps.ActiveSection != "appearance" || creatureProps.SmokeActive is not AppearanceSection section || !section.SmokeUse.Contains("Used by", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            Require(creatureProps.SmokeTitle.StartsWith("Creature template: ", StringComparison.Ordinal), "the window title does not say it edits the template: " + creatureProps.SmokeTitle);
+            Require(creatureProps.SmokeSubtitle.Contains("TEMPLATE · Entry ", StringComparison.Ordinal) && creatureProps.SmokeSubtitle.Contains("inspector on the right", StringComparison.Ordinal), "the subtitle does not point to the inspector: " + creatureProps.SmokeSubtitle);
+            Require(section.SmokeUse.Contains("own", StringComparison.Ordinal) && section.SmokeFields.Field("emote") != null && section.SmokeFields.Field("auras") != null, "the Appearance page lacks its note or fields");
+            Screenshot("template-window");
+            section.SmokeFields.SmokeType("emote", "70");
+            return true;
+        }),
+        ("template-edit-changes-only-the-template", () =>
+        {
+            var section = (AppearanceSection)creatureProps.SmokeActive!;
+            if (section.SmokeFields.Field("emote")!.Value.Text != "70")
+            {
+                return false;
+            }
+
+            Require(creatureProps.Context.Status == "Saved.", "the window did not say it saved: " + creatureProps.Context.Status);
+            Require(drafts.Draft!.NetEdits().Count == 1 && drafts.Draft.NetEdits()[0].Edit.Table == "creature_template_addon", "a template edit should change only the template addon row");
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("`creature_template_addon`", StringComparison.Ordinal), "the export lacks the template addon change");
+            creatureProps.Visible = false;
+            return true;
+        }),
+        ("template-edit-reaches-a-spawn-that-follows-it", () =>
+        {
+            creatures.Select(authoringAppearance);
+            if (creatures.SelectedGuid != authoringAppearance || creatures.SmokeFields.Field("emote")?.Text != "70")
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeFields.SmokeNote.StartsWith("Uses the template's appearance", StringComparison.Ordinal), "the spawn does not say it follows the template");
+            for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
+            {
+                creatures.SmokeHistory(false);
+            }
+
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a template edit behind");
             return true;
         }),
         ("referenced-creature-select", () =>
@@ -1046,7 +1099,7 @@ public partial class TerrainViewer
                 .Select(s => (s.Guid, Point: GameObjectOverlay.ViewPosition(s) + Vector3.Up))
                 .Select(c => (c.Guid, c.Point, Screen: camera.UnprojectPosition(c.Point)))
                 .Where(c => !camera.IsPositionBehind(c.Point)
-                    && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen)
+                    && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen) && !OverPanel(c.Screen)
                     && c.Screen.DistanceTo(primaryScreen) > 150
                     && gameObjects.FindHit(camera, c.Screen) is { } hit && hit.Guid == c.Guid
                     && (creatures.FindHit(camera, c.Screen) is not { } nearer || nearer.Distance > hit.Distance))
@@ -1198,6 +1251,7 @@ public partial class TerrainViewer
     Row? authoringAddonBefore;
     Row? authoringTemplateAddon;
     ulong authoringAppearance;
+    bool authoringWindowOpened;
     SpawnPathUse? authoringPath;
     bool authoringSkipPath;
 
@@ -1229,4 +1283,7 @@ public partial class TerrainViewer
         var window = GetViewport().GetFinalTransform() * screen;
         Input.ParseInputEvent(new InputEventMouseMotion { Position = window, GlobalPosition = window });
     }
+
+    /// <summary>True where a panel or the toolbar covers the viewport point, so a click there never reaches the world.</summary>
+    bool OverPanel(Vector2 point) => new Control[] { leftPanel, sidebar, toolbar }.Any(c => c.IsVisibleInTree() && c.GetGlobalRect().HasPoint(point));
 }

@@ -39,6 +39,13 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
     public uint? Entry => Context?.Target?.TemplateId;
     public AcCreatureView? View => Context?.AcView;
     public string ActiveSection => active?.Id ?? "";
+
+    /// <summary>The shown section and the window title text, for tests.</summary>
+    public CreatureSection? SmokeActive => active;
+
+    public string SmokeTitle => title.Text;
+
+    public string SmokeSubtitle => subtitle.Text;
     public IReadOnlyList<CreatureSection> Sections => sections;
     public event Action<string>? SummaryChanged;
     public event Action<uint>? QuestEditorRequested;
@@ -323,8 +330,9 @@ public partial class CreaturePropertiesWindow : ContentEditorWindow
         var view = Context.View;
         string? name = view?.Name;
         string subname = view?.Subname ?? "";
-        title.Text = name ?? (Context.Target != null ? "Loading…" : "No creature selected");
-        subtitle.Text = name == null ? "" : (subname.Length > 0 ? $"<{subname}>   " : "") + $"Entry {view!.Entry} · {Context.Snapshot?.SpawnCount ?? 0} spawn(s)";
+        // This window edits the creature template, shared by every spawn of it; one spawn's own settings are in the inspector beside the world.
+        title.Text = name != null ? "Creature template: " + name : Context.Target != null ? "Loading…" : "No creature selected";
+        subtitle.Text = name == null ? "" : (subname.Length > 0 ? $"<{subname}>   " : "") + ScopeText.Header(PropertyScope.Template, view!.Entry, 0, Context.Snapshot?.SpawnCount ?? 0) + " · a single spawn is edited in the inspector on the right";
         statusLabel.Text = Context.Status;
         statusLabel.Visible = Context.Status.Length > 0;
         for (int i = 0; i < listed.Count; i++)

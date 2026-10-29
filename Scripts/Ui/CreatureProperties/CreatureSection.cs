@@ -334,7 +334,8 @@ public static class CreatureSectionRegistry
         ctx => new TcGossipSection(ctx),
         ctx => new TcTemplateSection(ctx),
         ctx => new TcTrainerSection(ctx),
-        ctx => new TcVendorSection(ctx)
+        ctx => new TcVendorSection(ctx),
+        ctx => new AppearanceSection(ctx)
     ];
 
     public static List<CreatureSection> Create(CreatureContext ctx) => Factories.Select(factory => factory(ctx)).ToList();
