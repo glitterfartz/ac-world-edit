@@ -36,6 +36,7 @@ public partial class CreatureOverlay
         if (!selectedGuid.HasValue || poses == null || !poses.Available || group.Members.Count > 0 || !markers.TryGetValue(selectedGuid.Value, out var marker))
         {
             spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.Creature, null, null, null, null, false);
+            ShowWanderRing(null);
             return;
         }
 
@@ -44,11 +45,83 @@ public partial class CreatureOverlay
         ulong guid = selectedGuid.Value;
         var (baseline, state) = AppearanceBaseline(dialect, entry, guid);
         var own = poses.AddonOf(sourceKey, guid);
-        spawnFields.Show(dialect, SpawnKind.Creature, poses.RowOf(sourceKey, guid), own ?? baseline,
+        var spawnRow = poses.RowOf(sourceKey, guid);
+        ShowWanderRing(spawnRow);
+        spawnFields.Show(dialect, SpawnKind.Creature, spawnRow, own ?? baseline,
             state == SpawnInspector.AppearanceState.Loading ? state : own != null ? SpawnInspector.AppearanceState.Own : SpawnInspector.AppearanceState.Inherited,
             templateValues.GetValueOrDefault(entry), true, force);
         LoadTemplateValues(entry, dialect);
         LoadTemplateAddon(entry);
+    }
+
+    /// <summary>
+    /// A flat ring around the selected creature showing where it can wander. It hangs off the marker, so it follows
+    /// the marker through a drag and goes away with it; it is rebuilt whenever the row is shown.
+    /// </summary>
+    void ShowWanderRing(Row? row)
+    {
+        if (IsInstanceValid(wanderRing))
+        {
+            wanderRing!.QueueFree();
+        }
+
+        wanderRing = null;
+        if (SpawnFields.WanderRadius(row) is not float radius || !selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
+        {
+            return;
+        }
+
+        wanderRing = new MeshInstance3D
+        {
+            Name = "WanderRing",
+            Mesh = WanderRingMesh(radius),
+            MaterialOverride = wanderRingMaterial,
+            Position = new(0, 0.15f, 0),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+        };
+        marker.Node.AddChild(wanderRing);
+    }
+
+    MeshInstance3D? wanderRing;
+    public bool WanderRingShown => IsInstanceValid(wanderRing);
+    public float WanderRingRadius => wanderRing?.Mesh is ArrayMesh mesh ? mesh.GetAabb().Size.X / 2 : 0;
+
+    static readonly StandardMaterial3D wanderRingMaterial = new()
+    {
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        AlbedoColor = new("ffcf69"),
+        NoDepthTest = true
+    };
+
+    /// <summary>A circle of the given radius as a thin flat band, so it stays visible at any distance (lines are one pixel wide).</summary>
+    static ArrayMesh WanderRingMesh(float radius)
+    {
+        const int segments = 64;
+        float width = Mathf.Clamp(radius * 0.02f, 0.08f, 0.5f);
+        var vertices = new Vector3[(segments + 1) * 2];
+        var indices = new int[segments * 6];
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = i * Mathf.Tau / segments;
+            var direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
+            vertices[i * 2] = direction * (radius - width);
+            vertices[i * 2 + 1] = direction * radius;
+        }
+
+        for (int i = 0; i < segments; i++)
+        {
+            int a = i * 2;
+            int[] quad = [a, a + 1, a + 2, a + 1, a + 3, a + 2];
+            quad.CopyTo(indices, i * 6);
+        }
+
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+        arrays[(int)Mesh.ArrayType.Index] = indices;
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        return mesh;
     }
 
     /// <summary>What the spawn shows without an addon row of its own, and whether the template's addon has been read yet.</summary>

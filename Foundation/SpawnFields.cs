@@ -239,6 +239,13 @@ public static class SpawnFields
 
         return row;
     }
+    /// <summary>
+    /// The radius the server lets a creature wander within, or null when it stands still or follows a path.
+    /// Only a random-movement creature wanders; the radius is measured from the spawn point.
+    /// </summary>
+    public static float? WanderRadius(Row? row) =>
+        row != null && row.U("MovementType") == 1 && row.F("wander_distance") is > 0 and var radius ? radius : null;
+
     /// <summary>The spawn fields followed by the addon fields: everything the inspector shows.</summary>
     public static IReadOnlyList<SpawnField> All(WorldDialect dialect, SpawnKind kind) => [.. For(dialect, kind), .. AddonFor(dialect, kind)];
 

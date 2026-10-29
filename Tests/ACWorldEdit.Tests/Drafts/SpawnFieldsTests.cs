@@ -265,4 +265,17 @@ public class SpawnFieldsTests
         Assert.True(poses.EditAddon(null, "src", 5, "Set auras", blank, r => SpawnFields.Apply(fields["auras"], r, "12345 67890").Row!).Ok);
         Assert.Equal("12345 67890", poses.AddonOf("src", 5)!["auras"]);
     }
+
+    [Theory]
+    [InlineData(WorldDialect.TrinityCore)]
+    [InlineData(WorldDialect.AzerothCore)]
+    public void OnlyARandomMovementCreatureWithARadiusHasAWanderRing(WorldDialect dialect)
+    {
+        var row = NewRow(dialect, SpawnKind.Creature);
+        Assert.Null(SpawnFields.WanderRadius(null));
+        Assert.Null(SpawnFields.WanderRadius(row.With("MovementType", 0u).With("wander_distance", 0f)));
+        Assert.Null(SpawnFields.WanderRadius(row.With("MovementType", 0u).With("wander_distance", 8f)));
+        Assert.Null(SpawnFields.WanderRadius(row.With("MovementType", 1u).With("wander_distance", 0f)));
+        Assert.Equal(8f, SpawnFields.WanderRadius(row.With("MovementType", 1u).With("wander_distance", 8f)));
+    }
 }

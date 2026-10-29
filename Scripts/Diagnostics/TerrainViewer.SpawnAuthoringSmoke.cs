@@ -346,6 +346,7 @@ public partial class TerrainViewer
             var row = creatures.SmokeRow()!;
             Require(row["MovementType"] == "1" && row.F("wander_distance") == 6, "a wander radius should switch the creature to wandering");
             Require(creatures.SmokeFields.Field("MovementType")!.Value.Text == "Wanders", "the movement field does not show the change");
+            Require(creatures.WanderRingShown && Math.Abs(creatures.WanderRingRadius - 6) < 0.01f, $"the wander ring should show a 6 yd radius, not {creatures.WanderRingRadius}");
             creatures.SmokeFields.SmokeType("spawntimesecs", "-5");
             return true;
         }),
@@ -377,6 +378,7 @@ public partial class TerrainViewer
 
             Require(drafts.Draft!.NetEdits().Count == 0 && creatures.SmokeRow()!["spawntimesecs"] == authoringRespawn, "undo did not restore the row");
             Require(creatures.SmokeFields.Field("spawntimesecs")!.Value.Text == authoringRespawn, "the field does not show the restored value");
+            Require(creatures.WanderRingShown == (creatures.SmokeRow()!["MovementType"] == "1" && creatures.SmokeRow()!.F("wander_distance") > 0), "the wander ring does not match the restored row");
             return true;
         }),
         ("place-search-and-arm", () =>
