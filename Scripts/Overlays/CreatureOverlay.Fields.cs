@@ -26,7 +26,7 @@ public partial class CreatureOverlay
             return;
         }
 
-        if (!selectedGuid.HasValue || poses == null || !poses.Available || !markers.TryGetValue(selectedGuid.Value, out var marker))
+        if (!selectedGuid.HasValue || poses == null || !poses.Available || group.Members.Count > 0 || !markers.TryGetValue(selectedGuid.Value, out var marker))
         {
             spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.Creature, null, null, false);
             return;

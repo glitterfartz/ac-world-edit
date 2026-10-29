@@ -201,4 +201,52 @@ public class StagedSpawnTests
     [InlineData(5, 5, 5, 5, 0.0)]
     public void ASpawnFacesTheCameraThatPlacedIt(double x, double y, double toX, double toY, double heading) =>
         Assert.Equal(heading, SpawnPlacement.FacingHeading(x, y, toX, toY), 6);
+
+    static (ContentDrafts Drafts, SpawnPoses Poses) ThreeLoaded()
+    {
+        var drafts = Open(TcTables.Instance);
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature, _ => WorldDialect.TrinityCore);
+        poses.Load(Source, new ulong[] { 5, 6, 7 }.Select(g => SpawnEdits.NewCreature(TcSchema.Instance, g, 1234, Here with { X = Here.X + g }, 0, 0)));
+        return (drafts, poses);
+    }
+
+    [Fact]
+    public void AGroupMoveIsOneUndoableCommandForEverySpawn()
+    {
+        var (drafts, poses) = ThreeLoaded();
+        var (ok, message) = poses.EditMany(null, Source, [5, 6, 7], "Move 3 spawns", row => SpawnEdits.WithPose(row, SpawnEdits.PoseOf(row) with { Y = 99 }));
+        Assert.True(ok, message);
+        Assert.Equal(3, drafts.Draft!.NetEdits().Count);
+        Assert.All(new ulong[] { 5, 6, 7 }, g => Assert.Equal(99, SpawnEdits.PoseOf(poses.RowOf(Source, g)!).Y));
+
+        poses.Undo(null);
+        Assert.Empty(drafts.Draft.NetEdits());
+        Assert.Equal(Here.Y, SpawnEdits.PoseOf(poses.RowOf(Source, 6)!).Y);
+        Assert.True(poses.EditMany(null, Source, [5, 6], "Nothing", row => row).Ok);
+        Assert.Empty(drafts.Draft.NetEdits());
+    }
+
+    [Fact]
+    public void AGroupDeleteAndCopyEachAreOneCommandAndRefuseWhenARowIsMissing()
+    {
+        var (drafts, poses) = ThreeLoaded();
+        Assert.Contains("loading", poses.DeleteMany(null, TcSchema.Instance, Source, [5, 777]).Message);
+        Assert.Empty(drafts.Draft!.NetEdits());
+
+        Assert.True(poses.DeleteMany(null, TcSchema.Instance, Source, [5, 6, 7]).Ok);
+        Assert.Equal(3, drafts.Draft.NetEdits().Count);
+        Assert.All(new ulong[] { 5, 6, 7 }, g => Assert.True(poses.Deleted(Source, g)));
+        poses.Undo(null);
+        Assert.Empty(drafts.Draft.NetEdits());
+
+        var guids = poses.NextGuids(Source, 100, 2);
+        Assert.Equal([101ul, 102], guids);
+        var (ok, message) = poses.DuplicateMany(null, TcSchema.Instance, Source, [(5, guids[0], Here with { X = 1 }), (6, guids[1], Here with { X = 2 })]);
+        Assert.True(ok, message);
+        Assert.Equal([101ul, 102], poses.Inserted(Source).Select(r => r.UL("guid")));
+        poses.Undo(null);
+        Assert.Empty(poses.Inserted(Source));
+        // The reserved block counts staged GUIDs even once undone, so a redo cannot collide with a new copy.
+        Assert.Equal([103ul], poses.NextGuids(Source, 100, 1));
+    }
 }

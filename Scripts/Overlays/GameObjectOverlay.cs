@@ -126,6 +126,7 @@ public partial class GameObjectOverlay : RegionOverlay
         }
 
         query.Poll(Publish, error => queryStatus = error);
+        group.Sync(guid => lookup.TryGetValue(guid, out var member) ? ViewPosition(Effective(member)) : null);
         if (LayerEnabled && region != null && query.WantsStart)
         {
             var area = region;
@@ -329,6 +330,11 @@ public partial class GameObjectOverlay : RegionOverlay
             return;
         }
 
+        if (selected != guid)
+        {
+            group.Clear();
+        }
+
         selected = guid;
         modelUpdate = 0;
         SelectionChanged?.Invoke();
@@ -348,7 +354,7 @@ public partial class GameObjectOverlay : RegionOverlay
 
         var spawn = Effective(source);
         title.Text = spawn.Name;
-        identity.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
+        identity.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}" + (group.Members.Count > 0 ? $"   (+{group.Members.Count} selected)" : "");
         string conflict = poses?.Conflict(sourceKey, spawn.Guid, GameObjectPlacement.From(source)) == true ? "\nSource placement changed; draft requires review." : "";
         details.Text = FormattableString.Invariant($"Map {spawn.Pose.Map} · Display {spawn.DisplayId} · Type {spawn.Type}\nX {spawn.Pose.X:F2}    Y {spawn.Pose.Y:F2}    Z {spawn.Pose.Z:F2}\nHeading {PoseText.HeadingText(spawn.Pose.Heading)}\nScale {spawn.Scale:F2} · DB state {spawn.State}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility.Description}{conflict}");
         selectionLabel.Text = spawn.Name;
@@ -362,6 +368,7 @@ public partial class GameObjectOverlay : RegionOverlay
         // Cancel while the selection still exists so an unfinished move restores its placement.
         gizmo?.Finish(false);
         selected = null;
+        group.Clear();
         list?.DeselectAll();
         if (selectionLabel != null)
         {

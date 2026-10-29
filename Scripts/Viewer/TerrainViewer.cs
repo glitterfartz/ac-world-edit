@@ -731,6 +731,11 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _UnhandledInput(InputEvent input)
     {
+        if (placement.Current == null && HandleSelectionGesture(input))
+        {
+            return;
+        }
+
         if (placement.Current != null && !capture)
         {
             if (input is InputEventMouseMotion hover)

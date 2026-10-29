@@ -233,6 +233,7 @@ public partial class TerrainViewer
         };
         sidebar = new SceneSidebar(creatures, gameObjects, graveyards, waypoints, areaTriggers, objects, connection);
         ui.AddChild(sidebar);
+        BuildSelectionBox(ui);
         drafts = ContentDraftFiles.Open();
         creatures.Attach(drafts);
         gameObjects.Attach(drafts);

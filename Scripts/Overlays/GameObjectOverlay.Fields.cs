@@ -26,7 +26,7 @@ public partial class GameObjectOverlay
             return;
         }
 
-        if (!selected.HasValue || poses == null || !poses.Available || !lookup.TryGetValue(selected.Value, out var spawn))
+        if (!selected.HasValue || poses == null || !poses.Available || group.Members.Count > 0 || !lookup.TryGetValue(selected.Value, out var spawn))
         {
             spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.GameObject, null, null, false);
             return;

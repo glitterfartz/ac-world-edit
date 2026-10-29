@@ -34,7 +34,7 @@ public partial class TerrainViewer
             return;
         }
 
-        string Where() => $"map={currentMapId} records={creatures.Records.Count} selected={creatures.SelectedGuid} net={drafts.Draft?.NetEdits().Count} {creatures.QueryStatus}";
+        string Where() => $"map={currentMapId} records={creatures.Records.Count} selected={creatures.SelectedGuid} net={drafts.Draft?.NetEdits().Count} objectsSelected={gameObjects.SmokeSelected} objectGroup={gameObjects.Group.Count} creatureGroup={creatures.Group.Count} {creatures.QueryStatus}";
         spawnAuthoringRun.Advance(delta, spawnAuthoringSteps, !busy && world != null, Where, SmokeFail, () => GetTree().Quit(), waiting: Where);
     }
 
@@ -527,6 +527,157 @@ public partial class TerrainViewer
             Require(drafts.Draft!.NetEdits().Count == 0 && gameObjects.SmokeRecord(guid) == null, "undo left the GameObject");
             return true;
         }),
+        ("group-ctrl-click-adds-creatures", () =>
+        {
+            creatures.Select(authoringTemplate!.Guid);
+            FocusPose(authoringTemplate.Pose);
+            if (creatures.SelectedGuid != authoringTemplate.Guid || !creatures.CanDelete)
+            {
+                return false;
+            }
+
+            // Two other creatures the cursor can really reach: a ray at their centre hits them.
+            var reachable = creatures.Records
+                .Where(s => s.Guid != authoringTemplate.Guid)
+                .Select(s => (s.Guid, Screen: camera.UnprojectPosition(creatures.PickPointOf(s.Guid)), Behind: camera.IsPositionBehind(creatures.PickPointOf(s.Guid))))
+                .Where(c => !c.Behind && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen) && creatures.FindHit(camera, c.Screen)?.Guid == c.Guid)
+                .Take(2).ToArray();
+            if (reachable.Length < 2)
+            {
+                return false;
+            }
+
+            authoringGroup = [authoringTemplate.Guid, .. reachable.Select(c => c.Guid)];
+            foreach (var (_, screen, _) in reachable)
+            {
+                SmokeClick(screen, shift: false, ctrl: true);
+            }
+
+            return true;
+        }),
+        ("group-has-three-and-says-so", () =>
+        {
+            if (creatures.Group.Count < 3)
+            {
+                return false;
+            }
+
+            Require(creatures.Group.SequenceEqual(authoringGroup), "the group is not the primary followed by the two Ctrl-clicked creatures");
+            Require(creatures.SmokeMeta.Contains("(+2 selected)", StringComparison.Ordinal), "the inspector does not say two more are selected: " + creatures.SmokeMeta);
+            Require(!creatures.SmokeFields.Visible, "the spawn fields should hide while several creatures are selected");
+            // A second Ctrl-click on a member takes it out again.
+            SmokeClick(camera.UnprojectPosition(creatures.PickPointOf(authoringGroup[2])), shift: false, ctrl: true);
+            return true;
+        }),
+        ("group-ctrl-click-removes", () =>
+        {
+            if (creatures.Group.Count != 2)
+            {
+                return false;
+            }
+
+            Require(!creatures.InGroup(authoringGroup[2]), "the Ctrl-clicked member is still selected");
+            SmokeClick(camera.UnprojectPosition(creatures.PickPointOf(authoringGroup[2])), shift: false, ctrl: true);
+            return true;
+        }),
+        ("group-duplicate-copies-all", () =>
+        {
+            if (creatures.Group.Count != 3 || !creatures.CanDuplicate)
+            {
+                return false;
+            }
+
+            authoringCount = creatures.Records.Count;
+            SmokeKey(Key.D, ctrl: true);
+            return true;
+        }),
+        ("group-copies-are-the-selection", () =>
+        {
+            if (creatures.Records.Count != authoringCount + 3 || creatures.Group.Count != 3 || creatures.Group.Any(g => authoringGroup.Contains(g)))
+            {
+                return false;
+            }
+
+            Require(drafts.Draft!.NetEdits().Count(e => e.Edit.Table == "creature") == 3, "three copies should be three staged inserts");
+            Require(AuthoringScript(creatures.SmokeSourceKey).Split("INSERT INTO `creature`").Length - 1 >= 3, "the export lacks the three INSERTs");
+            authoringCopies = creatures.Group.ToArray();
+            authoringBefore = authoringCopies.Select(g => creatures.SmokeRecord(g)!.Pose).ToArray();
+            return true;
+        }),
+        ("group-move-drags-the-primary", () =>
+        {
+            Require(creatures.SmokeDrag(camera), "could not grab the primary creature's move handle");
+            return true;
+        }),
+        ("group-move-moved-everyone-the-same", () =>
+        {
+            var after = authoringCopies.Select(g => creatures.SmokeRecord(g)!.Pose).ToArray();
+            double dy = after[0].Y - authoringBefore[0].Y;
+            if (Math.Abs(dy) < 0.5)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < after.Length; i++)
+            {
+                Require(Math.Abs((after[i].Y - authoringBefore[i].Y) - dy) < 0.05 && Math.Abs(after[i].X - authoringBefore[i].X) < 0.05, $"creature {i} moved differently from the primary");
+            }
+
+            Require(creatures.Group.Count == 3, "the group was lost by the move");
+            Require(drafts.Draft!.NetEdits().Count(e => e.Edit.Table == "creature") == 3, "a group move of staged copies should stay three inserts");
+            return true;
+        }),
+        ("group-delete-removes-all-copies", () =>
+        {
+            SmokeKey(Key.Delete);
+            return true;
+        }),
+        ("group-copies-gone-nothing-left", () =>
+        {
+            if (authoringCopies.Any(g => creatures.SmokeRecord(g) != null))
+            {
+                return false;
+            }
+
+            Require(creatures.Group.Count == 0 && drafts.Draft!.NetEdits().Count == 0, "deleting the staged copies should leave nothing selected or to export");
+            return true;
+        }),
+        ("group-box-starts-dragging", () =>
+        {
+            creatures.Deselect();
+            var points = authoringGroup.Select(g => camera.UnprojectPosition(creatures.PickPointOf(g))).ToArray();
+            authoringBoxMin = new Vector2(points.Min(p => p.X), points.Min(p => p.Y)) - new Vector2(50, 50);
+            authoringBoxMax = new Vector2(points.Max(p => p.X), points.Max(p => p.Y)) + new Vector2(50, 50);
+            var window = GetViewport().GetFinalTransform() * authoringBoxMin;
+            Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = window, GlobalPosition = window, ShiftPressed = true });
+            SmokeMove(authoringBoxMin + (authoringBoxMax - authoringBoxMin) / 2);
+            return true;
+        }),
+        ("group-box-is-drawn-then-released", () =>
+        {
+            if (!selectionBox.Visible)
+            {
+                SmokeMove(authoringBoxMin + (authoringBoxMax - authoringBoxMin) / 2 + Vector2.One * (spawnAuthoringRun.StepTime > 1 ? 1 : 0));
+                return false;
+            }
+
+            SmokeMove(authoringBoxMax);
+            var window = GetViewport().GetFinalTransform() * authoringBoxMax;
+            Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = window, GlobalPosition = window, ShiftPressed = true });
+            return true;
+        }),
+        ("group-box-result", () =>
+        {
+            if (creatures.Group.Count < 3)
+            {
+                return false;
+            }
+
+            Require(!selectionBox.Visible, "the selection box stays on screen after the drag");
+            Require(authoringGroup.All(g => creatures.Group.Contains(g)), "the box missed creatures inside it");
+            creatures.Deselect();
+            return true;
+        }),
         ("referenced-creature-select", () =>
         {
             if (authoringReferenced == 0)
@@ -737,6 +888,104 @@ public partial class TerrainViewer
             Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
             return true;
         }),
+        ("object-group-focus", () =>
+        {
+            creatures.Deselect();
+            gameObjects.SmokeSelect(authoringObject!.Guid);
+            FocusPose(authoringObject.Pose);
+            authoringSettle = 0;
+            return true;
+        }),
+        ("object-group-ctrl-click", () =>
+        {
+            // Let the camera move settle: a region change reloads the GameObjects and clears the selection.
+            if (gameObjects.IsLoading || ++authoringSettle < 30 || gameObjects.SmokeSelected != authoringObject!.Guid || !gameObjects.CanDelete)
+            {
+                if (!gameObjects.IsLoading && gameObjects.SmokeSelected != authoringObject!.Guid)
+                {
+                    gameObjects.SmokeSelect(authoringObject.Guid);
+                }
+
+                return false;
+            }
+
+            // Two other GameObjects a Ctrl-click really reaches: the viewer sends the click to the nearer of
+            // creature and GameObject, and a click on the primary's gizmo starts its drag instead.
+            var primaryScreen = camera.UnprojectPosition(GameObjectOverlay.ViewPosition(gameObjects.SmokeRecord(authoringObject.Guid)!));
+            var reachable = gameObjects.Records
+                .Where(s => s.Guid != authoringObject.Guid)
+                .Select(s => (s.Guid, Point: GameObjectOverlay.ViewPosition(s) + Vector3.Up))
+                .Select(c => (c.Guid, c.Point, Screen: camera.UnprojectPosition(c.Point)))
+                .Where(c => !camera.IsPositionBehind(c.Point)
+                    && GetViewport().GetVisibleRect().Grow(-120).HasPoint(c.Screen)
+                    && c.Screen.DistanceTo(primaryScreen) > 150
+                    && gameObjects.FindHit(camera, c.Screen) is { } hit && hit.Guid == c.Guid
+                    && (creatures.FindHit(camera, c.Screen) is not { } nearer || nearer.Distance > hit.Distance))
+                .Take(2).ToArray();
+            if (reachable.Length < 2)
+            {
+                GD.Print("SPAWN_AUTHORING_NOTE fewer than two GameObjects can be clicked from here; their group commands are covered by the unit tests");
+                authoringSkipObjectGroup = true;
+                return true;
+            }
+
+            authoringObjectGroup = [authoringObject.Guid, .. reachable.Select(c => c.Guid)];
+            foreach (var c in reachable)
+            {
+                SmokeClick(c.Screen, shift: false, ctrl: true);
+            }
+
+            return true;
+        }),
+        ("object-group-has-three", () =>
+        {
+            if (authoringSkipObjectGroup)
+            {
+                return true;
+            }
+
+            if (gameObjects.Group.Count < 3 || !gameObjects.CanDuplicate)
+            {
+                return false;
+            }
+
+            Require(gameObjects.Group.SequenceEqual(authoringObjectGroup), "the GameObject group is not the primary followed by the Ctrl-clicked ones");
+            authoringCount = gameObjects.Records.Count;
+            gameObjects.SmokePressDuplicate();
+            return true;
+        }),
+        ("object-group-duplicate-copies-all", () =>
+        {
+            if (authoringSkipObjectGroup)
+            {
+                return true;
+            }
+
+            if (gameObjects.Records.Count != authoringCount + 3 || gameObjects.Group.Count != 3 || gameObjects.Group.Any(g => authoringObjectGroup.Contains(g)))
+            {
+                return false;
+            }
+
+            Require(drafts.Draft!.NetEdits().Count(e => e.Edit.Table == "gameobject") == 3, "three copies should be three staged inserts");
+            authoringCopies = gameObjects.Group.ToArray();
+            gameObjects.SmokePressDelete();
+            return true;
+        }),
+        ("object-group-copies-gone", () =>
+        {
+            if (authoringSkipObjectGroup)
+            {
+                return true;
+            }
+
+            if (authoringCopies.Any(g => gameObjects.SmokeRecord(g) != null))
+            {
+                return false;
+            }
+
+            Require(gameObjects.Group.Count == 0 && drafts.Draft!.NetEdits().Count == 0, "deleting the staged copies should leave nothing selected or to export");
+            return true;
+        }),
         ("referenced-gameobject", () =>
         {
             if (authoringReferenced == 0 || authoringKind != SpawnKind.GameObject)
@@ -803,6 +1052,13 @@ public partial class TerrainViewer
     IReadOnlyList<SpawnImpactItem> authoringItems = [];
     SpawnKind authoringKind = SpawnKind.Creature;
     bool authoringSkipObject;
+    ulong[] authoringGroup = [];
+    ulong[] authoringObjectGroup = [];
+    bool authoringSkipObjectGroup;
+    int authoringSettle;
+    Vector2 authoringBoxMin, authoringBoxMax;
+    ulong[] authoringCopies = [];
+    WorldPose[] authoringBefore = [];
     Task? authoringSearch;
     bool authoringSearchObject;
     int authoringPickIndex;
@@ -825,12 +1081,12 @@ public partial class TerrainViewer
     }
 
     /// <summary>A left click through the viewport, the way the mouse sends it.</summary>
-    void SmokeClick(Vector2 screen, bool shift)
+    void SmokeClick(Vector2 screen, bool shift, bool ctrl = false)
     {
         foreach (bool pressed in new[] { true, false })
         {
             var window = GetViewport().GetFinalTransform() * screen;
-            Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = window, GlobalPosition = window, ShiftPressed = shift });
+            Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = window, GlobalPosition = window, ShiftPressed = shift, CtrlPressed = ctrl });
         }
     }
 

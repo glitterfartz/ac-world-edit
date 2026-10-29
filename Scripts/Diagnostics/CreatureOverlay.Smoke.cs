@@ -388,4 +388,28 @@ public partial class CreatureOverlay
 
     /// <summary>The selected creature's row with the draft applied.</summary>
     public Row? SmokeRow() => selectedGuid.HasValue ? poses?.RowOf(sourceKey, selectedGuid.Value) : null;
+
+    /// <summary>Drag the selected creature's move handle two yards along view X, the way the mouse does; the whole group follows.</summary>
+    public bool SmokeDrag(Camera3D camera)
+    {
+        if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
+        {
+            return false;
+        }
+
+        var original = marker.Node.Position;
+        Mode = GizmoMode.Move;
+        gizmo.Update(camera, original, marker.Node.Rotation.Y);
+        var handle = original + Vector3.Right * gizmo.Scale.X * 0.7f;
+        if (!BeginDrag(camera, camera.UnprojectPosition(handle)))
+        {
+            return false;
+        }
+
+        Drag(camera, camera.UnprojectPosition(handle + Vector3.Right * 2));
+        EndDrag(true);
+        return true;
+    }
+
+    public string SmokeMeta => selectionMeta.Text;
 }

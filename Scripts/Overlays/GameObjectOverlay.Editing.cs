@@ -59,6 +59,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     {
         gizmo = new TransformGizmo();
         AddChild(gizmo);
+        AddChild(group);
         gizmo.Changed += MoveSelection;
     }
 
@@ -247,6 +248,11 @@ public partial class GameObjectOverlay : IPlacementEditor
         {
             ShowPlacement(source, after);
             ShowSelection();
+            return;
+        }
+
+        if (group.Members.Count > 0 && MoveGroup(success, PlacementOf(source), after))
+        {
             return;
         }
 

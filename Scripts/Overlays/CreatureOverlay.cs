@@ -86,6 +86,7 @@ public partial class CreatureOverlay : RegionOverlay
         }
 
         selectedGuid = null;
+        group.Clear();
         list?.DeselectAll();
         animation.Disabled = true;
         selectionName.Text = "Select a creature";
@@ -114,6 +115,7 @@ public partial class CreatureOverlay : RegionOverlay
     {
         gizmo = new TransformGizmo();
         AddChild(gizmo);
+        AddChild(group);
         gizmo.Changed += MoveSelection;
     }
 
@@ -287,6 +289,7 @@ public partial class CreatureOverlay : RegionOverlay
         }
 
         query.Poll(Publish, error => queryStatus = error);
+        group.Sync(guid => markers.TryGetValue(guid, out var member) ? member.Node.Position : null);
         if (region != null && LayerEnabled && query.WantsStart)
         {
             var next = region;
@@ -315,6 +318,17 @@ public partial class CreatureOverlay : RegionOverlay
                 {
                     selectWhenDrawn = null;
                     Select(placed);
+                    if (groupWhenDrawn != null)
+                    {
+                        foreach (ulong other in groupWhenDrawn.Where(markers.ContainsKey))
+                        {
+                            group.Add(other);
+                            LoadRow(other);
+                        }
+
+                        groupWhenDrawn = null;
+                        Select(placed);
+                    }
                 }
 
                 if (selectedGuid.HasValue)
@@ -627,6 +641,11 @@ public partial class CreatureOverlay : RegionOverlay
             return;
         }
 
+        if (selectedGuid != guid)
+        {
+            group.Clear();
+        }
+
         if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var previous))
         {
             previous.Body.MaterialOverride = normal;
@@ -647,7 +666,7 @@ public partial class CreatureOverlay : RegionOverlay
         var spawn = marker.Spawn;
         var pose = PoseOf(spawn);
         selectionName.Text = spawn.Name;
-        selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}";
+        selectionMeta.Text = $"GUID {spawn.Guid}   /   Template {spawn.TemplateId}" + (group.Members.Count > 0 ? $"   (+{group.Members.Count} selected)" : "");
         details.Text = FormattableString.Invariant($"Map {pose.Map} · Display {spawn.DisplayId}\nX {pose.X:F2}    Y {pose.Y:F2}    Z {pose.Z:F2}\nHeading {PoseText.HeadingText(pose.Heading)}\n{SpawnPhasing.Describe(spawn.Phasing, spawn.PhaseMask, spawn.SpawnMask)}\n{spawn.Visibility?.Description}\n{(poses?.Conflict(sourceKey, guid, spawn.Pose) == true ? "Source position changed; draft requires review." : "")}");
         ShowPose(pose);
         list.DeselectAll();
@@ -745,6 +764,11 @@ public partial class CreatureOverlay : RegionOverlay
         if (after == PoseOf(spawn))
         {
             ApplyPose(spawn.Guid);
+            return;
+        }
+
+        if (group.Members.Count > 0 && MoveGroup(success, PoseOf(spawn), after))
+        {
             return;
         }
 
