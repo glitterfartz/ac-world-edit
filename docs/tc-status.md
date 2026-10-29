@@ -4,6 +4,8 @@ The plan and open work for the TrinityCore database overhaul, and the project's 
 
 Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is built for TrinityCore: the waypoint layer reads `waypoint_path` and `waypoint_path_node`, and a node's position, facing and delay edit and export, with refinements listed below. All nine phases are built, and the behavior panel also edits TrinityCore AreaTrigger rules: client triggers (source type 2) and server-spawned triggers' templates (types 11 and 12), with refinements listed below.
 
+**Next: editor gap plan.** Phases 10 onward (spawn authoring, conditions, GameObjects, loot, movement, pools, events, creature pages, quest map data, travel, ambience, cinematics, text and items) are planned in [`gap-plan.md`](gap-plan.md); each phase lands as its own rows in this file when it starts.
+
 ## Decisions and design
 
 - The dialect follows the client kind: Wrath335 uses AzerothCore and Retail uses TrinityCore. There is no autodetect, so a schema mismatch fails with a dialect-specific error.
