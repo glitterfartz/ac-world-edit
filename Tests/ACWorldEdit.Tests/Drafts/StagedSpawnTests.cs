@@ -192,4 +192,13 @@ public class StagedSpawnTests
         Assert.Contains("loading", poses.Delete(null, TcSchema.Instance, Source, 777).Message);
         Assert.Contains("loading", poses.Duplicate(null, TcSchema.Instance, Source, 777, 778, Here).Message);
     }
+
+    [Theory]
+    [InlineData(0, 0, 10, 0, 0.0)]
+    [InlineData(0, 0, 0, 10, Math.PI / 2)]
+    [InlineData(0, 0, -10, 0, Math.PI)]
+    [InlineData(0, 0, 0, -10, 3 * Math.PI / 2)]
+    [InlineData(5, 5, 5, 5, 0.0)]
+    public void ASpawnFacesTheCameraThatPlacedIt(double x, double y, double toX, double toY, double heading) =>
+        Assert.Equal(heading, SpawnPlacement.FacingHeading(x, y, toX, toY), 6);
 }

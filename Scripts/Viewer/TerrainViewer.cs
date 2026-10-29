@@ -28,6 +28,7 @@ public partial class TerrainViewer : Node3D
     readonly Dictionary<TileKey, uint[]> chunkAreas = [];
     // CPU height copies for ground snapping; same lifetime as the loaded tile node.
     readonly Dictionary<TileKey, TerrainHeights> terrainHeights = [];
+    PlacementTool placement = null!;
     readonly HashSet<TileKey> failed = [];
     readonly HashSet<string> reportedNotices = [];
     readonly HashSet<TileKey> wanted = [];
@@ -143,6 +144,19 @@ public partial class TerrainViewer : Node3D
         areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection(), Lookup = () => clientLookup };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
+        placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
+        AddChild(placement);
+        creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
+        gameObjects.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.GameObject, entry, name));
+        placement.Changed += template =>
+        {
+            creatures.PlaceCard.SetPlacing(template?.Kind == SpawnKind.Creature ? template.Name : null);
+            gameObjects.PlaceCard.SetPlacing(template?.Kind == SpawnKind.GameObject ? template.Name : null);
+            if (template != null)
+            {
+                statusLog.Post($"Placing {template.Name}: click the ground. Shift-click keeps placing, Esc stops.");
+            }
+        };
         BuildUi();
         connection.Applied += () => _ = LoadTeleports();
         _ = LoadTeleports();
@@ -717,6 +731,26 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _UnhandledInput(InputEvent input)
     {
+        if (placement.Current != null && !capture)
+        {
+            if (input is InputEventMouseMotion hover)
+            {
+                placement.Hover(camera, hover.Position);
+            }
+            else if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
+            {
+                _ = placement.ClickAsync(camera, click.Position, click.ShiftPressed, statusLog.Post);
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            else if (input is InputEventKey { Pressed: true, Keycode: Key.Escape })
+            {
+                placement.Disarm();
+                statusLog.Post("Stopped placing.");
+                return;
+            }
+        }
+
         if (input is InputEventMouseButton mouse)
         {
             if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)

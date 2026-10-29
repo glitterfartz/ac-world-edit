@@ -373,6 +373,160 @@ public partial class TerrainViewer
             Require(creatures.SmokeFields.Field("spawntimesecs")!.Value.Text == authoringRespawn, "the field does not show the restored value");
             return true;
         }),
+        ("place-search-and-arm", () =>
+        {
+            if (authoringSearch == null)
+            {
+                authoringSearch = creatures.PlaceCard.SmokeSearchAsync(authoringTemplate!.Name);
+                return false;
+            }
+
+            if (!authoringSearch.IsCompleted)
+            {
+                return false;
+            }
+
+            Require(creatures.PlaceCard.SmokeCount > 0, $"searching for '{authoringTemplate!.Name}' found nothing");
+            int index = Enumerable.Range(0, creatures.PlaceCard.SmokeCount).First(i => creatures.PlaceCard.SmokeItem(i).EndsWith($"·   {authoringTemplate.TemplateId}", StringComparison.Ordinal));
+            authoringPickIndex = index;
+            creatures.PlaceCard.SmokeChoose(index);
+            Require(placement.Current is { Kind: SpawnKind.Creature } armed && armed.Entry == authoringTemplate.TemplateId, "choosing a result did not arm the placement tool");
+            Require(creatures.PlaceCard.SmokeHint.StartsWith("Placing ", StringComparison.Ordinal), "the card does not say what is being placed: " + creatures.PlaceCard.SmokeHint);
+            return true;
+        }),
+        ("place-pointer-shows-a-ghost-on-the-ground", () =>
+        {
+            authoringScreen = GetViewport().GetVisibleRect().Size * new Vector2(0.5f, 0.62f);
+            SmokeMove(authoringScreen);
+            return true;
+        }),
+        ("place-ghost-follows-the-cursor", () =>
+        {
+            if (placement.Target is not Vector3 target)
+            {
+                SmokeMove(authoringScreen + Vector2.One * (spawnAuthoringRun.StepTime > 1 ? 1 : 0));
+                return false;
+            }
+
+            Require(placement.Ghost.Visible, "the ghost is hidden although the cursor is over ground");
+            authoringTarget = target;
+            Require(Math.Abs((GroundAt(target + Vector3.Up * 0.5f).Height ?? target.Y) - target.Y) < 0.1f, "the ghost is not on the ground");
+            var projected = camera.UnprojectPosition(target);
+            Require(projected.DistanceTo(authoringScreen) < 8, $"the ghost is not under the cursor: cursor {authoringScreen}, ghost at {projected}, ground {target}, camera {camera.GlobalPosition}, viewport {GetViewport().GetVisibleRect().Size}, transform {GetViewport().GetFinalTransform()}, fresh ray hit {PlacementTool.RayGround(camera, authoringScreen, TerrainHeightAt)}, rotation {camera.Rotation}, fov {camera.Fov} keep {camera.KeepAspect}, rayDir {camera.ProjectRayNormal(authoringScreen)}, unproject(fresh) {camera.UnprojectPosition(PlacementTool.RayGround(camera, authoringScreen, TerrainHeightAt) ?? Vector3.Zero)}");
+            return true;
+        }),
+        ("place-click-puts-it-there-facing-the-camera", () =>
+        {
+            authoringCount = creatures.Records.Count;
+            SmokeClick(authoringScreen, shift: false);
+            return true;
+        }),
+        ("place-clicked-spawn-exists", () =>
+        {
+            if (creatures.Records.Count != authoringCount + 1 || creatures.SelectedGuid == authoringTemplate!.Guid || creatures.SelectedGuid is not ulong guid)
+            {
+                return false;
+            }
+
+            var record = creatures.SmokeRecord(guid)!;
+            var target = authoringTarget;
+            var server = ViewSpace.ToServer(target);
+            Require(record.TemplateId == authoringTemplate.TemplateId, "placed another template");
+            Require(Math.Abs(record.Pose.X - server.X) < 0.3 && Math.Abs(record.Pose.Y - server.Y) < 0.3, $"placed at ({record.Pose.X:F1}, {record.Pose.Y:F1}), the cursor was at ({server.X:F1}, {server.Y:F1})");
+            var cam = ViewSpace.ToServer(camera.GlobalPosition);
+            double facing = SpawnPlacement.FacingHeading(record.Pose.X, record.Pose.Y, cam.X, cam.Y);
+            Require(Math.Abs(WorldCoordinates.NormalizeHeading(record.Pose.Heading - facing)) < 0.05 || Math.Abs(WorldCoordinates.NormalizeHeading(record.Pose.Heading - facing) - 2 * Math.PI) < 0.05, "the spawn does not face the camera");
+            Require(placement.Current == null, "a plain click should stop placing");
+            Require(creatures.PlaceCard.SmokeHint.StartsWith("Search ", StringComparison.Ordinal), "the card still says it is placing");
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("INSERT INTO `creature`", StringComparison.Ordinal), "the export lacks the INSERT");
+            authoringCopy = guid;
+            return true;
+        }),
+        ("place-shift-click-keeps-placing", () =>
+        {
+            creatures.PlaceCard.SmokeChoose(authoringPickIndex);
+            Require(placement.Current != null, "re-arming failed");
+            authoringCount = creatures.Records.Count;
+            var other = authoringScreen + new Vector2(60, 20);
+            SmokeMove(other);
+            SmokeClick(authoringScreen, shift: true);
+            SmokeClick(other, shift: true);
+            return true;
+        }),
+        ("place-two-more-and-still-armed", () =>
+        {
+            if (creatures.Records.Count < authoringCount + 2)
+            {
+                return false;
+            }
+
+            Require(placement.Current != null, "Shift-click should keep the template armed");
+            SmokeKey(Key.Escape);
+            return true;
+        }),
+        ("place-escape-stops-and-undo-clears", () =>
+        {
+            if (placement.Current != null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < 10 && drafts.Draft!.NetEdits().Count > 0; i++)
+            {
+                creatures.SmokeHistory(false);
+            }
+
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left placed spawns behind");
+            return true;
+        }),
+        ("place-gameobject-search-and-arm", () =>
+        {
+            if (authoringSearch == null || authoringSearchObject == false)
+            {
+                authoringSearchObject = true;
+                authoringSearch = gameObjects.PlaceCard.SmokeSearchAsync(authoringObject!.TemplateId.ToString());
+                return false;
+            }
+
+            if (!authoringSearch.IsCompleted)
+            {
+                return false;
+            }
+
+            Require(gameObjects.PlaceCard.SmokeCount > 0, $"searching for {authoringObject!.TemplateId} found nothing");
+            int index = Enumerable.Range(0, gameObjects.PlaceCard.SmokeCount).First(i => gameObjects.PlaceCard.SmokeItem(i).EndsWith($"·   {authoringObject.TemplateId}", StringComparison.Ordinal));
+            gameObjects.PlaceCard.SmokeChoose(index);
+            Require(placement.Current is { Kind: SpawnKind.GameObject } armed && armed.Entry == authoringObject.TemplateId, "choosing a result did not arm the placement tool");
+            Require(creatures.PlaceCard.SmokeHint.StartsWith("Search ", StringComparison.Ordinal) && gameObjects.PlaceCard.SmokeHint.StartsWith("Placing ", StringComparison.Ordinal), "only the GameObject card should say it is placing");
+            authoringCount = gameObjects.Records.Count;
+            SmokeMove(authoringScreen);
+            return true;
+        }),
+        ("place-gameobject-click", () =>
+        {
+            if (placement.Target == null)
+            {
+                SmokeMove(authoringScreen);
+                return false;
+            }
+
+            SmokeClick(authoringScreen, shift: false);
+            return true;
+        }),
+        ("place-gameobject-exists-and-undone", () =>
+        {
+            if (gameObjects.Records.Count != authoringCount + 1 || gameObjects.SmokeSelected == authoringObject!.Guid || gameObjects.SmokeSelected is not ulong guid)
+            {
+                return false;
+            }
+
+            var record = gameObjects.SmokeRecord(guid)!;
+            Require(record.TemplateId == authoringObject.TemplateId && record.Name == authoringObject.Name && placement.Current == null, "placed the wrong template or kept placing");
+            Require(AuthoringScript(gameObjects.SmokeSourceKey).Contains("INSERT INTO `gameobject`", StringComparison.Ordinal), "the export lacks the INSERT");
+            gameObjects.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0 && gameObjects.SmokeRecord(guid) == null, "undo left the GameObject");
+            return true;
+        }),
         ("referenced-creature-select", () =>
         {
             if (authoringReferenced == 0)
@@ -649,6 +803,11 @@ public partial class TerrainViewer
     IReadOnlyList<SpawnImpactItem> authoringItems = [];
     SpawnKind authoringKind = SpawnKind.Creature;
     bool authoringSkipObject;
+    Task? authoringSearch;
+    bool authoringSearchObject;
+    int authoringPickIndex;
+    Vector2 authoringScreen;
+    Vector3 authoringTarget;
     string authoringRespawn = "";
     SpawnPathUse? authoringPath;
     bool authoringSkipPath;
@@ -663,5 +822,22 @@ public partial class TerrainViewer
         {
             Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = pressed, CtrlPressed = ctrl });
         }
+    }
+
+    /// <summary>A left click through the viewport, the way the mouse sends it.</summary>
+    void SmokeClick(Vector2 screen, bool shift)
+    {
+        foreach (bool pressed in new[] { true, false })
+        {
+            var window = GetViewport().GetFinalTransform() * screen;
+            Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = window, GlobalPosition = window, ShiftPressed = shift });
+        }
+    }
+
+    /// <summary>Move the pointer to a viewport point; events carry window pixels, which the content scale can change.</summary>
+    void SmokeMove(Vector2 screen)
+    {
+        var window = GetViewport().GetFinalTransform() * screen;
+        Input.ParseInputEvent(new InputEventMouseMotion { Position = window, GlobalPosition = window });
     }
 }
