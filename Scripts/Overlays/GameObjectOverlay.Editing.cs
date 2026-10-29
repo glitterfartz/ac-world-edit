@@ -78,7 +78,7 @@ public partial class GameObjectOverlay : IPlacementEditor
     /// </summary>
     async void LoadRow(ulong guid)
     {
-        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || !loadingRows.Add(guid))
+        if (poses == null || !poses.Available || poses.Has(sourceKey, guid) || IsStaged(guid) || !loadingRows.Add(guid))
         {
             return;
         }
@@ -150,6 +150,12 @@ public partial class GameObjectOverlay : IPlacementEditor
 
     void Resync()
     {
+        // The draft may have placed or deleted spawns: rebuild the set before posing what is left.
+        if (sourceKey.Length > 0)
+        {
+            Recompose();
+        }
+
         foreach (var source in lookup.Values)
         {
             ShowPlacement(source, PlacementOf(source));

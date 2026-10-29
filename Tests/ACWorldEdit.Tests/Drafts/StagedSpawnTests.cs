@@ -86,4 +86,32 @@ public class StagedSpawnTests
         Assert.Equal((3u, 1u, 3167u), (spawn.SpawnMask, spawn.PhaseMask, spawn.DisplayId));
         Assert.Null(spawn.Phasing);
     }
+
+    static readonly GameObjectLook Chest = new("Large Solid Chest", 259, 1.5f, 3);
+
+    [Fact]
+    public void AGameObjectRowKeepsItsFacingStateAndTemplateLook()
+    {
+        var row = SpawnEdits.NewGameObject(TcSchema.Instance, 11, 2843, Here with { Heading = 1.0 }, "0,1");
+        var spawn = SpawnPoses.GameObjectOf(row, Chest, WorldDialect.TrinityCore);
+        Assert.Equal((11ul, 2843u, "Large Solid Chest", 259u, 1.5f, 3), (spawn.Guid, spawn.TemplateId, spawn.Name, spawn.DisplayId, spawn.Scale, spawn.Type));
+        Assert.Equal(SpawnEdits.StateReady, (uint)spawn.State);
+        Assert.Equal(Here with { Heading = 1.0 }, spawn.Pose);
+        // The stored quaternion turns the object about the vertical axis by the heading.
+        Assert.Equal(MathF.Sin(0.5f), spawn.Rotation.Z, 4);
+        Assert.Equal(new SpawnPhasing("0,1", 0, 0, 0), spawn.Phasing);
+
+        var ac = SpawnPoses.GameObjectOf(SpawnEdits.NewGameObject(AcSchema.Instance, 12, 2843, Here, spawnMask: 3), Chest, WorldDialect.AzerothCore);
+        Assert.Equal((3u, 1u), (ac.SpawnMask, ac.PhaseMask));
+        Assert.Null(ac.Phasing);
+    }
+
+    [Fact]
+    public void AGameObjectWithoutAStoredRotationFacesByItsHeading()
+    {
+        var row = SpawnEdits.NewGameObject(TcSchema.Instance, 13, 2843, Here with { Heading = 2.0 }).With("rotation2", 0f).With("rotation3", 0f);
+        var spawn = SpawnPoses.GameObjectOf(row, Chest, WorldDialect.TrinityCore);
+        Assert.Equal(MathF.Sin(1.0f), spawn.Rotation.Z, 4);
+        Assert.Equal(System.Numerics.Quaternion.Zero, spawn.StoredRotation);
+    }
 }

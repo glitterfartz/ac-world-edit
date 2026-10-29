@@ -109,6 +109,37 @@ public sealed class SpawnPoses
             new SpawnPhasing(row["spawnDifficulties"], OrZero(row, "PhaseId"), OrZero(row, "PhaseGroup"), row.U("phaseUseFlags")));
     }
 
+    /// <summary>
+    /// A GameObject spawn row as the overlay draws it, mirroring the region read: the stored rotation
+    /// is normalized, and a spawn without one faces by its heading.
+    /// </summary>
+    public static GameObjectSpawn GameObjectOf(Row row, GameObjectLook look, WorldDialect dialect)
+    {
+        var pose = SpawnEdits.PoseOf(row);
+        var stored = new System.Numerics.Quaternion(row.F("rotation0"), row.F("rotation1"), row.F("rotation2"), row.F("rotation3"));
+        var rotation = stored;
+        if (!float.IsFinite(rotation.LengthSquared()))
+        {
+            rotation = System.Numerics.Quaternion.Identity;
+            stored = System.Numerics.Quaternion.Zero;
+        }
+        else if (rotation.LengthSquared() < 0.00001f)
+        {
+            rotation = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitZ, (float)pose.Heading);
+        }
+        else
+        {
+            rotation = System.Numerics.Quaternion.Normalize(rotation);
+        }
+
+        ulong guid = ulong.Parse(row["guid"], CultureInfo.InvariantCulture);
+        var visibility = new SpawnVisibility([], 0, false, "", false);
+        return dialect == WorldDialect.TrinityCore
+            ? new(guid, row.U("id"), look.Name, pose, 0, 0, look.DisplayId, look.Scale, rotation, row.I("state"), look.Type, visibility,
+                new SpawnPhasing(row["spawnDifficulties"], OrZero(row, "PhaseId"), OrZero(row, "PhaseGroup"), row.U("phaseUseFlags")), stored)
+            : new(guid, row.U("id"), look.Name, pose, row.U("spawnMask"), row.U("phaseMask"), look.DisplayId, look.Scale, rotation, row.I("state"), look.Type, visibility, null, stored);
+    }
+
     static uint OrZero(Row row, string column) => row.IsNull(column) ? 0 : (uint)Math.Max(0, row.I(column));
 
     static bool Same(WorldPose a, WorldPose b) => a.Map == b.Map && Math.Abs(a.X - b.X) < Tolerance && Math.Abs(a.Y - b.Y) < Tolerance && Math.Abs(a.Z - b.Z) < Tolerance && Math.Abs(a.Heading - b.Heading) < Tolerance;

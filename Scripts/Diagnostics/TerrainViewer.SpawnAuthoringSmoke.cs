@@ -18,6 +18,9 @@ public partial class TerrainViewer
     List<(string Name, Func<bool> Step)>? spawnAuthoringSteps;
     CreatureSpawn? authoringTemplate;
     Task<ulong?>? authoringPlace;
+    GameObjectSpawn? authoringObject;
+    Task<ulong?>? authoringObjectPlace;
+    ulong authoringObjectGuid;
     ulong authoringFirst;
     WorldPose authoringPose;
 
@@ -35,9 +38,10 @@ public partial class TerrainViewer
         spawnAuthoringRun.Advance(delta, spawnAuthoringSteps, !busy && world != null, Where, SmokeFail, () => GetTree().Quit(), waiting: Where);
     }
 
-    string AuthoringScript()
+    string AuthoringScript() => AuthoringScript(creatures.SmokeSourceKey);
+
+    string AuthoringScript(string key)
     {
-        string key = creatures.SmokeSourceKey;
         return SqlExport.Build(key, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, ContentDraftFiles.Sources.SchemaFor(key)).Apply;
     }
 
@@ -150,6 +154,57 @@ public partial class TerrainViewer
             ulong second = authoringPlace.Result ?? throw new InvalidOperationException("the second placement returned no GUID");
             Require(second != authoringFirst, "a new spawn reused the GUID of an undone one, so a redo would collide");
             creatures.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0, "the draft should be empty again");
+            return true;
+        }),
+        ("gameobjects-loaded", () =>
+        {
+            if (gameObjects.IsLoading || gameObjects.Records.Count == 0)
+            {
+                return false;
+            }
+
+            authoringObject = gameObjects.Records[0];
+            Require(drafts.Draft!.NetEdits().Count == 0, "the draft should be empty before placing a GameObject");
+            return true;
+        }),
+        ("place-gameobject", () =>
+        {
+            if (authoringObjectPlace == null)
+            {
+                authoringObjectPlace = gameObjects.PlaceAsync(authoringObject!.TemplateId, authoringObject.Pose with { X = authoringObject.Pose.X + 3 });
+                return false;
+            }
+
+            if (!authoringObjectPlace.IsCompleted)
+            {
+                return false;
+            }
+
+            authoringObjectGuid = authoringObjectPlace.Result ?? throw new InvalidOperationException("placing the GameObject returned no GUID");
+            return true;
+        }),
+        ("gameobject-drawn-and-selected", () =>
+        {
+            var record = gameObjects.SmokeRecord(authoringObjectGuid);
+            Require(record != null, "the placed GameObject is not among the records");
+            Require(gameObjects.SmokeSelected == authoringObjectGuid, "the placed GameObject is not selected");
+            Require(record!.TemplateId == authoringObject!.TemplateId && record.Name == authoringObject.Name && record.DisplayId == authoringObject.DisplayId, "drawn as another template");
+            Require(gameObjects.SmokeListed(authoringObjectGuid), "the placed GameObject is not in the list");
+            Require(GameObjectOverlay.ViewPosition(record).DistanceTo(ViewSpace.ToView(authoringObject.Pose.X + 3, authoringObject.Pose.Y, authoringObject.Pose.Z)) < 0.01f, "the GameObject is not at the placed pose");
+            string apply = AuthoringScript(gameObjects.SmokeSourceKey);
+            Require(apply.Contains("INSERT INTO `gameobject`", StringComparison.Ordinal), "the export lacks the gameobject INSERT");
+            return true;
+        }),
+        ("gameobject-undo-and-redo", () =>
+        {
+            gameObjects.SmokeHistory(false);
+            Require(gameObjects.SmokeRecord(authoringObjectGuid) == null && !gameObjects.SmokeListed(authoringObjectGuid), "undo left the GameObject drawn");
+            Require(gameObjects.SmokeSelected != authoringObjectGuid, "undo left the removed GameObject selected");
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
+            gameObjects.SmokeHistory(true);
+            Require(gameObjects.SmokeRecord(authoringObjectGuid)?.Name == authoringObject!.Name, "redo did not bring the GameObject back");
+            gameObjects.SmokeHistory(false);
             Require(drafts.Draft!.NetEdits().Count == 0, "the draft should be empty again");
             return true;
         })

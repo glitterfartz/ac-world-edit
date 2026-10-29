@@ -131,4 +131,26 @@ public partial class GameObjectOverlay
         GD.Print(FormattableString.Invariant($"GAMEOBJECT_SMOKE_PASSED guid={guid} drag/preview/commit/reopen/undo/redo/turn/export"));
         return true;
     }
+
+    public string SmokeSourceKey => sourceKey;
+
+    public ulong? SmokeSelected => selected;
+
+    public GameObjectSpawn? SmokeRecord(ulong guid) => lookup.GetValueOrDefault(guid);
+
+    public bool SmokeListed(ulong guid)
+    {
+        for (int i = 0; i < list.ItemCount; i++)
+        {
+            if (list.GetItemMetadata(i).AsString() == guid.ToString())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Undo or redo through the same path as the toolbar buttons and shortcuts.</summary>
+    public void SmokeHistory(bool redo) => History(redo);
 }

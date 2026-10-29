@@ -88,4 +88,31 @@ public class SpawnRowDbTests
 
     [TcDbFact]
     public async Task TrinityCoreTemplateLooksMatchTheRegionRead() => await CheckLooks(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore);
+
+    static async Task CheckGameObjectLooks(IDBSource source, WorldDialect dialect)
+    {
+        var region = await source.ReadGameObjectsAsync(Elwynn, new SpawnPreview { Dialect = dialect }, null, "", default);
+        var spawns = region.Spawns.Take(100).ToArray();
+        var rows = await source.ReadSpawnRowsAsync(SpawnKind.GameObject, spawns.Select(s => s.Guid).ToArray(), default);
+        var table = SpawnEdits.SpawnTable(source.Schema, SpawnKind.GameObject);
+        var looks = await source.ReadGameObjectLooksAsync(spawns.Select(s => s.TemplateId).ToArray(), default);
+        Assert.NotEmpty(looks);
+        foreach (var spawn in spawns)
+        {
+            var staged = SpawnPoses.GameObjectOf(rows.Get(table, spawn.Guid.ToString())!, looks[spawn.TemplateId], dialect);
+            Assert.Equal((spawn.Name, spawn.DisplayId, spawn.Scale, spawn.Type, spawn.State), (staged.Name, staged.DisplayId, staged.Scale, staged.Type, staged.State));
+            Assert.Equal(spawn.StoredRotation, staged.StoredRotation);
+            Assert.True(System.Numerics.Quaternion.Dot(spawn.Rotation, staged.Rotation) > 0.9999f);
+            Assert.Equal(spawn.Phasing, staged.Phasing);
+        }
+
+        Assert.Empty(await source.ReadGameObjectLooksAsync([], default));
+        Assert.Empty(await source.ReadGameObjectLooksAsync([uint.MaxValue], default));
+    }
+
+    [DbFact]
+    public async Task AzerothCoreGameObjectLooksMatchTheRegionRead() => await CheckGameObjectLooks(AcSource(Config), WorldDialect.AzerothCore);
+
+    [TcDbFact]
+    public async Task TrinityCoreGameObjectLooksMatchTheRegionRead() => await CheckGameObjectLooks(DBSource.Open(Environments.TrinityConnection()!), WorldDialect.TrinityCore);
 }

@@ -96,6 +96,7 @@ public partial class GameObjectOverlay : RegionOverlay
             names.FreeAll(n => n);
             paths.Clear();
             lookup.Clear();
+            databaseSpawns = [];
             records = [];
             list?.Clear();
             Deselect();
@@ -152,22 +153,9 @@ public partial class GameObjectOverlay : RegionOverlay
     void Publish(GameObjectRegionResult result)
     {
         sourceKey = result.SourceKey;
-        var incoming = result.Spawns.ToDictionary(s => s.Guid);
-        // Drop cached objects no longer in range; Reconcile()'s own diffing then removes
-        // their native model/fallback/label on its next tick without needing a full wipe.
-        foreach (ulong guid in lookup.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
-        {
-            lookup.Remove(guid);
-        }
-
-        records = result.Spawns;
+        databaseSpawns = result.Spawns;
         EventCatalog = result.Events;
-        foreach (var spawn in records)
-        {
-            lookup[spawn.Guid] = spawn;
-        }
-
-        Populate();
+        Recompose();
         queryStatus = result.Truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
     }
 

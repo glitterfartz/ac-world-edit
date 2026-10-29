@@ -27,6 +27,9 @@ public interface IDBSource
     /// <summary>The name, model and scale of these creature templates (bounded); a template the database lacks is absent.</summary>
     Task<IReadOnlyDictionary<uint, CreatureLook>> ReadCreatureLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
 
+    /// <summary>The name, model, size and type of these GameObject templates (bounded); a template the database lacks is absent.</summary>
+    Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 
