@@ -21,10 +21,14 @@ public enum ColumnKind
 /// may read and change. Columns outside the list are never captured or edited, so an eventual
 /// export updates only these. Name is the logical draft table; SqlName the physical table (they
 /// differ when one physical table is split into independent column groups, e.g. creature_ai).
+/// Nullable lists the columns whose NULL is meaningful (TrinityCore spawn overrides: NULL inherits
+/// the template's value); every other column reads NULL as 0 or empty, as the server loads it.
 /// </summary>
-public sealed record TableSchema(string Name, string[] Key, (string Name, ColumnKind Kind, int MaxLength)[] Columns, string? Sql = null, (string Column, string Default)[]? Added = null)
+public sealed record TableSchema(string Name, string[] Key, (string Name, ColumnKind Kind, int MaxLength)[] Columns, string? Sql = null, (string Column, string Default)[]? Added = null, string[]? Nullable = null)
 {
     public string SqlName => Sql ?? Name;
+
+    public bool IsNullable(string column) => Nullable?.Contains(column) == true;
 
     /// <summary>A saved row that predates <see cref="Added"/> columns, with those columns set to their defaults; other rows are returned as they are.</summary>
     public Row Upgrade(Row row) => Added == null ? row : Added.Where(a => !row.Values.ContainsKey(a.Column)).Aggregate(row, (current, a) => current.With(a.Column, a.Default));
@@ -53,7 +57,14 @@ public sealed class Row : IEquatable<Row>
         }
     }
 
+    /// <summary>
+    /// The stored form of SQL NULL. Rows are plain strings (stable in JSON, comparable by value), so
+    /// NULL is a reserved value no editor can type. Only <see cref="TableSchema.Nullable"/> columns may hold it.
+    /// </summary>
+    public const string NullValue = "\0NULL";
+
     public string this[string column] => Values.TryGetValue(column, out var value) ? value : throw new InvalidDataException($"Missing column {column}.");
+    public bool IsNull(string column) => this[column] == NullValue;
     public uint U(string column) => uint.Parse(this[column], CultureInfo.InvariantCulture);
     public int I(string column) => int.Parse(this[column], CultureInfo.InvariantCulture);
     public long L(string column) => long.Parse(this[column], CultureInfo.InvariantCulture);
@@ -64,15 +75,16 @@ public sealed class Row : IEquatable<Row>
     /// <summary>
     /// Copy with one column replaced; numbers are stored in invariant form.
     /// </summary>
-    public Row With(string column, object value)
+    public Row With(string column, object? value)
     {
         var copy = new Row(Values);
         copy.Values[column] = Format(value);
         return copy;
     }
 
-    public static string Format(object value) => value switch
+    public static string Format(object? value) => value switch
     {
+        null => NullValue,
         float f => f.ToString("R", CultureInfo.InvariantCulture),
         double d => d.ToString("R", CultureInfo.InvariantCulture),
         IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
@@ -94,6 +106,16 @@ public sealed class Row : IEquatable<Row>
         foreach (var (name, kind, max) in schema.Columns)
         {
             string value = this[name];
+            if (value == NullValue)
+            {
+                if (!schema.IsNullable(name))
+                {
+                    throw new InvalidDataException($"{schema.Name}.{name} cannot be empty (NULL).");
+                }
+
+                continue;
+            }
+
             bool ok = kind switch
             {
                 ColumnKind.Int => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _),

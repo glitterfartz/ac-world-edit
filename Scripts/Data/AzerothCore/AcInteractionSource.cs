@@ -140,7 +140,8 @@ public sealed class AcInteractionSource(WorldDatabase database)
     /// </summary>
     internal static async Task Load(WorldReadSession session, RowSet rows, TableSchema table, string predicate, object[] values, CancellationToken token)
     {
-        string columns = string.Join(',', table.Columns.Select(c => c.Kind == ColumnKind.Text ? $"COALESCE(`{c.Name}`,'')" : $"`{c.Name}`"));
+        // Text reads NULL as '' unless the column keeps NULL apart (a nullable override).
+        string columns = string.Join(',', table.Columns.Select(c => c.Kind == ColumnKind.Text && !table.IsNullable(c.Name) ? $"COALESCE(`{c.Name}`,'')" : $"`{c.Name}`"));
         await using var command = session.Command($"SELECT {columns} FROM `{table.SqlName}` WHERE {predicate} LIMIT {DbLimits.MaxRows}");
         for (int i = 0; i < values.Length; i++)
         {
@@ -154,10 +155,11 @@ public sealed class AcInteractionSource(WorldDatabase database)
             for (int i = 0; i < table.Columns.Length; i++)
             {
                 object value = reader.GetValue(i);
-                // A NULL number reads as 0, as the server loads it (text is already COALESCEd).
                 if (value is DBNull)
                 {
-                    value = 0;
+                    // A nullable column keeps NULL; any other NULL number reads as 0, as the server loads it.
+                    row.Values[table.Columns[i].Name] = table.IsNullable(table.Columns[i].Name) ? Row.NullValue : "0";
+                    continue;
                 }
 
                 row.Values[table.Columns[i].Name] = table.Columns[i].Kind == ColumnKind.Float ? Convert.ToSingle(value, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture) : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";

@@ -152,6 +152,12 @@ public static class SqlExport
 
     static string Eq(TableSchema schema, string column, string value)
     {
+        // "= NULL" never matches in SQL, so a NULL guard must be IS NULL.
+        if (value == Foundation.Row.NullValue)
+        {
+            return $"{Ident(column)} IS NULL";
+        }
+
         var kind = schema.Columns.First(c => c.Name == column).Kind;
         return kind switch
         {
@@ -187,7 +193,7 @@ public static class SqlExport
     /// Literal for a validated row value. Numeric kinds were parse-checked by Row.Validate, but are
     /// re-parsed here so only a canonical number can ever be emitted unquoted.
     /// </summary>
-    static string Literal(ColumnKind kind, string value) => kind switch
+    static string Literal(ColumnKind kind, string value) => value == Foundation.Row.NullValue ? "NULL" : kind switch
     {
         ColumnKind.Int => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
         ColumnKind.UInt => uint.Parse(value, NumberStyles.None, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
