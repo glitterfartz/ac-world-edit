@@ -323,6 +323,9 @@ public partial class SceneSidebar : PanelContainer
 
     void UpdateControlState() => limits.Text = $"Up to {creatures.Preview.QueryLimit} nearest rows / {creatures.Preview.ModelLimit} models per spawn layer. Limits also apply to All stored spawns.";
 
+    /// <summary>For smokes: show this phase catalog instead of the loaded overlays' own.</summary>
+    public PhaseCatalog? SmokePhases { get; set; }
+
     public void UpdateCounts()
     {
         counts["doodads"].Text = scenery.DoodadCount.ToString("N0");
@@ -337,7 +340,7 @@ public partial class SceneSidebar : PanelContainer
         counts["waypoints"].TooltipText = waypoints.QueryStatus;
         counts["creatures"].TooltipText = $"{creatures.Records.Count} SQL matches · {creatures.AdmittedCreatureCount} admitted · {creatures.ModelCreatureCount} native models ready";
         counts["gameobjects"].TooltipText = $"{gameObjects.Records.Count} SQL matches · {gameObjects.AdmittedObjectCount} admitted · {gameObjects.ModelObjectCount} native models ready";
-        visibility.SetPhaseCatalog(PhaseCatalog.Merge(creatures.PhaseCatalog, gameObjects.PhaseCatalog));
+        visibility.SetPhaseCatalog(SmokePhases ?? PhaseCatalog.Merge(creatures.PhaseCatalog, gameObjects.PhaseCatalog));
         visibility.SetEventCatalog(creatures.EventCatalog.Length > 0 ? creatures.EventCatalog : gameObjects.EventCatalog);
     }
 }

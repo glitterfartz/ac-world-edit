@@ -1,5 +1,6 @@
 using Godot;
 using ACWorldEdit.Foundation;
+using ACWorldEdit.Data;
 
 namespace ACWorldEdit;
 /// <summary>
@@ -9,6 +10,7 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool visibilitySmoke;
+    Task<CreatureRegionResult>? visibilityTc;
     int visibilityStage;
     double visibilityTime, visibilityChanged;
     readonly List<double> visibilityFrames = [];
@@ -246,22 +248,54 @@ public partial class TerrainViewer
                 case 93:
                     VisibilityCapture("visibility-phases");
                     VisibilityControl<MenuButton>("PhasePicker").GetPopup().Hide();
-                    // The same dropdown in TrinityCore mode: one phase at a time, "No phase" first. The area's counts are AzerothCore's here.
+                    // The same dropdown in TrinityCore mode, fed the real phase counts of a Twilight Highlands tile from the TrinityCore database.
                     sidebar.SetDialect(WorldDialect.TrinityCore);
-                    VisibilityControl<MenuButton>("PhasePicker").ShowPopup();
+                    string tcInfo = System.Environment.GetEnvironmentVariable("ACWORLD_TC_DB_INFO") ?? "";
+                    visibilityTc = tcInfo.Length == 0 ? null : DBSource.Open(WorldConnection.Parse(tcInfo, WorldDialect.TrinityCore))
+                        .ReadCreaturesAsync(new CreatureRegion(648, 26, 26, 30, 30), new SpawnPreview { Dialect = WorldDialect.TrinityCore }, null, "", default);
                     visibilityChanged = visibilityTime;
                     visibilityStage = 94;
                     break;
                 case 94:
-                    var tcMenu = VisibilityControl<MenuButton>("PhasePicker").GetPopup();
-                    if (tcMenu.GetItemText(0) != "No phase (0)  ·  spawns outside any phase" || !tcMenu.IsItemChecked(0) || !tcMenu.IsItemRadioCheckable(0))
+                    if (visibilityTc == null)
                     {
-                        throw new Exception("The TrinityCore phase dropdown should list 'No phase' first, chosen and single-choice");
+                        GD.Print("VISIBILITY_NOTE ACWORLD_TC_DB_INFO is not set; the TrinityCore phase dropdown was not rendered");
+                        sidebar.SetDialect(WorldDialect.AzerothCore);
+                        visibilityStage = 96;
+                        break;
+                    }
+
+                    if (!visibilityTc.IsCompleted)
+                    {
+                        return;
+                    }
+
+                    sidebar.SmokePhases = visibilityTc.Result.Phases;
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 95;
+                    break;
+                case 95:
+                    VisibilityControl<MenuButton>("PhasePicker").ShowPopup();
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 97;
+                    break;
+                case 97:
+                    var tcMenu = VisibilityControl<MenuButton>("PhasePicker").GetPopup();
+                    var texts = Enumerable.Range(0, tcMenu.ItemCount).Select(tcMenu.GetItemText).ToArray();
+                    GD.Print("VISIBILITY_TC_PHASES " + string.Join(" | ", texts));
+                    if (!tcMenu.Visible || texts[0] != "No phase (0)  ·  spawns outside any phase" || !tcMenu.IsItemChecked(0) || !tcMenu.IsItemRadioCheckable(0)
+                        || !texts.Any(t => t.StartsWith("Quest Zone-Specific 01 (170)  ·  ", StringComparison.Ordinal) && t.EndsWith(" spawns", StringComparison.Ordinal)))
+                    {
+                        throw new Exception("The TrinityCore phase dropdown should be open, list 'No phase' first and name phase 170 with its count: " + string.Join(" | ", texts));
                     }
 
                     VisibilityCapture("visibility-phases-trinity");
                     tcMenu.Hide();
+                    sidebar.SmokePhases = null;
                     sidebar.SetDialect(WorldDialect.AzerothCore);
+                    visibilityStage = 96;
+                    break;
+                case 96:
                     VisibilityPreset(1);
                     VisibilityPreset(0);
                     VisibilityControl<LineEdit>("CreatureSearch").Text = "";

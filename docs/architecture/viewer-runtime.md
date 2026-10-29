@@ -240,7 +240,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--water-smoke`, `--water-interior-smoke` | Aim at the largest native liquid; frame timing (p50, p95) |
 | `--creature-smoke`, `--visual-smoke`, `--gizmo-smoke` | Ray pick, gizmo editing, shortcuts, animation preview, map switching |
 | `--reload-smoke` | Force a partial model upload, reload the client, check recovery |
-| `--visibility-smoke` | Layers, preview policies, events, phase (the summary sentence and phase dropdown follow the typed mask; the dropdown lists real counts and, switched to TrinityCore mode, "No phase" first); a windowed run also saves `artifacts/visibility-{card,phases,phases-trinity}.png` |
+| `--visibility-smoke` | Layers, preview policies, events, phase (the summary sentence and phase dropdown follow the typed mask; the dropdown lists real counts; switched to TrinityCore mode and fed a Twilight Highlands tile from the TrinityCore database (needs `ACWORLD_TC_DB_INFO`), it lists "No phase" then the named phases with counts); a windowed run also saves `artifacts/visibility-{card,phases,phases-trinity}.png` |
 | `--skybox-smoke` | Checks that the skybox does not overwrite opaque pixels |
 | `--graveyard-smoke` | Pick, move, undo, comments, links, layer hiding |
 | `--waypoint-smoke` | Live waypoint paths near the start, a viewport click on a point, and the edit workflow |
