@@ -68,6 +68,19 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Waypoints from other users    | not started | Paths are found through `creature_addon` / `creature_template_addon.PathId` only. SmartAI `WAYPOINT_START` paths and `script_waypoint`-style users are not followed.                                                                                                                                                                                                                    |
 | Smokes                        | partial     | The TC client smoke (stages 80–82) selects a Goldshire path point, checks which fields are editable and runs the move, delay, undo, redo and revert workflow with the TC export. `--waypoint-smoke` still has no TC run of its own.                                                                                                                                                     |
 
+### Gap plan phases 10 and 11 (see [`gap-plan.md`](gap-plan.md))
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Nullable columns (`TableSchema.Nullable`, `Row.NullValue`) | done | Row, loader and export; TC spawn overrides inherit with NULL. |
+| Spawn and addon tables in `AcTables` / `TcTables` | done | `creature`, `gameobject`, `creature_addon`, `gameobject_addon`; no UI edits them yet. |
+| `IdAllocator`, `IDBSource.MaxIdAsync`, `InteractionDraft.MaxStaged` | done | Existing per-editor `MAX(id)` reads (menu, text, trainer, quest) are not moved onto it yet. |
+| `SpawnEdits` (place, duplicate, move, delete as row edits, `References`) | done | Foundation only; covered by `SpawnEditsTests`, including move-then-delete. |
+| Spawn poses on `RowEdit` | not started | `CreatureOverlay` and `GameObjectOverlay` still move through `CreatureDraft` / `GameObjectDraft`. The migration needs `creature-positions.json` / `gameobject-positions.json` moved into `interactions.json`, float-tolerant content-row guards for updates (deletes already use `Near`), and the overlays reading the effective `RowSet`. Until then a spawn placed through `SpawnEdits` has no overlay to show it. |
+| Spawn UI: drag-to-place, duplicate, delete, multi-select, inspector with overrides | not started | Needs the pose migration first, then the new-spawn equipment ID read (`creature_equip_template`) and a ground-snapped placement tool. |
+| Delete impact (`SpawnEdits.References` read) | not started | The descriptors exist; the `IDBSource` counts and the dialog do not. |
+| Entity page shell, content browser, condition catalog | not started | Phase 10 items that only later phases need. |
+
 ### Foundation, data and overlays
 
 | Item                                                                               | Status      | Notes                                                                                                                                                       |
