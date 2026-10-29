@@ -23,6 +23,24 @@ public partial class CreatureOverlay
 
     public Vector3 PositionOf(ulong guid) => markers[guid].Node.GlobalPosition;
 
+    /// <summary>
+    /// World point a click must hit: the centre of the creature's model box when its model is ready
+    /// (picking tests that box, which can be small for critters), else the marker capsule centre.
+    /// </summary>
+    public Vector3 PickPointOf(ulong guid)
+    {
+        foreach (var (node, guids) in modelBatches.Values)
+        {
+            int index = Array.IndexOf(guids, guid);
+            if (node.ModelReady && index >= 0)
+            {
+                return node.Transforms![index] * node.Bounds.GetCenter();
+            }
+        }
+
+        return markers[guid].Node.GlobalPosition + Vector3.Up;
+    }
+
     public bool Pick(Camera3D camera, Vector2 screen)
     {
         var hit = FindHit(camera, screen);
@@ -79,7 +97,7 @@ public partial class CreatureOverlay
         ulong guid = selectedGuid.Value;
         SmokeLoadRow(guid);
         var original = markers[guid].Node.Position;
-        if (!Pick(camera, camera.UnprojectPosition(original + Vector3.Up)) || selectedGuid != guid)
+        if (!Pick(camera, camera.UnprojectPosition(PickPointOf(guid))) || selectedGuid != guid)
         {
             return false;
         }

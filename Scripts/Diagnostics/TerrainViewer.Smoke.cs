@@ -457,8 +457,8 @@ public partial class TerrainViewer
             var spawn = creatures.Records.Where(s => ACWorldEdit.Foundation.WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y)).OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
             var position = creatures.PositionOf(spawn.Guid);
             camera.Position = position + new Vector3(0, 8, 15);
-            camera.LookAt(position + Vector3.Up);
-            if (!creatures.Pick(camera, camera.UnprojectPosition(position + Vector3.Up)) || creatures.SelectedGuid != spawn.Guid || creatures.SelectedListGuid != spawn.Guid)
+            camera.LookAt(creatures.PickPointOf(spawn.Guid));
+            if (!creatures.Pick(camera, camera.UnprojectPosition(creatures.PickPointOf(spawn.Guid))) || creatures.SelectedGuid != spawn.Guid || creatures.SelectedListGuid != spawn.Guid)
             {
                 SmokeFail("CREATURE_SMOKE_PICK_FAILED");
                 return;
