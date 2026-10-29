@@ -21,4 +21,4 @@ public sealed record CreatureRegion(ushort Map, int MinTileX, int MaxTileX, int 
 /// Read-only regional snapshot with result-limit status and a credential-free source identity
 /// for draft isolation.
 /// </summary>
-public sealed record CreatureRegionResult(IReadOnlyList<CreatureSpawn> Spawns, bool Truncated, string SourceKey = "", WorldEventInfo[]? Events = null);
+public sealed record CreatureRegionResult(IReadOnlyList<CreatureSpawn> Spawns, bool Truncated, string SourceKey = "", WorldEventInfo[]? Events = null, PhaseCatalog? Phases = null);

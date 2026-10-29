@@ -66,6 +66,7 @@ public partial class CreatureOverlay : RegionOverlay
     Label selectionName = null!, selectionMeta = null!;
     public SpawnPreview Preview { get; private set; } = new();
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
+    public PhaseCatalog PhaseCatalog { get; private set; } = PhaseCatalog.Empty;
 
     public event Action? SelectionChanged;
     readonly HashSet<ulong> admitted = [];
@@ -257,6 +258,7 @@ public partial class CreatureOverlay : RegionOverlay
     {
         sourceKey = result.SourceKey;
         EventCatalog = result.Events ?? [];
+        PhaseCatalog = result.Phases ?? PhaseCatalog.Empty;
         truncated = result.Truncated;
         databaseSpawns = result.Spawns;
         ReconcileSpawns(WithDraft());

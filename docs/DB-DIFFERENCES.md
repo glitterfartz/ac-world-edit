@@ -23,6 +23,7 @@ Schema references for column meanings, flags and enums:
   - Creatures: `creature_template_difficulty`, `creature_template_gossip`, `creature_trainer`, `creature_template_sparring`, `creature_static_flags_override`, `creature_summoned_data`, `creature_movement_info`.
   - Area triggers: `areatrigger_template(_actions)`, `areatrigger_create_properties(_orbit/_polygon_vertex/_spline_point)`.
   - Phasing: `phase_area`, `phase_name`, `terrain_swap_defaults`, `terrain_worldmap`.
+  - The visibility preview counts spawns per phase: AzerothCore expands each `phaseMask` into its bits (a mask with every bit set counts as "every phase"); TrinityCore groups by `PhaseId` (non-zero) and names it from `phase_name`. `PhaseGroup` is not expanded yet.
   - Retail systems: `conversation_*`, `playerchoice*`, `scenario*`, `spawn_tracking*`, `scene_template`, `gossip_menu_addon`, `vehicle_template`, `world_state`, `serverside_spell(_effect)`, `trinity_string`, `access_requirement`.
   - Views: `vw_*_with_labels`.
 - `hotfixes` DB: `broadcast_text` (237k rows), and sparse overrides `item`, `item_sparse`, `spell_name`, `creature_display_info`, `area_trigger` (0 rows), `content_tuning`, `player_condition`, `quest_v2`. Also `hotfix_data(Id,UniqueId,TableHash,RecordId,Status,VerifiedBuild)` and `hotfix_blob`.

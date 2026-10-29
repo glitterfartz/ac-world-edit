@@ -142,4 +142,25 @@ public sealed record SpawnPhasing(string Difficulties, uint PhaseId, uint PhaseG
 }
 
 public sealed record GameObjectRegionResult(IReadOnlyList<GameObjectSpawn> Spawns, bool Truncated,
-    WorldEventInfo[] Events, string SourceKey);
+    WorldEventInfo[] Events, string SourceKey, PhaseCatalog? Phases = null);
+
+/// <summary>
+/// One phase in the loaded area and how many stored spawns sit in it. AzerothCore's Id is the phase number
+/// (bit 0 is phase 1); TrinityCore's is the PhaseId and Name comes from `phase_name`.
+/// </summary>
+public sealed record PhaseInfo(uint Id, string Name, int Spawns);
+
+/// <summary>
+/// The phases the spawns of an area use, counted whatever the preview's phase filter is.
+/// <paramref name="EveryPhase"/> counts AzerothCore spawns whose mask has every bit set, which belong to no one phase.
+/// </summary>
+public sealed record PhaseCatalog(PhaseInfo[] Phases, int EveryPhase = 0)
+{
+    public static readonly PhaseCatalog Empty = new([]);
+
+    /// <summary>Add two catalogs (the creature and GameObject layers): counts of the same phase sum, and a name is kept.</summary>
+    public static PhaseCatalog Merge(PhaseCatalog a, PhaseCatalog b) => new(
+        a.Phases.Concat(b.Phases).GroupBy(p => p.Id).OrderBy(g => g.Key)
+            .Select(g => new PhaseInfo(g.Key, g.Select(p => p.Name).FirstOrDefault(n => n.Length > 0) ?? "", g.Sum(p => p.Spawns))).ToArray(),
+        a.EveryPhase + b.EveryPhase);
+}

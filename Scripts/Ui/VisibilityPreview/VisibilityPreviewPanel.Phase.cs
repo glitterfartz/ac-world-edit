@@ -5,7 +5,8 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// "Who is looking": which phase and difficulty the preview stands in. AzerothCore phases are mask bits, so they
-/// get quick buttons, one checkbox per phase and the typed mask underneath; TrinityCore phases are plain IDs.
+/// get quick buttons, a dropdown of checkable phases with their spawn counts (<c>.PhasePicker.cs</c>) and the typed
+/// mask underneath; TrinityCore phases are named IDs in the same dropdown.
 /// </summary>
 public sealed partial class VisibilityPreviewPanel
 {
@@ -36,10 +37,8 @@ public sealed partial class VisibilityPreviewPanel
     OptionButton difficulty = null!;
     LineEdit phase = null!;
     Label phaseCaption = null!, maskReadout = null!;
-    HFlowContainer phaseGrid = null!;
     HBoxContainer phaseButtons = null!;
-    Button normalWorld = null!, allPhases = null!, noPhase = null!;
-    readonly List<CheckBox> phaseBoxes = [];
+    Button normalWorld = null!, allPhases = null!;
 
     bool Trinity => dialect == WorldDialect.TrinityCore;
 
@@ -59,36 +58,13 @@ public sealed partial class VisibilityPreviewPanel
         AddChild(phaseButtons);
         normalWorld = InspectorUi.Button("Normal world", () => SetMask(AcPhaseMasks.Normal));
         allPhases = InspectorUi.Button("All phases", () => SetMask(AcPhaseMasks.All));
-        noPhase = InspectorUi.Button("No phase", () => SetPhaseId(0));
-        foreach (var button in new[] { normalWorld, allPhases, noPhase })
+        foreach (var button in new[] { normalWorld, allPhases })
         {
             button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             phaseButtons.AddChild(button);
         }
 
-        phaseGrid = new HFlowContainer
-        {
-            Name = "PhaseChecklist"
-        };
-        AddChild(phaseGrid);
-        for (int number = 1; number <= AcPhaseMasks.Listed; number++)
-        {
-            int phaseNumber = number;
-            var box = new CheckBox
-            {
-                Text = $"Phase {number}",
-                TooltipText = $"Mask value {1u << (number - 1)}" + (number == 1 ? ": the normal world" : ""),
-            };
-            box.Toggled += on =>
-            {
-                if (!syncing)
-                {
-                    SetMask(AcPhaseMasks.With(CurrentMask(), phaseNumber, on));
-                }
-            };
-            phaseGrid.AddChild(box);
-            phaseBoxes.Add(box);
-        }
+        BuildPhasePicker();
 
         var row = new HBoxContainer();
         AddChild(row);
@@ -144,8 +120,7 @@ public sealed partial class VisibilityPreviewPanel
         phase.TooltipText = Trinity
             ? "The phase to preview. 0 shows only spawns outside any phase; a phase ID also shows that phase's spawns."
             : "Advanced: the mask as a number. Decimal and 0x hex are accepted; 3 means phase 1 and phase 2.";
-        normalWorld.Visible = allPhases.Visible = phaseGrid.Visible = !Trinity;
-        noPhase.Visible = Trinity;
+        normalWorld.Visible = allPhases.Visible = !Trinity;
         difficulty.Clear();
         if (Trinity)
         {
@@ -189,25 +164,20 @@ public sealed partial class VisibilityPreviewPanel
         Edited();
     }
 
-    /// <summary>Keep the checklist and the sentence under the field in step with the typed mask.</summary>
+    /// <summary>Keep the dropdown and the sentence under the field in step with the typed mask.</summary>
     void ShowMaskReadout()
     {
         if (Trinity)
         {
             maskReadout.Text = "";
-            return;
         }
-
-        bool valid = AcPhaseMasks.TryParse(phase.Text, out uint mask);
-        maskReadout.Text = valid ? "= " + AcPhaseMasks.Describe(mask) + (mask == 0 ? ": nothing will show" : "") : "Not a mask yet. Use a number such as 1, 3 or 0x3.";
-        bool wasSyncing = syncing;
-        syncing = true;
-        for (int i = 0; i < phaseBoxes.Count; i++)
+        else
         {
-            phaseBoxes[i].ButtonPressed = valid && AcPhaseMasks.Has(mask, i + 1);
+            bool valid = AcPhaseMasks.TryParse(phase.Text, out uint mask);
+            maskReadout.Text = valid ? "= " + AcPhaseMasks.Describe(mask) + (mask == 0 ? ": nothing will show" : "") : "Not a mask yet. Use a number such as 1, 3 or 0x3.";
         }
 
-        syncing = wasSyncing;
+        RefreshPhasePicker();
     }
 
     /// <summary>The phase and difficulty rules the controls hold, or the reason they are not valid.</summary>
@@ -247,10 +217,7 @@ public sealed partial class VisibilityPreviewPanel
         bool on = masks.ButtonPressed;
         phase.Editable = on;
         difficulty.Disabled = !on;
-        normalWorld.Disabled = allPhases.Disabled = noPhase.Disabled = !on;
-        foreach (var box in phaseBoxes)
-        {
-            box.Disabled = !on;
-        }
+        normalWorld.Disabled = allPhases.Disabled = !on;
+        phasePicker.Disabled = !on;
     }
 }

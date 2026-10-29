@@ -48,4 +48,29 @@ public static class AcPhaseMasks
             _ => $"{phases.Length} phases"
         };
     }
+
+    /// <summary>
+    /// Count spawns per phase from (mask, spawns) groups. A spawn in two phases counts in both; one with every bit set
+    /// counts as <see cref="PhaseCatalog.EveryPhase"/> instead of in all 32 phases.
+    /// </summary>
+    public static PhaseCatalog Catalog(IEnumerable<(uint Mask, int Spawns)> groups)
+    {
+        var perPhase = new Dictionary<int, int>();
+        int everyPhase = 0;
+        foreach (var (mask, spawns) in groups)
+        {
+            if (mask == All)
+            {
+                everyPhase += spawns;
+                continue;
+            }
+
+            foreach (int phase in Phases(mask))
+            {
+                perPhase[phase] = perPhase.GetValueOrDefault(phase) + spawns;
+            }
+        }
+
+        return new(perPhase.OrderBy(p => p.Key).Select(p => new PhaseInfo((uint)p.Key, p.Key == 1 ? "Normal world" : "", p.Value)).ToArray(), everyPhase);
+    }
 }

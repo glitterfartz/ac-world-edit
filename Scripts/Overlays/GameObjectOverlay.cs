@@ -18,6 +18,7 @@ public partial class GameObjectOverlay : RegionOverlay
     public SpawnPreview Preview { get; private set; } = new();
     public IReadOnlyList<GameObjectSpawn> Records => records;
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
+    public PhaseCatalog PhaseCatalog { get; private set; } = PhaseCatalog.Empty;
     public ulong? SelectedGuid => selected;
     public int ModelObjectCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedObjectCount { get; private set; }
@@ -156,6 +157,7 @@ public partial class GameObjectOverlay : RegionOverlay
         sourceKey = result.SourceKey;
         databaseSpawns = result.Spawns;
         EventCatalog = result.Events;
+        PhaseCatalog = result.Phases ?? PhaseCatalog.Empty;
         Recompose();
         queryStatus = result.Truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";
     }

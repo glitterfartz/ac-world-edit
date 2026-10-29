@@ -28,6 +28,7 @@ public sealed class TcSpawnSource(WorldDatabase database)
         string helper = "((COALESCE(t.flags_extra,0) & 1152)<>0 OR (COALESCE(t.unit_flags2,0) & 2)<>0)";
         string script = "COALESCE(NULLIF(c.ScriptName,''),NULLIF(t.ScriptName,''),NULLIF(t.AIName,''),'')";
         var events = await session.ReadEvents(preview, token).ConfigureAwait(false);
+        var phases = await TcPhaseSource.ReadAsync(session, region, "creature", token).ConfigureAwait(false);
         await using var command = session.Command("");
         var restriction = Restrictions(session, false, preview, events, command);
         string spatial = Spatial(command, region, point, preview, "c", search, "c.id");
@@ -57,7 +58,7 @@ public sealed class TcSpawnSource(WorldDatabase database)
             spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, 0, 0, reader.GetUInt32(12), modelScale, visibility, Phasing(reader, 8)));
         }
 
-        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, database.SourceKey, events);
+        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, database.SourceKey, events, phases);
     }
 
     public async Task<GameObjectRegionResult> ReadGameObjectsAsync(CreatureRegion region, SpawnPreview preview, SpawnQueryPoint? point, string search, CancellationToken token)
@@ -66,6 +67,7 @@ public sealed class TcSpawnSource(WorldDatabase database)
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         session.Require("gameobject.id", "gameobject.PhaseId", "gameobject.PhaseGroup", "gameobject.phaseUseFlags", "gameobject_template.displayId", "gameobject_template.size");
         var events = await session.ReadEvents(preview, token).ConfigureAwait(false);
+        var phases = await TcPhaseSource.ReadAsync(session, region, "gameobject", token).ConfigureAwait(false);
         string helper = "COALESCE((t.displayId=0 OR (t.type=5 AND t.Data2<>0) OR (t.type=6 AND t.Data8<>0) OR (t.type=8 AND t.Data3<>0) OR (t.type=30 AND t.Data6<>0)),1)";
         string script = "COALESCE(NULLIF(g.ScriptName,''),NULLIF(t.ScriptName,''),NULLIF(t.AIName,''),'')";
         await using var command = session.Command("");
@@ -115,7 +117,7 @@ public sealed class TcSpawnSource(WorldDatabase database)
             spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, 0, 0, reader.GetUInt32(12), scale, rotation, reader.GetInt32(18), reader.GetInt32(19), visibility, Phasing(reader, 8), stored));
         }
 
-        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey);
+        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey, phases);
     }
 
     /// <summary>The difficulty list, phase, phase group and phase flags in four consecutive columns from <paramref name="first"/>.</summary>

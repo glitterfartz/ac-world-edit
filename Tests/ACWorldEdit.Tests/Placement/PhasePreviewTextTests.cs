@@ -59,4 +59,23 @@ public class PhasePreviewTextTests
         Assert.StartsWith("Showing spawns outside any phase.", PreviewSummary.Describe(new SpawnPreview { Dialect = WorldDialect.TrinityCore }));
         Assert.StartsWith("Showing spawns outside any phase and spawns in phase 169.", PreviewSummary.Describe(new SpawnPreview { Dialect = WorldDialect.TrinityCore, PhaseId = 169 }));
     }
+
+    [Fact]
+    public void SpawnsAreCountedInEveryPhaseOfTheirMask()
+    {
+        var catalog = AcPhaseMasks.Catalog([(1u, 100), (3u, 5), (4u, 2), (192u, 7), (AcPhaseMasks.All, 30)]);
+        Assert.Equal(30, catalog.EveryPhase);
+        Assert.Equal([(1u, 105), (2u, 5), (3u, 2), (7u, 7), (8u, 7)], catalog.Phases.Select(p => (p.Id, p.Spawns)));
+        Assert.Equal("Normal world", catalog.Phases[0].Name);
+    }
+
+    [Fact]
+    public void TwoCatalogsAddUpAndKeepTheNames()
+    {
+        var creatures = new PhaseCatalog([new(169, "Named", 10), new(170, "", 1)], 2);
+        var objects = new PhaseCatalog([new(169, "", 5), new(171, "Other", 3)], 1);
+        var both = PhaseCatalog.Merge(creatures, objects);
+        Assert.Equal([(169u, "Named", 15), (170u, "", 1), (171u, "Other", 3)], both.Phases.Select(p => (p.Id, p.Name, p.Spawns)));
+        Assert.Equal(3, both.EveryPhase);
+    }
 }

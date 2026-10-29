@@ -11,6 +11,7 @@ public sealed class AcGameObjectSource(WorldDatabase database)
         await using var session = await database.OpenAsync(token).ConfigureAwait(false);
         session.Require("gameobject.id", "gameobject_template.displayId", "gameobject_template.size");
         var events = await session.ReadEvents(preview, token).ConfigureAwait(false);
+        var phases = await AcPhaseSource.ReadAsync(session, region, "gameobject", token).ConfigureAwait(false);
         string helper = "COALESCE((t.displayId=0 OR (t.type=5 AND t.Data2<>0) OR (t.type=6 AND t.Data8<>0) OR (t.type=8 AND t.Data3<>0) OR (t.type=30 AND t.Data6<>0)),1)";
         string scriptName = session.Has("gameobject_template.ScriptName") ? "NULLIF(t.ScriptName,'')" : "NULL";
         string aiName = session.Has("gameobject_template.AIName") ? "NULLIF(t.AIName,'')" : "NULL";
@@ -62,6 +63,6 @@ public sealed class AcGameObjectSource(WorldDatabase database)
             spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), scale, rotation, reader.GetInt32(16), reader.GetInt32(17), visibility, null, stored));
         }
 
-        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey);
+        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, events, database.SourceKey, phases);
     }
 }

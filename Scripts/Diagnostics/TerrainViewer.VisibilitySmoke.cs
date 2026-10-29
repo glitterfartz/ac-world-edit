@@ -188,9 +188,11 @@ public partial class TerrainViewer
                     }
 
                     string said = VisibilityControl<Label>("VisibilitySummary").Text;
-                    if (!said.Contains("phase 2", StringComparison.Ordinal) || !VisibilityControl<HFlowContainer>("PhaseChecklist").GetChild<CheckBox>(1).ButtonPressed)
+                    var phaseMenu = VisibilityControl<MenuButton>("PhasePicker").GetPopup();
+                    string normalItem = phaseMenu.GetItemText(phaseMenu.GetItemIndex(1));
+                    if (!said.Contains("phase 2", StringComparison.Ordinal) || !phaseMenu.IsItemChecked(phaseMenu.GetItemIndex(2)) || phaseMenu.IsItemChecked(phaseMenu.GetItemIndex(1)) || !normalItem.Contains("normal world", StringComparison.Ordinal) || !normalItem.Contains("spawns", StringComparison.Ordinal))
                     {
-                        throw new Exception("The visibility summary or phase checklist does not follow the typed mask: " + said);
+                        throw new Exception("The visibility summary or phase checklist does not follow the typed mask: " + said + " / " + normalItem);
                     }
 
                     var phaseOne = VisibilityControl<LineEdit>("PhaseMask");
@@ -237,6 +239,29 @@ public partial class TerrainViewer
                     break;
                 case 92:
                     VisibilityCapture("visibility-card");
+                    VisibilityControl<MenuButton>("PhasePicker").ShowPopup();
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 93;
+                    break;
+                case 93:
+                    VisibilityCapture("visibility-phases");
+                    VisibilityControl<MenuButton>("PhasePicker").GetPopup().Hide();
+                    // The same dropdown in TrinityCore mode: one phase at a time, "No phase" first. The area's counts are AzerothCore's here.
+                    sidebar.SetDialect(WorldDialect.TrinityCore);
+                    VisibilityControl<MenuButton>("PhasePicker").ShowPopup();
+                    visibilityChanged = visibilityTime;
+                    visibilityStage = 94;
+                    break;
+                case 94:
+                    var tcMenu = VisibilityControl<MenuButton>("PhasePicker").GetPopup();
+                    if (tcMenu.GetItemText(0) != "No phase (0)  ·  spawns outside any phase" || !tcMenu.IsItemChecked(0) || !tcMenu.IsItemRadioCheckable(0))
+                    {
+                        throw new Exception("The TrinityCore phase dropdown should list 'No phase' first, chosen and single-choice");
+                    }
+
+                    VisibilityCapture("visibility-phases-trinity");
+                    tcMenu.Hide();
+                    sidebar.SetDialect(WorldDialect.AzerothCore);
                     VisibilityPreset(1);
                     VisibilityPreset(0);
                     VisibilityControl<LineEdit>("CreatureSearch").Text = "";

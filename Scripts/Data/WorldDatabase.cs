@@ -143,7 +143,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         "areatrigger", "areatrigger_scripts", "areatrigger_teleport", "areatrigger_involvedrelation", "areatrigger_tavern",
         "areatrigger_template", "areatrigger_create_properties", "areatrigger_create_properties_polygon_vertex",
         "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node",
-        "linked_respawn", "spawn_group", "game_event_model_equip", "creature_formations", "gameobject_addon"
+        "linked_respawn", "spawn_group", "game_event_model_equip", "creature_formations", "gameobject_addon", "phase_name"
     ];
 
     /// <summary>

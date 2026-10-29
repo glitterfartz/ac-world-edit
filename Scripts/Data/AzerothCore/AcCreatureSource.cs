@@ -32,6 +32,7 @@ public sealed class AcCreatureSource
         string ai = session.Has("creature_template.AIName") ? "NULLIF(t.AIName,'')" : "NULL";
         string script = $"COALESCE({spawnScript},{templateScript},{ai},'')";
         var events = await session.ReadEvents(preview, token).ConfigureAwait(false);
+        var phases = await AcPhaseSource.ReadAsync(session, region, "creature", token).ConfigureAwait(false);
         await using var command = session.Command("");
         var restriction = session.Restrictions(false, id, preview, events, command);
         string spatial = WorldReadSession.Spatial(command, region, point, preview, "c", search, id);
@@ -61,6 +62,6 @@ public sealed class AcCreatureSource
             spawns.Add(new(Convert.ToUInt64(reader.GetValue(0)), reader.GetUInt32(1), reader.GetString(2), pose, reader.GetUInt32(8), reader.GetUInt32(9), reader.GetUInt32(10), modelScale, visibility));
         }
 
-        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, database.SourceKey, events);
+        return new(spawns.Take(preview.QueryLimit).ToArray(), spawns.Count > preview.QueryLimit, database.SourceKey, events, phases);
     }
 }

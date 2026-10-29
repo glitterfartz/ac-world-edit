@@ -337,6 +337,7 @@ public partial class SceneSidebar : PanelContainer
         counts["waypoints"].TooltipText = waypoints.QueryStatus;
         counts["creatures"].TooltipText = $"{creatures.Records.Count} SQL matches · {creatures.AdmittedCreatureCount} admitted · {creatures.ModelCreatureCount} native models ready";
         counts["gameobjects"].TooltipText = $"{gameObjects.Records.Count} SQL matches · {gameObjects.AdmittedObjectCount} admitted · {gameObjects.ModelObjectCount} native models ready";
+        visibility.SetPhaseCatalog(PhaseCatalog.Merge(creatures.PhaseCatalog, gameObjects.PhaseCatalog));
         visibility.SetEventCatalog(creatures.EventCatalog.Length > 0 ? creatures.EventCatalog : gameObjects.EventCatalog);
     }
 }
