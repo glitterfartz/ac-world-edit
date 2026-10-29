@@ -69,7 +69,7 @@ public sealed partial class AppearanceSection : CreatureSection
         string spawns(int n) => n == 1 ? "1 spawn" : $"{n} spawns";
         use.Text = !loaded ? "Loading the template's appearance…"
             : templateUse == null ? "Counting the spawns that use it…"
-            : $"Shown by every spawn of this creature unless the spawn has its own appearance, which replaces this one. Used by {spawns(templateUse.Spawns)}; {templateUse.WithOwnAppearance} {(templateUse.WithOwnAppearance == 1 ? "has" : "have")} their own and {(templateUse.WithOwnAppearance == 1 ? "doesn't" : "don't")} follow this page.";
+            : $"Shown by every spawn of this creature unless the spawn has its own appearance. Used by {spawns(templateUse.Spawns)}; {templateUse.WithOwnAppearance} {(templateUse.WithOwnAppearance == 1 ? "has" : "have")} their own and {(templateUse.WithOwnAppearance == 1 ? "doesn't" : "don't")} follow this page.";
         fields.Show(Ctx.Dialect, SpawnKind.Creature, row, row, null, null, loaded);
     }
 
