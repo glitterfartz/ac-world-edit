@@ -372,6 +372,45 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
         }
     }
 
+    public int? MilestoneSeason(int mythicPlusSeasonId) =>
+        Table("MythicPlusSeason").TryGetValue(mythicPlusSeasonId, out var row) ? row.FieldAs<int>("MilestoneSeason") : null;
+
+    Dictionary<(uint Map, int Difficulty), uint>? mapTuning;
+
+    public uint MapDifficultyTuning(uint mapId, int difficultyId)
+    {
+        lock (gate)
+        {
+            if (mapTuning == null)
+            {
+                mapTuning = [];
+                foreach (var row in tables.Table("MapDifficulty").Values)
+                {
+                    mapTuning[(row.FieldAs<uint>("MapID"), row.FieldAs<int>("DifficultyID"))] = row.FieldAs<uint>("ContentTuningID");
+                }
+            }
+
+            return mapTuning.GetValueOrDefault((mapId, difficultyId));
+        }
+    }
+
+    public uint AreaTuning(uint areaId)
+    {
+        var areas = Table("AreaTable");
+        // The parent chain is short; the bound only guards a cyclic row.
+        for (int depth = 0; depth < 16 && areas.TryGetValue((int)areaId, out var area); depth++)
+        {
+            if (area.FieldAs<uint>("ContentTuningID") is var tuning and not 0)
+            {
+                return tuning;
+            }
+
+            areaId = area.FieldAs<uint>("ParentAreaID");
+        }
+
+        return 0;
+    }
+
     /// <summary>A numeric term matches the ID exactly; otherwise the text must contain the term.</summary>
     static bool Matches(int id, string text, string term) =>
         uint.TryParse(term, out uint number) ? (uint)id == number : text.Contains(term, StringComparison.OrdinalIgnoreCase);

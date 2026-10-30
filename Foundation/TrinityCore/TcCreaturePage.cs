@@ -69,6 +69,10 @@ public static class TcCreaturePage
 
             new("interaction", t, "npcflag", "NPC flags", "What players can do by right-clicking. The low 32 bits are NPCFlags, the high 32 bits NPCFlags2.", FieldKind.Flags, Flags: NpcServices),
 
+            Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default."),
+            Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks."),
+            Decimal("combat", "BaseVariance", "Melee damage spread", "Multiplies the attack power part of a melee hit (attack power / 3.5). 1 is the normal spread; 0 removes it."),
+            Decimal("combat", "RangeVariance", "Ranged damage spread", "Multiplies the attack power part of a ranged hit, like the melee damage spread."),
             DWhole("combat", "ContentTuningID", "Content tuning", "ContentTuning ID that scales level and health."),
             DWhole("combat", "LevelScalingDeltaMin", "Level delta min", "Lowest level added to the content tuning's top level (can be negative)."),
             DWhole("combat", "LevelScalingDeltaMax", "Level delta max", "Highest level added to the content tuning's top level. The creature's level is rolled between the two."),

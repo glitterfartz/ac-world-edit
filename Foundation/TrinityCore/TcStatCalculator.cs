@@ -1,7 +1,21 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>A creature's values at one level.</summary>
-public sealed record TcStatLine(int Level, long Health, double Mana, double Armor, double DamageMin, double DamageMax, int AttackPower, int RangedAttackPower);
+public sealed record TcStatLine(int Level, long Health, double Mana, double Armor, double DamageMin, double DamageMax, int AttackPower, int RangedAttackPower)
+{
+    /// <summary>A melee swing's damage: weapon damage plus attack power / 3.5 times the template's variance, times the damage multiplier and the swing time in seconds.</summary>
+    public (double Min, double Max) Melee { get; init; }
+
+    /// <summary>A ranged shot's damage, the same way with the ranged attack power, variance and attack time.</summary>
+    public (double Min, double Max) Ranged { get; init; }
+}
+
+/// <summary>The creature_template columns the calculation reads. Critters (type 8) take no tuning from their map or area.</summary>
+public sealed record TcStatTemplate(uint UnitClass, uint Classification = 0, bool Critter = false, uint BaseAttackTime = 2000, uint RangeAttackTime = 0, float BaseVariance = 1, float RangeVariance = 1)
+{
+    public static TcStatTemplate From(Row template) => new(template.U("unit_class"), template.U("Classification"), template.U("type") == 8,
+        template.U("BaseAttackTime"), template.U("RangeAttackTime"), template.F("BaseVariance"), template.F("RangeVariance"));
+}
 
 /// <summary>
 /// What the server computes for a creature_template_difficulty row. <see cref="Low"/> and <see cref="High"/>
@@ -16,8 +30,11 @@ public sealed record TcCreatureStats(uint ContentTuningId, int Expansion, int Mi
 /// level plus a random delta; its health, armor and damage are the ExpectedStat row for that level and
 /// the row's health-scaling expansion, scaled by the content tuning's and the class's modifiers and
 /// then by the template's multipliers; its mana and attack power come from creature_classlevelstats.
-/// The server's creature rates (Rate.Creature.*) are taken as 1, and Mythic+ seasons are not known, so a
-/// modifier limited to start in a season is skipped and one limited to end in a season is kept.
+/// A template without a content tuning takes its map difficulty's, then its area's, as
+/// <c>Creature::ApplyLevelScaling</c> does. Content tuning modifiers use the server's active Mythic+
+/// milestone season 0 for creatures (<c>ExpectedStatModReducer</c>). Conditional content tuning redirects
+/// are not applied: the server passes no redirect flags for a creature. Health is multiplied by the
+/// <c>Rate.Creature.*.HP</c> of the template's classification (<see cref="TcStatRates"/>).
 /// </summary>
 public static class TcStatCalculator
 {
@@ -73,13 +90,37 @@ public static class TcStatCalculator
     /// Compute a difficulty row's values at its lowest and highest level. unitClass is creature_template.unit_class;
     /// classStats looks up creature_classlevelstats by level and class.
     /// </summary>
-    public static TcCreatureStats Compute(Row difficulty, uint unitClass, ITcStatData data, Func<uint, uint, TcClassLevelStats?> classStats)
+    public static TcCreatureStats Compute(Row difficulty, uint unitClass, ITcStatData data, Func<uint, uint, TcClassLevelStats?> classStats) =>
+        Compute(difficulty, new TcStatTemplate(unitClass), data, classStats);
+
+    /// <summary>
+    /// <see cref="Compute(Row, uint, ITcStatData, Func{uint, uint, TcClassLevelStats?})"/> with the whole template,
+    /// the creature's <paramref name="site"/> (for a row with no content tuning) and the server's health rates.
+    /// </summary>
+    public static TcCreatureStats Compute(Row difficulty, TcStatTemplate template, ITcStatData data, Func<uint, uint, TcClassLevelStats?> classStats, TcStatSite? site = null, TcStatRates? rates = null)
     {
-        uint tuningId = (uint)Math.Max(difficulty.I("ContentTuningID"), 0);
+        uint unitClass = template.UnitClass;
         int expansion = ScalingExpansion(difficulty.I("HealthScalingExpansion"));
-        if (difficulty.I("ContentTuningID") <= 0)
+        uint tuningId = (uint)Math.Max(difficulty.I("ContentTuningID"), 0);
+        string? inherited = null;
+        if (tuningId == 0 && !template.Critter && site != null)
         {
-            return new(0, expansion, 0, 0, null, null, "No content tuning is set, so the server takes the level and scaling from the map or area the creature spawns in.");
+            tuningId = data.MapDifficultyTuning(site.MapId, site.DifficultyId);
+            if (tuningId != 0)
+            {
+                inherited = $"No content tuning is set, so the map's difficulty tuning {tuningId} is used.";
+            }
+            else if ((tuningId = data.AreaTuning(site.AreaId)) != 0)
+            {
+                inherited = $"No content tuning is set, so the area's tuning {tuningId} is used.";
+            }
+        }
+
+        if (tuningId == 0)
+        {
+            return new(0, expansion, 0, 0, null, null, template.Critter
+                ? "No content tuning is set, and critters take none from their map or area."
+                : "No content tuning is set, so the server takes the level and scaling from the map or area the creature spawns in.");
         }
 
         var tuning = data.ContentTuning(tuningId);
@@ -89,7 +130,7 @@ public static class TcStatCalculator
         }
 
         var (min, max) = CreatureLevels(tuning, difficulty.I("LevelScalingDeltaMin"), difficulty.I("LevelScalingDeltaMax"))!.Value;
-        var mods = data.ContentTuningMods(tuningId).Where(m => m.MinMythicPlusSeasonId == 0).ToArray();
+        var mods = data.ContentTuningMods(tuningId).Where(m => ModApplies(m, data)).ToArray();
         var classMod = ClassModRow(unitClass) is { } row ? data.ExpectedStatMod(row) : null;
         TcStatLine? At(int level)
         {
@@ -110,11 +151,35 @@ public static class TcStatCalculator
             double armor = stat == null ? 1 : Scale(stat.CreatureArmor, m => m.CreatureArmorMod);
             var baseStats = classStats((uint)level, unitClass);
             double damage = dps * difficulty.F("DamageModifier");
-            return new(level, (long)Math.Ceiling(health * difficulty.F("HealthModifier")), (baseStats?.BaseMana ?? 0) * (double)difficulty.F("ManaModifier"),
-                armor * difficulty.F("ArmorModifier"), damage, damage * 1.5, baseStats?.AttackPower ?? 0, baseStats?.RangedAttackPower ?? 0);
+            // GetMaxHealthByLevel is ceil(expected * HealthModifier); UpdateLevelDependantStats then truncates it times the rate.
+            double baseHealth = Math.Ceiling(health * difficulty.F("HealthModifier"));
+            long scaledHealth = (long)(baseHealth * (rates ?? TcStatRates.None).HealthFor(template.Classification));
+            int power = baseStats?.AttackPower ?? 0, rangedPower = baseStats?.RangedAttackPower ?? 0;
+            double multiplier = difficulty.F("DamageModifier");
+            (double, double) Swing(int attackPower, float variance, uint attackTime) =>
+                ((dps + attackPower / 3.5 * variance) * multiplier * attackTime / 1000, (dps * 1.5 + attackPower / 3.5 * variance) * multiplier * attackTime / 1000);
+            return new(level, scaledHealth, (baseStats?.BaseMana ?? 0) * (double)difficulty.F("ManaModifier"),
+                armor * difficulty.F("ArmorModifier"), damage, damage * 1.5, power, rangedPower)
+            {
+                Melee = Swing(power, template.BaseVariance, template.BaseAttackTime),
+                Ranged = Swing(rangedPower, template.RangeVariance, template.RangeAttackTime)
+            };
         }
 
         bool known = data.ExpectedStat((uint)max, expansion) != null || data.ExpectedStat((uint)max, -2) != null;
-        return new(tuningId, expansion, min, max, At(min), At(max), known ? null : $"The client has no expected stats for level {max}, so the server computes 1 for health, damage and armor.");
+        string? note = known ? inherited : $"The client has no expected stats for level {max}, so the server computes 1 for health, damage and armor.";
+        return new(tuningId, expansion, min, max, At(min), At(max), note);
+    }
+
+    /// <summary>ExpectedStatModReducer with the active milestone season 0: a season's own row is skipped when it starts later or has already ended.</summary>
+    static bool ModApplies(TcContentTuningMod mod, ITcStatData data)
+    {
+        const int ActiveMilestoneSeason = 0;
+        if (mod.MinMythicPlusSeasonId != 0 && data.MilestoneSeason(mod.MinMythicPlusSeasonId) is { } start && ActiveMilestoneSeason < start)
+        {
+            return false;
+        }
+
+        return mod.MaxMythicPlusSeasonId == 0 || data.MilestoneSeason(mod.MaxMythicPlusSeasonId) is not { } end || ActiveMilestoneSeason < end;
     }
 }

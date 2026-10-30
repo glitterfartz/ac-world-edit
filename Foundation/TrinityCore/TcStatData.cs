@@ -29,6 +29,34 @@ public interface ITcStatData
     TcExpectedStatMod? ExpectedStatMod(uint id);
 
     IReadOnlyList<TcContentTuningMod> ContentTuningMods(uint contentTuningId);
+
+    /// <summary>MythicPlusSeason.MilestoneSeason of a season, or null when the table has no such season.</summary>
+    int? MilestoneSeason(int mythicPlusSeasonId);
+
+    /// <summary>MapDifficulty.ContentTuningID of a map in a difficulty (0 when there is none).</summary>
+    uint MapDifficultyTuning(uint mapId, int difficultyId);
+
+    /// <summary>The first non-zero AreaTable.ContentTuningID on the area or, going up through ParentAreaID, its zone (0 when none).</summary>
+    uint AreaTuning(uint areaId);
+}
+
+/// <summary>
+/// Where a creature stands, for a template that has no content tuning of its own: the server then
+/// takes the map difficulty's tuning, then the area's (<c>Creature::ApplyLevelScaling</c>).
+/// </summary>
+public sealed record TcStatSite(uint MapId, int DifficultyId, uint AreaId);
+
+/// <summary>
+/// The server's <c>Rate.Creature.*.HP</c> settings by creature classification (Normal, Elite, RareElite,
+/// Obsolete, Rare, Trivial, MinusMob); any other classification uses the Elite rate, as the server does.
+/// A rate of 1 changes nothing. (Rate.Creature.*.Damage exists in worldserver.conf but master's
+/// <c>Creature::CalculateMinMaxDamage</c> does not apply it.)
+/// </summary>
+public sealed record TcStatRates(float[] Health)
+{
+    public static readonly TcStatRates None = new([1, 1, 1, 1, 1, 1, 1]);
+
+    public float HealthFor(uint classification) => Health[classification < Health.Length ? (int)classification : 1];
 }
 
 /// <summary>One creature_classlevelstats row of the TrinityCore world database.</summary>

@@ -16,6 +16,13 @@ public class TcStatTests
         public TcExpectedStat? ExpectedStat(uint level, int expansion) => Stats.GetValueOrDefault((level, expansion));
         public TcExpectedStatMod? ExpectedStatMod(uint id) => Mods.GetValueOrDefault(id);
         public IReadOnlyList<TcContentTuningMod> ContentTuningMods(uint contentTuningId) => TuningMods.GetValueOrDefault(contentTuningId) ?? [];
+        public Dictionary<int, int> Seasons { get; } = [];
+        public Dictionary<(uint, int), uint> MapTunings { get; } = [];
+        public Dictionary<uint, uint> AreaTunings { get; } = [];
+
+        public int? MilestoneSeason(int mythicPlusSeasonId) => Seasons.TryGetValue(mythicPlusSeasonId, out int milestone) ? milestone : null;
+        public uint MapDifficultyTuning(uint mapId, int difficultyId) => MapTunings.GetValueOrDefault((mapId, difficultyId));
+        public uint AreaTuning(uint areaId) => AreaTunings.GetValueOrDefault(areaId);
     }
 
     // Content tuning 100 runs from level 1 to the current expansion's cap (type 2 adds 90).
@@ -26,6 +33,7 @@ public class TcStatTests
         data.Stats[(90, 11)] = new(1000, 10, 500);
         data.Mods[4] = new(2, 1, 1);
         data.TuningMods[100] = [new(0, 0, new(1.5f, 2, 1)), new(3, 0, new(100, 100, 100))];
+        data.Seasons[3] = 1;
         return data;
     }
 
@@ -80,6 +88,62 @@ public class TcStatTests
         Assert.Equal(90, line.DamageMax);
         Assert.Equal(400, line.Mana);
         Assert.Equal((30, 40), (line.AttackPower, line.RangedAttackPower));
+    }
+
+    [Fact]
+    public void AModLimitedToASeasonAppliesOnlyWhileTheActiveSeasonIsInRange()
+    {
+        // The server evaluates creatures with milestone season 0: a mod that starts at season 1 or later is skipped,
+        // a mod that ends at a season above 0 still applies, and one that ends at season 0 does not; an unknown season is ignored.
+        var data = Tables();
+        data.TuningMods[100] = [new(3, 0, new(100, 100, 100)), new(0, 4, new(2, 1, 1)), new(0, 5, new(100, 1, 1)), new(0, 9, new(3, 1, 1)), new(8, 0, new(5, 1, 1))];
+        data.Seasons[4] = 2;
+        data.Seasons[5] = 0;
+        var line = TcStatCalculator.Compute(Difficulty(), 8, data, Base).High!;
+        // 1000 x 2 (ends at season 2) x 3 (unknown end season) x 5 (unknown start season) x HealthModifier 2
+        Assert.Equal(60000, line.Health);
+    }
+
+    [Fact]
+    public void ATemplateWithoutATuningTakesTheMapDifficultysThenTheAreasUnlessItIsACritter()
+    {
+        var data = Tables();
+        data.MapTunings[(0, 0)] = 100;
+        data.AreaTunings[12] = 100;
+        var row = Difficulty(v => v.Add(("ContentTuningID", 0)));
+        var byMap = TcStatCalculator.Compute(row, new TcStatTemplate(1), data, Base, new(0, 0, 0));
+        Assert.Equal(100u, byMap.ContentTuningId);
+        Assert.Contains("map's difficulty tuning 100", byMap.Note);
+        Assert.Equal(6000, byMap.High!.Health);
+        data.MapTunings.Clear();
+        var byArea = TcStatCalculator.Compute(row, new TcStatTemplate(1), data, Base, new(0, 0, 12));
+        Assert.Contains("area's tuning 100", byArea.Note);
+        Assert.Equal(6000, byArea.High!.Health);
+        Assert.Null(TcStatCalculator.Compute(row, new TcStatTemplate(1, Critter: true), data, Base, new(0, 0, 12)).Low);
+        Assert.Null(TcStatCalculator.Compute(row, new TcStatTemplate(1), data, Base, new(0, 0, 99)).Low);
+        Assert.Null(TcStatCalculator.Compute(row, new TcStatTemplate(1), data, Base).Low);
+    }
+
+    [Fact]
+    public void HealthIsMultipliedByTheRateOfTheClassificationAndTruncated()
+    {
+        var rates = new TcStatRates([1, 2.5f, 1, 1, 1, 1, 1]);
+        Assert.Equal(6000, TcStatCalculator.Compute(Difficulty(), new TcStatTemplate(1), Tables(), Base, null, rates).High!.Health);
+        Assert.Equal(15000, TcStatCalculator.Compute(Difficulty(), new TcStatTemplate(1, Classification: 1), Tables(), Base, null, rates).High!.Health);
+        // An unknown classification uses the Elite rate, like the server.
+        Assert.Equal(15000, TcStatCalculator.Compute(Difficulty(), new TcStatTemplate(1, Classification: 42), Tables(), Base, null, rates).High!.Health);
+    }
+
+    [Fact]
+    public void ASwingAddsAttackPowerAndScalesBySwingTime()
+    {
+        var template = new TcStatTemplate(1, BaseAttackTime: 1500, RangeAttackTime: 2000, BaseVariance: 2, RangeVariance: 0.5f);
+        var line = TcStatCalculator.Compute(Difficulty(), template, Tables(), Base).High!;
+        // Weapon damage 20 (10 x tuning 2); attack power 30 / 3.5 x variance 2; DamageModifier 3; 1.5 s.
+        Assert.Equal((20 + 30 / 3.5 * 2) * 3 * 1.5, line.Melee.Min, 6);
+        Assert.Equal((30 + 30 / 3.5 * 2) * 3 * 1.5, line.Melee.Max, 6);
+        // Ranged attack power 40, variance 0.5, 2 s.
+        Assert.Equal((20 + 40 / 3.5 * 0.5) * 3 * 2, line.Ranged.Min, 6);
     }
 
     [Fact]

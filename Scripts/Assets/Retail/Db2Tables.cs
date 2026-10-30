@@ -56,6 +56,8 @@ public sealed class Db2Tables
         ["ContentTuningXExpected"] = 2976765,
         ["ExpectedStat"] = 1937326,
         ["ExpectedStatMod"] = 1969773,
+        ["MythicPlusSeason"] = 2400282,
+        ["MapDifficulty"] = 1367868,
         ["CurrencyTypes"] = 1095531,
         ["ItemExtendedCost"] = 801681,
         ["PlayerCondition"] = 1045411,

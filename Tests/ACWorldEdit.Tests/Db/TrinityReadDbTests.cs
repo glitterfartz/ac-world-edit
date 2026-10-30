@@ -494,6 +494,9 @@ public class TrinityReadDbTests
         public TcExpectedStat? ExpectedStat(uint level, int expansion) => null;
         public TcExpectedStatMod? ExpectedStatMod(uint id) => null;
         public IReadOnlyList<TcContentTuningMod> ContentTuningMods(uint contentTuningId) => [];
+        public int? MilestoneSeason(int mythicPlusSeasonId) => null;
+        public uint MapDifficultyTuning(uint mapId, int difficultyId) => 0;
+        public uint AreaTuning(uint areaId) => 0;
     }
 
     [TcRetailFact]

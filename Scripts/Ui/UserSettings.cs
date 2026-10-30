@@ -58,6 +58,16 @@ public static class UserSettings
     /// <summary>Saved UI scale in percent (100 when unset or out of range).</summary>
     public static int LoadUiScale() => int.TryParse(Read("ui", "scale_percent", "100"), out int percent) && percent is >= 50 and <= 300 ? percent : 100;
 
+    /// <summary>
+    /// The server's Rate.Creature.*.HP settings in [creature_rates] (hp_0 to hp_6 by classification, as in
+    /// worldserver.conf); 1 where unset or unreadable. The viewer cannot read the server's file, so they are typed in once.
+    /// </summary>
+    public static TcStatRates LoadCreatureRates() => new(Enumerable.Range(0, 7).Select(i =>
+        float.TryParse(Read("creature_rates", "hp_" + i, "1"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float rate) && rate > 0 ? rate : 1f).ToArray());
+
+    public static void SaveCreatureHealthRate(uint classification, float rate) =>
+        Write("creature_rates", "hp_" + classification, rate.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
     public static void SaveUiScale(int percent) => Write("ui", "scale_percent", percent.ToString());
 
     static ConfigFile Open()
