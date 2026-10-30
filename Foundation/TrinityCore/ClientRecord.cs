@@ -12,5 +12,8 @@ public enum ClientRecord
     SkillLine,
     Difficulty,
     Language,
-    GossipNpcOption
+    GossipNpcOption,
+
+    /// <summary>A client file addressed by FileDataID (a texture, for example). Unknown, so true, when no client files are open.</summary>
+    FileData
 }

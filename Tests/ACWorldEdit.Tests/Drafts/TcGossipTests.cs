@@ -157,6 +157,7 @@ public class TcGossipTests
     [InlineData("Language", 999, "language 999")]
     [InlineData("SpellID", 999, "spell 999")]
     [InlineData("GossipNpcOptionID", 999, "client option 999")]
+    [InlineData("OverrideIconID", 999, "icon file 999")]
     [InlineData("ActionPoiID", 999, "point of interest 999")]
     public void ReferencesTheClientOrDatabaseDoesNotKnowAreRefused(string column, int value, string message)
     {

@@ -20,6 +20,8 @@ public static class TcGossipRules
                     yield return new(true, $"Gossip option {key}: language {row.U("Language")} does not exist in the client.");
                 if (row.I("SpellID") > 0 && !exists(ClientRecord.Spell, (uint)row.I("SpellID")))
                     yield return new(true, $"Gossip option {key}: spell {row.I("SpellID")} does not exist in the client.");
+                if (row.I("OverrideIconID") > 0 && !exists(ClientRecord.FileData, (uint)row.I("OverrideIconID")))
+                    yield return new(true, $"Gossip option {key}: icon file {row.I("OverrideIconID")} does not exist in the client.");
                 if (row.I("GossipNpcOptionID") > 0 && !exists(ClientRecord.GossipNpcOption, (uint)row.I("GossipNpcOptionID")))
                     yield return new(true, $"Gossip option {key}: client option {row.I("GossipNpcOptionID")} does not exist in the client.");
             }

@@ -63,7 +63,7 @@ public interface IClientLookup : ITcStatData
 /// <see cref="IClientLookup"/> over <see cref="Db2Tables"/>. The tables object is not thread-safe, so
 /// every access to it is serialised here; the rows themselves are read-only once loaded.
 /// </summary>
-public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
+public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileExists = null) : IClientLookup
 {
     readonly object gate = new();
 
@@ -296,6 +296,7 @@ public sealed class RetailClientLookup(Db2Tables tables) : IClientLookup
 
     public bool Exists(ClientRecord kind, uint id) => kind switch
     {
+        ClientRecord.FileData => fileExists?.Invoke(id) ?? true,
         ClientRecord.Item => Item(id) != null,
         ClientRecord.Spell => SpellName(id) != null,
         _ => Table(kind switch
