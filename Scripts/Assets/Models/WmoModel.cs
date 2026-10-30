@@ -26,6 +26,8 @@ public static class WmoModel
         var header = root["MOHD"];
         b.Range(header.Data, 64);
         int groups = b.I(header.Data + 4);
+        // MOHD flag 0x2: the retail lighting path, where the header ambient is added at runtime instead of baked into MOCV.
+        bool unifiedRenderPath = (b.H(header.Data + 60) & 2) != 0;
         if (groups > 4096)
         {
             throw new InvalidDataException("Unbounded WMO group count.");
@@ -112,7 +114,7 @@ public static class WmoModel
             var colors2 = subChunks.Where(c => c.Tag == "MOCV").Skip(1).FirstOrDefault();
             var uvChunk2 = subChunks.Where(c => c.Tag == "MOTV").Skip(1).FirstOrDefault();
             bool interior = (gb.U(gp.Data + 8) & 0x2000) != 0;
-            var colorMode = colors.Size == 0 ? VertexColorMode.None : interior ? VertexColorMode.BakedInterior : VertexColorMode.ExteriorEmissive;
+            var colorMode = colors.Size == 0 ? VertexColorMode.None : interior ? (unifiedRenderPath ? VertexColorMode.RetailInterior : VertexColorMode.BakedInterior) : VertexColorMode.ExteriorEmissive;
             Vector3[] positions = new Vector3[vertices], normals = new Vector3[vertices];
             Vector2[] uvs = new Vector2[vertices];
             Vector4[] tint = new Vector4[vertices];
@@ -143,6 +145,19 @@ public static class WmoModel
                 uvs2[i] = uvChunk2.Size >= vertices * 8 && float.IsFinite(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8)) && float.IsFinite(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8 + 4))
                     ? new(LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8), LittleEndian.F32(gb.Bytes, uvChunk2.Data + i * 8 + 4))
                     : uvs[i];
+            }
+
+            // A retail interior group (unified render path) lights itself as mix(interior, world, alpha): the interior
+            // term is its color plus the header ambient, which the client adds at runtime, and the alpha weights world
+            // lighting, high near an opening to the outdoors. Stored scaled by (1 - alpha), with half the ambient
+            // because the shader doubles it; the alpha-weighted world term is added by the shader through normal lighting.
+            if (colorMode == VertexColorMode.RetailInterior)
+            {
+                var ambient = new Vector3(b.Bytes[header.Data + 30], b.Bytes[header.Data + 29], b.Bytes[header.Data + 28]) / 255f;
+                for (int i = 0; i < vertices; i++)
+                {
+                    tint[i] = new((new Vector3(tint[i].X, tint[i].Y, tint[i].Z) + ambient * 0.5f) * (1 - tint[i].W), tint[i].W);
+                }
             }
 
             // MOBA is a 24-byte render-batch record. A flag redirects the material ID

@@ -214,8 +214,10 @@ void fragment() {
         discard;
     }
     vec3 base = tex.rgb * batch_color.rgb;
-    ALBEDO = vertex_color == 1 ? base * COLOR.rgb * 2.0 : base;
-    EMISSION = (vertex_color == 2 ? base * COLOR.rgb : vec3(0.0)) + layer_add;
+    // Mode 3 (retail interior): the alpha weights world lighting through the normal lit path, and the color
+    // (already scaled by 1 - alpha, ambient included) is the group's own emissive term, doubled like mode 1.
+    ALBEDO = vertex_color == 1 ? base * COLOR.rgb * 2.0 : vertex_color == 3 ? base * COLOR.a : base;
+    EMISSION = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
 }

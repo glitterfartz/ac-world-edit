@@ -12,7 +12,12 @@ public enum VertexColorMode
 {
     None,
     BakedInterior,
-    ExteriorEmissive
+    ExteriorEmissive,
+    /// <summary>
+    /// A retail interior group (MOHD unified render path): the color alpha weights world lighting against the
+    /// group's own color, which is already scaled by (1 - alpha) and includes the header ambient.
+    /// </summary>
+    RetailInterior
 }
 
 /// <summary>
