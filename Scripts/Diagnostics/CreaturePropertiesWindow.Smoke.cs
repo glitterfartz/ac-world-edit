@@ -15,6 +15,7 @@ public partial class CreaturePropertiesWindow
     public bool SmokeOnQuestDetail => Active?.Id == "quests" && SmokeQuestDetail != 0;
     public uint SmokeQuestDetail => (Section("quests") as QuestsSection)?.SmokeQuestDetail ?? 0;
     public bool SmokeLoaded => Context.View != null && Context.Snapshot != null;
+    public uint SmokeEntry => Context.Snapshot?.Entry ?? 0;
     AcCreatureView? view => Context.AcView;
     Node body => (Node?)Active ?? this;
 

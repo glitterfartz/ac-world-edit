@@ -95,6 +95,7 @@ public partial class TerrainViewer
         }, () => showCellBorders);
         menu.Check(view, "Navigation panel", () => leftPanel.Visible = !leftPanel.Visible, () => leftPanel.Visible);
         menu.Check(view, "Scene explorer panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible);
+        menu.Check(view, "Content browser", ToggleContentBrowser, () => contentBrowser.Visible, ctrl | Key.B);
         var scale = menu.Submenu(view, "UI scale");
         foreach (int percent in UiScalePercents)
         {

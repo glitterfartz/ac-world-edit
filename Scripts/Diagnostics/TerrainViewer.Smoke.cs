@@ -41,6 +41,7 @@ public partial class TerrainViewer
         interactionSmoke = flags.Contains("--interaction-smoke");
         contentSmoke = flags.Contains("--content-smoke");
         spawnAuthoringSmoke = flags.Contains("--spawn-authoring-smoke");
+        contentBrowserSmoke = flags.Contains("--content-browser-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
         behaviorSmoke = flags.Contains("--behavior-smoke");
         perfSmoke = flags.Contains("--perf-smoke");
@@ -133,6 +134,11 @@ public partial class TerrainViewer
         if (spawnAuthoringSmoke)
         {
             SpawnAuthoringSmoke(delta);
+        }
+
+        if (contentBrowserSmoke)
+        {
+            ContentBrowserSmoke(delta);
         }
 
         if (interactionSmoke)

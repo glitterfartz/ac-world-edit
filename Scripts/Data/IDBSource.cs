@@ -45,6 +45,9 @@ public interface IDBSource
     /// <summary>How many spawns the template has and how many of them have their own addon row.</summary>
     Task<TemplateUse> CountTemplateUseAsync(uint entry, CancellationToken token);
 
+    /// <summary>Creature or GameObject templates by name or entry, optionally of one type (bounded): the content browser's search.</summary>
+    Task<IReadOnlyList<TemplateHit>> SearchTemplatesAsync(SpawnKind kind, string term, int? type, CancellationToken token);
+
     /// <summary>The largest value of a whole-number column (0 for an empty table): the database side of <see cref="IdAllocator"/>.</summary>
     Task<ulong> MaxIdAsync(TableSchema table, string column, CancellationToken token);
 

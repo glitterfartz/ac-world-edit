@@ -286,6 +286,19 @@ public partial class TerrainViewer
         sidebar.ReviewPendingRequested += OpenPendingChanges;
         creatureProps.SummaryChanged += creatures.SetInteractionSummary;
         creatureProps.QuestEditorRequested += questEditor.Open;
+        contentBrowser = new ContentBrowser
+        {
+            Connection = () => DatabaseConnection(),
+            Lookup = () => clientLookup,
+            Report = statusLog.Post
+        };
+        contentBrowser.Activated += OpenTemplate;
+        ui.AddChild(contentBrowser);
+        foreach (var side in new Control[] { leftPanel, sidebar })
+        {
+            side.Resized += FitContentBrowser;
+            side.VisibilityChanged += FitContentBrowser;
+        }
         creatures.PropertiesRequested += spawn =>
         {
             if (databaseEnabled)
@@ -305,6 +318,52 @@ public partial class TerrainViewer
     }
 
     CreaturePropertiesWindow creatureProps = null!;
+    ContentBrowser contentBrowser = null!;
+
+    void ToggleContentBrowser()
+    {
+        if (contentBrowser.Visible)
+        {
+            contentBrowser.Close();
+        }
+        else if (!databaseEnabled)
+        {
+            statusLog.Post("The content browser needs a world database connection.");
+        }
+        else
+        {
+            FitContentBrowser();
+            contentBrowser.Open();
+        }
+    }
+
+    /// <summary>
+    /// Keep the content browser between the navigation panel and the Scene explorer, which size to
+    /// their content; it takes the freed width when either is hidden.
+    /// </summary>
+    void FitContentBrowser()
+    {
+        const float gap = 12, margin = 20;
+        contentBrowser.OffsetLeft = leftPanel.Visible ? leftPanel.Position.X + leftPanel.Size.X + gap : margin;
+        contentBrowser.OffsetRight = sidebar.Visible ? sidebar.OffsetLeft - gap : -margin;
+    }
+
+    /// <summary>
+    /// A template opened in the content browser: creatures open in the properties window; game objects
+    /// have no window yet, so they only name themselves on the status bar.
+    /// </summary>
+    void OpenTemplate(SpawnKind kind, uint entry, string name)
+    {
+        string label = string.IsNullOrEmpty(name) ? $"{kind} {entry}" : name;
+        if (kind == SpawnKind.Creature)
+        {
+            creatureProps.OpenEntry(entry, label);
+        }
+        else
+        {
+            statusLog.Post($"Game object {entry}: {label}. Game objects have no properties window yet.");
+        }
+    }
 
     /// <summary>
     /// The behavior (SmartAI) editors open for both databases: creatures, client AreaTriggers and, for

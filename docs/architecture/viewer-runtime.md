@@ -137,7 +137,7 @@ All camera and input handling is in `TerrainViewer.cs`.
 - **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window (for TrinityCore only the template page is editable so far). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
 - **F12** (handled in `_Input`, so it works while flying) saves a diagnostic dump; see [Diagnostic dump](#diagnostic-dump-f12).
-- **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
+- **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+B, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
 
 Per-frame order in `_Process`:
 
@@ -227,6 +227,7 @@ Cross-window wiring is set up in `BuildUi`:
 
 - the creature inspector's Properties button, a short right-click and the Behavior menu entries open the creature window on a section;
 - The "Creature Templates" toolbar button searches `creature_template` by name or ID (for either database, through `IDBSource.SearchAsync`) in the shared `PickerPopup` and opens the creature window on the pick, as a quest giver card does;
+- View → Content browser (Ctrl+B) toggles `ContentBrowser` (`Scripts/Ui`), a bottom panel fitted between the navigation panel and the Scene explorer (it widens when either is hidden). Its Creatures and Game objects tabs search templates by name or entry with a type filter (`IDBSource.SearchTemplatesAsync`, 50 results, newest search wins) and list `Name (entry) · type`. Double-click or Enter raises `Activated`: a creature opens in the creature window; a GameObject only names itself on the status bar, since it has no properties window yet. Without a database connection it says so on the status bar instead of opening;
 - the creature window and quest givers open the standalone quest editor, and the quest editor's giver cards open the creature window on its Behavior section;
 - the interaction summary updates the creature inspector;
 - the sidebar's review button opens the pending-changes window.
@@ -263,6 +264,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--areatrigger-smoke` | Trigger click, volume check, behavior rule add and undo. AzerothCore: trigger 5140 in Utgarde Pinnacle; TrinityCore: Stormwind spawn 290 (template 188) |
 | `--interaction-smoke` | Gossip, vendor, quests, edit mode, reopen (headless works; set `ACWORLD_CLIENT_PROFILE=wrath`, as it covers AzerothCore only) |
 | `--spawn-authoring-smoke` | Spawn authoring in Goldshire on an isolated draft (headless works). Creatures and GameObjects: `PlaceAsync` draws, lists and selects the new spawn with the template's name and model, exports an INSERT, undo removes it and redo restores it; a creature placed after an undo gets a fresh GUID. Then the spawn fields (respawn, movement, a wander radius and its ring in the viewport, an override with Use template, a refused value). Then Ctrl+D and the Delete key (creatures) and the inspector buttons (GameObjects) copy and delete spawns, including a source spawn whose delete is undone, and a referenced spawn whose delete asks first (Keep leaves it, Delete anyway removes it, undo restores it). Separate from `--interaction-smoke`; grows with each spawn-authoring slice. A windowed run (no `--headless`) also saves `artifacts/spawn-authoring-{ghost,placed,fields,group,delete-dialog}.png`; the delete dialog is a separate window and is not captured |
+| `--content-browser-smoke` | Needs the world database (headless works). Ctrl+B opens the content browser, whose empty search lists only named creature templates; a search finds Hogger (448) first by name, double-clicking him opens the creature window on his entry, the Game objects tab with the Mailbox type filter lists only Mailboxes (32349), opening one names it on the status bar, and Ctrl+B closes the browser. A windowed run also saves `artifacts/content-browser-{creatures,objects}.png` |
 | `--content-smoke` | Behavior rules, speech, quest create and validation |
 | `--behavior-smoke` | Behavior editor driven by mouse and key events (headless works; AzerothCore only, so set `ACWORLD_CLIENT_PROFILE=wrath`) |
 | `--perf-breakdown` | Parks the camera at five Stormwind poses once streaming is idle and measures render CPU/GPU time and main/shadow-pass draw counts with each scene category (terrain, liquid, WMO shells, embedded doodads, ADT doodads, creatures, GameObjects, markers) hidden or shadow-less, plus sun shadows off. Run windowed; method and results in [`performance.md`](../performance.md) |

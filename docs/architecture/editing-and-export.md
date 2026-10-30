@@ -44,7 +44,7 @@ AzerothCore (`Scripts/Data/AzerothCore/`):
 | `AcInteractionSource` | `creature_template`, `creature`, `creature_queststarter`, `creature_questender`, `npc_vendor`, `creature_default_trainer`, `npc_spellclick_spells`, `gossip_menu`, `gossip_menu_option`, `npc_text`, `trainer`, `trainer_spell`, `item_template`, `quest_template`, `broadcast_text`, `points_of_interest`, `conditions`, `smart_scripts` |
 | `AcContentSource` | the four quest tables, starter and ender links, `creature_template` (AIName), `smart_scripts` (source types 0, 9, 2), `creature_text`, `areatrigger_scripts`, `areatrigger`, `creature`, `gameobject_template`, `item_template` |
 
-`AcContentSource` also provides name search (`SearchAsync`). `AcInteractionSource` uses `InteractionCatalog` (from `Scripts/Assets/Client`) to look up client-side names and icons.
+`AcContentSource` also provides name search (`SearchAsync`). The content browser's template search, `IDBSource.SearchTemplatesAsync`, is one shared query for both dialects (`DbTemplateSearch`): `creature_template` or `gameobject_template` by escaped name or exact entry, optionally one `type`, at most `DbLimits.MaxSearch` `TemplateHit`s with the exact entry first and unnamed rows only matched by entry. The type names come from `CreatureTypes` and `GameObjectTypes` in Foundation. `AcInteractionSource` uses `InteractionCatalog` (from `Scripts/Assets/Client`) to look up client-side names and icons.
 
 TrinityCore (`Scripts/Data/TrinityCore/`, opened through `TcDBSource`; coverage in [`docs/tc-status.md`](../tc-status.md)):
 
