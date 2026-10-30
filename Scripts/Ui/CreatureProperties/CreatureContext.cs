@@ -14,7 +14,7 @@ namespace ACWorldEdit;
 /// <see cref="Commit"/>; anything that changes raises <see cref="Changed"/> and sections redraw.
 /// A section with its own data (behavior, quests) keeps that in its own panel and only uses the hooks.
 /// </summary>
-public sealed class CreatureContext
+public sealed class CreatureContext : IEntityContext
 {
     public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public Func<IClientFiles?> Store { get; set; } = () => null;

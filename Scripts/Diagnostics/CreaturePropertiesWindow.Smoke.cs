@@ -11,12 +11,12 @@ public partial class CreaturePropertiesWindow
 {
     public string SmokeStatus => Context.Status;
     public uint SmokeCurrentMenu => (Section("gossip") as AcGossipSection)?.SmokeCurrentMenu ?? 0;
-    public bool SmokeOnVendorPage => active?.Id == "vendor";
-    public bool SmokeOnQuestDetail => active?.Id == "quests" && SmokeQuestDetail != 0;
+    public bool SmokeOnVendorPage => Active?.Id == "vendor";
+    public bool SmokeOnQuestDetail => Active?.Id == "quests" && SmokeQuestDetail != 0;
     public uint SmokeQuestDetail => (Section("quests") as QuestsSection)?.SmokeQuestDetail ?? 0;
     public bool SmokeLoaded => Context.View != null && Context.Snapshot != null;
     AcCreatureView? view => Context.AcView;
-    Node body => (Node?)active ?? this;
+    Node body => (Node?)Active ?? this;
 
     IEnumerable<T> Live<T>(Node root) where T : Node => root.FindChildren("*", typeof(T).Name, true, false).OfType<T>().Where(n => !n.IsQueuedForDeletion() && !IsDying(n) && (n is not CanvasItem item || item.IsVisibleInTree()));
 

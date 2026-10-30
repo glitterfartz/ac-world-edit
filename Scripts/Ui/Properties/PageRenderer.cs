@@ -8,11 +8,11 @@ namespace ACWorldEdit;
 /// <summary>
 /// Draws a <see cref="EntityPage"/> for either dialect: each group's fields as caption/editor rows,
 /// flag sets as checkboxes plus a raw value box, and the difficulty picker when any field binds to a
-/// difficulty row. Editors commit a <see cref="RowEdit"/> through the <see cref="CreatureContext"/>; with
+/// difficulty row. Editors commit a <see cref="RowEdit"/> through the <see cref="IEntityContext"/>; with
 /// no draft open every field is shown as text. A section hangs its own controls on a group through
 /// <see cref="After"/>.
 /// </summary>
-public sealed class PageRenderer(CreatureContext ctx)
+public sealed class PageRenderer(IEntityContext ctx)
 {
     int? difficulty;
     GridContainer? grid;

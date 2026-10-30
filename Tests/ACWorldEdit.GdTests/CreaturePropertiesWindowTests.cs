@@ -35,7 +35,7 @@ public class CreaturePropertiesWindowTests
         var listed = window.Sections.Where(s => s.Supports(window.Context.Dialect)).ToArray();
         AssertThat(picker.ItemCount).IsEqual(listed.Length);
         AssertThat(listed.Select(s => s.Id).ToArray()).IsEqual(new[] { "behavior", "stats", "gossip", "quests", "speech", "template", "trainer", "vendor" });
-        AssertThat(window.ActiveSection).IsEqual(CreaturePropertiesWindow.DefaultSection);
+        AssertThat(window.ActiveSection).IsEqual(CreaturePropertiesWindow.DefaultSectionId);
     }
 
     [TestCase]
