@@ -190,6 +190,7 @@ public sealed partial class SkyLighting : Node3D
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
         SetSkybox(table.SkyboxPath(table.Profile(activeParamsId)?.SkyboxId ?? 0));
         skyboxAnchor.Position = camera.Position;
+        ApplyFlat();
         ApplyDiagnosticBackground();
     }
 

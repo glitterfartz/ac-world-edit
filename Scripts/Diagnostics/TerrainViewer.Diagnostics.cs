@@ -51,8 +51,16 @@ public partial class TerrainViewer
         return null;
     }
 
-    void CaptureDiagnostics()
+    bool capturingDiagnostics;
+
+    async void CaptureDiagnostics()
     {
+        if (capturingDiagnostics)
+        {
+            return;
+        }
+
+        capturingDiagnostics = true;
         try
         {
             string rel = $"artifacts/diagnostics/{DateTime.Now:yyyyMMdd-HHmmss}";
@@ -121,6 +129,7 @@ public partial class TerrainViewer
                     pitchDegrees = MathF.Round(Mathf.RadToDeg(pitch), 1),
                 },
                 timeOfDay = Math.Round(sky.TimeOfDayHours, 2),
+                lighting = sky.Describe(),
                 fps = Engine.GetFramesPerSecond(),
                 loadedTiles = loaded.Count,
                 objectCount = objects.ObjectCount,
@@ -163,11 +172,32 @@ public partial class TerrainViewer
                 File.WriteAllLines(System.IO.Path.Combine(dir, "log-tail.txt"), lines);
             }
 
+            // The second screenshot has the sun, fog and tone mapping off, so a surface that is black in both is black
+            // in its data and one that is black only in the first is lighting or fog. A few frames let it render.
+            sky.Flat = true;
+            try
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                }
+
+                GetViewport().GetTexture().GetImage().SavePng(System.IO.Path.Combine(dir, "screenshot-flat.png"));
+            }
+            finally
+            {
+                sky.Flat = false;
+            }
+
             statusLog.Post($"Saved diagnostics to {rel}.");
         }
         catch (Exception e)
         {
             statusLog.Post("Diagnostics failed: " + e.Message);
+        }
+        finally
+        {
+            capturingDiagnostics = false;
         }
     }
 }
