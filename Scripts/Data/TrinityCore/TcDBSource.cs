@@ -25,6 +25,7 @@ public sealed class TcDBSource : IDBSource
         database = new WorldDatabase(connection);
         spawns = new(database);
         graveyards = new(database);
+        SqlExport.HotfixesDatabase = connection.Hotfixes?.Trim() is { Length: > 0 } hotfixesName ? hotfixesName : WorldConnection.DefaultHotfixes;
         var hotfixes = new TcHotfixSource(connection.HotfixesSettings);
         areaTriggers = new(database, lookup, hotfixes);
         interaction = new(database, lookup, hotfixes);

@@ -23,6 +23,16 @@ public class TrinityReadDbTests
     static IDBSource Open(IClientLookup? lookup = null) => DBSource.Open(Environments.TrinityConnection()!, lookup);
 
     [TcDbFact]
+    public async Task ASnapshotOfASpawnCarriesItsRowAndIgnoresDraftRowsOfAnotherDatabase()
+    {
+        var source = Open();
+        var staged = TcBroadcastText.Create(4_000_000_000u, "Staged", 2_000_000_000)[0];
+        var snapshot = await source.ReadInteractionAsync(295, 280710, [(TcTables.BroadcastText, TcTables.BroadcastText.KeyOf(staged.After!))], rows => rows, null, CancellationToken.None);
+        Assert.Equal(0u, snapshot.Rows.Get(TcTables.SpawnCreature, "280710")!.U("map"));
+        Assert.Empty(snapshot.Rows.All(TcTables.BroadcastText));
+    }
+
+    [TcDbFact]
     public async Task GossipReferenceChecksResolveMenusAndExactBroadcastIds()
     {
         var source = Open();
@@ -505,6 +515,7 @@ public class TrinityReadDbTests
         public TcExpectedStat? ExpectedStat(uint level, int expansion) => null;
         public TcExpectedStatMod? ExpectedStatMod(uint id) => null;
         public IReadOnlyList<TcContentTuningMod> ContentTuningMods(uint contentTuningId) => [];
+        public uint MaxBroadcastTextId() => 0;
         public int? MilestoneSeason(int mythicPlusSeasonId) => null;
         public uint MapDifficultyTuning(uint mapId, int difficultyId) => 0;
         public uint AreaTuning(uint areaId) => 0;

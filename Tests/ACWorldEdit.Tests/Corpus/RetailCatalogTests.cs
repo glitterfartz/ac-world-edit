@@ -292,6 +292,22 @@ public class RetailAnimationTests
     }
 
     [RetailClientFact]
+    public void ScalingLookupsReadTheClientsTuningTables()
+    {
+        var lookup = new RetailClientLookup(RetailData.Tables);
+        // Goldshire (area 87) has no tuning of its own and walks up to Elwynn Forest (zone 12), which has 73.
+        Assert.Equal(73u, lookup.AreaTuning(12));
+        Assert.Equal(73u, lookup.AreaTuning(87));
+        Assert.Equal(0u, lookup.AreaTuning(uint.MaxValue));
+        // Map 33 in difficulty 1 has its own tuning; the open world (map 0, no difficulty) has none.
+        Assert.Equal(213u, lookup.MapDifficultyTuning(33, 1));
+        Assert.Equal(0u, lookup.MapDifficultyTuning(0, 0));
+        Assert.Equal(2, lookup.MilestoneSeason(3));
+        Assert.Null(lookup.MilestoneSeason(int.MaxValue));
+        Assert.True(lookup.MaxBroadcastTextId() > 300_000);
+    }
+
+    [RetailClientFact]
     public void ReferenceTablesAnswerExistenceChecks()
     {
         var lookup = new RetailClientLookup(RetailData.Tables);

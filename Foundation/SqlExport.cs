@@ -171,7 +171,22 @@ public static class SqlExport
     internal static string Absent(string label, string table, string guard) => $"SELECT {Quote(label)} AS `change`, IF(COUNT(*) = 0, 'ok', 'STALE') AS `state` FROM {TableIdent(table)} WHERE {guard};";
 
     /// <summary>A table name, quoted per part: <c>hotfixes.broadcast_text</c> becomes <c>`hotfixes`.`broadcast_text`</c> (a row of another database on the same server).</summary>
-    internal static string TableIdent(string name) => string.Join('.', name.Split('.').Select(Ident));
+    internal static string TableIdent(string name)
+    {
+        var parts = name.Split('.');
+        if (parts.Length == 2 && parts[0] == "hotfixes")
+        {
+            parts[0] = HotfixesDatabase;
+        }
+
+        return string.Join('.', parts.Select(Ident));
+    }
+
+    /// <summary>
+    /// The database the <c>hotfixes.</c> qualifier of a table name stands for: the connection's hotfixes database,
+    /// set when a TrinityCore source opens (it is "hotfixes" unless the connection names another).
+    /// </summary>
+    public static string HotfixesDatabase { get; set; } = "hotfixes";
 
     internal static string Ident(string name) => "`" + name.Replace("`", "``", StringComparison.Ordinal) + "`";
 

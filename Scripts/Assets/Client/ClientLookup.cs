@@ -37,6 +37,9 @@ public interface IClientLookup : ITcStatData
     /// <summary>Broadcast text for an ID, or null when the client has none. Text1 is the female form.</summary>
     string? BroadcastText(uint id, bool female = false);
 
+    /// <summary>The highest ID in the client's BroadcastText table, so a new text can be numbered above it.</summary>
+    uint MaxBroadcastTextId();
+
     IReadOnlyList<(uint Id, string Text)> SearchBroadcastText(string term, int limit);
 
     ClientItem? Item(uint id);
@@ -173,6 +176,8 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
 
         return text.Length == 0 ? null : text;
     }
+
+    public uint MaxBroadcastTextId() => (uint)Table("BroadcastText").Keys.DefaultIfEmpty(0).Max();
 
     public IReadOnlyList<(uint Id, string Text)> SearchBroadcastText(string term, int limit)
     {

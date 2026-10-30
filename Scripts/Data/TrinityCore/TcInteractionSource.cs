@@ -40,8 +40,20 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         await AcInteractionSource.Load(session, rows, TcTables.QuestStarter, "id=@k0", [entry], token);
         await AcInteractionSource.Load(session, rows, TcTables.QuestEnder, "id=@k0", [entry], token);
         await AcInteractionSource.Load(session, rows, TcTables.SpellClick, "npc_entry=@k0", [entry], token);
+        if (guid != 0)
+        {
+            // The spawn's cached zone and area tell the stats page where a creature without a content tuning stands.
+            await AcInteractionSource.Load(session, rows, TcTables.SpawnCreature, "guid=@k0", [guid], token);
+        }
+
         foreach (var (table, key) in draftKeys)
         {
+            // Rows of another database (a new broadcast text) exist only in the draft; there is nothing to read back.
+            if (table.SqlName.Contains('.'))
+            {
+                continue;
+            }
+
             var parts = key.Split('|');
             await AcInteractionSource.Load(session, rows, table, string.Join(" AND ", table.Key.Select((k, i) => $"`{k}`=@k{i}")), parts.Cast<object>().ToArray(), token);
         }
@@ -97,6 +109,11 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         try
         {
             (lookup.MaxBroadcastTextId, lookup.MaxHotfixId) = await hotfixes.ReadMaxIdsAsync(token).ConfigureAwait(false);
+            // The client's own table loads under the hotfixes database's rows, so a new ID must clear both.
+            if (lookup.MaxBroadcastTextId != 0 && client != null)
+            {
+                lookup.MaxBroadcastTextId = Math.Max(lookup.MaxBroadcastTextId, client.MaxBroadcastTextId());
+            }
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
