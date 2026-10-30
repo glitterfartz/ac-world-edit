@@ -134,6 +134,11 @@ public static class AcInteractionRules
     public static IEnumerable<InteractionIssue> Check(AcCreatureView view, RowSet rows, IInteractionLookup lookup)
     {
         uint entry = view.Entry, flags = view.NpcFlag;
+        foreach (var issue in AcStatsPage.Check(rows, entry))
+        {
+            yield return issue;
+        }
+
         bool MenuExists(uint id) => rows.All(AcTables.GossipMenu).Any(r => r.U("MenuID") == id) || lookup.MenuExists(id);
         foreach (var menu in view.Menus.Values)
         {

@@ -34,6 +34,9 @@ public interface IWorldSchema
     /// <summary>The creature template page: shared groups, this dialect's fields.</summary>
     CreaturePage TemplatePage { get; }
 
+    /// <summary>The creature stats page: level, class and scaling fields. The values they produce are computed per dialect.</summary>
+    CreaturePage StatsPage { get; }
+
     /// <summary>The creature's vendor rows and per-item fields.</summary>
     ItemListSpec VendorPage { get; }
 
@@ -66,6 +69,7 @@ public sealed class AcSchema : IWorldSchema
     public ITableCatalog Tables => AcTables.Instance;
     public ISqlDialect Sql => AcSqlDialect.Instance;
     public CreaturePage TemplatePage => AcCreaturePage.Page;
+    public CreaturePage StatsPage => AcStatsPage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.AzerothCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.AzerothCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.AzerothCore;
@@ -84,6 +88,7 @@ public sealed class TcSchema : IWorldSchema
     public ITableCatalog Tables => TcTables.Instance;
     public ISqlDialect Sql => TcSqlDialect.Instance;
     public CreaturePage TemplatePage => TcCreaturePage.Page;
+    public CreaturePage StatsPage => TcStatsPage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.TrinityCore;

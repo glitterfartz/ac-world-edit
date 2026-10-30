@@ -56,7 +56,7 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
         }
 
         renderer.After["multipliers"] = () => Results(v);
-        renderer.Render(this, TcStatsPage.Page, Ctx.Effective, v.Entry, Ctx.Editable);
+        renderer.Render(this, Ctx.Schema.StatsPage, Ctx.Effective, v.Entry, Ctx.Editable);
     }
 
     void Results(TcCreatureView v)
