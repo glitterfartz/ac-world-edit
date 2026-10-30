@@ -87,4 +87,16 @@ public class NullableColumnTests
         Assert.Null(AcTables.SpawnCreature.Nullable);
         Assert.Throws<InvalidDataException>(() => Row.Of(AcTables.SpawnCreature.Columns.Select(c => (c.Name, c.Kind == ColumnKind.Text ? "" : c.Kind == ColumnKind.Float ? (object)0f : 0u)).ToArray()).With("npcflag", null).Validate(AcTables.SpawnCreature));
     }
+
+    [Fact]
+    public void AZeroInAColumnTheCatalogDoesNotModelAsNullableAlsoGuardsNullButAKeyStaysPlain()
+    {
+        // Real rows have NULL in columns such as gossip_menu_option.SpellID; the loader reads them as 0.
+        var row = Row.Of(TcTables.GossipOption.Columns.Select(c => (c.Name, (object)(c.Kind == ColumnKind.Text ? "" : 0))).ToArray()).With("MenuID", 5u);
+        var sql = SqlExport.Build("tc", [], [InteractionEdits.Delete(TcTables.GossipOption, row)], DateTime.UnixEpoch, schema: TcSchema.Instance);
+        Assert.Contains("(`SpellID` = 0 OR `SpellID` IS NULL)", sql.Apply);
+        Assert.Contains("`MenuID` = 5 AND", sql.Apply);
+        Assert.DoesNotContain("(`MenuID` = 5", sql.Apply);
+        Assert.DoesNotContain("(`OptionID` = 0 OR", sql.Apply);
+    }
 }

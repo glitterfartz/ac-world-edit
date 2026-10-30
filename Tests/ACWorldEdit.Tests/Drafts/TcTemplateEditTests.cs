@@ -38,7 +38,7 @@ public class TcTemplateEditTests
             ("StaticFlags1", 0u), ("StaticFlags2", 0u), ("StaticFlags3", 0u), ("StaticFlags4", 0u), ("StaticFlags5", 0u), ("StaticFlags6", 0u), ("StaticFlags7", 0u), ("StaticFlags8", 0u));
         var edit = new RowEdit("creature_template_difficulty", TcTables.CreatureDifficulty.KeyOf(before), before, before.With("LootID", 123u));
         var scripts = SqlExport.Build("tc", [], [edit], new DateTime(2026, 1, 1), null, TcSchema.Instance);
-        Assert.Contains("UPDATE `creature_template_difficulty` SET `LootID` = 123 WHERE `Entry` = 54 AND `DifficultyID` = 0 AND `LootID` = 0;", scripts.Apply);
+        Assert.Contains("UPDATE `creature_template_difficulty` SET `LootID` = 123 WHERE `Entry` = 54 AND `DifficultyID` = 0 AND (`LootID` = 0 OR `LootID` IS NULL);", scripts.Apply);
     }
 
     [Fact]

@@ -150,12 +150,17 @@ public static class SqlExport
         }
 
         var kind = schema.Columns.First(c => c.Name == column).Kind;
-        return kind switch
+        string guard = kind switch
         {
             ColumnKind.Float => Near(column, double.Parse(value, CultureInfo.InvariantCulture)),
             ColumnKind.Text => TextEq(column, value),
             _ => $"{Ident(column)} = {Literal(kind, value)}"
         };
+        // The loader reads a NULL number as 0, and real rows have NULL in columns the catalog does not model as nullable,
+        // so a guard on a 0 in such a column must also accept NULL or it never matches the row it was read from.
+        // (Key columns cannot be NULL, and a guard on one stays a plain comparison the index can serve.)
+        bool zero = kind != ColumnKind.Text && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double number) && number == 0;
+        return zero && !schema.IsNullable(column) && !schema.Key.Contains(column) ? $"({guard} OR {Ident(column)} IS NULL)" : guard;
     }
 
     // ---- primitives ------------------------------------------------------------------------
