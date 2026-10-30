@@ -55,3 +55,32 @@ public class StatsPageTests
     [Fact]
     public void ACreatureWithoutAStatsRowHasNothingToCheck() => Assert.Empty(AcStatsPage.Check(new RowSet(), 7));
 }
+
+/// <summary>Draft rows saved before a table gained columns still load: <see cref="TableSchema.Upgrade"/> fills them with the database's defaults.</summary>
+public class SavedRowUpgradeTests
+{
+    static Row Without(TableSchema table, params string[] columns) =>
+        Row.Of(table.Columns.Where(c => !columns.Contains(c.Name)).Select(c => (c.Name, (object)(c.Kind == ColumnKind.Text ? "" : 0))).ToArray());
+
+    [Theory]
+    [InlineData("gossip_menu_option", new[] { "BoxBroadcastTextID" })]
+    [InlineData("trainer_spell", new[] { "ReqAbility1", "ReqAbility2", "ReqAbility3" })]
+    public void AzerothCoreRowsSavedWithoutTheNewColumnsGetDefaults(string name, string[] added)
+    {
+        var table = AcSchema.Instance.Tables.Find(name);
+        var saved = Without(table, added);
+        Assert.Throws<InvalidDataException>(() => { saved.Validate(table); });
+        var upgraded = table.Upgrade(saved);
+        upgraded.Validate(table);
+        Assert.All(added, column => Assert.Equal("0", upgraded[column]));
+    }
+
+    [Fact]
+    public void ATrinityCoreTemplateSavedWithoutTheAttackColumnsGetsTheDatabasesDefaults()
+    {
+        var table = TcTables.CreatureTemplate;
+        var upgraded = table.Upgrade(Without(table, "BaseAttackTime", "RangeAttackTime", "BaseVariance", "RangeVariance"));
+        upgraded.Validate(table);
+        Assert.Equal(["0", "0", "1", "1"], new[] { "BaseAttackTime", "RangeAttackTime", "BaseVariance", "RangeVariance" }.Select(c => upgraded[c]));
+    }
+}

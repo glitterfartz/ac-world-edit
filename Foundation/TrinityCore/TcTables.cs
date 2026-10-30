@@ -40,7 +40,7 @@ public sealed class TcTables : ITableCatalog
         ("AIName", ColumnKind.Text, 64),
         ("ScriptName", ColumnKind.Text, 64),
         ("flags_extra", ColumnKind.UInt, 0)
-    ]);
+    ], Added: [("BaseAttackTime", "0"), ("RangeAttackTime", "0"), ("BaseVariance", "1"), ("RangeVariance", "1")]);
 
     public static readonly TableSchema CreatureDifficulty = new("creature_template_difficulty", ["Entry", "DifficultyID"],
     [
