@@ -65,6 +65,7 @@ Downloads the pinned official StormLib 9.40 x64 DLL into `artifacts/`, checks it
 | Tool | Purpose |
 |---|---|
 | `launch_viewer.py` | Builds `ACWorldEdit.csproj` and launches Godot. `--smoke` runs the terrain smoke headless. `--check-assets` runs the corpus tests. Godot is found through `--godot-path`, `GODOT_BIN` or `PATH`. Sets `APPDATA` and `LOCALAPPDATA` into `.build-env/` |
+| `Tools/generate_condition_catalog.py` | Regenerates `Foundation/AzerothCore/AcConditionTypes.cs` from AzerothCore's `ConditionMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcConditionTypes.cs` from TrinityCore's (the AzerothCore header is a third argument, for reusing labels). Curated names, sentences and source key labels live in the script |
 | `Tools/generate_smart_catalog.py` | Regenerates `Foundation/AzerothCore/AcSmartTypes.cs` from AzerothCore's `SmartScriptMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcSmartTypes.cs` from TrinityCore's |
 | `Tools/get_casclib.py` | Copies a locally built `CascLib.dll` into `native/win-x64/`; the project copies it to the output when present |
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (CC BY-SA 4.0), pinned by its commit; `definitions/*.dbd` are copied to output as `definitions/` |

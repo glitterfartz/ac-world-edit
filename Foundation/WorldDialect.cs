@@ -48,6 +48,9 @@ public interface IWorldSchema
 
     /// <summary>SmartAI: event, action and target types, smart_scripts columns and the loader rules.</summary>
     SmartCatalog Smart { get; }
+
+    /// <summary>The `conditions` table's condition types and source types, with their sentences and key labels.</summary>
+    ConditionCatalog Conditions { get; }
 }
 
 /// <summary>The schema object of each dialect.</summary>
@@ -75,6 +78,7 @@ public sealed class AcSchema : IWorldSchema
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.AzerothCore;
     public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.AzerothCore;
     public SmartCatalog Smart => SmartCatalog.Ac;
+    public ConditionCatalog Conditions => ConditionCatalog.Ac;
 }
 
 /// <summary>
@@ -94,4 +98,5 @@ public sealed class TcSchema : IWorldSchema
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.TrinityCore;
     public QuestLinksPageSpec QuestLinksPage => Foundation.QuestLinksPage.TrinityCore;
     public SmartCatalog Smart => SmartCatalog.Trinity;
+    public ConditionCatalog Conditions => ConditionCatalog.Trinity;
 }

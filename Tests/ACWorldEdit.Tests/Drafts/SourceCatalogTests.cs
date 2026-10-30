@@ -83,6 +83,7 @@ public class SourceCatalogTests
         public TrainerPageSpec TrainerPage => AcSchema.Instance.TrainerPage;
         public QuestLinksPageSpec QuestLinksPage => AcSchema.Instance.QuestLinksPage;
         public SmartCatalog Smart => SmartCatalog.Trinity;
+        public ConditionCatalog Conditions => ConditionCatalog.Trinity;
         public IReadOnlyList<TableSchema> All => [Wide];
         public TableSchema Find(string name) => name == Wide.Name ? Wide : throw new InvalidDataException(name);
     }

@@ -67,7 +67,7 @@ Implementation:
 - **Condition engine (model only).** Add `ConditionCatalog` per dialect: source types from `ConditionMgr.h` (TC; AC's equivalent), condition types with parameter kinds, and sentences such as "Player has aura {spell}". Generate it with a script modelled on `Tools/generate_smart_catalog.py`. The visual builder is Phase 12.
 - **Content browser shell.** A dockable bottom panel (Unreal "Content Browser" style) with tabs per entity kind (creature templates, GO templates, later loot tables, pools, events). It offers search, filters and a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Phase 11 makes it drag-to-place.
 
-Docs: `editing-and-export.md` (allocator, nullable, references), `viewer-runtime.md` (shell, browser), `tc-status.md` rows. Correct the tc-status note on condition source "type 20": the TC enum goes from 19 to 21.
+Docs: `editing-and-export.md` (allocator, nullable, references), `viewer-runtime.md` (shell, browser), `tc-status.md` rows. TrinityCore's condition source ids run 0-36 with 20 unused (the catalog skips it).
 
 ---
 

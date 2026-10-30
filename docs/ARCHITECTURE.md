@@ -150,7 +150,7 @@ A client folder is opened by `ClientServices`, which wires an `IClientFiles` sou
 | `Foundation/` | Draft model, SQL export, SmartAI and quest rules, coordinates |
 | `Shaders/` | `terrain.gdshader`, `liquid.gdshader`, `model.gdshader` |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
-| `Tools/` | `generate_smart_catalog.py`, `get_casclib.py` |
+| `Tools/` | `generate_smart_catalog.py`, `generate_condition_catalog.py`, `get_casclib.py` |
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (`.dbd` layouts), pinned by the submodule commit |
 | `launch_viewer.py` | Build and launch helper, `--smoke` and `--check-assets` modes |
 
@@ -168,5 +168,6 @@ Generated or local-only folders (`artifacts/`, `native/`, `.build-env/`, `bin/`,
 - **FileDataID (FDID)**: a numeric retail file identifier. The app encodes it in path strings as `fdid:N`.
 - **MH2O**: retail liquid data in the root ADT.
 - **SmartAI**: the scripting table `smart_scripts` of both servers (the columns and ID ranges differ; `SmartCatalog` holds each dialect's).
+- **Conditions**: the `conditions` table's condition types and source types (the ids and meanings differ; `ConditionCatalog` holds each dialect's, reached through `IWorldSchema.Conditions`).
 - **Draft**: a locally stored, undoable set of edits that is not yet in the database.
 - **Apply / revert script**: the generated SQL that applies a set of changes, and the SQL that undoes them.
