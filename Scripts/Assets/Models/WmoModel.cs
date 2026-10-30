@@ -176,10 +176,11 @@ public static class WmoModel
                 }
 
                 string texture = Slot(12);
-                // The DF shader (23) leaves texture_1 empty and keeps its diffuse in texture_2.
-                if (texture.Length == 0 && b.U(m + 4) == 23)
+                // The DF shader (23) keeps its diffuse in texture_2; texture_1 is empty or a tiny filler shared
+                // across buildings (solid black in the Khaz Algar spires), which drew the whole building near-black.
+                if (b.U(m + 4) == 23 && Slot(24) is { Length: > 0 } diffuse)
                 {
-                    texture = Slot(24);
+                    texture = diffuse;
                 }
 
                 int[] indices = new int[count];
@@ -331,7 +332,7 @@ public static class WmoModel
                 }
             }
 
-            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode, Layers: layers == null ? null : layers with { Uv2 = uv2.ToArray(), Alpha2 = alpha2.ToArray() });
+            return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode, Layers: layers == null ? null : layers with { Uv2 = uv2.ToArray(), Alpha2 = alpha2.ToArray() }, Debug: string.Join(" / ", group.Select(s => s.Debug).Where(d => d != null).Distinct()));
         }).ToArray();
         return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
     }
