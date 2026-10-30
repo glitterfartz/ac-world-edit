@@ -4,7 +4,7 @@ namespace ACWorldEdit.Assets;
 /// One batch of a decoded model as text, for the diagnostic dump: which textures and combiner it
 /// resolved to and the shader it came from, without the vertex data.
 /// </summary>
-public sealed record SurfaceReport(string Texture, int Blend, bool TwoSided, bool Unlit, string ColorMode, int Vertices, int Triangles, string? Combiner, string[] LayerTextures, string[] LayerCoords, string? Debug);
+public sealed record SurfaceReport(string Texture, int Blend, bool TwoSided, bool Unlit, string ColorMode, int Vertices, int Triangles, string? Combiner, string[] LayerTextures, string[] LayerCoords, string? Debug, float[]? VertexColorMeanRgba);
 
 /// <summary>
 /// A model's batches and decode warnings. A published model drops its textures, layers and warnings
@@ -24,6 +24,7 @@ public sealed record ModelReport(SurfaceReport[] Surfaces, string[] Warnings)
             s.Layers?.Combiner.ToString(),
             s.Layers?.Textures ?? [],
             [.. (s.Layers?.Coords ?? []).Select(c => c.ToString())],
-            s.Debug))],
+            s.Debug,
+            s.Colors is { Length: > 0 } c ? [MathF.Round(c.Average(v => v.X), 2), MathF.Round(c.Average(v => v.Y), 2), MathF.Round(c.Average(v => v.Z), 2), MathF.Round(c.Average(v => v.W), 2)] : null))],
         [.. data.Warnings.Distinct()]);
 }

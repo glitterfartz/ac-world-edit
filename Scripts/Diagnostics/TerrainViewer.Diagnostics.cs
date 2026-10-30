@@ -23,15 +23,26 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// Nearest ray hit on loaded terrain, found by marching the ray over the height maps. Null when the
-    /// ray leaves the loaded tiles first.
+    /// Nearest place the ray passes from above the terrain surface to below it, found by marching the
+    /// ray over the height maps. Null when the ray leaves the loaded tiles first, or starts below the
+    /// surface (the terrain is single-sided, so from underneath it is not what you see).
     /// </summary>
     Vector3? TerrainRayHit(PickRay ray)
     {
+        bool above = false;
         for (float t = 0; t < 1500; t += 2)
         {
             var p = ray.Origin + ray.Direction * t;
-            if (TerrainHeightAt(p.X, p.Z) is float h && p.Y <= h)
+            if (TerrainHeightAt(p.X, p.Z) is not float h)
+            {
+                continue;
+            }
+
+            if (p.Y > h)
+            {
+                above = true;
+            }
+            else if (above)
             {
                 return new(p.X, h, p.Z);
             }
@@ -120,6 +131,12 @@ public partial class TerrainViewer
                     usedScreenCentre = centred,
                     terrainHit = terrainHit is Vector3 t ? new { view = Round(t), server = ServerPoint(t) } : null,
                     candidates = candidates.Select(Entry).ToList(),
+                },
+                terrain = new
+                {
+                    aimedAt = terrainHit != null ? "the point where the aim ray meets the surface" : "the point below the camera (the ray found no surface)",
+                    cameraHeightAboveSurface = TerrainHeightAt(camera.Position.X, camera.Position.Z) is float ground ? MathF.Round(camera.Position.Y - ground, 1) : (float?)null,
+                    report = TerrainReport(terrainHit ?? new Vector3(camera.Position.X, 0, camera.Position.Z)),
                 },
                 nearby = nearby.Select(Entry).ToList(),
                 models = models_,
