@@ -301,6 +301,17 @@ public class TrinityReadDbTests
     }
 
     [TcDbFact]
+    public async Task TheHotfixesMaximumIdsNumberNewBroadcastTexts()
+    {
+        var source = new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings);
+        var (broadcast, hotfix) = await source.ReadMaxIdsAsync(CancellationToken.None);
+        Assert.True(broadcast > 0);
+        Assert.True(hotfix > 0);
+        // A text the tool writes sits above every row the database already has.
+        Assert.Empty((await source.ReadBroadcastTextsAsync([broadcast + 1], CancellationToken.None)));
+    }
+
+    [TcDbFact]
     public async Task TheHotfixesAreaTriggerTableReadsAndIsEmptyOrWellFormed()
     {
         var source = new TcHotfixSource(Environments.TrinityConnection()!.HotfixesSettings);

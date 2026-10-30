@@ -94,6 +94,15 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         await ReadQuestTitles(session, final, lookup, token);
         await AcInteractionSource.ReadCounts(session, "SELECT SourceEntry,COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId=19 AND SourceEntry IN ({0}) GROUP BY SourceEntry", final.All(TcTables.QuestStarter).Concat(final.All(TcTables.QuestEnder)).Select(r => r.U("quest")).Distinct().ToArray(), lookup.QuestConditionCounts, token);
         await ReadTexts(final, lookup, token);
+        try
+        {
+            (lookup.MaxBroadcastTextId, lookup.MaxHotfixId) = await hotfixes.ReadMaxIdsAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // Without the hotfixes database a new text cannot be numbered; the editor says so when asked to write one.
+            lookup.MaxBroadcastTextId = 0;
+        }
         // Shared vendor lists (negative items), one level deep like the view.
         foreach (uint list in final.All(TcTables.Vendor).Where(r => r.I("item") < 0).Select(r => (uint)-r.I("item")).Distinct())
         {

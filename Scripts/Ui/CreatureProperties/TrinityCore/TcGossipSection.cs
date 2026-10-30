@@ -155,6 +155,17 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
                     var box = new HBoxContainer();
                     box.AddChild(edit);
                     box.AddChild(find);
+                    if (field.Column != "ActionMenuID")
+                    {
+                        var write = new Button { Text = "New…", Name = "NewBroadcast_" + field.Column, TooltipText = "Write a new broadcast text for this option." };
+                        write.Pressed += () => PromptText($"New {field.Label.ToLowerInvariant()}", text => Ctx.Try(() =>
+                        {
+                            if (NewText(text, out uint id, out var created))
+                                Ctx.Commit($"Write {field.Label.ToLowerInvariant()}", [.. created, .. ItemListSpec.Change(page.Options.Table, row, row.With(field.Column, id))]);
+                        }));
+                        box.AddChild(write);
+                    }
+
                     return box;
                 }
                 if (field.Column is "OptionText" or "BoxText")
@@ -276,27 +287,77 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         AddChild(box);
         var broadcast = new LineEdit { Name = newMenu ? "NewMenuBroadcast" : "AddGreetingBroadcast", PlaceholderText = "Greeting broadcast ID", CustomMinimumSize = new(160, 0), TooltipText = "The broadcast text the greeting plays." };
         var find = new Button { Name = newMenu ? "ChooseNewMenuBroadcast" : "ChooseGreetingBroadcast", Text = "…", TooltipText = "Search broadcast texts by ID or text." };
+        var typed = new LineEdit { Name = newMenu ? "NewMenuText" : "AddGreetingText", PlaceholderText = "or write a new greeting", CustomMinimumSize = new(220, 0), TooltipText = "With no ID above, this text becomes a new broadcast text." };
         var add = new Button { Name = newMenu ? "NewMenu" : "AddGreeting", Text = newMenu ? "+ New menu" : "Add greeting", TooltipText = newMenu ? "Create a menu with this greeting and let the creature open it." : "Give this menu a greeting." };
         add.Pressed += () => Ctx.Try(() =>
         {
-            uint broadcastId = uint.Parse(broadcast.Text, CultureInfo.InvariantCulture);
+            List<RowEdit> edits = [];
+            uint broadcastId = 0;
+            if (broadcast.Text.Trim().Length == 0 && typed.Text.Trim().Length > 0)
+            {
+                if (!NewText(typed.Text.Trim(), out broadcastId, out var created)) return;
+                edits.AddRange(created);
+            }
+            else
+            {
+                broadcastId = uint.Parse(broadcast.Text, CultureInfo.InvariantCulture);
+            }
+
             uint text = Ctx.NextId(TcTables.NpcText, "ID", Ctx.Snapshot!.Lookup.MaxTextId);
             uint target = newMenu ? NewMenuId() : menu;
-            List<RowEdit> edits = [Insert(TcTables.NpcText, TcGossipRules.NewGreeting(text, broadcastId)), Insert(TcTables.GossipMenu, Row.Of(("MenuID", target), ("TextID", text)))];
+            edits.AddRange([Insert(TcTables.NpcText, TcGossipRules.NewGreeting(text, broadcastId)), Insert(TcTables.GossipMenu, Row.Of(("MenuID", target), ("TextID", text)))]);
             if (newMenu)
             {
                 edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", v.Entry), ("MenuID", target))));
                 EnsureGossipFlag(v, edits);
             }
 
-            _ = SaveReference(newMenu ? $"New gossip menu {target}" : "Add greeting", [.. edits], broadcastId, Reference.Broadcast);
+            // A text written here is not in any database yet, so there is nothing to look up.
+            _ = SaveReference(newMenu ? $"New gossip menu {target}" : "Add greeting", [.. edits], edits.Any(e => e.Table == TcTables.BroadcastText.Name) ? 0 : broadcastId, Reference.Broadcast);
             if (newMenu) selected = target;
         });
         broadcast.TextSubmitted += _ => add.EmitSignal(BaseButton.SignalName.Pressed);
         find.Pressed += () => ChooseBroadcast(picked => broadcast.Text = picked.ToString(CultureInfo.InvariantCulture));
         box.AddChild(broadcast);
         box.AddChild(find);
+        box.AddChild(typed);
         box.AddChild(add);
+    }
+
+    /// <summary>
+    /// The rows for a new broadcast text numbered after the highest in the hotfixes database and this draft;
+    /// false, with a message, when that database is not connected.
+    /// </summary>
+    bool NewText(string text, out uint id, out RowEdit[] edits)
+    {
+        var lookup = Ctx.Snapshot!.Lookup;
+        if (lookup.MaxBroadcastTextId == 0)
+        {
+            Ctx.Status = "A new text is stored in the hotfixes database, which is not connected.";
+            id = 0;
+            edits = [];
+            return false;
+        }
+
+        id = Ctx.NextId(TcTables.BroadcastText, "ID", lookup.MaxBroadcastTextId);
+        edits = TcBroadcastText.Create(id, text, (int)Ctx.NextId(TcTables.HotfixData, "Id", (uint)lookup.MaxHotfixId));
+        return true;
+    }
+
+    /// <summary>Ask for one line of text; <paramref name="accepted"/> gets it trimmed when it is not empty.</summary>
+    void PromptText(string title, Action<string> accepted)
+    {
+        var dialog = new ConfirmationDialog { Title = title, OkButtonText = "Create" };
+        var text = new LineEdit { Name = "NewText", PlaceholderText = "Text", CustomMinimumSize = new(420, 0) };
+        dialog.AddChild(text);
+        dialog.Confirmed += () =>
+        {
+            if (text.Text.Trim() is { Length: > 0 } entered) accepted(entered);
+            dialog.QueueFree();
+        };
+        dialog.Canceled += dialog.QueueFree;
+        AddChild(dialog);
+        dialog.PopupCentered();
     }
 
     /// <summary>A MenuID free in both gossip_menu and gossip_menu_option (the options of a menu can exist without a gossip_menu row).</summary>
@@ -386,9 +447,16 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             weight.TextSubmitted += _ => Save();
             var find = new Button { Text = "…", TooltipText = "Search broadcast texts by ID or text." };
             find.Pressed += () => ChooseBroadcast(picked => id.Text = picked.ToString(CultureInfo.InvariantCulture), row.U($"BroadcastTextID{slot}") is var now and not 0 ? now : null);
+            var write = new Button { Text = "New…", Name = $"NewGreetingText{slot}", TooltipText = "Write a new broadcast text for this slot." };
+            write.Pressed += () => PromptText($"New greeting for slot {slot}", text => Ctx.Try(() =>
+            {
+                if (NewText(text, out uint created, out var rows))
+                    Ctx.Commit("Write greeting text", [.. rows, .. TcGossipRules.SetVariant(row, slot, created, float.TryParse(weight.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out float w) && w > 0 ? w : 1f)]);
+            }));
             var pick = new HBoxContainer();
             pick.AddChild(id);
             pick.AddChild(find);
+            pick.AddChild(write);
             grid.AddChild(pick);
             grid.AddChild(weight);
             grid.AddChild(save);

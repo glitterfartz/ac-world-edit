@@ -47,6 +47,10 @@ public sealed class InteractionLookupData(InteractionCatalog? catalog, IClientLo
     public readonly Dictionary<uint, List<Row>> ReferenceVendors = [];
     public readonly Dictionary<uint, int> MenuUserCounts = [], TextUserCounts = [], TrainerUserCounts = [];
     public uint MaxMenuId, MaxTextId, MaxTrainerId;
+
+    /// <summary>The highest hotfixes.broadcast_text ID and hotfix_data Id (TrinityCore); new texts take the next of each.</summary>
+    public uint MaxBroadcastTextId;
+    public int MaxHotfixId;
     /// <summary>creature_classlevelstats keyed by (class, level).</summary>
     public readonly Dictionary<(uint Class, uint Level), ClassLevelStats> ClassLevelStats = [];
     /// <summary>TrinityCore's creature_classlevelstats (mana and attack power only) keyed by (level, class).</summary>

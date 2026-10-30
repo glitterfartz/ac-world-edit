@@ -92,6 +92,22 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return texts;
     }
 
+    /// <summary>The highest broadcast_text ID and hotfix_data Id, for numbering new rows.</summary>
+    public async Task<(uint BroadcastText, int HotfixData)> ReadMaxIdsAsync(CancellationToken token)
+    {
+        if (!Available)
+        {
+            return (0, 0);
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("SELECT COALESCE((SELECT MAX(ID) FROM broadcast_text),0), COALESCE((SELECT MAX(Id) FROM hotfix_data),0)", connection, transaction);
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        await reader.ReadAsync(token).ConfigureAwait(false);
+        return (Convert.ToUInt32(reader.GetValue(0)), Convert.ToInt32(reader.GetValue(1)));
+    }
+
     /// <summary>Broadcast texts whose male or female text contains the term, newest build of an ID first, bounded.</summary>
     public async Task<IReadOnlyList<(uint Id, string Text)>> SearchBroadcastTextsAsync(string term, int limit, CancellationToken token)
     {

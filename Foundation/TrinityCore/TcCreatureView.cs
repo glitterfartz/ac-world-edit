@@ -61,9 +61,9 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
             var options = rows.All(TcTables.GossipOption).Where(r => r.U("MenuID") == menu).OrderBy(r => r.U("OptionID")).Select(r =>
             {
                 uint broadcast = r.U("OptionBroadcastTextID");
-                string text = broadcast != 0 && lookup.BroadcastText(broadcast) is { } said ? said.Male : r.T("OptionText");
+                string text = broadcast != 0 && Said(rows, lookup, broadcast) is { } said ? said.Male : r.T("OptionText");
                 uint boxBroadcast = r.U("BoxBroadcastTextID");
-                string box = boxBroadcast != 0 && lookup.BroadcastText(boxBroadcast) is { } boxSaid ? boxSaid.Male : r.T("BoxText");
+                string box = boxBroadcast != 0 && Said(rows, lookup, boxBroadcast) is { } boxSaid ? boxSaid.Male : r.T("BoxText");
                 return new TcOptionView(r.U("OptionID"), r.I("GossipOptionID"), r.U("OptionNpc"), text, r.U("ActionMenuID"), r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.UL("BoxMoney"), box, r.I("SpellID"), TrainerOf(menu, r.U("OptionID")));
             }).ToArray();
             foreach (var option in options.Where(o => o.ActionMenuId != 0))
@@ -91,6 +91,9 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
         return new TcCreatureView(entry, template.T("name"), template.T("subname"), template.UL("npcflag"), template, difficulties, menus.ToArray(), trainers, vendor, Quests(TcTables.QuestStarter), Quests(TcTables.QuestEnder), clicks);
     }
 
+    /// <summary>A broadcast text: one written in this draft, else the database's or client's.</summary>
+    static (string Male, string Female)? Said(RowSet rows, IInteractionLookup lookup, uint id) => TcBroadcastText.Staged(rows, id) ?? lookup.BroadcastText(id);
+
     static TcMenuText Text(RowSet rows, uint textId, IInteractionLookup lookup)
     {
         var row = rows.Get(TcTables.NpcText, textId.ToString(CultureInfo.InvariantCulture));
@@ -102,7 +105,7 @@ public sealed record TcCreatureView(uint Entry, string Name, string Subname, ulo
         var variants = Enumerable.Range(0, 8)
             .Select(i => (Id: row.U($"BroadcastTextID{i}"), Weight: row.F($"Probability{i}")))
             .Where(v => v.Id != 0)
-            .Select(v => new TcTextVariant(v.Id, v.Weight, lookup.BroadcastText(v.Id)?.Male))
+            .Select(v => new TcTextVariant(v.Id, v.Weight, Said(rows, lookup, v.Id)?.Male))
             .ToArray();
         return new TcMenuText(textId, false, variants);
     }

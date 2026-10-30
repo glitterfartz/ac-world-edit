@@ -106,7 +106,7 @@ public static class SqlExport
     static SqlStep Row(RowEdit edit, ITableCatalog tables)
     {
         var schema = tables.Find(edit.Table);
-        string table = Ident(schema.SqlName);
+        string table = TableIdent(schema.SqlName);
         string keyOf(Row r) => string.Join(" AND ", schema.Key.Select(k => Eq(schema, k, r[k])));
         string all(Row r) => string.Join(" AND ", schema.Columns.Select(c => Eq(schema, c.Name, r[c.Name])));
         string insert(Row r) => $"INSERT INTO {table} ({string.Join(", ", schema.Columns.Select(c => Ident(c.Name)))}) VALUES ({string.Join(", ", schema.Columns.Select(c => Literal(c.Kind, r[c.Name])))});";
@@ -163,12 +163,15 @@ public static class SqlExport
     /// <summary>
     /// Preflight/post-check row: "ok" when exactly one row matches the guard.
     /// </summary>
-    internal static string Check(string label, string table, string guard) => $"SELECT {Quote(label)} AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM {Ident(table)} WHERE {guard};";
+    internal static string Check(string label, string table, string guard) => $"SELECT {Quote(label)} AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM {TableIdent(table)} WHERE {guard};";
 
     /// <summary>
     /// Preflight/post-check row for a row that must not exist.
     /// </summary>
-    internal static string Absent(string label, string table, string guard) => $"SELECT {Quote(label)} AS `change`, IF(COUNT(*) = 0, 'ok', 'STALE') AS `state` FROM {Ident(table)} WHERE {guard};";
+    internal static string Absent(string label, string table, string guard) => $"SELECT {Quote(label)} AS `change`, IF(COUNT(*) = 0, 'ok', 'STALE') AS `state` FROM {TableIdent(table)} WHERE {guard};";
+
+    /// <summary>A table name, quoted per part: <c>hotfixes.broadcast_text</c> becomes <c>`hotfixes`.`broadcast_text`</c> (a row of another database on the same server).</summary>
+    internal static string TableIdent(string name) => string.Join('.', name.Split('.').Select(Ident));
 
     internal static string Ident(string name) => "`" + name.Replace("`", "``", StringComparison.Ordinal) + "`";
 
