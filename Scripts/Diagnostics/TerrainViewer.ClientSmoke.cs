@@ -195,6 +195,21 @@ public partial class TerrainViewer
                 gc.Rebuild();
                 if (creatureProps.Section("gossip")!.FindChild("NewMenu", true, false) is not Button)
                 { SmokeFail("CLIENT_SHOT_NEW_MENU control missing"); return; }
+                // A greeting typed instead of picked becomes a new broadcast text in the hotfixes database.
+                var gossipBox = creatureProps.Section("gossip")!;
+                if (gossipBox.FindChild("NewMenuText", true, false) is not LineEdit typedGreeting || gossipBox.FindChild("NewMenu", true, false) is not Button newMenuButton)
+                { SmokeFail("CLIENT_SHOT_NEW_TEXT control missing"); return; }
+                typedGreeting.Text = "Smoke greeting text.";
+                newMenuButton.EmitSignal(Button.SignalName.Pressed);
+                if (!gc.Effective.All(Foundation.TcTables.BroadcastText).Any(r => r.T("Text") == "Smoke greeting text.") || !gc.Effective.All(Foundation.TcTables.HotfixData).Any())
+                { SmokeFail("CLIENT_SHOT_NEW_TEXT " + gc.Status); return; }
+                var textSql = Foundation.SqlExport.Build(gc.SourceKey, [], gc.Draft!.NetEdits().Select(e => e.Edit).ToArray(), schema: gc.Schema);
+                if (!textSql.Apply.Contains("INSERT INTO `" + Foundation.SqlExport.HotfixesDatabase + "`.`broadcast_text`"))
+                { SmokeFail("CLIENT_SHOT_NEW_TEXT_EXPORT"); return; }
+                gc.Drafts.History(gc, false);
+                gc.Rebuild();
+                if (gc.Effective.All(Foundation.TcTables.BroadcastText).Any())
+                { SmokeFail("CLIENT_SHOT_NEW_TEXT_UNDO"); return; }
                 GD.Print("CLIENT_SHOT_GOSSIP_EDIT_OK submenu/back/add/text/validation/greeting/undo/redo/export");
                 creatureProps.ShowSection("template", null);
                 clientShotFrames = 0;

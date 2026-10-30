@@ -356,7 +356,8 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
             dialog.QueueFree();
         };
         dialog.Canceled += dialog.QueueFree;
-        AddChild(dialog);
+        // The window owns the dialog: the section frees its children whenever it redraws, which a reload can do while this is open.
+        GetWindow().AddChild(dialog);
         dialog.PopupCentered();
     }
 
