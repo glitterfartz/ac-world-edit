@@ -171,30 +171,26 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     /// </summary>
     void RenderForkMenu(AcCreatureView v, MenuView menu)
     {
-        // Gossip conditions are keyed by MenuID and are not editable here, so a copy loses them.
-        int conditions = v.Conditions.GetValueOrDefault(14) + v.Conditions.GetValueOrDefault(15);
+        int conditions = effective.All(Ctx.Schema.Tables.Find("conditions")).Count(c => c.U("SourceGroup") == menu.MenuId && GossipMenuCopy.IsMenuCondition(c));
         var fork = new Button
         {
             Text = "Make a copy for this NPC",
-            TooltipText = conditions > 0 ? $"Warning: the {conditions} SQL condition(s) on this NPC's menus are not copied; copied texts and options become unconditional." : "Copy texts and options under new IDs."
+            TooltipText = conditions > 0 ? $"Copy texts and options under new IDs, with this menu's {conditions} condition(s) and this NPC's own gossip-select SmartAI rules." : "Copy texts and options under new IDs."
         };
-        if (conditions > 0)
-        {
-            body.AddChild(ClientStyle.Text($"Copying drops {conditions} condition(s) (e.g. holiday-only options would always show).", 11, ClientStyle.Warning));
-        }
 
         fork.Pressed += () =>
         {
             uint copy = NextId(Ctx.Schema.GossipPage.Menus.Table, "MenuID", snapshot!.Lookup.MaxMenuId);
             uint nextText = NextId(Ctx.Schema.GossipPage.TextTable, "ID", snapshot.Lookup.MaxTextId);
             List<RowEdit> edits = [];
+            Dictionary<uint, uint> textIds = [];
             foreach (var link in effective.All(Ctx.Schema.GossipPage.Menus.Table).Where(r => r.U("MenuID") == menu.MenuId).ToArray())
             {
                 var text = effective.Get(Ctx.Schema.GossipPage.TextTable, link["TextID"]);
                 uint textId = link.U("TextID");
                 if (text != null)
                 {
-                    textId = nextText++;
+                    textIds[link.U("TextID")] = textId = nextText++;
                     edits.Add(Insert(Ctx.Schema.GossipPage.TextTable, text.With("ID", textId)));
                 }
 
@@ -202,6 +198,8 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
             }
 
             edits.AddRange(effective.All(Ctx.Schema.GossipPage.Options.Table).Where(r => r.U("MenuID") == menu.MenuId).ToArray().Select(r => Insert(Ctx.Schema.GossipPage.Options.Table, r.With("MenuID", copy))));
+            edits.AddRange(GossipMenuCopy.Conditions(Ctx.Schema.Tables.Find("conditions"), effective, menu.MenuId, copy, textIds));
+            edits.AddRange(GossipMenuCopy.RepointSelectEvents(Ctx.Schema.Tables.Find("smart_scripts"), effective, v.Entry, menu.MenuId, copy));
             if (menus.Count == 0)
             {
                 var template = TemplateRow;

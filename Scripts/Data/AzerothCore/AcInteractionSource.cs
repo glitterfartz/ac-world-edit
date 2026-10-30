@@ -97,6 +97,8 @@ public sealed class AcInteractionSource(WorldDatabase database)
             }
         }
 
+        await LoadMenuCopyRows(session, rows, AcTables.Conditions, AcTables.SmartScripts, entry, loadedMenus, token);
+
         var lookup = new InteractionLookupData(catalog);
         var final = effective(rows);
         await ReadLookups(session, final, lookup, token);
@@ -138,6 +140,20 @@ public sealed class AcInteractionSource(WorldDatabase database)
     /// Load rows of one table matching a parameterized predicate (identifiers come from the schema
     /// registry, never from input) into the snapshot, bounded by DbLimits.MaxRows.
     /// </summary>
+    /// <summary>
+    /// The rows a menu copy carries (see <see cref="GossipMenuCopy"/>): the conditions on each loaded menu's texts and
+    /// options, and the creature's own gossip-select SmartAI events.
+    /// </summary>
+    internal static async Task LoadMenuCopyRows(WorldReadSession session, RowSet rows, TableSchema conditions, TableSchema smart, uint entry, IEnumerable<uint> menus, CancellationToken token)
+    {
+        foreach (uint menu in menus)
+        {
+            await Load(session, rows, conditions, "SourceTypeOrReferenceId IN (14,15) AND SourceGroup=@k0", [menu], token);
+        }
+
+        await Load(session, rows, smart, "entryorguid=@k0 AND source_type=0 AND event_type=62", [(long)entry], token);
+    }
+
     internal static async Task Load(WorldReadSession session, RowSet rows, TableSchema table, string predicate, object[] values, CancellationToken token)
     {
         // Text reads NULL as '' unless the column keeps NULL apart (a nullable override).

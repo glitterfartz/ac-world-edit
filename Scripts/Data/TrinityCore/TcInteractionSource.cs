@@ -95,6 +95,7 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         }
 
         var final = effective(rows);
+        await AcInteractionSource.LoadMenuCopyRows(session, rows, TcTables.Conditions, TcTables.SmartScripts, entry, loadedMenus, token);
         var lookup = new InteractionLookupData(catalog, client);
         await AcInteractionSource.ReadCounts(session, "SELECT TrainerID,COUNT(*) FROM creature_trainer WHERE TrainerID IN ({0}) GROUP BY TrainerID", final.All(TcTables.CreatureTrainer).Select(r => r.U("TrainerID")).Distinct().ToArray(), lookup.TrainerUserCounts, token);
         await AcInteractionSource.ReadIds(session, "SELECT ID FROM points_of_interest WHERE ID IN ({0})", final.All(TcTables.GossipOption).Select(r => r.U("ActionPoiID")).Where(id => id != 0), lookup.Pois, token);

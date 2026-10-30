@@ -115,7 +115,7 @@ UX:
 - **Reference conditions** (negative source types) are shown as named, reusable "condition sets" that can be shared.
 - A **live tester** pane: pick class, race, level and completed quests, and see whether it passes. This uses only the `ConditionCatalog` semantics; no server is needed.
 
-Implementation: a `ConditionCatalog` (Phase 10) plus a `ConditionStrip` control in `Scripts/Ui`, and an `IDBSource.ReadConditionsAsync(sourceType, group, entry)`. `conditions` goes into both table catalogs. Wire it into gossip (types 14, 15), quest availability (19, and the quest editor), SmartAI (22), vendor (23), graveyard (27, which replaces today's team-only handling), and spawn groups / phases (26, 33). Copy-menu then copies its conditions, and re-points the copying creature's own SmartAI gossip events (`GOSSIP_SELECT` on the old menu) to the copy; that takes one command across the gossip page's draft source and the behavior editor's. Rules mirror `ConditionMgr::isConditionTypeValid` / `isSourceTypeValid` for each dialect.
+Implementation: a `ConditionCatalog` (Phase 10) plus a `ConditionStrip` control in `Scripts/Ui`, and an `IDBSource.ReadConditionsAsync(sourceType, group, entry)`. `conditions` goes into both table catalogs. Wire it into gossip (types 14, 15), quest availability (19, and the quest editor), SmartAI (22), vendor (23), graveyard (27, which replaces today's team-only handling), and spawn groups / phases (26, 33). Copy-menu then copies its conditions (built in Phase 6 for menu sources 14 and 15; the builder generalises it). Rules mirror `ConditionMgr::isConditionTypeValid` / `isSourceTypeValid` for each dialect.
 
 ---
 

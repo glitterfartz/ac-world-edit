@@ -375,7 +375,27 @@ public sealed class AcTables : ITableCatalog
         ("invisibilityValue", ColumnKind.UInt, 0)
     ]);
 
-    public static readonly TableSchema[] Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon];
+    /// <summary>The server's conditions table. Only the gossip menu sources (14 and 15) are read and copied so far; the visual builder is Phase 12.</summary>
+    public static readonly TableSchema Conditions = new("conditions", ["SourceTypeOrReferenceId", "SourceGroup", "SourceEntry", "SourceId", "ElseGroup", "ConditionTypeOrReference", "ConditionTarget", "ConditionValue1", "ConditionValue2", "ConditionValue3"],
+    [
+        ("SourceTypeOrReferenceId", ColumnKind.Int, 0),
+        ("SourceGroup", ColumnKind.UInt, 0),
+        ("SourceEntry", ColumnKind.Int, 0),
+        ("SourceId", ColumnKind.Int, 0),
+        ("ElseGroup", ColumnKind.UInt, 0),
+        ("ConditionTypeOrReference", ColumnKind.Int, 0),
+        ("ConditionTarget", ColumnKind.UInt, 0),
+        ("ConditionValue1", ColumnKind.UInt, 0),
+        ("ConditionValue2", ColumnKind.UInt, 0),
+        ("ConditionValue3", ColumnKind.UInt, 0),
+        ("NegativeCondition", ColumnKind.UInt, 0),
+        ("ErrorType", ColumnKind.UInt, 0),
+        ("ErrorTextId", ColumnKind.UInt, 0),
+        ("ScriptName", ColumnKind.Text, 0),
+        ("Comment", ColumnKind.Text, 0)
+    ]);
+
+    public static readonly TableSchema[] Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon, Conditions];
 
     IReadOnlyList<TableSchema> ITableCatalog.All => Tables;
     TableSchema ITableCatalog.Find(string name) => Tables.FirstOrDefault(t => t.Name == name) ?? throw new InvalidDataException($"Table {name} is not editable.");

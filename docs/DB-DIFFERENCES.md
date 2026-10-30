@@ -98,6 +98,8 @@ Schema references for column meanings, flags and enums:
   - `reputation_spillover_template` faction6, `spell_area` autocast→flags, `spell_custom_attr` spell_id→entry, `spell_enchant_proc_data` (renamed columns), `spell_group_stack_rules`.description, `spell_proc` + SpellFamilyMask3/ProcFlags2, `spell_target_position` + OrderIndex.
   - `transports` + phase columns, `vehicle_(template_)accessory` + RideSpellID.
 
+- `conditions`: the same 15 columns in both, plus TC's `ConditionStringValue1` (varchar 64) before `NegativeCondition`; AC's `ScriptName` is char(64), TC's varchar(64). `TcTables.Conditions` and `AcTables.Conditions` carry them; only gossip menu sources (14 text, 15 option) are read and copied before Phase 12.
+
 ### TC gossip editing rules
 
 The [master option schema](https://trinitycore.info/database/master/world/gossip_menu_option) uses `OptionNpc` (0-based service enum) rather than AC `OptionType`/`OptionNpcFlag`, and has separate `OptionBroadcastTextID` and `BoxBroadcastTextID` overrides. Literal edits clear the corresponding override. The editors draw an option's client icon from `OptionNpc` 1-9 (the same numbers as the 3.3.5 gossip icons; other services use the chat icon) and follow it by `OptionNpc` 1 vendor, 2 taxi, 3 trainer (AC: `OptionType` 3/15, 4, 5, plus 2 quest giver). A TC menu has no text of its own, so searching menus by text goes through broadcast text: `broadcast_text` matches (hotfixes, then the client) → `npc_text.BroadcastTextID0..7` → `gossip_menu`. TC `BoxMoney` is an unsigned int; the existing wide row representation is retained for compatibility, but the editor rejects costs above uint32. Confirmation code is boolean.

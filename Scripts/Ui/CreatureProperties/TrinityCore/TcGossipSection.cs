@@ -271,7 +271,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         box.AddChild(remove);
         if (Ctx.Snapshot?.Lookup.MenuUsers(menu.MenuId) > 1)
         {
-            var copy = new Button { Name = "CopyMenu", Text = "Copy for this creature", TooltipText = "Give this creature its own copy of the menu and its options. Conditions and scripts that name the menu do not move." };
+            var copy = new Button { Name = "CopyMenu", Text = "Copy for this creature", TooltipText = "Give this creature its own copy of the menu and its options. Its conditions are copied, and this creature's own gossip-select SmartAI rules follow the copy." };
             copy.Pressed += () => CopyMenu(v.Entry, menu, link);
             box.AddChild(copy);
         }
@@ -381,6 +381,8 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx
         List<RowEdit> edits = [];
         edits.AddRange(Ctx.Effective.All(TcTables.GossipMenu).Where(r => r.U("MenuID") == menu.MenuId).Select(r => Insert(TcTables.GossipMenu, r.With("MenuID", copy))));
         edits.AddRange(Ctx.Effective.All(TcTables.GossipOption).Where(r => r.U("MenuID") == menu.MenuId).Select(r => Insert(TcTables.GossipOption, r.With("MenuID", copy))));
+        edits.AddRange(GossipMenuCopy.Conditions(TcTables.Conditions, Ctx.Effective, menu.MenuId, copy));
+        edits.AddRange(GossipMenuCopy.RepointSelectEvents(TcTables.SmartScripts, Ctx.Effective, entry, menu.MenuId, copy));
         edits.Add(Delete(TcTables.CreatureGossip, link));
         edits.Add(Insert(TcTables.CreatureGossip, Row.Of(("CreatureID", entry), ("MenuID", copy))));
         Ctx.Commit($"Copy gossip menu {menu.MenuId}", edits);

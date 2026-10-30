@@ -278,4 +278,43 @@ public class PhaseSixRealDataTests
             Assert.Equal((long)Math.Ceiling(health), computed.High.Health);
         }
     }
+
+    // ---- Gossip: copying a menu carries its conditions and re-points the creature's SmartAI ---------------------
+
+    static async Task CopyingARealMenuCarriesItsConditionsAndSmartRules(DatabaseSettings settings, IDBSource source, TableSchema conditions, TableSchema smart, string schemaName)
+    {
+        // Anachronos (15192) opens menu 6539, which has many conditions, and listens to it with SmartAI.
+        const uint entry = 15192, menu = 6539, copy = 9_900_001;
+        var snapshot = await source.ReadInteractionAsync(entry, 0, [], rows => rows, null, CancellationToken.None);
+        long conditionsInDb = Convert.ToInt64(Assert.Single(await Rows(settings, $"SELECT COUNT(*) FROM conditions WHERE SourceTypeOrReferenceId IN (14,15) AND SourceGroup={menu}"))[0], CultureInfo.InvariantCulture);
+        long smartInDb = Convert.ToInt64(Assert.Single(await Rows(settings, $"SELECT COUNT(*) FROM smart_scripts WHERE entryorguid={entry} AND source_type=0 AND event_type=62 AND event_param1={menu}"))[0], CultureInfo.InvariantCulture);
+        Assert.True(conditionsInDb > 20 && smartInDb > 5, "the sample creature still has conditions and gossip-select rules");
+
+        var copiedConditions = GossipMenuCopy.Conditions(conditions, snapshot.Rows, menu, copy);
+        var repointed = GossipMenuCopy.RepointSelectEvents(smart, snapshot.Rows, entry, menu, copy);
+        Assert.Equal(conditionsInDb, copiedConditions.Length);
+        Assert.Equal(smartInDb, repointed.Length);
+        Assert.All(copiedConditions, e => Assert.Equal(copy, e.After!.U("SourceGroup")));
+        Assert.All(repointed, e => Assert.Equal((menu, copy), (e.Before!.U("event_param1"), e.After!.U("event_param1"))));
+
+        // Run the exported guards against the live rows they were read from: nothing exists at the copy's IDs, and
+        // every re-pointed rule still matches exactly one row (real rows have NULLs the loader reads as 0).
+        var script = SqlExport.Build("db", [], [.. copiedConditions, .. repointed], DateTime.UnixEpoch, schema: source.Schema);
+        Assert.Contains("INSERT INTO `conditions`", script.Apply);
+        Assert.Contains("UPDATE `smart_scripts` SET `event_param1` = " + copy, script.Apply);
+        var states = await Preflight(settings, script.Apply);
+        Assert.Equal(copiedConditions.Length + repointed.Length, states.Count);
+        Assert.All(states, s => Assert.True(s.State == "ok", $"{schemaName}: {s.Change} reads {s.State}"));
+    }
+
+    [DbFact]
+    public async Task AzerothCoreCopyingARealMenuCarriesItsConditionsAndSmartRules() =>
+        await CopyingARealMenuCarriesItsConditionsAndSmartRules(Test.Config, Test.AcSource(Test.Config), AcTables.Conditions, AcTables.SmartScripts, "AzerothCore");
+
+    [TcDbFact]
+    public async Task TrinityCoreCopyingARealMenuCarriesItsConditionsAndSmartRules()
+    {
+        var connection = Environments.TrinityConnection()!;
+        await CopyingARealMenuCarriesItsConditionsAndSmartRules(connection.World, DBSource.Open(connection), TcTables.Conditions, TcTables.SmartScripts, "TrinityCore");
+    }
 }
