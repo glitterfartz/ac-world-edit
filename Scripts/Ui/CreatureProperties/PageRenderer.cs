@@ -48,7 +48,7 @@ public sealed class PageRenderer(CreatureContext ctx)
             if (editable)
             {
                 var remove = new Button { Text = "Remove", TooltipText = $"Remove this {spec.ItemName}." };
-                remove.Pressed += () => ctx.Commit($"Remove {spec.ItemName}", [spec.Remove(row)]);
+                remove.Pressed += () => ctx.Commit($"Remove {spec.ItemName}", spec.Remove(row, ctx.Effective));
                 head.AddChild(remove);
             }
 

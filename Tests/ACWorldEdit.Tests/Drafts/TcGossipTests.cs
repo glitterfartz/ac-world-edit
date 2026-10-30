@@ -52,6 +52,21 @@ public class TcGossipTests
     }
 
     [Fact]
+    public void RemovingAnOptionAlsoRemovesTheTrainerBoundToIt()
+    {
+        var rows = Rows();
+        var option = Page.Options.Select(rows, 42).Single();
+        var bound = Row.Of(("CreatureID", 7u), ("MenuID", 42u), ("OptionID", option.U("OptionID")), ("TrainerID", 3u));
+        var other = Row.Of(("CreatureID", 7u), ("MenuID", 42u), ("OptionID", option.U("OptionID") + 1), ("TrainerID", 4u));
+        rows.Set(TcTables.CreatureTrainer, bound);
+        rows.Set(TcTables.CreatureTrainer, other);
+        var edits = Page.Options.Remove(option, rows);
+        Assert.Equal(2, edits.Length);
+        Assert.Contains(edits, e => e.Table == TcTables.CreatureTrainer.Name && e.Before == bound);
+        Assert.DoesNotContain(edits, e => e.Before == other);
+    }
+
+    [Fact]
     public void AllEightVariantsTextOverridesAndOptionLifecyclePersistAndExport()
     {
         var rows = Rows();

@@ -87,7 +87,8 @@ public sealed record ItemListSpec(
     FieldSpec[] Fields,
     Func<uint, RowSet, Row> NewRow,
     Func<Row, bool>? Visible = null,
-    string? ThenByColumn = null)
+    string? ThenByColumn = null,
+    Func<Row, RowSet, IEnumerable<RowEdit>>? Dependents = null)
 {
     public IEnumerable<Row> Select(RowSet rows, uint parent) => rows.All(Table)
         .Where(r => r.U(ParentColumn) == parent && (Visible?.Invoke(r) ?? true))
@@ -112,6 +113,12 @@ public sealed record ItemListSpec(
     }
 
     public RowEdit Remove(Row row) => InteractionEdits.Delete(Table, row);
+
+    /// <summary>
+    /// Remove the item together with the loaded rows that only make sense with it (see
+    /// <c>Dependents</c>), as one command.
+    /// </summary>
+    public RowEdit[] Remove(Row row, RowSet rows) => [Remove(row), .. Dependents?.Invoke(row, rows) ?? []];
 
     public static RowEdit[] Change(TableSchema table, Row before, Row after) => table.KeyOf(before) == table.KeyOf(after)
         ? [InteractionEdits.Update(table, before, after)]

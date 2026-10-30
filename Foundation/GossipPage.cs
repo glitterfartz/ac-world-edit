@@ -85,6 +85,11 @@ public static class GossipPage
         _ => GossipService.Other
     };
 
+    /// <summary>A trainer bound to a removed option (TrinityCore keys <c>creature_trainer</c> by menu and option) would point at nothing.</summary>
+    static IEnumerable<RowEdit> TrainerBindings(Row option, RowSet rows) => rows.All(TcTables.CreatureTrainer)
+        .Where(b => b.U("MenuID") == option.U("MenuID") && b.U("OptionID") == option.U("OptionID"))
+        .Select(b => InteractionEdits.Delete(TcTables.CreatureTrainer, b));
+
     static GossipPageSpec Build(bool retail)
     {
         var table = retail ? TcTables.GossipOption : AcTables.GossipOption;
@@ -142,7 +147,8 @@ public static class GossipPage
         var menus = retail ? TcTables.GossipMenu : AcTables.GossipMenu;
         return new(new(menus, "MenuID", "TextID", "gossip text link", [],
                 (menu, _) => Row.Of(("MenuID", menu), ("TextID", 0u))),
-            new(table, "MenuID", "OptionID", "gossip option", fields.ToArray(), NewOption),
+            new(table, "MenuID", "OptionID", "gossip option", fields.ToArray(), NewOption,
+                Dependents: retail ? TrainerBindings : null),
             retail ? TcTables.NpcText : AcTables.NpcText,
             retail ? TcIcon : r => r.U("OptionIcon"),
             retail ? TcService : AcService);
