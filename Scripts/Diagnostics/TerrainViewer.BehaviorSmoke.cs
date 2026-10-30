@@ -30,14 +30,23 @@ public partial class TerrainViewer
     /// <summary>
     /// A left click at a control's center through the normal input path (hover, press, release).
     /// </summary>
-    static void ClickControl(Control control)
+    void ClickControl(Control control)
     {
         if (!Revealed(control))
         {
             throw new InvalidOperationException($"{control.Name} is scrolled out of view; reveal it first");
         }
 
-        var at = control.GetScreenTransform() * (control.Size / 2);
+        ClickAt(control.GetScreenTransform() * (control.Size / 2));
+    }
+
+    /// <summary>
+    /// Hover, press and release at a viewport point. Injected events are in window coordinates, and
+    /// the viewport may be scaled (headless runs at 40x), so the point goes through the final transform.
+    /// </summary>
+    void ClickAt(Vector2 viewportPoint)
+    {
+        var at = GetViewport().GetFinalTransform() * viewportPoint;
         Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at });
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
@@ -173,10 +182,7 @@ public partial class TerrainViewer
             return false;
         }
 
-        var at = list.GetScreenTransform() * (list.GetItemRect(index).GetCenter());
-        Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
-        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at });
-        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
+        ClickAt(list.GetScreenTransform() * list.GetItemRect(index).GetCenter());
         return true;
     }
 }

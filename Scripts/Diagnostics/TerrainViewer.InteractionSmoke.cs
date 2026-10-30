@@ -5,7 +5,7 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Opt-in --interaction-smoke (graphical): Innkeeper Farley in Goldshire through real input and
+/// Opt-in --interaction-smoke: Innkeeper Farley in Goldshire through real input and
 /// controls. A right-drag must only turn the camera; a short right-click opens the window; gossip,
 /// vendor (with client icons), submenu, quests, quest editor and editing are exercised on an
 /// isolated draft; a map switch closes the window. Saves artifacts/interaction-*.png.
@@ -79,13 +79,15 @@ public partial class TerrainViewer
 
     void RightClick(Vector2 at, Vector2 drag)
     {
-        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = at, GlobalPosition = at });
+        // Injected events are in window coordinates; the viewport may be scaled (headless runs at 40x).
+        var window = GetViewport().GetFinalTransform() * at;
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = window, GlobalPosition = window });
         if (drag != Vector2.Zero)
         {
-            Input.ParseInputEvent(new InputEventMouseMotion { Relative = drag, Position = at, GlobalPosition = at });
+            Input.ParseInputEvent(new InputEventMouseMotion { Relative = drag, Position = window, GlobalPosition = window });
         }
 
-        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = at, GlobalPosition = at });
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = window, GlobalPosition = window });
     }
 
     List<(string, Func<bool>)> InteractionSteps() =>
@@ -292,7 +294,7 @@ public partial class TerrainViewer
         }),
         ("edit-vendor-add", () =>
         {
-            if (!creatureProps.SmokeStatus.Contains("result(s)", StringComparison.Ordinal))
+            if (!creatureProps.SmokeStatus.Contains("item(s) found", StringComparison.Ordinal))
             {
                 return false;
             }
