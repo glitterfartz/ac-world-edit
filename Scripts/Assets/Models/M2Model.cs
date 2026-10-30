@@ -448,7 +448,7 @@ public static class M2Model
             }
 
             var layers = skin.H(p + 14) > 1 ? Layers(skin.H(p + 2), skin.H(p + 14), combo, uv2) : null;
-            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0, Material: Appearance(skin.S(p + 8), skin.H(p + 20), skin.H(p + 22)), Layers: layers));
+            surfaces.Add(new(pos.ToArray(), norm.ToArray(), uv.ToArray(), indices.ToArray(), texture.Replace('\\', '/'), b.H(materials.Offset + material * 4 + 2), (b.H(materials.Offset + material * 4) & 4) != 0, bi.ToArray(), weights.ToArray(), Unlit: (b.H(materials.Offset + material * 4) & 1) != 0, Material: Appearance(skin.S(p + 8), skin.H(p + 20), skin.H(p + 22)), Layers: layers, Debug: $"M2 shader 0x{skin.H(p + 2):X4}, {skin.H(p + 14)} texture units, texture type {type}"));
             if (skin.H(p + 14) > 1 && layers == null)
             {
                 warnings.Add($"M2 shader 0x{skin.H(p + 2):X4} with {skin.H(p + 14)} textures uses its base texture.");

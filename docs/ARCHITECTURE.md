@@ -146,7 +146,7 @@ A client folder is opened by `ClientServices`, which wires an `IClientFiles` sou
 | `Scripts/Rendering/` | Terrain, model, WMO and sky node construction |
 | `Scripts/Overlays/` | Creature, GameObject, graveyard and AreaTrigger overlays, gizmo, region queries |
 | `Scripts/Ui/` | Editor windows, sidebar, menus, pickers, settings |
-| `Scripts/Diagnostics/` | Smoke workflows and CLI flag parsing |
+| `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
 | `Foundation/` | Draft model, SQL export, SmartAI and quest rules, coordinates |
 | `Shaders/` | `terrain.gdshader`, `liquid.gdshader`, `model.gdshader` |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |

@@ -883,6 +883,14 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _Input(InputEvent input)
     {
+        // F12 works while flying too, so it sits before the flight-key swallow.
+        if (input is InputEventKey { Keycode: Key.F12, Pressed: true, Echo: false })
+        {
+            CaptureDiagnostics();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         // While right-mouse flight is active, W/A/S/D/Q/E drive the camera by polling. Consume key
         // events here (before shortcut input) so they cannot also switch tools or run menu
         // commands. Esc still reaches _UnhandledInput to release the mouse.

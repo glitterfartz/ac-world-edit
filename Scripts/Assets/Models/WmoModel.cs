@@ -230,7 +230,7 @@ public static class WmoModel
                     }
                 }
 
-                surfaces.Add(new(positions, normals, uvs, indices, texture, blend, (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode, Layers: layers));
+                surfaces.Add(new(positions, normals, uvs, indices, texture, blend, (b.U(m) & 4) != 0, Colors: tint, Unlit: (b.U(m) & 1) != 0 || colorMode == VertexColorMode.BakedInterior, ColorMode: colorMode, Layers: layers, Debug: $"WMO shader {b.U(m + 4)}, flags 0x{b.U(m):X}, blend {b.I(m + 8)}"));
             }
         }
 

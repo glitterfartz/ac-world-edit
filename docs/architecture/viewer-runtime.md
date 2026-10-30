@@ -49,7 +49,7 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 | `Viewer/TerrainViewer.Listfile.cs` | One-time listfile prompt and in-app update (download on a worker, then reload the retail client) |
 | `Viewer/TerrainViewer.Locate.cs` | Locate a creature from quest links: fly to a loaded spawn, or query the database and wait for the region to stream in |
 | `Viewer/TerrainViewer.Teleports.cs` | `game_tele` dropdown, with a generation guard |
-| `Diagnostics/TerrainViewer.*.cs` | Smoke workflows (see Diagnostics below) |
+| `Diagnostics/TerrainViewer.*.cs` | Smoke workflows and the F12 diagnostic dump (see Diagnostics below) |
 
 Other viewer files: `SkyLighting.cs` (sun, environment and skybox), `ClientLighting.cs` (light regions and profiles), `ClientServices.cs` (client open), `TerrainMinimap.cs` (a `Control` that raises `Jump` on click), `ScenePicking.cs` (box and sphere ray hits), `AreaTable.cs`.
 
@@ -136,6 +136,7 @@ All camera and input handling is in `TerrainViewer.cs`.
 - **`_Input`** runs before shortcuts. While captured it swallows keys other than Escape, so flight keys do not trigger toolbar modes. While an editor is dragging it routes motion, release and Escape to that editor.
 - **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window (for TrinityCore only the template page is editable so far). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
+- **F12** (handled in `_Input`, so it works while flying) saves a diagnostic dump; see [Diagnostic dump](#diagnostic-dump-f12).
 - **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
 
 Per-frame order in `_Process`:
@@ -231,6 +232,16 @@ Cross-window wiring is set up in `BuildUi`:
 Every content editor shares one `ContentDrafts` instance and resyncs through its `Changed` event.
 
 ## Diagnostics
+
+### Diagnostic dump (F12)
+
+F12 writes `artifacts/diagnostics/<yyyyMMdd-HHmmss>/` (`Diagnostics/TerrainViewer.Diagnostics.cs`), so a rendering problem can be investigated afterwards without hunting for the object. Aim the mouse at the problem first; while flying (cursor captured) it aims at the screen centre.
+
+- `screenshot.png`: the full window.
+- `report.json`: client kind and build, map, tile, zone, camera (view and server coordinates, yaw, pitch), time of day, FPS; `pick`: the terrain point under the aim and up to 8 placements whose bounding boxes the aim ray crosses, nearest first (boxes ignore occlusion, so the target may be one of several); `nearby`: up to 150 placements within 250 yd with distance, frustum flag, server position, scale, rotation, and whether the model is ready or failed; `models`: per model, every batch's texture, blend, combiner and layer textures, vertex count and `Debug` (M2 `shader_id`, texture-unit count and texture type, or the WMO shader, flags and blend), plus decode warnings.
+- `log-tail.txt`: the last 400 lines of the Godot log, where model warnings go.
+
+`ModelLibrary` drops a model's batch detail when it is published (`ModelData.ForProbes`), so it keeps a `ModelReport` taken just before. Creatures, GameObjects and terrain texture layers are not in the report yet. `fdid:N` paths resolve through the community listfile in the user data folder.
 
 Smoke workflows run inside the real app. They are opt-in CLI flags passed after `--`, parsed in `ConfigureSmokeChecks` (`Diagnostics/TerrainViewer.Smoke.cs`):
 

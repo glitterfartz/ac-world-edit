@@ -92,6 +92,12 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
         .Where(pair => AssetRef.IsWmo(pair.Key.Model.Path) && library.ReadyData(pair.Key.Model) != null)
         .SelectMany(pair => pair.Value.Items);
 
+    /// <summary>One attached placement for the diagnostic dump: its model, view-space transform and local bounds (empty until the model is ready).</summary>
+    public readonly record struct Placed(WorldObject Item, ModelKey Model, Transform3D Transform, Aabb Bounds, bool Ready);
+
+    public IEnumerable<Placed> Placements() => batches.SelectMany(pair => pair.Value.Items.Select((item, i) =>
+        new Placed(item, pair.Key.Model, pair.Value.Node.Transforms is { } t && i < t.Length ? t[i] : ModelLibrary.Placement(item), pair.Value.Node.Bounds, pair.Value.Node.ModelReady)));
+
     /// <summary>
     /// Hide/free batches and clear ownership on map/client changes. ModelLibrary still owns the
     /// shared cache.

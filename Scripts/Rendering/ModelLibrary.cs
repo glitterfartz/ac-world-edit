@@ -17,6 +17,8 @@ public sealed class ModelLibrary
     internal sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
     {
         public ModelData Data = data;
+        /// <summary>The batch summary the diagnostic dump reads; set when the entry is published, since <see cref="Data"/> then drops it.</summary>
+        public ModelReport? Report;
         public AnimationPalette Palette = palette;
         public MaterialPalette Materials = materials;
         public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
@@ -47,6 +49,7 @@ public sealed class ModelLibrary
         public void ReleaseUploadData(bool isWmo)
         {
             long gpu = Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length;
+            Report = ModelReport.From(Data);
             Data = Data.ForProbes(isWmo);
             Decoded = new(StringComparer.OrdinalIgnoreCase);
             Palette = Palette with { Pixels = [] };
@@ -149,6 +152,9 @@ public sealed class ModelLibrary
     /// IDs. Null means the variant is still decoding/uploading (or failed), not that it has no geometry.
     /// </summary>
     public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
+    /// <summary>The batches and warnings of a decoded variant (kept after upload), for the diagnostic dump; null while it decodes or after it failed.</summary>
+    public ModelReport? ReportFor(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Report ?? ModelReport.From(e.Data) : null;
+    public bool HasFailed(ModelKey key) => failed.Contains(key);
     public int ReadyModels => cache.Count;
     /// <summary>
     /// Diagnostic hold for --reload-smoke: at most one surface uploads per frame and nothing is
