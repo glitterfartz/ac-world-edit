@@ -315,9 +315,12 @@ public class RetailAnimationTests
         Assert.True(lookup.Exists(ClientRecord.SkillLine, 164));
         Assert.True(lookup.Exists(ClientRecord.Spell, 2575));
         Assert.True(lookup.Exists(ClientRecord.Item, 2589));
-        foreach (var kind in Enum.GetValues<ClientRecord>())
+        foreach (var kind in Enum.GetValues<ClientRecord>().Where(k => k != ClientRecord.FileData))
         {
             Assert.False(lookup.Exists(kind, 4000000000u), kind.ToString());
         }
+
+        // Without open client files a file cannot be checked, so it is not refused.
+        Assert.True(lookup.Exists(ClientRecord.FileData, 4000000000u));
     }
 }
