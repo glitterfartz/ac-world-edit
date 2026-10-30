@@ -32,10 +32,10 @@ public interface IWorldSchema
     ISqlDialect Sql { get; }
 
     /// <summary>The creature template page: shared groups, this dialect's fields.</summary>
-    CreaturePage TemplatePage { get; }
+    EntityPage TemplatePage { get; }
 
     /// <summary>The creature stats page: level, class and scaling fields. The values they produce are computed per dialect.</summary>
-    CreaturePage StatsPage { get; }
+    EntityPage StatsPage { get; }
 
     /// <summary>The creature's vendor rows and per-item fields.</summary>
     ItemListSpec VendorPage { get; }
@@ -71,8 +71,8 @@ public sealed class AcSchema : IWorldSchema
     public WorldDialect Dialect => WorldDialect.AzerothCore;
     public ITableCatalog Tables => AcTables.Instance;
     public ISqlDialect Sql => AcSqlDialect.Instance;
-    public CreaturePage TemplatePage => AcCreaturePage.Page;
-    public CreaturePage StatsPage => AcStatsPage.Page;
+    public EntityPage TemplatePage => AcCreaturePage.Page;
+    public EntityPage StatsPage => AcStatsPage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.AzerothCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.AzerothCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.AzerothCore;
@@ -91,8 +91,8 @@ public sealed class TcSchema : IWorldSchema
     public WorldDialect Dialect => WorldDialect.TrinityCore;
     public ITableCatalog Tables => TcTables.Instance;
     public ISqlDialect Sql => TcSqlDialect.Instance;
-    public CreaturePage TemplatePage => TcCreaturePage.Page;
-    public CreaturePage StatsPage => TcStatsPage.Page;
+    public EntityPage TemplatePage => TcCreaturePage.Page;
+    public EntityPage StatsPage => TcStatsPage.Page;
     public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
     public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
     public TrainerPageSpec TrainerPage => Foundation.TrainerPage.TrinityCore;

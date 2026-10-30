@@ -129,12 +129,12 @@ public sealed record ItemListSpec(
 /// The template page of one dialect: the shared, ordered groups and the fields each dialect puts in
 /// them. One renderer draws any page, so both dialects keep the same structure.
 /// </summary>
-public sealed record CreaturePage(GroupSpec[] Groups, FieldSpec[] Fields, DifficultySpec? Difficulty = null)
+public sealed record EntityPage(GroupSpec[] Groups, FieldSpec[] Fields, DifficultySpec? Difficulty = null)
 {
     public IEnumerable<FieldSpec> In(string group) => Fields.Where(f => f.Group == group);
 
     /// <summary>The groups shared by every dialect, in display order.</summary>
-    public static GroupSpec[] StandardGroups(string? movementHint = null, string? flagsHint = null) =>
+    public static GroupSpec[] CreatureGroups(string? movementHint = null, string? flagsHint = null) =>
     [
         new("identity", "Identity"),
         new("interaction", "Interaction"),

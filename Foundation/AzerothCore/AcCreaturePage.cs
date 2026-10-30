@@ -120,9 +120,9 @@ public static class AcCreaturePage
 
     static string Shown(string value) => float.Parse(value, CultureInfo.InvariantCulture).ToString("0.##", CultureInfo.InvariantCulture);
 
-    public static readonly CreaturePage Page = Build();
+    public static readonly EntityPage Page = Build();
 
-    static CreaturePage Build()
+    static EntityPage Build()
     {
         var d = AcTables.CreatureDetails;
         var t = AcTables.CreatureTemplate;
@@ -190,6 +190,6 @@ public static class AcCreaturePage
             Flags("dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
         ];
 
-        return new(CreaturePage.StandardGroups("Speeds are multiples of the normal rate: 1 is a player's walking pace, 1.14286 is the usual run.", "Tick the behaviours that apply. The raw value keeps any bits the list does not name."), fields);
+        return new(EntityPage.CreatureGroups("Speeds are multiples of the normal rate: 1 is a player's walking pace, 1.14286 is the usual run.", "Tick the behaviours that apply. The raw value keeps any bits the list does not name."), fields);
     }
 }

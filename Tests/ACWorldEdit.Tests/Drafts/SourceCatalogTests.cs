@@ -76,8 +76,8 @@ public class SourceCatalogTests
         public WorldDialect Dialect => WorldDialect.TrinityCore;
         public ITableCatalog Tables => this;
         public ISqlDialect Sql => TcSqlDialect.Instance;
-        public CreaturePage TemplatePage => TcCreaturePage.Page;
-        public CreaturePage StatsPage => TcStatsPage.Page;
+        public EntityPage TemplatePage => TcCreaturePage.Page;
+        public EntityPage StatsPage => TcStatsPage.Page;
         public ItemListSpec VendorPage => Foundation.VendorPage.TrinityCore;
         public GossipPageSpec GossipPage => Foundation.GossipPage.TrinityCore;
         public TrainerPageSpec TrainerPage => AcSchema.Instance.TrainerPage;

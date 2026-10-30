@@ -11,9 +11,9 @@ public static class TcStatsPage
 {
     static string Shown(string value) => float.Parse(value, CultureInfo.InvariantCulture).ToString("0.###", CultureInfo.InvariantCulture);
 
-    public static readonly CreaturePage Page = Build();
+    public static readonly EntityPage Page = Build();
 
-    static CreaturePage Build()
+    static EntityPage Build()
     {
         var d = TcTables.CreatureDifficulty;
         FieldSpec Whole(string group, string column, string label, string tip) => new(group, d, column, label, tip, FieldKind.Whole, RowBinding.Difficulty);

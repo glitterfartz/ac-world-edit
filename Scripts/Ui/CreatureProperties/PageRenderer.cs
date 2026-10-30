@@ -6,7 +6,7 @@ using static ACWorldEdit.Foundation.InteractionEdits;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Draws a <see cref="CreaturePage"/> for either dialect: each group's fields as caption/editor rows,
+/// Draws a <see cref="EntityPage"/> for either dialect: each group's fields as caption/editor rows,
 /// flag sets as checkboxes plus a raw value box, and the difficulty picker when any field binds to a
 /// difficulty row. Editors commit a <see cref="RowEdit"/> through the <see cref="CreatureContext"/>; with
 /// no draft open every field is shown as text. A section hangs its own controls on a group through
@@ -71,7 +71,7 @@ public sealed class PageRenderer(CreatureContext ctx)
         }
     }
 
-    public void Render(Control parent, CreaturePage page, RowSet rows, uint entry, bool editable)
+    public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
         Row? picked = null;

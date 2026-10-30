@@ -38,9 +38,9 @@ public static class TcCreaturePage
         _ => $"Difficulty {id}"
     };
 
-    public static readonly CreaturePage Page = Build();
+    public static readonly EntityPage Page = Build();
 
-    static CreaturePage Build()
+    static EntityPage Build()
     {
         var t = TcTables.CreatureTemplate;
         var d = TcTables.CreatureDifficulty;
@@ -113,7 +113,7 @@ public static class TcCreaturePage
             fields.Add(DFlags($"StaticFlags{i}", $"Static flags {i}", "Static creature flags."));
         }
 
-        return new(CreaturePage.StandardGroups(flagsHint: "The raw value keeps every bit; named bits come once they are checked against TrinityCore."), fields.ToArray(),
+        return new(EntityPage.CreatureGroups(flagsHint: "The raw value keeps every bit; named bits come once they are checked against TrinityCore."), fields.ToArray(),
             new DifficultySpec(d, "Entry", "DifficultyID", DifficultyName, NewDifficulty, [0, 1, 2, 14, 15, 16, 23], byte.MaxValue));
     }
 

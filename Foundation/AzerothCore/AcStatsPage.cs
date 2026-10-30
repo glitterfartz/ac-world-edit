@@ -19,9 +19,9 @@ public static class AcStatsPage
 
     static string Shown(string value) => float.Parse(value, CultureInfo.InvariantCulture).ToString("0.##", CultureInfo.InvariantCulture);
 
-    public static readonly CreaturePage Page = Build();
+    public static readonly EntityPage Page = Build();
 
-    static CreaturePage Build()
+    static EntityPage Build()
     {
         var s = AcTables.CreatureStats;
         FieldSpec Whole(string column, string label, string tip) => new("levels", s, column, label, tip, FieldKind.Whole, Max: MaxLevel);
