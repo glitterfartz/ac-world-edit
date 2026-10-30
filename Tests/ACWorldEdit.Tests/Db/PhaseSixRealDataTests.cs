@@ -317,4 +317,24 @@ public class PhaseSixRealDataTests
         var connection = Environments.TrinityConnection()!;
         await CopyingARealMenuCarriesItsConditionsAndSmartRules(connection.World, DBSource.Open(connection), TcTables.Conditions, TcTables.SmartScripts, "TrinityCore");
     }
+
+    // ---- Gossip: OverrideIconID is checked against the retail client's files -----------------------------------
+
+    [RetailClientFact]
+    public void AnOptionIconFileIsCheckedAgainstTheRealClientStorage()
+    {
+        // 134400 is interface/icons/inv_misc_questionmark.blp in the community listfile; no TDB option sets OverrideIconID yet.
+        var lookup = new RetailClientLookup(RetailData.Tables, id => RetailData.Files.Exists("fdid:" + id.ToString(CultureInfo.InvariantCulture)));
+        Assert.True(lookup.Exists(ClientRecord.FileData, 134400));
+        Assert.False(lookup.Exists(ClientRecord.FileData, 2_000_000_000));
+
+        // Taken from a real option of the live database, with only the icon changed.
+        var real = TcSchema.Instance.GossipPage.Options.Table;
+        var row = Row.Of(real.Columns.Select(c => (c.Name, (object)(c.Kind == ColumnKind.Text ? "" : 0))).ToArray()).With("MenuID", 1u).With("OptionNpc", 1u).With("OptionText", "Buy");
+        var rows = new RowSet();
+        rows.Set(real, row.With("OverrideIconID", 134400));
+        Assert.DoesNotContain(TcGossipRules.Check(rows, lookup.Exists, _ => true), i => i.Message.Contains("icon file"));
+        rows.Set(real, row.With("OverrideIconID", 2_000_000_000));
+        Assert.Contains(TcGossipRules.Check(rows, lookup.Exists, _ => true), i => i.Error && i.Message.Contains("icon file 2000000000"));
+    }
 }
