@@ -104,6 +104,7 @@ public static class GossipPage
             Field("ActionPoiID", "Point of interest", "Map marker shown by this option. 0 means none."),
             Field("BoxText", "Confirmation text", "Text of the confirmation dialog.", FieldKind.Text),
             Field("BoxMoney", "Confirmation cost", "Cost in copper shown in the confirmation dialog."),
+            Field("BoxBroadcastTextID", "Confirmation broadcast", "BroadcastText overriding the literal confirmation text."),
             Field("BoxCoded", "Ask for code", "Ask the player to enter a code.", FieldKind.Check)
         };
         if (retail)
@@ -114,7 +115,6 @@ public static class GossipPage
                 Field("Language", "Language", "Language ID for this option."),
                 Field("Flags", "Flags", "Additional option flags."),
                 Field("GossipNpcOptionID", "NPC option ID", "Client NPC option record."),
-                Field("BoxBroadcastTextID", "Confirmation broadcast", "BroadcastText overriding the literal confirmation text."),
                 Field("SpellID", "Spell", "Spell cast by this option."),
                 Field("OverrideIconID", "Icon override", "Client icon override.")
             });

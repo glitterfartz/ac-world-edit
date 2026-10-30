@@ -15,7 +15,7 @@ public static class InteractionEdits
     public static Row NewText(uint id, string text) => Row.Of(("ID", id), ("text0_0", text), ("text0_1", ""), ("BroadcastTextID0", 0), ("Probability0", 1f));
 
     public static Row NewOption(uint menu, uint id, string text, uint type, uint npcFlag, uint icon, uint action) =>
-        Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", 0), ("OptionType", type), ("OptionNpcFlag", npcFlag), ("ActionMenuID", action), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
+        Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", 0), ("OptionType", type), ("OptionNpcFlag", npcFlag), ("ActionMenuID", action), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""), ("BoxBroadcastTextID", 0u));
 
     /// <summary>
     /// Decimal or 0x-prefixed hex; throws FormatException/OverflowException for anything else.

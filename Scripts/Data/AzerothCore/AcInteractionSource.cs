@@ -24,7 +24,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
         "creature_template.minlevel", "creature_template.unit_class", "creature_template.HealthModifier", "creature_classlevelstats.basehp0",
         "creature_template.faction", "creature_template.speed_run", "creature_template.lootid", "creature_template.flags_extra", "creature_template.CreatureImmunitiesId",
         "gossip_menu.MenuID", "gossip_menu.TextID", "npc_text.text0_0", "npc_text.BroadcastTextID0",
-        "gossip_menu_option.OptionType", "gossip_menu_option.ActionMenuID", "creature_queststarter.quest", "creature_questender.quest",
+        "gossip_menu_option.OptionType", "gossip_menu_option.BoxBroadcastTextID", "trainer_spell.ReqAbility1", "gossip_menu_option.ActionMenuID", "creature_queststarter.quest", "creature_questender.quest",
         "npc_vendor.ExtendedCost", "creature_default_trainer.TrainerId", "trainer_spell.SpellId", "npc_spellclick_spells.spell_id",
         "quest_template.LogTitle", "item_template.name"
     ];
@@ -233,7 +233,7 @@ public sealed class AcInteractionSource(WorldDatabase database)
             lookup.Quests[quest.Id] = quest;
         }
 
-        var broadcasts = view.All(AcTables.NpcText).Select(r => r.I("BroadcastTextID0")).Concat(view.All(AcTables.GossipOption).Select(r => r.I("OptionBroadcastTextID"))).Where(id => id > 0).Select(id => (uint)id);
+        var broadcasts = view.All(AcTables.NpcText).Select(r => r.I("BroadcastTextID0")).Concat(view.All(AcTables.GossipOption).SelectMany(r => new[] { r.I("OptionBroadcastTextID"), r.I("BoxBroadcastTextID") })).Where(id => id > 0).Select(id => (uint)id);
         await using (var command = session.Command(""))
         {
             command.CommandText = $"SELECT ID,COALESCE(MaleText,''),COALESCE(FemaleText,'') FROM broadcast_text WHERE ID IN ({InList(command, broadcasts, "b")})";

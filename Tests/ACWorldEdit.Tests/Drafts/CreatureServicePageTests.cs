@@ -16,7 +16,7 @@ public class CreatureServicePageTests
         var spec = page.Spells;
         var rows = new RowSet();
         var first = spec.Add(rows, 42, ("SpellId", uint.MaxValue), ("ReqLevel", 20u), ("ReqSkillLine", 164u), ("ReqSkillRank", 75u)).After!;
-        if (dialect == WorldDialect.TrinityCore) first = first.With("ReqAbility1", 123u).With("ReqAbility2", 456u).With("ReqAbility3", 789u);
+        first = first.With("ReqAbility1", 123u).With("ReqAbility2", 456u).With("ReqAbility3", 789u);
         first.Validate(spec.Table);
         Assert.Equal(spec.Table.Columns.Length, first.Values.Count);
         rows.Set(spec.Table, first);

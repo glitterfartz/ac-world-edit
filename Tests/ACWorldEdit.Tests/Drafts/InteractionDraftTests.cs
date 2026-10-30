@@ -40,7 +40,7 @@ public class InteractionDraftTests
         snapshot.Set(AcTables.GossipMenu, Row.Of(("MenuID", 50u), ("TextID", 60u)));
         var text = Row.Of(("ID", 60u), ("text0_0", "Hello $N.$BWelcome."), ("text0_1", ""), ("BroadcastTextID0", 900), ("Probability0", 1f));
         snapshot.Set(AcTables.NpcText, text);
-        var option = Row.Of(("MenuID", 50u), ("OptionID", 0u), ("OptionIcon", 1u), ("OptionText", "Let me browse your goods."), ("OptionBroadcastTextID", 0), ("OptionType", 3u), ("OptionNpcFlag", AcNpcFlags.Vendor), ("ActionMenuID", 0u), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
+        var option = Row.Of(("MenuID", 50u), ("OptionID", 0u), ("OptionIcon", 1u), ("OptionText", "Let me browse your goods."), ("OptionBroadcastTextID", 0), ("OptionType", 3u), ("OptionNpcFlag", AcNpcFlags.Vendor), ("ActionMenuID", 0u), ("ActionPoiID", 0u), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""), ("BoxBroadcastTextID", 0u));
         snapshot.Set(AcTables.GossipOption, option);
         var bread = Row.Of(("entry", 42u), ("item", 4540), ("ExtendedCost", 0u), ("slot", 0), ("maxcount", 0u), ("incrtime", 0u));
         snapshot.Set(AcTables.Vendor, bread);

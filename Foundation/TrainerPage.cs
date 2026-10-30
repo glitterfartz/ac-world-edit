@@ -21,15 +21,12 @@ public static class TrainerPage
             Whole("ReqSkillLine", "Required skill", "SkillLine ID required to learn this spell. 0 means none."),
             Whole("ReqSkillRank", "Required skill rank", "Minimum rank in the required skill.")
         };
-        if (retail)
-        {
-            for (int i = 1; i <= 3; i++)
-                fields.Add(Whole($"ReqAbility{i}", $"Required ability {i}", "Spell ID the player must already know. 0 means none."));
-        }
+        for (int i = 1; i <= 3; i++)
+            fields.Add(Whole($"ReqAbility{i}", $"Required ability {i}", "Spell ID the player must already know. 0 means none."));
         Row NewSpell(uint trainer, RowSet rows)
         {
-            var row = Row.Of(("TrainerId", trainer), ("SpellId", 0u), ("MoneyCost", 0u), ("ReqLevel", 1u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u));
-            return retail ? row.With("ReqAbility1", 0u).With("ReqAbility2", 0u).With("ReqAbility3", 0u) : row;
+            return Row.Of(("TrainerId", trainer), ("SpellId", 0u), ("MoneyCost", 0u), ("ReqLevel", 1u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u),
+                ("ReqAbility1", 0u), ("ReqAbility2", 0u), ("ReqAbility3", 0u));
         }
         var binding = retail ? TcTables.CreatureTrainer : AcTables.DefaultTrainer;
         var bindings = new ItemListSpec(binding, retail ? "CreatureID" : "CreatureId", retail ? "MenuID" : "TrainerId", "trainer binding", [],

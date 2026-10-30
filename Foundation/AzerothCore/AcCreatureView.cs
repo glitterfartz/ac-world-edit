@@ -84,7 +84,7 @@ public sealed record AcCreatureView(
                     queue.Enqueue(action);
                 }
 
-                return new OptionView(r, r.U("OptionID"), r.U("OptionIcon"), fromBroadcast?.Male ?? r.T("OptionText"), fromBroadcast != null, r.U("OptionType"), r.U("OptionNpcFlag"), action, r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.U("BoxMoney"), r.T("BoxText"), (r.U("OptionNpcFlag") & flags) == 0, Edited(AcTables.GossipOption, r));
+                return new OptionView(r, r.U("OptionID"), r.U("OptionIcon"), fromBroadcast?.Male ?? r.T("OptionText"), fromBroadcast != null, r.U("OptionType"), r.U("OptionNpcFlag"), action, r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.U("BoxMoney"), r.U("BoxBroadcastTextID") is var boxBroadcast and not 0 && lookup.BroadcastText(boxBroadcast) is { } boxSaid ? boxSaid.Male : r.T("BoxText"), (r.U("OptionNpcFlag") & flags) == 0, Edited(AcTables.GossipOption, r));
             }).ToArray();
             menus[menu] = new MenuView(menu, texts, options, lookup.MenuUsers(menu), texts.Any(t => t.Edited) || options.Any(o => o.Edited));
         }

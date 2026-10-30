@@ -50,7 +50,7 @@ public class AcCreatureViewTests
         AcCreatureView.Build(Entry, 1, "Test NPC", "", "", 1, snapshot ?? rows.Clone(), rows, lookup, [], new Dictionary<int, int>());
 
     static Row Option(uint menu, uint id, uint action = 0, uint type = 1, uint icon = 0, uint flag = 1, uint poi = 0, int broadcast = 0, string text = "Hi") =>
-        Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", broadcast), ("OptionType", type), ("OptionNpcFlag", flag), ("ActionMenuID", action), ("ActionPoiID", poi), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""));
+        Row.Of(("MenuID", menu), ("OptionID", id), ("OptionIcon", icon), ("OptionText", text), ("OptionBroadcastTextID", broadcast), ("OptionType", type), ("OptionNpcFlag", flag), ("ActionMenuID", action), ("ActionPoiID", poi), ("BoxCoded", 0u), ("BoxMoney", 0u), ("BoxText", ""), ("BoxBroadcastTextID", 0u));
 
     static Row MenuText(uint menu, uint text) => Row.Of(("MenuID", menu), ("TextID", text));
 
@@ -278,8 +278,8 @@ public class AcCreatureViewTests
         var lookup = new Lookup();
         AssertError(Build(rows, lookup), "Trainer 8 does not exist");
         rows.Set(AcTables.Trainer, Row.Of(("Id", 8u), ("Type", 1u), ("Requirement", 0u), ("Greeting", "Hi")));
-        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 133u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 5u)));
-        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 134u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqLevel", 1u)));
+        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 133u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqAbility1", 0u), ("ReqAbility2", 0u), ("ReqAbility3", 0u), ("ReqLevel", 5u)));
+        rows.Set(AcTables.TrainerSpell, Row.Of(("TrainerId", 8u), ("SpellId", 134u), ("MoneyCost", 10u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u), ("ReqAbility1", 0u), ("ReqAbility2", 0u), ("ReqAbility3", 0u), ("ReqLevel", 1u)));
         var view = Build(rows, lookup);
         Assert.Equal("Hi", view.Trainer!.Greeting);
         Assert.True(view.Trainer.Exists);
