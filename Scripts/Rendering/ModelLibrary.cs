@@ -7,7 +7,13 @@ namespace ACWorldEdit;
 /// requested animation ID. Equal keys reuse decoded and GPU resources. Skybox variants get
 /// unlit, fog-free, first-drawn materials and unculled, shadowless instances (see SkyLighting).
 /// </summary>
-public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "");
+public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "")
+{
+    /// <summary>The variant a creature display resolves to, playing <paramref name="animation"/>.</summary>
+    public static ModelKey ForCreature(CreatureAppearance appearance, ushort animation = 0) =>
+        new(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: animation, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "");
+}
+
 /// <summary>
 /// Main-thread resource owner with a few decode workers. Upload surfaces incrementally, batch
 /// placements and animate on the GPU; active resources can exceed the dormant-cache target.

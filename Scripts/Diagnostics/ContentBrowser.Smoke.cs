@@ -16,6 +16,13 @@ public partial class ContentBrowser
 
     public int SmokeRows(SpawnKind kind) => PageOf(kind).Results.ItemCount;
 
+    /// <summary>Rows showing a rendered thumbnail rather than the blank tile.</summary>
+    public int SmokeThumbnails(SpawnKind kind)
+    {
+        var list = PageOf(kind).Results;
+        return Enumerable.Range(0, list.ItemCount).Count(i => list.GetItemIcon(i) is { } icon && icon != Blank);
+    }
+
     /// <summary>Show the kind's tab, pick the type (null for any) and submit the term.</summary>
     public void SmokeSearch(SpawnKind kind, string term, int? type)
     {

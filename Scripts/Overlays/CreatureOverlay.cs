@@ -479,7 +479,7 @@ public partial class CreatureOverlay : RegionOverlay
                 continue;
             }
 
-            var key = new ModelKey(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "");
+            var key = ModelKey.ForCreature(appearance, selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0);
             if (!groups.TryGetValue(key, out var list))
             {
                 groups[key] = list = [];

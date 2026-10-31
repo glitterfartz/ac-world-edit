@@ -290,8 +290,15 @@ public partial class TerrainViewer
         {
             Connection = () => DatabaseConnection(),
             Lookup = () => clientLookup,
-            Report = statusLog.Post
+            Report = statusLog.Post,
+            Thumbnails = thumbnails = new ModelThumbnails
+            {
+                Models = () => store == null ? null : models,
+                MainCamera = () => camera,
+                Directory = ProjectSettings.GlobalizePath($"user://thumbs/{profile.Kind.ToString().ToLowerInvariant()}")
+            }
         };
+        AddChild(thumbnails);
         contentBrowser.Activated += OpenTemplate;
         ui.AddChild(contentBrowser);
         foreach (var side in new Control[] { leftPanel, sidebar })
@@ -319,6 +326,8 @@ public partial class TerrainViewer
 
     CreaturePropertiesWindow creatureProps = null!;
     ContentBrowser contentBrowser = null!;
+    /// <summary>Off-screen model thumbnails for the content browser; reset when another client loads.</summary>
+    ModelThumbnails? thumbnails;
 
     void ToggleContentBrowser()
     {

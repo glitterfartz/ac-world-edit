@@ -33,6 +33,28 @@ public partial class TerrainViewer
         contentBrowserRun.Advance(delta, contentBrowserSteps, !busy && world != null, Where, SmokeFail, () => GetTree().Quit(), waiting: Where);
     }
 
+    /// <summary>
+    /// Windowed: wait until rendered thumbnails replace the blank tiles and their PNGs are cached, then
+    /// screenshot the browser. Headless has no renderer, so there is nothing to wait for.
+    /// </summary>
+    bool Thumbnailed(SpawnKind kind, string shotName)
+    {
+        if (DisplayServer.GetName() == "headless")
+        {
+            return true;
+        }
+
+        int wanted = Math.Min(3, contentBrowser.SmokeRows(kind));
+        if (contentBrowser.SmokeThumbnails(kind) < wanted)
+        {
+            return false;
+        }
+
+        Require(System.IO.Directory.GetFiles(thumbnails!.Directory, "*.png").Length > 0, $"no thumbnail was saved in {thumbnails.Directory}");
+        Screenshot(shotName);
+        return true;
+    }
+
     List<(string, Func<bool>)> ContentBrowserSteps() =>
     [
         ("open", () =>
@@ -64,9 +86,9 @@ public partial class TerrainViewer
             }
 
             Require(found[0].Name == "Hogger", $"the exact name should sort first, got '{found[0].Name}'");
-            Screenshot("creatures");
             return true;
         }),
+        ("creature-thumbnails", () => Thumbnailed(SpawnKind.Creature, "creatures")),
         ("open-hogger", () =>
         {
             Require(contentBrowser.SmokeActivate(SpawnKind.Creature, SmokeHogger), "Hogger is not listed");
@@ -92,9 +114,9 @@ public partial class TerrainViewer
             }
 
             Require(found.All(h => h.Type == MailboxType), "the type filter let another GameObject type through");
-            Screenshot("objects");
             return true;
         }),
+        ("object-thumbnails", () => Thumbnailed(SpawnKind.GameObject, "objects")),
         ("open-mailbox", () =>
         {
             Require(contentBrowser.SmokeActivate(SpawnKind.GameObject, SmokeMailbox), "the Mailbox is not listed");

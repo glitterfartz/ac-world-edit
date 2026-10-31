@@ -9,7 +9,8 @@ namespace ACWorldEdit;
 /// The content browser: a panel along the bottom with one tab per kind of template (creatures, game
 /// objects), a search box and the matching templates. Searches are bounded and read-only, and a newer
 /// search replaces an older one still running. A template is picked with a click and opened with a
-/// double-click or Enter; what opening does is up to the viewer (<see cref="Activated"/>).
+/// double-click or Enter; what opening does is up to the viewer (<see cref="Activated"/>). Each result shows
+/// its model's thumbnail once <see cref="Thumbnails"/> has one, and a blank tile until then.
 /// </summary>
 public sealed partial class ContentBrowser : PanelContainer
 {
@@ -17,6 +18,7 @@ public sealed partial class ContentBrowser : PanelContainer
 
     public Func<WorldConnection> Connection { get; set; } = () => WorldConnection.Empty;
     public Func<IClientLookup?> Lookup { get; set; } = () => null;
+    public IThumbnailSource? Thumbnails { get; set; }
 
     /// <summary>Feedback for the status bar.</summary>
     public Action<string> Report { get; set; } = _ => { };
@@ -32,6 +34,8 @@ public sealed partial class ContentBrowser : PanelContainer
         public OptionButton Type = null!;
         public Label Count = null!;
         public IReadOnlyList<TemplateHit> Found = [];
+        /// <summary>Display ID by entry for the current results.</summary>
+        public IReadOnlyDictionary<uint, uint> Displays = new Dictionary<uint, uint>();
         public int Generation;
         public bool Loaded;
     }
@@ -47,7 +51,7 @@ public sealed partial class ContentBrowser : PanelContainer
         AnchorTop = AnchorBottom = AnchorRight = 1;
         OffsetLeft = 360;
         OffsetRight = -436;
-        OffsetTop = -300;
+        OffsetTop = -380;
         OffsetBottom = -70;
         Theme = InspectorUi.ExplorerTheme();
         var root = new VBoxContainer();
@@ -71,7 +75,14 @@ public sealed partial class ContentBrowser : PanelContainer
         }
     }
 
-    public void Close() => Visible = false;
+    public void Close()
+    {
+        Visible = false;
+        Thumbnails?.CancelWaiting();
+    }
+
+    const int IconSize = 96;
+    static readonly Texture2D Blank = ImageTexture.CreateFromImage(Image.CreateEmpty(IconSize, IconSize, false, Image.Format.Rgba8));
 
     void AddPage(SpawnKind kind, string title, string placeholder)
     {
@@ -107,7 +118,10 @@ public sealed partial class ContentBrowser : PanelContainer
             SizeFlagsVertical = SizeFlags.ExpandFill,
             MaxColumns = 0,
             SameColumnWidth = true,
-            FixedColumnWidth = 260,
+            FixedColumnWidth = 132,
+            IconMode = ItemList.IconModeEnum.Top,
+            FixedIconSize = new Vector2I(IconSize, IconSize),
+            MaxTextLines = 2,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             AllowReselect = true
         };
@@ -143,6 +157,10 @@ public sealed partial class ContentBrowser : PanelContainer
             term = term[..Math.Min(80, term.Length)];
             int type = page.Type.GetSelectedId() - 1;
             var found = await db.SearchTemplatesAsync(page.Kind, term, type == AnyType ? null : type, token);
+            var entries = found.Select(h => h.Entry).ToList();
+            var displays = page.Kind == SpawnKind.Creature
+                ? (await db.ReadCreatureLooksAsync(entries, token)).ToDictionary(p => p.Key, p => p.Value.DisplayId)
+                : (await db.ReadGameObjectLooksAsync(entries, token)).ToDictionary(p => p.Key, p => p.Value.DisplayId);
 
             if (generation != page.Generation)
             {
@@ -150,6 +168,7 @@ public sealed partial class ContentBrowser : PanelContainer
             }
 
             page.Found = found;
+            page.Displays = displays;
             page.Loaded = true;
             ShowResults(page);
         }
@@ -169,16 +188,41 @@ public sealed partial class ContentBrowser : PanelContainer
     void ShowResults(Tab page)
     {
         page.Results.Clear();
+        Thumbnails?.CancelWaiting();
+        int generation = page.Generation;
         foreach (var hit in page.Found)
         {
             string label = string.IsNullOrEmpty(hit.Name) ? $"({hit.Entry})" : hit.Name;
             string kind = page.Kind == SpawnKind.Creature ? CreatureTypes.Name(hit.Type) : GameObjectTypes.Name(hit.Type);
-            int row = page.Results.AddItem($"{label} ({hit.Entry}) · {kind}");
-            page.Results.SetItemTooltip(row, $"{label} ({hit.Entry}). Double-click to open.");
+            int row = page.Results.AddItem($"{label}\n{hit.Entry} · {kind}", Thumbnail(page, generation, hit.Entry) ?? Blank);
+            page.Results.SetItemTooltip(row, $"{label} ({hit.Entry}) · {kind}. Double-click to open.");
         }
 
         int count = page.Found.Count;
         page.Count.Text = count == 0 ? "No templates found." : count >= DbLimits.MaxSearch ? $"First {count} shown. Narrow the search." : $"{count} found.";
+    }
+
+    /// <summary>
+    /// The entry's thumbnail if known; otherwise null, and the row's icon is set when it arrives, provided
+    /// the page still shows the same search (rows are found again by entry, not by a saved index).
+    /// </summary>
+    Texture2D? Thumbnail(Tab page, int generation, uint entry)
+    {
+        if (Thumbnails == null || !page.Displays.TryGetValue(entry, out uint display))
+        {
+            return null;
+        }
+
+        void Ready(Texture2D texture)
+        {
+            int row = page.Found.ToList().FindIndex(h => h.Entry == entry);
+            if (page.Generation == generation && row >= 0 && row < page.Results.ItemCount)
+            {
+                page.Results.SetItemIcon(row, texture);
+            }
+        }
+
+        return page.Kind == SpawnKind.Creature ? Thumbnails.Creature(display, Ready) : Thumbnails.GameObject(display, Ready);
     }
 
     public override void _ExitTree()

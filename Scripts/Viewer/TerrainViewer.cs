@@ -226,6 +226,7 @@ public partial class TerrainViewer : Node3D
             maps.Clear();
             int selected = 0;
             await models.SetStore(store, result.Creatures, result.GameObjects);
+            thumbnails?.Reset(ProjectSettings.GlobalizePath($"user://thumbs/{kind.ToString().ToLowerInvariant()}"));
             for (int i = 0; i < mapList.Count; i++)
             {
                 maps.AddItem($"{mapList[i].Name} ({mapList[i].Id})");
