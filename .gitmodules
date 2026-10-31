@@ -1,3 +1,9 @@
 [submodule "Data/WoWDBDefs"]
 	path = Data/WoWDBDefs
 	url = https://github.com/wowdev/WoWDBDefs.git
+[submodule "ThirdParty/CascLib"]
+	path = ThirdParty/CascLib
+	url = https://github.com/ladislav-zezula/CascLib.git
+[submodule "ThirdParty/StormLib"]
+	path = ThirdParty/StormLib
+	url = https://github.com/ladislav-zezula/StormLib.git
