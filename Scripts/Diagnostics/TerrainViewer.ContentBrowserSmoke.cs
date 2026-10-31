@@ -50,10 +50,15 @@ public partial class TerrainViewer
             return false;
         }
 
-        Require(System.IO.Directory.GetFiles(thumbnails!.Directory, "*.png").Length > 0, $"no thumbnail was saved in {thumbnails.Directory}");
+        // The smoke cache starts empty, so each tab's thumbnails must have been rendered by this run.
+        Require(thumbnails!.Rendered > renderedThumbnails, $"the {kind} thumbnails were not rendered by this run");
+        renderedThumbnails = thumbnails.Rendered;
+        Require(System.IO.Directory.GetFiles(thumbnails.Directory, "*.png").Length == renderedThumbnails, $"not every rendered thumbnail was saved in {thumbnails.Directory}");
         Screenshot(shotName);
         return true;
     }
+
+    int renderedThumbnails;
 
     List<(string, Func<bool>)> ContentBrowserSteps() =>
     [

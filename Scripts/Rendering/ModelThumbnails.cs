@@ -208,9 +208,15 @@ public sealed partial class ModelThumbnails : Node, IThumbnailSource
         foreach (var job in active.ToArray())
         {
             job.Age += delta;
-            if (job.Instance == null || !IsInstanceValid(job.Instance) || models.HasFailed(job.Key) || job.Age > Timeout)
+            if (job.Instance == null || !IsInstanceValid(job.Instance) || models.HasFailed(job.Key))
             {
                 Finish(job, null);
+            }
+            else if (job.Age > Timeout && capture?.Job != job)
+            {
+                // Slow, not failed (the world may be streaming): forget the job so the next search asks again.
+                active.Remove(job);
+                job.Holder?.QueueFree();
             }
             else if (job.Instance.ModelReady && capture == null)
             {

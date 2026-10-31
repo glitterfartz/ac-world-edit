@@ -294,8 +294,7 @@ public partial class TerrainViewer
             Thumbnails = thumbnails = new ModelThumbnails
             {
                 Models = () => store == null ? null : models,
-                MainCamera = () => camera,
-                Directory = ProjectSettings.GlobalizePath($"user://thumbs/{profile.Kind.ToString().ToLowerInvariant()}")
+                MainCamera = () => camera
             }
         };
         AddChild(thumbnails);
@@ -328,6 +327,14 @@ public partial class TerrainViewer
     ContentBrowser contentBrowser = null!;
     /// <summary>Off-screen model thumbnails for the content browser; reset when another client loads.</summary>
     ModelThumbnails? thumbnails;
+    readonly string smokeThumbnails = Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// The thumbnail cache of a client kind. Smoke runs get a fresh folder under artifacts, as their drafts
+    /// do, so a run renders every thumbnail instead of reading an earlier run's PNGs.
+    /// </summary>
+    string ThumbnailDirectory(ClientKind kind) =>
+        ProjectSettings.GlobalizePath(anySmoke ? $"res://artifacts/thumbs/{smokeThumbnails}" : $"user://thumbs/{kind.ToString().ToLowerInvariant()}");
 
     void ToggleContentBrowser()
     {
