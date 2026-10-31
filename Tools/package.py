@@ -90,7 +90,6 @@ def main():
         sys.exit('Data/WoWDBDefs is not initialised. Run python Tools/setup.py first.')
 
     env = os.environ.copy()
-    env['MSBuildEnableWorkloadResolver'] = 'false'
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)  # Godot refuses to export into a folder that does not exist
     run(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false'], env)
