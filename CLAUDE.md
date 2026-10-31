@@ -24,6 +24,8 @@ Architecture lives in `docs/`, not here. Read the relevant page before working i
 Shell is PowerShell on Windows. SDK is pinned in `global.json`; Godot is found via `--godot-path`, `GODOT_BIN` or `godot` on PATH.
 
 ```powershell
+git submodule update --init               # or clone with --recurse-submodules
+python Tools/setup.py                     # sync submodules, build CascLib into native/win-x64 (--with-tests adds StormLib)
 python launch_viewer.py                   # build, then launch the viewer
 python launch_viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
 dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite
@@ -33,7 +35,8 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 
 ## Notes
 
-- `artifacts/`, `native/`, `.build-env/`, `wow-data/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
+- Third-party code lives in pinned submodules (`ThirdParty/CascLib`, `ThirdParty/StormLib`, `Data/WoWDBDefs`); change a pin by checking out the new commit inside the submodule and `git add`-ing it, and keep `THIRD-PARTY.md` current. `Tools/package.py` makes a release build.
+- `artifacts/`, `native/`, `build/`, `.build-env/`, `wow-data/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
 - Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added.
 - The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/`; use `-p:NuGetAudit=false` for dotnet commands.
 - A PostToolUse hook runs `dotnet format whitespace` on each edited `.cs` file.
@@ -44,7 +47,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 - Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/tc-status.md` when work lands or a gap is found, `docs/NEEDED-TESTS.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
 - For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/DB-DIFFERENCES.md`.
-- `azerothcore-wotlk` and `wow-data` are read-only reference and must never be modified (enforced by `.claude/hooks/block_readonly.py`).
+- `azerothcore-wotlk` and `wow-data` are read-only reference and must never be modified.
 - Dialect-specific classes use the `Ac` / `Tc` prefix (file names too) and live in `AzerothCore/` / `TrinityCore/` directories under their feature or layer; shared interfaces, descriptors, context and renderers stay unprefixed. When working in a feature, rename and move legacy dialect-specific classes to match, moving `.cs.uid` companions with them.
 - Write tests after a feature works (not test-first for large features). Skip trivial getters/setters and Godot UI wiring. Keep tests fast and deterministic; slow corpus tests are opt-in.
 - Inspect visual changes in Godot before calling them done.

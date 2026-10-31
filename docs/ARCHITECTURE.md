@@ -150,7 +150,8 @@ A client folder is opened by `ClientServices`, which wires an `IClientFiles` sou
 | `Foundation/` | Draft model, SQL export, SmartAI and quest rules, coordinates |
 | `Shaders/` | `terrain.gdshader`, `liquid.gdshader`, `model.gdshader` |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
-| `Tools/` | `generate_smart_catalog.py`, `generate_condition_catalog.py`, `get_casclib.py` |
+| `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py` |
+| `ThirdParty/` | `CascLib` and `StormLib` git submodules, built by `Tools/setup.py` |
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (`.dbd` layouts), pinned by the submodule commit |
 | `launch_viewer.py` | Build and launch helper, `--smoke` and `--check-assets` modes |
 

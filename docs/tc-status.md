@@ -132,6 +132,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 
 | Item                                                                                  | Status      | Notes                                                                                                                                         |
 | ------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| CI | not started | `Tools/setup.py` and `Tools/package.py` are the two steps a Windows CI job would run (Godot 4.7.1 .NET and its export templates must be installed). No workflow exists yet, and a full export has not been run on a machine with the templates installed (`--export-pack` works), so the data-folder name and contents `Tools/package.py` assumes are unchecked. |
 | `Db2Tables` thread safety                                                             | partial     | Retail test classes still run one at a time (`[Collection(RetailData.Collection)]`); drop that once the retail corpus tests pass in parallel. |
 | `RetailCorpusTests.EveryMapWdtParsesAndOneTilePerTerrainMapDecodes` accepted failures | not started | Stale "until the retail WMO milestone" comments; tighten or remove the filter.                                                                |
 

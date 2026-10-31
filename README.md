@@ -19,10 +19,32 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams and an overview. D
 
 ## Prerequisites
 
-- .NET SDK matching [`global.json`](global.json) (10.0.400, roll-forward to the latest feature band)
-- Godot 4.7 .NET edition, found via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH
-- Python 3 (for `launch_viewer.py`)
-- A WoW client (3.3.5 or retail) and, for database overlays, an AzerothCore (3.3.5) or TrinityCore master (retail) world database
+| Requirement | Needed for | Notes |
+| --- | --- | --- |
+| Windows x64 | everything | The native build and `native/win-x64` layout are Windows only for now |
+| Git | cloning, submodules | Clone with `--recurse-submodules`, or run the setup script |
+| .NET SDK matching [`global.json`](global.json) (10.0.400, roll-forward to the latest feature band) | build, tests | Projects target `net8.0` |
+| Godot 4.7.1 **.NET (mono) edition** | running, packaging | Found via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH |
+| Python 3 | setup and launch scripts | Standard library only |
+| CMake and Visual Studio Build Tools ("Desktop development with C++") | `Tools/setup.py` | Builds CascLib (Retail profile) and StormLib (tests) |
+| A WoW client: 3.3.5 (MPQ) or retail (CASC) | viewing | Never modified |
+| An AzerothCore (3.3.5) or TrinityCore master (retail) `world` database, plus optional `hotfixes` | database overlays and editing | Read-only connection; a SELECT-only account is enough |
+
+Third-party code comes from pinned git submodules: `ThirdParty/CascLib` and `ThirdParty/StormLib` (both MIT) and `Data/WoWDBDefs` (retail table layouts, CC BY-SA 4.0). NuGet packages (SharpZipLib, MySqlConnector, DBCD) are pinned by version in `ACWorldEdit.csproj` and restored by `dotnet`, so they are not submodules. See [THIRD-PARTY.md](THIRD-PARTY.md).
+
+The Wrath profile needs none of the native libraries; only the Retail profile needs CascLib and the WoWDBDefs definitions.
+
+## Setup
+
+```powershell
+git clone --recurse-submodules https://github.com/glitterfartz/ac-world-edit.git
+cd ac-world-edit
+python Tools/setup.py                     # sync submodules, build CascLib into native/win-x64/
+python Tools/setup.py --with-tests        # also build StormLib, used only by the StormLib differential test
+python Tools/setup.py --check             # report what is present and change nothing
+```
+
+`Tools/setup.py` syncs the pinned submodules, builds out of tree under `.build-env/cmake/` (the submodule folders stay clean), copies the DLLs and their licences into `native/win-x64/`, and skips a rebuild when the pinned commit and options are unchanged (`--force` rebuilds). It prints what is still missing, with the fix. Set `ACWORLD_CMAKE_GENERATOR` if CMake cannot pick a Visual Studio generator.
 
 ## Build and run
 
@@ -32,9 +54,25 @@ python launch_viewer.py --smoke           # build, then run Godot headless with 
 python launch_viewer.py --check-assets    # run the corpus test set (needs real client data)
 ```
 
-The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/` so CLI caches stay in the project. Pass `-p:NuGetAudit=false` to direct `dotnet` commands.
+The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/` so CLI caches stay in the project. Pass `-p:NuGetAudit=false` to direct `dotnet` commands. A build warns (`ACW001`, `ACW002`) when `CascLib.dll` or the WoWDBDefs definitions are missing, and the viewer says the same in its status bar when the Retail profile is selected.
 
 Other smoke workflows (`--visual-smoke`, `--water-smoke`, `--reload-smoke`, `--creature-smoke`, `--client-smoke`, ...) are opt-in flags passed to Godot after `--`.
+
+## First run
+
+1. Start the viewer (`python launch_viewer.py`).
+2. **File → Load client…**: pick **Wrath** (a 3.3.5 folder containing `common.MPQ`) or **Retail** (the install folder containing `.build.info`). The folder is remembered per profile. A retail client offers to download the community listfile once; **File → Update listfile…** repeats it later.
+3. **File → Database connection…**: enter host, port, user, password and the world database (for example `acore_world`; for retail also an optional hotfixes database). The connection is tested before it is saved. Skip this step to browse the client data without database overlays.
+4. Pick a map and fly around. Edits are staged as drafts; **File → Pending changes…** lists them and exports reviewable SQL. Settings, drafts and exports live in Godot's user folder: `%APPDATA%\Godot\app_userdata\ACWorldEdit` when you start the project from the Godot editor or an exported build, and `.build-env\roaming\Godot\app_userdata\ACWorldEdit` when you start it with `launch_viewer.py`, which redirects `APPDATA`.
+
+## Package a build
+
+```powershell
+python Tools/package.py                   # build/win-x64/ACWorldEdit.exe plus its data folder
+python Tools/package.py --pack-only       # just ACWorldEdit.pck; needs no export templates
+```
+
+This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The script then makes sure `CascLib.dll`, the retail `definitions/` and the licences are in the build's data folder, where the loader looks for them. Output goes to the git-ignored `build/`. A CI job would run `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed; no CI is configured yet, and a full export has not been run yet (only `--pack-only` has).
 
 ## Test
 
@@ -58,6 +96,11 @@ The default settings exclude the `Corpus` (needs client data) and `KnownBug` cat
 | `ACWORLD_DATA_DIR`       | 3.3.5 client data directory, for `ClientData`/`Corpus` tests                                               |
 | `ACWORLD_RETAIL_DIR`     | Retail client directory, for `ClientData`/`Corpus` tests                                                   |
 | `ACWORLD_CLIENT_PROFILE` | Client profile selection for `ClientData`/`Corpus` tests                                                   |
-| `ACWORLD_CASCLIB`        | Path to `CascLib.dll`; fetch it with `python Tools/get_casclib.py` into `native/win-x64/`                  |
-| `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions`                                                  |
+| `ACWORLD_CASCLIB`        | Path to `CascLib.dll` (default: the one `python Tools/setup.py` builds into `native/win-x64/`)             |
+| `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions` (the submodule)                              |
+| `ACWORLD_CMAKE_GENERATOR` | CMake generator for `Tools/setup.py` (default: CMake's Visual Studio generator)                           |
 | `ACWORLD_LISTFILE`       | Override for the community listfile location (default `user://community-listfile.csv`)                     |
+
+## License
+
+MIT, see [LICENSE](LICENSE). Third-party components keep their own licences: [THIRD-PARTY.md](THIRD-PARTY.md).

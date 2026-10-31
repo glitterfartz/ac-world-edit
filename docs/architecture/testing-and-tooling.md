@@ -58,7 +58,7 @@ Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client 
 
 ### `Tests/run_stormlib_checks.py` (StormLib differential)
 
-Downloads the pinned official StormLib 9.40 x64 DLL into `artifacts/`, checks its SHA-256, then runs `dotnet test Tests/ACWorldEdit.Tests` with `STORMLIB_DLL` set. The xUnit `WorldCorpusTests` use `Support/StormLibOracle.cs` to compare every asset read against StormLib. Only that test reads the variable.
+Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/StormLib` submodule (v9.40, Unicode build because the oracle passes `LPWStr` paths) to `native/win-x64/StormLib.dll`. The script then runs `dotnet test Tests/ACWorldEdit.Tests` with `STORMLIB_DLL` set to that DLL and `ACWORLD_DATA_DIR` as the client data. The xUnit `WorldCorpusTests` use `Support/StormLibOracle.cs` to compare every asset read against StormLib. Only that test reads the variable. StormLib is a test-only dependency: the runtime MPQ reader is managed (`MpqArchive`).
 
 ## Tooling
 
@@ -67,9 +67,11 @@ Downloads the pinned official StormLib 9.40 x64 DLL into `artifacts/`, checks it
 | `launch_viewer.py` | Builds `ACWorldEdit.csproj` and launches Godot. `--smoke` runs the terrain smoke headless. `--check-assets` runs the corpus tests. Godot is found through `--godot-path`, `GODOT_BIN` or `PATH`. Sets `APPDATA` and `LOCALAPPDATA` into `.build-env/` |
 | `Tools/generate_condition_catalog.py` | Regenerates `Foundation/AzerothCore/AcConditionTypes.cs` from AzerothCore's `ConditionMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcConditionTypes.cs` from TrinityCore's (the AzerothCore header is a third argument, for reusing labels). Curated names, sentences and source key labels live in the script |
 | `Tools/generate_smart_catalog.py` | Regenerates `Foundation/AzerothCore/AcSmartTypes.cs` from AzerothCore's `SmartScriptMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcSmartTypes.cs` from TrinityCore's |
-| `Tools/get_casclib.py` | Copies a locally built `CascLib.dll` into `native/win-x64/`; the project copies it to the output when present |
+| `Tools/setup.py` | Syncs the pinned submodules and builds `ThirdParty/CascLib` (and with `--with-tests` `ThirdParty/StormLib`) out of tree under `.build-env/cmake/`, then copies the DLLs and licences into `native/win-x64/`. A stamp (submodule commit plus CMake options) skips rebuilds; `--force` rebuilds, `--check` only reports. Builds use the static MSVC runtime, so the DLLs need no VC++ redistributable. `ACWORLD_CMAKE_GENERATOR` overrides the CMake generator |
+| `Tools/package.py` | Builds, imports and exports the `Windows Desktop` preset (`export_presets.cfg`) to `build/win-x64/`, then makes sure `CascLib.dll`, `definitions/` and the licences are in the build's data folder (the loader searches `AppContext.BaseDirectory`; the folder name is assumed from Godot's `data_<name>_windows_x86_64` convention and not yet checked against a real export). `--pack-only` exports just the `.pck` and needs no export templates. A future CI job runs `setup.py`, then `package.py`; it must install Godot 4.7.1 .NET and its export templates |
+| `ThirdParty/` | `CascLib` and `StormLib` git submodules (MIT), pinned by commit; a `.gdignore` keeps Godot from scanning them. `native/` and `build/` are git-ignored outputs |
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (CC BY-SA 4.0), pinned by its commit; `definitions/*.dbd` are copied to output as `definitions/` |
-| `.claude/hooks/block_readonly.py` | Blocks edits and shell writes under the read-only game and data folders |
+| `THIRD-PARTY.md` | Licences and purpose of every third-party component; shipped with builds together with `LICENSE` |
 | `.claude/hooks/format_cs.py` | Runs `dotnet format whitespace` on each edited `.cs` file |
 
 Build configuration:
@@ -95,7 +97,7 @@ Environment variables for tests and tools:
 
 - `ACWORLD_DB_INFO` = `host;port;user;password;database` (AzerothCore Db tests); `ACWORLD_TC_DB_INFO` = the same plus optional `;hotfixes` (TrinityCore Db tests, `TcDbFact`).
 - `ACWORLD_DATA_DIR` (3.3.5 client), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE`: `ClientData`/`Corpus` tests.
-- `ACWORLD_CASCLIB` (`CascLib.dll`; `Tools/get_casclib.py` copies it into `native/win-x64/`), `ACWORLD_DBD_DIR` (defaults to the `Data/WoWDBDefs` submodule; `git submodule update --init`).
+- `ACWORLD_CASCLIB` (`CascLib.dll`; `Tools/setup.py` builds it into `native/win-x64/`), `ACWORLD_DBD_DIR` (defaults to the `Data/WoWDBDefs` submodule, which `Tools/setup.py` initialises).
 - `ACWORLD_LISTFILE` overrides the community listfile path; `RetailListfileFact` tests skip without it.
 
 ## Commit messages
