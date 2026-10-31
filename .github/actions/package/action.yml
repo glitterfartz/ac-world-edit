@@ -17,8 +17,28 @@ outputs:
 runs:
   using: composite
   steps:
-    # pwsh, not bash: under the runner's Git Bash the same `dotnet build` that Tools/package.py starts
-    # failed its NuGet restore with no message, while it works from PowerShell like every other step.
+    # TEMPORARY: builds the project three ways, each with a fresh restore and its own binary log, to find
+    # out what the failing restore in Tools/package.py depends on. Remove once the cause is fixed.
+    - name: Diagnose restore (temporary)
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        New-Item -ItemType Directory -Force diag | Out-Null
+        python --version
+        $probe = @'
+        import os, subprocess, sys
+        mode, log = sys.argv[1], sys.argv[2]
+        env = os.environ.copy() if mode == 'copy' else None
+        sys.exit(subprocess.call(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false', '-bl:' + log], env=env))
+        '@
+        Set-Content -Path diag/probe.py -Value $probe
+        foreach ($variant in 'pwsh', 'inherit', 'copy') {
+          Remove-Item Foundation/obj, .godot/mono/temp/obj -Recurse -Force -ErrorAction SilentlyContinue
+          $log = "diag/$variant.binlog"
+          if ($variant -eq 'pwsh') { dotnet build ACWorldEdit.csproj -c Release -p:NuGetAudit=false "-bl:$log" } else { python diag/probe.py $variant $log }
+          "RESULT $variant exit=$LASTEXITCODE"
+        }
+
     - name: Export
       shell: pwsh
       env:

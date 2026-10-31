@@ -89,10 +89,11 @@ def main():
     if not args.pack_only and not (ROOT / 'Data' / 'WoWDBDefs' / 'definitions' / 'Map.dbd').is_file():
         sys.exit('Data/WoWDBDefs is not initialised. Run python Tools/setup.py first.')
 
-    env = os.environ.copy()
+    env = None  # dotnet and Godot inherit the environment unchanged
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)  # Godot refuses to export into a folder that does not exist
-    run(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false'], env)
+    # The binary log records NuGet and MSBuild errors that the console summary can hide.
+    run(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false', f'-bl:{ROOT / "build" / "dotnet.binlog"}'], env)
     # .godot/ is git-ignored, so a fresh checkout has no imported resources until this runs.
     run([godot, '--headless', '--path', str(ROOT), '--import'], env)
     if args.pack_only:

@@ -56,6 +56,15 @@ jobs:
         with:
           version: ${{ steps.version.outputs.number }}
 
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build/dotnet.binlog
+          retention-days: 3
+          if-no-files-found: ignore
+
       # The notes list the commits since the previous tag; GitHub's generated notes (appended below) only
       # cover merged pull requests, which direct pushes to master do not have.
       - name: Create the draft release
