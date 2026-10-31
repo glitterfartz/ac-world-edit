@@ -35,6 +35,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 
 ## Notes
 
+- `ACWorldEdit.sln` exists for Godot's .NET export; pass `ACWorldEdit.csproj` explicitly to `dotnet` commands, since a bare `dotnet build` in the root sees two candidates.
 - Third-party code lives in pinned submodules (`ThirdParty/CascLib`, `ThirdParty/StormLib`, `Data/WoWDBDefs`); change a pin by checking out the new commit inside the submodule and `git add`-ing it, and keep `THIRD-PARTY.md` current. `Tools/package.py` makes a release build.
 - `artifacts/`, `native/`, `build/`, `.build-env/`, `wow-data/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
 - Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added.
