@@ -17,21 +17,15 @@ outputs:
 runs:
   using: composite
   steps:
-    # TEMPORARY: diagnose a silent restore failure seen only in this job. Remove once fixed.
-    - name: Diagnose restore (temporary)
-      shell: pwsh
-      continue-on-error: true
-      run: |
-        dotnet --info | Select-Object -First 25
-        "--- env names"; (Get-ChildItem Env: | Sort-Object Name | ForEach-Object { $_.Name }) -join ', '
-        "--- restore from pwsh"; dotnet restore ACWorldEdit.csproj -p:NuGetAudit=false -v:detailed 2>&1 | Select-Object -Last 70
-        "--- restore from python"; python -c "import subprocess,os; print(subprocess.call(['dotnet','restore','ACWorldEdit.csproj','-p:NuGetAudit=false','-v:n'], env=os.environ.copy()))"
-
+    # pwsh, not bash: under the runner's Git Bash the same `dotnet build` that Tools/package.py starts
+    # failed its NuGet restore with no message, while it works from PowerShell like every other step.
     - name: Export
-      shell: bash
+      shell: pwsh
       env:
         VERSION: ${{ inputs.version }}
-      run: python Tools/package.py --version "$VERSION"
+      run: |
+        python Tools/package.py --version $env:VERSION
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     # The exe is a GUI-subsystem program, so wait on the process itself and check its exit code. A
     # throwaway APPDATA keeps the run from touching or depending on any user settings.
