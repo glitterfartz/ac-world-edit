@@ -60,6 +60,10 @@ public partial class TerrainViewer
         clientShot |= clientShotOverlays;
         clientShot |= clientShotWater;
         clientSmoke = flags.Contains("--client-smoke") || clientShot;
+        if (flags.Contains("--reset-smoke"))
+        {
+            _ = ResetSmoke();
+        }
     }
 
     /// <summary>

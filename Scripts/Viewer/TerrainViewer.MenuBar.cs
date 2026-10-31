@@ -64,6 +64,7 @@ public partial class TerrainViewer
         file.AddSeparator();
         menu.Command(file, "Pending changes…", OpenPendingChanges);
         menu.Command(file, "Clear cache…", ClearCache, () => !busy);
+        menu.Command(file, "Reset configs and delete cache…", ResetEverything, () => OperatingSystem.IsWindows());
         file.AddSeparator();
         menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
 

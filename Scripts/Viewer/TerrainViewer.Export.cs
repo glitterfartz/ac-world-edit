@@ -1,5 +1,6 @@
 using System.Text;
 using Godot;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -162,15 +163,16 @@ public partial class TerrainViewer
     }
 
     /// <summary>
-    /// Wipe the saved editing state: every draft change with its undo history, and the record of
-    /// which changes were exported.
+    /// Wipe the saved editing state (every draft change with its undo history, and the record of
+    /// which changes were exported) and the model thumbnails of both client profiles. The listfile
+    /// and the engine's shader caches are left alone; Reset configs and delete cache removes them.
     /// </summary>
     void ClearCache()
     {
         var confirm = new ConfirmationDialog
         {
             Title = "Clear cache",
-            DialogText = "Clear all saved edits, undo history and the exported-changes record? Unexported changes are lost.",
+            DialogText = "Clear all saved edits, undo history, the exported-changes record and model thumbnails? Unexported changes are lost.",
             OkButtonText = "Clear cache"
         };
         confirm.Confirmed += () =>
@@ -181,12 +183,89 @@ public partial class TerrainViewer
             drafts.Clear();
             pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
             pendingStore.ClearExported();
+            // Reset first so no capture is still writing into the folder, then drop the files of both profiles.
+            thumbnails?.Reset(ThumbnailDirectory(profile.Kind));
+            bool thumbsGone = UserDataReset.TryDeleteDirectory(ProjectSettings.GlobalizePath("user://thumbs"));
             RefreshPending();
-            pendingWindow.SetStatus("Cache cleared.");
+            string result = thumbsGone ? "Cache cleared." : "Cache cleared, but some thumbnails are still in use.";
+            pendingWindow.SetStatus(result);
+            statusLog.Post(result);
         };
         confirm.Canceled += confirm.QueueFree;
         AddChild(confirm);
         confirm.PopupCentered();
+    }
+
+    /// <summary>
+    /// Delete the whole user data folder after the viewer exits: settings and saved logins, drafts and
+    /// exported SQL, thumbnails, the downloaded listfile, logs and the engine's shader caches, so the
+    /// next launch starts as a first run. The delete is done by a detached helper because the viewer
+    /// itself holds some of those files open. Nothing is deleted unless the helper started.
+    /// </summary>
+    void ResetEverything()
+    {
+        string folder = OS.GetUserDataDir();
+        if (!CanReset(folder))
+        {
+            statusLog.Post("Reset is not available here.");
+            return;
+        }
+
+        int unsaved = CollectPending().Count;
+        int scripts = UserDataReset.CountExportedScripts(folder);
+        var confirm = new ConfirmationDialog
+        {
+            Title = "Reset configs and delete cache",
+            DialogText = $"Delete everything the viewer saved, then close it?\n\n{folder}\n\n" +
+                "This removes your client folders and database logins, all saved edits and undo history " +
+                $"({unsaved} unsaved change(s) in this profile), {scripts} exported SQL script(s), thumbnails, the downloaded listfile, " +
+                "logs and shader caches. The next launch starts as a first run.\n\nBack up the folder first if you still need the scripts.",
+            OkButtonText = "Delete everything and close"
+        };
+        confirm.AddButton("Open folder", false, "open");
+        confirm.CustomAction += action =>
+        {
+            if (action == "open")
+            {
+                OS.ShellOpen(folder);
+            }
+        };
+        confirm.Confirmed += async () =>
+        {
+            confirm.QueueFree();
+            await BeginReset(folder);
+        };
+        confirm.Canceled += confirm.QueueFree;
+        AddChild(confirm);
+        confirm.PopupCentered();
+    }
+
+    /// <summary>Whether the folder is this app's own user folder and this platform can run the cleanup.</summary>
+    static bool CanReset(string folder) =>
+        OperatingSystem.IsWindows() && UserDataReset.IsSafeTarget(folder, (string)ProjectSettings.GetSetting("application/config/name"));
+
+    /// <summary>
+    /// Start the detached cleaner for this process, then quit so it can delete the folder. When the
+    /// cleaner cannot start the viewer stays open and nothing is deleted.
+    /// </summary>
+    async Task<bool> BeginReset(string folder)
+    {
+        if (!CanReset(folder))
+        {
+            statusLog.Post("Reset is not available here.");
+            return false;
+        }
+
+        if (!await UserDataReset.StartCleanerAsync(folder, System.Environment.ProcessId))
+        {
+            statusLog.Post("Could not start the cleanup. Nothing was deleted.");
+            return false;
+        }
+
+        statusLog.Post("Closing to delete the saved data.");
+        await ToSignal(GetTree().CreateTimer(0.1), SceneTreeTimer.SignalName.Timeout);
+        GetTree().Quit();
+        return true;
     }
 
     /// <summary>
