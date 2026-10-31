@@ -44,7 +44,7 @@ python Tools/setup.py --with-tests        # also build StormLib, used only by th
 python Tools/setup.py --check             # report what is present and change nothing
 ```
 
-`Tools/setup.py` syncs the pinned submodules, builds out of tree under `.build-env/cmake/` (the submodule folders stay clean), copies the DLLs and their licences into `native/win-x64/`, and skips a rebuild when the pinned commit and options are unchanged (`--force` rebuilds). It prints what is still missing, with the fix. Set `ACWORLD_CMAKE_GENERATOR` if CMake cannot pick a Visual Studio generator.
+`Tools/setup.py` syncs the pinned submodules, builds out of tree under `.build-env/cmake/` (the submodule folders stay clean), copies the DLLs and their licences into `native/win-x64/`, and skips a rebuild when the pinned commit and options are unchanged (`--force` rebuilds). It prints what is still missing, with the fix. Set `ACWORLD_CMAKE_GENERATOR` if CMake cannot pick a Visual Studio generator. When the checkout path is long (over about 80 characters for `.build-env\cmake`), the build moves to a short folder under the temp directory, because MSVC fails past Windows' 260-character path limit; `ACWORLD_CMAKE_BUILD_DIR` chooses the folder.
 
 ## Build and run
 
@@ -99,6 +99,7 @@ The default settings exclude the `Corpus` (needs client data) and `KnownBug` cat
 | `ACWORLD_CASCLIB`        | Path to `CascLib.dll` (default: the one `python Tools/setup.py` builds into `native/win-x64/`)             |
 | `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions` (the submodule)                              |
 | `ACWORLD_CMAKE_GENERATOR` | CMake generator for `Tools/setup.py` (default: CMake's Visual Studio generator)                           |
+| `ACWORLD_CMAKE_BUILD_DIR` | Folder for `Tools/setup.py`'s CMake builds (default `.build-env/cmake`, or a short temp folder for long checkout paths) |
 | `ACWORLD_LISTFILE`       | Override for the community listfile location (default `user://community-listfile.csv`)                     |
 
 ## License

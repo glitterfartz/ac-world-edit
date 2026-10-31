@@ -11,7 +11,8 @@ Submodules (all pinned by their commit in this repository):
   ThirdParty/CascLib    native CASC reader -> native/win-x64/CascLib.dll
   ThirdParty/StormLib   MPQ reference implementation for tests -> native/win-x64/StormLib.dll
 
-Builds happen out of tree under .build-env/cmake/ so the submodule working trees stay clean.
+Builds happen out of tree under .build-env/cmake/ (a short temp folder when the checkout path is
+long) so the submodule working trees stay clean.
 NuGet packages are restored by dotnet and are not handled here. Nothing is written to a WoW install.
 """
 import argparse
@@ -21,11 +22,15 @@ import platform
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 NATIVE = ROOT / 'native' / 'win-x64'
 BUILD = ROOT / '.build-env' / 'cmake'
+# MSVC's file tracker cannot write its .tlog files past the 260-character path limit, which a deep
+# checkout path reaches inside CMake's own folders. Longer build roots move to the temp folder.
+MAX_BUILD_ROOT = 80
 
 # name -> (submodule path, CMake options, built DLL name, installed DLL name)
 LIBRARIES = {
@@ -42,6 +47,18 @@ LIBRARIES = {
 # compatibility switch (both projects declare a cmake_minimum_required older than CMake 4 accepts).
 COMMON_OPTIONS = ['-DCMAKE_POLICY_VERSION_MINIMUM=3.5', '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW',
                   '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded']
+
+
+def build_root():
+    """ACWORLD_CMAKE_BUILD_DIR, else .build-env/cmake, else a short folder under the temp directory."""
+    override = os.environ.get('ACWORLD_CMAKE_BUILD_DIR')
+    if override:
+        return Path(override)
+    if len(str(BUILD)) <= MAX_BUILD_ROOT:
+        return BUILD
+    short = Path(tempfile.gettempdir()) / 'acw-cmake' / hashlib.sha1(str(ROOT).encode()).hexdigest()[:8]
+    print(f'Checkout path is long; building under {short} (set ACWORLD_CMAKE_BUILD_DIR to choose).')
+    return short
 
 
 def run(command, cwd=ROOT, check=True):
@@ -88,7 +105,7 @@ def build_library(name, force):
         print(f'{name}: up to date ({installed})')
         return
 
-    build_dir = BUILD / name
+    build_dir = build_root() / name
     configure = ['cmake', '-S', str(source), '-B', str(build_dir), '-A', 'x64', *COMMON_OPTIONS, *options]
     generator = os.environ.get('ACWORLD_CMAKE_GENERATOR')
     if generator:
