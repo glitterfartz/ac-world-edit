@@ -37,12 +37,13 @@ public sealed partial class ContentBrowser : PanelContainer
         /// <summary>Display ID by entry for the current results.</summary>
         public IReadOnlyDictionary<uint, uint> Displays = new Dictionary<uint, uint>();
         public int Generation;
+        /// <summary>The page's running search; a newer search on the same page cancels it, other pages' searches do not.</summary>
+        public CancellationTokenSource? Cancellation;
         public bool Loaded;
     }
 
     readonly List<Tab> pages = [];
     TabContainer tabs = null!;
-    CancellationTokenSource? cancellation;
 
     public ContentBrowser()
     {
@@ -146,9 +147,9 @@ public sealed partial class ContentBrowser : PanelContainer
     async Task SearchAsync(Tab page)
     {
         int generation = ++page.Generation;
-        cancellation?.Cancel();
-        cancellation = new();
-        var token = cancellation.Token;
+        page.Cancellation?.Cancel();
+        page.Cancellation = new();
+        var token = page.Cancellation.Token;
         page.Count.Text = "Searching…";
         try
         {
@@ -227,6 +228,9 @@ public sealed partial class ContentBrowser : PanelContainer
 
     public override void _ExitTree()
     {
-        cancellation?.Cancel();
+        foreach (var page in pages)
+        {
+            page.Cancellation?.Cancel();
+        }
     }
 }

@@ -18,6 +18,7 @@ public partial class TerrainViewer
     const uint SmokeHogger = 448;
     const uint SmokeMailbox = 32349;
     const int MailboxType = 19;
+    const int HumanoidType = 7;
 
     void ContentBrowserSmoke(double delta)
     {
@@ -126,6 +127,20 @@ public partial class TerrainViewer
         {
             Require(contentBrowser.SmokeActivate(SpawnKind.GameObject, SmokeMailbox), "the Mailbox is not listed");
             Require(statusLog.Latest.StartsWith($"Game object {SmokeMailbox}", StringComparison.Ordinal), $"opening a GameObject said '{statusLog.Latest}'");
+            // Searches on both tabs in one frame: neither may cancel the other.
+            contentBrowser.SmokeSearch(SpawnKind.Creature, "Hogger", HumanoidType);
+            contentBrowser.SmokeSearch(SpawnKind.GameObject, "Mailbox", null);
+            return true;
+        }),
+        ("both-tabs", () =>
+        {
+            if (contentBrowser.SmokeSearching(SpawnKind.Creature) || contentBrowser.SmokeSearching(SpawnKind.GameObject))
+            {
+                return false;
+            }
+
+            Require(contentBrowser.SmokeResults(SpawnKind.Creature).All(h => h.Type == HumanoidType), "the creature tab did not finish its own search");
+            Require(contentBrowser.SmokeResults(SpawnKind.GameObject).Any(h => h.Entry == SmokeMailbox), "the GameObject tab did not finish its own search");
             SmokeKey(Key.B, ctrl: true);
             return true;
         }),

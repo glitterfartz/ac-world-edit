@@ -16,6 +16,9 @@ public partial class ContentBrowser
 
     public int SmokeRows(SpawnKind kind) => PageOf(kind).Results.ItemCount;
 
+    /// <summary>The page still shows its search as running.</summary>
+    public bool SmokeSearching(SpawnKind kind) => PageOf(kind).Count.Text.StartsWith("Searching", StringComparison.Ordinal);
+
     /// <summary>Rows showing a rendered thumbnail rather than the blank tile.</summary>
     public int SmokeThumbnails(SpawnKind kind)
     {
