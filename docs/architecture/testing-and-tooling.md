@@ -91,7 +91,7 @@ Workflows live in `.github/workflows`; the steps they share are composite action
 | `workflows/release.yml` | push of a `vMAJOR.MINOR.PATCH[-suffix]` tag | Checks the tag format and that the commit is on `master`, builds and tests, packages with the tag as the version, and runs `gh release create --draft --verify-tag` with the zip, its `.sha256`, a commit list since the previous tag and GitHub's generated notes (`--prerelease` when the tag has a hyphen) |
 | `actions/setup-build` | | `setup-dotnet` (`global.json` plus 8.0.x), `setup-python`, caches, then `python Tools/setup.py --no-godot`. The `native/win-x64` cache key is the CascLib submodule commit plus a hash of `Tools/setup.py`; `setup.py` skips the CMake build when its stamp matches the restored files. The NuGet cache key hashes the csproj files and `global.json` |
 | `actions/setup-godot` | | Downloads Godot 4.7.1 .NET and the export templates from `godotengine/godot-builds`, verifies SHA-512 against hashes pinned in the action, keeps only the Windows x86_64 templates (about 210 MB instead of the 1.2 GB archive), caches the result and sets `GODOT_BIN` |
-| `actions/package` | | `python Tools/package.py --version`, a smoke run of the exported exe (`--headless --quit-after 30`, exit code 0, throwaway `APPDATA`), then the zip and its SHA-256 in `dist/` |
+| `actions/package` | | `python Tools/package.py --version`, a smoke run of the exported exe (`--headless --quit-after 30`, exit code 0, throwaway `APPDATA`), then the zip and its SHA-256 in `dist/`. A failed export uploads `build/dotnet.binlog` as `build-log` |
 | `dependabot.yml` | weekly | Updates for the workflow actions and NuGet packages. Submodule pins are bumped by hand |
 
 ### Releasing
@@ -106,6 +106,8 @@ git push origin v0.1.0
 `release.yml` checks that the tag is `vMAJOR.MINOR.PATCH` (optionally `-suffix`, which marks a pre-release) and that the commit is on `master`, runs the build and tests, packages with the tag as the exe's file and product version, and creates a **draft** release with `ACWorldEdit-<version>-win-x64.zip` and its `.sha256`. Review the draft under Releases on GitHub, edit the notes if needed, and publish it. The build is unsigned, so Windows SmartScreen may warn.
 
 To upgrade Godot, change the version, asset names, both SHA-512 values (from the release's `SHA512-SUMS.txt`) and the cache key in `actions/setup-godot/action.yml` together, along with the `Godot.NET.Sdk` version in `ACWorldEdit.csproj`. To change a submodule pin, check out the new commit inside the submodule and `git add` it; the cache key follows the commit. Private-repo limits apply: Windows minutes count double and artifact storage is 500 MB, so lower `retention-days` if the 7-day artifacts reach the quota. The test job does not run the gdUnit4 project or any test that needs client data.
+
+Never name a workflow environment variable `VERSION` (or anything else that matches an MSBuild property). MSBuild turns every environment variable into a property, so `VERSION=dev-abc1234` becomes `$(Version)` and NuGet restore fails with only `MSB4181`. The package action passes the version as `ACW_VERSION`, and `Tools/package.py` drops `VERSION` from the environment of `dotnet` and Godot. `package.py` stamps the version into `export_presets.cfg` and restores the file afterwards; if a killed run leaves it stamped, the next stamped run refuses to start until you run `git checkout export_presets.cfg`.
 
 ## Test commands and environment
 

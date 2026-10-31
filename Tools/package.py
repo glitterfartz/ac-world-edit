@@ -57,6 +57,10 @@ def stamp_version(version):
     numbers = re.match(r'(\d+)\.(\d+)\.(\d+)', version)
     file_version = '.'.join(numbers.groups()) + '.0' if numbers else '0.0.0.0'
     original = PRESETS.read_text(encoding='utf-8')
+    # A killed run cannot restore the preset; stamping over its leftovers would make them the "original".
+    if re.search(r'^application/product_version="[^"]', original, flags=re.MULTILINE):
+        sys.exit('export_presets.cfg already has a product version (left by an interrupted run?). '
+                 'Restore it with: git checkout export_presets.cfg')
     text = original
     for key, value in (('application/file_version', file_version), ('application/product_version', version),
                        ('application/modify_resources', 'true')):
@@ -89,7 +93,9 @@ def main():
     if not args.pack_only and not (ROOT / 'Data' / 'WoWDBDefs' / 'definitions' / 'Map.dbd').is_file():
         sys.exit('Data/WoWDBDefs is not initialised. Run python Tools/setup.py first.')
 
-    env = None  # dotnet and Godot inherit the environment unchanged
+    # MSBuild turns environment variables into properties, so a stray VERSION (for example from a CI
+    # step) would become $(Version) and break the NuGet restore without a message. Keep it out.
+    env = {key: value for key, value in os.environ.items() if key.upper() != 'VERSION'}
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)  # Godot refuses to export into a folder that does not exist
     # The binary log records NuGet and MSBuild errors that the console summary can hide.

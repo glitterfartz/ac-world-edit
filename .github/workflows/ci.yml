@@ -68,16 +68,12 @@ jobs:
         with:
           version: dev-${{ steps.sha.outputs.short }}
 
-      # TEMPORARY while the package restore failure is diagnosed: the three diagnostic binary logs and the
-      # one from Tools/package.py. Afterwards only the package.py log is kept, on failure.
-      - name: Upload build logs
-        if: always()
+      - name: Upload build log
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs
-          path: |
-            diag/*.binlog
-            build/dotnet.binlog
+          name: build-log
+          path: build/dotnet.binlog
           retention-days: 3
           if-no-files-found: ignore
 

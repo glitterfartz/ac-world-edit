@@ -17,34 +17,15 @@ outputs:
 runs:
   using: composite
   steps:
-    # TEMPORARY: builds the project three ways, each with a fresh restore and its own binary log, to find
-    # out what the failing restore in Tools/package.py depends on. Remove once the cause is fixed.
-    - name: Diagnose restore (temporary)
-      shell: pwsh
-      continue-on-error: true
-      run: |
-        New-Item -ItemType Directory -Force diag | Out-Null
-        python --version
-        $probe = @'
-        import os, subprocess, sys
-        mode, log = sys.argv[1], sys.argv[2]
-        env = os.environ.copy() if mode == 'copy' else None
-        sys.exit(subprocess.call(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false', '-bl:' + log], env=env))
-        '@
-        Set-Content -Path diag/probe.py -Value $probe
-        foreach ($variant in 'pwsh', 'inherit', 'copy') {
-          Remove-Item Foundation/obj, .godot/mono/temp/obj -Recurse -Force -ErrorAction SilentlyContinue
-          $log = "diag/$variant.binlog"
-          if ($variant -eq 'pwsh') { dotnet build ACWorldEdit.csproj -c Release -p:NuGetAudit=false "-bl:$log" } else { python diag/probe.py $variant $log }
-          "RESULT $variant exit=$LASTEXITCODE"
-        }
-
+    # The version goes in ACW_VERSION, never VERSION: MSBuild turns every environment variable into a
+    # property, so VERSION would set $(Version) for the project the export builds, and a value such as
+    # dev-787bcb4 is not a valid NuGet version (the restore then fails with no message).
     - name: Export
       shell: pwsh
       env:
-        VERSION: ${{ inputs.version }}
+        ACW_VERSION: ${{ inputs.version }}
       run: |
-        python Tools/package.py --version $env:VERSION
+        python Tools/package.py --version $env:ACW_VERSION
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     # The exe is a GUI-subsystem program, so wait on the process itself and check its exit code. A
@@ -65,11 +46,11 @@ runs:
       id: zip
       shell: pwsh
       env:
-        VERSION: ${{ inputs.version }}
+        ACW_VERSION: ${{ inputs.version }}
       run: |
         $ErrorActionPreference = 'Stop'
         New-Item -ItemType Directory -Force dist | Out-Null
-        $name = "ACWorldEdit-$env:VERSION-win-x64"
+        $name = "ACWorldEdit-$env:ACW_VERSION-win-x64"
         $zip = Join-Path $PWD "dist/$name.zip"
         Compress-Archive -Path 'build/win-x64/*' -DestinationPath $zip -Force
         $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLowerInvariant()
