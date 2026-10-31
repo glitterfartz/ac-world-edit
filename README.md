@@ -4,7 +4,7 @@ A 3D world viewer and editor for [AzerothCore](https://www.azerothcore.org/) and
 
 It reads the WoW client's data to render terrain, models and liquids. On top of that it overlays world-database content: creature and gameobject spawns, graveyards, area triggers, NPC interactions, vendor data, quests and SmartAI scripts.
 
-A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a TrinityCore master `world` database plus optional `hotfixes`. TrinityCore support is in progress: spawns, graveyards, area triggers and read-only creature properties work; quest, SmartAI and waypoint editing are AzerothCore-only for now (see [docs/tc-status.md](docs/tc-status.md)).
+A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a TrinityCore master `world` and `hotfixes`. 
 
 The database connection is read-only, and the game files are never modified. Edits are staged as local drafts and leave the app only as SQL scripts for you to review and run.
 
@@ -44,8 +44,6 @@ python Tools/setup.py --with-tests        # also build StormLib, used only by th
 python Tools/setup.py --check             # report what is present and change nothing
 ```
 
-`Tools/setup.py` syncs the pinned submodules, builds out of tree under `.build-env/cmake/` (the submodule folders stay clean), copies the DLLs and their licences into `native/win-x64/`, and skips a rebuild when the pinned commit and options are unchanged (`--force` rebuilds). It prints what is still missing, with the fix. Set `ACWORLD_CMAKE_GENERATOR` if CMake cannot pick a Visual Studio generator. When the checkout path is long (over about 80 characters for `.build-env\cmake`), the build moves to a short folder under the temp directory, because MSVC fails past Windows' 260-character path limit; `ACWORLD_CMAKE_BUILD_DIR` chooses the folder.
-
 ## Build and run
 
 ```powershell
@@ -54,16 +52,14 @@ python launch_viewer.py --smoke           # build, then run Godot headless with 
 python launch_viewer.py --check-assets    # run the corpus test set (needs real client data)
 ```
 
-The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/` so CLI caches stay in the project. Pass `-p:NuGetAudit=false` to direct `dotnet` commands. A build warns (`ACW001`, `ACW002`) when `CascLib.dll` or the WoWDBDefs definitions are missing, and the viewer says the same in its status bar when the Retail profile is selected.
-
 Other smoke workflows (`--visual-smoke`, `--water-smoke`, `--reload-smoke`, `--creature-smoke`, `--client-smoke`, ...) are opt-in flags passed to Godot after `--`.
 
 ## First run
 
 1. Start the viewer (`python launch_viewer.py`).
 2. **File → Load client…**: pick **Wrath** (a 3.3.5 folder containing `common.MPQ`) or **Retail** (the install folder containing `.build.info`). The folder is remembered per profile. A retail client offers to download the community listfile once; **File → Update listfile…** repeats it later.
-3. **File → Database connection…**: enter host, port, user, password and the world database (for example `acore_world`; for retail also an optional hotfixes database). The connection is tested before it is saved. Skip this step to browse the client data without database overlays.
-4. Pick a map and fly around. Edits are staged as drafts; **File → Pending changes…** lists them and exports reviewable SQL. **File → Clear cache…** removes saved edits, the exported-changes record and model thumbnails. **File → Reset configs and delete cache…** deletes the whole user folder (client folders, database logins, edits, exported scripts, thumbnails, the downloaded listfile, logs and shader caches) when the viewer closes, so the next launch is a first run; back up the exported scripts first. Environment variables such as `ACWORLD_DATA_DIR` still apply after a reset. Settings, drafts and exports live in Godot's user folder: `%APPDATA%\Godot\app_userdata\ACWorldEdit` when you start the project from the Godot editor or an exported build, and `.build-env\roaming\Godot\app_userdata\ACWorldEdit` when you start it with `launch_viewer.py`, which redirects `APPDATA`.
+3. **File → Database connection…**: enter host, port, user, password and the world database (for example `acore_world`; for retail also an optional hotfixes database).
+4. Pick a map and fly around. Edits are staged as drafts; **File → Pending changes…** lists them and exports SQL.
 
 ## Package a build
 
@@ -71,8 +67,6 @@ Other smoke workflows (`--visual-smoke`, `--water-smoke`, `--reload-smoke`, `--c
 python Tools/package.py                   # build/win-x64/ACWorldEdit.exe plus its data folder
 python Tools/package.py --pack-only       # just ACWorldEdit.pck; needs no export templates
 ```
-
-This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. A CI job would run `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed; no CI is configured yet. Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
 
 ## Test
 
