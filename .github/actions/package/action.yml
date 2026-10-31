@@ -17,6 +17,16 @@ outputs:
 runs:
   using: composite
   steps:
+    # TEMPORARY: diagnose a silent restore failure seen only in this job. Remove once fixed.
+    - name: Diagnose restore (temporary)
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        dotnet --info | Select-Object -First 25
+        "--- env names"; (Get-ChildItem Env: | Sort-Object Name | ForEach-Object { $_.Name }) -join ', '
+        "--- restore from pwsh"; dotnet restore ACWorldEdit.csproj -p:NuGetAudit=false -v:detailed 2>&1 | Select-Object -Last 70
+        "--- restore from python"; python -c "import subprocess,os; print(subprocess.call(['dotnet','restore','ACWorldEdit.csproj','-p:NuGetAudit=false','-v:n'], env=os.environ.copy()))"
+
     - name: Export
       shell: bash
       env:
