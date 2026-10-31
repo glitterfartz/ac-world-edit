@@ -72,7 +72,24 @@ python Tools/package.py                   # build/win-x64/ACWorldEdit.exe plus i
 python Tools/package.py --pack-only       # just ACWorldEdit.pck; needs no export templates
 ```
 
-This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. A CI job would run `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed; no CI is configured yet. Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
+This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. `--version 0.1.0` stamps the exe's file and product version (the preset is restored afterwards). Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
+
+## Continuous integration and releases
+
+GitHub Actions (`.github/`) runs on Windows runners:
+
+- **Every push to `master` or `ci/**`, and every pull request**: build and run the default test suite (corpus, database and Retail tests need client data or a server and skip themselves).
+- **Every `master` or `ci/**` push, and manual runs**: also export the Windows build and keep `ACWorldEdit-dev-<sha>-win-x64.zip` (with its `.sha256`) as an artifact for 7 days.
+- **A pushed `v*` tag**: build, test, package and create a **draft** GitHub Release with the zip and checksum attached. Tags with a hyphen (`v0.1.0-rc1`) are marked as pre-releases.
+
+To release, merge to `master`, then tag that commit and push the tag:
+
+```powershell
+git tag -a v0.1.0 -m "ACWorldEdit 0.1.0"
+git push origin v0.1.0
+```
+
+Review the draft in GitHub (Releases), edit the notes if needed, and publish it. The tag must be `vMAJOR.MINOR.PATCH` (optionally `-suffix`) on a commit that is on `master`; the exe's file and product version come from the tag. The build is unsigned, so Windows SmartScreen may warn.
 
 ## Test
 
