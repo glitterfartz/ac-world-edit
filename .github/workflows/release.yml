@@ -1,0 +1,82 @@
+name: Release
+
+# Push a tag such as v0.1.0 (or v0.1.0-rc1 for a pre-release) to build, test and package that commit
+# and create a DRAFT GitHub Release with the zip and its SHA-256. Review and publish the draft by hand.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check the tag
+        shell: bash
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-suffix."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::Tag '$TAG' is not on master. Merge the commit to master and tag it there."
+            exit 1
+          fi
+
+      - uses: ./.github/actions/setup-build
+
+      - name: Build
+        run: dotnet build ACWorldEdit.csproj -c Release -p:NuGetAudit=false
+
+      # A failing test blocks the release.
+      - name: Test
+        run: dotnet test Tests/ACWorldEdit.Tests -c Release -p:NuGetAudit=false
+
+      - uses: ./.github/actions/setup-godot
+
+      - name: Version
+        id: version
+        shell: bash
+        run: echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        id: package
+        uses: ./.github/actions/package
+        with:
+          version: ${{ steps.version.outputs.number }}
+
+      # The notes list the commits since the previous tag; GitHub's generated notes (appended below) only
+      # cover merged pull requests, which direct pushes to master do not have.
+      - name: Create the draft release
+        shell: bash
+        env:
+          ZIP: ${{ steps.package.outputs.zip }}
+          CHECKSUM: ${{ steps.package.outputs.checksum }}
+        run: |
+          previous="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          {
+            if [ -n "$previous" ]; then
+              echo "## Changes since $previous"; range="$previous..$TAG"
+            else
+              echo "## Changes (first release, latest 100 commits)"; range="$TAG"
+            fi
+            echo
+            git log --no-merges --max-count=100 --pretty='- %s' "$range"
+            echo
+            echo "SHA-256 of the zip is in the attached .sha256 file. The build is unsigned, so Windows SmartScreen may warn."
+            echo
+          } > release-notes.md
+          flags=(--draft --verify-tag --title "$TAG" --notes-file release-notes.md --generate-notes)
+          if [[ "$TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$TAG" "$ZIP" "$CHECKSUM" "${flags[@]}"
