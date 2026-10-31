@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-"""Export a Windows x64 release build and make sure its native and data dependencies are present.
+"""Export a Windows x64 release build and check that it is complete.
 
   python Tools/package.py                  # build/win-x64/ACWorldEdit.exe (+ data folder)
   python Tools/package.py --pack-only      # export only the .pck; needs no export templates
 
-Run python Tools/setup.py first. After the export, CascLib.dll, the retail table definitions and the licences are copied into the
-build's data_ACWorldEdit_windows_x86_64 folder, which is where the loader looks (AppContext.BaseDirectory).
-A full export has not been run yet (it needs the export templates); --pack-only has.
-Needs Godot 4.7.1 .NET with its export templates installed (Editor > Manage Export Templates; in CI,
-the matching templates archive). Output goes to the git-ignored build/ folder.
+Run python Tools/setup.py first. Needs Godot 4.7.1 .NET with its export templates installed
+(Editor > Manage Export Templates; in CI, the matching templates archive). Output goes to the
+git-ignored build/ folder.
+
+Godot's .NET export needs ACWorldEdit.sln at the project root, and it reports a missing solution
+or a failed publish as a warning with exit code 0, leaving an .exe with no game assembly. This
+script therefore checks the data folder (data_ACWorldEdit_windows_x86_64) afterwards. The csproj
+copies CascLib.dll, definitions/ and the licences into that folder through publish.
+
+Do not run it from a shell with APPDATA redirected (launch_viewer.py does that for its own
+subprocesses): Godot would look for the export templates under the redirected folder.
 """
 import argparse
 import os
@@ -21,13 +27,18 @@ ROOT = Path(__file__).resolve().parent.parent
 PRESET = 'Windows Desktop'
 OUT = ROOT / 'build' / 'win-x64'
 DATA = OUT / 'data_ACWorldEdit_windows_x86_64'
+# Files the exported game needs next to its assembly, as the csproj publishes them.
+REQUIRED = ['ACWorldEdit.dll', 'ACWorldEdit.Foundation.dll', 'GodotSharp.dll', 'CascLib.dll',
+            'definitions/Map.dbd', 'LICENSE', 'THIRD-PARTY.md']
 
 
 def find_godot():
+    """The console build when it sits beside GODOT_BIN, so export errors are printed."""
     found = os.environ.get('GODOT_BIN') or shutil.which('godot')
     if not found:
         sys.exit('Godot not found: set GODOT_BIN or put godot on PATH.')
-    return found
+    console = Path(found).with_name(Path(found).stem.removesuffix('_console') + '_console.exe')
+    return str(console) if console.is_file() else found
 
 
 def run(command, env=None):
@@ -43,16 +54,17 @@ def main():
     args = parser.parse_args()
 
     godot = find_godot()
-    casclib = ROOT / 'native' / 'win-x64' / 'CascLib.dll'
-    definitions = ROOT / 'Data' / 'WoWDBDefs' / 'definitions'
-    if not args.pack_only and not casclib.is_file():
+    if not (ROOT / 'ACWorldEdit.sln').is_file():
+        sys.exit('ACWorldEdit.sln is missing; Godot cannot export the C# project without it.')
+    if not args.pack_only and not (ROOT / 'native' / 'win-x64' / 'CascLib.dll').is_file():
         sys.exit('native/win-x64/CascLib.dll is missing. Run python Tools/setup.py first.')
-    if not args.pack_only and not (definitions / 'Map.dbd').is_file():
+    if not args.pack_only and not (ROOT / 'Data' / 'WoWDBDefs' / 'definitions' / 'Map.dbd').is_file():
         sys.exit('Data/WoWDBDefs is not initialised. Run python Tools/setup.py first.')
 
     env = os.environ.copy()
     env['MSBuildEnableWorkloadResolver'] = 'false'
-    OUT.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(OUT, ignore_errors=True)
+    OUT.mkdir(parents=True)  # Godot refuses to export into a folder that does not exist
     run(['dotnet', 'build', 'ACWorldEdit.csproj', '-c', 'Release', '-p:NuGetAudit=false'], env)
     # .godot/ is git-ignored, so a fresh checkout has no imported resources until this runs.
     run([godot, '--headless', '--path', str(ROOT), '--import'], env)
@@ -61,14 +73,9 @@ def main():
         return 0
     run([godot, '--headless', '--path', str(ROOT), '--export-release', PRESET, str(OUT / 'ACWorldEdit.exe')], env)
 
-    DATA.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(casclib, DATA / 'CascLib.dll')
-    for name in ('CascLib.LICENSE.txt',):
-        source = ROOT / 'native' / 'win-x64' / name
-        if source.is_file():
-            shutil.copyfile(source, DATA / name)
-    shutil.copytree(definitions, DATA / 'definitions', dirs_exist_ok=True)
-    shutil.copyfile(ROOT / 'Data' / 'WoWDBDefs' / 'LICENSE.md', DATA / 'definitions' / 'LICENSE.md')
+    missing = [name for name in REQUIRED if not (DATA / name).is_file()]
+    if missing:
+        sys.exit(f'Export finished but {DATA} lacks: {", ".join(missing)}. Read the Godot output above.')
     for name in ('LICENSE', 'THIRD-PARTY.md'):
         shutil.copyfile(ROOT / name, OUT / name)
     print(f'Build ready: {OUT / "ACWorldEdit.exe"}')
