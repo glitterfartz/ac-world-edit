@@ -63,7 +63,7 @@ Other smoke workflows (`--visual-smoke`, `--water-smoke`, `--reload-smoke`, `--c
 1. Start the viewer (`python launch_viewer.py`).
 2. **File → Load client…**: pick **Wrath** (a 3.3.5 folder containing `common.MPQ`) or **Retail** (the install folder containing `.build.info`). The folder is remembered per profile. A retail client offers to download the community listfile once; **File → Update listfile…** repeats it later.
 3. **File → Database connection…**: enter host, port, user, password and the world database (for example `acore_world`; for retail also an optional hotfixes database). The connection is tested before it is saved. Skip this step to browse the client data without database overlays.
-4. Pick a map and fly around. Edits are staged as drafts; **File → Pending changes…** lists them and exports reviewable SQL. Settings, drafts and exports live in Godot's user folder: `%APPDATA%\Godot\app_userdata\ACWorldEdit` when you start the project from the Godot editor or an exported build, and `.build-env\roaming\Godot\app_userdata\ACWorldEdit` when you start it with `launch_viewer.py`, which redirects `APPDATA`.
+4. Pick a map and fly around. Edits are staged as drafts; **File → Pending changes…** lists them and exports reviewable SQL. **File → Clear cache…** removes saved edits, the exported-changes record and model thumbnails. **File → Reset configs and delete cache…** deletes the whole user folder (client folders, database logins, edits, exported scripts, thumbnails, the downloaded listfile, logs and shader caches) when the viewer closes, so the next launch is a first run; back up the exported scripts first. Environment variables such as `ACWORLD_DATA_DIR` still apply after a reset. Settings, drafts and exports live in Godot's user folder: `%APPDATA%\Godot\app_userdata\ACWorldEdit` when you start the project from the Godot editor or an exported build, and `.build-env\roaming\Godot\app_userdata\ACWorldEdit` when you start it with `launch_viewer.py`, which redirects `APPDATA`.
 
 ## Package a build
 
@@ -100,6 +100,7 @@ The default settings exclude the `Corpus` (needs client data) and `KnownBug` cat
 | `ACWORLD_DBD_DIR`        | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions` (the submodule)                              |
 | `ACWORLD_CMAKE_GENERATOR` | CMake generator for `Tools/setup.py` (default: CMake's Visual Studio generator)                           |
 | `ACWORLD_CMAKE_BUILD_DIR` | Folder for `Tools/setup.py`'s CMake builds (default `.build-env/cmake`, or a short temp folder for long checkout paths) |
+| `ACWORLD_RESET_SMOKE`    | `1` lets `--reset-smoke` run; it deletes the whole user data folder, so point `APPDATA` at a throwaway folder first |
 | `ACWORLD_LISTFILE`       | Override for the community listfile location (default `user://community-listfile.csv`)                     |
 
 ## License
