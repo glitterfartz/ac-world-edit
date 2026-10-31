@@ -38,7 +38,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
     public static ClientServices OpenRetail(string directory, string? listfile = null)
     {
         string definitions = Db2Tables.FindDefinitions(System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory)
-            ?? throw new FileNotFoundException("Retail table definitions (Data/WoWDBDefs) were not found next to the game.");
+            ?? throw new FileNotFoundException(DependencyCheck.DefinitionsMissing);
         CascFiles files;
         try
         {
@@ -46,7 +46,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         }
         catch (DllNotFoundException)
         {
-            throw new FileNotFoundException("CascLib.dll was not found; see Tools/get_casclib.py. The Wrath profile does not need it.");
+            throw new FileNotFoundException(DependencyCheck.CascLibMissing + " The Wrath profile does not need it.");
         }
 
         try

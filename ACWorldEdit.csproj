@@ -9,12 +9,19 @@
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="DBCD" Version="2.3.1" />
-    <Compile Remove="Tests/**/*.cs;Foundation/**/*.cs;artifacts/**/*.cs;Data/WoWDBDefs/**/*.cs;**/bin/**/*.cs;**/obj/**/*.cs" />
+    <Compile Remove="Tests/**/*.cs;Foundation/**/*.cs;artifacts/**/*.cs;Data/WoWDBDefs/**/*.cs;ThirdParty/**;**/bin/**/*.cs;**/obj/**/*.cs" />
     <ProjectReference Include="Foundation/ACWorldEdit.Foundation.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT, see Tools/get_casclib.py). -->
+    <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT). Both come from pinned submodules; python Tools/setup.py builds CascLib. -->
     <None Include="Data/WoWDBDefs/definitions/*.dbd;Data/WoWDBDefs/LICENSE.md" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="native/win-x64/CascLib.dll" Link="CascLib.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.dll')" />
+    <None Include="native/win-x64/CascLib.LICENSE.txt" Link="CascLib.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.LICENSE.txt')" />
+    <None Include="LICENSE;THIRD-PARTY.md" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- The copies above are conditional so a build never fails on them; this says what is missing instead, in the build log CI reads. -->
+  <Target Name="WarnMissingDependencies" BeforeTargets="BeforeBuild">
+    <Warning Condition="!Exists('$(MSBuildProjectDirectory)/native/win-x64/CascLib.dll')" Code="ACW001" Text="native/win-x64/CascLib.dll is missing, so the Retail profile cannot load. Run python Tools/setup.py." />
+    <Warning Condition="!Exists('$(MSBuildProjectDirectory)/Data/WoWDBDefs/definitions/Map.dbd')" Code="ACW002" Text="Data/WoWDBDefs is not initialised, so Retail table definitions are missing. Run python Tools/setup.py." />
+  </Target>
 </Project>

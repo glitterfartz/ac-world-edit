@@ -544,12 +544,25 @@ public partial class TerrainViewer
                 UserSettings.SaveDataDirectory(directory);
             }
 
+            WarnMissingDependencies(kind);
             await LoadClient();
         };
         dialog.Confirmed += dialog.QueueFree;
         dialog.Canceled += dialog.QueueFree;
         AddChild(dialog);
         dialog.PopupCentered();
+    }
+
+    /// <summary>
+    /// Say in the status bar what a profile needs that this install lacks (CascLib.dll, retail table
+    /// definitions), before the client load fails on it.
+    /// </summary>
+    void WarnMissingDependencies(ClientKind kind)
+    {
+        foreach (string problem in DependencyCheck.Missing(kind, System.Environment.GetEnvironmentVariable("ACWORLD_CASCLIB"), System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory))
+        {
+            statusLog.Post($"Retail unavailable: {problem}");
+        }
     }
 
     /// <summary>

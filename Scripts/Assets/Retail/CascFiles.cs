@@ -279,9 +279,9 @@ public sealed class CascFiles : IClientFiles
 }
 
 /// <summary>
-/// P/Invoke surface of CascLib.dll (MIT, built from github.com/ladislav-zezula/CascLib). The DLL is
-/// copied next to the game assembly or kept in native/win-x64; a missing DLL fails only the Retail
-/// profile.
+/// P/Invoke surface of CascLib.dll (MIT, built from the pinned ThirdParty/CascLib submodule by
+/// Tools/setup.py as an ANSI build, matching CharSet.Ansi below). The DLL is copied next to the game
+/// assembly or kept in native/win-x64; a missing DLL fails only the Retail profile.
 /// </summary>
 static class CascNative
 {

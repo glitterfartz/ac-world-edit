@@ -158,6 +158,7 @@ public partial class TerrainViewer : Node3D
             }
         };
         BuildUi();
+        WarnMissingDependencies(UserSettings.LoadProfile());
         connection.Applied += () => _ = LoadTeleports();
         _ = LoadTeleports();
         ConfigureSmokeChecks();
