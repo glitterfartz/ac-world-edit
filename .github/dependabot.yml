@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Workflow and composite-action dependencies. Submodule pins (CascLib, StormLib, WoWDBDefs) are
+  # deliberately not tracked: bump them by hand and rebuild.
+  - package-ecosystem: github-actions
+    directories: ['/', '/.github/actions/*']
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: nuget
+    directories: ['/', '/Foundation', '/Tests/ACWorldEdit.Tests', '/Tests/ACWorldEdit.GdTests']
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

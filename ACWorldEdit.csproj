@@ -14,7 +14,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT). Both come from pinned submodules; python Tools/setup.py builds CascLib. -->
-    <None Include="Data/WoWDBDefs/definitions/*.dbd;Data/WoWDBDefs/LICENSE.md" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data/WoWDBDefs/definitions/*.dbd" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data/WoWDBDefs/LICENSE.md" Link="definitions/LICENSE.md" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Data/WoWDBDefs/LICENSE.md')" />
     <None Include="native/win-x64/CascLib.dll" Link="CascLib.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.dll')" />
     <None Include="native/win-x64/CascLib.LICENSE.txt" Link="CascLib.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.LICENSE.txt')" />
     <None Include="LICENSE;THIRD-PARTY.md" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

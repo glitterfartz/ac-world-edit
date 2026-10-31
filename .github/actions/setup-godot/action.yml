@@ -1,0 +1,67 @@
+name: Set up Godot
+description: Godot 4.7.1 .NET plus the Windows release export templates, verified against pinned SHA-512 hashes. Sets GODOT_BIN.
+
+# To upgrade Godot, change VERSION, the two file names and the two hashes below together (the
+# hashes are in SHA512-SUMS.txt of the godotengine/godot-builds release) and the cache key.
+runs:
+  using: composite
+  steps:
+    - name: Cache Godot and export templates
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/godot
+          ~/AppData/Roaming/Godot/export_templates/4.7.1.stable.mono
+        key: godot-4.7.1-mono-win64-v1
+
+    - name: Download and verify Godot
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        VERSION: 4.7.1-stable
+        EDITOR_ZIP: Godot_v4.7.1-stable_mono_win64.zip
+        EDITOR_SHA512: aa04876c7932c2e6807233e6908da4045e904781a83dc3c793c34ba71c9f66292eb4da82aa55a6b8694fccf856f8c244c7709cfba20405066445daf9c2749b71
+        TEMPLATES_TPZ: Godot_v4.7.1-stable_mono_export_templates.tpz
+        TEMPLATES_SHA512: 8bbc4caed6f095f4a2dee27b59254077797f3a4288b55e9f9eec7fe47c69deb2e3f8853644b37e8bec0c2910c596aa1a6ecc0a7f4b7502d4c685cf9d853be0d1
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $base = "https://github.com/godotengine/godot-builds/releases/download/$env:VERSION"
+        $work = Join-Path $env:RUNNER_TEMP 'godot-download'
+        New-Item -ItemType Directory -Force $work | Out-Null
+        foreach ($asset in @(@($env:EDITOR_ZIP, $env:EDITOR_SHA512), @($env:TEMPLATES_TPZ, $env:TEMPLATES_SHA512))) {
+          $name, $expected = $asset
+          $file = Join-Path $work $name
+          Invoke-WebRequest -Uri "$base/$name" -OutFile $file
+          $actual = (Get-FileHash -Path $file -Algorithm SHA512).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "SHA-512 mismatch for $name (got $actual)" }
+        }
+
+        $editor = Join-Path $HOME 'godot'
+        Expand-Archive -Path (Join-Path $work $env:EDITOR_ZIP) -DestinationPath $editor -Force
+
+        # The .tpz is a zip of every platform's templates (1.2 GB); keep only the Windows x86_64 ones.
+        $templates = Join-Path $env:APPDATA 'Godot/export_templates/4.7.1.stable.mono'
+        New-Item -ItemType Directory -Force $templates | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $work $env:TEMPLATES_TPZ))
+        try {
+          foreach ($entry in $zip.Entries) {
+            if ($entry.Name -like 'windows_*_x86_64*.exe' -or $entry.Name -eq 'version.txt') {
+              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $templates $entry.Name), $true)
+            }
+          }
+        } finally { $zip.Dispose() }
+        Remove-Item $work -Recurse -Force
+
+    - name: Locate Godot
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $exe = Get-ChildItem -Path (Join-Path $HOME 'godot') -Recurse -Filter 'Godot_v4.7.1-stable_mono_win64.exe' | Select-Object -First 1
+        if (-not $exe) { throw 'Godot editor not found after setup.' }
+        $templates = Join-Path $env:APPDATA 'Godot/export_templates/4.7.1.stable.mono'
+        foreach ($name in 'windows_release_x86_64.exe', 'windows_debug_x86_64.exe') {
+          if (-not (Test-Path (Join-Path $templates $name))) { throw "Export template $name is missing in $templates" }
+        }
+        "GODOT_BIN=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8

@@ -1,0 +1,62 @@
+name: Package
+description: Export the Windows build with Tools/package.py, smoke-run the exe, and write the zip and its SHA-256 to dist/. Needs setup-build and setup-godot first.
+
+inputs:
+  version:
+    description: Version stamped into the exe and used in the zip name, without a leading v (for example 0.1.0, 0.1.0-rc1 or dev-abc1234).
+    required: true
+
+outputs:
+  zip:
+    description: Path of the zip.
+    value: ${{ steps.zip.outputs.zip }}
+  checksum:
+    description: Path of the .sha256 file.
+    value: ${{ steps.zip.outputs.checksum }}
+
+runs:
+  using: composite
+  steps:
+    # The version goes in ACW_VERSION, never VERSION: MSBuild turns every environment variable into a
+    # property, so VERSION would set $(Version) for the project the export builds, and a value such as
+    # dev-787bcb4 is not a valid NuGet version (the restore then fails with no message).
+    - name: Export
+      shell: pwsh
+      env:
+        ACW_VERSION: ${{ inputs.version }}
+      run: |
+        python Tools/package.py --version $env:ACW_VERSION
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    # The exe is a GUI-subsystem program, so wait on the process itself and check its exit code. A
+    # throwaway APPDATA keeps the run from touching or depending on any user settings.
+    - name: Smoke-run the exported exe
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $env:APPDATA = Join-Path $env:RUNNER_TEMP 'smoke-appdata'
+        $env:LOCALAPPDATA = $env:APPDATA
+        New-Item -ItemType Directory -Force $env:APPDATA | Out-Null
+        $exe = Join-Path $PWD 'build/win-x64/ACWorldEdit.exe'
+        $process = Start-Process -FilePath $exe -ArgumentList '--headless', '--quit-after', '30' -WorkingDirectory (Split-Path $exe) -PassThru
+        if (-not $process.WaitForExit(120000)) { $process.Kill(); throw 'The exported exe did not exit within 120 s.' }
+        if ($process.ExitCode -ne 0) { throw "The exported exe exited with code $($process.ExitCode)." }
+
+    - name: Zip and checksum
+      id: zip
+      shell: pwsh
+      env:
+        ACW_VERSION: ${{ inputs.version }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        New-Item -ItemType Directory -Force dist | Out-Null
+        $name = "ACWorldEdit-$env:ACW_VERSION-win-x64"
+        $zip = Join-Path $PWD "dist/$name.zip"
+        Compress-Archive -Path 'build/win-x64/*' -DestinationPath $zip -Force
+        $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        $checksum = "$zip.sha256"
+        # LF, not Out-File's CRLF: sha256sum -c would read the file name as "<name>.zip\r".
+        [IO.File]::WriteAllText($checksum, "$hash  $name.zip`n")
+        "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        "checksum=$checksum" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        Write-Host "$name.zip  $([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB  sha256 $hash"

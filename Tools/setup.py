@@ -5,6 +5,7 @@
   python Tools/setup.py --with-tests    # also build StormLib (only the StormLib differential test uses it)
   python Tools/setup.py --check         # report what is present, change nothing
   python Tools/setup.py --force         # rebuild even when the stamp says the output is current
+  python Tools/setup.py --no-godot      # do not require Godot (CI jobs that only build and test)
 
 Submodules (all pinned by their commit in this repository):
   Data/WoWDBDefs        retail table layouts, copied to the build output as definitions/
@@ -135,7 +136,7 @@ def find_godot():
     return os.environ.get('GODOT_BIN') or shutil.which('godot')
 
 
-def report(with_tests):
+def report(with_tests, need_godot=True):
     """Print what is present and return the problems that stop the app from working."""
     problems = []
 
@@ -148,8 +149,11 @@ def report(with_tests):
     if not line(dotnet is not None, '.NET SDK', dotnet or 'not found (see global.json for the required version)'):
         problems.append('.NET SDK')
     godot = find_godot()
-    if not line(bool(godot and Path(godot).exists()), 'Godot 4.7.1 .NET', godot or 'not found; set GODOT_BIN or put godot on PATH'):
-        problems.append('Godot')
+    if need_godot:
+        if not line(bool(godot and Path(godot).exists()), 'Godot 4.7.1 .NET', godot or 'not found; set GODOT_BIN or put godot on PATH'):
+            problems.append('Godot')
+    else:
+        line(True, 'Godot 4.7.1 .NET', 'not required for this run')
     line(shutil.which('git') is not None, 'git', shutil.which('git') or 'not found')
 
     print('Submodules')
@@ -182,23 +186,24 @@ def main():
     parser.add_argument('--with-tests', action='store_true', help='also build StormLib for the differential test')
     parser.add_argument('--check', action='store_true', help='report what is present and change nothing')
     parser.add_argument('--force', action='store_true', help='rebuild even when the stamp matches')
+    parser.add_argument('--no-godot', action='store_true', help='do not treat a missing Godot as a problem (CI jobs that only build and test)')
     args = parser.parse_args()
 
     if args.check:
-        problems = report(args.with_tests)
+        problems = report(args.with_tests, not args.no_godot)
         return 1 if problems else 0
 
     if platform.system() != 'Windows':
         print('Native builds are Windows x64 only for now; syncing submodules and checking tools.')
         sync_submodules()
-        return 1 if report(args.with_tests) else 0
+        return 1 if report(args.with_tests, not args.no_godot) else 0
 
     sync_submodules()
     build_library('CascLib', args.force)
     if args.with_tests:
         build_library('StormLib', args.force)
     print()
-    problems = report(args.with_tests)
+    problems = report(args.with_tests, not args.no_godot)
     if problems:
         print('\nStill missing: ' + ', '.join(problems))
         return 1

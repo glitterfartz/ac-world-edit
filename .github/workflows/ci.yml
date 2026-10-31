@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    # ci/** lets infrastructure changes run the full pipeline (including packaging) before they reach master.
+    branches: [master, 'ci/**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ./.github/actions/setup-build
+
+      # The project is named explicitly: ACWorldEdit.sln exists for Godot's export, so a bare
+      # `dotnet build` in the repository root sees two candidates.
+      - name: Build
+        run: dotnet build ACWorldEdit.csproj -c Release -p:NuGetAudit=false
+
+      # Corpus, database and Retail tests need client data or a server and skip themselves here.
+      - name: Test
+        run: dotnet test Tests/ACWorldEdit.Tests -c Release -p:NuGetAudit=false --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          retention-days: 7
+
+  package:
+    # Builds a downloadable Windows build of every master push (and manual runs), not of pull requests.
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ./.github/actions/setup-build
+
+      - uses: ./.github/actions/setup-godot
+
+      - name: Short commit id
+        id: sha
+        shell: bash
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        id: package
+        uses: ./.github/actions/package
+        with:
+          version: dev-${{ steps.sha.outputs.short }}
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build/dotnet.binlog
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ACWorldEdit-dev-${{ steps.sha.outputs.short }}-win-x64
+          path: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.checksum }}
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
