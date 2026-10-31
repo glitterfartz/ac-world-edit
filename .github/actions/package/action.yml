@@ -55,7 +55,8 @@ runs:
         Compress-Archive -Path 'build/win-x64/*' -DestinationPath $zip -Force
         $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLowerInvariant()
         $checksum = "$zip.sha256"
-        "$hash  $name.zip" | Out-File -FilePath $checksum -Encoding ascii
+        # LF, not Out-File's CRLF: sha256sum -c would read the file name as "<name>.zip\r".
+        [IO.File]::WriteAllText($checksum, "$hash  $name.zip`n")
         "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
         "checksum=$checksum" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
         Write-Host "$name.zip  $([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB  sha256 $hash"
