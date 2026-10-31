@@ -94,6 +94,17 @@ Workflows live in `.github/workflows`; the steps they share are composite action
 | `actions/package` | | `python Tools/package.py --version`, a smoke run of the exported exe (`--headless --quit-after 30`, exit code 0, throwaway `APPDATA`), then the zip and its SHA-256 in `dist/` |
 | `dependabot.yml` | weekly | Updates for the workflow actions and NuGet packages. Submodule pins are bumped by hand |
 
+### Releasing
+
+Merge to `master`, then tag that commit and push the tag:
+
+```powershell
+git tag -a v0.1.0 -m "ACWorldEdit 0.1.0"
+git push origin v0.1.0
+```
+
+`release.yml` checks that the tag is `vMAJOR.MINOR.PATCH` (optionally `-suffix`, which marks a pre-release) and that the commit is on `master`, runs the build and tests, packages with the tag as the exe's file and product version, and creates a **draft** release with `ACWorldEdit-<version>-win-x64.zip` and its `.sha256`. Review the draft under Releases on GitHub, edit the notes if needed, and publish it. The build is unsigned, so Windows SmartScreen may warn.
+
 To upgrade Godot, change the version, asset names, both SHA-512 values (from the release's `SHA512-SUMS.txt`) and the cache key in `actions/setup-godot/action.yml` together, along with the `Godot.NET.Sdk` version in `ACWorldEdit.csproj`. To change a submodule pin, check out the new commit inside the submodule and `git add` it; the cache key follows the commit. Private-repo limits apply: Windows minutes count double and artifact storage is 500 MB, so lower `retention-days` if the 7-day artifacts reach the quota. The test job does not run the gdUnit4 project or any test that needs client data.
 
 ## Test commands and environment
