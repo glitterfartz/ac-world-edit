@@ -620,7 +620,8 @@ public partial class TerrainViewer : Node3D
                 decoded[surface.Texture] = LiquidTextures.For(assets).Decode(type);
                 tile.Liquids[i] = surface with
                 {
-                    LiquidKind = LiquidTextures.For(assets).Kind(type)
+                    LiquidKind = LiquidTextures.For(assets).Kind(type),
+                    LiquidStyle = LiquidTextures.For(assets).Style(type)
                 };
             }
             catch (Exception e)

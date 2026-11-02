@@ -16,41 +16,35 @@ public sealed partial class LightBand
 }
 
 /// <summary>
-/// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
-/// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-17
-/// (secondary accents and water-specific colors) are unused future fidelity work.
+/// The four LightParams water alphas: shallow and deep for rivers/lakes and for the ocean (the
+/// depth gradient runs from the shallow to the deep value).
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, (uint Time, float End, float Scaler)[]? FogDistance = null)
+public readonly record struct WaterAlphas(float RiverShallow, float RiverDeep, float OceanShallow, float OceanDeep)
 {
     /// <summary>
-    /// Retail fog distance at a tick: the client fades linearly from End * Scaler to End, so End is where the
-    /// fog is complete. Null for Wrath profiles and for samples without a usable distance.
+    /// The client's values when a map has no lights at all (DayNight::SetColors).
     /// </summary>
-    public float? FogEndAt(double tick)
-    {
-        if (FogDistance is not { Length: > 0 } samples)
-        {
-            return null;
-        }
+    public static WaterAlphas Default { get; } = new(0.5f, 1f, 0.75f, 1f);
+}
 
-        if (samples.Length == 1)
-        {
-            return samples[0].End > 0 ? samples[0].End : null;
-        }
+/// <summary>
+/// The four LightIntBand water colors: shallow ("close") and deep ("far") for the ocean and for
+/// rivers/lakes.
+/// </summary>
+public sealed record WaterColors(LightBand OceanShallow, LightBand OceanDeep, LightBand RiverShallow, LightBand RiverDeep);
 
-        int next = Array.FindIndex(samples, s => s.Time > tick);
-        var (before, after) = next switch
-        {
-            < 0 => (samples[^1], samples[0]),
-            0 => (samples[^1], samples[0]),
-            _ => (samples[next - 1], samples[next])
-        };
-        double span = (after.Time + (after.Time <= before.Time ? LightBand.CycleLength : 0)) - before.Time;
-        double at = tick < before.Time ? tick + LightBand.CycleLength : tick;
-        float t = span <= 0 ? 0f : (float)Math.Clamp((at - before.Time) / span, 0, 1);
-        float end = before.End + (after.End - before.End) * t;
-        return end > 0 ? end : null;
-    }
+/// <summary>
+/// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
+/// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-13 (shadow
+/// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
+/// tables carry no water bands.
+/// </summary>
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null)
+{
+    /// <summary>
+    /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
+    /// </summary>
+    public (float End, float StartMul)? FogAt(double tick) => FogDistance?.At(tick);
 }
 
 /// <summary>
@@ -112,9 +106,12 @@ public sealed class ClientLighting
             }
 
             Dictionary<uint, uint> paramSkybox = [];
+            Dictionary<uint, WaterAlphas> paramWater = [];
             foreach (var row in tables.Table("LightParams").Values)
             {
                 paramSkybox[(uint)row.ID] = Convert.ToUInt32(row["LightSkyboxID"]);
+                paramWater[(uint)row.ID] = new(Convert.ToSingle(row["WaterShallowAlpha"]), Convert.ToSingle(row["WaterDeepAlpha"]),
+                    Convert.ToSingle(row["OceanShallowAlpha"]), Convert.ToSingle(row["OceanDeepAlpha"]));
             }
 
             Dictionary<uint, string> skyboxPaths = [];
@@ -154,7 +151,10 @@ public sealed class ClientLighting
                     Band(rows, "SkyTopColor"),
                     Band(rows, "SkySmogColor"),
                     Band(rows, "SkyFogColor"),
-                    [.. rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogEnd"]), Convert.ToSingle(r["FogScaler"]))).OrderBy(s => s.Item1)]);
+                    FogCurve.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogEnd"]), Convert.ToSingle(r["FogScaler"])))),
+                    new(Band(rows, "OceanCloseColor"), Band(rows, "OceanFarColor"), Band(rows, "RiverCloseColor"), Band(rows, "RiverFarColor")),
+                    paramWater.GetValueOrDefault(paramsId, WaterAlphas.Default),
+                    Band(rows, "SunColor"));
             }
 
             return new(regions, profiles, skyboxPaths);
@@ -178,6 +178,7 @@ public sealed class ClientLighting
             var lightParams = new DbcTable(store.Read(@"DBFilesClient/LightParams.dbc"));
             var skybox = new DbcTable(store.Read(@"DBFilesClient/LightSkybox.dbc"));
             var intBand = new DbcTable(store.Read(@"DBFilesClient/LightIntBand.dbc"));
+            var floatBand = new DbcTable(store.Read(@"DBFilesClient/LightFloatBand.dbc"));
             var regions = new List<LightRegion>();
             foreach (uint id in light.Ids)
             {
@@ -197,14 +198,20 @@ public sealed class ClientLighting
                 }
 
                 uint skyboxId = lightParams.U(paramsId, 2);
-                int baseRow = lightParams.Position(paramsId) * 18;
+                int position = lightParams.Position(paramsId), baseRow = position * 18;
+                // LightFloatBand holds 6 rows per entry: band 0 is the fog end, band 1 its start multiplier.
+                int floatRow = position * 6;
                 profiles[paramsId] = new(
                     skyboxId,
                     LightBand.Read(intBand, baseRow + 0),
                     LightBand.Read(intBand, baseRow + 1),
                     LightBand.Read(intBand, baseRow + 2),
                     LightBand.Read(intBand, baseRow + 6),
-                    LightBand.Read(intBand, baseRow + 7));
+                    LightBand.Read(intBand, baseRow + 7),
+                    FogCurve.FromBands(LightFloatBand.Read(floatBand, floatRow), LightFloatBand.Read(floatBand, floatRow + 1)),
+                    new(LightBand.Read(intBand, baseRow + 14), LightBand.Read(intBand, baseRow + 15), LightBand.Read(intBand, baseRow + 16), LightBand.Read(intBand, baseRow + 17)),
+                    new(lightParams.F(paramsId, 5), lightParams.F(paramsId, 6), lightParams.F(paramsId, 7), lightParams.F(paramsId, 8)),
+                    LightBand.Read(intBand, baseRow + 9));
                 if (skyboxId > 0 && skybox.Contains(skyboxId) && !skyboxPaths.ContainsKey(skyboxId))
                 {
                     skyboxPaths[skyboxId] = BinaryAsset.ModelPath(skybox.Str(skyboxId, 1));

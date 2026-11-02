@@ -93,7 +93,7 @@ public static class WmoModel
                     type = LiquidData.WmoType((uint)(value & 15), 0, gb.U(gp.Data + 8));
                 }
 
-                surfaces.Add(LiquidData.Wmo(gb.Bytes.AsSpan(lq.Data, lq.Size).ToArray(), type, LiquidTextures.For(store).Kind(type)));
+                surfaces.Add(LiquidData.Wmo(gb.Bytes.AsSpan(lq.Data, lq.Size).ToArray(), type, LiquidTextures.For(store).Kind(type)) with { LiquidStyle = LiquidTextures.For(store).Style(type) });
             }
 
             if (!sub.TryGetValue("MOVT", out var vt) || !sub.TryGetValue("MOVI", out var ix) || !sub.TryGetValue("MOBA", out var ba))

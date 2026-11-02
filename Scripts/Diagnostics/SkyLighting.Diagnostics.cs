@@ -22,7 +22,7 @@ public sealed partial class SkyLighting
             flat = saved != null,
             sun = new { energy = MathF.Round(sun.LightEnergy, 3), color = Rgb(sun.LightColor), rotationDegrees = new[] { sun.RotationDegrees.X, sun.RotationDegrees.Y, sun.RotationDegrees.Z }, shadows = sun.ShadowEnabled },
             ambient = new { source = env.AmbientLightSource.ToString(), color = Rgb(env.AmbientLightColor), energy = MathF.Round(env.AmbientLightEnergy, 3) },
-            fog = new { enabled = env.FogEnabled, lightColor = Rgb(env.FogLightColor), density = MathF.Round(env.FogDensity, 5), approximateEndYards = env.FogDensity > 0 ? MathF.Round(3.5f / env.FogDensity, 0) : (float?)null },
+            fog = new { enabled = clientFog.W > 0.5f, startYards = MathF.Round(clientFog.X, 1), endYards = MathF.Round(clientFog.Y, 1), viewDistance = ViewDistance },
             background = new { mode = env.BackgroundMode.ToString(), color = Rgb(env.BackgroundColor), skyTop = Rgb(skyMaterial.SkyTopColor), skyHorizon = Rgb(skyMaterial.SkyHorizonColor) },
             tonemap = env.TonemapMode.ToString(),
             skybox = skyboxPath,
@@ -43,6 +43,7 @@ public sealed partial class SkyLighting
         env.AmbientLightColor = Colors.White;
         env.AmbientLightEnergy = 1;
         env.FogEnabled = false;
+        ClientShaderGlobals.Set(ClientShaderGlobals.Fog, new Vector4(0, 1, 1, 0));
         env.TonemapMode = Godot.Environment.ToneMapper.Linear;
     }
 

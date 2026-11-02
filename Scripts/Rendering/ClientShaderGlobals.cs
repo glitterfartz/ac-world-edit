@@ -1,0 +1,73 @@
+using Godot;
+
+namespace ACWorldEdit;
+
+/// <summary>
+/// Shader-wide parameters that mirror the constants the client feeds every world shader (fog, the
+/// map sun and the time-of-day water colors). <c>SkyLighting</c> writes them each frame; the
+/// terrain, model and liquid shaders read them through <c>Shaders/client_lighting.gdshaderinc</c>.
+/// A shader that declares a global fails to compile if it does not exist yet, so shaders are loaded
+/// through <see cref="Load"/>.
+/// </summary>
+public static class ClientShaderGlobals
+{
+    /// <summary>
+    /// Fog: x start, y end (yards of view depth), z density exponent, w 1 when fog is on.
+    /// </summary>
+    public const string Fog = "client_fog";
+    public const string FogColor = "client_fog_color";
+    /// <summary>
+    /// Direction the sun light travels (world space, unit length).
+    /// </summary>
+    public const string SunDirection = "client_sun_dir";
+    public const string SunAmbient = "client_sun_ambient";
+    public const string SunDiffuse = "client_sun_diffuse";
+    public const string SunSpecular = "client_sun_specular";
+    /// <summary>
+    /// Water gradient ends, rgb color plus alpha: ocean shallow/deep, river shallow/deep.
+    /// </summary>
+    public const string OceanShallow = "client_water_ocean_shallow";
+    public const string OceanDeep = "client_water_ocean_deep";
+    public const string RiverShallow = "client_water_river_shallow";
+    public const string RiverDeep = "client_water_river_deep";
+    static bool registered;
+
+    /// <summary>
+    /// Register every global once, with values that draw like the client with no lights: no fog, a
+    /// neutral sun and plain water.
+    /// </summary>
+    public static void Ensure()
+    {
+        if (registered)
+        {
+            return;
+        }
+
+        registered = true;
+        // The parameters live only for this run (they are not in the project settings), so each is new;
+        // listing the existing ones is an editor-only call.
+        void Add(string name, RenderingServer.GlobalShaderParameterType type, Variant value) => RenderingServer.GlobalShaderParameterAdd(name, type, value);
+
+        Add(Fog, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 1, 1, 0));
+        Add(FogColor, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.57f, 0.71f, 0.79f));
+        Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
+        Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
+        Add(SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(1, 1, 1));
+        Add(SunSpecular, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 0, 0));
+        Add(OceanShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.1f, 0.25f, 0.35f, 0.75f));
+        Add(OceanDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.02f, 0.1f, 0.2f, 1));
+        Add(RiverShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.15f, 0.35f, 0.4f, 0.5f));
+        Add(RiverDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.05f, 0.2f, 0.3f, 1));
+    }
+
+    /// <summary>
+    /// Load a shader after the globals it may declare exist.
+    /// </summary>
+    public static Shader Load(string path)
+    {
+        Ensure();
+        return GD.Load<Shader>(path);
+    }
+
+    public static void Set(string name, Variant value) => RenderingServer.GlobalShaderParameterSet(name, value);
+}

@@ -94,6 +94,7 @@ public sealed partial class SkyLighting : Node3D
             environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
             environment.Environment.BackgroundColor = interior ? new Color("080a0d") : new Color("91b5c9");
             environment.Environment.FogEnabled = false;
+            ClientShaderGlobals.Set(ClientShaderGlobals.Fog, new Vector4(0, 1, 1, 0));
             SetSkybox(null);
         }
     }
@@ -181,17 +182,91 @@ public sealed partial class SkyLighting : Node3D
         skyMaterial.SkyHorizonColor = skyHorizon;
         skyMaterial.GroundHorizonColor = skyHorizon;
         skyMaterial.GroundBottomColor = skyHorizon.Darkened(0.3f);
-        environment.Environment.FogEnabled = true;
-        environment.Environment.FogLightColor = fog;
-        // Retail fog is complete at the light's FogEnd; the exponential falloff reaches about 3 % transmittance there.
-        float? backgroundEnd = backgroundProfile.FogEndAt(tick), foregroundEnd = foregroundProfile?.FogEndAt(tick);
-        float? fogEnd = backgroundEnd is { } be && foregroundEnd is { } fe && bestWeight > 0 ? Mathf.Lerp(be, fe, bestWeight) : backgroundEnd ?? foregroundEnd;
-        environment.Environment.FogDensity = fogEnd is { } end ? 3.5f / Math.Max(end, 10f) : 0.0035f;
+        // The client's fog (DayNight::UpdateFog): it ramps from end * startMul to end, with the end capped at the
+        // view distance. The shaders apply it (client_lighting.gdshaderinc), so Godot's own fog stays off.
+        var backgroundFog = backgroundProfile.FogAt(tick);
+        var foregroundFog = foregroundProfile?.FogAt(tick);
+        (float End, float StartMul)? curve = backgroundFog is { } b && foregroundFog is { } f && bestWeight > 0
+            ? (Mathf.Lerp(b.End, f.End, bestWeight), Mathf.Lerp(b.StartMul, f.StartMul, bestWeight))
+            : backgroundFog ?? foregroundFog;
+        float fogEnd = Math.Min(ViewDistance, curve?.End ?? ViewDistance);
+        float fogStart = fogEnd * (curve?.StartMul ?? DefaultFogStartMultiplier);
+        environment.Environment.FogEnabled = false;
+        SetClientFog(fogStart, fogEnd, fog);
+        ApplyWater(backgroundProfile, foregroundProfile, bestWeight, tick);
+        ApplySunUniforms(diffuse, ambient, backgroundProfile, foregroundProfile, bestWeight, tick);
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
         SetSkybox(table.SkyboxPath(table.Profile(activeParamsId)?.SkyboxId ?? 0));
         skyboxAnchor.Position = camera.Position;
         ApplyFlat();
         ApplyDiagnosticBackground();
+    }
+
+    /// <summary>
+    /// The distance the fog is capped at, standing in for the client's view distance setting (its
+    /// "farclip" runs from 177 to 1277 yards). The camera here has no such limit, so this only shapes
+    /// the fog: it ends at the smaller of this and the light's own fog end.
+    /// </summary>
+    public float ViewDistance { get; set; } = 777;
+    /// <summary>
+    /// Fog start as a fraction of its end when a light has no fog data (DayNight DEFAULT_FOG_SCALER).
+    /// </summary>
+    const float DefaultFogStartMultiplier = 0.5f;
+    Vector4 clientFog = new(0, 1, 1, 0);
+
+    void SetClientFog(float start, float end, Color color)
+    {
+        clientFog = new(start, end, 1, 1);
+        ClientShaderGlobals.Set(ClientShaderGlobals.Fog, clientFog);
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(color.R, color.G, color.B));
+    }
+
+    /// <summary>
+    /// Blend the profile's four water gradient ends the same way the other bands are blended and
+    /// publish them for the liquid shader. Profiles without water bands keep the previous values.
+    /// </summary>
+    void ApplyWater(LightProfile background, LightProfile? foreground, float weight, double tick)
+    {
+        if (background.Water is not { } bw || background.WaterAlpha is not { } ba)
+        {
+            return;
+        }
+
+        Vector4 Gradient(Func<WaterColors, LightBand> band, Func<WaterAlphas, float> alpha)
+        {
+            var color = band(bw).At(tick);
+            float a = alpha(ba);
+            if (foreground is { Water: { } fw, WaterAlpha: { } fa } && weight > 0)
+            {
+                color = color.Lerp(band(fw).At(tick), weight);
+                a = Mathf.Lerp(a, alpha(fa), weight);
+            }
+
+            return new(color.R, color.G, color.B, a);
+        }
+
+        ClientShaderGlobals.Set(ClientShaderGlobals.OceanShallow, Gradient(w => w.OceanShallow, a => a.OceanShallow));
+        ClientShaderGlobals.Set(ClientShaderGlobals.OceanDeep, Gradient(w => w.OceanDeep, a => a.OceanDeep));
+        ClientShaderGlobals.Set(ClientShaderGlobals.RiverShallow, Gradient(w => w.RiverShallow, a => a.RiverShallow));
+        ClientShaderGlobals.Set(ClientShaderGlobals.RiverDeep, Gradient(w => w.RiverDeep, a => a.RiverDeep));
+    }
+
+    /// <summary>
+    /// Publish the map sun for shaders that light themselves the client's way (water): the direction
+    /// the light travels, its ambient and diffuse colors and the specular color (the sun band).
+    /// </summary>
+    void ApplySunUniforms(Color diffuse, Color ambient, LightProfile background, LightProfile? foreground, float weight, double tick)
+    {
+        var specular = background.SunColor?.At(tick) ?? Colors.White;
+        if (foreground?.SunColor is { } sunBand && weight > 0)
+        {
+            specular = specular.Lerp(sunBand.At(tick), weight);
+        }
+
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunDirection, (-sun.GlobalTransform.Basis.Z).Normalized());
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunAmbient, new Vector3(ambient.R, ambient.G, ambient.B));
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunDiffuse, new Vector3(diffuse.R, diffuse.G, diffuse.B));
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunSpecular, new Vector3(specular.R, specular.G, specular.B));
     }
 
     /// <summary>

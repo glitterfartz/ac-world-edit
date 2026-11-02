@@ -5,6 +5,41 @@ using System.Text.RegularExpressions;
 namespace ACWorldEdit.Assets;
 
 /// <summary>
+/// Which procedural depth gradient a liquid type names in its second texture slot.
+/// </summary>
+public enum LiquidGradient
+{
+    River = 0,
+    Ocean = 1,
+    Wmo = 2
+}
+
+/// <summary>
+/// How the client's water material draws one LiquidType (Liquid::CSettingsBank::UpdateRecord):
+/// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
+/// the texture scale, rotation (radians) and depth scale.
+/// </summary>
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale)
+{
+    /// <summary>
+    /// What the stock river and lake types use.
+    /// </summary>
+    public static LiquidStyle River { get; } = new(LiquidGradient.River, 0, 1250, 1, 0, 1);
+    /// <summary>
+    /// What the stock ocean types use.
+    /// </summary>
+    public static LiquidStyle Ocean { get; } = new(LiquidGradient.Ocean, 1, 1250, 1, 0, 1);
+
+    /// <summary>
+    /// Pick the gradient from the procedural texture name in a type's second slot ("proceduralOceanDepthTex").
+    /// </summary>
+    public static LiquidGradient GradientFor(string textureName) =>
+        textureName.Contains("Ocean", StringComparison.OrdinalIgnoreCase) ? LiquidGradient.Ocean
+        : textureName.Contains("Wmo", StringComparison.OrdinalIgnoreCase) ? LiquidGradient.Wmo
+        : LiquidGradient.River;
+}
+
+/// <summary>
 /// Per-store CPU liquid catalog/atlas cache. Identical patterns share decoded storage;
 /// ConditionalWeakTable ties lifetime to the mounted client rather than a global singleton.
 /// </summary>
@@ -34,6 +69,24 @@ public sealed class LiquidTextures
     /// Read the client SoundBank category used for water/ocean versus lava/slime preview blending.
     /// </summary>
     public uint Kind(uint type) => retail?.Kind(type) ?? types!.U(type, 3);
+    /// <summary>
+    /// How the water material draws a type. Wrath reads the LiquidType.dbc columns the client reads
+    /// (texture slot 1, floats 0 to 2, ints 0 and 1); retail types use the stock river or ocean style by
+    /// their sound bank until the retail table's columns are read.
+    /// </summary>
+    public LiquidStyle Style(uint type)
+    {
+        if (types is not { } table)
+        {
+            return Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+        }
+
+        // Only the water material (1) reads the floats as scale, rotation and depth scale; magma uses them as scroll speeds.
+        bool water = table.U(type, 14) == 1;
+        int period = (int)table.U(type, 42);
+        return new(LiquidStyle.GradientFor(table.Str(type, 16)), (int)table.U(type, 41) == 1 ? 1 : 0, period > 0 ? period : 1250,
+            water ? table.F(type, 23) : 1, water ? table.F(type, 24) : 0, water ? table.F(type, 25) : 1);
+    }
     /// <summary>
     /// Resolve the first native texture slot and normalize separators, retaining printf-style frame
     /// placeholders.
