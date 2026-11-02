@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode cull_disabled;
+#include "res://Shaders/client_lighting.gdshaderinc"
 // Up to four native layers share one chunk UV set. Alpha textures use raw data
 // sampling; only color textures are converted from source color space.
 uniform sampler2D layer0 : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -61,4 +62,5 @@ void fragment() {
     }
     ALBEDO = color;
     ROUGHNESS = 1.0;
+    FOG = client_fog_output(-VERTEX.z);
 }

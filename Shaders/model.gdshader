@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode cull_disabled;
+#include "res://Shaders/client_lighting.gdshaderinc"
 
 // ModelLibrary chooses blend/cull/unlit variants from this shader. Keep the render-mode
 // and roughness statements explicit because that material setup replaces those statements.
@@ -220,4 +221,5 @@ void fragment() {
     EMISSION = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
+    FOG = client_fog_output(-VERTEX.z);
 }

@@ -118,7 +118,7 @@ public sealed class ModelLibrary
     readonly List<ModelInstance> unbuilt = [];
     // Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
     readonly Dictionary<ModelKey, int> liveKeys = [];
-    readonly Shader baseShader = GD.Load<Shader>("res://Shaders/model.gdshader");
+    readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model.gdshader");
     readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
     readonly ImageTexture fallback;
     IClientFiles? store;
@@ -647,7 +647,7 @@ public sealed class ModelLibrary
         };
         if (surface.LiquidType != null)
         {
-            LiquidRendering.Configure(material, texture, surface.LiquidKind);
+            LiquidRendering.Configure(material, texture, surface.LiquidKind, surface.LiquidStyle);
             mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
             return;
         }

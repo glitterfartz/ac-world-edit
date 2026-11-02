@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class TerrainRenderer
 {
-    readonly Shader shader = GD.Load<Shader>("res://Shaders/terrain.gdshader");
+    readonly Shader shader = ClientShaderGlobals.Load("res://Shaders/terrain.gdshader");
     readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly ImageTexture fallback;
     readonly HashSet<ShaderMaterial> materials = [];
@@ -340,7 +340,7 @@ public sealed class TerrainRenderer
             {
                 Shader = LiquidRendering.Shader
             };
-            LiquidRendering.Configure(mat, texture, surface.LiquidKind);
+            LiquidRendering.Configure(mat, texture, surface.LiquidKind, surface.LiquidStyle);
             entry = new(texture, mat);
             liquids.Add(surface.Texture, entry);
         }

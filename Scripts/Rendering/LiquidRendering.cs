@@ -4,22 +4,30 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Main-thread bridge from parsed grids/atlases to Godot. Native frames animate in the shader;
-/// tint, opacity response and view-angle blending remain approximations.
+/// Main-thread bridge from parsed grids/atlases to Godot. The shader (Shaders/liquid.gdshader) is the
+/// client's water and magma pixel/vertex shaders; native frames animate over the type's period and the
+/// depth gradient comes from the active light's water colors.
 /// </summary>
 public static class LiquidRendering
 {
-    public static Shader Shader { get; } = GD.Load<Shader>("res://Shaders/liquid.gdshader");
+    public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
 
     /// <summary>
-    /// Bind horizontal atlas/category. Supported native frames are square, so atlas aspect ratio
-    /// supplies frame count.
+    /// Bind horizontal atlas/category and the type's style. Supported native frames are square, so
+    /// atlas aspect ratio supplies frame count. A surface without a style draws as a stock river.
     /// </summary>
-    public static void Configure(ShaderMaterial material, Texture2D texture, uint kind)
+    public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
+        style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("liquid_kind", (int)kind);
+        material.SetShaderParameter("gradient", (int)style.Gradient);
+        material.SetShaderParameter("depth_table", style.DepthTable);
+        material.SetShaderParameter("period_ms", (float)style.PeriodMs);
+        material.SetShaderParameter("uv_scale", style.Scale);
+        material.SetShaderParameter("uv_angle", style.Rotation);
+        material.SetShaderParameter("depth_scale", style.DepthScale);
     }
 
     /// <summary>
