@@ -2,12 +2,12 @@ shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
 #include "res://Shaders/client_lighting.gdshaderinc"
 
-// Liquids, in two water models, magma/slime and a retail swamp depth-layer path, chosen per surface:
+// Liquids, in two water models and a magma/slime path, chosen per surface:
 //
 //   water_wrath   the 3.3.5a client's psLiquidWater (ps_3_0): animated frames added to the lit gradient.
 //   water_retail  the retail client's "mediumwater" (ps_5_0): ripple normal map, fresnel, sun glint.
 //   magma/slime   vertex color times the animated frames, unlit and opaque (both clients).
-//   swamp         procswamp_0's lit shallow/middle/deep texture blend and minimum opacity (retail).
+// Retail swamp material 14 uses swamp.gdshader (screen/depth inputs isolated from other liquids).
 //
 // A surface uses the retail model when its LiquidType names a ripple normal map (retail data does, 3.3.5a
 // data does not); see LiquidRendering.Configure. The depth gradient, lighting and fog are shared.
@@ -47,15 +47,6 @@ uniform float uv_angle = 0.0;
 // How fast magma and slime scroll their frames, in texture widths per second along U and V (LiquidType floats 0
 // and 1; Liquid::GetTexScrollMtx). Water leaves it at zero.
 uniform vec2 scroll_speed = vec2(0.0);
-
-// Retail material 14, procswamp permutation 0: three lit depth layers.
-// DB2 float-to-buffer assignments are inferred (see RetailLiquids.SwampSettings).
-uniform bool swamp_material = false;
-uniform sampler2D swamp_middle_tex : filter_linear_mipmap, repeat_enable;
-uniform sampler2D swamp_deep_tex : filter_linear_mipmap, repeat_enable;
-uniform vec4 swamp_depths = vec4(0.003, 0.006, 0.01, 0.014);
-uniform vec3 swamp_scales = vec3(0.1, 0.25, 0.7);
-uniform float swamp_opacity = 1.0;
 
 const int GRADIENT_ROWS = 64;
 
@@ -173,33 +164,6 @@ vec4 water_retail(float depth_v, vec3 view_position, mat4 view_matrix) {
 
 // ---- Fragment ---------------------------------------------------------------------------------------------
 
-vec4 liquid_frame(vec2 uv, float frame) {
-    vec2 size = vec2(textureSize(albedo_tex, 0));
-    vec2 inset = vec2(0.5 * frames / size.x, 0.5 / size.y);
-    vec2 tile = mix(inset, vec2(1.0) - inset, fract(uv));
-    return texture(albedo_tex, vec2((frame + tile.x) / frames, tile.y));
-}
-
-// procswamp_0: smoothstep A->B and B->C, then crossfade those blends by the
-// middle interval. Keep the native normalized MH2O depth, not the water gradient table.
-vec4 swamp_retail(vec2 uv, float depth, float frame) {
-    vec4 shallow = liquid_frame(uv * swamp_scales.x, frame);
-    vec4 middle = texture(swamp_middle_tex, uv * swamp_scales.y);
-    vec4 deep = texture(swamp_deep_tex, uv * swamp_scales.z);
-    vec3 lower = swamp_depths.xzy;
-    vec3 upper = swamp_depths.ywz;
-    // Adjacent intervals may meet at the same value (type 1225). Define a hard
-    // transition there instead of allowing 0/0 to poison the layer blend.
-    vec3 widths = upper - lower;
-    vec3 t = clamp((vec3(depth) - lower) / max(widths, vec3(0.000001)), 0.0, 1.0);
-    t = t * t * (3.0 - 2.0 * t);
-    vec4 color = mix(mix(shallow, middle, t.x), mix(middle, deep, t.y), t.z);
-    float diffuse = clamp(dot(-client_sun_dir, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
-    color.rgb *= client_sun_ambient + client_sun_diffuse * diffuse;
-    color.a = max(color.a, 0.35) * swamp_opacity;
-    return color;
-}
-
 void fragment() {
     float frame = mod(floor(mod(TIME * 1000.0, period_ms) / period_ms * frames), frames);
     vec2 size = vec2(textureSize(albedo_tex, 0));
@@ -212,11 +176,7 @@ void fragment() {
     tile = mix(inset, vec2(1.0) - inset, tile);
     vec4 frame_color = texture(albedo_tex, vec2((frame + tile.x) / frames, tile.y));
 
-    if (swamp_material) {
-        vec4 swamp = swamp_retail(UV, COLOR.a, frame);
-        ALBEDO = gamma_to_linear(swamp.rgb);
-        ALPHA = swamp.a;
-    } else if (liquid_kind >= 2) {
+    if (liquid_kind >= 2) {
         // Magma and slime: vertex color (white) times the frame, unlit and opaque.
         ALBEDO = gamma_to_linear(frame_color.rgb);
         ALPHA = 1.0;

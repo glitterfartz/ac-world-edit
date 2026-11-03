@@ -26,11 +26,15 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, SwampSettings> swamps = [];
 
     /// <summary>
-    /// Material 14's three depth textures. The DB2-to-buffer mapping is inferred: floats 0..3
-    /// are the depth transitions, 12 opacity, and 13..15 the three texture scales.
+    /// Material 14 depth layers, shore texture, ripple sequence and surface constants. The
+    /// DB2-to-buffer mapping is inferred; UV motion uses an estimate because CPU texture matrices
+    /// are stripped. Float assignments and the unassigned fields are recorded in viewer-runtime.md.
     /// </summary>
     public sealed record SwampSettings(string Middle, string Deep, System.Numerics.Vector4 Depths,
-        System.Numerics.Vector3 Scales, float Opacity);
+        System.Numerics.Vector3 Scales, float Opacity, string NormalPattern = "",
+        float NormalStrength = 0.15f, float SpecularPower = 300, float Refraction = 0.075f,
+        float WaveScale = 1, float Reflection = 0.6f, float FlowSpeed = 0.3f,
+        float FramesPerSecond = 60, float SpecularStrength = 0.1f, string Shore = "", float ShoreWidth = 0.3f);
 
     public static void Register(IClientFiles files, RetailLiquids liquids) => registry.AddOrUpdate(files, liquids);
 
@@ -46,11 +50,14 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
-                if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 16 && textures.Length >= 3)
+                if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 18 && textures.Length >= 3)
                 {
                     result.swamps[(uint)row.ID] = new(textures[1], textures[2],
                         new(floats[0], floats[1], floats[2], floats[3]),
-                        new(floats[13], floats[14], floats[15]), floats[12]);
+                        new(floats[13], floats[14], floats[15]), floats[12],
+                        textures.Length > 5 ? textures[5] : "", floats[4], floats[5], floats[6],
+                        floats[11], floats[8], 0.3f /* estimated UV scroll speed */, floats[10], floats[17],
+                        textures.Length > 3 ? textures[3] : "", floats[9]);
                 }
             }
 

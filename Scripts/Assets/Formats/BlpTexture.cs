@@ -7,7 +7,7 @@ namespace ACWorldEdit.Assets;
 public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
 {
     /// <summary>
-    /// Decode palette/raw/DXT1/DXT3/DXT5 storage with native alpha packing. Select the first
+    /// Decode palette/raw/DXT1/DXT3/DXT5/BC5 storage with native alpha packing. Select the first
     /// available mip within the requested target; zero requests full resolution. Reject unsupported
     /// encodings and truncated blocks.
     /// </summary>
@@ -76,6 +76,33 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
                 pixels[i + 1] = input[i + 1];
                 pixels[i + 2] = input[i];
                 pixels[i + 3] = input[i + 3];
+            }
+        }
+        else if (encoding == 2 && alphaEncoding == 11)
+        {
+            // Retail BLP preferred format 11 is BC5_UNORM: two BC4 blocks, red then green.
+            // Keep the two channels raw; the consuming shader reconstructs its own normal.
+            Span<byte> red = stackalloc byte[16];
+            Span<byte> green = stackalloc byte[16];
+            int pos = 0;
+            for (int y = 0; y < h; y += 4)
+            {
+                for (int x = 0; x < w; x += 4)
+                {
+                    if (pos + 16 > input.Length) throw new InvalidDataException("Short BC5 block");
+                    DecodeBc4(input.Slice(pos, 8), red);
+                    DecodeBc4(input.Slice(pos + 8, 8), green);
+                    for (int i = 0; i < 16; i++)
+                    {
+                        int px = x + i % 4, py = y + i / 4;
+                        if (px >= w || py >= h) continue;
+                        int p = (py * w + px) * 4;
+                        pixels[p] = red[i];
+                        pixels[p + 1] = green[i];
+                        pixels[p + 3] = 255;
+                    }
+                    pos += 16;
+                }
             }
         }
         else if (encoding == 2)
@@ -199,5 +226,25 @@ public sealed record BlpTexture(int Width, int Height, byte[] Rgba)
         rgba[1] = (byte)(((c >> 5) & 63) * 255 / 63);
         rgba[2] = (byte)((c & 31) * 255 / 31);
         rgba[3] = 255;
+    }
+
+    static void DecodeBc4(ReadOnlySpan<byte> block, Span<byte> output)
+    {
+        Span<byte> table = stackalloc byte[8];
+        table[0] = block[0];
+        table[1] = block[1];
+        if (table[0] > table[1])
+        {
+            for (int i = 2; i < 8; i++) table[i] = (byte)(((8 - i) * table[0] + (i - 1) * table[1]) / 7);
+        }
+        else
+        {
+            for (int i = 2; i < 6; i++) table[i] = (byte)(((6 - i) * table[0] + (i - 1) * table[1]) / 5);
+            table[6] = 0;
+            table[7] = 255;
+        }
+        ulong bits = 0;
+        for (int i = 0; i < 6; i++) bits |= (ulong)block[i + 2] << (8 * i);
+        for (int i = 0; i < 16; i++) output[i] = table[(int)((bits >> (i * 3)) & 7)];
     }
 }

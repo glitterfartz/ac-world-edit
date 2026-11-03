@@ -46,9 +46,10 @@ public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int Pe
 }
 
 /// <summary>Decoded material 14 depth layers; shared CPU textures, with no engine resources.</summary>
-public sealed record SwampLiquidStyle(BlpTexture Middle, BlpTexture Deep, RetailLiquids.SwampSettings Settings)
+public sealed record SwampLiquidStyle(BlpTexture Middle, BlpTexture Deep, RetailLiquids.SwampSettings Settings,
+    BlpTexture? Shore = null, BlpTexture? Normals = null)
 {
-    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Middle)}|{RuntimeHelpers.GetHashCode(Deep)}";
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Middle)}|{RuntimeHelpers.GetHashCode(Deep)}|{(Shore == null ? 0 : RuntimeHelpers.GetHashCode(Shore))}|{(Normals == null ? 0 : RuntimeHelpers.GetHashCode(Normals))}";
 }
 
 /// <summary>
@@ -102,7 +103,8 @@ public sealed class LiquidTextures
                         // Missing extra layers retain the existing base-texture fallback.
                         var middle = Extra(settings.Middle);
                         var deep = Extra(settings.Deep);
-                        swamps[type] = swamp = middle != null && deep != null ? new(middle, deep, settings) : null;
+                        swamps[type] = swamp = middle != null && deep != null
+                            ? new(middle, deep, settings, Extra(settings.Shore), OptionalSequence(settings.NormalPattern)) : null;
                     }
 
                     return stock with { Swamp = swamp };
@@ -169,6 +171,15 @@ public sealed class LiquidTextures
     /// placeholders.
     /// </summary>
     public string Pattern(uint type) => (retail?.Pattern(type) ?? types!.Str(type, 15)).Replace('\\', '/');
+
+    BlpTexture? OptionalSequence(string pattern)
+    {
+        lock (atlases)
+        {
+            try { return Sequence(pattern.Replace('\\', '/')); }
+            catch (Exception e) when (e is InvalidDataException or FileNotFoundException or NotSupportedException) { return null; }
+        }
+    }
     /// <summary>
     /// Decode bounded sequences at up to 128 pixels per frame into a horizontal atlas. A lock
     /// prevents duplicate worker decodes; missing procedural assets fail explicitly.
@@ -188,26 +199,7 @@ public sealed class LiquidTextures
                 return atlases[type] = cached;
             }
 
-            List<BlpTexture> frames = [];
-            if (pattern.Contains('%'))
-            {
-                for (int i = 1; i <= 60; i++)
-                {
-                    string path = Regex.Replace(pattern, @"%0?(\d*)d", m => m.Groups[1].Value.Length > 0 ? i.ToString("D" + m.Groups[1].Value) : i.ToString());
-                    if (!store.Exists(path))
-                    {
-                        break;
-                    }
-
-                    frames.Add(BlpTexture.Decode(store.Read(path), 128));
-                }
-            }
-            else if (pattern.Length > 0 && store.Exists(pattern))
-            {
-                frames.Add(BlpTexture.Decode(store.Read(pattern), 128));
-            }
-
-            if (frames.Count == 0)
+            if (Sequence(pattern) is not { } sequence)
             {
                 // Some retail types name textures the listfile does not know; they draw with the base
                 // liquid of their kind (1 water, 2 ocean, 3 magma, 4 slime) instead of vanishing.
@@ -220,22 +212,49 @@ public sealed class LiquidTextures
                 throw new InvalidDataException($"Liquid {type} has no supported native texture sequence: {pattern}");
             }
 
-            int w = frames[0].Width, h = frames[0].Height;
-            if (frames.Any(f => f.Width != w || f.Height != h))
-            {
-                throw new InvalidDataException("Mismatched liquid texture frames.");
-            }
-
-            byte[] rgba = new byte[checked(w * h * frames.Count * 4)];
-            for (int f = 0; f < frames.Count; f++)
-            {
-                for (int y = 0; y < h; y++)
-                {
-                    frames[f].Rgba.AsSpan(y * w * 4, w * 4).CopyTo(rgba.AsSpan((y * w * frames.Count + f * w) * 4));
-                }
-            }
-
-            return sequences[pattern] = atlases[type] = new(w * frames.Count, h, rgba);
+            return atlases[type] = sequence;
         }
+    }
+
+    // Called under the atlas lock; base colors and animated normal maps share decoded sequences.
+    BlpTexture? Sequence(string pattern)
+    {
+        if (sequences.TryGetValue(pattern, out var cached)) return cached;
+        List<BlpTexture> frames = [];
+        if (pattern.Contains('%'))
+        {
+            for (int i = 1; i <= 60; i++)
+            {
+                string path = Regex.Replace(pattern, @"%0?(\d*)d", m => m.Groups[1].Value.Length > 0 ? i.ToString("D" + m.Groups[1].Value) : i.ToString());
+                if (!store.Exists(path))
+                {
+                    break;
+                }
+
+                frames.Add(BlpTexture.Decode(store.Read(path), 128));
+            }
+        }
+        else if (pattern.Length > 0 && store.Exists(pattern))
+        {
+            frames.Add(BlpTexture.Decode(store.Read(pattern), 128));
+        }
+
+        if (frames.Count == 0) return null;
+        int w = frames[0].Width, h = frames[0].Height;
+        if (frames.Any(f => f.Width != w || f.Height != h))
+        {
+            throw new InvalidDataException("Mismatched liquid texture frames.");
+        }
+
+        byte[] rgba = new byte[checked(w * h * frames.Count * 4)];
+        for (int f = 0; f < frames.Count; f++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                frames[f].Rgba.AsSpan(y * w * 4, w * 4).CopyTo(rgba.AsSpan((y * w * frames.Count + f * w) * 4));
+            }
+        }
+
+        return sequences[pattern] = new(w * frames.Count, h, rgba);
     }
 }

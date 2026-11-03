@@ -182,11 +182,31 @@ public class RetailLiquidTests
         }
     }
 
+    [Fact]
+    public void SwampAnimationFramesAndShoreAreSharedWithoutMergingDifferentSettings()
+    {
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.SwampSettings("middle.blp", "deep.blp", new(0, 0.04f, 0.04f, 0.05f), new(1), 1,
+            NormalPattern: "normal_%d.blp", Shore: "shore.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1, "shallow.blp", 2, 14), (2, "shallow.blp", 2, 14)], [], [(14, 3)],
+            swamps: [(1, settings), (2, settings with { SpecularStrength = 0 })]));
+        var textures = LiquidTextures.For(files);
+        var first = textures.Style(1);
+        var second = textures.Style(2);
+        Assert.NotNull(first.Swamp!.Normals);
+        Assert.NotNull(first.Swamp.Shore);
+        Assert.Equal(2, first.Swamp.Normals.Width / first.Swamp.Normals.Height);
+        Assert.Same(first.Swamp.Normals, second.Swamp!.Normals);
+        Assert.Same(first.Swamp.Shore, second.Swamp.Shore);
+        Assert.NotEqual(first.CacheKey, second.CacheKey);
+    }
+
     sealed class SwampFiles(bool missingDeep) : IClientFiles
     {
         public ClientKind Kind => ClientKind.Retail;
         public string Build => "synthetic";
-        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" || path == "deep.blp" && !missingDeep;
+        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" or "shore.blp" or "normal_1.blp" or "normal_2.blp" || path == "deep.blp" && !missingDeep;
         public string Source(string path) => "synthetic";
         public void Dispose() { }
         public byte[] Read(string path)

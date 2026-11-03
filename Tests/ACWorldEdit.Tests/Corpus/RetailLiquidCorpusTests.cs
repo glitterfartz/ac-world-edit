@@ -41,6 +41,9 @@ public class RetailLiquidCorpusTests
             Assert.NotEmpty(textures.Decode(1225).Rgba);
             Assert.NotEmpty(style.Swamp.Middle.Rgba);
             Assert.NotEmpty(style.Swamp.Deep.Rgba);
+            Assert.NotNull(style.Swamp.Shore);
+            Assert.NotNull(style.Swamp.Normals);
+            Assert.Equal(30, style.Swamp.Normals.Width / style.Swamp.Normals.Height);
             Assert.Equal(0.04f, style.Swamp.Settings.Depths.Y);
             Assert.Equal(style.Swamp.Settings.Depths.Y, style.Swamp.Settings.Depths.Z);
         }
