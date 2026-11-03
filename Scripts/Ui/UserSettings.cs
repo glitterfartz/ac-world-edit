@@ -15,6 +15,9 @@ public static class UserSettings
 {
     const string Path = "user://settings.cfg";
 
+    public static string LoadNavigationDirectory(ClientKind kind) => Read("navigation", SettingsResolver.ProfileName(kind), "");
+    public static void SaveNavigationDirectory(ClientKind kind, string directory) => Write("navigation", SettingsResolver.ProfileName(kind), directory);
+
     public static string LoadDataDirectory() => SettingsResolver.DataDirectory(System.Environment.GetEnvironmentVariable(SettingsResolver.DataVariable), () => Read("client", "data_dir", ""));
 
     public static void SaveDataDirectory(string directory) => Write("client", "data_dir", directory);

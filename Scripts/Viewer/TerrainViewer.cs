@@ -96,6 +96,7 @@ public partial class TerrainViewer : Node3D
     WaypointOverlay waypoints = null!;
     AreaTriggerOverlay areaTriggers = null!;
     SceneSidebar sidebar = null!;
+    NavigationOverlay navigation = null!;
     ushort? currentMapId;
     /// <summary>
     /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
@@ -157,7 +158,10 @@ public partial class TerrainViewer : Node3D
                 statusLog.Post($"Placing {template.Name}. Esc stops.");
             }
         };
+        navigation = new NavigationOverlay { Report = statusLog.Post, OcclusionDistance = NavigationOcclusion };
+        AddChild(navigation);
         BuildUi();
+        navigation.Configure(profile.Kind, null);
         WarnMissingDependencies(UserSettings.LoadProfile());
         connection.Applied += () => _ = LoadTeleports();
         _ = LoadTeleports();
@@ -214,6 +218,7 @@ public partial class TerrainViewer : Node3D
             var result = await Task.Run(() => ClientServices.Open(kind, path, listfile));
             store = result.Files;
             mapList = result.Maps;
+            navigation.Configure(kind, result.NavigationParents);
             lighting = result.Lighting;
             areas = result.Areas;
             databaseEnabled = result.DatabaseEnabled;
@@ -306,6 +311,7 @@ public partial class TerrainViewer : Node3D
             string wdtPath = info.WdtFileId != 0 ? AssetRef.FromFileId(info.WdtFileId) : $"World/Maps/{name}/{name}.wdt";
             world = await Task.Run(() => new WorldMap(name, assets.Read(wdtPath)));
             currentMapId = checked((ushort)mapList[maps.Selected].Id);
+            navigation.SetMap(currentMapId);
             sky.SetMap(lighting, currentMapId, world.Tiles.Count == 0);
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
@@ -357,6 +363,7 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     void ResetTerrain()
     {
+        navigation?.SetMap(null);
         generation++;
         cancellation.Cancel();
         cancellation.Dispose();
@@ -640,6 +647,7 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _Process(double delta)
     {
+        navigation.UpdateRegion(CameraTile(), radius);
         PerfMark(0);
         if (capture && !busy)
         {
@@ -733,6 +741,12 @@ public partial class TerrainViewer : Node3D
     /// </summary>
     public override void _UnhandledInput(InputEvent input)
     {
+        if (!capture && navigation.Inspect && navigation.LayerEnabled && input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } navClick)
+        {
+            navigation.Pick(camera, navClick.Position);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (placement.Current == null && HandleSelectionGesture(input))
         {
             return;

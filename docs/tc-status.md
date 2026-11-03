@@ -156,3 +156,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 | Path-named placements                                         | partial     | Resolve only through the community listfile.                                                          |
 
 Assigning or creating a TrinityCore gossip menu also sets the gossip bit in `creature_template.npcflag` when it is missing. That is a template edit and affects every spawn of the entry; the exported SQL shows it as a separate `UPDATE`.
+
+## MMap inspection
+
+Implemented generated navigation inspection for AC MMap 20 / TC MMap 16, Detour 7 with 64-bit references: independent disk streaming, detail surfaces, polygon edges, tile boundaries, off-mesh lines, opacity/X-ray, terrain filters, explicit polygon picking and metadata. Retail parent lookup includes the complete Map table and uses immediate-parent fallback only for absent child tiles. Source files remain static snapshots; route finding, editing/generation, live obstacles and instance-specific rebuilds remain outside scope. Deterministic parser tests, opt-in full-folder corpus checks and a Godot navigation smoke workflow accompany the feature.

@@ -15,6 +15,7 @@ public partial class SceneSidebar : PanelContainer
     readonly AreaTriggerOverlay areaTriggers;
     readonly ConnectionForm connectionPath;
     readonly WorldObjectScene scenery;
+    readonly NavigationOverlay? navigation;
     TabContainer tabs = null!;
     OptionButton budget = null!;
     VisibilityPreviewPanel visibility = null!;
@@ -27,8 +28,9 @@ public partial class SceneSidebar : PanelContainer
     public bool DoodadsEnabled { get; private set; } = true;
     public bool WmosEnabled { get; private set; } = true;
 
-    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, WaypointOverlay waypoints, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, ConnectionForm connectionPath)
+    public SceneSidebar(CreatureOverlay creatures, GameObjectOverlay gameObjects, GraveyardOverlay graveyards, WaypointOverlay waypoints, AreaTriggerOverlay areaTriggers, WorldObjectScene scenery, ConnectionForm connectionPath, NavigationOverlay? navigation = null)
     {
+        this.navigation = navigation;
         this.connectionPath = connectionPath;
         connectionPath.Applied += () =>
         {
@@ -89,6 +91,7 @@ public partial class SceneSidebar : PanelContainer
         tabs.AddChild(graveyardPage);
         tabs.AddChild(triggerPage);
         tabs.AddChild(waypointPage);
+        if (navigation != null) tabs.AddChild(navigation.BuildPanel());
         // One selection at a time across kinds, so menus and the gizmo act on a single target.
         Action[] deselect = [creatures.Deselect, gameObjects.Deselect, graveyards.Deselect, areaTriggers.Deselect, waypoints.Deselect];
         void Exclusive(int kind)
@@ -124,6 +127,7 @@ public partial class SceneSidebar : PanelContainer
         unsaved.Text = count > 0 ? $"Unsaved changes! ({count})  Review" : "";
     }
 
+    public void ShowNavigationTab() => tabs.CurrentTab = tabs.GetTabCount() - 1;
     public void ShowSceneTab() => tabs.CurrentTab = 0;
     Label databaseNote = null!;
 
@@ -167,6 +171,7 @@ public partial class SceneSidebar : PanelContainer
         Layer(layers, "Graveyards", "graveyards", graveyards.SetLayerEnabled);
         Layer(layers, "AreaTriggers", "areatriggers", areaTriggers.SetLayerEnabled, areaTriggers.LayerEnabled);
         Layer(layers, "Waypoints", "waypoints", waypoints.SetLayerEnabled);
+        if (navigation != null) Layer(layers, "Navigation (MMaps)", "navigation", navigation.SetLayerEnabled, false);
         layers.AddChild(InspectorUi.Text("Hidden layers stop queuing models and spawn queries.", 11, true));
         databaseNote = InspectorUi.Text("Database layers are off for this client; the world database does not describe it.", 11, true);
         databaseNote.Visible = false;
@@ -328,6 +333,11 @@ public partial class SceneSidebar : PanelContainer
 
     public void UpdateCounts()
     {
+        if (navigation != null)
+        {
+            counts["navigation"].Text = navigation.TileCount.ToString();
+            if (FindChild("navigation", true, false) is CheckButton navToggle) navToggle.SetPressedNoSignal(navigation.LayerEnabled);
+        }
         counts["doodads"].Text = scenery.DoodadCount.ToString("N0");
         counts["wmos"].Text = scenery.WmoCount.ToString("N0");
         counts["creatures"].Text = creatures.ModelCreatureCount.ToString("N0");

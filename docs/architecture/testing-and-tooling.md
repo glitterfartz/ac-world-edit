@@ -136,3 +136,9 @@ Environment variables for tests and tools:
 - Scopes: `assets`, `archives`, `formats`, `models`, `world`, `retail`, `client`, `data`, `foundation`, `viewer`, `rendering`, `overlays`, `ui`, `diagnostics`, `tests`, `docs`.
 - Body only when needed: blank line, prose wrapped at 72 columns, what changed and why. No file lists.
 - One logical change per commit; split unrelated work.
+
+## Navigation validation
+
+`Assets/NavigationTests` builds deterministic AC and TC wrappers with detail-only vertices and off-mesh polygons. It checks detail indices, coordinate conversion, server terrain meanings, malformed versions/counts/lengths/non-finite values, TC map-level connections, 64-bit polygon capacity, child precedence, immediate-parent-only fallback, missing files and corrupt-child rejection.
+
+The opt-in `Category=Corpus` navigation theories read every `.mmtile` and `.mmap` in `ACWORLD_AC_MMAP_DIR` and `ACWORLD_TC_MMAP_DIR`. Set these to server output directories and run with `--settings Tests/ACWorldEdit.Tests/corpus.runsettings --filter FullyQualifiedName~NavigationTests`. The default suite excludes these filesystem checks. Godot's `--navigation-smoke` validates rendering uploads, picking and generation/disable lifecycle; screenshots require a real renderer. Neither suite establishes parity with live server pathfinding or dynamic obstacles.

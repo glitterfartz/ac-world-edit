@@ -30,3 +30,5 @@ Tests deferred while implementing retail loading and rendering. Add them after t
 
 - [ ] Visual: the four hotfixed humanoid displays (136833, 136834, 137044, 137045) were checked by `TrinityReadDbTests.HotfixedHumanoidDisplaysKeepTheirSkinAndCustomization` only; find their spawns and inspect them in the viewer.
 - [ ] Visual: humanoids were inspected at overlay-shot distance (two Stormwind guards in Goldshire). A close-up should confirm the face: eye texture placement, eyebrows (group 34), facial hair, and that the eye-glow geoset (group 17, hidden by default) does not draw over the eyes.
+
+Navigation: deterministic parser coverage lives in NavigationTests; full-folder checks are opt-in with ACWORLD_AC_MMAP_DIR / ACWORLD_TC_MMAP_DIR. The --navigation-smoke workflow covers upload, picking, X-ray and reset/disable lifecycle. Manual landmark comparisons across every generated map and live-server obstacle parity are not automated.

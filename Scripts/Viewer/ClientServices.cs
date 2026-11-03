@@ -8,7 +8,7 @@ namespace ACWorldEdit;
 /// provide them yet; the creature and GameObject catalogs read DBC (Wrath) or DB2 (retail) display tables; Lookup serves the DB2 reference data (trigger volumes, texts, item and spell names) a retail world database lacks; DatabaseEnabled is false when the world database cannot describe that client.
 /// Open runs on a worker: it reads archives and tables but creates no Godot resources.
 /// </summary>
-public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, ICreatureCatalog? Creatures = null, IGameObjectCatalog? GameObjects = null, IClientLookup? Lookup = null)
+public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, ICreatureCatalog? Creatures = null, IGameObjectCatalog? GameObjects = null, IClientLookup? Lookup = null, IReadOnlyDictionary<int, int>? NavigationParents = null)
 {
     public static ClientServices Open(ClientKind kind, string directory, string? listfile = null) =>
         kind == ClientKind.Retail ? OpenRetail(directory, listfile) : OpenWrath(directory);
@@ -65,7 +65,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
         }
         catch
         {
