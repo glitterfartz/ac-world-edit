@@ -23,7 +23,7 @@ public sealed partial class SkyLighting
             sun = new { energy = MathF.Round(sun.LightEnergy, 3), color = Rgb(sun.LightColor), rotationDegrees = new[] { sun.RotationDegrees.X, sun.RotationDegrees.Y, sun.RotationDegrees.Z }, shadows = sun.ShadowEnabled },
             ambient = new { source = env.AmbientLightSource.ToString(), color = Rgb(env.AmbientLightColor), energy = MathF.Round(env.AmbientLightEnergy, 3) },
             fog = new { enabled = clientFog.W > 0.5f, startYards = MathF.Round(clientFog.X, 1), endYards = MathF.Round(clientFog.Y, 1), viewDistance = ViewDistance },
-            background = new { mode = env.BackgroundMode.ToString(), color = Rgb(env.BackgroundColor), skyTop = Rgb(skyMaterial.SkyTopColor), skyHorizon = Rgb(skyMaterial.SkyHorizonColor) },
+            background = new { mode = env.BackgroundMode.ToString(), color = Rgb(env.BackgroundColor), skyTop = Rgb(skyTopColor), skyHorizon = Rgb(skyHorizonColor) },
             tonemap = env.TonemapMode.ToString(),
             skybox = skyboxPath,
             skyboxReady = SkyboxReady,

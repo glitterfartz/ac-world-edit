@@ -13,6 +13,8 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
+    // --client-shot-sky=HOUR[,YAW_DEGREES]: set the time of day and look level at the sky instead of framing a building.
+    (double Hour, float YawDegrees)? clientShotSky;
     int clientShotFrames, clientShotCreatureStage, clientShotDifficulty, sharedVendorFrames;
     uint clientShotQuest;
     TileKey? clientShotTile;
@@ -822,7 +824,17 @@ public partial class TerrainViewer
             if (!clientShotFramed)
             {
                 clientShotFramed = true;
-                if (clientShotWater && LargestLiquid() is { } lake)
+                if (clientShotSky is { } skyShot)
+                {
+                    sky.SetTimeOfDay(skyShot.Hour);
+                    camera.Position += new Vector3(0, 40, 0);
+                    camera.Rotation = new Vector3(Mathf.DegToRad(12), Mathf.DegToRad(skyShot.YawDegrees), 0);
+                    yaw = camera.Rotation.Y;
+                    pitch = camera.Rotation.X;
+                    GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees}");
+                    clientShotFrames = 0;
+                }
+                else if (clientShotWater && LargestLiquid() is { } lake)
                 {
                     GD.Print($"CLIENT_SHOT_WATER center={lake}");
                     camera.Position = lake + new Vector3(0, 90, 140);

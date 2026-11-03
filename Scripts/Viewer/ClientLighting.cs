@@ -34,12 +34,19 @@ public readonly record struct WaterAlphas(float RiverShallow, float RiverDeep, f
 public sealed record WaterColors(LightBand OceanShallow, LightBand OceanDeep, LightBand RiverShallow, LightBand RiverDeep);
 
 /// <summary>
+/// The three sky bands between the zenith and the horizon (LightIntBand 3 to 5) and whether the light's
+/// sky takes the sunrise/sunset highlight. Together with SkyTop, SkyHorizon and Fog they are the six
+/// colors of the sky dome's rings.
+/// </summary>
+public sealed record SkyBands(LightBand Middle, LightBand Band1, LightBand Band2, bool Highlight);
+
+/// <summary>
 /// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
 /// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-13 (shadow
 /// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
 /// tables carry no water bands.
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null)
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null)
 {
     /// <summary>
     /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
@@ -107,9 +114,11 @@ public sealed class ClientLighting
 
             Dictionary<uint, uint> paramSkybox = [];
             Dictionary<uint, WaterAlphas> paramWater = [];
+            Dictionary<uint, bool> paramHighlight = [];
             foreach (var row in tables.Table("LightParams").Values)
             {
                 paramSkybox[(uint)row.ID] = Convert.ToUInt32(row["LightSkyboxID"]);
+                paramHighlight[(uint)row.ID] = Convert.ToUInt32(row["HighlightSky"]) != 0;
                 paramWater[(uint)row.ID] = new(Convert.ToSingle(row["WaterShallowAlpha"]), Convert.ToSingle(row["WaterDeepAlpha"]),
                     Convert.ToSingle(row["OceanShallowAlpha"]), Convert.ToSingle(row["OceanDeepAlpha"]));
             }
@@ -154,7 +163,8 @@ public sealed class ClientLighting
                     FogCurve.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogEnd"]), Convert.ToSingle(r["FogScaler"])))),
                     new(Band(rows, "OceanCloseColor"), Band(rows, "OceanFarColor"), Band(rows, "RiverCloseColor"), Band(rows, "RiverFarColor")),
                     paramWater.GetValueOrDefault(paramsId, WaterAlphas.Default),
-                    Band(rows, "SunColor"));
+                    Band(rows, "SunColor"),
+                    new(Band(rows, "SkyMiddleColor"), Band(rows, "SkyBand1Color"), Band(rows, "SkyBand2Color"), paramHighlight.GetValueOrDefault(paramsId)));
             }
 
             return new(regions, profiles, skyboxPaths);
@@ -211,7 +221,8 @@ public sealed class ClientLighting
                     FogCurve.FromBands(LightFloatBand.Read(floatBand, floatRow), LightFloatBand.Read(floatBand, floatRow + 1)),
                     new(LightBand.Read(intBand, baseRow + 14), LightBand.Read(intBand, baseRow + 15), LightBand.Read(intBand, baseRow + 16), LightBand.Read(intBand, baseRow + 17)),
                     new(lightParams.F(paramsId, 5), lightParams.F(paramsId, 6), lightParams.F(paramsId, 7), lightParams.F(paramsId, 8)),
-                    LightBand.Read(intBand, baseRow + 9));
+                    LightBand.Read(intBand, baseRow + 9),
+                    new(LightBand.Read(intBand, baseRow + 3), LightBand.Read(intBand, baseRow + 4), LightBand.Read(intBand, baseRow + 5), lightParams.U(paramsId, 1) != 0));
                 if (skyboxId > 0 && skybox.Contains(skyboxId) && !skyboxPaths.ContainsKey(skyboxId))
                 {
                     skyboxPaths[skyboxId] = BinaryAsset.ModelPath(skybox.Str(skyboxId, 1));

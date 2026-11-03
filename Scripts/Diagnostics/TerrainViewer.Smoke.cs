@@ -56,6 +56,13 @@ public partial class TerrainViewer
             clientShotTile = new TileKey(int.Parse(parts[0]), int.Parse(parts[1]));
         }
 
+        if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-sky=", StringComparison.Ordinal)) is { } skyFlag)
+        {
+            clientShot = true;
+            var parts = skyFlag["--client-shot-sky=".Length..].Split(',');
+            clientShotSky = (double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture), parts.Length > 1 ? float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : 0f);
+        }
+
         clientShotWater = flags.Contains("--client-shot-water");
         clientShotOverlays = flags.Contains("--client-shot-overlays");
         clientShot |= clientShotOverlays;

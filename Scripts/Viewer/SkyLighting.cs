@@ -4,7 +4,7 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Drives the sun, ambient/fog color, procedural sky gradient and LightSkybox model from client
+/// Drives the sun, ambient/fog color, the sky dome shader and LightSkybox model from client
 /// Light.dbc data and a scrubbable time-of-day clock. Falls back to a fixed neutral look when no
 /// client lighting table is available or the active map is an interior. Direction/shadow tuning is
 /// an approximation of the client look, not a reconstruction of its exact sun trajectory or portal
@@ -14,7 +14,8 @@ public sealed partial class SkyLighting : Node3D
 {
     readonly DirectionalLight3D sun;
     readonly WorldEnvironment environment;
-    readonly ProceduralSkyMaterial skyMaterial;
+    readonly ShaderMaterial skyMaterial;
+    Color skyTopColor = new("4a7fc4"), skyHorizonColor = new("c0d2e5");
     readonly ModelLibrary models;
     readonly Node3D skyboxAnchor;
     ModelInstance? skyboxInstance;
@@ -58,7 +59,10 @@ public sealed partial class SkyLighting : Node3D
             DirectionalShadowBlendSplits = true
         };
         AddChild(sun);
-        skyMaterial = new ProceduralSkyMaterial();
+        skyMaterial = new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/sky.gdshader")
+        };
         environment = new WorldEnvironment
         {
             Environment = new Godot.Environment
@@ -163,8 +167,6 @@ public sealed partial class SkyLighting : Node3D
 
         var diffuse = Blend(p => p.Diffuse);
         var ambient = Blend(p => p.Ambient);
-        var skyTop = Blend(p => p.SkyTop);
-        var skyHorizon = Blend(p => p.SkyHorizon);
         var fog = Blend(p => p.Fog);
         double angle = TimeOfDayHours / 24.0 * Math.Tau;
         sun.RotationDegrees = new Vector3((float)(-55 + 35 * Math.Cos(angle)), -30, 0);
@@ -178,10 +180,7 @@ public sealed partial class SkyLighting : Node3D
         {
             SkyMaterial = skyMaterial
         };
-        skyMaterial.SkyTopColor = skyTop;
-        skyMaterial.SkyHorizonColor = skyHorizon;
-        skyMaterial.GroundHorizonColor = skyHorizon;
-        skyMaterial.GroundBottomColor = skyHorizon.Darkened(0.3f);
+        ApplySky(backgroundProfile, foregroundProfile, bestWeight, tick, camera);
         // The client's fog (DayNight::UpdateFog): it ramps from end * startMul to end, with the end capped at the
         // view distance. The shaders apply it (client_lighting.gdshaderinc), so Godot's own fog stays off.
         var backgroundFog = backgroundProfile.FogAt(tick);
@@ -219,6 +218,51 @@ public sealed partial class SkyLighting : Node3D
         clientFog = new(start, end, 1, 1);
         ClientShaderGlobals.Set(ClientShaderGlobals.Fog, clientFog);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(color.R, color.G, color.B));
+    }
+
+    /// <summary>
+    /// Publish the six sky colors, the sunrise/sunset highlight, the camera heading and the sun's place for
+    /// the dome shader (Shaders/sky.gdshader), blending the two profiles as the other bands are blended.
+    /// </summary>
+    void ApplySky(LightProfile background, LightProfile? foreground, float weight, double tick, Camera3D camera)
+    {
+        Vector3 Blend(Func<LightProfile, LightBand> pick)
+        {
+            var color = pick(background).At(tick);
+            if (foreground != null && weight > 0)
+            {
+                color = color.Lerp(pick(foreground).At(tick), weight);
+            }
+
+            return new(color.R, color.G, color.B);
+        }
+
+        // Profiles without the in-between bands blend the zenith into the horizon.
+        var top = Blend(p => p.SkyTop);
+        var horizon = Blend(p => p.SkyHorizon);
+        skyTopColor = new(top.X, top.Y, top.Z);
+        skyHorizonColor = new(horizon.X, horizon.Y, horizon.Z);
+        skyMaterial.SetShaderParameter("sky_zenith", top);
+        skyMaterial.SetShaderParameter("sky_middle", Blend(p => p.Sky?.Middle ?? p.SkyTop));
+        skyMaterial.SetShaderParameter("sky_band1", Blend(p => p.Sky?.Band1 ?? p.SkyHorizon));
+        skyMaterial.SetShaderParameter("sky_band2", Blend(p => p.Sky?.Band2 ?? p.SkyHorizon));
+        skyMaterial.SetShaderParameter("sky_smog", horizon);
+        skyMaterial.SetShaderParameter("sky_fog", Blend(p => p.Fog));
+        skyMaterial.SetShaderParameter("sun_glow_color", Blend(p => p.SunColor ?? p.Diffuse));
+
+        float flag = (background.Sky?.Highlight ?? false ? 1f : 0f);
+        if (foreground != null && weight > 0)
+        {
+            flag = Mathf.Lerp(flag, foreground.Sky?.Highlight ?? false ? 1f : 0f, weight);
+        }
+
+        float dayFraction = (float)(TimeOfDayHours / 24.0);
+        skyMaterial.SetShaderParameter("highlight", SkyDome.Highlight(dayFraction) * flag);
+        // The dome's axes are the client's: view X = -y, view Y = z, view Z = -x.
+        var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
+        skyMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx));
+        var forward = -camera.GlobalTransform.Basis.Z;
+        skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }
 
     /// <summary>
