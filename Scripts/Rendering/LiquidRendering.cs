@@ -19,10 +19,12 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.SetShaderParameter("has_bump", style.Bump != null);
+        // A type that names a ripple normal map (retail data) draws with the retail water model; one that does
+        // not (3.3.5a data) keeps the 3.3.5a model. See Shaders/liquid.gdshader.
+        material.SetShaderParameter("water_model", style.Bump != null ? 1 : 0);
         if (style.Bump != null)
         {
-            material.SetShaderParameter("bump_tex", BumpTexture(style.Bump));
+            material.SetShaderParameter("retail_ripple_tex", BumpTexture(style.Bump));
         }
 
         material.SetShaderParameter("albedo_tex", texture);
