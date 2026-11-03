@@ -17,7 +17,7 @@ sequenceDiagram
 
     Main->>TV: scene loaded
     TV->>TV: create TerrainRenderer, ModelLibrary, WorldObjectScene, Camera3D
-    TV->>TV: create SkyLighting and five overlays
+    TV->>TV: create SkyLighting and six overlays
     TV->>UI: BuildUi (menus, toolbar, sidebar, editor windows, drafts)
     TV->>TV: ConfigureSmokeChecks (parse CLI flags)
     TV-->>TV: StartupPrompts (not awaited): DB test, client picker if none saved
@@ -283,3 +283,19 @@ Side effects of any flag ending in `-smoke`: startup database and client prompts
 Smoke workflows are opt-in flags passed after `--` to Godot (`--terrain-smoke`, `--creature-smoke`, `--client-smoke`, ...). `--client-shot` / `--client-shot-tile=X,Y` (windowed) saves `artifacts/client-shot.png` framed on the largest nearby building with the UI hidden; `--client-shot-water` frames the largest liquid.
 
 Test retail with pre-Cataclysm areas such as Goldshire/Elwynn Forest: the database's spawns come from 3.3.5, so later zones often have no creatures.
+
+## Navigation overlay
+
+Scene explorer has an **MMaps** page and a **Navigation (MMaps)** scene-layer toggle. The layer starts disabled. Choose the server's MMaps folder on this page; `UserSettings` remembers one folder per Wrath/Retail profile. No machine-specific folder is shipped. `ACWORLD_AC_MMAP_DIR` and `ACWORLD_TC_MMAP_DIR` optionally override the saved folders for diagnostics.
+
+`NavigationOverlay` owns its own cancellable worker, generation counter, attempted-tile cache and retention ring. `TerrainViewer` supplies the current map, profile metadata and camera tile/radius; navigation does not depend on successful terrain decoding. One file decodes at a time off the Godot thread. Detail triangles are prepared by the Godot-free parser. The main thread uploads batches of up to 512 triangles or polygons per frame and evicts tiles outside radius + 1. Evicted successful tiles can load again; missing and malformed tiles are remembered until reload or a source/map change. Disabling clears selection, cancels work and releases nodes. Stale results cannot publish after reset.
+
+Shared unlit materials draw translucent detail surfaces with depth testing and an 0.08-yard display offset. Polygon edges are separate from detail triangulation. Controls show surfaces, polygon edges, tile boundaries and off-mesh lines, and adjust opacity and X-ray (disables depth testing). Terrain filters use AC's Ground/Magma/Slime/Water areas or TC's Ground/Steep ground/Water/Magma-slime areas; unknown areas remain numeric and gray. Flags are shown as numbers without inventing meanings.
+
+**Inspect navmesh** reserves viewport left-clicks for the nearest displayed navigation triangle. Outside that mode, ordinary entity selection continues. The selected polygon is highlighted and its inspector records file, requested/source map, filename tile, Detour grid, polygon index, area, flags, original Detour coordinates, static neighbor codes, agent dimensions and AC generator settings. Errors and explicit selection feedback go through `StatusLog` to the status bar; successful tile loads are silent.
+
+`--navigation-smoke` opens the selected client, loads the configured navigation region, checks geometry upload and polygon picking, captures `artifacts/navigation-ac.png` / `navigation-tc.png` and X-ray variants with a real renderer, resets map generations, and checks disable releases tiles. It uses the existing client-profile environment variables plus the MMap folder override. Headless runs check lifecycle but do not capture images.
+
+Navigation picking uses loaded terrain heights and visible building render triangles to reject occluded surfaces when X-ray is off. Like ground probes, these are render data rather than server collision: texture transparency and animated foliage are not a pixel-exact visibility test. X-ray deliberately bypasses these blockers.
+
+For targeted visual checks, add `--navigation-smoke-map=48` (a selectable map ID) or `--navigation-smoke-tile=31,49` (viewer tile axes). Instance screenshot filenames include their map ID. An absent generated tile is reported rather than inferred from the client terrain.

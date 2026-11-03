@@ -158,6 +158,12 @@ public sealed class Db2Tables
         }
     }
 
+    /// <summary>Complete Map table, including rows without selectable client terrain.</summary>
+    public Dictionary<int, int> NavigationParents() => Table("Map").Values
+        .Select(row => (Id: row.ID, Parent: row.FieldAs<int>("ParentMapID"), Cosmetic: row.FieldAs<int>("CosmeticParentMapID")))
+        .Where(row => row.Parent >= 0 || row.Cosmetic >= 0)
+        .ToDictionary(row => row.Id, row => row.Parent >= 0 ? row.Parent : row.Cosmetic);
+
     /// <summary>
     /// Maps that have a WDT. Retail names a map's world file by FileDataID (Map.WdtFileDataID); a
     /// map is listed only when that file exists, so instances without terrain data do not appear.

@@ -231,7 +231,7 @@ public partial class TerrainViewer
             tileY.Value = key.Y;
             Teleport(key);
         };
-        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, waypoints, areaTriggers, objects, connection);
+        sidebar = new SceneSidebar(creatures, gameObjects, graveyards, waypoints, areaTriggers, objects, connection, navigation);
         ui.AddChild(sidebar);
         BuildSelectionBox(ui);
         drafts = ContentDraftFiles.Open();

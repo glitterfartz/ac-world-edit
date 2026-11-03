@@ -51,7 +51,7 @@ flowchart TB
         direction TB
         viewer["Viewer<br/>TerrainViewer hub, ClientServices, Sky, Minimap"]
         render["Rendering<br/>TerrainRenderer, ModelLibrary, WorldObjectScene"]
-        overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger, Gizmo"]
+        overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger, Navigation, Gizmo"]
         ui["Ui<br/>Sidebar, editors, pickers, settings"]
         diag["Diagnostics<br/>smoke workflows, CLI flags"]
         data["Data (Godot-free)<br/>WorldDatabase, Source classes"]
@@ -172,3 +172,7 @@ Generated or local-only folders (`artifacts/`, `native/`, `.build-env/`, `bin/`,
 - **Conditions**: the `conditions` table's condition types and source types (the ids and meanings differ; `ConditionCatalog` holds each dialect's, reached through `IWorldSchema.Conditions`).
 - **Draft**: a locally stored, undoable set of edits that is not yet in the database.
 - **Apply / revert script**: the generated SQL that applies a set of changes, and the SQL that undoes them.
+
+## Navigation inspection
+
+The viewer can display generated AC MMap 20 and TC MMap 16 navigation surfaces, polygon edges, tile bounds and off-mesh connections. Scene explorer's MMaps page selects a separate server-output folder per client profile, filters server-specific terrain areas, controls opacity/X-ray and provides explicit polygon inspection. TC child tiles take precedence; only missing child files fall back to the immediate Map parent. Parsing and validation stay Godot-free under Assets/Navigation; NavigationOverlay owns rendering and independent streaming. Route calculation, mesh editing/generation, live obstacles and instance rebuilds are outside this feature.

@@ -28,6 +28,7 @@ public partial class TerrainViewer
         ConfigureTeleSmoke(flags);
         waterInterior = flags.Contains("--water-interior-smoke");
         waterSmoke = flags.Contains("--water-smoke") || waterInterior;
+        navigationSmoke = flags.Contains("--navigation-smoke");
         smoke = flags.Contains("--terrain-smoke");
         visualSmoke = flags.Contains("--visual-smoke");
         gizmoSmoke = flags.Contains("--gizmo-smoke");
@@ -90,6 +91,7 @@ public partial class TerrainViewer
     /// </summary>
     void RunSmokeChecks(double delta)
     {
+        if (navigationSmoke) NavigationSmoke(delta);
         if (smoke)
         {
             Smoke(delta);
