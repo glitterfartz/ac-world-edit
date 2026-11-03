@@ -183,6 +183,38 @@ public static class SkyDome
         return index < 0f ? 0f : 1f - MathF.Pow(sharpness, MathF.Min(index, 255f) * step);
     }
 
+    // How strongly the stars show over the day (s_starFadeTable) and the glare's alpha over the day (the sun's
+    // and the moon's m_alphaCurve in InitSunGlare and InitMoonGlare).
+    static readonly (float Time, float Value)[] StarFadeCurve = [(0.125f, 1f), (0.1875f, 0f), (0.9375f, 0f), (1f, 1f)];
+    static readonly (float Time, float Value)[] SunGlareCurve = [(0.27083334f, 0f), (0.3125f, 1f), (0.8125f, 1f), (0.875f, 0f)];
+    static readonly (float Time, float Value)[] MoonGlareCurve = [(0.083333336f, 1f), (0.13541667f, 0f), (0.94791669f, 0f), (0.99930561f, 1f)];
+
+    /// <summary>The star model's opacity at a day fraction: full at night, gone by day (DNStars::Update).</summary>
+    public static float StarFade(float dayFraction) => (Interpolate(StarFadeCurve, dayFraction) * 254f + 1f) / 255f;
+
+    /// <summary>
+    /// A glare quad's width (in the units the planets use) and alpha before the cloud, occlusion and fade-rate
+    /// terms (DNGlare::Update).
+    /// </summary>
+    public readonly record struct Glare(float Scale, float Alpha);
+
+    // The glare grows and brightens as the camera turns toward the body, from a cosine of 0.7 up to 1.
+    static float GlareFacing(float cosine) => Math.Clamp((cosine - 0.7f) / (1f - 0.7f), 0f, 1f);
+
+    /// <summary>The sun's glare: 3 to 20 units wide, 0.5 to 1 alpha, shown from sunrise to sunset.</summary>
+    public static Glare SunGlare(float dayFraction, float cosineToCamera)
+    {
+        float t = GlareFacing(cosineToCamera);
+        return new((20f - 3f) * t + 3f, (t * (1f - 0.5f) + 0.5f) * Interpolate(SunGlareCurve, dayFraction));
+    }
+
+    /// <summary>The moon's glare: twice the moon quad's width, 0.1 to 1 alpha, shown at night.</summary>
+    public static Glare MoonGlare(float dayFraction, float cosineToCamera, float moonScale)
+    {
+        float t = GlareFacing(cosineToCamera);
+        return new(moonScale * 2f, (t * (1f - 0.1f) + 0.1f) * Interpolate(MoonGlareCurve, dayFraction));
+    }
+
     /// <summary>The sky highlight strength (0..1) at a day fraction, before the light's HighlightSky flag scales it.</summary>
     public static float Highlight(float dayFraction) => Interpolate(HighlightCurve, dayFraction);
 

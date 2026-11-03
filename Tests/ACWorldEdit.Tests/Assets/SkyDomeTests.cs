@@ -70,6 +70,40 @@ public class SkyDomeTests
     }
 
     [Fact]
+    public void StarsShowAtNightAndFadeOutAtDawnAndDusk()
+    {
+        Assert.Equal(1f, SkyDome.StarFade(0f), 3);
+        Assert.Equal(1f, SkyDome.StarFade(0.125f), 3);
+        Assert.Equal(1f / 255f, SkyDome.StarFade(SkyDome.Noon), 4);
+        Assert.Equal(1f, SkyDome.StarFade(1f), 3);
+        Assert.InRange(SkyDome.StarFade(0.15f), 0.2f, 0.8f);
+    }
+
+    [Fact]
+    public void SunGlareGrowsAsTheCameraTurnsTowardTheSun()
+    {
+        // Looking away (cosine 0.7 or less) the quad is 3 wide at half alpha; straight at the sun it is 20 wide at full alpha.
+        var away = SkyDome.SunGlare(SkyDome.Noon, 0.2f);
+        var at = SkyDome.SunGlare(SkyDome.Noon, 1f);
+        Assert.Equal(3f, away.Scale, 3);
+        Assert.Equal(0.5f, away.Alpha, 3);
+        Assert.Equal(20f, at.Scale, 3);
+        Assert.Equal(1f, at.Alpha, 3);
+        // No sun glare at night.
+        Assert.Equal(0f, SkyDome.SunGlare(0f, 1f).Alpha, 3);
+    }
+
+    [Fact]
+    public void MoonGlareIsTwiceTheMoonQuadAndOnlyShowsAtNight()
+    {
+        var glare = SkyDome.MoonGlare(0f, 1f, 1.75f);
+        Assert.Equal(3.5f, glare.Scale, 3);
+        Assert.Equal(1f, glare.Alpha, 3);
+        Assert.Equal(0.1f, SkyDome.MoonGlare(0.05f, 0f, 1.75f).Alpha, 3);
+        Assert.Equal(0f, SkyDome.MoonGlare(SkyDome.Noon, 1f, 1.75f).Alpha, 3);
+    }
+
+    [Fact]
     public void CloudLayerFadesOutTowardTheHorizon()
     {
         Assert.Equal(1f, SkyDome.CloudEdgeAlpha(0f), 4);

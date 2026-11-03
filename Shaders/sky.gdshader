@@ -28,23 +28,7 @@ uniform float glow_horizon = 0.35;
 
 const float TAU_F = 6.28318530718;
 
-// Clouds (DayNight::DNClouds): the client fills a texture with four octaves of animated noise, keeps what is above
-// the light's density through a sharpness curve, bakes the shading and the sun's bump lighting into it, and maps
-// it onto a cap of the dome. This does the same per pixel. Hidden, like the planets, when a LightSkybox model
-// takes over the sky.
 uniform bool celestial_enabled = true;
-uniform float cloud_density = 0.0;
-uniform vec3 cloud_sun_color = vec3(1.0);
-uniform vec3 cloud_shade_color = vec3(0.5);
-uniform vec3 cloud_base_color = vec3(0.2);
-// Direction toward the body that lights the clouds: the sun by day, the moon by night.
-uniform vec3 cloud_light_direction = vec3(0.0, 1.0, 0.0);
-
-const float CLOUD_TEXTURE_SIZE = 128.0;
-const float CLOUD_SHARPNESS = 0.96;
-// (255 - 101) / 256: the client computes it once at its default density, whose byte truncates to 101.
-const float CLOUD_SHARPNESS_STEP = 0.6015625;
-const float PI_F = 3.14159265359;
 
 // Sun and moons: camera-facing quads PLANET_DISTANCE from the eye (DayNight::DNPlanet), drawn beneath the dome (so
 // they add to the sky color) and modulated by the sun color; xyz is the direction toward the quad (world space) and w its width at that
@@ -138,110 +122,6 @@ vec3 planet_hit(vec3 dir, vec4 disc) {
     return vec3(uv, clamp(point.y * 2.5, 0.0, 1.0));
 }
 
-// ---- Clouds -----------------------------------------------------------------------------------------------
-
-// The lattice value at a cell, in [-1, 1] (the client fills a 256 entry table with random values).
-float cloud_lattice(ivec3 cell) {
-    uvec3 c = uvec3(cell & ivec3(255));
-    uint h = (c.x * 1597334673u) ^ (c.y * 3812015801u) ^ (c.z * 2798796415u);
-    h = (h ^ (h >> 15u)) * 2246822519u;
-    h = (h ^ (h >> 13u)) * 3266489917u;
-    h ^= h >> 16u;
-    return float(h & 0xFFFFu) / 32767.5 - 1.0;
-}
-
-float cloud_fade(float f) {
-    return (1.0 - cos(f * PI_F)) * 0.5;
-}
-
-// Trilinear lattice noise with the client's cosine fade.
-float cloud_noise(vec3 p) {
-    vec3 base = floor(p);
-    ivec3 cell = ivec3(base);
-    vec3 f = vec3(cloud_fade(p.x - base.x), cloud_fade(p.y - base.y), cloud_fade(p.z - base.z));
-    float x00 = mix(cloud_lattice(cell), cloud_lattice(cell + ivec3(1, 0, 0)), f.x);
-    float x10 = mix(cloud_lattice(cell + ivec3(0, 1, 0)), cloud_lattice(cell + ivec3(1, 1, 0)), f.x);
-    float x01 = mix(cloud_lattice(cell + ivec3(0, 0, 1)), cloud_lattice(cell + ivec3(1, 0, 1)), f.x);
-    float x11 = mix(cloud_lattice(cell + ivec3(0, 1, 1)), cloud_lattice(cell + ivec3(1, 1, 1)), f.x);
-    return mix(mix(x00, x10, f.y), mix(x01, x11, f.y), f.z);
-}
-
-// The first `octaves` octaves at a texture coordinate: 8, 16, 32 and 64 cells across, each half the amplitude of
-// the last. The pattern drifts through the noise at the client's animation speed (2 steps of 1/256 per second).
-float cloud_sum(vec2 uv, int octaves) {
-    float drift = TIME / 128.0;
-    float sum = 0.0;
-    float amplitude = 1.0;
-    float cells = 8.0;
-    for (int i = 0; i < octaves; i++) {
-        sum += cloud_noise(vec3(uv * cells + vec2(drift, 0.0), drift)) * amplitude;
-        amplitude *= 0.5;
-        cells *= 2.0;
-    }
-    return sum;
-}
-
-// Polar angle from the cloud sphere's axis for a view direction (WorldToTexture): the sphere is centered
-// cos(45 degrees) below the eye, so the rim of the cloud cap is the horizon.
-float cloud_theta(vec3 dir) {
-    float along = -0.70710678 * dir.y;
-    float t = along + sqrt(along * along + 0.5);
-    return acos(clamp(t * dir.y + 0.70710678, -1.0, 1.0));
-}
-
-// A view direction's place in the cloud texture: an azimuthal map around the zenith out to 45 degrees.
-vec2 cloud_uv(vec3 dir) {
-    vec2 horizontal = vec2(-dir.z, -dir.x);
-    float len = length(horizontal);
-    vec2 around = len > 0.00001 ? horizontal / len : vec2(0.0);
-    return around * min(cloud_theta(dir), 0.78539816) * 0.63661977 + 0.5;
-}
-
-float cloud_edge_alpha(float theta) {
-    float turns = theta / PI_F;
-    if (turns <= 0.205) {
-        return 1.0;
-    }
-    if (turns <= 0.23) {
-        return mix(1.0, 0.5, (turns - 0.205) / 0.025);
-    }
-    return mix(0.5, 0.0, clamp((turns - 0.23) / 0.015, 0.0, 1.0));
-}
-
-// The cloud layer along a view ray: rgb (gamma space) and opacity. DNClouds::UpdateTextureAnimation bakes the
-// color per texel and the retail "dnclouds" pixel shader adds a bright rim toward the light on thin cloud.
-vec4 cloud_layer(vec3 dir) {
-    float edge = cloud_edge_alpha(cloud_theta(dir));
-    vec2 uv = cloud_uv(dir);
-    float level = floor(cloud_sum(uv, 4) * 64.0 + 128.5);
-    float index = level - floor((1.0 - cloud_density) * 255.0);
-    if (edge <= 0.0 || index < 0.0) {
-        return vec4(0.0);
-    }
-    float alpha = 1.0 - pow(CLOUD_SHARPNESS, min(index, 255.0) * CLOUD_SHARPNESS_STEP);
-    if (alpha <= 0.0) {
-        return vec4(0.0);
-    }
-
-    // Shade by how thick the cloud is, then the sun's bump light from the slope of the first three octaves.
-    float shade = (floor((1.0 - alpha) * 255.0 * 0.5) + 64.0) / 255.0;
-    vec3 color = cloud_shade_color * shade + cloud_base_color;
-    float here = cloud_sum(uv, 3);
-    float slope_x = cloud_sum(uv - vec2(1.0 / CLOUD_TEXTURE_SIZE, 0.0), 3) - here;
-    float slope_y = cloud_sum(uv - vec2(0.0, 1.0 / CLOUD_TEXTURE_SIZE), 3) - here;
-    vec3 to_light = vec3((cloud_uv(cloud_light_direction) - uv) * CLOUD_TEXTURE_SIZE, 64.0);
-    float lit = (to_light.z + slope_x * to_light.x + slope_y * to_light.y) / (length(vec3(slope_x, slope_y, 1.0)) * length(to_light));
-    if (lit > 0.0) {
-        color += cloud_sun_color * lit;
-    }
-    color = min(color, vec3(1.0));
-
-    float rim = clamp(dot(dir, normalize(cloud_light_direction)), 0.0, 1.0);
-    rim *= rim * clamp(1.0 - alpha * edge, 0.0, 1.0);
-    color = min(color + color * cloud_sun_color * rim, vec3(1.0));
-    return vec4(color, alpha * edge);
-}
-
 void sky() {
     vec3 dir = normalize(EYEDIR);
     // World up is +Y; the client's x and y are -Z and -X.
@@ -279,7 +159,8 @@ void sky() {
     vec3 at_horizon = mix(color, sun_glow_color, glow_horizon);
     vec3 glow = mix(at_horizon, above, clamp(height * 50.0, 0.0, 1.0));
     float closeness = clamp(dot(dir, normalize(sun_direction)) - glow_threshold, 0.0, 1.0) / (1.0 - glow_threshold);
-    // The client draws the sun and moons first and the dome additively over them, then the clouds with alpha.
+    // The client draws the sun and moons first and the dome additively over them; the clouds come after the
+    // stars, so they are their own shell (Shaders/clouds.gdshader).
     vec3 sky_color = mix(color, glow, closeness * closeness * closeness);
     vec3 planets = vec3(0.0);
     if (celestial_enabled) {
@@ -300,9 +181,5 @@ void sky() {
         }
     }
     sky_color = min(sky_color + planets, vec3(1.0));
-    if (celestial_enabled && cloud_density > 0.0 && dir.y > 0.0) {
-        vec4 clouds = cloud_layer(dir);
-        sky_color = mix(sky_color, clouds.rgb, clouds.a);
-    }
     COLOR = band_to_linear(sky_color);
 }

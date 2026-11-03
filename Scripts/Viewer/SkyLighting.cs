@@ -17,6 +17,13 @@ public sealed partial class SkyLighting : Node3D
     readonly ShaderMaterial skyMaterial;
     Color skyTopColor = new("4a7fc4"), skyHorizonColor = new("c0d2e5");
     bool hasSunTexture, hasMoonTexture, hasMoon2Texture;
+    readonly Node3D starsAnchor;
+    readonly MeshInstance3D cloudDome;
+    readonly ShaderMaterial cloudMaterial;
+    ModelInstance? starsInstance;
+    float appliedStarFade = -1;
+    readonly (MeshInstance3D Quad, ShaderMaterial Material)[] glares = new (MeshInstance3D, ShaderMaterial)[2];
+    bool hasSunGlare, hasMoonGlare;
     readonly ModelLibrary models;
     readonly Node3D skyboxAnchor;
     ModelInstance? skyboxInstance;
@@ -82,6 +89,50 @@ public sealed partial class SkyLighting : Node3D
             Name = "Skybox"
         };
         AddChild(skyboxAnchor);
+        starsAnchor = new Node3D
+        {
+            Name = "Stars"
+        };
+        AddChild(starsAnchor);
+        cloudMaterial = new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/clouds.gdshader"),
+            // After the star model (a skybox variant, priority below -1) and before the world's translucent surfaces.
+            RenderPriority = -1
+        };
+        cloudMaterial.SetShaderParameter("shell_distance", ShellDistance);
+        cloudDome = new MeshInstance3D
+        {
+            Name = "Clouds",
+            Mesh = new SphereMesh { Radius = 1, Height = 2, RadialSegments = 64, Rings = 32 },
+            MaterialOverride = cloudMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            Visible = false,
+            // The vertex shader moves the vertices, so the node's own bounds are meaningless to the culler.
+            CustomAabb = new Aabb(new Vector3(-10000, -10000, -10000), new Vector3(20000, 20000, 20000))
+        };
+        AddChild(cloudDome);
+        var glareShader = GD.Load<Shader>("res://Shaders/glare.gdshader");
+        for (int i = 0; i < glares.Length; i++)
+        {
+            // The client draws glare last, over everything, so it takes the highest render priority.
+            var material = new ShaderMaterial
+            {
+                Shader = glareShader,
+                RenderPriority = (int)Material.RenderPriorityMax
+            };
+            material.SetShaderParameter("is_moon", i == 1);
+            var quad = new MeshInstance3D
+            {
+                Name = i == 0 ? "SunGlare" : "MoonGlare",
+                Mesh = new QuadMesh { Size = Vector2.One },
+                MaterialOverride = material,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                Visible = false
+            };
+            AddChild(quad);
+            glares[i] = (quad, material);
+        }
     }
 
     /// <summary>
@@ -102,6 +153,13 @@ public sealed partial class SkyLighting : Node3D
             environment.Environment.FogEnabled = false;
             ClientShaderGlobals.Set(ClientShaderGlobals.Fog, new Vector4(0, 1, 1, 0));
             SetSkybox(null);
+            foreach (var glare in glares)
+            {
+                glare.Quad.Visible = false;
+            }
+
+            starsAnchor.Visible = false;
+            cloudDome.Visible = false;
         }
     }
 
@@ -281,17 +339,83 @@ public sealed partial class SkyLighting : Node3D
     }
 
     /// <summary>
-    /// Give the dome the client's sun and moon textures (sunCenter, moon, moon02); a null one leaves that body
-    /// out.
+    /// Give the sky the client's sun and moon textures (sunCenter, moon, moon02) and their glare textures
+    /// (sunGlare, moonGlare); a null one leaves that body or glare out.
     /// </summary>
-    public void SetCelestialTextures(Texture2D? sunTexture, Texture2D? moonTexture, Texture2D? moon2Texture)
+    public void SetCelestialTextures(Texture2D? sunTexture, Texture2D? moonTexture, Texture2D? moon2Texture, Texture2D? sunGlareTexture = null, Texture2D? moonGlareTexture = null)
     {
+        hasSunGlare = sunGlareTexture != null;
+        hasMoonGlare = moonGlareTexture != null;
+        glares[0].Material.SetShaderParameter("glare_tex", sunGlareTexture);
+        glares[1].Material.SetShaderParameter("glare_tex", moonGlareTexture);
         hasSunTexture = sunTexture != null;
         hasMoonTexture = moonTexture != null;
         hasMoon2Texture = moon2Texture != null;
         skyMaterial.SetShaderParameter("sun_tex", sunTexture);
         skyMaterial.SetShaderParameter("moon_tex", moonTexture);
         skyMaterial.SetShaderParameter("moon2_tex", moon2Texture);
+    }
+
+    /// <summary>
+    /// Place one glare quad over its body and set what the shader needs. The facing terms depend on where the
+    /// camera looks, so the cosine to the body is taken here.
+    /// </summary>
+    void UpdateGlare(int index, Camera3D camera, Vector3 forward, Vector3 direction, float planetWidth, bool present, float cloudDensity, Vector3 color, float dayFraction)
+    {
+        var (quad, material) = glares[index];
+        float cosine = forward.Dot(direction);
+        var glare = index == 0 ? SkyDome.SunGlare(dayFraction, cosine) : SkyDome.MoonGlare(dayFraction, cosine, planetWidth);
+        bool shown = present && skyboxPath == null && glare.Alpha > 0.001f;
+        quad.Visible = shown;
+        if (!shown)
+        {
+            return;
+        }
+
+        var position = camera.GlobalPosition + direction * SkyDome.PlanetDistance;
+        quad.GlobalTransform = new Transform3D(Basis.Identity, position);
+        quad.LookAt(camera.GlobalPosition, Vector3.Up);
+        quad.Scale = Vector3.One * glare.Scale;
+        material.SetShaderParameter("glare_color", color);
+        material.SetShaderParameter("glare_alpha", glare.Alpha);
+        material.SetShaderParameter("planet_direction", direction);
+        material.SetShaderParameter("planet_width", planetWidth);
+        material.SetShaderParameter("cloud_density", cloudDensity);
+    }
+
+    /// <summary>
+    /// Give the sky the client's star model (Environments/Stars/stars.m2); null removes it. It is drawn like a
+    /// LightSkybox model and fades with the day (<see cref="SkyDome.StarFade"/>).
+    /// </summary>
+    public void SetStarsModel(string? path)
+    {
+        if (starsInstance != null && GodotObject.IsInstanceValid(starsInstance))
+        {
+            starsInstance.QueueFree();
+        }
+
+        starsInstance = path == null ? null : models.Attach(starsAnchor, new ModelKey(path, Skybox: true));
+        appliedStarFade = -1;
+    }
+
+    // Follow the camera, and fade the stars by the day. The model's batches are plain geometry instances, so the
+    // fade is the instance transparency, applied only when it changes.
+    void ApplyStars(float dayFraction, Camera3D camera)
+    {
+        starsAnchor.Position = camera.Position;
+        float fade = SkyDome.StarFade(dayFraction);
+        bool show = starsInstance != null && GodotObject.IsInstanceValid(starsInstance) && skyboxPath == null && fade > 0.01f;
+        starsAnchor.Visible = show;
+        if (!show || starsInstance!.ModelReady == false || Math.Abs(fade - appliedStarFade) < 0.004f)
+        {
+            return;
+        }
+
+        appliedStarFade = fade;
+        foreach (var child in starsInstance.FindChildren("*", "GeometryInstance3D", true, false))
+        {
+            ((GeometryInstance3D)child).Transparency = 1f - fade;
+        }
     }
 
     /// <summary>
@@ -332,10 +456,12 @@ public sealed partial class SkyLighting : Node3D
             density = Mathf.Lerp(density, Density(foreground), weight);
         }
 
-        skyMaterial.SetShaderParameter("cloud_density", density);
-        skyMaterial.SetShaderParameter("cloud_sun_color", Blend(p => p.Clouds?.Sun ?? p.Diffuse));
-        skyMaterial.SetShaderParameter("cloud_shade_color", Blend(p => p.Clouds?.Shade ?? p.Ambient));
-        skyMaterial.SetShaderParameter("cloud_base_color", Blend(p => p.Clouds?.Base ?? p.Ambient));
+        cloudMaterial.SetShaderParameter("cloud_density", density);
+        cloudMaterial.SetShaderParameter("cloud_sun_color", Blend(p => p.Clouds?.Sun ?? p.Diffuse));
+        cloudMaterial.SetShaderParameter("cloud_shade_color", Blend(p => p.Clouds?.Shade ?? p.Ambient));
+        cloudMaterial.SetShaderParameter("cloud_base_color", Blend(p => p.Clouds?.Base ?? p.Ambient));
+        cloudDome.Visible = skyboxPath == null && density > 0f;
+        cloudDome.Position = camera.Position;
 
         float flag = (background.Sky?.Highlight ?? false ? 1f : 0f);
         if (foreground != null && weight > 0)
@@ -359,11 +485,16 @@ public sealed partial class SkyLighting : Node3D
         // The clouds are lit by the moon at night (before about 04:50 and after about 22:10) and by the sun otherwise.
         var lightPlanet = dayFraction < 0.2013889f || dayFraction > 0.9236111f ? SkyDome.Moon(dayFraction) : SkyDome.Sun(dayFraction);
         var (lx, ly, lz) = lightPlanet.Direction;
-        skyMaterial.SetShaderParameter("cloud_light_direction", new Vector3(-ly, lz, -lx));
+        cloudMaterial.SetShaderParameter("cloud_light_direction", new Vector3(-ly, lz, -lx));
         Disc("sun_disc", SkyDome.Sun(dayFraction), hasSunTexture);
         Disc("moon_disc", SkyDome.Moon(dayFraction), hasMoonTexture);
         Disc("moon2_disc", SkyDome.SecondMoon(dayFraction), hasMoon2Texture);
         var forward = -camera.GlobalTransform.Basis.Z;
+        var sunPlanet = SkyDome.Sun(dayFraction);
+        var moonPlanet = SkyDome.Moon(dayFraction);
+        UpdateGlare(0, camera, forward, new Vector3(-sunPlanet.Direction.Y, sunPlanet.Direction.Z, -sunPlanet.Direction.X), sunPlanet.Scale, hasSunGlare, density, Blend(p => p.SunColor ?? p.Diffuse), dayFraction);
+        UpdateGlare(1, camera, forward, new Vector3(-moonPlanet.Direction.Y, moonPlanet.Direction.Z, -moonPlanet.Direction.X), moonPlanet.Scale, hasMoonGlare, density, Blend(p => p.SunColor ?? p.Diffuse), dayFraction);
+        ApplyStars(dayFraction, camera);
         skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }
 

@@ -12,6 +12,8 @@ namespace ACWorldEdit;
 public partial class TerrainViewer : Node3D
 {
     IClientFiles? store;
+    // The client's star model, drawn like a skybox model; both clients have it under this name.
+    const string StarsModelPath = "Environments/Stars/stars.m2";
     WorldMap? world;
     TerrainRenderer renderer = null!;
     ModelLibrary models = null!;
@@ -206,6 +208,7 @@ public partial class TerrainViewer : Node3D
             pending = null;
         }
 
+        sky.SetStarsModel(null);
         await models.SetStore(null);
         old?.Dispose();
         message = profile.LoadingMessage;
@@ -220,7 +223,7 @@ public partial class TerrainViewer : Node3D
             mapList = result.Maps;
             navigation.Configure(kind, result.NavigationParents);
             lighting = result.Lighting;
-            sky.SetCelestialTextures(CelestialTextures.Load(store, "Textures/sunCenter.blp"), CelestialTextures.Load(store, "Textures/moon.blp"), CelestialTextures.Load(store, "Textures/moon02.blp"));
+            sky.SetCelestialTextures(CelestialTextures.Load(store, "Textures/sunCenter.blp"), CelestialTextures.Load(store, "Textures/moon.blp"), CelestialTextures.Load(store, "Textures/moon02.blp"), CelestialTextures.Load(store, "Textures/sunGlare.blp"), CelestialTextures.Load(store, "Textures/moonGlare.blp"));
             areas = result.Areas;
             databaseEnabled = result.DatabaseEnabled;
             clientLookup = result.Lookup;
@@ -233,6 +236,7 @@ public partial class TerrainViewer : Node3D
             maps.Clear();
             int selected = 0;
             await models.SetStore(store, result.Creatures, result.GameObjects);
+            sky.SetStarsModel(store.Exists(StarsModelPath) ? StarsModelPath : null);
             thumbnails?.Reset(ThumbnailDirectory(kind));
             for (int i = 0; i < mapList.Count; i++)
             {
