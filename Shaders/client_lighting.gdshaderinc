@@ -16,6 +16,13 @@ global uniform vec4 client_fog_height_end;
 global uniform vec4 client_fog_sun;
 global uniform vec3 client_sun_disc;
 
+// The sun the client lights every surface with: the direction its light travels (world space) and the ambient,
+// diffuse and specular band colors (8-bit values, gamma space).
+global uniform vec3 client_sun_dir;
+global uniform vec3 client_sun_ambient;
+global uniform vec3 client_sun_diffuse;
+global uniform vec3 client_sun_specular;
+
 // Band colors are 8-bit values the client shows without a linear pipeline; Godot lights and tone maps in
 // linear space, so fog (and the sky it meets at the horizon) are converted on the way out.
 vec3 client_gamma_to_linear(vec3 c) {
@@ -101,4 +108,21 @@ vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
     }
     vec3 scattered = client_fog.w > 1.5 ? client_fog_sun_scatter(view_position, inv_view) : vec3(0.0);
     return vec4(client_gamma_to_linear(color) + scattered, 1.0 - client_fog_factor(-view_position.z, eye_distance));
+}
+
+// The client's surface lighting (the retail terrain pixel shader), in gamma space like the client: ambient plus
+// diffuse N.L scale the albedo, a Blinn-Phong highlight (exponent 20) masked by the texture's alpha adds on top, and
+// the baked shadow only takes 30 % off. Lighting that brightens past white clamps, as the framebuffer does.
+// shadow is 1 for lit and 0 for fully shadowed; view_position is the fragment's view-space VERTEX.
+const float CLIENT_SPECULAR_EXPONENT = 20.0;
+const float CLIENT_SPECULAR_STRENGTH = 1.0;
+const float CLIENT_SHADOW_STRENGTH = 0.3;
+vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 view_position, vec3 normal, mat4 view_matrix) {
+    vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
+    vec3 lit = clamp(client_sun_ambient + client_sun_diffuse * max(dot(-sun, normal), 0.0), 0.0, 1.0);
+    vec3 half_vector = normalize(normalize(view_position) + sun);
+    float highlight = pow(max(dot(-half_vector, normal), 0.0), CLIENT_SPECULAR_EXPONENT);
+    vec3 specular = clamp(client_sun_specular * highlight * shadow * specular_mask * CLIENT_SPECULAR_STRENGTH, 0.0, 1.0);
+    vec3 color = albedo * lit + specular;
+    return color * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
 }

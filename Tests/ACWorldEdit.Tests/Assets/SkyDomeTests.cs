@@ -126,6 +126,25 @@ public class SkyDomeTests
     }
 
     [Fact]
+    public void LightTravelsDownwardOnAFixedBearingAndSteepensAtNoon()
+    {
+        var (nx, ny, nz) = SkyDome.LightDirection(0.5f);
+        var (dx, dy, dz) = SkyDome.LightDirection(0.25f);
+
+        Assert.Equal(MathF.Cos(2.2165682f), nz, 5);
+        Assert.Equal(MathF.Cos(1.9198623f), dz, 5);
+        Assert.True(nz < dz && dz < 0);
+        // Same bearing all day: the horizontal parts stay in proportion (azimuth 225 degrees, so x equals y).
+        Assert.Equal(nx, ny, 5);
+        Assert.Equal(dx, dy, 5);
+        Assert.True(nx < 0);
+        Assert.Equal(1f, nx * nx + ny * ny + nz * nz, 5);
+        // The elevation table wraps from 0.75 back to 0 (midnight is as steep as noon).
+        Assert.Equal(nz, SkyDome.LightDirection(0f).Z, 5);
+        Assert.Equal((dx + SkyDome.LightDirection(0.75f).X) / 2, SkyDome.LightDirection(0.25f).X, 5);
+    }
+
+    [Fact]
     public void RingsRunFromTheZenithDownToTheHorizonAtHeightZero()
     {
         var top = SkyDome.Ring(0);

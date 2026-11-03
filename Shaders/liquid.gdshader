@@ -16,10 +16,6 @@ render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
 
 // ---- Shared inputs ----------------------------------------------------------------------------------------
 
-global uniform vec3 client_sun_dir;
-global uniform vec3 client_sun_ambient;
-global uniform vec3 client_sun_diffuse;
-global uniform vec3 client_sun_specular;
 global uniform vec4 client_water_ocean_shallow;
 global uniform vec4 client_water_ocean_deep;
 global uniform vec4 client_water_river_shallow;

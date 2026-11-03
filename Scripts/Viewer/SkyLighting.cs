@@ -80,7 +80,7 @@ public sealed partial class SkyLighting : Node3D
                 AmbientLightSource = Godot.Environment.AmbientSource.Color,
                 AmbientLightColor = new Color("c8d7e5"),
                 AmbientLightEnergy = 0.65f,
-                TonemapMode = Godot.Environment.ToneMapper.Filmic
+                TonemapMode = Godot.Environment.ToneMapper.Linear
             }
         };
         AddChild(environment);
@@ -224,11 +224,12 @@ public sealed partial class SkyLighting : Node3D
         var diffuse = Blend(p => p.Diffuse);
         var ambient = Blend(p => p.Ambient);
         var fog = Blend(p => p.Fog);
-        double angle = TimeOfDayHours / 24.0 * Math.Tau;
-        sun.RotationDegrees = new Vector3((float)(-55 + 35 * Math.Cos(angle)), -30, 0);
+        // The client lights everything along one direction (DayNight::SetDirection) with the diffuse and ambient bands at
+        // full strength; it has no exposure curve, so the light's energy stays 1 (the tonemapper is linear).
+        var (lx, ly, lz) = SkyDome.LightDirection((float)(TimeOfDayHours / 24.0));
+        sun.Basis = Basis.LookingAt(new Vector3(-ly, lz, -lx).Normalized(), Vector3.Up);
         sun.LightColor = diffuse;
-        float luminance = 0.299f * diffuse.R + 0.587f * diffuse.G + 0.114f * diffuse.B;
-        sun.LightEnergy = Mathf.Clamp(Mathf.Lerp(0.15f, 1.8f, luminance), 0.15f, 1.8f);
+        sun.LightEnergy = 1f;
         environment.Environment.AmbientLightColor = ambient;
         environment.Environment.AmbientLightEnergy = 1.0f;
         environment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;

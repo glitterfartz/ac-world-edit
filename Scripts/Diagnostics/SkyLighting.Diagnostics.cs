@@ -44,6 +44,10 @@ public sealed partial class SkyLighting
         env.AmbientLightEnergy = 1;
         env.FogEnabled = false;
         ClientShaderGlobals.Set(ClientShaderGlobals.Fog, new Vector4(0, 1, 1, 0));
+        // The terrain computes its own lighting from these, so flat means white ambient and no sun or specular there too.
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunAmbient, new Vector3(1, 1, 1));
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunDiffuse, Vector3.Zero);
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunSpecular, Vector3.Zero);
         env.TonemapMode = Godot.Environment.ToneMapper.Linear;
     }
 

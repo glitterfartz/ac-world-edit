@@ -226,4 +226,16 @@ public static class SkyDome
     {
         return Direction(Interpolate(SunTheta, dayFraction), Interpolate(SunPhi, dayFraction));
     }
+
+    // The polar angle from straight up of the direction the sun's light travels, over the day (DayNight::SetDirection).
+    // It is steeper at noon and midnight than at dawn and dusk, and its bearing (225 degrees) never moves.
+    static readonly (float Time, float Value)[] LightElevation = [(0f, 2.2165682f), (0.25f, 1.9198623f), (0.5f, 2.2165682f), (0.75f, 1.9198623f)];
+    const float LightAzimuth = 3.926991f;
+
+    /// <summary>
+    /// The unit vector the sun's light travels along at a day fraction, in client axes (DayNight::SetDirection). This
+    /// is what every lit surface uses; it is not the direction toward the sun disc, which rises and sets.
+    /// </summary>
+    public static (float X, float Y, float Z) LightDirection(float dayFraction) =>
+        Direction(Interpolate(LightElevation, dayFraction), LightAzimuth);
 }
