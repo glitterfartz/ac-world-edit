@@ -30,6 +30,89 @@ project/assembly_name="ACWorldEdit"
 
 3d/physics_engine="Jolt Physics"
 
+[shader_globals]
+
+client_fog={
+"type": "vec4",
+"value": Vector4(0, 1, 1, 0)
+}
+client_fog_color={
+"type": "vec3",
+"value": Vector3(0.57, 0.71, 0.79)
+}
+client_fog_end={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_height={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_poly={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_height_color={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_height_end={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_sun={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+client_fog_volumes={
+"type": "sampler2D",
+"value": null
+}
+client_fog_volume_count={
+"type": "float",
+"value": 0.0
+}
+client_fog_volume_time={
+"type": "float",
+"value": 0.0
+}
+client_sun_disc={
+"type": "vec3",
+"value": Vector3(0, 1, 0)
+}
+client_sun_dir={
+"type": "vec3",
+"value": Vector3(0.423999, -0.847998, 0.317999)
+}
+client_sun_ambient={
+"type": "vec3",
+"value": Vector3(0.25, 0.25, 0.25)
+}
+client_sun_diffuse={
+"type": "vec3",
+"value": Vector3(1, 1, 1)
+}
+client_sun_specular={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+client_water_ocean_shallow={
+"type": "vec4",
+"value": Vector4(0.1, 0.25, 0.35, 0.75)
+}
+client_water_ocean_deep={
+"type": "vec4",
+"value": Vector4(0.02, 0.1, 0.2, 1)
+}
+client_water_river_shallow={
+"type": "vec4",
+"value": Vector4(0.15, 0.35, 0.4, 0.5)
+}
+client_water_river_deep={
+"type": "vec4",
+"value": Vector4(0.05, 0.2, 0.3, 1)
+}
+
 [rendering]
 
 renderer/rendering_method.mobile="gl_compatibility"

@@ -172,6 +172,8 @@ flowchart LR
 
 ## Tables: DBC and DB2
 
+Lighting and water values reach rendering through `ClientShaderGlobals`; the globals' types and neutral editor defaults live in `project.godot`, independently of opening a client. The runtime replaces these defaults with the selected client's light bands and volume data.
+
 Two readers exist and share no abstraction:
 
 - `DbcTable` (`Formats/DbcTable.cs`) reads WDBC by fixed field index. Callers hard-code the indexes and document them in comments (for example `AreaLookup.cs` and `InteractionCatalog.cs`).

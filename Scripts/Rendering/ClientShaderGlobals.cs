@@ -6,7 +6,7 @@ namespace ACWorldEdit;
 /// Shader-wide parameters that mirror the constants the client feeds every world shader (fog, the
 /// map sun and the time-of-day water colors). <c>SkyLighting</c> writes them each frame; the
 /// terrain, model and liquid shaders read them through <c>Shaders/client_lighting.gdshaderinc</c>.
-/// A shader that declares a global fails to compile if it does not exist yet, so shaders are loaded
+/// Globals and preview defaults live in project.godot so the editor can compile shaders too. Runtime textures are initialized
 /// through <see cref="Load"/>.
 /// </summary>
 public static class ClientShaderGlobals
@@ -65,8 +65,7 @@ public static class ClientShaderGlobals
     static bool registered;
 
     /// <summary>
-    /// Register every global once, with values that draw like the client with no lights: no fog, a
-    /// neutral sun and plain water.
+    /// Initialize the runtime fog-volume texture once. Project settings supply the other defaults.
     /// </summary>
     public static void Ensure()
     {
@@ -76,34 +75,13 @@ public static class ClientShaderGlobals
         }
 
         registered = true;
-        // The parameters live only for this run (they are not in the project settings), so each is new;
-        // listing the existing ones is an editor-only call.
-        void Add(string name, RenderingServer.GlobalShaderParameterType type, Variant value) => RenderingServer.GlobalShaderParameterAdd(name, type, value);
-
-        Add(Fog, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 1, 1, 0));
-        Add(FogColor, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.57f, 0.71f, 0.79f));
-        Add(FogEnd, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogHeight, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogPoly, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogHeightColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogHeightEndColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogSun, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
-        Add(FogVolumes, RenderingServer.GlobalShaderParameterType.Sampler2D, ImageTexture.CreateFromImage(Image.CreateEmpty(MaxFogVolumes * FogVolumeTexels, 1, false, Image.Format.Rgbaf)));
-        Add(FogVolumeCount, RenderingServer.GlobalShaderParameterType.Float, 0f);
-        Add(FogVolumeTime, RenderingServer.GlobalShaderParameterType.Float, 0f);
-        Add(SunDisc, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 1, 0));
-        Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
-        Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
-        Add(SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(1, 1, 1));
-        Add(SunSpecular, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 0, 0));
-        Add(OceanShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.1f, 0.25f, 0.35f, 0.75f));
-        Add(OceanDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.02f, 0.1f, 0.2f, 1));
-        Add(RiverShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.15f, 0.35f, 0.4f, 0.5f));
-        Add(RiverDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.05f, 0.2f, 0.3f, 1));
+        // project.godot declares every global, including its editor preview default.
+        // Only the fog-volume data texture needs a runtime allocation.
+        Set(FogVolumes, ImageTexture.CreateFromImage(Image.CreateEmpty(MaxFogVolumes * FogVolumeTexels, 1, false, Image.Format.Rgbaf)));
     }
 
     /// <summary>
-    /// Load a shader after the globals it may declare exist.
+    /// Load a shader after its runtime texture defaults exist.
     /// </summary>
     public static Shader Load(string path)
     {

@@ -282,6 +282,8 @@ Side effects of any flag ending in `-smoke`: startup database and client prompts
 
 ## Smoke workflows and retail testing
 
+Client shader globals and their neutral preview defaults are declared in `project.godot` under `shader_globals`, so shaders compile in Godot's shader editor before the viewer runs. `ClientShaderGlobals.Ensure` allocates the runtime fog-volume texture; `SkyLighting` updates the globals from client data.
+
 Smoke workflows are opt-in flags passed after `--` to Godot (`--terrain-smoke`, `--creature-smoke`, `--client-smoke`, ...). `--client-shot` / `--client-shot-tile=X,Y` (windowed) saves `artifacts/client-shot.png` framed on the largest nearby building with the UI hidden; `--client-shot-water` frames the largest liquid.
 
 Test retail with pre-Cataclysm areas such as Goldshire/Elwynn Forest: the database's spawns come from 3.3.5, so later zones often have no creatures.
