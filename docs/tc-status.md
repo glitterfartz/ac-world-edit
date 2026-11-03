@@ -223,7 +223,7 @@ Material 3 now uses a dedicated `procwaterabove`-derived surface
 screen refraction, squared Fresnel, reflection drawn 60% toward lit water, and sun
 highlights. Real types 100/321 resolve the native bump map in corpus checks; a Godot
 fixture using that texture over a checkerboard ground was inspected. Partial
-fidelity: UV matrices and float bindings are inferred, one bounded screen-space trace
+fidelity: UV matrices and float bindings are inferred, one shared bounded screen trace
 replaces the retail reflection inputs, the final soft edge is simplified, captured
 pixels may receive fog twice, and underside/foam/masks/auxiliary permutations remain
 open. Not verified against a retail reference. This is a surface approximation, not
