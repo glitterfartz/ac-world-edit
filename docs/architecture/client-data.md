@@ -226,3 +226,13 @@ flowchart LR
 The two-way links are deliberate and small: `WorldMap` calls `RetailTerrain`, which builds `TerrainTile` through an internal constructor; `Chunks` uses `MpqArchive.U` (a little-endian read helper), and `AssetStore` uses `DbcTable`.
 
 Per-client side data (`RetailLiquids`, `LiquidTextures`) is attached to an `IClientFiles` instance through `ConditionalWeakTable`, not passed as an argument.
+
+## Generated navigation files
+
+`Scripts/Assets/Navigation` reads server-generated MMaps from an independently selected disk folder. It does not use client archives. `AcNavigationReader` accepts AzerothCore MMap 20 (56-byte wrapper); `TcNavigationReader` accepts TrinityCore MMap 16 (20-byte wrapper). Both consume little-endian Detour 7 with six polygon vertices and 64-bit references. Other versions and reference layouts are rejected. The shared `DetourReader` checks payload sizes, counts, indices, finite coordinates, bounds and detail-mesh ranges before returning plain navigation data. It retains static polygon neighbor codes, flags, areas, detail triangle flags, agent dimensions and off-mesh connections. Serialized runtime link slots do not describe live server connectivity.
+
+AC map parameters are 28 bytes, and tile headers include the generator's Recast settings. TC map files have a 40-byte header followed by 44-byte map-level off-mesh records. Both generators store a polygon capacity of `0x80000000` when built for 64-bit references; the reader preserves that bit pattern as an unsigned capacity.
+
+`NavigationSource` tries the requested tile first. TC falls back only when that file is missing, to its immediate parent, without walking ancestors or replacing corrupt child tiles. `Db2Tables.NavigationParents` reads the complete retail Map table, including rows excluded from the map picker: ParentMapID takes precedence over CosmeticParentMapID. Requested and source map IDs, filename coordinates and Detour grid coordinates remain separate. Filename X/Y are reversed relative to viewer tile X/Y. Detour stores `(server Y, server Z, server X)`; the explicit viewer conversion is `(-detour X, detour Y, -detour Z)`.
+
+These files are a snapshot of generated navigation surfaces. The viewer does not calculate routes, edit or generate meshes, apply live obstacles, or rebuild instance-specific navigation.
