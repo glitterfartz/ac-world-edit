@@ -62,5 +62,5 @@ void fragment() {
     }
     ALBEDO = color;
     ROUGHNESS = 1.0;
-    FOG = client_fog_output(-VERTEX.z);
+    FOG = client_fog_output(VERTEX);
 }

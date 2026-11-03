@@ -13,8 +13,11 @@ namespace ACWorldEdit;
 public partial class TerrainViewer
 {
     bool clientSmoke, clientShot, clientShotMoved, clientShotFramed, clientShotWater, clientShotOverlays, clientShotOverlaysFocused;
-    // --client-shot-sky=HOUR[,YAW_DEGREES]: set the time of day and look level at the sky instead of framing a building.
-    (double Hour, float YawDegrees)? clientShotSky;
+    // --client-shot-sky=HOUR[,YAW_DEGREES[,LIFT_YARDS[,PITCH_DEGREES]]]: set the time of day and look out from a raised
+    // camera instead of framing a building (defaults: 0, 40 yards, 12 degrees up).
+    (double Hour, float YawDegrees, float Lift, float PitchDegrees)? clientShotSky;
+    // --client-shot-map=DIRECTORY (for example Expansion01): open that map before the shot.
+    string? clientShotMap;
     int clientShotFrames, clientShotCreatureStage, clientShotDifficulty, sharedVendorFrames;
     uint clientShotQuest;
     TileKey? clientShotTile;
@@ -749,6 +752,21 @@ public partial class TerrainViewer
         // saves artifacts/client-shot.png for inspection. It needs a real window (not --headless).
         if (clientShot && DisplayServer.GetName() != "headless")
         {
+            if (clientShotMap != null)
+            {
+                int mapIndex = mapList.FindIndex(m => m.Directory.Equals(clientShotMap, StringComparison.OrdinalIgnoreCase));
+                if (mapIndex >= 0 && currentMapId != (ushort)mapList[mapIndex].Id)
+                {
+                    if (maps.Selected != mapIndex)
+                    {
+                        maps.Select(mapIndex);
+                        _ = OpenMap();
+                    }
+
+                    return;
+                }
+            }
+
             // --client-shot-tile=X,Y moves the camera over that tile first, then waits for it to finish.
             if (!clientShotMoved)
             {
@@ -827,11 +845,11 @@ public partial class TerrainViewer
                 if (clientShotSky is { } skyShot)
                 {
                     sky.SetTimeOfDay(skyShot.Hour);
-                    camera.Position += new Vector3(0, 40, 0);
-                    camera.Rotation = new Vector3(Mathf.DegToRad(12), Mathf.DegToRad(skyShot.YawDegrees), 0);
+                    camera.Position += new Vector3(0, skyShot.Lift, 0);
+                    camera.Rotation = new Vector3(Mathf.DegToRad(skyShot.PitchDegrees), Mathf.DegToRad(skyShot.YawDegrees), 0);
                     yaw = camera.Rotation.Y;
                     pitch = camera.Rotation.X;
-                    GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees}");
+                    GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees} camera={camera.Position} fog={sky.ClientFogValues}");
                     clientShotFrames = 0;
                 }
                 else if (clientShotWater && LargestLiquid() is { } lake)

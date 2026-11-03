@@ -312,6 +312,7 @@ public partial class TerrainViewer : Node3D
             world = await Task.Run(() => new WorldMap(name, assets.Read(wdtPath)));
             currentMapId = checked((ushort)mapList[maps.Selected].Id);
             navigation.SetMap(currentMapId);
+            sky.Retail = profile.Kind == ClientKind.Retail;
             sky.SetMap(lighting, currentMapId, world.Tiles.Count == 0);
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);

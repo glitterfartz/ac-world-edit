@@ -60,7 +60,14 @@ public partial class TerrainViewer
         {
             clientShot = true;
             var parts = skyFlag["--client-shot-sky=".Length..].Split(',');
-            clientShotSky = (double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture), parts.Length > 1 ? float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : 0f);
+            float Part(int index, float fallback) => parts.Length > index ? float.Parse(parts[index], System.Globalization.CultureInfo.InvariantCulture) : fallback;
+            clientShotSky = (double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture), Part(1, 0f), Part(2, 40f), Part(3, 12f));
+        }
+
+        if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-map=", StringComparison.Ordinal)) is { } mapFlag)
+        {
+            clientShot = true;
+            clientShotMap = mapFlag["--client-shot-map=".Length..];
         }
 
         clientShotWater = flags.Contains("--client-shot-water");

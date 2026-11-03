@@ -5,7 +5,7 @@ shader_type sky;
 // The client draws a 24-sided cap with six rings, each ring one of the light's six sky colors; the horizon
 // ring and the funnel below it are the fog color. Instead of a mesh, each view ray is intersected with the
 // strips between the rings, so the colors blend across the same triangles the client interpolates over.
-// Colors are the raw band values, like the fog, so the horizon matches the fog that meets it.
+// Colors are the band values converted like the fog, so the horizon matches the fog that meets it.
 uniform vec3 sky_zenith = vec3(0.25, 0.45, 0.8);
 uniform vec3 sky_middle = vec3(0.4, 0.6, 0.85);
 uniform vec3 sky_band1 = vec3(0.55, 0.72, 0.9);
@@ -27,6 +27,13 @@ uniform float glow_above = 0.2;
 uniform float glow_horizon = 0.35;
 
 const float TAU_F = 6.28318530718;
+
+// The band colors are 8-bit values the client shows as they are; the horizon has to match the fog, which is
+// converted the same way (Shaders/client_lighting.gdshaderinc).
+vec3 band_to_linear(vec3 c) {
+    c = clamp(c, 0.0, 1.0);
+    return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, vec3(lessThan(c, vec3(0.04045))));
+}
 
 // s_skyThetaTable (rings 0 to 5): distance from the dome axis and height over the horizon ring.
 const float RING_RADIUS[6] = float[6](0.0, 0.50904142, 0.58778525, 0.66131187, 0.68454711, 0.70710678);
@@ -111,5 +118,5 @@ void sky() {
     vec3 at_horizon = mix(color, sun_glow_color, glow_horizon);
     vec3 glow = mix(at_horizon, above, clamp(height * 50.0, 0.0, 1.0));
     float closeness = clamp(dot(dir, normalize(sun_direction)) - glow_threshold, 0.0, 1.0) / (1.0 - glow_threshold);
-    COLOR = mix(color, glow, closeness * closeness * closeness);
+    COLOR = band_to_linear(mix(color, glow, closeness * closeness * closeness));
 }

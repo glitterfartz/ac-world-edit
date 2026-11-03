@@ -89,6 +89,7 @@ public sealed partial class SkyLighting : Node3D
     /// </summary>
     public void SetMap(ClientLighting? lightTable, uint? activeMapId, bool isInterior)
     {
+        ViewDistance = Retail ? RetailViewDistance : ClassicViewDistance;
         table = lightTable;
         mapId = activeMapId;
         interior = isInterior;
@@ -191,7 +192,8 @@ public sealed partial class SkyLighting : Node3D
         float fogEnd = Math.Min(ViewDistance, curve?.End ?? ViewDistance);
         float fogStart = fogEnd * (curve?.StartMul ?? DefaultFogStartMultiplier);
         environment.Environment.FogEnabled = false;
-        SetClientFog(fogStart, fogEnd, fog);
+        var (density, endColor, endDistance) = RetailFogTerms(backgroundProfile, foregroundProfile, bestWeight, tick);
+        SetClientFog(fogStart, fogEnd, fog, density, endColor, endDistance);
         ApplyWater(backgroundProfile, foregroundProfile, bestWeight, tick);
         ApplySunUniforms(diffuse, ambient, backgroundProfile, foregroundProfile, bestWeight, tick);
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
@@ -202,22 +204,55 @@ public sealed partial class SkyLighting : Node3D
     }
 
     /// <summary>
-    /// The distance the fog is capped at, standing in for the client's view distance setting (its
-    /// "farclip" runs from 177 to 1277 yards). The camera here has no such limit, so this only shapes
-    /// the fog: it ends at the smaller of this and the light's own fog end.
+    /// True for a retail client: its fog is exponential, with a wider view distance.
     /// </summary>
-    public float ViewDistance { get; set; } = 777;
+    public bool Retail { get; set; }
+    /// <summary>
+    /// The distance the fog is capped at, standing in for the client's view distance setting (the 3.3.5a
+    /// "farclip" runs from 177 to 1277 yards; retail reaches several thousand). The camera here has no such
+    /// limit, so this only shapes the fog: it ends at the smaller of this and the light's own fog end.
+    /// </summary>
+    public float ViewDistance { get; set; } = ClassicViewDistance;
+    const float ClassicViewDistance = 777;
+    const float RetailViewDistance = 2500;
     /// <summary>
     /// Fog start as a fraction of its end when a light has no fog data (DayNight DEFAULT_FOG_SCALER).
     /// </summary>
     const float DefaultFogStartMultiplier = 0.5f;
     Vector4 clientFog = new(0, 1, 1, 0);
+    /// <summary>The fog values the shaders last received: start, end, density and mode.</summary>
+    public Vector4 ClientFogValues => clientFog;
 
-    void SetClientFog(float start, float end, Color color)
+    void SetClientFog(float start, float end, Color color, float density, Color endColor, float endDistance)
     {
-        clientFog = new(start, end, 1, 1);
+        clientFog = new(start, end, Retail ? density : 1, Retail ? 2 : 1);
         ClientShaderGlobals.Set(ClientShaderGlobals.Fog, clientFog);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(color.R, color.G, color.B));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogEnd, new Vector4(endColor.R, endColor.G, endColor.B, endDistance));
+    }
+
+    /// <summary>
+    /// Retail's extra fog terms at a tick, blended like the other bands: the density (4.5 when a light has
+    /// none) and the color the fog turns toward with distance. Not used for 3.3.5a clients.
+    /// </summary>
+    (float Density, Color EndColor, float EndDistance) RetailFogTerms(LightProfile background, LightProfile? foreground, float weight, double tick)
+    {
+        if (!Retail || background.RetailFog is not { } bg)
+        {
+            return (1, Colors.Black, 0);
+        }
+
+        float density = bg.Density.At(tick);
+        var color = bg.EndColor.At(tick);
+        float distance = bg.EndColorDistance.At(tick);
+        if (foreground?.RetailFog is { } fg && weight > 0)
+        {
+            density = Mathf.Lerp(density, fg.Density.At(tick), weight);
+            color = color.Lerp(fg.EndColor.At(tick), weight);
+            distance = Mathf.Lerp(distance, fg.EndColorDistance.At(tick), weight);
+        }
+
+        return (density > 0 ? density : 4.5f, color, distance);
     }
 
     /// <summary>

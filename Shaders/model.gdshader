@@ -221,5 +221,5 @@ void fragment() {
     EMISSION = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
-    FOG = client_fog_output(-VERTEX.z);
+    FOG = client_fog_output(VERTEX);
 }

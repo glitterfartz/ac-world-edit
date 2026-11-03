@@ -41,12 +41,19 @@ public sealed record WaterColors(LightBand OceanShallow, LightBand OceanDeep, Li
 public sealed record SkyBands(LightBand Middle, LightBand Band1, LightBand Band2, bool Highlight);
 
 /// <summary>
+/// The retail light data's fog terms that the 3.3.5a tables do not have: the density the fog's
+/// extinction is scaled by (FogDensity, 4.5 on the classic lights) and the color the fog turns toward with
+/// distance (EndFogColor over EndFogColorDistance yards).
+/// </summary>
+public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, LightFloatBand EndColorDistance);
+
+/// <summary>
 /// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
 /// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-13 (shadow
 /// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
 /// tables carry no water bands.
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null)
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null)
 {
     /// <summary>
     /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
@@ -164,7 +171,11 @@ public sealed class ClientLighting
                     new(Band(rows, "OceanCloseColor"), Band(rows, "OceanFarColor"), Band(rows, "RiverCloseColor"), Band(rows, "RiverFarColor")),
                     paramWater.GetValueOrDefault(paramsId, WaterAlphas.Default),
                     Band(rows, "SunColor"),
-                    new(Band(rows, "SkyMiddleColor"), Band(rows, "SkyBand1Color"), Band(rows, "SkyBand2Color"), paramHighlight.GetValueOrDefault(paramsId)));
+                    new(Band(rows, "SkyMiddleColor"), Band(rows, "SkyBand1Color"), Band(rows, "SkyBand2Color"), paramHighlight.GetValueOrDefault(paramsId)),
+                    new(
+                        LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogDensity"])))),
+                        Band(rows, "EndFogColor"),
+                        LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["EndFogColorDistance"]))))));
             }
 
             return new(regions, profiles, skyboxPaths);

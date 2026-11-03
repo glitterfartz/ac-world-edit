@@ -12,10 +12,15 @@ namespace ACWorldEdit;
 public static class ClientShaderGlobals
 {
     /// <summary>
-    /// Fog: x start, y end (yards of view depth), z density exponent, w 1 when fog is on.
+    /// Fog: x start, y end (yards), z density, w mode (0 off, 1 the 3.3.5a linear ramp over view depth, 2 retail
+    /// exponential extinction over the distance to the eye).
     /// </summary>
     public const string Fog = "client_fog";
     public const string FogColor = "client_fog_color";
+    /// <summary>
+    /// The color the fog turns toward with distance (rgb) and the yards that takes (w, 0 for none); retail only.
+    /// </summary>
+    public const string FogEnd = "client_fog_end";
     /// <summary>
     /// Direction the sun light travels (world space, unit length).
     /// </summary>
@@ -50,6 +55,7 @@ public static class ClientShaderGlobals
 
         Add(Fog, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 1, 1, 0));
         Add(FogColor, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.57f, 0.71f, 0.79f));
+        Add(FogEnd, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
         Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
         Add(SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(1, 1, 1));

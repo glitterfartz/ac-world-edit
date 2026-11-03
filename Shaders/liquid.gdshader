@@ -157,5 +157,5 @@ void fragment() {
         ALBEDO = gamma_to_linear(lit * depth_color.rgb + tex.rgb + (client_sun_specular * highlight + 0.25) * tex.a);
         ALPHA = depth_color.a;
     }
-    FOG = client_fog_output(-VERTEX.z);
+    FOG = client_fog_output(VERTEX);
 }
