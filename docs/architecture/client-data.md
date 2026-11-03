@@ -306,3 +306,18 @@ generic base-layer fallback. All settings and texture identities participate
 in cache identity, so terrain 302 and faster WMO 303 keep distinct materials.
 The settings and decoded layers remain Godot-free. The client 3D noise source
 has not been identified; runtime uses a documented shader-only approximation.
+
+### Material 3 procedural-water inputs
+
+Material 3 is procedural water. `RetailLiquids.ProceduralWaterSettings` retains the
+authored depth gradient from texture slot 1 (not the SoundBank), the depth table
+from Int[0], and inferred floats for depth scale (2), wave scale (0), normal
+strength (4), refraction (3) and specular exponent (11, floored at 1). The synthetic
+`RetailLiquids.From` test seam gains an optional `waters` argument. `LiquidTextures.Style`
+builds `LiquidStyle.ProceduralWater` and loads the native bump map from texture slot
+2; an intentionally empty frame slot returns a shared white 1×1 placeholder rather
+than decoding ordinary ocean fallback frames. Settings, bump identity and the
+placeholder all participate in cache identity, so material-3 water cannot share a
+material with stock ocean or river. Missing bump keeps the marker and renders flat.
+Settings and decoded layers remain Godot-free. Remaining floats and the CPU UV
+matrices are not bound by this port.

@@ -274,6 +274,32 @@ public class RetailLiquidTests
         }
     }
 
+    [Fact]
+    public void ProceduralWaterNeedsNoFrameAndItsGradientDoesNotFollowSoundBank()
+    {
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.ProceduralWaterSettings(LiquidGradient.River, 0, 1, 1, .5f, .1f, 300);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(321, "", 1, 3), (100, "", 1, 3), (2, "shallow.blp", 1, 1)], [], [],
+            bumps: [(321, "normal_1.blp"), (100, "missing.blp")],
+            waters: [(321, settings), (100, settings with { Gradient = LiquidGradient.Ocean, DepthTable = 1 })]));
+        var textures = LiquidTextures.For(files);
+        var river = textures.Style(321);
+        var ocean = textures.Style(100);
+        Assert.Equal(LiquidGradient.River, river.Gradient);
+        Assert.Equal(LiquidGradient.Ocean, ocean.Gradient);
+        Assert.NotNull(river.Bump);
+        Assert.Null(ocean.Bump);
+        Assert.NotNull(ocean.ProceduralWater);
+        Assert.Null(textures.Style(2).ProceduralWater);
+        Assert.NotEqual(river.CacheKey, ocean.CacheKey);
+        var neutral = textures.Decode(321);
+        Assert.Equal(1, neutral.Width);
+        Assert.Equal(1, neutral.Height);
+        Assert.Equal(new byte[] { 255, 255, 255, 255 }, neutral.Rgba);
+        Assert.Same(neutral, textures.Decode(100));
+    }
+
     sealed class SwampFiles(bool missingDeep) : IClientFiles
     {
         public ClientKind Kind => ClientKind.Retail;

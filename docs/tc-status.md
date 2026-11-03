@@ -215,3 +215,16 @@ earlier classification of both materials 3/4 as procedural water: only 3 is wate
 Partial fidelity: client 3D noise is replaced by analytic value noise, DB2 constant
 bindings and UV transforms are inferred, and auxiliary variants/client comparison
 remain open. This adds visual noise animation, not fluid simulation.
+
+### Retail procedural water
+
+Material 3 now uses a dedicated `procwaterabove`-derived surface
+(`procwater.gdshader`): near/far scrolling normals, depth colors, foreground-rejected
+screen refraction, squared Fresnel, reflection drawn 60% toward lit water, and sun
+highlights. Real types 100/321 resolve the native bump map in corpus checks; a Godot
+fixture using that texture over a checkerboard ground was inspected. Partial
+fidelity: UV matrices and float bindings are inferred, one bounded screen-space trace
+replaces the retail reflection inputs, the final soft edge is simplified, captured
+pixels may receive fog twice, and underside/foam/masks/auxiliary permutations remain
+open. Not verified against a retail reference. This is a surface approximation, not
+fluid simulation.

@@ -19,13 +19,13 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null, RetailLiquids.ProceduralWaterSettings? ProceduralWater = null)
 {
     /// <summary>
     /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
     /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
     /// </summary>
-    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}";
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}|{ProceduralWater}";
 
     /// <summary>
     /// What the stock river and lake types use.
@@ -77,6 +77,7 @@ public sealed record SwampLiquidStyle(BlpTexture Middle, BlpTexture Deep, Retail
 public sealed class LiquidTextures
 {
     static readonly ConditionalWeakTable<IClientFiles, LiquidTextures> stores = new();
+    static readonly BlpTexture proceduralPlaceholder = new(1, 1, [255, 255, 255, 255]);
     readonly IClientFiles store;
     readonly DbcTable? types;
     readonly RetailLiquids? retail;
@@ -112,6 +113,11 @@ public sealed class LiquidTextures
         if (types is not { } table)
         {
             var stock = Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+            if (retail!.ProceduralWater(type) is { } procedural)
+            {
+                return stock with { ProceduralWater = procedural, Bump = Bump(type), Gradient = procedural.Gradient,
+                    DepthTable = procedural.DepthTable, DepthScale = procedural.DepthScale };
+            }
             if (retail!.Magma(type) is { } magma && Extra(magma.Middle) is { } magmaMiddle && Extra(magma.Top) is { } magmaTop)
             {
                 return stock with { Magma = new(magmaMiddle, magmaTop, magma) };
@@ -232,6 +238,12 @@ public sealed class LiquidTextures
             }
 
             string pattern = Pattern(type);
+            // Material 3 needs no frame texture. An empty authored slot is intentional,
+            // not a reason to decode ordinary ocean frames as a fallback.
+            if (string.IsNullOrWhiteSpace(pattern) && retail?.Material(type) == 3)
+            {
+                return atlases[type] = proceduralPlaceholder;
+            }
             if (sequences.TryGetValue(pattern, out cached))
             {
                 return atlases[type] = cached;

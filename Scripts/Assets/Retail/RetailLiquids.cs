@@ -28,6 +28,11 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, LeySettings> leys = [];
     readonly Dictionary<uint, FogSettings> fogs = [];
     readonly Dictionary<uint, MagmaSettings> magmas = [];
+    readonly Dictionary<uint, ProceduralWaterSettings> waters = [];
+
+    public sealed record ProceduralWaterSettings(LiquidGradient Gradient, int DepthTable, float DepthScale,
+        float WaveScale, float NormalStrength, float Refraction, float SpecularPower);
+    public ProceduralWaterSettings? ProceduralWater(uint type) => waters.GetValueOrDefault(type);
 
     public sealed record MagmaSettings(string Middle, string Top, System.Numerics.Vector3 Scales,
         System.Numerics.Vector3 BaseColor, float ScrollU, float ScrollV, float NoiseSpeed);
@@ -71,6 +76,13 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 3 && floats.Length >= 12 && textures.Length >= 2)
+                {
+                    var ints = row.Field<int[]>("Int") ?? [];
+                    result.waters[(uint)row.ID] = new(LiquidStyle.GradientFor(textures[1]),
+                        ints.Length > 0 && ints[0] == 1 ? 1 : 0, floats[2], floats[0], floats[4], floats[3],
+                        Math.Max(floats[11], 1));
+                }
                 if (row.FieldAs<uint>("MaterialID") == 4 && floats.Length >= 10 && textures.Length >= 3)
                 {
                     var ints = row.Field<int[]>("Int") ?? [];
@@ -134,9 +146,13 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null, IEnumerable<(uint Type, ProceduralWaterSettings Settings)>? waters = null)
     {
         var result = new RetailLiquids();
+        foreach (var water in waters ?? [])
+        {
+            result.waters[water.Type] = water.Settings;
+        }
         foreach (var magma in magmas ?? [])
         {
             result.magmas[magma.Type] = magma.Settings;

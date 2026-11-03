@@ -29,6 +29,53 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void DocumentedShaderInspectionTilesSelectTheirIntendedMaterials()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        foreach (var item in new[] { ("Azeroth",46,23,1225u,14u), ("2601",36,25,1177u,13u),
+            ("SuramarEndScenario",23,29,890u,12u), ("2371",29,46,1147u,10u),
+            ("Deephome",28,28,350u,5u), ("2825",40,21,100u,3u),
+            ("FWHordeGarrisonLevel3",23,21,302u,4u), ("Azeroth",40,41,3u,2u) })
+        {
+            var info = RetailData.Tables.Maps().Single(m => m.Directory.Equals(item.Item1, StringComparison.OrdinalIgnoreCase));
+            var world = new WorldMap(info.Directory, RetailData.Files.Read(AssetRef.FromFileId(info.WdtFileId)));
+            var tile = world.ReadTile(RetailData.Files, new(item.Item2, item.Item3));
+            Assert.Contains(tile.Liquids, s => s.LiquidType == item.Item4 && s.Indices.Length > 0);
+            Assert.Equal(item.Item5, RetailLiquids.For(RetailData.Files)!.Material(item.Item4));
+            var style = textures.Style(item.Item4);
+            Assert.True(item.Item5 switch {
+                14 => style.Swamp != null, 13 => style.Fel != null, 12 => style.Ley != null,
+                10 => style.Fog != null, 5 => style.Mercury, 3 => style.ProceduralWater != null,
+                4 => style.Magma != null, 2 => textures.Kind(item.Item4) == 2, _ => false
+            }, $"{item.Item1} {item.Item2},{item.Item3} type {item.Item4} selected the fallback");
+            string pattern = textures.Pattern(item.Item4);
+            if (pattern.Length > 0)
+                Assert.True(RetailData.Files.Exists(pattern.Replace("%d", "1")), pattern);
+            Assert.NotEmpty(textures.Decode(item.Item4).Rgba);
+        }
+    }
+
+    [RetailListfileFact]
+    public void ProceduralWaterUsesNativeNormalAndAuthoredGradientWithoutFrameFallback()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var basic = textures.Style(100);
+        var river = textures.Style(321);
+        Assert.NotNull(basic.ProceduralWater);
+        Assert.NotNull(river.ProceduralWater);
+        Assert.NotNull(basic.Bump);
+        Assert.NotEmpty(basic.Bump.Rgba);
+        Assert.Equal(LiquidGradient.Ocean, basic.Gradient);
+        Assert.Equal(LiquidGradient.River, river.Gradient);
+        Assert.Same(basic.Bump, river.Bump);
+        Assert.Equal(1, textures.Decode(100).Width);
+        Assert.Equal(.1f, basic.ProceduralWater.Refraction);
+        Assert.Equal(.025f, textures.Style(101).ProceduralWater!.Refraction);
+        Assert.NotEqual(basic.CacheKey, textures.Style(101).CacheKey);
+        Assert.Null(textures.Style(2).ProceduralWater);
+    }
+
+    [RetailListfileFact]
     public void ProceduralMagmaTypesResolveAllThreeNativeLayers()
     {
         var textures = LiquidTextures.For(RetailData.Files);
