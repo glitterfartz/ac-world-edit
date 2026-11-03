@@ -58,7 +58,14 @@ vec3 liquid_reflection(vec3 position, vec3 direction, vec3 fallback, vec2 screen
     vec3 point = position + direction * hi;
     vec4 clip = projection * vec4(point, 1.0);
     vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
-    float edge = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
+    // Retail's projected-map window: max(1 - x^2, 0) * sat(1 - y^2) on the map
+    // coordinate. Its extra max(0.75 - z^2, 0) * 1.333 factor keys the client's
+    // reflection-map vertical coverage, where z is the reflected ray's world-up
+    // component; on a screen trace that factor only suppresses steep rays, so a
+    // reflection of a tall nearby object drops to ~0.15. It is not applied.
+    vec2 ndc = uv * 2.0 - 1.0;
+    float weight = max(1.0 - ndc.x * ndc.x, 0.0)
+        * clamp(1.0 - ndc.y * ndc.y, 0.0, 1.0);
     // Retail renders its reflection at a fraction of screen resolution. The blur
     // grows a little with distance, which keeps far hits soft rather than mirrored.
     vec2 blur = pixel * (1.5 + hi * 0.05);
@@ -68,7 +75,7 @@ vec3 liquid_reflection(vec3 position, vec3 direction, vec3 fallback, vec2 screen
     reflected += texture(scene_color, uv + vec2(0.0, blur.y)).rgb * 0.15;
     reflected += texture(scene_color, uv - vec2(0.0, blur.y)).rgb * 0.15;
     float fade = 1.0 - smoothstep(max_distance * 0.3, max_distance, hi);
-    return mix(fallback, reflected, smoothstep(0.0, 0.08, edge) * fade);
+    return mix(fallback, reflected, weight * fade);
 }
 
 #endif
