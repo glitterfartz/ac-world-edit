@@ -29,6 +29,26 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void ProceduralMagmaTypesResolveAllThreeNativeLayers()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var terrain = textures.Style(302);
+        var wmo = textures.Style(303);
+        Assert.NotNull(terrain.Magma);
+        Assert.NotNull(wmo.Magma);
+        Assert.EndsWith("Magma0.blp", textures.Pattern(302));
+        Assert.NotEmpty(textures.Decode(302).Rgba);
+        Assert.NotEmpty(terrain.Magma.Middle.Rgba);
+        Assert.NotEmpty(terrain.Magma.Top.Rgba);
+        Assert.Same(terrain.Magma.Middle, wmo.Magma.Middle);
+        Assert.Same(terrain.Magma.Top, wmo.Magma.Top);
+        Assert.Equal(.025f, terrain.Magma.Settings.ScrollU);
+        Assert.Equal(.1f, wmo.Magma.Settings.ScrollU);
+        Assert.NotEqual(terrain.CacheKey, wmo.CacheKey);
+        Assert.Null(textures.Style(3).Magma);
+    }
+
+    [RetailListfileFact]
     public void FogLiquidsShareDensityPixelsButKeepTheirAuthoredTint()
     {
         var textures = LiquidTextures.For(RetailData.Files);

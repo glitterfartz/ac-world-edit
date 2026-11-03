@@ -205,3 +205,13 @@ Types 750/751 pass corpus checks and the real density texture was inspected over
 a checker in Godot. Unit-scale scrolling UVs are estimated. Auxiliary mask,
 depth-aware extinction/height variants, secondary outputs and retail comparison
 remain open. This is a fog sheet, not a volume simulation.
+
+### Retail procedural magma
+
+Material 4 (types 302/303) now resolves extensionless native layer names and uses
+the three-stage `procmagma_0` composition. Real layers were inspected in Godot;
+corpus checks cover sharing and distinct terrain/WMO motion. This corrects the
+earlier classification of both materials 3/4 as procedural water: only 3 is water.
+Partial fidelity: client 3D noise is replaced by analytic value noise, DB2 constant
+bindings and UV transforms are inferred, and auxiliary variants/client comparison
+remain open. This adds visual noise animation, not fluid simulation.

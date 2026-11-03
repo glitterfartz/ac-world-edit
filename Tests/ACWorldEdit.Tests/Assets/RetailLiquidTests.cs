@@ -244,6 +244,36 @@ public class RetailLiquidTests
         Assert.Same(textures.Decode(750), textures.Decode(751));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ProceduralMagmaResolvesExtensionsAndKeepsPerTypeMotion(bool missingTop)
+    {
+        using var files = new SwampFiles(missingTop);
+        var settings = new RetailLiquids.MagmaSettings("middle.blp", "deep.blp", new(.55f, .45f, .35f), new(1, .4f, 0), .025f, 0, .05f);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(302, "shallow", 2, 4), (303, "shallow", 2, 4)], [], [],
+            magmas: [(302, settings), (303, settings with { ScrollU = .1f })]));
+        var textures = LiquidTextures.For(files);
+        Assert.Equal("shallow.blp", textures.Pattern(302));
+        Assert.Same(textures.Decode(302), textures.Decode(303));
+        var first = textures.Style(302);
+        var second = textures.Style(303);
+        if (missingTop)
+        {
+            Assert.Null(first.Magma);
+            Assert.Null(second.Magma);
+        }
+        else
+        {
+            Assert.NotNull(first.Magma);
+            Assert.NotNull(second.Magma);
+            Assert.Same(first.Magma.Middle, second.Magma.Middle);
+            Assert.Same(first.Magma.Top, second.Magma.Top);
+            Assert.NotEqual(first.CacheKey, second.CacheKey);
+        }
+    }
+
     sealed class SwampFiles(bool missingDeep) : IClientFiles
     {
         public ClientKind Kind => ClientKind.Retail;

@@ -11,6 +11,7 @@ namespace ACWorldEdit;
 public static class LiquidRendering
 {
     public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
+    static Shader MagmaShader { get; } = ClientShaderGlobals.Load("res://Shaders/procmagma.gdshader");
     static Shader FogShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquidfog.gdshader");
     static Shader MercuryShader { get; } = ClientShaderGlobals.Load("res://Shaders/mercury.gdshader");
     static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/leyline.gdshader");
@@ -24,10 +25,21 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.Shader = style.Fog != null ? FogShader : style.Mercury ? MercuryShader : style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
+        material.Shader = style.Magma != null ? MagmaShader : style.Fog != null ? FogShader : style.Mercury ? MercuryShader : style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
+        if (style.Magma is { } magma)
+        {
+            material.SetShaderParameter("middle_tex", ExtraTexture(magma.Middle));
+            material.SetShaderParameter("top_tex", ExtraTexture(magma.Top));
+            var s = magma.Settings;
+            material.SetShaderParameter("layer_scales", new Vector3(s.Scales.X, s.Scales.Y, s.Scales.Z));
+            material.SetShaderParameter("base_color", new Vector3(s.BaseColor.X, s.BaseColor.Y, s.BaseColor.Z));
+            material.SetShaderParameter("scroll_speed", new Vector2(s.ScrollU, s.ScrollV));
+            material.SetShaderParameter("noise_speed", s.NoiseSpeed);
+            return;
+        }
         if (style.Fog is { } fog)
         {
             material.SetShaderParameter("fog_tint", new Vector3(fog.Color.X, fog.Color.Y, fog.Color.Z));

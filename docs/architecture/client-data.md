@@ -293,3 +293,16 @@ bounded base-atlas decoder; multiple authored fog colors share decoded density
 pixels but their settings participate in cache identity. Material tint alpha,
 depth/height extinction parameters and auxiliary masks remain unbound by this
 basic port. Both the parsed settings and cached styles remain Godot-free.
+
+### Material 4 magma inputs
+
+Material 4 is procedural magma; material 3 is procedural water. Its LiquidType
+rows name `Magma0`, `Magma1` and `Magma2` without extensions. `RetailLiquids.Pattern`
+appends `.blp` for material 4 only, preserving explicit extensions and all other
+material names. `MagmaSettings` retains normalized extra paths and inferred
+layer scales, base color, scroll and noise speed. `LiquidTextures.Style` builds
+`MagmaLiquidStyle` with shared middle/top pixels; absent extra layers retain the
+generic base-layer fallback. All settings and texture identities participate
+in cache identity, so terrain 302 and faster WMO 303 keep distinct materials.
+The settings and decoded layers remain Godot-free. The client 3D noise source
+has not been identified; runtime uses a documented shader-only approximation.

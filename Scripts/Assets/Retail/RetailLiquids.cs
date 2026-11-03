@@ -27,6 +27,12 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, FelSettings> fels = [];
     readonly Dictionary<uint, LeySettings> leys = [];
     readonly Dictionary<uint, FogSettings> fogs = [];
+    readonly Dictionary<uint, MagmaSettings> magmas = [];
+
+    public sealed record MagmaSettings(string Middle, string Top, System.Numerics.Vector3 Scales,
+        System.Numerics.Vector3 BaseColor, float ScrollU, float ScrollV, float NoiseSpeed);
+    public MagmaSettings? Magma(uint type) => magmas.GetValueOrDefault(type);
+    static string BlpPath(string path) => string.IsNullOrWhiteSpace(path) || Path.HasExtension(path) ? path : path + ".blp";
 
     // liquidfog_0 CB1[18].rgb and CB1[17].y; DB2 bindings remain inferred.
     public sealed record FogSettings(System.Numerics.Vector3 Color, float OpacityScale);
@@ -65,6 +71,15 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 4 && floats.Length >= 10 && textures.Length >= 3)
+                {
+                    var ints = row.Field<int[]>("Int") ?? [];
+                    uint color = ints.Length > 2 ? unchecked((uint)ints[2]) : 0;
+                    result.magmas[(uint)row.ID] = new(BlpPath(textures[1]), BlpPath(textures[2]),
+                        new(floats[2], floats[3], floats[4]),
+                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f),
+                        floats[0], floats[1], floats[9]);
+                }
                 if (row.FieldAs<uint>("MaterialID") == 10)
                 {
                     var colors = row.Field<int[]>("Color") ?? [];
@@ -119,9 +134,13 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null)
     {
         var result = new RetailLiquids();
+        foreach (var magma in magmas ?? [])
+        {
+            result.magmas[magma.Type] = magma.Settings;
+        }
         foreach (var fog in fogs ?? [])
         {
             result.fogs[fog.Type] = fog.Settings;
@@ -160,7 +179,7 @@ public sealed class RetailLiquids
 
     public bool HasType(uint type) => types.ContainsKey(type);
 
-    public string Pattern(uint type) => types.TryGetValue(type, out var t) ? t.Pattern : throw new InvalidDataException($"Unknown liquid type {type}.");
+    public string Pattern(uint type) => types.TryGetValue(type, out var t) ? (t.Material == 4 ? BlpPath(t.Pattern) : t.Pattern) : throw new InvalidDataException($"Unknown liquid type {type}.");
 
     /// <summary>The ripple normal map a type names, or null when it has none (magma, slime).</summary>
     public string? Bump(uint type) => bumpMaps.GetValueOrDefault(type);
