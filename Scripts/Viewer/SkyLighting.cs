@@ -248,7 +248,10 @@ public sealed partial class SkyLighting : Node3D
         (float End, float StartMul)? curve = backgroundFog is { } b && foregroundFog is { } f && bestWeight > 0
             ? (Mathf.Lerp(b.End, f.End, bestWeight), Mathf.Lerp(b.StartMul, f.StartMul, bestWeight))
             : backgroundFog ?? foregroundFog;
-        float fogEnd = Math.Min(ViewDistance, curve?.End ?? ViewDistance);
+        // A retail light with no fog distance (the newer lights, FogEnd 0) scales its density over a fixed span:
+        // their FogDensity runs 4 to 25, which over the view distance would leave a few hundred yards of sight, while
+        // their EndFogColorDistance of 1000 to 2400 yards only means something if the fog is still thin out there.
+        float fogEnd = curve == null && Retail ? ModernFogSpan : Math.Min(ViewDistance, curve?.End ?? ViewDistance);
         // A retail light with no fog distance (the newer lights) starts its fog at the eye.
         float fogStart = fogEnd * (curve?.StartMul ?? (Retail ? 0f : DefaultFogStartMultiplier));
         environment.Environment.FogEnabled = false;
@@ -274,6 +277,8 @@ public sealed partial class SkyLighting : Node3D
     public float ViewDistance { get; set; } = ClassicViewDistance;
     const float ClassicViewDistance = 777;
     const float RetailViewDistance = 2500;
+    // The yards a newer retail light's FogDensity is spread over (an estimate; the client's own code is not readable here).
+    const float ModernFogSpan = 10000;
     /// <summary>
     /// Fog start as a fraction of its end when a light has no fog data (DayNight DEFAULT_FOG_SCALER).
     /// </summary>
