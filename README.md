@@ -8,6 +8,37 @@ A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a
 
 The database connection is read-only, and the game files are never modified. Edits are staged as local drafts and leave the app only as SQL scripts for you to review and run.
 
+## Screenshots
+
+Explore the world, inspect server content, and preview edits in context. Click any screenshot to view it at full size.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <p><strong>Creature placement</strong></p>
+      <a href="docs/img/npc-screen.png"><img src="docs/img/npc-screen.png" alt="A Stormwind Guard selected with the movement gizmo in Goldshire, alongside the creature inspector." width="640"></a>
+      <p>Find nearby creatures, inspect their spawn data, and adjust their placement in the world.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>Creature templates &amp; gossip</strong></p>
+      <a href="docs/img/template-screen.png"><img src="docs/img/template-screen.png" alt="The Stormwind Guard creature template editor showing its gossip menu, greeting, and submenu options." width="640"></a>
+      <p>Browse creature templates and edit gossip menus, greetings, and linked options.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <p><strong>Navigation meshes</strong></p>
+      <a href="docs/img/mmap-screen.png"><img src="docs/img/mmap-screen.png" alt="Green ground and blue water navigation polygons overlaid on Pandaria terrain, with scene layer controls visible." width="640"></a>
+      <p>Overlay generated MMaps to inspect navigation surfaces across terrain and water.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>Area triggers</strong></p>
+      <a href="docs/img/at-screen.png"><img src="docs/img/at-screen.png" alt="A selected spherical area trigger highlighted in a Kalimdor forest, with its quest link and dimensions in the inspector." width="640"></a>
+      <p>Visualize trigger volumes and inspect their dimensions, quests, and server links.</p>
+    </td>
+  </tr>
+</table>
+
 ## Architecture
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams and an overview. Detail pages:
