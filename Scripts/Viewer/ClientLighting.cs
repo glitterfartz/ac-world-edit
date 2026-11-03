@@ -77,13 +77,11 @@ public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Am
 }
 
 /// <summary>
-/// One Light.dbc region: a falloff circle (or, with FalloffEnd 0, a map-wide default) referencing a
-/// Default-slot LightParams profile. Position is pre-converted to the viewer's Y-up basis.
+/// One Light.dbc region: a falloff sphere referencing a Default-slot LightParams profile, or the map's
+/// default light, which the client identifies by its coordinates being exactly (0, 0, 0) (DayNight::LightLoad), not by
+/// its falloff. Position is pre-converted to the viewer's Y-up basis.
 /// </summary>
-public sealed record LightRegion(uint Id, uint ContinentId, Vector3 ViewPosition, float FalloffStart, float FalloffEnd, uint ParamsId)
-{
-    public bool IsDefault => FalloffEnd <= 0;
-}
+public sealed record LightRegion(uint Id, uint ContinentId, Vector3 ViewPosition, float FalloffStart, float FalloffEnd, uint ParamsId, bool IsDefault = false);
 
 /// <summary>
 /// Client Light.dbc/LightParams.dbc/LightSkybox.dbc/LightIntBand.dbc, resolved into per-map regions
@@ -161,7 +159,7 @@ public sealed class ClientLighting
                 var coords = ((Array)row["GameCoords"]).Cast<object>().Select(Convert.ToDouble).ToArray();
                 uint paramsId = Convert.ToUInt32(((Array)row["LightParamsID"]).GetValue(0));
                 regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), ViewSpace.ToView(coords[0], coords[1], coords[2]),
-                    Convert.ToSingle(row["GameFalloffStart"]), Convert.ToSingle(row["GameFalloffEnd"]), paramsId));
+                    Convert.ToSingle(row["GameFalloffStart"]), Convert.ToSingle(row["GameFalloffEnd"]), paramsId, coords[0] == 0 && coords[1] == 0 && coords[2] == 0));
             }
 
             LightBand Band(List<DBCD.DBCDRow> rows, string column) =>
@@ -234,7 +232,7 @@ public sealed class ClientLighting
                 double dbcX = light.F(id, 2), dbcY = light.F(id, 3), dbcZ = light.F(id, 4);
                 var view = LightCoordinates.ToView(dbcX, dbcY, dbcZ);
                 uint paramsId = light.U(id, 7);
-                regions.Add(new(id, light.U(id, 1), new((float)view.X, (float)view.Y, (float)view.Z), light.F(id, 5) / 36f, light.F(id, 6) / 36f, paramsId));
+                regions.Add(new(id, light.U(id, 1), new((float)view.X, (float)view.Y, (float)view.Z), light.F(id, 5) / 36f, light.F(id, 6) / 36f, paramsId, dbcX == 0 && dbcY == 0 && dbcZ == 0));
             }
 
             Dictionary<uint, LightProfile> profiles = [];

@@ -179,45 +179,41 @@ public sealed partial class SkyLighting : Node3D
             return;
         }
 
-        LightRegion? background = null;
-        LightRegion? nearestAny = null;
-        float nearestDist = float.MaxValue;
-        LightRegion? best = null;
-        float bestWeight = 0;
-        float bestFalloffEnd = float.MaxValue;
-        foreach (var region in mapRegions)
-        {
-            if (region.IsDefault)
-            {
-                background ??= region;
-                continue;
-            }
-
-            float dist = new Vector2(camera.Position.X - region.ViewPosition.X, camera.Position.Z - region.ViewPosition.Z).Length();
-            if (dist < nearestDist)
-            {
-                nearestDist = dist;
-                nearestAny = region;
-            }
-
-            float span = Math.Max(1f, region.FalloffEnd - region.FalloffStart);
-            float weight = dist <= region.FalloffStart ? 1f : dist >= region.FalloffEnd ? 0f : (region.FalloffEnd - dist) / span;
-            if (weight > 0 && region.FalloffEnd < bestFalloffEnd)
-            {
-                best = region;
-                bestWeight = weight;
-                bestFalloffEnd = region.FalloffEnd;
-            }
-        }
-
-        background ??= nearestAny;
+        // The base is the map's default light, the one at coordinates (0, 0, 0). A map without one uses Light 1, the
+        // Eastern Kingdoms default, as the client does (DayNight::LightLoad), rather than whichever local light is nearest.
+        var background = mapRegions.FirstOrDefault(r => r.IsDefault) ?? table.Regions.FirstOrDefault(r => r.Id == 1);
         var backgroundProfile = background != null ? table.Profile(background.ParamsId) : null;
         if (backgroundProfile == null)
         {
             return;
         }
 
+        // Local lights blend over it by their distance to the camera in three dimensions, height included
+        // (DayNight::BlendAreaLight). The client blends every light that covers it, the nearest last; this takes
+        // the nearest.
+        LightRegion? best = null;
+        float bestWeight = 0;
+        float bestDistance = float.MaxValue;
+        foreach (var region in mapRegions)
+        {
+            if (region.IsDefault)
+            {
+                continue;
+            }
+
+            float dist = camera.Position.DistanceTo(region.ViewPosition);
+            float span = Math.Max(1f, region.FalloffEnd - region.FalloffStart);
+            float weight = dist <= region.FalloffStart ? 1f : dist >= region.FalloffEnd ? 0f : (region.FalloffEnd - dist) / span;
+            if (weight > 0 && dist < bestDistance)
+            {
+                best = region;
+                bestWeight = weight;
+                bestDistance = dist;
+            }
+        }
+
         var foregroundProfile = best != null ? table.Profile(best.ParamsId) : null;
+        ActiveLights = $"background={background?.Id}/params {background?.ParamsId} foreground={best?.Id}/params {best?.ParamsId} weight={bestWeight:0.00} regions={mapRegions.Length}";
         double tick = TimeOfDayHours * 120.0;
         Color Blend(Func<LightProfile, LightBand> pick)
         {
@@ -286,6 +282,8 @@ public sealed partial class SkyLighting : Node3D
     Vector4 clientFog = new(0, 1, 1, 0);
     /// <summary>The fog values the shaders last received: start, end, density and mode.</summary>
     public Vector4 ClientFogValues => clientFog;
+    /// <summary>The Light regions the sky last blended, for the diagnostics.</summary>
+    public string ActiveLights { get; private set; } = "";
     /// <summary>The retail height fog values the shaders last received (plane, scaler, density, enabled).</summary>
     public Vector4 ClientFogHeightValues { get; private set; }
 
