@@ -42,10 +42,11 @@ public sealed record SkyBands(LightBand Middle, LightBand Band1, LightBand Band2
 
 /// <summary>
 /// The retail light data's fog terms that the 3.3.5a tables do not have: the density the fog's
-/// extinction is scaled by (FogDensity, 4.5 on the classic lights) and the color the fog turns toward with
-/// distance (EndFogColor over EndFogColorDistance yards).
+/// extinction is scaled by (FogDensity, 4.5 on the classic lights), the color the fog turns toward with
+/// distance (EndFogColor over EndFogColorDistance yards), and the sun scattering color and strength (zero on the
+/// classic lights).
 /// </summary>
-public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, LightFloatBand EndColorDistance, FogHeightLayer Height);
+public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, LightFloatBand EndColorDistance, FogHeightLayer Height, LightBand SunColor, LightFloatBand SunStrength);
 
 /// <summary>
 /// Retail's height fog: below the plane at FogHeight the fog takes the layer's density and colors, above it the
@@ -192,7 +193,9 @@ public sealed class ClientLighting
                             FloatBand(rows, r => Convert.ToSingle(r["FogHeightDensity"])),
                             [.. Enumerable.Range(0, 4).Select(i => FloatBand(rows, r => Convert.ToSingle(((Array)r["FogHeightCoefficients"]).GetValue(i))))],
                             Band(rows, "FogHeightColor"),
-                            Band(rows, "EndFogHeightColor"))));
+                            Band(rows, "EndFogHeightColor")),
+                        Band(rows, "SunFogColor"),
+                        FloatBand(rows, r => Convert.ToSingle(r["SunFogStrength"]))));
             }
 
             return new(regions, profiles, skyboxPaths);

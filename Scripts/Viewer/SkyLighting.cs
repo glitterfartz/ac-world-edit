@@ -229,9 +229,9 @@ public sealed partial class SkyLighting : Node3D
     /// Retail's fog terms beyond the 3.3.5a ones, at one tick: density, the end-fog color and distance, and the
     /// height layer.
     /// </summary>
-    readonly record struct RetailFogValues(float Density, Color EndColor, float EndDistance, Vector4 Height, Vector4 Poly, Color HeightColor, Color HeightEndColor)
+    readonly record struct RetailFogValues(float Density, Color EndColor, float EndDistance, Vector4 Height, Vector4 Poly, Color HeightColor, Color HeightEndColor, Vector4 Sun)
     {
-        public static RetailFogValues None { get; } = new(1, Colors.Black, 0, Vector4.Zero, Vector4.Zero, Colors.Black, Colors.Black);
+        public static RetailFogValues None { get; } = new(1, Colors.Black, 0, Vector4.Zero, Vector4.Zero, Colors.Black, Colors.Black, Vector4.Zero);
     }
 
     void SetClientFog(float start, float end, Color color, RetailFogValues terms)
@@ -244,6 +244,7 @@ public sealed partial class SkyLighting : Node3D
         ClientFogHeightValues = terms.Height;
         ClientShaderGlobals.Set(ClientShaderGlobals.FogPoly, terms.Poly);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightColor, new Vector4(terms.HeightColor.R, terms.HeightColor.G, terms.HeightColor.B, 0));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogSun, terms.Sun);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightEndColor, new Vector4(terms.HeightEndColor.R, terms.HeightEndColor.G, terms.HeightEndColor.B, 0));
     }
 
@@ -271,7 +272,11 @@ public sealed partial class SkyLighting : Node3D
         var poly = new Vector4(Mix(r => r.Height.Coefficients[0].At(tick)), Mix(r => r.Height.Coefficients[1].At(tick)), Mix(r => r.Height.Coefficients[2].At(tick)), Mix(r => r.Height.Coefficients[3].At(tick)));
         bool layered = poly != Vector4.Zero;
         var height = new Vector4(Mix(r => r.Height.Plane.At(tick)), Mix(r => r.Height.Scaler.At(tick)), Mix(r => r.Height.Density.At(tick)), layered ? 1 : 0);
-        return new(density > 0 ? density : 4.5f, MixColor(r => r.EndColor), Mix(r => r.EndColorDistance.At(tick)), height, poly, MixColor(r => r.Height.Color), MixColor(r => r.Height.EndColor));
+        var sunColor = MixColor(r => r.SunColor);
+        float sunStrength = Mix(r => r.SunStrength.At(tick));
+        // A light with no sun fog color has no scattering; the LightData default of white would otherwise light every fog.
+        var sun = sunColor.R + sunColor.G + sunColor.B > 0.0001f ? new Vector4(sunColor.R, sunColor.G, sunColor.B, sunStrength) : Vector4.Zero;
+        return new(density > 0 ? density : 4.5f, MixColor(r => r.EndColor), Mix(r => r.EndColorDistance.At(tick)), height, poly, MixColor(r => r.Height.Color), MixColor(r => r.Height.EndColor), sun);
     }
 
     /// <summary>
@@ -315,6 +320,7 @@ public sealed partial class SkyLighting : Node3D
         // The dome's axes are the client's: view X = -y, view Y = z, view Z = -x.
         var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
         skyMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx));
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunDisc, new Vector3(-sy, sz, -sx).Normalized());
         var forward = -camera.GlobalTransform.Basis.Z;
         skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }

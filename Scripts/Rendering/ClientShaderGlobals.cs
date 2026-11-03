@@ -30,6 +30,14 @@ public static class ClientShaderGlobals
     public const string FogHeightColor = "client_fog_height_color";
     public const string FogHeightEndColor = "client_fog_height_end";
     /// <summary>
+    /// Retail sun scattering: the color (rgb, band bytes) and strength (w) added around the sun's direction; zero when off.
+    /// </summary>
+    public const string FogSun = "client_fog_sun";
+    /// <summary>
+    /// The unit direction toward the sun disc in world space.
+    /// </summary>
+    public const string SunDisc = "client_sun_disc";
+    /// <summary>
     /// Direction the sun light travels (world space, unit length).
     /// </summary>
     public const string SunDirection = "client_sun_dir";
@@ -68,6 +76,8 @@ public static class ClientShaderGlobals
         Add(FogPoly, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(FogHeightColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(FogHeightEndColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogSun, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(SunDisc, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 1, 0));
         Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
         Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
         Add(SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(1, 1, 1));
