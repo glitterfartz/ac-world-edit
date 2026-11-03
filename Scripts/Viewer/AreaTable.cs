@@ -8,7 +8,7 @@ namespace ACWorldEdit.Assets;
 /// </summary>
 public sealed partial class AreaLookup
 {
-    public static AreaLookup? TryLoad(IClientFiles store)
+    public static AreaLookup? TryLoadWrath(IClientFiles store)
     {
         try
         {

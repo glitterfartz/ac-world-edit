@@ -22,7 +22,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
         try
         {
             var maps = store.Maps();
-            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoad(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
+            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoadWrath(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
         }
         catch
         {
