@@ -98,7 +98,8 @@ public partial class TerrainViewer
         clientLabel.AddThemeFontSizeOverride("font_size", 12);
         box.AddChild(clientLabel);
         box.AddChild(new HSeparator());
-        box.AddChild(new Label { Text = "World" });
+        box.AddChild(InspectorUi.Text("World settings", 24));
+        box.AddChild(new Label { Text = "Map" });
         // Map names can be long; clip them instead of letting the button and its dropdown grow.
         maps = new OptionButton { ClipText = true, FitToLongestItem = false, CustomMinimumSize = new Vector2(220, 0), TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
         box.AddChild(maps);
@@ -139,7 +140,7 @@ public partial class TerrainViewer
         BuildTeleportUi(box);
         var radiusRow = new HBoxContainer();
         box.AddChild(radiusRow);
-        radiusRow.AddChild(new Label { Text = "Nearby tile radius" });
+        radiusRow.AddChild(new Label { Text = "Tile view distance" });
         distance = new SpinBox
         {
             MinValue = 0,
