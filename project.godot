@@ -34,3 +34,4 @@ project/assembly_name="ACWorldEdit"
 
 renderer/rendering_method.mobile="gl_compatibility"
 anti_aliasing/quality/use_taa=true
+anti_aliasing/quality/use_debanding=true
