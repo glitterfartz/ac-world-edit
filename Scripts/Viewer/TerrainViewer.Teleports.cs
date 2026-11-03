@@ -6,23 +6,40 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// game_tele bookmarks: read once at startup (and again whenever the database connection changes)
+/// game_tele bookmarks and same-map server XYZ navigation. Bookmarks are read once at startup
+/// (and again whenever the database connection changes)
 /// on a worker, shown in the left panel, and used to move the camera to a server position,
 /// opening the target map first when it differs from the current one. Read-only; stale loads are dropped.
 /// </summary>
 public partial class TerrainViewer
 {
     OptionButton teleports = null!;
+    LineEdit telePosition = null!;
     TeleportLocation[] teleportList = [];
     int teleportGeneration;
 
     void BuildTeleportUi(VBoxContainer box)
     {
         box.AddChild(new Label { Text = "Teleport" });
-        teleports = new OptionButton { TooltipText = "Jump to a location from the game_tele table", Disabled = true };
+        teleports = new OptionButton { Name = "TeleportLocations", TooltipText = "Jump to a location from the game_tele table", Disabled = true };
         teleports.AddItem("Loading…");
         teleports.ItemSelected += async index => await TeleportTo((int)index);
         box.AddChild(teleports);
+        box.AddChild(new Label { Text = "Teleport to XYZ (current map)" });
+        var positionRow = new HBoxContainer();
+        box.AddChild(positionRow);
+        telePosition = new LineEdit
+        {
+            Name = "TeleportPosition",
+            PlaceholderText = "X, Y, Z",
+            TooltipText = "Server coordinates on the current map. Use decimal points; press Enter or Go.",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        telePosition.TextSubmitted += TeleportToPosition;
+        positionRow.AddChild(telePosition);
+        var go = new Button { Name = "TeleportPositionGo", Text = "Go" };
+        go.Pressed += () => TeleportToPosition(telePosition.Text);
+        positionRow.AddChild(go);
     }
 
     async Task LoadTeleports()
@@ -59,7 +76,7 @@ public partial class TerrainViewer
 
         teleportList = rows;
         teleports.Clear();
-        teleports.AddItem(rows.Length > 0 ? $"Select a location ({rows.Length})" : failure.Length > 0 ? "Unavailable" : "No teleports");
+        teleports.AddItem(rows.Length > 0 ? $"Select a location (game_tele) ({rows.Length})" : failure.Length > 0 ? "Unavailable" : "No teleports");
         foreach (var row in rows)
         {
             teleports.AddItem(row.Name);
@@ -97,6 +114,39 @@ public partial class TerrainViewer
             GD.Print("Start location: game_tele unavailable, using the default (" + DbErrors.Safe(error) + ")");
             return null;
         }
+    }
+
+    /// <summary>Move to exact server coordinates without consulting bookmarks or changing maps.</summary>
+    void TeleportToPosition(string text)
+    {
+        var parts = text.Split(',');
+        static bool Coordinate(string value, out float coordinate) =>
+            float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out coordinate)
+            && float.IsFinite(coordinate);
+        if (parts.Length != 3 || !Coordinate(parts[0], out float x) || !Coordinate(parts[1], out float y) || !Coordinate(parts[2], out float z))
+        {
+            message = "Enter three finite server coordinates: X, Y, Z (use decimal points).";
+            return;
+        }
+
+        if (busy)
+        {
+            message = "The viewer is busy loading; try again in a moment.";
+            return;
+        }
+
+        if (world == null || store == null || !currentMapId.HasValue)
+        {
+            message = "Open a map before teleporting to coordinates.";
+            return;
+        }
+
+        // Coordinate entry is an eye position, unlike FocusPose's offset view of an object.
+        // Keep the current heading and stop later terrain uploads lifting the requested Z.
+        cameraFocused = true;
+        camera.Position = ViewSpace.ToView(x, y, z);
+        UpdateWanted();
+        message = FormattableString.Invariant($"Teleported to {x}, {y}, {z}.");
     }
 
     async Task TeleportTo(int index)

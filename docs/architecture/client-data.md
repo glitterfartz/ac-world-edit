@@ -112,6 +112,8 @@ Retail:
 
 If opening fails, the partly opened store is disposed.
 
+Both client profiles support server XYZ navigation on the currently open map without a database connection. The viewer converts server axes through `ViewSpace`; named `game_tele` destinations instead come from the world database and can open a different client map.
+
 ## Terrain pipeline
 
 ```mermaid

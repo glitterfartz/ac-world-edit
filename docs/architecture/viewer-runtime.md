@@ -49,7 +49,7 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 | `Viewer/TerrainViewer.Ground.cs` | `GroundAt`: combines terrain height and WMO floors for snapping |
 | `Viewer/TerrainViewer.Listfile.cs` | One-time listfile prompt and in-app update (download on a worker, then reload the retail client) |
 | `Viewer/TerrainViewer.Locate.cs` | Locate a creature from quest links: fly to a loaded spawn, or query the database and wait for the region to stream in |
-| `Viewer/TerrainViewer.Teleports.cs` | `game_tele` dropdown, with a generation guard |
+| `Viewer/TerrainViewer.Teleports.cs` | `game_tele` dropdown with a generation guard, plus same-map server XYZ navigation |
 | `Diagnostics/TerrainViewer.*.cs` | Smoke workflows and the F12 diagnostic dump (see Diagnostics below) |
 
 Other viewer files: `SkyLighting.cs` (sun, environment, skybox and the client fog, sun and water values it publishes), `ClientLighting.cs` (light regions and profiles), `ClientServices.cs` (client open), `TerrainMinimap.cs` (a `Control` that raises `Jump` on click), `ScenePicking.cs` (box and sphere ray hits), `AreaTable.cs`.
@@ -139,6 +139,7 @@ flowchart LR
 All camera and input handling is in `TerrainViewer.cs`.
 
 - **Flight:** hold right mouse to capture the cursor. Mouse motion changes yaw and pitch (pitch clamped to ±1.55). `MoveCamera` reads physical W, A, S, D, Q and E; Shift multiplies speed by 4; the wheel changes speed between 5 and 1500.
+- **Teleport:** choose a `game_tele` bookmark to open its map and focus that location, or enter `X, Y, Z` and press Enter/Go to move the camera to that exact server position on the current map. XYZ entry preserves the camera heading, does not require a bookmark or database connection, rejects non-finite coordinates and waits until a map is open and not loading. Coordinates use decimal points regardless of the system locale; later terrain uploads do not lift the entered eye height.
 - **`_Input`** runs before shortcuts. While captured it swallows keys other than Escape, so flight keys do not trigger toolbar modes. While an editor is dragging it routes motion, release and Escape to that editor.
 - **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window (for TrinityCore only the template page is editable so far). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
