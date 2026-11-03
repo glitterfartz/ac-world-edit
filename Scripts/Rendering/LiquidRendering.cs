@@ -18,6 +18,7 @@ public static class LiquidRendering
     static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/leyline.gdshader");
     static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/fel.gdshader");
     static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/swamp.gdshader");
+    static Shader AzeriteShader { get; } = ClientShaderGlobals.Load("res://Shaders/azerite.gdshader");
 
     /// <summary>
     /// Bind horizontal atlas/category and the type's style. Supported native frames are square, so
@@ -26,7 +27,7 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.Shader = style.ProceduralWater != null ? ProceduralWaterShader : style.Magma != null ? MagmaShader : style.Fog != null ? FogShader : style.Mercury ? MercuryShader : style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
+        material.Shader = style.ProceduralWater != null ? ProceduralWaterShader : style.Magma != null ? MagmaShader : style.Fog != null ? FogShader : style.Mercury ? MercuryShader : style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : style.Azerite != null ? AzeriteShader : Shader;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
@@ -86,6 +87,15 @@ public static class LiquidRendering
             material.SetShaderParameter("deep_uv", new Vector3(deep.X, deep.Y, deep.Z));
             material.SetShaderParameter("shallow_uv", new Vector3(shallow.X, shallow.Y, shallow.Z));
             material.SetShaderParameter("depth_coefficient", fel.Settings.DepthCoefficient);
+            return;
+        }
+        if (style.Azerite is { } azerite)
+        {
+            material.SetShaderParameter("center_tex", ExtraTexture(azerite.Center));
+            var deep = azerite.Settings.DeepUv;
+            var center = azerite.Settings.CenterUv;
+            material.SetShaderParameter("deep_uv", new Vector3(deep.X, deep.Y, deep.Z));
+            material.SetShaderParameter("center_uv", new Vector3(center.X, center.Y, center.Z));
             return;
         }
         if (style.Swamp is { } swamp)

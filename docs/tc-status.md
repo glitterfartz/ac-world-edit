@@ -152,6 +152,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 | Terrain layers 5–8                                            | not started | Only the first 4 are drawn.                                                                           |
 | Terrain height blending (MHID/MTXP)                           | done        | Layers weight by `height * scale + offset` from the `_h` alpha and MTXP, with the client's suppression of layers far below the tallest; MTXP texture scale applies too. Not done: MAMP scale, the `_s` specular and cube-map reflection layers. Test: `SplitTerrainTests` (parameters read); the blend itself is checked by eye in Khaz Algar (`--tele-name=TheDawnbreaker --tele-tile=33,29`). |
 | Retail swamp liquid (material 14) | deviates | Depth layers, BC5 ripple animation, shore overlay/fade, refraction, Fresnel reflection and sunlight are in; screen reflections replace the client reflection render, interaction buffers are absent and constant mapping is inferred. |
+| Retail azerite liquid (material 18) | partial | Both authored body layers (`azeritedeep`, `azeritecentercolor`) blend by native depth in `azerite.gdshader`, unlit and opaque, with client fog; the two azerite types route there instead of the lava/slime fallback. The mask permutation, the nine-texture procedural variant and the yellow transition/blend/animation slots are not ported, and the depth coefficient is an estimate. |
 | Underwater lighting and fog                                   | partial     | The water surface now draws its shipped underside (`mediumwaterbelow`/`procwaterbelow`; see the liquid sections), so looking up through a liquid no longer reads as a flat sky reflection. What is still missing is the camera's medium: under a liquid surface the viewer keeps the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog), and there is no underwater post pass (tint, distortion, the water-line window). Khaz Algar tile 33,29 is mostly seabed, so its view is the plain above-water fog at the wrong depth. Fog distance comes from `LightData.FogEnd`/`FogScaler` (retail) or LightFloatBand (Wrath) and follows the client's linear-start-to-end ramp with the end capped at an emulated view distance (`SkyLighting.ViewDistance`, 777 yd; the fog shaders are in `client_lighting.gdshaderinc`). Only the default weather slot is read. |
 | Uncompressed alpha size                                       | partial     | Follows the WDT big-alpha flag; decide per layer if a map disagrees.                                  |
 | Path-named placements                                         | partial     | Resolve only through the community listfile.                                                          |
@@ -233,3 +234,28 @@ replaces the retail reflection inputs, the final soft edge is simplified, captur
 pixels may receive fog twice, and foam/masks/auxiliary permutations remain
 open. Not verified against a retail reference. This is a surface approximation, not
 fluid simulation.
+
+### Retail azerite (material 18)
+
+`LiquidRendering` selects `azerite.gdshader` when both body layers resolve. The
+surface ports `azerite_0`: two texture samples are mixed by
+`saturate(1 - nativeDepth * coefficient)`, opaque and unlit, then client fog.
+LiquidType slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are bound as the
+deep and centre layers, and floats 0..2 and 3..5 are read as each layer's scale,
+angle in degrees and scroll speed (the material-13 triple layout). Which shader
+unit each slot feeds is inferred from the texture names; the slot order is not
+recovered CPU code. The depth coefficient has no table column, so it stays a
+fixed estimate (1.0).
+
+Both types (940 `8XP Azerite`, 951 `8XP Azerite (THe Motherlode)`) and their 23
+`LiquidObject`s resolve in corpus checks, and the shipped `azeritedeep` /
+`azeritecentercolor` pixels are used. A Zandalar pool was inspected in a windowed
+capture: the blue centre water carries the cream deep-swirl layer, brightening
+with depth.
+
+Unported: `azerite_1` (`t14`/`t15` masks and its alpha), `procazerite` (a
+nine-input procedural body: two normal maps, refraction, reflection and glow),
+and the `azeriteblend`, `azeritetranscolor` and `azeriteanim.%d` slots that the
+fuller variant reads. The client's per-light medium accumulation is not ported
+either, so the base colour is drawn unshaded like the other liquid cores. This is
+not a retail parity claim.

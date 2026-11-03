@@ -346,6 +346,33 @@ valid absence check. DB2 frame counts for the three unresolved slots are zero.
 Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
 before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
 
+### Material 18 azerite
+
+`LiquidRendering` selects `azerite.gdshader` when `LiquidStyle.Azerite` resolves.
+The port follows `azerite_0`: two body textures are sampled with their own UV
+transforms and mixed by `saturate(1 - nativeDepth * coefficient)`, then drawn
+opaque and unlit with client fog. The vertex colour alpha carries native depth for
+terrain liquids, so the centre colour shows where the pool is shallow and the
+deep-swirl layer takes over as it deepens. Both azerite types (940 and 951) share
+one material because they name the same six textures and floats.
+
+Inferred bindings: slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are the
+two layers — the unit order is inferred from the texture names — and floats 0..2 /
+3..5 are each layer's scale, angle in degrees and scroll speed, the layout
+material 13 uses. The depth coefficient is not in the table and is a fixed
+estimate (1.0). Missing either layer keeps the previous generic lava/slime
+fallback instead of drawing a half material.
+
+Fidelity limits: `azerite_1`'s two mask textures and its alpha, `procazerite`'s
+nine-input procedural body (two normal maps, refraction, reflection and glow), and
+the `azeriteblend`/`azeritetranscolor`/`azeriteanim` slots are unported, so the
+authored gold transition and animation do not appear. The client's per-light
+medium accumulation is not ported either; like the other liquid cores this one is
+unshaded. This is not a retail parity claim. Real types 940/951 resolve both
+layers in corpus checks; see
+[shader inspection locations](shader-inspection-locations.md) for the Zandalar
+pool used for the windowed check.
+
 ### Material 5 mercury surface
 
 Material 5 selects `mercury.gdshader`, independent of sound bank. It uses the

@@ -21,6 +21,7 @@ visible surface triangle.
 | Mercury | Deepholm / 646 | Deephome | 28,28 | 350 | 1873.61, 1669.44, 184.92 |
 | Procedural water | Den of Nalorakk / 2825 | 2825 | 40,21 | 100 | 5386.11, -4697.22, 59.65 |
 | Procedural magma | FW Horde Garrison Level 4 / 1154 | FWHordeGarrisonLevel3 | 23,21 | 302 | 5373.61, 4477.78, 161.66 |
+| Azerite | Zandalar / 1642 | Zandalar | 27,29 | 940 | 1425.0, 2516.67, 146.7 |
 
 The full machine-generated export is `artifacts/shader-inspection-locations.txt`
 (git-ignored).
@@ -46,6 +47,10 @@ Notes:
   (2825, 40,21, type 100) works for `procwaterbelow` but sits under a dark cave
   ceiling, so its underside reads nearly black; use a lit procedural-water site before
   judging colour.
+- The azerite entry is the deepest cell of a large Zandalar pool (type 940). Eye
+  `1425, 2516.67, 146.7` with pitch 89 shows the blue centre water carrying the
+  cream deep-swirl layer; the pool spans several heights in tile 27,29, so a
+  top-down eye much higher than 10 yards shows other pools instead.
 - The map, tile, type and XYZ are read from the retail client data. Visual parity
   against a retail reference is a separate, manual step and is not claimed by this
   table.

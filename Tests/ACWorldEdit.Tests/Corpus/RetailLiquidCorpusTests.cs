@@ -149,6 +149,28 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void AzeriteTypesResolveBothAuthoredBodyLayers()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var azerite = textures.Style(940);
+        var motherlode = textures.Style(951);
+        Assert.NotNull(azerite.Azerite);
+        Assert.NotNull(motherlode.Azerite);
+        Assert.Null(azerite.Bump);
+        Assert.Null(azerite.Ley);
+        Assert.NotEmpty(textures.Decode(940).Rgba);
+        Assert.NotEmpty(azerite.Azerite.Deep.Rgba);
+        Assert.NotEmpty(azerite.Azerite.Center.Rgba);
+        Assert.Same(azerite.Azerite.Deep, motherlode.Azerite!.Deep);
+        Assert.Same(azerite.Azerite.Center, motherlode.Azerite.Center);
+        Assert.Equal(0.36f, azerite.Azerite.Settings.DeepUv.X);
+        Assert.Equal(45, azerite.Azerite.Settings.CenterUv.Y);
+        // Both azerite types name the same six textures and floats, so they share one material.
+        Assert.Equal(azerite.CacheKey, motherlode.CacheKey);
+        Assert.NotEqual(azerite.CacheKey, LiquidStyle.River.CacheKey);
+    }
+
+    [RetailListfileFact]
     public void VenomTileResolvesDistinctDepthLayersAndUvSettings()
     {
         var tile = Azeroth().ReadTile(RetailData.Files, new TileKey(52, 22));

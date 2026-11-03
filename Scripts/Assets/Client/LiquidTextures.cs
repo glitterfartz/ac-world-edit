@@ -19,13 +19,13 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null, RetailLiquids.ProceduralWaterSettings? ProceduralWater = null)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null, RetailLiquids.ProceduralWaterSettings? ProceduralWater = null, AzeriteLiquidStyle? Azerite = null)
 {
     /// <summary>
     /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
     /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
     /// </summary>
-    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}|{ProceduralWater}";
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}|{ProceduralWater}|{Azerite?.CacheKey}";
 
     /// <summary>
     /// What the stock river and lake types use.
@@ -61,6 +61,12 @@ public sealed record LeyLiquidStyle(BlpTexture Detail, RetailLiquids.LeySettings
 public sealed record FelLiquidStyle(BlpTexture Shallow, RetailLiquids.FelSettings Settings)
 {
     public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Shallow)}";
+}
+
+/// <summary>Decoded material 18 deep and center body layers; no engine resources.</summary>
+public sealed record AzeriteLiquidStyle(BlpTexture Deep, BlpTexture Center, RetailLiquids.AzeriteSettings Settings)
+{
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Deep)}|{RuntimeHelpers.GetHashCode(Center)}";
 }
 
 /// <summary>Decoded material 14 depth layers; shared CPU textures, with no engine resources.</summary>
@@ -153,6 +159,12 @@ public sealed class LiquidTextures
 
                     return stock with { Swamp = swamp };
                 }
+            }
+
+            // Azerite (material 18) needs both body layers; one missing leaves the lava/slime fallback.
+            if (retail!.Azerite(type) is { } azerite && Extra(azerite.Deep) is { } azeriteDeep && Extra(azerite.Center) is { } azeriteCenter)
+            {
+                return stock with { Azerite = new(azeriteDeep, azeriteCenter, azerite) };
             }
 
             if (Kind(type) >= 2)

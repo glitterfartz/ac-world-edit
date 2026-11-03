@@ -26,6 +26,7 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, SwampSettings> swamps = [];
     readonly Dictionary<uint, FelSettings> fels = [];
     readonly Dictionary<uint, LeySettings> leys = [];
+    readonly Dictionary<uint, AzeriteSettings> azerites = [];
     readonly Dictionary<uint, FogSettings> fogs = [];
     readonly Dictionary<uint, MagmaSettings> magmas = [];
     readonly Dictionary<uint, ProceduralWaterSettings> waters = [];
@@ -50,6 +51,15 @@ public sealed class RetailLiquids
     // Material 13: two scale/angle/scroll triples; depth mapping remains inferred.
     public sealed record FelSettings(string Shallow, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 ShallowUv, float DepthCoefficient);
     public FelSettings? Fel(uint type) => fels.GetValueOrDefault(type);
+
+    /// <summary>
+    /// Material 18 (azerite): slots 0 and 1 are the two body layers and floats 0..2 / 3..5 are each
+    /// layer's scale, angle in degrees and scroll speed, read like material 13's triples. The masked
+    /// variants, the procedural nine-texture shader and the depth coefficient's source are not in the
+    /// table, so those stay inferred.
+    /// </summary>
+    public sealed record AzeriteSettings(string Deep, string Center, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 CenterUv);
+    public AzeriteSettings? Azerite(uint type) => azerites.GetValueOrDefault(type);
 
     /// <summary>
     /// Material 14 depth layers, shore texture, ripple sequence and surface constants. The
@@ -112,6 +122,11 @@ public sealed class RetailLiquids
                     result.fels[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
                         new(floats[3], floats[4], floats[5]), floats[14]);
                 }
+                if (row.FieldAs<uint>("MaterialID") == 18 && floats.Length >= 6 && textures.Length >= 2)
+                {
+                    result.azerites[(uint)row.ID] = new(BlpPath(textures[0] ?? ""), BlpPath(textures[1] ?? ""),
+                        new(floats[0], floats[1], floats[2]), new(floats[3], floats[4], floats[5]));
+                }
                 if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 18 && textures.Length >= 3)
                 {
                     result.swamps[(uint)row.ID] = new(textures[1], textures[2],
@@ -146,9 +161,13 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null, IEnumerable<(uint Type, ProceduralWaterSettings Settings)>? waters = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null, IEnumerable<(uint Type, ProceduralWaterSettings Settings)>? waters = null, IEnumerable<(uint Type, AzeriteSettings Settings)>? azerites = null)
     {
         var result = new RetailLiquids();
+        foreach (var azerite in azerites ?? [])
+        {
+            result.azerites[azerite.Type] = azerite.Settings;
+        }
         foreach (var water in waters ?? [])
         {
             result.waters[water.Type] = water.Settings;

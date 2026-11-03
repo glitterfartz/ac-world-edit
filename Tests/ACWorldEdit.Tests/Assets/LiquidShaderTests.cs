@@ -56,6 +56,19 @@ public class LiquidShaderTests
         Assert.DoesNotContain("liquid_reflection", Shader("liquid.gdshader"));
     }
 
+    [Fact]
+    public void AzeriteBlendsItsTwoBodyLayersByNativeDepth()
+    {
+        string shader = Shader("azerite.gdshader");
+        // azerite_0: 1 - depth * coefficient picks between the deep and centre textures, opaque.
+        Assert.Contains("1.0-COLOR.a*depth_coefficient", shader);
+        Assert.Contains("mix(deep, center, blend)", shader);
+        Assert.Contains("ALPHA = 1.0;", shader);
+        // The surface must not borrow water ripples or reflections the shipped shader does not sample.
+        Assert.DoesNotContain("liquid_surface.gdshaderinc", shader);
+        Assert.DoesNotContain("liquid_reflection", shader);
+    }
+
     static int Count(string text, string value)
     {
         int count = 0;

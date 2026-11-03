@@ -275,6 +275,44 @@ public class RetailLiquidTests
     }
 
     [Fact]
+    public void AzeriteKeepsBothBodyLayersAndItsOwnMaterial()
+    {
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.AzeriteSettings("deep.blp", "center.blp",
+            new(0.36f, 0.36f, 2), new(20, 45, 0.0035f));
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(940, "shallow.blp", 2, 18), (951, "shallow.blp", 2, 18), (3, "shallow.blp", 2, 2)], [], [],
+            azerites: [(940, settings), (951, settings with { CenterUv = new(10, 0, 0) })]));
+        var textures = LiquidTextures.For(files);
+        var azerite = textures.Style(940);
+        var other = textures.Style(951);
+        Assert.NotNull(azerite.Azerite);
+        Assert.NotNull(other.Azerite);
+        Assert.Null(textures.Style(3).Azerite);
+        Assert.Equal("deep.blp", azerite.Azerite.Settings.Deep);
+        Assert.Same(azerite.Azerite.Deep, other.Azerite!.Deep);
+        Assert.Same(azerite.Azerite.Center, other.Azerite.Center);
+        // A material-18 type has its own material, not the lava/slime scroll fallback of its sound bank.
+        Assert.Equal(0, azerite.ScrollU);
+        Assert.Equal(0, azerite.ScrollV);
+        Assert.NotEqual(azerite.CacheKey, other.CacheKey);
+        Assert.NotEqual(azerite.CacheKey, LiquidStyle.River.CacheKey);
+    }
+
+    [Fact]
+    public void AzeriteNeedsBothLayersToLeaveTheFallback()
+    {
+        using var files = new SwampFiles(true);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(940, "shallow.blp", 2, 18)], [], [],
+            azerites: [(940, new("missing-deep.blp", "center.blp", new(1), new(1)))]));
+        var textures = LiquidTextures.For(files);
+        var style = textures.Style(940);
+        Assert.Null(style.Azerite);
+        Assert.Equal(0, style.ScrollU);
+    }
+
+    [Fact]
     public void ProceduralWaterNeedsNoFrameAndItsGradientDoesNotFollowSoundBank()
     {
         using var files = new SwampFiles(false);
@@ -304,7 +342,7 @@ public class RetailLiquidTests
     {
         public ClientKind Kind => ClientKind.Retail;
         public string Build => "synthetic";
-        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" or "shore.blp" or "normal_1.blp" or "normal_2.blp" || path == "deep.blp" && !missingDeep;
+        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" or "shore.blp" or "normal_1.blp" or "normal_2.blp" or "center.blp" || path == "deep.blp" && !missingDeep;
         public string Source(string path) => "synthetic";
         public void Dispose() { }
         public byte[] Read(string path)
