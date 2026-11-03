@@ -16,6 +16,7 @@ public sealed partial class SkyLighting : Node3D
     readonly WorldEnvironment environment;
     readonly ShaderMaterial skyMaterial;
     Color skyTopColor = new("4a7fc4"), skyHorizonColor = new("c0d2e5");
+    bool hasSunTexture, hasMoonTexture, hasMoon2Texture;
     readonly ModelLibrary models;
     readonly Node3D skyboxAnchor;
     ModelInstance? skyboxInstance;
@@ -280,6 +281,20 @@ public sealed partial class SkyLighting : Node3D
     }
 
     /// <summary>
+    /// Give the dome the client's sun and moon textures (sunCenter, moon, moon02); a null one leaves that body
+    /// out.
+    /// </summary>
+    public void SetCelestialTextures(Texture2D? sunTexture, Texture2D? moonTexture, Texture2D? moon2Texture)
+    {
+        hasSunTexture = sunTexture != null;
+        hasMoonTexture = moonTexture != null;
+        hasMoon2Texture = moon2Texture != null;
+        skyMaterial.SetShaderParameter("sun_tex", sunTexture);
+        skyMaterial.SetShaderParameter("moon_tex", moonTexture);
+        skyMaterial.SetShaderParameter("moon2_tex", moon2Texture);
+    }
+
+    /// <summary>
     /// Publish the six sky colors, the sunrise/sunset highlight, the camera heading and the sun's place for
     /// the dome shader (Shaders/sky.gdshader), blending the two profiles as the other bands are blended.
     /// </summary>
@@ -321,6 +336,16 @@ public sealed partial class SkyLighting : Node3D
         var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
         skyMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx));
         ClientShaderGlobals.Set(ClientShaderGlobals.SunDisc, new Vector3(-sy, sz, -sx).Normalized());
+        // Quads whose texture the client does not have stay off (width 0).
+        void Disc(string name, SkyDome.Planet planet, bool present)
+        {
+            var (px, py, pz) = planet.Direction;
+            skyMaterial.SetShaderParameter(name, new Vector4(-py, pz, -px, present ? planet.Scale : 0f));
+        }
+
+        Disc("sun_disc", SkyDome.Sun(dayFraction), hasSunTexture);
+        Disc("moon_disc", SkyDome.Moon(dayFraction), hasMoonTexture);
+        Disc("moon2_disc", SkyDome.SecondMoon(dayFraction), hasMoon2Texture);
         var forward = -camera.GlobalTransform.Basis.Z;
         skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }

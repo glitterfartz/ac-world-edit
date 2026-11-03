@@ -220,6 +220,7 @@ public partial class TerrainViewer : Node3D
             mapList = result.Maps;
             navigation.Configure(kind, result.NavigationParents);
             lighting = result.Lighting;
+            sky.SetCelestialTextures(CelestialTextures.Load(store, "Textures/sunCenter.blp"), CelestialTextures.Load(store, "Textures/moon.blp"), CelestialTextures.Load(store, "Textures/moon02.blp"));
             areas = result.Areas;
             databaseEnabled = result.DatabaseEnabled;
             clientLookup = result.Lookup;

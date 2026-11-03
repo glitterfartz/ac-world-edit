@@ -28,6 +28,18 @@ uniform float glow_horizon = 0.35;
 
 const float TAU_F = 6.28318530718;
 
+// Sun and moons: camera-facing quads PLANET_DISTANCE from the eye (DayNight::DNPlanet), alpha blended over the sky
+// and modulated by the sun color; xyz is the direction toward the quad (world space) and w its width at that
+// distance, 0 when the client has no texture for it. They fade over the 0.4 units above the horizon and are cut
+// off below it. The client faces the quads along the camera axis; these face their own direction.
+uniform sampler2D sun_tex : filter_linear_mipmap, repeat_disable;
+uniform sampler2D moon_tex : filter_linear_mipmap, repeat_disable;
+uniform sampler2D moon2_tex : filter_linear_mipmap, repeat_disable;
+uniform vec4 sun_disc = vec4(0.0, 1.0, 0.0, 0.0);
+uniform vec4 moon_disc = vec4(0.0, 1.0, 0.0, 0.0);
+uniform vec4 moon2_disc = vec4(0.0, 1.0, 0.0, 0.0);
+const float PLANET_DISTANCE = 12.0;
+
 // The band colors are 8-bit values the client shows as they are; the horizon has to match the fog, which is
 // converted the same way (Shaders/client_lighting.gdshaderinc).
 vec3 band_to_linear(vec3 c) {
@@ -81,6 +93,33 @@ vec3 ring_color(vec3 band, vec3 ramp, float u) {
     return mix(ramp, dark, -face * highlight);
 }
 
+// Where a view ray lands on a planet quad: texture coordinates in xy and the horizon fade in z, with z < 0 when
+// the ray misses the quad or hits it below the horizon.
+vec3 planet_hit(vec3 dir, vec4 disc) {
+    vec3 miss = vec3(0.0, 0.0, -1.0);
+    if (disc.w <= 0.0) {
+        return miss;
+    }
+    vec3 p = normalize(disc.xyz);
+    float facing = dot(dir, p);
+    if (facing <= 0.05) {
+        return miss;
+    }
+    vec3 point = dir * (PLANET_DISTANCE / facing);
+    if (point.y <= 0.0) {
+        return miss;
+    }
+    vec3 across = cross(vec3(0.0, 1.0, 0.0), p);
+    across = length(across) > 0.001 ? normalize(across) : vec3(1.0, 0.0, 0.0);
+    vec3 up = cross(p, across);
+    vec3 offset = point - PLANET_DISTANCE * p;
+    vec2 uv = vec2(dot(offset, across) / disc.w + 0.5, 0.5 - dot(offset, up) / disc.w);
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return miss;
+    }
+    return vec3(uv, clamp(point.y * 2.5, 0.0, 1.0));
+}
+
 void sky() {
     vec3 dir = normalize(EYEDIR);
     // World up is +Y; the client's x and y are -Z and -X.
@@ -118,5 +157,21 @@ void sky() {
     vec3 at_horizon = mix(color, sun_glow_color, glow_horizon);
     vec3 glow = mix(at_horizon, above, clamp(height * 50.0, 0.0, 1.0));
     float closeness = clamp(dot(dir, normalize(sun_direction)) - glow_threshold, 0.0, 1.0) / (1.0 - glow_threshold);
-    COLOR = band_to_linear(mix(color, glow, closeness * closeness * closeness));
+    vec3 sky_color = mix(color, glow, closeness * closeness * closeness);
+    vec3 sun_hit = planet_hit(dir, sun_disc);
+    if (sun_hit.z >= 0.0) {
+        vec4 disc = texture(sun_tex, sun_hit.xy);
+        sky_color = mix(sky_color, disc.rgb * sun_glow_color, disc.a * sun_hit.z);
+    }
+    vec3 moon_hit = planet_hit(dir, moon_disc);
+    if (moon_hit.z >= 0.0) {
+        vec4 disc = texture(moon_tex, moon_hit.xy);
+        sky_color = mix(sky_color, disc.rgb * sun_glow_color, disc.a * moon_hit.z);
+    }
+    vec3 moon2_hit = planet_hit(dir, moon2_disc);
+    if (moon2_hit.z >= 0.0) {
+        vec4 disc = texture(moon2_tex, moon2_hit.xy);
+        sky_color = mix(sky_color, disc.rgb, disc.a * moon2_hit.z);
+    }
+    COLOR = band_to_linear(sky_color);
 }

@@ -42,6 +42,34 @@ public class SkyDomeTests
     }
 
     [Fact]
+    public void SunQuadIsTwiceAsWideAtSunriseAndSunsetAsAtNoon()
+    {
+        Assert.Equal(2f, SkyDome.Sun(0.25f).Scale, 3);
+        Assert.Equal(1f, SkyDome.Sun(SkyDome.Noon).Scale, 3);
+        Assert.Equal(2f, SkyDome.Sun(0.875f).Scale, 3);
+    }
+
+    [Fact]
+    public void MoonIsHighAtMidnightAndBelowTheHorizonAtNoon()
+    {
+        var midnight = SkyDome.Moon(0f);
+        Assert.Equal(MathF.Cos(0.61086524f), midnight.Direction.Z, 4);
+        Assert.Equal(1.75f, midnight.Scale, 3);
+        Assert.True(SkyDome.Moon(SkyDome.Noon).Direction.Z < 0);
+        // One and a half times the base scale while it is low, at moonrise and moonset.
+        Assert.Equal(1.5f * 1.75f, SkyDome.Moon(SkyDome.Moonset).Scale, 3);
+    }
+
+    [Fact]
+    public void SecondMoonFollowsItsOwnSlowerCycle()
+    {
+        Assert.True(SkyDome.SecondMoon(0f).Direction.Z > 0);
+        Assert.True(SkyDome.SecondMoon(SkyDome.Noon).Direction.Z < 0);
+        var (x, y, z) = SkyDome.SecondMoon(0.05f).Direction;
+        Assert.Equal(1f, MathF.Sqrt(x * x + y * y + z * z), 4);
+    }
+
+    [Fact]
     public void RingsRunFromTheZenithDownToTheHorizonAtHeightZero()
     {
         var top = SkyDome.Ring(0);

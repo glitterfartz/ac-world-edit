@@ -96,6 +96,51 @@ public static class SkyDome
         return from + offset / range * (to - from);
     }
 
+    public const float Moonrise = 0.91666669f;
+    public const float Moonset = 0.16666667f;
+
+    /// <summary>How far from the camera the sun and moon quads sit (DayNight::SetPlanets).</summary>
+    public const float PlanetDistance = 12f;
+
+    // Polar angle and azimuth of the moons over their cycle (s_moonTheta, s_moonPhi, s_moon2Phi) and the quad
+    // scale curves (s_sunScale, s_moonScale).
+    static readonly (float Time, float Value)[] MoonTheta =
+    [
+        (0f, 0.61086524f), (0.0034722222f, 0.61086524f), (Moonset, 1.7453293f), (Moonrise, 1.7453293f), (0.99652779f, 0.61086524f)
+    ];
+
+    static readonly (float Time, float Value)[] MoonPhi = [(0f, 0.78539819f), (Moonset, 0.78539819f), (Moonrise, 0.78539819f)];
+    static readonly (float Time, float Value)[] SecondMoonPhi = [(0f, 2.3561945f), (Moonset, 2.6179938f), (Moonrise, 2.8797934f)];
+    static readonly (float Time, float Value)[] SunScaleCurve = [(0.25f, 2f), (0.28125f, 1f), (0.84375f, 1f), (0.875f, 2f)];
+    static readonly (float Time, float Value)[] MoonScaleCurve = [(0.041666672f, 1f), (Moonset, 1.5f), (Moonrise, 1.5f), (0.99930561f, 1f)];
+
+    /// <summary>
+    /// One celestial quad: the unit direction toward it (client axes) and its width in the units the quad
+    /// is drawn at, <see cref="PlanetDistance"/> from the eye.
+    /// </summary>
+    public readonly record struct Planet((float X, float Y, float Z) Direction, float Scale);
+
+    /// <summary>The sun disc (texture sunCenter, base scale 1, doubled at sunrise and sunset).</summary>
+    public static Planet Sun(float dayFraction) => new(SunDirection(dayFraction), Interpolate(SunScaleCurve, dayFraction));
+
+    /// <summary>The moon (texture moon, base scale 1.75, one and a half times that while it is low).</summary>
+    public static Planet Moon(float dayFraction) =>
+        new(Direction(Interpolate(MoonTheta, dayFraction), Interpolate(MoonPhi, dayFraction)), Interpolate(MoonScaleCurve, dayFraction) * 1.75f);
+
+    /// <summary>
+    /// The second moon (texture moon02, base scale 1), which crosses the sky once every 1.7 days. The
+    /// editor has no calendar, so the cycle starts at the clock's midnight.
+    /// </summary>
+    public static Planet SecondMoon(float dayFraction)
+    {
+        float cycle = dayFraction / 1.7f;
+        return new(Direction(Interpolate(MoonTheta, cycle), Interpolate(SecondMoonPhi, cycle)), Interpolate(MoonScaleCurve, cycle));
+    }
+
+    // The unit vector for a polar angle from straight up and an azimuth (DayNight::SetPlanets).
+    static (float X, float Y, float Z) Direction(float theta, float phi) =>
+        (MathF.Cos(phi) * MathF.Sin(theta), MathF.Sin(theta) * MathF.Sin(phi), MathF.Cos(theta));
+
     /// <summary>The sky highlight strength (0..1) at a day fraction, before the light's HighlightSky flag scales it.</summary>
     public static float Highlight(float dayFraction) => Interpolate(HighlightCurve, dayFraction);
 
@@ -105,8 +150,6 @@ public static class SkyDome
     /// </summary>
     public static (float X, float Y, float Z) SunDirection(float dayFraction)
     {
-        float theta = Interpolate(SunTheta, dayFraction);
-        float phi = Interpolate(SunPhi, dayFraction);
-        return (MathF.Cos(phi) * MathF.Sin(theta), MathF.Sin(theta) * MathF.Sin(phi), MathF.Cos(theta));
+        return Direction(Interpolate(SunTheta, dayFraction), Interpolate(SunPhi, dayFraction));
     }
 }
