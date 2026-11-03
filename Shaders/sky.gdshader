@@ -42,7 +42,8 @@ uniform vec3 cloud_light_direction = vec3(0.0, 1.0, 0.0);
 
 const float CLOUD_TEXTURE_SIZE = 128.0;
 const float CLOUD_SHARPNESS = 0.96;
-const float CLOUD_SHARPNESS_STEP = 0.59765625;
+// (255 - 101) / 256: the client computes it once at its default density, whose byte truncates to 101.
+const float CLOUD_SHARPNESS_STEP = 0.6015625;
 const float PI_F = 3.14159265359;
 
 // Sun and moons: camera-facing quads PLANET_DISTANCE from the eye (DayNight::DNPlanet), drawn beneath the dome (so

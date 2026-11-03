@@ -85,8 +85,8 @@ public class SkyDomeTests
         // No density means nothing is above the threshold; thin noise at the default density stays clear.
         Assert.Equal(0f, SkyDome.CloudAlpha(1f, 0f), 4);
         Assert.Equal(0f, SkyDome.CloudAlpha(-1f, 0.6f), 4);
-        // Level 192 against the threshold 102 is index 90: 1 - 0.96^(90 * 0.59765625).
-        Assert.Equal(1f - MathF.Pow(0.96f, 90f * 0.59765625f), SkyDome.CloudAlpha(1f, 0.6f), 4);
+        // Level 192 against the threshold byte 101 ((1 - 0.6) * 255 truncates) is index 91: 1 - 0.96^(91 * 0.6015625).
+        Assert.Equal(1f - MathF.Pow(0.96f, 91f * 0.6015625f), SkyDome.CloudAlpha(1f, 0.6f), 4);
         Assert.True(SkyDome.CloudAlpha(1.5f, 0.6f) > SkyDome.CloudAlpha(1f, 0.6f));
         Assert.True(SkyDome.CloudAlpha(1f, 0.8f) > SkyDome.CloudAlpha(1f, 0.6f));
     }

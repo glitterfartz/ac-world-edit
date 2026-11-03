@@ -172,12 +172,12 @@ public static class SkyDome
     /// <summary>
     /// A cloud texel's opacity from the summed noise (DNClouds::UpdateTextureAnimation): the sum scaled to a level
     /// around 128, minus the density threshold, through the sharpness curve (0.96 to the power of the index times
-    /// the step the client computes once at its default density).
+    /// the step the client computes once at its default density, whose byte truncates to 101).
     /// </summary>
     public static float CloudAlpha(float noiseSum, float density)
     {
         const float sharpness = 0.96f;
-        const float step = (255 - 102) * 0.00390625f;
+        const float step = (255 - 101) * 0.00390625f;
         float level = MathF.Round(noiseSum * 64f + 128f);
         float index = level - MathF.Floor((1f - density) * 255f);
         return index < 0f ? 0f : 1f - MathF.Pow(sharpness, MathF.Min(index, 255f) * step);
