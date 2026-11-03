@@ -30,6 +30,11 @@ project/assembly_name="ACWorldEdit"
 
 3d/physics_engine="Jolt Physics"
 
+[rendering]
+
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/use_debanding=true
+
 [shader_globals]
 
 client_fog={
@@ -112,9 +117,3 @@ client_water_river_deep={
 "type": "vec4",
 "value": Vector4(0.05, 0.2, 0.3, 1)
 }
-
-[rendering]
-
-renderer/rendering_method.mobile="gl_compatibility"
-anti_aliasing/quality/use_taa=true
-anti_aliasing/quality/use_debanding=true

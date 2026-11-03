@@ -436,6 +436,17 @@ public partial class TerrainViewer : Node3D
     /// indices outside the terrain grid.
     /// </summary>
     TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
+
+
+    /// <summary>
+    /// Convert the camera's view-space position to server coordinates. The Y is the camera's eye height, not the ground.
+    /// </summary>
+    Vector3 CameraServer()
+    {
+        var position = ViewSpace.ToServer(camera.Position);
+        return new Vector3((float)position.X, (float)position.Y, (float)position.Z);
+    }
+
     /// <summary>
     /// Resolve the camera's current zone/subzone and continent for the UI title. Outdoor maps use the
     /// nearest loaded chunk's MCNK AreaId; interiors have no per-chunk area, so only the map's own
@@ -694,7 +705,7 @@ public partial class TerrainViewer : Node3D
         continentLabel.Text = continent;
         var current = CameraTile();
         int cells = renderer.CellCount;
-        statusBar.Telemetry = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
+        statusBar.Telemetry = $"{world?.Name ?? "No map"}    |    Tile {current.X}, {current.Y}    |    Position {CameraServer().X:0.0}, {CameraServer().Y:0.0}, {CameraServer().Z:0.0}    |    {loaded.Count}/{wanted.Count} tiles · {cells:N0} cells    |    {objects.ObjectCount:N0} objects · {creatures.ModelCreatureCount} creatures · {gameObjects.ModelObjectCount} GameObjects{(models.Busy ? " (loading)" : "")}    |    {speed:0} yd/s    |    {Engine.GetFramesPerSecond()} FPS";
         minimap.Sync(world, loaded.Keys, current, camera.Position);
         PerfMark(2);
         creatures.Update(camera);
