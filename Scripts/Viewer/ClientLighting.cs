@@ -45,7 +45,14 @@ public sealed record SkyBands(LightBand Middle, LightBand Band1, LightBand Band2
 /// extinction is scaled by (FogDensity, 4.5 on the classic lights) and the color the fog turns toward with
 /// distance (EndFogColor over EndFogColorDistance yards).
 /// </summary>
-public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, LightFloatBand EndColorDistance);
+public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, LightFloatBand EndColorDistance, FogHeightLayer Height);
+
+/// <summary>
+/// Retail's height fog: below the plane at FogHeight the fog takes the layer's density and colors, above it the
+/// main ones, with a cubic (Coefficients, highest power first) over the distance above the plane (scaled by
+/// Scaler) shaping the transition. All-zero coefficients, as on the classic lights, leave the main fog everywhere.
+/// </summary>
+public sealed record FogHeightLayer(LightFloatBand Plane, LightFloatBand Scaler, LightFloatBand Density, LightFloatBand[] Coefficients, LightBand Color, LightBand EndColor);
 
 /// <summary>
 /// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
@@ -152,6 +159,9 @@ public sealed class ClientLighting
             LightBand Band(List<DBCD.DBCDRow> rows, string column) =>
                 LightBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), unchecked((uint)Convert.ToInt64(r[column])))));
 
+            LightFloatBand FloatBand(List<DBCD.DBCDRow> rows, Func<DBCD.DBCDRow, float> value) =>
+                LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), value(r))));
+
             Dictionary<uint, LightProfile> profiles = [];
             foreach (uint paramsId in regions.Select(r => r.ParamsId).Distinct())
             {
@@ -175,7 +185,14 @@ public sealed class ClientLighting
                     new(
                         LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["FogDensity"])))),
                         Band(rows, "EndFogColor"),
-                        LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["EndFogColorDistance"]))))));
+                        LightFloatBand.FromSamples(rows.Select(r => (Convert.ToUInt32(r["Time"]), Convert.ToSingle(r["EndFogColorDistance"])))),
+                        new(
+                            FloatBand(rows, r => Convert.ToSingle(r["FogHeight"])),
+                            FloatBand(rows, r => Convert.ToSingle(r["FogHeightScaler"])),
+                            FloatBand(rows, r => Convert.ToSingle(r["FogHeightDensity"])),
+                            [.. Enumerable.Range(0, 4).Select(i => FloatBand(rows, r => Convert.ToSingle(((Array)r["FogHeightCoefficients"]).GetValue(i))))],
+                            Band(rows, "FogHeightColor"),
+                            Band(rows, "EndFogHeightColor"))));
             }
 
             return new(regions, profiles, skyboxPaths);

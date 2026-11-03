@@ -22,6 +22,14 @@ public static class ClientShaderGlobals
     /// </summary>
     public const string FogEnd = "client_fog_end";
     /// <summary>
+    /// Retail height fog: x fog plane height (world Y), y scaler, z density below the plane, w 1 when the light has height fog.
+    /// </summary>
+    public const string FogHeight = "client_fog_height";
+    /// <summary>The cubic that shapes the transition, highest power first.</summary>
+    public const string FogPoly = "client_fog_poly";
+    public const string FogHeightColor = "client_fog_height_color";
+    public const string FogHeightEndColor = "client_fog_height_end";
+    /// <summary>
     /// Direction the sun light travels (world space, unit length).
     /// </summary>
     public const string SunDirection = "client_sun_dir";
@@ -56,6 +64,10 @@ public static class ClientShaderGlobals
         Add(Fog, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 1, 1, 0));
         Add(FogColor, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.57f, 0.71f, 0.79f));
         Add(FogEnd, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogHeight, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogPoly, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogHeightColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogHeightEndColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
         Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
         Add(SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(1, 1, 1));

@@ -6,6 +6,12 @@ global uniform vec4 client_fog;
 global uniform vec3 client_fog_color;
 // The color the fog turns toward with distance (rgb) and the yards that takes (w, 0 for none); retail only.
 global uniform vec4 client_fog_end;
+// Retail height fog (see ClientShaderGlobals): plane height, scaler, density below the plane, w 1 when present;
+// the transition cubic; the layer's color and its end color.
+global uniform vec4 client_fog_height;
+global uniform vec4 client_fog_poly;
+global uniform vec4 client_fog_height_color;
+global uniform vec4 client_fog_height_end;
 
 // Band colors are 8-bit values the client shows without a linear pipeline; Godot lights and tone maps in
 // linear space, so fog (and the sky it meets at the horizon) are converted on the way out.
@@ -29,9 +35,50 @@ float client_fog_factor(float view_depth, float eye_distance) {
     return pow(clamp((client_fog.y - view_depth) / span, 0.0, 1.0), client_fog.z);
 }
 
+// How much of the main fog applies at a world height (1 above the fog plane, 0 in the layer below it), from the
+// retail volume-fog compute shader: a cubic of the distance above the plane.
+float client_fog_main_weight(float world_y) {
+    float x = 1.0 - clamp((world_y - client_fog_height.x) * client_fog_height.y, 0.0, 1.0);
+    float p = ((client_fog_poly.x * x + client_fog_poly.y) * x + client_fog_poly.z) * x + client_fog_poly.w;
+    return 1.0 - clamp(p, 0.0, 1.0);
+}
+
+// Retail fog with a height layer: the extinction and color vary along the ray, so it is integrated in a few
+// steps from the fog start to the fragment, the way the froxel volume accumulates its slices.
+vec4 client_fog_layered(vec3 view_position, mat4 inv_view) {
+    float eye_distance = length(view_position);
+    float start = client_fog.x;
+    if (eye_distance <= start) {
+        return vec4(client_gamma_to_linear(client_fog_color), 0.0);
+    }
+    float span = max(client_fog.y - client_fog.x, 0.001);
+    vec3 direction = normalize((inv_view * vec4(view_position, 0.0)).xyz);
+    float camera_y = inv_view[3].y;
+    const int STEPS = 6;
+    float step_length = (eye_distance - start) / float(STEPS);
+    float transmittance = 1.0;
+    vec3 scattered = vec3(0.0);
+    for (int i = 0; i < STEPS; i++) {
+        float t = start + (float(i) + 0.5) * step_length;
+        float main_weight = client_fog_main_weight(camera_y + direction.y * t);
+        float density = mix(client_fog_height.z, client_fog.z, main_weight) / span;
+        float fade = client_fog_end.w > 0.0 ? clamp((t - start) / client_fog_end.w, 0.0, 1.0) : 0.0;
+        vec3 main_color = mix(client_fog_color, client_fog_end.rgb, fade);
+        vec3 layer_color = mix(client_fog_height_color.rgb, client_fog_height_end.rgb, fade * fade * fade);
+        float absorbed = 1.0 - exp(-density * step_length);
+        scattered += transmittance * absorbed * mix(layer_color, main_color, main_weight);
+        transmittance *= 1.0 - absorbed;
+    }
+    float alpha = 1.0 - transmittance;
+    return vec4(client_gamma_to_linear(alpha > 0.0001 ? scattered / alpha : client_fog_color), alpha);
+}
+
 // Fog as Godot's custom fog output: rgb color, a how much of it covers the surface. view_position is the
-// fragment's view-space VERTEX.
-vec4 client_fog_output(vec3 view_position) {
+// fragment's view-space VERTEX and inv_view its INV_VIEW_MATRIX.
+vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
+    if (client_fog.w > 1.5 && client_fog_height.w > 0.5) {
+        return client_fog_layered(view_position, inv_view);
+    }
     float eye_distance = length(view_position);
     vec3 color = client_fog_color;
     if (client_fog.w > 1.5 && client_fog_end.w > 0.0) {

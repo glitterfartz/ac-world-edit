@@ -190,10 +190,10 @@ public sealed partial class SkyLighting : Node3D
             ? (Mathf.Lerp(b.End, f.End, bestWeight), Mathf.Lerp(b.StartMul, f.StartMul, bestWeight))
             : backgroundFog ?? foregroundFog;
         float fogEnd = Math.Min(ViewDistance, curve?.End ?? ViewDistance);
-        float fogStart = fogEnd * (curve?.StartMul ?? DefaultFogStartMultiplier);
+        // A retail light with no fog distance (the newer lights) starts its fog at the eye.
+        float fogStart = fogEnd * (curve?.StartMul ?? (Retail ? 0f : DefaultFogStartMultiplier));
         environment.Environment.FogEnabled = false;
-        var (density, endColor, endDistance) = RetailFogTerms(backgroundProfile, foregroundProfile, bestWeight, tick);
-        SetClientFog(fogStart, fogEnd, fog, density, endColor, endDistance);
+        SetClientFog(fogStart, fogEnd, fog, RetailFogTerms(backgroundProfile, foregroundProfile, bestWeight, tick));
         ApplyWater(backgroundProfile, foregroundProfile, bestWeight, tick);
         ApplySunUniforms(diffuse, ambient, backgroundProfile, foregroundProfile, bestWeight, tick);
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
@@ -222,37 +222,56 @@ public sealed partial class SkyLighting : Node3D
     Vector4 clientFog = new(0, 1, 1, 0);
     /// <summary>The fog values the shaders last received: start, end, density and mode.</summary>
     public Vector4 ClientFogValues => clientFog;
+    /// <summary>The retail height fog values the shaders last received (plane, scaler, density, enabled).</summary>
+    public Vector4 ClientFogHeightValues { get; private set; }
 
-    void SetClientFog(float start, float end, Color color, float density, Color endColor, float endDistance)
+    /// <summary>
+    /// Retail's fog terms beyond the 3.3.5a ones, at one tick: density, the end-fog color and distance, and the
+    /// height layer.
+    /// </summary>
+    readonly record struct RetailFogValues(float Density, Color EndColor, float EndDistance, Vector4 Height, Vector4 Poly, Color HeightColor, Color HeightEndColor)
     {
-        clientFog = new(start, end, Retail ? density : 1, Retail ? 2 : 1);
+        public static RetailFogValues None { get; } = new(1, Colors.Black, 0, Vector4.Zero, Vector4.Zero, Colors.Black, Colors.Black);
+    }
+
+    void SetClientFog(float start, float end, Color color, RetailFogValues terms)
+    {
+        clientFog = new(start, end, Retail ? terms.Density : 1, Retail ? 2 : 1);
         ClientShaderGlobals.Set(ClientShaderGlobals.Fog, clientFog);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(color.R, color.G, color.B));
-        ClientShaderGlobals.Set(ClientShaderGlobals.FogEnd, new Vector4(endColor.R, endColor.G, endColor.B, endDistance));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogEnd, new Vector4(terms.EndColor.R, terms.EndColor.G, terms.EndColor.B, terms.EndDistance));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogHeight, terms.Height);
+        ClientFogHeightValues = terms.Height;
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogPoly, terms.Poly);
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightColor, new Vector4(terms.HeightColor.R, terms.HeightColor.G, terms.HeightColor.B, 0));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightEndColor, new Vector4(terms.HeightEndColor.R, terms.HeightEndColor.G, terms.HeightEndColor.B, 0));
     }
 
     /// <summary>
     /// Retail's extra fog terms at a tick, blended like the other bands: the density (4.5 when a light has
-    /// none) and the color the fog turns toward with distance. Not used for 3.3.5a clients.
+    /// none), the color the fog turns toward with distance and the height layer. The layer counts only when its
+    /// transition cubic is not all zero, as the client's shader treats the classic lights. Not used for 3.3.5a clients.
     /// </summary>
-    (float Density, Color EndColor, float EndDistance) RetailFogTerms(LightProfile background, LightProfile? foreground, float weight, double tick)
+    RetailFogValues RetailFogTerms(LightProfile background, LightProfile? foreground, float weight, double tick)
     {
         if (!Retail || background.RetailFog is not { } bg)
         {
-            return (1, Colors.Black, 0);
+            return RetailFogValues.None;
         }
 
-        float density = bg.Density.At(tick);
-        var color = bg.EndColor.At(tick);
-        float distance = bg.EndColorDistance.At(tick);
-        if (foreground?.RetailFog is { } fg && weight > 0)
+        var fg = foreground?.RetailFog is { } other && weight > 0 ? other : null;
+        float Mix(Func<RetailFog, float> pick) => fg == null ? pick(bg) : Mathf.Lerp(pick(bg), pick(fg), weight);
+        Color MixColor(Func<RetailFog, LightBand> pick)
         {
-            density = Mathf.Lerp(density, fg.Density.At(tick), weight);
-            color = color.Lerp(fg.EndColor.At(tick), weight);
-            distance = Mathf.Lerp(distance, fg.EndColorDistance.At(tick), weight);
+            var color = pick(bg).At(tick);
+            return fg == null ? color : color.Lerp(pick(fg).At(tick), weight);
         }
 
-        return (density > 0 ? density : 4.5f, color, distance);
+        float density = Mix(r => r.Density.At(tick));
+        var poly = new Vector4(Mix(r => r.Height.Coefficients[0].At(tick)), Mix(r => r.Height.Coefficients[1].At(tick)), Mix(r => r.Height.Coefficients[2].At(tick)), Mix(r => r.Height.Coefficients[3].At(tick)));
+        bool layered = poly != Vector4.Zero;
+        var height = new Vector4(Mix(r => r.Height.Plane.At(tick)), Mix(r => r.Height.Scaler.At(tick)), Mix(r => r.Height.Density.At(tick)), layered ? 1 : 0);
+        return new(density > 0 ? density : 4.5f, MixColor(r => r.EndColor), Mix(r => r.EndColorDistance.At(tick)), height, poly, MixColor(r => r.Height.Color), MixColor(r => r.Height.EndColor));
     }
 
     /// <summary>

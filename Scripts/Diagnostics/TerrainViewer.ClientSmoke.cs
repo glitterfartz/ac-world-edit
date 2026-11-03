@@ -849,7 +849,7 @@ public partial class TerrainViewer
                     camera.Rotation = new Vector3(Mathf.DegToRad(skyShot.PitchDegrees), Mathf.DegToRad(skyShot.YawDegrees), 0);
                     yaw = camera.Rotation.Y;
                     pitch = camera.Rotation.X;
-                    GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees} camera={camera.Position} fog={sky.ClientFogValues}");
+                    GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees} camera={camera.Position} fog={sky.ClientFogValues} height={sky.ClientFogHeightValues}");
                     clientShotFrames = 0;
                 }
                 else if (clientShotWater && LargestLiquid() is { } lake)
