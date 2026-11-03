@@ -152,7 +152,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 | Terrain layers 5–8                                            | not started | Only the first 4 are drawn.                                                                           |
 | Terrain height blending (MHID/MTXP)                           | done        | Layers weight by `height * scale + offset` from the `_h` alpha and MTXP, with the client's suppression of layers far below the tallest; MTXP texture scale applies too. Not done: MAMP scale, the `_s` specular and cube-map reflection layers. Test: `SplitTerrainTests` (parameters read); the blend itself is checked by eye in Khaz Algar (`--tele-name=TheDawnbreaker --tele-tile=33,29`). |
 | Retail swamp liquid (material 14) | deviates | Depth layers, BC5 ripple animation, shore overlay/fade, refraction, Fresnel reflection and sunlight are in; screen reflections replace the client reflection render, interaction buffers are absent and constant mapping is inferred. |
-| Underwater lighting and fog                                   | not started | Under a liquid surface the viewer still uses the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog). Khaz Algar tile 33,29 is mostly seabed, so its view is the plain above-water fog at the wrong depth. Fog distance comes from `LightData.FogEnd`/`FogScaler` (retail) or LightFloatBand (Wrath) and follows the client's linear-start-to-end ramp with the end capped at an emulated view distance (`SkyLighting.ViewDistance`, 777 yd; the fog shaders are in `client_lighting.gdshaderinc`). Only the default weather slot is read. |
+| Underwater lighting and fog                                   | partial     | The water surface now draws its shipped underside (`mediumwaterbelow`/`procwaterbelow`; see the liquid sections), so looking up through a liquid no longer reads as a flat sky reflection. What is still missing is the camera's medium: under a liquid surface the viewer keeps the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog), and there is no underwater post pass (tint, distortion, the water-line window). Khaz Algar tile 33,29 is mostly seabed, so its view is the plain above-water fog at the wrong depth. Fog distance comes from `LightData.FogEnd`/`FogScaler` (retail) or LightFloatBand (Wrath) and follows the client's linear-start-to-end ramp with the end capped at an emulated view distance (`SkyLighting.ViewDistance`, 777 yd; the fog shaders are in `client_lighting.gdshaderinc`). Only the default weather slot is read. |
 | Uncompressed alpha size                                       | partial     | Follows the WDT big-alpha flag; decide per layer if a map disagrees.                                  |
 | Path-named placements                                         | partial     | Resolve only through the community listfile.                                                          |
 
@@ -221,10 +221,15 @@ remain open. This adds visual noise animation, not fluid simulation.
 Material 3 now uses a dedicated `procwaterabove`-derived surface
 (`procwater.gdshader`): near/far scrolling normals, depth colors, foreground-rejected
 screen refraction, squared Fresnel, reflection drawn 60% toward lit water, and sun
-highlights. Real types 100/321 resolve the native bump map in corpus checks; a Godot
-fixture using that texture over a checkerboard ground was inspected. Partial
+highlights. The eye under the surface switches the same fragment shader to
+`procwaterbelow`: both ripple pairs at full strength, unperturbed depth, plain ripple
+refraction, no reflection or foam, the gradient alpha as the body weight, and a
+weaker fourth-power-Fresnel sun response. Real types 100/321 resolve the native bump
+map in corpus checks; a Godot
+fixture using that texture over a checkerboard ground was inspected, and the
+underside was checked under the Den of Nalorakk water. Partial
 fidelity: UV matrices and float bindings are inferred, one shared bounded screen trace
 replaces the retail reflection inputs, the final soft edge is simplified, captured
-pixels may receive fog twice, and underside/foam/masks/auxiliary permutations remain
+pixels may receive fog twice, and foam/masks/auxiliary permutations remain
 open. Not verified against a retail reference. This is a surface approximation, not
 fluid simulation.

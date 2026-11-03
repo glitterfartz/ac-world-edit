@@ -38,6 +38,14 @@ Notes:
 - Types that still use the generic fallback (for example venom 1233/1234) are not
   listed; a location is only a useful check once the named material routes and its
   base assets resolve.
+- Underwater-surface check: on Azeroth tile 36,35 the stock water (type 5, material 1,
+  `mediumwaterbelow`) has a level-50 pool spanning server `-1800..-1817` X and
+  `-2442..-2538` Y. Eye `-1804, -2490, 45` with pitch 89 looks straight up at the
+  underside through the same material; it reads as a dark gradient-weighted sheet,
+  where the above-surface path used to show a flat fog-coloured plane. Den of Nalorakk
+  (2825, 40,21, type 100) works for `procwaterbelow` but sits under a dark cave
+  ceiling, so its underside reads nearly black; use a lit procedural-water site before
+  judging colour.
 - The map, tile, type and XYZ are read from the retail client data. Visual parity
   against a retail reference is a separate, manual step and is not claimed by this
   table.
