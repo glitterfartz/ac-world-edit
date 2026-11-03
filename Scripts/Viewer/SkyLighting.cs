@@ -24,6 +24,8 @@ public sealed partial class SkyLighting : Node3D
     float appliedStarFade = -1;
     readonly (MeshInstance3D Quad, ShaderMaterial Material)[] glares = new (MeshInstance3D, ShaderMaterial)[2];
     bool hasSunGlare, hasMoonGlare;
+    readonly MeshInstance3D shaftQuad;
+    readonly ShaderMaterial shaftMaterial;
     readonly ModelLibrary models;
     readonly Node3D skyboxAnchor;
     ModelInstance? skyboxInstance;
@@ -133,6 +135,23 @@ public sealed partial class SkyLighting : Node3D
             AddChild(quad);
             glares[i] = (quad, material);
         }
+
+        shaftMaterial = new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/sunshafts.gdshader"),
+            RenderPriority = (int)Material.RenderPriorityMax - 1
+        };
+        shaftQuad = new MeshInstance3D
+        {
+            Name = "SunShafts",
+            Mesh = new QuadMesh { Size = new Vector2(2, 2) },
+            MaterialOverride = shaftMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            Visible = false,
+            // The vertex shader covers the screen whatever the node's place, so the culler must never drop it.
+            CustomAabb = new Aabb(new Vector3(-10000, -10000, -10000), new Vector3(20000, 20000, 20000))
+        };
+        AddChild(shaftQuad);
     }
 
     /// <summary>
@@ -160,6 +179,7 @@ public sealed partial class SkyLighting : Node3D
 
             starsAnchor.Visible = false;
             cloudDome.Visible = false;
+            shaftQuad.Visible = false;
         }
     }
 
@@ -388,6 +408,42 @@ public sealed partial class SkyLighting : Node3D
     }
 
     /// <summary>
+    /// Sun shafts: the light's LightShaft color, intensity and radius blended like the other bands, scaled by how high
+    /// the sun is. Lights without shafts (most of them) leave the quad off.
+    /// </summary>
+    void UpdateShafts(LightProfile background, LightProfile? foreground, float weight, double tick, float dayFraction)
+    {
+        float Intensity(LightProfile p) => p.Shafts?.Intensity.At(tick) ?? 0f;
+        float intensity = Intensity(background);
+        if (foreground != null && weight > 0)
+        {
+            intensity = Mathf.Lerp(intensity, Intensity(foreground), weight);
+        }
+
+        var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
+        float amount = intensity * SkyDome.ShaftSunVisibility(sz);
+        shaftQuad.Visible = amount > 0.001f;
+        if (!shaftQuad.Visible)
+        {
+            return;
+        }
+
+        float Radius(LightProfile p) => p.Shafts?.Radius.At(tick) ?? 0f;
+        float radius = Radius(background);
+        var color = background.Shafts?.Color.At(tick) ?? Colors.White;
+        if (foreground != null && weight > 0)
+        {
+            radius = Mathf.Lerp(radius, Radius(foreground), weight);
+            color = color.Lerp(foreground.Shafts?.Color.At(tick) ?? color, weight);
+        }
+
+        shaftMaterial.SetShaderParameter("shaft_color", new Vector3(color.R, color.G, color.B));
+        shaftMaterial.SetShaderParameter("shaft_amount", amount);
+        shaftMaterial.SetShaderParameter("shaft_reach", SkyDome.ShaftReach(radius));
+        shaftMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx).Normalized());
+    }
+
+    /// <summary>
     /// Give the sky the client's star model (Environments/Stars/stars.m2); null removes it. It is drawn like a
     /// LightSkybox model and fades with the day (<see cref="SkyDome.StarFade"/>).
     /// </summary>
@@ -498,6 +554,7 @@ public sealed partial class SkyLighting : Node3D
         var moonPlanet = SkyDome.Moon(dayFraction);
         UpdateGlare(0, camera, forward, new Vector3(-sunPlanet.Direction.Y, sunPlanet.Direction.Z, -sunPlanet.Direction.X), sunPlanet.Scale, hasSunGlare, density, Blend(p => p.SunColor ?? p.Diffuse), dayFraction);
         UpdateGlare(1, camera, forward, new Vector3(-moonPlanet.Direction.Y, moonPlanet.Direction.Z, -moonPlanet.Direction.X), moonPlanet.Scale, hasMoonGlare, density, Blend(p => p.SunColor ?? p.Diffuse), dayFraction);
+        UpdateShafts(background, foreground, weight, tick, dayFraction);
         ApplyStars(dayFraction, camera);
         skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }

@@ -227,6 +227,19 @@ public static class SkyDome
         return Direction(Interpolate(SunTheta, dayFraction), Interpolate(SunPhi, dayFraction));
     }
 
+    /// <summary>The LightShaft radius the gather reaches the sun at (64); smaller radii reach proportionally less far.</summary>
+    public const float FullShaftRadius = 64f;
+
+    /// <summary>How far toward the sun each pixel gathers, as a fraction of the way (0 to 1), for a LightShaft radius.</summary>
+    public static float ShaftReach(float radius) => Math.Clamp(radius / FullShaftRadius, 0f, 1f);
+
+    /// <summary>How much of a light's shaft shows with the sun this far above the horizon (the sine of its elevation): none below it, full from 0.15.</summary>
+    public static float ShaftSunVisibility(float sunUp)
+    {
+        float t = Math.Clamp((sunUp + 0.05f) / 0.2f, 0f, 1f);
+        return t * t * (3f - 2f * t);
+    }
+
     // The polar angle from straight up of the direction the sun's light travels, over the day (DayNight::SetDirection).
     // It is steeper at noon and midnight than at dawn and dusk, and its bearing (225 degrees) never moves.
     static readonly (float Time, float Value)[] LightElevation = [(0f, 2.2165682f), (0.25f, 1.9198623f), (0.5f, 2.2165682f), (0.75f, 1.9198623f)];

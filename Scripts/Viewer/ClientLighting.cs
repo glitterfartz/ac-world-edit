@@ -60,6 +60,12 @@ public sealed record FogHeightLayer(LightFloatBand Plane, LightFloatBand Scaler,
 /// the three colors the clouds are lit with (LightIntBand 10 to 12, retail CloudSunColor, CloudEmissiveColor and
 /// CloudLayer1AmbientColor): sunlit, shaded and base.
 /// </summary>
+/// <summary>
+/// A light's sun shafts (LightShaft rows linked through LightParamsLightShaft to the light's time-of-day samples): the
+/// shaft color, its radius (32 or 64) and its intensity. Absent on most lights.
+/// </summary>
+public sealed record ShaftBands(LightBand Color, LightFloatBand Radius, LightFloatBand Intensity);
+
 public sealed record CloudBands(LightFloatBand Density, LightBand Sun, LightBand Shade, LightBand Base);
 
 /// <summary>
@@ -68,7 +74,7 @@ public sealed record CloudBands(LightFloatBand Density, LightBand Sun, LightBand
 /// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
 /// tables carry no water bands.
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null, CloudBands? Clouds = null)
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null, CloudBands? Clouds = null, ShaftBands? Shafts = null)
 {
     /// <summary>
     /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
@@ -143,6 +149,27 @@ public sealed class ClientLighting
                     Convert.ToSingle(row["OceanShallowAlpha"]), Convert.ToSingle(row["OceanDeepAlpha"]));
             }
 
+            // Each sample of a light can name a LightShaft row; they are optional and only newer builds have them.
+            Dictionary<uint, DBCD.DBCDRow> shaftRows = [];
+            Dictionary<uint, uint> shaftOfSample = [];
+            try
+            {
+                foreach (var row in tables.Table("LightShaft").Values)
+                {
+                    shaftRows[(uint)row.ID] = row;
+                }
+
+                foreach (var row in tables.Table("LightParamsLightShaft").Values)
+                {
+                    shaftOfSample[Convert.ToUInt32(row["LightDataID"])] = Convert.ToUInt32(row["LightShaftID"]);
+                }
+            }
+            catch (Exception e) when (e is ArgumentException or InvalidDataException)
+            {
+                shaftRows.Clear();
+                shaftOfSample.Clear();
+            }
+
             Dictionary<uint, string> skyboxPaths = [];
             foreach (var row in tables.Table("LightSkybox").Values)
             {
@@ -176,6 +203,12 @@ public sealed class ClientLighting
                     continue;
                 }
 
+                var shaftSamples = rows.Where(r => shaftOfSample.TryGetValue((uint)r.ID, out uint shaft) && shaftRows.ContainsKey(shaft))
+                    .Select(r => (Time: Convert.ToUInt32(r["Time"]), Shaft: shaftRows[shaftOfSample[(uint)r.ID]])).ToList();
+                var shafts = shaftSamples.Count == 0 ? null : new ShaftBands(
+                    LightBand.FromSamples(shaftSamples.Select(x => (x.Time, unchecked((uint)Convert.ToInt64(x.Shaft["Color"]))))),
+                    LightFloatBand.FromSamples(shaftSamples.Select(x => (x.Time, Convert.ToSingle(x.Shaft["Field_11_0_0_54210_001"])))),
+                    LightFloatBand.FromSamples(shaftSamples.Select(x => (x.Time, Convert.ToSingle(x.Shaft["Field_11_0_0_54210_002"])))));
                 profiles[paramsId] = new(
                     paramSkybox.GetValueOrDefault(paramsId),
                     Band(rows, "DirectColor"),
@@ -201,7 +234,8 @@ public sealed class ClientLighting
                             Band(rows, "EndFogHeightColor")),
                         Band(rows, "SunFogColor"),
                         FloatBand(rows, r => Convert.ToSingle(r["SunFogStrength"]))),
-                    new(FloatBand(rows, r => Convert.ToSingle(r["CloudDensity"])), Band(rows, "CloudSunColor"), Band(rows, "CloudEmissiveColor"), Band(rows, "CloudLayer1AmbientColor")));
+                    new(FloatBand(rows, r => Convert.ToSingle(r["CloudDensity"])), Band(rows, "CloudSunColor"), Band(rows, "CloudEmissiveColor"), Band(rows, "CloudLayer1AmbientColor")),
+                    shafts);
             }
 
             return new(regions, profiles, skyboxPaths);

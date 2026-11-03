@@ -145,6 +145,24 @@ public class SkyDomeTests
     }
 
     [Fact]
+    public void ShaftReachScalesWithTheLightShaftRadius()
+    {
+        Assert.Equal(1f, SkyDome.ShaftReach(64f));
+        Assert.Equal(0.5f, SkyDome.ShaftReach(32f));
+        Assert.Equal(0f, SkyDome.ShaftReach(0f));
+        Assert.Equal(1f, SkyDome.ShaftReach(500f));
+    }
+
+    [Fact]
+    public void ShaftsFadeInAsTheSunClearsTheHorizon()
+    {
+        Assert.Equal(0f, SkyDome.ShaftSunVisibility(-0.2f));
+        Assert.Equal(1f, SkyDome.ShaftSunVisibility(0.5f));
+        Assert.True(SkyDome.ShaftSunVisibility(0.05f) is > 0f and < 1f);
+        Assert.True(SkyDome.ShaftSunVisibility(0.1f) > SkyDome.ShaftSunVisibility(0.0f));
+    }
+
+    [Fact]
     public void RingsRunFromTheZenithDownToTheHorizonAtHeightZero()
     {
         var top = SkyDome.Ring(0);
