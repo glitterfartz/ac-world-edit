@@ -283,3 +283,13 @@ mercury marker and renders a flat reflective surface. Existing base atlas loadin
 is retained, although the procedural mercury shader does not sample that atlas.
 Per-type mercury float-to-buffer bindings are not asserted; runtime ripple
 transforms and highlight parameters currently use documented estimates.
+
+### Material 10 fog-liquid inputs
+
+`RetailLiquids.FogSettings` retains inferred Color[0] RGB and Float[1] opacity
+for material 10. `LiquidTextures.Style` carries those settings as `LiquidStyle.Fog`
+and bypasses the ordinary water bump lookup. Texture slot 0 uses the existing
+bounded base-atlas decoder; multiple authored fog colors share decoded density
+pixels but their settings participate in cache identity. Material tint alpha,
+depth/height extinction parameters and auxiliary masks remain unbound by this
+basic port. Both the parsed settings and cached styles remain Godot-free.

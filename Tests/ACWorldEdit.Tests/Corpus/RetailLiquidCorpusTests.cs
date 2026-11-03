@@ -29,6 +29,23 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void FogLiquidsShareDensityPixelsButKeepTheirAuthoredTint()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var forest = textures.Style(750);
+        var witch = textures.Style(751);
+        Assert.NotNull(forest.Fog);
+        Assert.NotNull(witch.Fog);
+        Assert.Null(forest.Bump);
+        Assert.Equal(0.5f, forest.Fog.OpacityScale);
+        Assert.NotEqual(forest.Fog.Color, witch.Fog.Color);
+        Assert.NotEqual(forest.CacheKey, witch.CacheKey);
+        var density = textures.Decode(750);
+        Assert.NotEmpty(density.Rgba);
+        Assert.Same(density, textures.Decode(751));
+    }
+
+    [RetailListfileFact]
     public void MercuryTypesResolveTheSharedNativeRippleMap()
     {
         var textures = LiquidTextures.For(RetailData.Files);

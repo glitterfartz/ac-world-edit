@@ -221,6 +221,29 @@ public class RetailLiquidTests
         Assert.NotEqual(mercury.CacheKey, ocean.CacheKey);
     }
 
+    [Fact]
+    public void FogTintsDoNotShareMaterialsOrSelectOrdinaryWaterRipples()
+    {
+        using var files = new SwampFiles(false);
+        var green = new RetailLiquids.FogSettings(new(0, 1, 0), 0.5f);
+        var red = new RetailLiquids.FogSettings(new(1, 0, 0), 2);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(750, "shallow.blp", 0, 10), (751, "shallow.blp", 0, 10), (1, "shallow.blp", 0, 1)], [], [],
+            bumps: [(750, "normal_1.blp"), (751, "normal_1.blp"), (1, "normal_1.blp")],
+            fogs: [(750, green), (751, red)]));
+        var textures = LiquidTextures.For(files);
+        var first = textures.Style(750);
+        var second = textures.Style(751);
+        Assert.Equal(green, first.Fog);
+        Assert.Equal(red, second.Fog);
+        Assert.Null(first.Bump);
+        Assert.Null(second.Bump);
+        Assert.NotNull(textures.Style(1).Bump);
+        Assert.NotEqual(first.CacheKey, second.CacheKey);
+        Assert.NotEqual(first.CacheKey, textures.Style(1).CacheKey);
+        Assert.Same(textures.Decode(750), textures.Decode(751));
+    }
+
     sealed class SwampFiles(bool missingDeep) : IClientFiles
     {
         public ClientKind Kind => ClientKind.Retail;

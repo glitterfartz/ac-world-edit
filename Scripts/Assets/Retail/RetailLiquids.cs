@@ -26,6 +26,11 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, SwampSettings> swamps = [];
     readonly Dictionary<uint, FelSettings> fels = [];
     readonly Dictionary<uint, LeySettings> leys = [];
+    readonly Dictionary<uint, FogSettings> fogs = [];
+
+    // liquidfog_0 CB1[18].rgb and CB1[17].y; DB2 bindings remain inferred.
+    public sealed record FogSettings(System.Numerics.Vector3 Color, float OpacityScale);
+    public FogSettings? Fog(uint type) => fogs.GetValueOrDefault(type);
 
     public sealed record LeySettings(string Detail, System.Numerics.Vector3 FirstUv,
         System.Numerics.Vector3 SecondUv, System.Numerics.Vector3 Color);
@@ -60,6 +65,13 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 10)
+                {
+                    var colors = row.Field<int[]>("Color") ?? [];
+                    uint color = colors.Length > 0 ? unchecked((uint)colors[0]) : 0;
+                    result.fogs[(uint)row.ID] = new(
+                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f), floats[1]);
+                }
                 if (row.FieldAs<uint>("MaterialID") == 12 && floats.Length >= 6 && textures.Length >= 2)
                 {
                     var colors = row.Field<int[]>("Color") ?? [];
@@ -107,9 +119,13 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null)
     {
         var result = new RetailLiquids();
+        foreach (var fog in fogs ?? [])
+        {
+            result.fogs[fog.Type] = fog.Settings;
+        }
         foreach (var swamp in swamps ?? [])
         {
             result.swamps[swamp.Type] = swamp.Settings;

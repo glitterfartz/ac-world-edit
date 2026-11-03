@@ -196,3 +196,12 @@ single bounded screen reflection replaces two client reflection inputs, CPU UV
 matrices/normal multipliers/highlight exponent remain estimates, and captured
 fog may receive surface fog again. Other permutations and interaction buffers
 remain open. Ordinary water and missing-bump routing have deterministic coverage.
+
+### Retail fog-liquid core
+
+Partial: material 10 now renders the `liquidfog_0` two-density-sample RGB/alpha
+composition, with inferred authored tint/opacity, alpha blending and client fog.
+Types 750/751 pass corpus checks and the real density texture was inspected over
+a checker in Godot. Unit-scale scrolling UVs are estimated. Auxiliary mask,
+depth-aware extinction/height variants, secondary outputs and retail comparison
+remain open. This is a fog sheet, not a volume simulation.
