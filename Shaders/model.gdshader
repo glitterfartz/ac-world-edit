@@ -1,10 +1,15 @@
 shader_type spatial;
 render_mode cull_disabled;
+// False for unlit and skybox variants.
+const bool LIT = true;
 #include "res://Shaders/client_lighting.gdshaderinc"
 
-// ModelLibrary chooses blend/cull/unlit variants from this shader. Keep the render-mode
-// and roughness statements explicit because that material setup replaces those statements.
-uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+// ModelLibrary chooses blend/cull/unlit variants from this shader. Keep the render-mode, LIT and roughness
+// statements explicit because that material setup replaces those statements.
+// Like the client, everything is computed on the 8-bit (gamma-space) values: textures are sampled raw, the lighting
+// is the client's (client_model_light), and only the finished color is converted to the linear space Godot expects.
+// The material is unshaded; Godot's lights and shadows do not touch it.
+uniform sampler2D albedo_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 // Four RGBA-float texels per bone matrix, one row per sampled native animation frame.
 uniform sampler2D animation_palette : filter_nearest, repeat_disable;
 uniform float animation_duration = 0.0;
@@ -33,9 +38,9 @@ varying vec4 batch_color;
 uniform int combiner = 0;
 uniform bool edge_fade = false;
 uniform ivec4 layer_coords = ivec4(0);
-uniform sampler2D layer_tex2 : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
-uniform sampler2D layer_tex3 : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
-uniform sampler2D layer_tex4 : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D layer_tex2 : filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D layer_tex3 : filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D layer_tex4 : filter_linear_mipmap_anisotropic, repeat_enable;
 varying vec2 uv_b;
 varying vec2 uv_c;
 varying vec2 uv_d;
@@ -215,10 +220,13 @@ void fragment() {
         discard;
     }
     vec3 base = tex.rgb * batch_color.rgb;
-    // Mode 3 (retail interior): the alpha weights world lighting through the normal lit path, and the color
-    // (already scaled by 1 - alpha, ambient included) is the group's own emissive term, doubled like mode 1.
-    ALBEDO = vertex_color == 1 ? base * COLOR.rgb * 2.0 : vertex_color == 3 ? base * COLOR.a : base;
-    EMISSION = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
+    // Mode 1 (baked interior) is the group's own color, doubled, with no world light. Mode 3 (retail interior): the
+    // alpha weights world lighting and the color (already scaled by 1 - alpha, ambient included) is the group's own
+    // emissive term, doubled like mode 1. Mode 2 (exterior WMO) adds its colors on top of the sun lighting.
+    vec3 surface = vertex_color == 3 ? base * COLOR.a : base;
+    vec3 emission = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
+    vec3 light = LIT && vertex_color != 1 ? client_model_light(NORMAL, VIEW_MATRIX) : vec3(1.0);
+    ALBEDO = client_gamma_to_linear(vertex_color == 1 ? base * COLOR.rgb * 2.0 + emission : surface * light + emission);
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;
     FOG = client_fog_output(VERTEX, INV_VIEW_MATRIX);

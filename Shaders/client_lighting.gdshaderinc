@@ -110,6 +110,14 @@ vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
     return vec4(client_gamma_to_linear(color) + scattered, 1.0 - client_fog_factor(-view_position.z, eye_distance));
 }
 
+// The client's light on a model or WMO batch (the retail combiners shaders), in gamma space: ambient, widened a little
+// toward the sun side by a wrap term, plus diffuse N.L. It multiplies the surface color; there is no specular.
+vec3 client_model_light(vec3 normal, mat4 view_matrix) {
+    vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
+    float facing = dot(normal, -sun);
+    return client_sun_ambient * (0.7 + 0.4 * (0.5 * facing + 0.5)) + client_sun_diffuse * max(facing, 0.0);
+}
+
 // The client's surface lighting (the retail terrain pixel shader), in gamma space like the client: ambient plus
 // diffuse N.L scale the albedo, a Blinn-Phong highlight (exponent 20) masked by the texture's alpha adds on top, and
 // the baked shadow only takes 30 % off. Lighting that brightens past white clamps, as the framebuffer does.

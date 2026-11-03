@@ -573,10 +573,16 @@ public sealed class ModelLibrary
                 code = code.Replace("cull_disabled", "cull_back");
             }
 
-            // Skybox variants are already unshaded.
-            if (!skybox && surface.Unlit)
+            // The material is always unshaded: the shader does the client's lighting itself. Unlit and skybox
+            // variants skip that lighting (skybox variants are already unshaded).
+            if (!skybox)
             {
                 code = code.Replace("render_mode ", "render_mode unshaded, ");
+            }
+
+            if (skybox || surface.Unlit)
+            {
+                code = code.Replace("const bool LIT = true;", "const bool LIT = false;");
             }
 
             shader = new Shader
