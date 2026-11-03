@@ -13,11 +13,15 @@ public sealed class RetailLiquids
     /// <summary>MH2O stores a LiquidObject ID instead of a vertex format from this value up.</summary>
     public const int FirstObjectId = 42;
 
+    /// <summary>LiquidType texture slot holding the water's ripple normal map ("newoceanbump.blp" on the stock types).</summary>
+    public const int BumpSlot = 2;
+
     static readonly ConditionalWeakTable<IClientFiles, RetailLiquids> registry = new();
 
     readonly Dictionary<uint, (string Pattern, uint Kind, uint Material)> types = [];
     readonly Dictionary<uint, uint> objectTypes = [];
     readonly Dictionary<uint, int> materialFormats = [];
+    readonly Dictionary<uint, string> bumpMaps = [];
 
     public static void Register(IClientFiles files, RetailLiquids liquids) => registry.AddOrUpdate(files, liquids);
 
@@ -30,6 +34,10 @@ public sealed class RetailLiquids
         {
             string[] textures = row.Field<string[]>("Texture") ?? [];
             result.types[(uint)row.ID] = (textures.Length > 0 ? textures[0] ?? "" : "", row.FieldAs<uint>("SoundBank"), row.FieldAs<uint>("MaterialID"));
+            if (textures.Length > BumpSlot && !string.IsNullOrWhiteSpace(textures[BumpSlot]))
+            {
+                result.bumpMaps[(uint)row.ID] = textures[BumpSlot]!.Replace('\\', '/');
+            }
         }
 
         foreach (var row in tables.Table("LiquidObject").Values)
@@ -49,9 +57,14 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null)
     {
         var result = new RetailLiquids();
+        foreach (var b in bumps ?? [])
+        {
+            result.bumpMaps[b.Type] = b.Bump.Replace('\\', '/');
+        }
+
         foreach (var t in types)
         {
             result.types[t.Type] = (t.Pattern, t.Kind, t.Material);
@@ -73,6 +86,9 @@ public sealed class RetailLiquids
     public bool HasType(uint type) => types.ContainsKey(type);
 
     public string Pattern(uint type) => types.TryGetValue(type, out var t) ? t.Pattern : throw new InvalidDataException($"Unknown liquid type {type}.");
+
+    /// <summary>The ripple normal map a type names, or null when it has none (magma, slime).</summary>
+    public string? Bump(uint type) => bumpMaps.GetValueOrDefault(type);
 
     public uint Kind(uint type) => types.TryGetValue(type, out var t) ? t.Kind : 0;
 

@@ -19,6 +19,12 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+        material.SetShaderParameter("has_bump", style.Bump != null);
+        if (style.Bump != null)
+        {
+            material.SetShaderParameter("bump_tex", BumpTexture(style.Bump));
+        }
+
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("liquid_kind", (int)kind);
@@ -28,6 +34,25 @@ public static class LiquidRendering
         material.SetShaderParameter("uv_scale", style.Scale);
         material.SetShaderParameter("uv_angle", style.Rotation);
         material.SetShaderParameter("depth_scale", style.DepthScale);
+    }
+
+    static readonly Dictionary<BlpTexture, ImageTexture> bumpTextures = [];
+
+    /// <summary>
+    /// The ripple normal map as a mip-mapped texture, uploaded once per decoded map. It is a handful of
+    /// small textures, so they live as long as the process.
+    /// </summary>
+    static ImageTexture BumpTexture(BlpTexture bump)
+    {
+        if (!bumpTextures.TryGetValue(bump, out var texture))
+        {
+            using var image = Image.CreateFromData(bump.Width, bump.Height, false, Image.Format.Rgba8, bump.Rgba);
+            image.GenerateMipmaps();
+            texture = ImageTexture.CreateFromImage(image);
+            bumpTextures[bump] = texture;
+        }
+
+        return texture;
     }
 
     /// <summary>

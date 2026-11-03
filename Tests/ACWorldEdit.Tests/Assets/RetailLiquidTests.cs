@@ -114,6 +114,18 @@ public class RetailLiquidTests
     }
 
     [Fact]
+    public void WaterTypesExposeTheirRippleNormalMap()
+    {
+        var withBump = RetailLiquids.From(
+            [(1, "XTextures\\river\\lake_a.%d.blp", 0, 10)], [], [(10, 0)],
+            [(1, "XTextures\\ocean\\newoceanbump.blp")]);
+
+        Assert.Equal("XTextures/ocean/newoceanbump.blp", withBump.Bump(1));
+        Assert.Null(withBump.Bump(2));
+        Assert.Null(Tables.Bump(1));
+    }
+
+    [Fact]
     public void ListfileResolvesIgnoringCaseAndSeparators()
     {
         string file = Path.Combine(Path.GetTempPath(), "listfile-" + Guid.NewGuid().ToString("N") + ".csv");

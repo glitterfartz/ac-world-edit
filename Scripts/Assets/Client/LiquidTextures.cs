@@ -19,7 +19,7 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null)
 {
     /// <summary>
     /// What the stock river and lake types use.
@@ -51,6 +51,7 @@ public sealed class LiquidTextures
     readonly RetailLiquids? retail;
     readonly Dictionary<uint, BlpTexture> atlases = [];
     readonly Dictionary<string, BlpTexture> sequences = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, BlpTexture?> bumps = new(StringComparer.OrdinalIgnoreCase);
     LiquidTextures(IClientFiles source)
     {
         store = source;
@@ -72,13 +73,14 @@ public sealed class LiquidTextures
     /// <summary>
     /// How the water material draws a type. Wrath reads the LiquidType.dbc columns the client reads
     /// (texture slot 1, floats 0 to 2, ints 0 and 1); retail types use the stock river or ocean style by
-    /// their sound bank until the retail table's columns are read.
+    /// their sound bank and add the ripple normal map the retail water shader samples.
     /// </summary>
     public LiquidStyle Style(uint type)
     {
         if (types is not { } table)
         {
-            return Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+            var stock = Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+            return Kind(type) < 2 && Bump(type) is { } bump ? stock with { Bump = bump } : stock;
         }
 
         // Only the water material (1) reads the floats as scale, rotation and depth scale; magma uses them as scroll speeds.
@@ -87,6 +89,37 @@ public sealed class LiquidTextures
         return new(LiquidStyle.GradientFor(table.Str(type, 16)), (int)table.U(type, 41) == 1 ? 1 : 0, period > 0 ? period : 1250,
             water ? table.F(type, 23) : 1, water ? table.F(type, 24) : 0, water ? table.F(type, 25) : 1);
     }
+    /// <summary>
+    /// The retail ripple normal map for a water type, decoded once and shared by every type that names
+    /// it. Null when the type has none or the client cannot read it, which leaves the flat water look.
+    /// </summary>
+    BlpTexture? Bump(uint type)
+    {
+        if (retail?.Bump(type) is not { } path)
+        {
+            return null;
+        }
+
+        lock (bumps)
+        {
+            if (!bumps.TryGetValue(path, out var texture))
+            {
+                try
+                {
+                    texture = store.Exists(path) ? BlpTexture.Decode(store.Read(path), 256) : null;
+                }
+                catch (Exception e) when (e is InvalidDataException or FileNotFoundException)
+                {
+                    texture = null;
+                }
+
+                bumps[path] = texture;
+            }
+
+            return texture;
+        }
+    }
+
     /// <summary>
     /// Resolve the first native texture slot and normalize separators, retaining printf-style frame
     /// placeholders.

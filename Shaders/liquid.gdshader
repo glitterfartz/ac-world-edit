@@ -32,8 +32,18 @@ uniform float uv_scale = 1.0;
 uniform float uv_angle = 0.0;
 uniform float depth_scale = 1.0;
 
+// Retail water (psLiquidWater "mediumwater", ps_5_0): the animated frames are gone and a ripple normal
+// map (LiquidType texture 2) bends the surface instead. Set when the type names one.
+uniform bool has_bump = false;
+uniform sampler2D bump_tex : filter_linear_mipmap, repeat_enable;
+
 const float WATER_SPECULAR_EXPONENT = 6.0;
 const int GRADIENT_ROWS = 64;
+// The retail shader reads these from its constant buffer; the values are chosen to look like the stock
+// water, because the buffer layout is not in the shipped bytecode.
+const float RIPPLE_STRENGTH = 1.0;
+const float RIPPLE_SPECULAR_SCALE = 1.0;
+const float RETAIL_SPECULAR_EXPONENT = 16.0;
 
 vec3 gamma_to_linear(vec3 c) {
     c = clamp(c, 0.0, 1.0);
@@ -68,6 +78,54 @@ vec4 water_gradient(float v) {
     return color;
 }
 
+varying vec3 world_position;
+
+void vertex() {
+    world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+// One ripple layer: the normal map's red and green, 0.5 meaning flat.
+vec2 ripple(vec2 uv) {
+    return texture(bump_tex, uv).rg;
+}
+
+// The retail pixel shader's water, in the same gamma-space arithmetic as the 3.3.5a one. Two pairs of
+// scrolling ripple samples (a near pair and a coarser far pair, blended by camera distance) bend the
+// surface; fresnel mixes the lit gradient toward the sky color, and the sun adds a specular glint.
+// Returns rgb in gamma space and the gradient alpha.
+vec4 retail_water(float depth_v, vec3 view_position, mat4 view_matrix) {
+    vec2 p = world_position.xz;
+    float t = TIME;
+    // The scroll rates and UV scales come from the vertex shader, which this client install does not
+    // ship; these are chosen to read as the stock ripples.
+    vec2 near_sum = ripple(p * 0.090 + vec2(0.021, 0.013) * t) + ripple(vec2(p.y, -p.x) * 0.170 + vec2(-0.015, 0.019) * t) - 1.0;
+    vec2 far_sum = (ripple(p * 0.023 + vec2(0.006, -0.004) * t) + ripple(vec2(-p.y, p.x) * 0.047 + vec2(-0.005, -0.007) * t) - 1.0) * 1.4;
+    float blend = min(0.2 + length(view_position) * 0.001, 1.0);
+    vec2 n = ((near_sum * 2.0 - far_sum) * blend + far_sum) * RIPPLE_STRENGTH;
+    vec2 n_unit = n * inversesqrt(dot(n, n) + 1.0);
+
+    // The water is horizontal: its tangent axes are world X and Z, and the ripples tilt it from world up.
+    vec3 up = normalize((view_matrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+    vec3 axis_x = (view_matrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
+    vec3 axis_z = (view_matrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz;
+    vec3 surface = up + (axis_x * n_unit.x + axis_z * n_unit.y) * RIPPLE_SPECULAR_SCALE;
+
+    vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
+    vec3 lit = client_sun_ambient + client_sun_diffuse * clamp(dot(-sun, up), 0.0, 1.0);
+    vec4 gradient_color = water_gradient(clamp(depth_v + 0.1 * abs(n_unit.y), 0.0, 1.0));
+    vec3 color = lit * gradient_color.rgb;
+
+    vec3 to_eye = -normalize(view_position);
+    float fresnel = 1.0 - clamp(dot(to_eye, surface), 0.0, 1.0);
+    fresnel *= fresnel;
+    color = mix(color, client_fog_color, 0.1 + 0.5 * fresnel);
+
+    vec3 half_vector = normalize(-sun + to_eye);
+    float glint = pow(clamp(dot(half_vector, surface), 0.0, 1.0), RETAIL_SPECULAR_EXPONENT) + 0.2;
+    color += fresnel * glint * client_sun_specular;
+    return vec4(color, min(gradient_color.a * 1.25, 1.0));
+}
+
 void fragment() {
     float frame = mod(floor(mod(TIME * 1000.0, period_ms) / period_ms * frames), frames);
     vec2 size = vec2(textureSize(albedo_tex, 0));
@@ -83,6 +141,10 @@ void fragment() {
         // Magma and slime: vertex color (white) times the texture, unlit and opaque.
         ALBEDO = gamma_to_linear(tex.rgb);
         ALPHA = 1.0;
+    } else if (has_bump) {
+        vec4 water = retail_water(depth_coordinate(round(COLOR.a * 255.0)) * depth_scale, VERTEX, VIEW_MATRIX);
+        ALBEDO = gamma_to_linear(water.rgb);
+        ALPHA = water.a;
     } else {
         // Water: (ambient + diffuse * N.L) times the depth gradient, plus the water texture and its
         // masked highlight. The surface normal is straight up, as the client builds it.
