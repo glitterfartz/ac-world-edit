@@ -105,6 +105,9 @@ public sealed class ClientLighting
     readonly Dictionary<uint, LightProfile> profiles;
     readonly Dictionary<uint, string> skyboxPaths;
 
+    /// <summary>Retail VolumeFogCondition: a placed fog volume's id to the presence it has when its condition is false.</summary>
+    public IReadOnlyDictionary<uint, float> FogVolumePresence { get; private init; } = new Dictionary<uint, float>();
+
     ClientLighting(List<LightRegion> regions, Dictionary<uint, LightProfile> profiles, Dictionary<uint, string> skyboxPaths)
     {
         Regions = regions;
@@ -238,7 +241,20 @@ public sealed class ClientLighting
                     shafts);
             }
 
-            return new(regions, profiles, skyboxPaths);
+            Dictionary<uint, float> presence = [];
+            try
+            {
+                foreach (var row in tables.Table("VolumeFogCondition").Values)
+                {
+                    presence[Convert.ToUInt32(row["VFOG_uID"])] = Convert.ToSingle(row["WhenFalse"]);
+                }
+            }
+            catch (Exception e) when (e is ArgumentException or InvalidDataException)
+            {
+                presence.Clear();
+            }
+
+            return new(regions, profiles, skyboxPaths) { FogVolumePresence = presence };
         }
         catch (Exception e)
         {

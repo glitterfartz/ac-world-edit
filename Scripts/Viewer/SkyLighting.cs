@@ -415,7 +415,7 @@ public sealed partial class SkyLighting : Node3D
     }
 
     /// <summary>One fog volume placed in the viewer: a view-space box (center, axes, half sizes), its extinction per yard, color and edge power.</summary>
-    readonly record struct FogBox(Vector3 Center, Basis Axes, Vector3 Half, float Thickness, Color Color, float Power);
+    readonly record struct FogBox(Vector3 Center, Basis Axes, Vector3 Half, float Thickness, Color Color, float Power, bool Ellipsoid, bool Noise, float SpeedA, float SpeedB, float HeightPower);
 
     /// <summary>
     /// Hand the shaders a map's fog volumes. The WDT stores them in server axes; the viewer's are (-y, z, -x) of those, so the
@@ -428,7 +428,8 @@ public sealed partial class SkyLighting : Node3D
         {
             var rotation = new Basis(new Quaternion(v.Rotation.X, v.Rotation.Y, v.Rotation.Z, v.Rotation.W).Normalized());
             return new FogBox(ViewSpace.ToView(v.Position.X, v.Position.Y, v.Position.Z), permutation * rotation * permutation.Transposed(),
-                new Vector3(v.Size.X, v.Size.Y, v.Size.Z) / 2f, v.ThicknessPerYard, new Color(v.Color.X, v.Color.Y, v.Color.Z), v.EdgePower);
+                new Vector3(v.Size.X, v.Size.Y, v.Size.Z) / 2f, v.ThicknessPerYard, new Color(v.Color.X, v.Color.Y, v.Color.Z), v.EdgePower,
+                v.IsEllipsoid, v.UsesNoise, v.NoiseSpeed(0), v.NoiseSpeed(1), v.HeightPower);
         })];
     }
 
@@ -455,6 +456,7 @@ public sealed partial class SkyLighting : Node3D
             fogVolumeImage.SetPixel(at + 2, 0, new Color(b.Axes.Y.X, b.Axes.Y.Y, b.Axes.Y.Z, b.Half.Y));
             fogVolumeImage.SetPixel(at + 3, 0, new Color(b.Axes.Z.X, b.Axes.Z.Y, b.Axes.Z.Z, b.Half.Z));
             fogVolumeImage.SetPixel(at + 4, 0, new Color(b.Color.R, b.Color.G, b.Color.B, b.Power));
+            fogVolumeImage.SetPixel(at + 5, 0, new Color((b.Ellipsoid ? 1f : 0f) + (b.Noise ? 2f : 0f), b.SpeedA, b.SpeedB, b.HeightPower));
         }
 
         if (fogVolumeTexture == null)
@@ -468,6 +470,7 @@ public sealed partial class SkyLighting : Node3D
         }
 
         ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeCount, (float)chosen.Length);
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeTime, (float)(Time.GetTicksMsec() / 1000.0 % 100000.0));
     }
 
     /// <summary>

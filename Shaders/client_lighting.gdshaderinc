@@ -94,14 +94,44 @@ vec3 client_fog_sun_scatter(vec3 view_position, mat4 inv_view) {
     return client_gamma_to_linear(client_fog_sun.rgb) * client_fog_sun.w * phase;
 }
 
-// Placed retail fog volumes (the retail "volumefogmaterialinjection" pass): the few boxes nearest the camera, five
-// texels each (see ClientShaderGlobals). Each ray from the eye to the fragment is clipped to the box, and the
-// extinction is the box's thickness times the length inside, shaped by how far the segment's middle sits from the
-// box's faces (the client's signed-distance falloff, raised to the edge power). The haze takes the volume's color,
-// lit by the sun and ambient. The thickness scale, the box height and the falloff distance are estimates.
+// Placed retail fog volumes (the retail "volumefogmaterialinjection" pass): the few boxes nearest the camera, six
+// texels each (see ClientShaderGlobals). Each ray from the eye to the fragment is clipped to the volume (a box or, for
+// flag bit 2, the ellipsoid inscribed in it) and the density is sampled at three points along the part inside: the
+// thickness, shaped by how far the point sits from the volume's faces (the client's signed-distance falloff, raised to
+// the edge power), thinning from the bottom of the box to its top, and, for flag bit 0, broken up by two drifting
+// layers of 3D noise through a contrast curve. The haze takes the volume's color, lit by the sun and ambient. The
+// thickness scale, the box height, the falloff distance, the noise cell sizes and speeds and the contrast curve are
+// estimates; the client's noise is a texture and its constants are not in the shipped bytecode.
 global uniform sampler2D client_fog_volumes : filter_nearest, repeat_disable;
 global uniform float client_fog_volume_count;
+global uniform float client_fog_volume_time;
 const int CLIENT_FOG_VOLUME_MAX = 6;
+const float CLIENT_FOG_NOISE_CELL = 100.0;
+
+float client_fog_hash(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.zyx + 31.32);
+    return fract((p.x + p.y) * p.z);
+}
+
+// 3D value noise in 0 to 1.
+float client_fog_noise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = mix(mix(client_fog_hash(i), client_fog_hash(i + vec3(1, 0, 0)), f.x), mix(client_fog_hash(i + vec3(0, 1, 0)), client_fog_hash(i + vec3(1, 1, 0)), f.x), f.y);
+    float b = mix(mix(client_fog_hash(i + vec3(0, 0, 1)), client_fog_hash(i + vec3(1, 0, 1)), f.x), mix(client_fog_hash(i + vec3(0, 1, 1)), client_fog_hash(i + vec3(1, 1, 1)), f.x), f.y);
+    return mix(a, b, f.z);
+}
+
+// Density factor at a world point: two noise layers drifting at their own speeds, averaged and contrasted so the
+// mean stays near 1 and the haze breaks into clumps.
+float client_fog_noise_factor(vec3 world, float speed_a, float speed_b) {
+    vec3 a = (world - vec3(1.0, 0.0, 0.3) * speed_a * client_fog_volume_time) / CLIENT_FOG_NOISE_CELL;
+    vec3 b = (world - vec3(-0.6, 0.0, 1.0) * speed_b * client_fog_volume_time) / (CLIENT_FOG_NOISE_CELL * 1.7) + 17.0;
+    float n = 0.5 * (client_fog_noise(a) + client_fog_noise(b));
+    return mix(0.3, 1.7, smoothstep(0.25, 0.75, n));
+}
 
 vec4 client_fog_volume_layer(vec3 origin, vec3 direction, float eye_distance) {
     float transmittance = 1.0;
@@ -112,32 +142,63 @@ vec4 client_fog_volume_layer(vec3 origin, vec3 direction, float eye_distance) {
         if (i >= count) {
             break;
         }
-        int at = i * 5;
+        int at = i * 6;
         vec4 t0 = texelFetch(client_fog_volumes, ivec2(at, 0), 0);
         vec4 ax = texelFetch(client_fog_volumes, ivec2(at + 1, 0), 0);
         vec4 ay = texelFetch(client_fog_volumes, ivec2(at + 2, 0), 0);
         vec4 az = texelFetch(client_fog_volumes, ivec2(at + 3, 0), 0);
         vec4 t4 = texelFetch(client_fog_volumes, ivec2(at + 4, 0), 0);
+        vec4 t5 = texelFetch(client_fog_volumes, ivec2(at + 5, 0), 0);
+        bool ellipsoid = mod(t5.x, 2.0) > 0.5;
+        bool noisy = t5.x > 1.5;
         vec3 half_size = vec3(ax.w, ay.w, az.w);
         vec3 o = origin - t0.xyz;
         vec3 local_origin = vec3(dot(o, ax.xyz), dot(o, ay.xyz), dot(o, az.xyz));
         vec3 local_direction = vec3(dot(direction, ax.xyz), dot(direction, ay.xyz), dot(direction, az.xyz));
-        vec3 safe = mix(local_direction, vec3(1e-5), lessThan(abs(local_direction), vec3(1e-5)));
-        vec3 ta = (-half_size - local_origin) / safe;
-        vec3 tb = (half_size - local_origin) / safe;
-        vec3 t_near = min(ta, tb);
-        vec3 t_far = max(ta, tb);
-        float t_in = max(max(t_near.x, t_near.y), max(t_near.z, 0.0));
-        float t_out = min(min(t_far.x, t_far.y), min(t_far.z, eye_distance));
+        float t_in;
+        float t_out;
+        if (ellipsoid) {
+            vec3 so = local_origin / half_size;
+            vec3 sd = local_direction / half_size;
+            float qa = dot(sd, sd);
+            float qb = dot(so, sd);
+            float disc = qb * qb - qa * (dot(so, so) - 1.0);
+            if (disc <= 0.0) {
+                continue;
+            }
+            float root = sqrt(disc);
+            t_in = max((-qb - root) / qa, 0.0);
+            t_out = min((-qb + root) / qa, eye_distance);
+        } else {
+            vec3 safe = mix(local_direction, vec3(1e-5), lessThan(abs(local_direction), vec3(1e-5)));
+            vec3 ta = (-half_size - local_origin) / safe;
+            vec3 tb = (half_size - local_origin) / safe;
+            vec3 t_near = min(ta, tb);
+            vec3 t_far = max(ta, tb);
+            t_in = max(max(t_near.x, t_near.y), max(t_near.z, 0.0));
+            t_out = min(min(t_far.x, t_far.y), min(t_far.z, eye_distance));
+        }
         float length_inside = t_out - t_in;
         if (length_inside <= 0.0) {
             continue;
         }
-        vec3 middle = local_origin + local_direction * (t_in + t_out) * 0.5;
-        vec3 to_face = half_size - abs(middle);
         float falloff = max(min(min(half_size.x, half_size.y), half_size.z), 0.001);
-        float edge = pow(clamp(min(min(to_face.x, to_face.y), to_face.z) / falloff, 0.0, 1.0), t4.w);
-        float opacity = 1.0 - exp(-t0.w * edge * length_inside);
+        float density = 0.0;
+        for (int tap = 0; tap < 3; tap++) {
+            float t = t_in + length_inside * (0.1667 + 0.3333 * float(tap));
+            vec3 local = local_origin + local_direction * t;
+            float inside_distance = ellipsoid
+                ? (1.0 - length(local / half_size)) * min(min(half_size.x, half_size.y), half_size.z)
+                : min(min(half_size.x - abs(local.x), half_size.y - abs(local.y)), half_size.z - abs(local.z));
+            float edge = pow(clamp(inside_distance / falloff, 0.0, 1.0), t4.w);
+            float height = pow(clamp(0.5 - local.z / (2.0 * half_size.z), 0.0, 1.0), t5.w);
+            float tap_density = edge * height;
+            if (noisy) {
+                tap_density *= client_fog_noise_factor(origin + direction * t, t5.y, t5.z);
+            }
+            density += tap_density / 3.0;
+        }
+        float opacity = 1.0 - exp(-t0.w * density * length_inside);
         scattered += transmittance * opacity * client_gamma_to_linear(t4.rgb) * lit;
         transmittance *= 1.0 - opacity;
     }

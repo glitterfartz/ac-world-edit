@@ -22,8 +22,33 @@ namespace ACWorldEdit.Assets;
 /// <param name="Extra">The first three floats of the VFEX entry with this id (they alone hold real values), if any.</param>
 public sealed record MapFogVolume(Vector3 Color, float[] Intensity, float Unknown18, Vector3 Position, Quaternion Rotation, float[] Radius, int[] AnimationPeriods, uint Flags, uint ModelFileDataId, uint FogLevel, uint Id, float[]? Extra)
 {
+    /// <summary>
+    /// How much of the volume shows: 1 unless the map's VolumeFogCondition names it, in which case its WhenFalse value (no
+    /// player is here to satisfy the condition).
+    /// </summary>
+    public float Presence { get; init; } = 1f;
+
     /// <summary>Extinction per yard along a ray through the volume's middle (the thickness, scaled to read as haze rather than a wall).</summary>
-    public float ThicknessPerYard => Intensity[0] * ThicknessScale;
+    public float ThicknessPerYard => Intensity[0] * ThicknessScale * Presence;
+
+    /// <summary>
+    /// Whether the haze drifts with a noise (flags bit 0). The injection shader exists in permutations that add the noise,
+    /// an ellipsoid shape and sun shadows; the flag bits are taken to select them in that order (an inference: the wiki
+    /// does not document the flags).
+    /// </summary>
+    public bool UsesNoise => (Flags & 1) != 0;
+
+    /// <summary>Whether the volume is an ellipsoid inscribed in its box rather than the box (flags bit 2).</summary>
+    public bool IsEllipsoid => (Flags & 4) != 0;
+
+    /// <summary>The power that shapes how density thins from the box's bottom to its top (the second intensity value).</summary>
+    public float HeightPower => Math.Max(Intensity[1], 0.1f);
+
+    /// <summary>Yards one noise cell spans; the animation periods are the milliseconds the first two noise layers take to cross one.</summary>
+    public const float NoiseCellYards = 100f;
+
+    /// <summary>Yards per second a noise layer (0 or 1) drifts, from its animation period.</summary>
+    public float NoiseSpeed(int layer) => AnimationPeriods[layer] <= 0 ? 0f : NoiseCellYards * 1000f / AnimationPeriods[layer];
 
     /// <summary>Yards the box measures along its local x, y and z axes (the shader's box size).</summary>
     public Vector3 Size => new(Radius[0], Radius[1], Intensity[2]);
@@ -53,6 +78,12 @@ public static class FogVolumes
 
     /// <summary>The path a map's fog volumes are stored at, for a map directory name.</summary>
     public static string PathFor(string directory) => $"World/Maps/{directory}/{directory}_fogs.wdt";
+
+    /// <summary>
+    /// Apply VolumeFogCondition: each volume the table names (by its id) takes the table's WhenFalse value as its presence.
+    /// </summary>
+    public static IReadOnlyList<MapFogVolume> ApplyConditions(IReadOnlyList<MapFogVolume> volumes, IReadOnlyDictionary<uint, float>? whenFalse) =>
+        whenFalse == null || whenFalse.Count == 0 ? volumes : [.. volumes.Select(v => whenFalse.TryGetValue(v.Id, out float presence) ? v with { Presence = presence } : v)];
 
     /// <summary>
     /// A map's fog volumes, or an empty list when the client has no <c>_fogs.wdt</c> for it (classic continents, MPQ clients).

@@ -320,7 +320,7 @@ public partial class TerrainViewer : Node3D
             sky.Retail = profile.Kind == ClientKind.Retail;
             sky.SetMap(lighting, currentMapId, world.Tiles.Count == 0);
             // Retail maps may carry placed fog volumes in a separate _fogs.wdt.
-            sky.SetFogVolumes(profile.Kind == ClientKind.Retail ? await Task.Run(() => FogVolumes.Load(assets, name)) : []);
+            sky.SetFogVolumes(profile.Kind == ClientKind.Retail ? await Task.Run(() => FogVolumes.ApplyConditions(FogVolumes.Load(assets, name), lighting?.FogVolumePresence)) : []);
             tileX.Editable = tileY.Editable = world.Tiles.Count > 0;
             objects.SetGlobals(world.GlobalObjects);
             var requested = waterSmoke && waterStage == 0 ? new TileKey(32, 49) : new TileKey((int)tileX.Value, (int)tileY.Value);

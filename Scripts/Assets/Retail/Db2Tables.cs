@@ -25,6 +25,7 @@ public sealed class Db2Tables
         ["LightData"] = 1375580,
         ["LightParams"] = 1334669,
         ["LightSkybox"] = 1308501,
+        ["VolumeFogCondition"] = 3587230,
         ["LightShaft"] = 5350589,
         ["LightParamsLightShaft"] = 5350588,
         ["LiquidType"] = 1371380,

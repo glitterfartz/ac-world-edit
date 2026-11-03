@@ -94,6 +94,34 @@ public class FogVolumeTests
     }
 
     [Fact]
+    public void FlagsPickTheShapeAndNoiseAndPeriodsTheDriftSpeed()
+    {
+        var volume = Assert.Single(FogVolumes.Read(Chunk("VFOG", Vfog(1))));
+
+        // Flags 1: noise on, a box. A 10 second period over a 100 yard cell is 10 yards a second; the second layer is half that.
+        Assert.True(volume.UsesNoise);
+        Assert.False(volume.IsEllipsoid);
+        Assert.Equal(10f, volume.NoiseSpeed(0), 4);
+        Assert.Equal(5f, volume.NoiseSpeed(1), 4);
+        Assert.True((volume with { Flags = 4 }).IsEllipsoid);
+        Assert.Equal(0f, (volume with { AnimationPeriods = [0, 0, 0, 0] }).NoiseSpeed(0));
+        Assert.Equal(0.8f, volume.HeightPower);
+    }
+
+    [Fact]
+    public void ConditionsScaleTheVolumesTheyNameByTheirWhenFalseValue()
+    {
+        var volumes = FogVolumes.Read(Chunk("VFOG", Vfog(0x259).Concat(Vfog(0x25a)).ToArray()));
+
+        var adjusted = FogVolumes.ApplyConditions(volumes, new Dictionary<uint, float> { [0x25a] = 0f });
+
+        Assert.Equal(1f, adjusted[0].Presence);
+        Assert.Equal(0f, adjusted[1].Presence);
+        Assert.Equal(0f, adjusted[1].ThicknessPerYard);
+        Assert.Same(volumes, FogVolumes.ApplyConditions(volumes, null));
+    }
+
+    [Fact]
     public void ATruncatedChunkAndATrailingPartialEntryAreIgnored()
     {
         var whole = Chunk("VFOG", Vfog(1));
