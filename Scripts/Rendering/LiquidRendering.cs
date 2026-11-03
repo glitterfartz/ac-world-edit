@@ -35,6 +35,7 @@ public static class LiquidRendering
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
         material.SetShaderParameter("uv_scale", style.Scale);
         material.SetShaderParameter("uv_angle", style.Rotation);
+        material.SetShaderParameter("scroll_speed", new Vector2(style.ScrollU, style.ScrollV));
         material.SetShaderParameter("depth_scale", style.DepthScale);
     }
 

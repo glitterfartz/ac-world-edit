@@ -22,6 +22,7 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, uint> objectTypes = [];
     readonly Dictionary<uint, int> materialFormats = [];
     readonly Dictionary<uint, string> bumpMaps = [];
+    readonly Dictionary<uint, (float U, float V)> scrolls = [];
 
     public static void Register(IClientFiles files, RetailLiquids liquids) => registry.AddOrUpdate(files, liquids);
 
@@ -34,6 +35,11 @@ public sealed class RetailLiquids
         {
             string[] textures = row.Field<string[]>("Texture") ?? [];
             result.types[(uint)row.ID] = (textures.Length > 0 ? textures[0] ?? "" : "", row.FieldAs<uint>("SoundBank"), row.FieldAs<uint>("MaterialID"));
+            if (row.Field<float[]>("Float") is { Length: > 1 } floats)
+            {
+                result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+            }
+
             if (textures.Length > BumpSlot && !string.IsNullOrWhiteSpace(textures[BumpSlot]))
             {
                 result.bumpMaps[(uint)row.ID] = textures[BumpSlot]!.Replace('\\', '/');
@@ -57,9 +63,14 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null)
     {
         var result = new RetailLiquids();
+        foreach (var sc in scrolls ?? [])
+        {
+            result.scrolls[sc.Type] = (sc.U, sc.V);
+        }
+
         foreach (var b in bumps ?? [])
         {
             result.bumpMaps[b.Type] = b.Bump.Replace('\\', '/');
@@ -89,6 +100,9 @@ public sealed class RetailLiquids
 
     /// <summary>The ripple normal map a type names, or null when it has none (magma, slime).</summary>
     public string? Bump(uint type) => bumpMaps.GetValueOrDefault(type);
+
+    /// <summary>The scroll speeds (cycles per second along U and V) of a magma or slime type: its first two floats.</summary>
+    public (float U, float V) Scroll(uint type) => scrolls.GetValueOrDefault(type);
 
     public uint Kind(uint type) => types.TryGetValue(type, out var t) ? t.Kind : 0;
 

@@ -332,7 +332,8 @@ public sealed class TerrainRenderer
             return;
         }
 
-        if (!liquids.TryGetValue(surface.Texture, out var entry))
+        string key = surface.Texture + "|" + (surface.LiquidStyle?.CacheKey ?? "");
+        if (!liquids.TryGetValue(key, out var entry))
         {
             using var image = Image.CreateFromData(pixels.Width, pixels.Height, false, Image.Format.Rgba8, pixels.Rgba);
             var texture = ImageTexture.CreateFromImage(image);
@@ -342,7 +343,7 @@ public sealed class TerrainRenderer
             };
             LiquidRendering.Configure(mat, texture, surface.LiquidKind, surface.LiquidStyle);
             entry = new(texture, mat);
-            liquids.Add(surface.Texture, entry);
+            liquids.Add(key, entry);
         }
 
         entry.References++;
@@ -361,7 +362,7 @@ public sealed class TerrainRenderer
             Mesh = LiquidRendering.Mesh(surface, entry.Material),
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
         };
-        node.SetMeta("liquid", surface.Texture);
+        node.SetMeta("liquid", key);
         container.AddChild(node);
     }
 

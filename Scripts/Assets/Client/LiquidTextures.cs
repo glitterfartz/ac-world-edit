@@ -19,8 +19,14 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0)
 {
+    /// <summary>
+    /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
+    /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
+    /// </summary>
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}";
+
     /// <summary>
     /// What the stock river and lake types use.
     /// </summary>
@@ -80,14 +86,22 @@ public sealed class LiquidTextures
         if (types is not { } table)
         {
             var stock = Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-            return Kind(type) < 2 && Bump(type) is { } bump ? stock with { Bump = bump } : stock;
+            if (Kind(type) >= 2)
+            {
+                // Magma and slime scroll their frames at the type's first two floats.
+                var (u, v) = retail!.Scroll(type);
+                return stock with { ScrollU = u, ScrollV = v };
+            }
+
+            return Bump(type) is { } bump ? stock with { Bump = bump } : stock;
         }
 
-        // Only the water material (1) reads the floats as scale, rotation and depth scale; magma uses them as scroll speeds.
+        // Only the water material (1) reads the floats as scale, rotation and depth scale; magma uses the first two as scroll speeds.
         bool water = table.U(type, 14) == 1;
         int period = (int)table.U(type, 42);
         return new(LiquidStyle.GradientFor(table.Str(type, 16)), (int)table.U(type, 41) == 1 ? 1 : 0, period > 0 ? period : 1250,
-            water ? table.F(type, 23) : 1, water ? table.F(type, 24) : 0, water ? table.F(type, 25) : 1);
+            water ? table.F(type, 23) : 1, water ? table.F(type, 24) : 0, water ? table.F(type, 25) : 1, null,
+            water ? 0 : table.F(type, 23), water ? 0 : table.F(type, 24));
     }
     /// <summary>
     /// The retail ripple normal map for a water type, decoded once and shared by every type that names

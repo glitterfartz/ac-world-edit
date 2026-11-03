@@ -47,6 +47,9 @@ uniform float period_ms = 1250.0;
 // Frame texture scale and rotation in radians (LiquidType floats 0 and 1).
 uniform float uv_scale = 1.0;
 uniform float uv_angle = 0.0;
+// How fast magma and slime scroll their frames, in texture widths per second along U and V (LiquidType floats 0
+// and 1; Liquid::GetTexScrollMtx). Water leaves it at zero.
+uniform vec2 scroll_speed = vec2(0.0);
 
 const int GRADIENT_ROWS = 64;
 
@@ -169,7 +172,7 @@ void fragment() {
     vec2 size = vec2(textureSize(albedo_tex, 0));
     float s = sin(uv_angle);
     float c = cos(uv_angle);
-    vec2 scaled = UV * uv_scale;
+    vec2 scaled = UV * uv_scale + fract(TIME * scroll_speed);
     vec2 tile = fract(vec2(c * scaled.x - s * scaled.y, s * scaled.x + c * scaled.y));
     // Clamp inside each frame to avoid sampling its neighbor in the atlas.
     vec2 inset = vec2(0.5 * frames / size.x, 0.5 / size.y);

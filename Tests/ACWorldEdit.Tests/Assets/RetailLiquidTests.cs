@@ -126,6 +126,29 @@ public class RetailLiquidTests
     }
 
     [Fact]
+    public void MagmaTypesExposeTheirScrollSpeeds()
+    {
+        var tables = RetailLiquids.From(
+            [(3, "XTextures\\lava\\lava.%d.blp", 2, 2)], [], [(2, 1)],
+            scrolls: [(3, 0.025f, 0.1f)]);
+
+        Assert.Equal((0.025f, 0.1f), tables.Scroll(3));
+        Assert.Equal((0f, 0f), tables.Scroll(99));
+    }
+
+    [Fact]
+    public void StylesThatScrollDifferentlyDoNotShareAMaterialKey()
+    {
+        var still = LiquidStyle.River;
+        var scrolling = LiquidStyle.River with { ScrollU = 0.025f };
+        var faster = LiquidStyle.River with { ScrollU = 0.025f, ScrollV = 0.1f };
+
+        Assert.NotEqual(still.CacheKey, scrolling.CacheKey);
+        Assert.NotEqual(scrolling.CacheKey, faster.CacheKey);
+        Assert.Equal(scrolling.CacheKey, (LiquidStyle.River with { ScrollU = 0.025f }).CacheKey);
+    }
+
+    [Fact]
     public void ListfileResolvesIgnoringCaseAndSeparators()
     {
         string file = Path.Combine(Path.GetTempPath(), "listfile-" + Guid.NewGuid().ToString("N") + ".csv");
