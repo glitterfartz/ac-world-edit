@@ -148,6 +148,63 @@ public class RetailLiquidTests
         Assert.Equal(scrolling.CacheKey, (LiquidStyle.River with { ScrollU = 0.025f }).CacheKey);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SwampLayersAreSharedAndMissingLayersKeepTheBaseFallback(bool missingDeep)
+    {
+        using var files = new SwampFiles(missingDeep);
+        var settings = new RetailLiquids.SwampSettings("middle.blp", "deep.blp",
+            new(0, 0.04f, 0.04f, 0.05f), new(0.1f, 0.3f, 2), 1);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1225, "shallow.blp", 2, 14), (899, "shallow.blp", 2, 14)], [], [(14, 3)],
+            swamps: [(1225, settings), (899, settings with { Opacity = 0.93f })]));
+        var textures = LiquidTextures.For(files);
+        var first = textures.Style(1225);
+        var second = textures.Style(899);
+        Assert.Equal(0, first.ScrollU);
+        Assert.Equal(0, first.ScrollV);
+        Assert.Same(textures.Decode(1225), textures.Decode(899));
+        if (missingDeep)
+        {
+            Assert.Null(first.Swamp);
+            Assert.Null(second.Swamp);
+        }
+        else
+        {
+            Assert.NotNull(first.Swamp);
+            Assert.NotNull(second.Swamp);
+            Assert.Same(first.Swamp.Middle, second.Swamp.Middle);
+            Assert.Same(first.Swamp.Deep, second.Swamp.Deep);
+            Assert.Same(first.Swamp, textures.Style(1225).Swamp);
+            Assert.NotEqual(first.CacheKey, second.CacheKey);
+            Assert.NotEqual(first.CacheKey, LiquidStyle.River.CacheKey);
+        }
+    }
+
+    sealed class SwampFiles(bool missingDeep) : IClientFiles
+    {
+        public ClientKind Kind => ClientKind.Retail;
+        public string Build => "synthetic";
+        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" || path == "deep.blp" && !missingDeep;
+        public string Source(string path) => "synthetic";
+        public void Dispose() { }
+        public byte[] Read(string path)
+        {
+            if (!Exists(path)) throw new FileNotFoundException(path);
+            byte[] b = new byte[152];
+            "BLP2"u8.CopyTo(b);
+            b[8] = 3; // One uncompressed BGRA texel.
+            b[9] = 8;
+            BitConverter.GetBytes(1).CopyTo(b, 12);
+            BitConverter.GetBytes(1).CopyTo(b, 16);
+            BitConverter.GetBytes(148).CopyTo(b, 20);
+            BitConverter.GetBytes(4).CopyTo(b, 84);
+            b[151] = 255;
+            return b;
+        }
+    }
+
     [Fact]
     public void ListfileResolvesIgnoringCaseAndSeparators()
     {

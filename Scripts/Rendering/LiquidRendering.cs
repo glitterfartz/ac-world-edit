@@ -19,12 +19,23 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+        material.SetShaderParameter("swamp_material", style.Swamp != null);
+        if (style.Swamp is { } swamp)
+        {
+            material.SetShaderParameter("swamp_middle_tex", ExtraTexture(swamp.Middle));
+            material.SetShaderParameter("swamp_deep_tex", ExtraTexture(swamp.Deep));
+            var d = swamp.Settings.Depths;
+            var s = swamp.Settings.Scales;
+            material.SetShaderParameter("swamp_depths", new Vector4(d.X, d.Y, d.Z, d.W));
+            material.SetShaderParameter("swamp_scales", new Vector3(s.X, s.Y, s.Z));
+            material.SetShaderParameter("swamp_opacity", swamp.Settings.Opacity);
+        }
         // A type that names a ripple normal map (retail data) draws with the retail water model; one that does
         // not (3.3.5a data) keeps the 3.3.5a model. See Shaders/liquid.gdshader.
         material.SetShaderParameter("water_model", style.Bump != null ? 1 : 0);
         if (style.Bump != null)
         {
-            material.SetShaderParameter("retail_ripple_tex", BumpTexture(style.Bump));
+            material.SetShaderParameter("retail_ripple_tex", ExtraTexture(style.Bump));
         }
 
         material.SetShaderParameter("albedo_tex", texture);
@@ -39,20 +50,20 @@ public static class LiquidRendering
         material.SetShaderParameter("depth_scale", style.DepthScale);
     }
 
-    static readonly Dictionary<BlpTexture, ImageTexture> bumpTextures = [];
+    static readonly Dictionary<BlpTexture, ImageTexture> extraTextures = [];
 
     /// <summary>
-    /// The ripple normal map as a mip-mapped texture, uploaded once per decoded map. It is a handful of
-    /// small textures, so they live as long as the process.
+    /// Ripple maps and swamp depth layers as mip-mapped textures, uploaded once per decoded texture.
+    /// These small shared textures live as long as the process.
     /// </summary>
-    static ImageTexture BumpTexture(BlpTexture bump)
+    static ImageTexture ExtraTexture(BlpTexture pixels)
     {
-        if (!bumpTextures.TryGetValue(bump, out var texture))
+        if (!extraTextures.TryGetValue(pixels, out var texture))
         {
-            using var image = Image.CreateFromData(bump.Width, bump.Height, false, Image.Format.Rgba8, bump.Rgba);
+            using var image = Image.CreateFromData(pixels.Width, pixels.Height, false, Image.Format.Rgba8, pixels.Rgba);
             image.GenerateMipmaps();
             texture = ImageTexture.CreateFromImage(image);
-            bumpTextures[bump] = texture;
+            extraTextures[pixels] = texture;
         }
 
         return texture;

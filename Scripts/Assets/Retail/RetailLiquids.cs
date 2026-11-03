@@ -23,6 +23,14 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, int> materialFormats = [];
     readonly Dictionary<uint, string> bumpMaps = [];
     readonly Dictionary<uint, (float U, float V)> scrolls = [];
+    readonly Dictionary<uint, SwampSettings> swamps = [];
+
+    /// <summary>
+    /// Material 14's three depth textures. The DB2-to-buffer mapping is inferred: floats 0..3
+    /// are the depth transitions, 12 opacity, and 13..15 the three texture scales.
+    /// </summary>
+    public sealed record SwampSettings(string Middle, string Deep, System.Numerics.Vector4 Depths,
+        System.Numerics.Vector3 Scales, float Opacity);
 
     public static void Register(IClientFiles files, RetailLiquids liquids) => registry.AddOrUpdate(files, liquids);
 
@@ -38,6 +46,12 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 16 && textures.Length >= 3)
+                {
+                    result.swamps[(uint)row.ID] = new(textures[1], textures[2],
+                        new(floats[0], floats[1], floats[2], floats[3]),
+                        new(floats[13], floats[14], floats[15]), floats[12]);
+                }
             }
 
             if (textures.Length > BumpSlot && !string.IsNullOrWhiteSpace(textures[BumpSlot]))
@@ -63,9 +77,13 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null)
     {
         var result = new RetailLiquids();
+        foreach (var swamp in swamps ?? [])
+        {
+            result.swamps[swamp.Type] = swamp.Settings;
+        }
         foreach (var sc in scrolls ?? [])
         {
             result.scrolls[sc.Type] = (sc.U, sc.V);
@@ -105,6 +123,8 @@ public sealed class RetailLiquids
     public (float U, float V) Scroll(uint type) => scrolls.GetValueOrDefault(type);
 
     public uint Kind(uint type) => types.TryGetValue(type, out var t) ? t.Kind : 0;
+
+    public SwampSettings? Swamp(uint type) => swamps.GetValueOrDefault(type);
 
     /// <summary>
     /// Resolve an MH2O layer's type and vertex format. Values below <see cref="FirstObjectId"/> are the

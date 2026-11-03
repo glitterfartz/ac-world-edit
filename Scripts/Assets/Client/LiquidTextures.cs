@@ -19,13 +19,13 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null)
 {
     /// <summary>
     /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
     /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
     /// </summary>
-    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}";
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}";
 
     /// <summary>
     /// What the stock river and lake types use.
@@ -45,6 +45,12 @@ public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int Pe
         : LiquidGradient.River;
 }
 
+/// <summary>Decoded material 14 depth layers; shared CPU textures, with no engine resources.</summary>
+public sealed record SwampLiquidStyle(BlpTexture Middle, BlpTexture Deep, RetailLiquids.SwampSettings Settings)
+{
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Middle)}|{RuntimeHelpers.GetHashCode(Deep)}";
+}
+
 /// <summary>
 /// Per-store CPU liquid catalog/atlas cache. Identical patterns share decoded storage;
 /// ConditionalWeakTable ties lifetime to the mounted client rather than a global singleton.
@@ -57,7 +63,8 @@ public sealed class LiquidTextures
     readonly RetailLiquids? retail;
     readonly Dictionary<uint, BlpTexture> atlases = [];
     readonly Dictionary<string, BlpTexture> sequences = new(StringComparer.OrdinalIgnoreCase);
-    readonly Dictionary<string, BlpTexture?> bumps = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, BlpTexture?> extraTextures = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<uint, SwampLiquidStyle?> swamps = [];
     LiquidTextures(IClientFiles source)
     {
         store = source;
@@ -79,13 +86,29 @@ public sealed class LiquidTextures
     /// <summary>
     /// How the water material draws a type. Wrath reads the LiquidType.dbc columns the client reads
     /// (texture slot 1, floats 0 to 2, ints 0 and 1); retail types use the stock river or ocean style by
-    /// their sound bank and add the ripple normal map the retail water shader samples.
+    /// their sound bank and add the ripple normal map or material 14's depth layers.
     /// </summary>
     public LiquidStyle Style(uint type)
     {
         if (types is not { } table)
         {
             var stock = Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+            if (retail!.Swamp(type) is { } settings)
+            {
+                lock (swamps)
+                {
+                    if (!swamps.TryGetValue(type, out var swamp))
+                    {
+                        // Missing extra layers retain the existing base-texture fallback.
+                        var middle = Extra(settings.Middle);
+                        var deep = Extra(settings.Deep);
+                        swamps[type] = swamp = middle != null && deep != null ? new(middle, deep, settings) : null;
+                    }
+
+                    return stock with { Swamp = swamp };
+                }
+            }
+
             if (Kind(type) >= 2)
             {
                 // Magma and slime scroll their frames at the type's first two floats.
@@ -114,9 +137,16 @@ public sealed class LiquidTextures
             return null;
         }
 
-        lock (bumps)
+        return Extra(path);
+    }
+
+    BlpTexture? Extra(string path)
+    {
+        path = path.Replace('\\', '/');
+
+        lock (extraTextures)
         {
-            if (!bumps.TryGetValue(path, out var texture))
+            if (!extraTextures.TryGetValue(path, out var texture))
             {
                 try
                 {
@@ -127,7 +157,7 @@ public sealed class LiquidTextures
                     texture = null;
                 }
 
-                bumps[path] = texture;
+                extraTextures[path] = texture;
             }
 
             return texture;

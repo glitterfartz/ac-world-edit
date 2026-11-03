@@ -29,6 +29,24 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void ReportedSwampTilesResolveThreeDepthTextures()
+    {
+        var map = Azeroth();
+        var textures = LiquidTextures.For(RetailData.Files);
+        foreach (var key in new[] { new TileKey(46, 22), new TileKey(46, 23), new TileKey(47, 23), new TileKey(45, 23) })
+        {
+            var swamp = map.ReadTile(RetailData.Files, key).Liquids.First(s => s.LiquidType == 1225);
+            var style = textures.Style(swamp.LiquidType!.Value);
+            Assert.NotNull(style.Swamp);
+            Assert.NotEmpty(textures.Decode(1225).Rgba);
+            Assert.NotEmpty(style.Swamp.Middle.Rgba);
+            Assert.NotEmpty(style.Swamp.Deep.Rgba);
+            Assert.Equal(0.04f, style.Swamp.Settings.Depths.Y);
+            Assert.Equal(style.Swamp.Settings.Depths.Y, style.Swamp.Settings.Depths.Z);
+        }
+    }
+
+    [RetailListfileFact]
     public void AzerothTilesDecodeLiquidsWithKnownTypes()
     {
         var map = Azeroth();
