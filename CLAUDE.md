@@ -40,6 +40,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 - `artifacts/`, `native/`, `build/`, `.build-env/`, `wow-data/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
 - Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added.
 - The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/`; use `-p:NuGetAudit=false` for dotnet commands.
+- `--client-shot*` runs write PNGs into `artifacts/`. Read them back (the Read tool displays images) to inspect a rendering change; do not guess from logs alone. Prefer the same map, tile, hour and eye for before/after captures so they compare directly.
 - A PostToolUse hook runs `dotnet format whitespace` on each edited `.cs` file.
 
 ## Rules
