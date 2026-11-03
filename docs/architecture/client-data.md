@@ -253,3 +253,21 @@ retain the generic liquid fallback. The common base texture decoder continues
 to load slot 0. Current listfiles do not name the two venom base textures for
 types 1233/1234, although the DB2 rows name them. Type 898 resolves both layers.
 Animated normal and other procedural inputs are not bound by this core port.
+
+### Material 12 detail inputs
+
+`RetailLiquids.LeySettings` carries texture slot 1, the first two inferred UV
+triples and packed Color[0] for material 12. `LiquidTextures.Style` returns
+`LeyLiquidStyle` with the shared decoded second atlas; slot 0 uses the existing
+base decoder. Both static and printf-style animated details are supported.
+Settings and texture identity participate in material caching. Missing second
+layers retain the generic fallback. The additional procedural surface inputs
+are not bound by this core port.
+
+Venom input follow-up (deferred at user request): the listfile lookup gap does
+not establish missing game assets. Current listfiles resolve shore/specular to
+7568587/7568588, both readable from CASC, but do not name deep/shallow/emissive.
+Direct name lookup also fails for the known readable files, so it is not a
+valid absence check. DB2 frame counts for the three unresolved slots are zero.
+Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
+before treating this as an asset blocker. Do not substitute guessed FileDataIDs.

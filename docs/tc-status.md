@@ -170,3 +170,18 @@ checked in a Godot depth-gradient fixture; real type 898 resolves in corpus test
 Venom 1233/1234 on Azeroth 52,22 still uses the generic fallback: its deep/shallow
 textures have no names in the installed or current community listfile. No client
 visual parity is claimed for this partial implementation.
+
+### Retail material 12 core
+
+Partial: `leyline_0` detail composition is implemented with inferred DB2 UV/color
+bindings. Real types 868/890 resolve in corpus checks and real ley textures were
+inspected in a Godot fixture. Procedural surface passes and retail comparison
+remain open; native depth opacity and fixed animation period are approximations.
+
+Venom input follow-up (deferred at user request): the listfile lookup gap does
+not establish missing game assets. Current listfiles resolve shore/specular to
+7568587/7568588, both readable from CASC, but do not name deep/shallow/emissive.
+Direct name lookup also fails for the known readable files, so it is not a
+valid absence check. DB2 frame counts for the three unresolved slots are zero.
+Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
+before treating this as an asset blocker. Do not substitute guessed FileDataIDs.

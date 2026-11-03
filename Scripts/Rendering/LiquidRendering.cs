@@ -11,6 +11,7 @@ namespace ACWorldEdit;
 public static class LiquidRendering
 {
     public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
+    static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/leyline.gdshader");
     static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/fel.gdshader");
     static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/swamp.gdshader");
 
@@ -21,10 +22,22 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.Shader = style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
+        material.Shader = style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
+        if (style.Ley is { } ley)
+        {
+            material.SetShaderParameter("detail_tex", ExtraTexture(ley.Detail, mipmaps: false));
+            material.SetShaderParameter("detail_frames", (float)ley.Detail.Width / ley.Detail.Height);
+            var first = ley.Settings.FirstUv;
+            var second = ley.Settings.SecondUv;
+            var color = ley.Settings.Color;
+            material.SetShaderParameter("first_uv", new Vector3(first.X, first.Y, first.Z));
+            material.SetShaderParameter("second_uv", new Vector3(second.X, second.Y, second.Z));
+            material.SetShaderParameter("base_color", new Vector3(color.X, color.Y, color.Z));
+            return;
+        }
         if (style.Fel is { } fel)
         {
             material.SetShaderParameter("shallow_tex", ExtraTexture(fel.Shallow));

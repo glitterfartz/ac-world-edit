@@ -25,6 +25,11 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, (float U, float V)> scrolls = [];
     readonly Dictionary<uint, SwampSettings> swamps = [];
     readonly Dictionary<uint, FelSettings> fels = [];
+    readonly Dictionary<uint, LeySettings> leys = [];
+
+    public sealed record LeySettings(string Detail, System.Numerics.Vector3 FirstUv,
+        System.Numerics.Vector3 SecondUv, System.Numerics.Vector3 Color);
+    public LeySettings? Ley(uint type) => leys.GetValueOrDefault(type);
 
     // Material 13: two scale/angle/scroll triples; depth mapping remains inferred.
     public sealed record FelSettings(string Shallow, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 ShallowUv, float DepthCoefficient);
@@ -55,6 +60,14 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 12 && floats.Length >= 6 && textures.Length >= 2)
+                {
+                    var colors = row.Field<int[]>("Color") ?? [];
+                    uint color = colors.Length > 0 ? unchecked((uint)colors[0]) : 0;
+                    result.leys[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
+                        new(floats[3], floats[4], floats[5]),
+                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f));
+                }
                 if (row.FieldAs<uint>("MaterialID") == 13 && floats.Length >= 15 && textures.Length >= 2)
                 {
                     result.fels[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),

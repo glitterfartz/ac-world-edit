@@ -29,6 +29,27 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void LeyAndIlluminatedWaterResolveIndependentDetailLayers()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var ley = textures.Style(868);
+        var mana = textures.Style(890);
+        Assert.NotNull(ley.Ley);
+        Assert.NotNull(mana.Ley);
+        Assert.Null(ley.Bump);
+        Assert.Null(ley.Fel);
+        Assert.NotEmpty(textures.Decode(868).Rgba);
+        Assert.NotEmpty(ley.Ley.Detail.Rgba);
+        Assert.NotEmpty(mana.Ley.Detail.Rgba);
+        Assert.Same(ley.Ley.Detail, textures.Style(868).Ley!.Detail);
+        Assert.NotSame(ley.Ley.Detail, mana.Ley.Detail);
+        Assert.NotEqual(ley.CacheKey, mana.CacheKey);
+        Assert.Equal(90, ley.Ley.Settings.FirstUv.Y);
+        Assert.Equal(-0.02f, ley.Ley.Settings.FirstUv.Z);
+        Assert.True(ley.Ley.Settings.Color.LengthSquared() > 0);
+    }
+
+    [RetailListfileFact]
     public void VenomTileResolvesDistinctDepthLayersAndUvSettings()
     {
         var tile = Azeroth().ReadTile(RetailData.Files, new TileKey(52, 22));
