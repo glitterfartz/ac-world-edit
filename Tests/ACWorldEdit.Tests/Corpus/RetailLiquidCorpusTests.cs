@@ -29,6 +29,21 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void MercuryTypesResolveTheSharedNativeRippleMap()
+    {
+        var textures = LiquidTextures.For(RetailData.Files);
+        var exterior = textures.Style(350);
+        var interior = textures.Style(412);
+        Assert.True(exterior.Mercury);
+        Assert.True(interior.Mercury);
+        Assert.NotNull(exterior.Bump);
+        Assert.NotEmpty(exterior.Bump.Rgba);
+        Assert.Same(exterior.Bump, interior.Bump);
+        Assert.False(textures.Style(2).Mercury);
+        Assert.NotEqual(exterior.CacheKey, textures.Style(2).CacheKey);
+    }
+
+    [RetailListfileFact]
     public void LeyAndIlluminatedWaterResolveIndependentDetailLayers()
     {
         var textures = LiquidTextures.For(RetailData.Files);

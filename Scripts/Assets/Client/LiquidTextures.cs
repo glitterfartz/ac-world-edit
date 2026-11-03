@@ -19,13 +19,13 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false)
 {
     /// <summary>
     /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
     /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
     /// </summary>
-    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}";
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}";
 
     /// <summary>
     /// What the stock river and lake types use.
@@ -106,6 +106,10 @@ public sealed class LiquidTextures
         if (types is not { } table)
         {
             var stock = Kind(type) == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
+            if (retail!.Material(type) == 5)
+            {
+                return stock with { Mercury = true, Bump = Bump(type) };
+            }
             if (retail!.Ley(type) is { } ley && OptionalSequence(ley.Detail) is { } detail)
             {
                 return stock with { Ley = new(detail, ley) };

@@ -185,3 +185,14 @@ Direct name lookup also fails for the known readable files, so it is not a
 valid absence check. DB2 frame counts for the three unresolved slots are zero.
 Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
 before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
+
+### Retail mercury surface
+
+Material 5 now uses a dedicated `procmercury_0`-based reflective surface, with
+native bump texture, gamma-space desaturation/Fresnel/highlight composition and
+client fog. Real types 350/412 pass corpus checks; a Godot fixture using the
+native bump texture and colored boxes was visually inspected. Fidelity deviates:
+single bounded screen reflection replaces two client reflection inputs, CPU UV
+matrices/normal multipliers/highlight exponent remain estimates, and captured
+fog may receive surface fog again. Other permutations and interaction buffers
+remain open. Ordinary water and missing-bump routing have deterministic coverage.

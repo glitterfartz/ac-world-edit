@@ -152,6 +152,8 @@ public sealed class RetailLiquids
     /// <summary>The scroll speeds (cycles per second along U and V) of a magma or slime type: its first two floats.</summary>
     public (float U, float V) Scroll(uint type) => scrolls.GetValueOrDefault(type);
 
+    public uint Material(uint type) => types.TryGetValue(type, out var t) ? t.Material : 0;
+
     public uint Kind(uint type) => types.TryGetValue(type, out var t) ? t.Kind : 0;
 
     public SwampSettings? Swamp(uint type) => swamps.GetValueOrDefault(type);

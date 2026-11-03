@@ -11,6 +11,7 @@ namespace ACWorldEdit;
 public static class LiquidRendering
 {
     public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
+    static Shader MercuryShader { get; } = ClientShaderGlobals.Load("res://Shaders/mercury.gdshader");
     static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/leyline.gdshader");
     static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/fel.gdshader");
     static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/swamp.gdshader");
@@ -22,10 +23,16 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.Shader = style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
+        material.Shader = style.Mercury ? MercuryShader : style.Ley != null ? LeyShader : style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
+        if (style.Mercury)
+        {
+            material.SetShaderParameter("has_normals", style.Bump != null);
+            if (style.Bump is { } bump) material.SetShaderParameter("ripple_tex", ExtraTexture(bump));
+            return;
+        }
         if (style.Ley is { } ley)
         {
             material.SetShaderParameter("detail_tex", ExtraTexture(ley.Detail, mipmaps: false));

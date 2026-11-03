@@ -202,6 +202,25 @@ public class RetailLiquidTests
         Assert.NotEqual(first.CacheKey, second.CacheKey);
     }
 
+    [Theory]
+    [InlineData("normal_1.blp", true)]
+    [InlineData("missing.blp", false)]
+    public void MercuryIsDistinctFromOrdinaryWaterEvenWhenTheBumpIsMissing(string bump, bool available)
+    {
+        using var files = new SwampFiles(false);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(350, "shallow.blp", 1, 5), (2, "shallow.blp", 1, 1)], [], [],
+            bumps: [(350, bump), (2, bump)]));
+        var textures = LiquidTextures.For(files);
+        var mercury = textures.Style(350);
+        var ocean = textures.Style(2);
+        Assert.True(mercury.Mercury);
+        Assert.False(ocean.Mercury);
+        Assert.Equal(available, mercury.Bump != null);
+        Assert.Same(mercury.Bump, ocean.Bump);
+        Assert.NotEqual(mercury.CacheKey, ocean.CacheKey);
+    }
+
     sealed class SwampFiles(bool missingDeep) : IClientFiles
     {
         public ClientKind Kind => ClientKind.Retail;

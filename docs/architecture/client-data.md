@@ -271,3 +271,15 @@ Direct name lookup also fails for the known readable files, so it is not a
 valid absence check. DB2 frame counts for the three unresolved slots are zero.
 Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
 before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
+
+### Material 5 mercury routing
+
+`RetailLiquids.Material` exposes the parsed LiquidMaterial ID independently of
+SoundBank. Material 5 makes `LiquidTextures.Style` set `LiquidStyle.Mercury` and
+retain the shared decoded bump map from texture slot 2. The marker participates
+in cache identity, preventing ordinary ocean water with the same source texture
+and sound bank from sharing a mercury material. A missing bump map keeps the
+mercury marker and renders a flat reflective surface. Existing base atlas loading
+is retained, although the procedural mercury shader does not sample that atlas.
+Per-type mercury float-to-buffer bindings are not asserted; runtime ripple
+transforms and highlight parameters currently use documented estimates.
