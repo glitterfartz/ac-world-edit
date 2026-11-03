@@ -141,6 +141,48 @@ public static class SkyDome
     static (float X, float Y, float Z) Direction(float theta, float phi) =>
         (MathF.Cos(phi) * MathF.Sin(theta), MathF.Sin(theta) * MathF.Sin(phi), MathF.Cos(theta));
 
+    // How opaque the cloud layer is toward its rim (s_cloudAlphaTable over s_cloudThetaTable), by polar angle from
+    // the cloud sphere's axis in units of pi.
+    static readonly (float Theta, float Alpha)[] CloudEdge = [(0.205f, 1f), (0.23f, 0.5f), (0.245f, 0f)];
+
+    /// <summary>
+    /// The cloud layer's opacity at a polar angle (radians) from the top of the dome: full up to 0.205 pi, fading to
+    /// half at 0.23 pi and to nothing at 0.245 pi, where the clouds meet the horizon.
+    /// </summary>
+    public static float CloudEdgeAlpha(float theta)
+    {
+        float turns = theta / MathF.PI;
+        if (turns <= CloudEdge[0].Theta)
+        {
+            return 1f;
+        }
+
+        for (int i = 1; i < CloudEdge.Length; i++)
+        {
+            if (turns <= CloudEdge[i].Theta)
+            {
+                float t = (turns - CloudEdge[i - 1].Theta) / (CloudEdge[i].Theta - CloudEdge[i - 1].Theta);
+                return CloudEdge[i - 1].Alpha + (CloudEdge[i].Alpha - CloudEdge[i - 1].Alpha) * t;
+            }
+        }
+
+        return 0f;
+    }
+
+    /// <summary>
+    /// A cloud texel's opacity from the summed noise (DNClouds::UpdateTextureAnimation): the sum scaled to a level
+    /// around 128, minus the density threshold, through the sharpness curve (0.96 to the power of the index times
+    /// the step the client computes once at its default density).
+    /// </summary>
+    public static float CloudAlpha(float noiseSum, float density)
+    {
+        const float sharpness = 0.96f;
+        const float step = (255 - 102) * 0.00390625f;
+        float level = MathF.Round(noiseSum * 64f + 128f);
+        float index = level - MathF.Floor((1f - density) * 255f);
+        return index < 0f ? 0f : 1f - MathF.Pow(sharpness, MathF.Min(index, 255f) * step);
+    }
+
     /// <summary>The sky highlight strength (0..1) at a day fraction, before the light's HighlightSky flag scales it.</summary>
     public static float Highlight(float dayFraction) => Interpolate(HighlightCurve, dayFraction);
 

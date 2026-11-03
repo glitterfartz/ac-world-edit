@@ -56,12 +56,19 @@ public sealed record RetailFog(LightFloatBand Density, LightBand EndColor, Light
 public sealed record FogHeightLayer(LightFloatBand Plane, LightFloatBand Scaler, LightFloatBand Density, LightFloatBand[] Coefficients, LightBand Color, LightBand EndColor);
 
 /// <summary>
+/// The light's cloud terms: the density that thresholds the cloud noise (LightFloatBand 3, retail CloudDensity) and
+/// the three colors the clouds are lit with (LightIntBand 10 to 12, retail CloudSunColor, CloudEmissiveColor and
+/// CloudLayer1AmbientColor): sunlit, shaded and base.
+/// </summary>
+public sealed record CloudBands(LightFloatBand Density, LightBand Sun, LightBand Shade, LightBand Base);
+
+/// <summary>
 /// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
 /// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-13 (shadow
 /// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
 /// tables carry no water bands.
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null)
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null, CloudBands? Clouds = null)
 {
     /// <summary>
     /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
@@ -195,7 +202,8 @@ public sealed class ClientLighting
                             Band(rows, "FogHeightColor"),
                             Band(rows, "EndFogHeightColor")),
                         Band(rows, "SunFogColor"),
-                        FloatBand(rows, r => Convert.ToSingle(r["SunFogStrength"]))));
+                        FloatBand(rows, r => Convert.ToSingle(r["SunFogStrength"]))),
+                    new(FloatBand(rows, r => Convert.ToSingle(r["CloudDensity"])), Band(rows, "CloudSunColor"), Band(rows, "CloudEmissiveColor"), Band(rows, "CloudLayer1AmbientColor")));
             }
 
             return new(regions, profiles, skyboxPaths);
@@ -253,7 +261,9 @@ public sealed class ClientLighting
                     new(LightBand.Read(intBand, baseRow + 14), LightBand.Read(intBand, baseRow + 15), LightBand.Read(intBand, baseRow + 16), LightBand.Read(intBand, baseRow + 17)),
                     new(lightParams.F(paramsId, 5), lightParams.F(paramsId, 6), lightParams.F(paramsId, 7), lightParams.F(paramsId, 8)),
                     LightBand.Read(intBand, baseRow + 9),
-                    new(LightBand.Read(intBand, baseRow + 3), LightBand.Read(intBand, baseRow + 4), LightBand.Read(intBand, baseRow + 5), lightParams.U(paramsId, 1) != 0));
+                    new(LightBand.Read(intBand, baseRow + 3), LightBand.Read(intBand, baseRow + 4), LightBand.Read(intBand, baseRow + 5), lightParams.U(paramsId, 1) != 0),
+                    null,
+                    new(LightFloatBand.Read(floatBand, floatRow + 3), LightBand.Read(intBand, baseRow + 10), LightBand.Read(intBand, baseRow + 11), LightBand.Read(intBand, baseRow + 12)));
                 if (skyboxId > 0 && skybox.Contains(skyboxId) && !skyboxPaths.ContainsKey(skyboxId))
                 {
                     skyboxPaths[skyboxId] = BinaryAsset.ModelPath(skybox.Str(skyboxId, 1));

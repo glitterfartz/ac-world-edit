@@ -323,6 +323,19 @@ public sealed partial class SkyLighting : Node3D
         skyMaterial.SetShaderParameter("sky_smog", horizon);
         skyMaterial.SetShaderParameter("sky_fog", Blend(p => p.Fog));
         skyMaterial.SetShaderParameter("sun_glow_color", Blend(p => p.SunColor ?? p.Diffuse));
+        // A LightSkybox model brings its own sun, moons and clouds, and the client then draws none of ours.
+        skyMaterial.SetShaderParameter("celestial_enabled", skyboxPath == null);
+        float Density(LightProfile p) => p.Clouds?.Density.At(tick) ?? 0f;
+        float density = Density(background);
+        if (foreground != null && weight > 0)
+        {
+            density = Mathf.Lerp(density, Density(foreground), weight);
+        }
+
+        skyMaterial.SetShaderParameter("cloud_density", density);
+        skyMaterial.SetShaderParameter("cloud_sun_color", Blend(p => p.Clouds?.Sun ?? p.Diffuse));
+        skyMaterial.SetShaderParameter("cloud_shade_color", Blend(p => p.Clouds?.Shade ?? p.Ambient));
+        skyMaterial.SetShaderParameter("cloud_base_color", Blend(p => p.Clouds?.Base ?? p.Ambient));
 
         float flag = (background.Sky?.Highlight ?? false ? 1f : 0f);
         if (foreground != null && weight > 0)
@@ -343,6 +356,10 @@ public sealed partial class SkyLighting : Node3D
             skyMaterial.SetShaderParameter(name, new Vector4(-py, pz, -px, present ? planet.Scale : 0f));
         }
 
+        // The clouds are lit by the moon at night (before about 04:50 and after about 22:10) and by the sun otherwise.
+        var lightPlanet = dayFraction < 0.2013889f || dayFraction > 0.9236111f ? SkyDome.Moon(dayFraction) : SkyDome.Sun(dayFraction);
+        var (lx, ly, lz) = lightPlanet.Direction;
+        skyMaterial.SetShaderParameter("cloud_light_direction", new Vector3(-ly, lz, -lx));
         Disc("sun_disc", SkyDome.Sun(dayFraction), hasSunTexture);
         Disc("moon_disc", SkyDome.Moon(dayFraction), hasMoonTexture);
         Disc("moon2_disc", SkyDome.SecondMoon(dayFraction), hasMoon2Texture);
