@@ -53,12 +53,13 @@ public sealed class RetailLiquids
     public FelSettings? Fel(uint type) => fels.GetValueOrDefault(type);
 
     /// <summary>
-    /// Material 18 (azerite): slots 0 and 1 are the two body layers and floats 0..2 / 3..5 are each
-    /// layer's scale, angle in degrees and scroll speed, read like material 13's triples. The masked
-    /// variants, the procedural nine-texture shader and the depth coefficient's source are not in the
-    /// table, so those stay inferred.
+    /// Material 18 (azerite): slots 0 and 1 are the two body layers. Both sample the native liquid UV at
+    /// unit scale; floats 0 and 1 are inferred to be each layer's scroll speed, the same reading the
+    /// other materials use for their first two floats. Floats 2..5 are not applied: reading them as a
+    /// per-layer scale/angle triple tiled the centre texture about 20 times per layer, which is not an
+    /// authored look. The masked variants and the depth coefficient's source are not in the table.
     /// </summary>
-    public sealed record AzeriteSettings(string Deep, string Center, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 CenterUv);
+    public sealed record AzeriteSettings(string Deep, string Center, float DeepScroll, float CenterScroll);
     public AzeriteSettings? Azerite(uint type) => azerites.GetValueOrDefault(type);
 
     /// <summary>
@@ -122,10 +123,10 @@ public sealed class RetailLiquids
                     result.fels[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
                         new(floats[3], floats[4], floats[5]), floats[14]);
                 }
-                if (row.FieldAs<uint>("MaterialID") == 18 && floats.Length >= 6 && textures.Length >= 2)
+                if (row.FieldAs<uint>("MaterialID") == 18 && floats.Length >= 2 && textures.Length >= 2)
                 {
                     result.azerites[(uint)row.ID] = new(BlpPath(textures[0] ?? ""), BlpPath(textures[1] ?? ""),
-                        new(floats[0], floats[1], floats[2]), new(floats[3], floats[4], floats[5]));
+                        floats[0], floats[1]);
                 }
                 if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 18 && textures.Length >= 3)
                 {

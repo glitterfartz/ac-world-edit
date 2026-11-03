@@ -278,11 +278,10 @@ public class RetailLiquidTests
     public void AzeriteKeepsBothBodyLayersAndItsOwnMaterial()
     {
         using var files = new SwampFiles(false);
-        var settings = new RetailLiquids.AzeriteSettings("deep.blp", "center.blp",
-            new(0.36f, 0.36f, 2), new(20, 45, 0.0035f));
+        var settings = new RetailLiquids.AzeriteSettings("deep.blp", "center.blp", 0.36f, 0.36f);
         RetailLiquids.Register(files, RetailLiquids.From(
             [(940, "shallow.blp", 2, 18), (951, "shallow.blp", 2, 18), (3, "shallow.blp", 2, 2)], [], [],
-            azerites: [(940, settings), (951, settings with { CenterUv = new(10, 0, 0) })]));
+            azerites: [(940, settings), (951, settings with { CenterScroll = 0.1f })]));
         var textures = LiquidTextures.For(files);
         var azerite = textures.Style(940);
         var other = textures.Style(951);
@@ -292,6 +291,8 @@ public class RetailLiquidTests
         Assert.Equal("deep.blp", azerite.Azerite.Settings.Deep);
         Assert.Same(azerite.Azerite.Deep, other.Azerite!.Deep);
         Assert.Same(azerite.Azerite.Center, other.Azerite.Center);
+        Assert.Equal(0.36f, azerite.Azerite.Settings.DeepScroll);
+        Assert.Equal(0.36f, azerite.Azerite.Settings.CenterScroll);
         // A material-18 type has its own material, not the lava/slime scroll fallback of its sound bank.
         Assert.Equal(0, azerite.ScrollU);
         Assert.Equal(0, azerite.ScrollV);
@@ -305,7 +306,7 @@ public class RetailLiquidTests
         using var files = new SwampFiles(true);
         RetailLiquids.Register(files, RetailLiquids.From(
             [(940, "shallow.blp", 2, 18)], [], [],
-            azerites: [(940, new("missing-deep.blp", "center.blp", new(1), new(1)))]));
+            azerites: [(940, new("missing-deep.blp", "center.blp", 0, 0))]));
         var textures = LiquidTextures.For(files);
         var style = textures.Style(940);
         Assert.Null(style.Azerite);

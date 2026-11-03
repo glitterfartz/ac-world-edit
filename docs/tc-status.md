@@ -241,17 +241,21 @@ fluid simulation.
 surface ports `azerite_0`: two texture samples are mixed by
 `saturate(1 - nativeDepth * coefficient)`, opaque and unlit, then client fog.
 LiquidType slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are bound as the
-deep and centre layers, and floats 0..2 and 3..5 are read as each layer's scale,
-angle in degrees and scroll speed (the material-13 triple layout). Which shader
-unit each slot feeds is inferred from the texture names; the slot order is not
-recovered CPU code. The depth coefficient has no table column, so it stays a
-fixed estimate (1.0).
+deep and centre layers, and floats 0 and 1 are read as their scroll speeds.
+Which shader unit each slot feeds is inferred from the texture names; the slot
+order is not recovered CPU code. Floats 2..5 are not applied: reading them as
+material 13's per-layer scale/angle/scroll triples tiled the centre texture
+about twenty times and gave a fine diagonal weave. Both layers instead sample
+the native MH2O liquid UV at unit scale, about one texture per layer, because
+the client's per-layer matrices are CPU constants that are not in the table.
+The depth coefficient has no table column, so it stays a fixed estimate (1.0).
 
 Both types (940 `8XP Azerite`, 951 `8XP Azerite (THe Motherlode)`) and their 23
 `LiquidObject`s resolve in corpus checks, and the shipped `azeritedeep` /
 `azeritecentercolor` pixels are used. A Zandalar pool was inspected in a windowed
-capture: the blue centre water carries the cream deep-swirl layer, brightening
-with depth.
+capture: the blue centre layer carries the cream deep-swirl layer, brightening
+with depth and banded by the 8-bit depth interpolation (capture:
+`artifacts/azerite-pool.png`, git-ignored).
 
 Unported: `azerite_1` (`t14`/`t15` masks and its alpha), `procazerite` (a
 nine-input procedural body: two normal maps, refraction, reflection and glow),

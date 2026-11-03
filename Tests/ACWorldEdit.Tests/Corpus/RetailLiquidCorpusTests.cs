@@ -163,8 +163,8 @@ public class RetailLiquidCorpusTests
         Assert.NotEmpty(azerite.Azerite.Center.Rgba);
         Assert.Same(azerite.Azerite.Deep, motherlode.Azerite!.Deep);
         Assert.Same(azerite.Azerite.Center, motherlode.Azerite.Center);
-        Assert.Equal(0.36f, azerite.Azerite.Settings.DeepUv.X);
-        Assert.Equal(45, azerite.Azerite.Settings.CenterUv.Y);
+        Assert.Equal(0.36f, azerite.Azerite.Settings.DeepScroll);
+        Assert.Equal(0.36f, azerite.Azerite.Settings.CenterScroll);
         // Both azerite types name the same six textures and floats, so they share one material.
         Assert.Equal(azerite.CacheKey, motherlode.CacheKey);
         Assert.NotEqual(azerite.CacheKey, LiquidStyle.River.CacheKey);

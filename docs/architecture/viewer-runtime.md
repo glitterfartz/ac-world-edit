@@ -349,19 +349,24 @@ before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
 ### Material 18 azerite
 
 `LiquidRendering` selects `azerite.gdshader` when `LiquidStyle.Azerite` resolves.
-The port follows `azerite_0`: two body textures are sampled with their own UV
-transforms and mixed by `saturate(1 - nativeDepth * coefficient)`, then drawn
-opaque and unlit with client fog. The vertex colour alpha carries native depth for
+The port follows `azerite_0`: two body textures are sampled and mixed by
+`saturate(1 - nativeDepth * coefficient)`, then drawn opaque and unlit with
+client fog. The vertex colour alpha carries native depth for
 terrain liquids, so the centre colour shows where the pool is shallow and the
 deep-swirl layer takes over as it deepens. Both azerite types (940 and 951) share
 one material because they name the same six textures and floats.
 
 Inferred bindings: slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are the
-two layers — the unit order is inferred from the texture names — and floats 0..2 /
-3..5 are each layer's scale, angle in degrees and scroll speed, the layout
-material 13 uses. The depth coefficient is not in the table and is a fixed
-estimate (1.0). Missing either layer keeps the previous generic lava/slime
-fallback instead of drawing a half material.
+two layers — the unit order is inferred from the texture names — and floats 0
+and 1 are the layers' scroll speeds, read the way the other materials read
+their first two floats. Floats 2..5 are not applied. Reading them as material
+13's per-layer scale/angle/scroll triples tiled the centre layer about twenty
+times across the pool and produced a fine diagonal weave that is not an
+authored look. The client's per-layer texture matrices are CPU constants that
+are not in the table, so both layers sample the native MH2O liquid UV at unit
+scale: one texture per layer, about 33 yards on a side. The depth coefficient
+is not in the table and is a fixed estimate (1.0). Missing either layer keeps
+the previous generic lava/slime fallback instead of drawing a half material.
 
 Fidelity limits: `azerite_1`'s two mask textures and its alpha, `procazerite`'s
 nine-input procedural body (two normal maps, refraction, reflection and glow), and

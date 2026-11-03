@@ -47,10 +47,13 @@ Notes:
   (2825, 40,21, type 100) works for `procwaterbelow` but sits under a dark cave
   ceiling, so its underside reads nearly black; use a lit procedural-water site before
   judging colour.
-- The azerite entry is the deepest cell of a large Zandalar pool (type 940). Eye
-  `1425, 2516.67, 146.7` with pitch 89 shows the blue centre water carrying the
-  cream deep-swirl layer; the pool spans several heights in tile 27,29, so a
-  top-down eye much higher than 10 yards shows other pools instead.
+- The azerite entry is inside a large Zandalar pool (type 940) that spans server
+  X 1258..1600 and Y 2154..2667 across tile 27,29. The surface under
+  `1425, 2516.67` is that pool at height 136.2, so the listed XYZ sits about 10
+  yards above it. Eye `1425, 2516.67, 168` with pitch 89 looks straight down at
+  the pool and shows the blue centre layer with the cream `azeritedeep` swirls
+  banded by the 8-bit depth interpolation. The stock water (type 5) in this tile
+  is 300 yards west at X 1067..1146, so it never covers this point.
 - The map, tile, type and XYZ are read from the retail client data. Visual parity
   against a retail reference is a separate, manual step and is not claimed by this
   table.

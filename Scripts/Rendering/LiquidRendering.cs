@@ -92,10 +92,8 @@ public static class LiquidRendering
         if (style.Azerite is { } azerite)
         {
             material.SetShaderParameter("center_tex", ExtraTexture(azerite.Center));
-            var deep = azerite.Settings.DeepUv;
-            var center = azerite.Settings.CenterUv;
-            material.SetShaderParameter("deep_uv", new Vector3(deep.X, deep.Y, deep.Z));
-            material.SetShaderParameter("center_uv", new Vector3(center.X, center.Y, center.Z));
+            material.SetShaderParameter("deep_scroll", azerite.Settings.DeepScroll);
+            material.SetShaderParameter("center_scroll", azerite.Settings.CenterScroll);
             return;
         }
         if (style.Swamp is { } swamp)
