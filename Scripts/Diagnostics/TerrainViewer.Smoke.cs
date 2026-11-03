@@ -64,6 +64,14 @@ public partial class TerrainViewer
             clientShotSky = (double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture), Part(1, 0f), Part(2, 40f), Part(3, 12f));
         }
 
+        if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-eye=", StringComparison.Ordinal)) is { } eyeFlag)
+        {
+            clientShot = true;
+            var parts = eyeFlag["--client-shot-eye=".Length..].Split(',');
+            float Part(int index, float fallback) => parts.Length > index ? float.Parse(parts[index], System.Globalization.CultureInfo.InvariantCulture) : fallback;
+            clientShotEye = (ViewSpace.ToView(Part(0, 0f), Part(1, 0f), Part(2, 0f)), Part(3, 0f), Part(4, 0f));
+        }
+
         if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-map=", StringComparison.Ordinal)) is { } mapFlag)
         {
             clientShot = true;

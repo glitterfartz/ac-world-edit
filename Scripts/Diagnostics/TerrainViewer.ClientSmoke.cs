@@ -16,6 +16,9 @@ public partial class TerrainViewer
     // --client-shot-sky=HOUR[,YAW_DEGREES[,LIFT_YARDS[,PITCH_DEGREES]]]: set the time of day and look out from a raised
     // camera instead of framing a building (defaults: 0, 40 yards, 12 degrees up).
     (double Hour, float YawDegrees, float Lift, float PitchDegrees)? clientShotSky;
+    // --client-shot-eye=X,Y,Z[,YAW_DEGREES[,PITCH_DEGREES]]: put the camera at a map position (server axes), for looking
+    // around inside a building; combine with --client-shot-tile so that tile is loaded, and with --client-shot-sky for the hour.
+    (Vector3 Position, float YawDegrees, float PitchDegrees)? clientShotEye;
     // --client-shot-map=DIRECTORY (for example Expansion01): open that map before the shot.
     string? clientShotMap;
     int clientShotFrames, clientShotCreatureStage, clientShotDifficulty, sharedVendorFrames;
@@ -847,6 +850,12 @@ public partial class TerrainViewer
                     sky.SetTimeOfDay(skyShot.Hour);
                     camera.Position += new Vector3(0, skyShot.Lift, 0);
                     camera.Rotation = new Vector3(Mathf.DegToRad(skyShot.PitchDegrees), Mathf.DegToRad(skyShot.YawDegrees), 0);
+                    if (clientShotEye is { } eye)
+                    {
+                        camera.Position = eye.Position;
+                        camera.Rotation = new Vector3(Mathf.DegToRad(eye.PitchDegrees), Mathf.DegToRad(eye.YawDegrees), 0);
+                    }
+
                     yaw = camera.Rotation.Y;
                     pitch = camera.Rotation.X;
                     GD.Print($"CLIENT_SHOT_SKY hour={skyShot.Hour} yaw={skyShot.YawDegrees} camera={camera.Position} fog={sky.ClientFogValues} height={sky.ClientFogHeightValues} debanding={GetViewport().UseDebanding} lights=[{sky.ActiveLights}]");
