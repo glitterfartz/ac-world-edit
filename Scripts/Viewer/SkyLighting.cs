@@ -24,6 +24,10 @@ public sealed partial class SkyLighting : Node3D
     float appliedStarFade = -1;
     readonly (MeshInstance3D Quad, ShaderMaterial Material)[] glares = new (MeshInstance3D, ShaderMaterial)[2];
     bool hasSunGlare, hasMoonGlare;
+    // The map's fog volumes as view-space boxes, and the texture the nearest few are handed to the shaders in.
+    FogBox[] fogBoxes = [];
+    readonly Image fogVolumeImage = Image.CreateEmpty(ClientShaderGlobals.MaxFogVolumes * ClientShaderGlobals.FogVolumeTexels, 1, false, Image.Format.Rgbaf);
+    ImageTexture? fogVolumeTexture;
     readonly MeshInstance3D shaftQuad;
     readonly ShaderMaterial shaftMaterial;
     readonly ModelLibrary models;
@@ -165,6 +169,8 @@ public sealed partial class SkyLighting : Node3D
         mapId = activeMapId;
         interior = isInterior;
         mapRegions = table != null && activeMapId != null ? table.ForMap(activeMapId.Value).ToArray() : [];
+        fogBoxes = [];
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeCount, 0f);
         if (interior || table == null)
         {
             environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
@@ -258,6 +264,7 @@ public sealed partial class SkyLighting : Node3D
             SkyMaterial = skyMaterial
         };
         ApplySky(backgroundProfile, foregroundProfile, bestWeight, tick, camera);
+        UpdateFogVolumes(camera);
         // The client's fog (DayNight::UpdateFog): it ramps from end * startMul to end, with the end capped at the
         // view distance. The shaders apply it (client_lighting.gdshaderinc), so Godot's own fog stays off.
         var backgroundFog = backgroundProfile.FogAt(tick);
@@ -405,6 +412,62 @@ public sealed partial class SkyLighting : Node3D
         material.SetShaderParameter("planet_direction", direction);
         material.SetShaderParameter("planet_width", planetWidth);
         material.SetShaderParameter("cloud_density", cloudDensity);
+    }
+
+    /// <summary>One fog volume placed in the viewer: a view-space box (center, axes, half sizes), its extinction per yard, color and edge power.</summary>
+    readonly record struct FogBox(Vector3 Center, Basis Axes, Vector3 Half, float Thickness, Color Color, float Power);
+
+    /// <summary>
+    /// Hand the shaders a map's fog volumes. The WDT stores them in server axes; the viewer's are (-y, z, -x) of those, so the
+    /// rotation is carried over by conjugating it with that axis permutation.
+    /// </summary>
+    public void SetFogVolumes(IReadOnlyList<MapFogVolume> volumes)
+    {
+        var permutation = new Basis(new Vector3(0, 0, -1), new Vector3(-1, 0, 0), new Vector3(0, 1, 0));
+        fogBoxes = [.. volumes.Where(v => v.FogLevel <= 2 && v.ThicknessPerYard > 0 && v.Size.X > 0 && v.Size.Y > 0 && v.Size.Z > 0).Select(v =>
+        {
+            var rotation = new Basis(new Quaternion(v.Rotation.X, v.Rotation.Y, v.Rotation.Z, v.Rotation.W).Normalized());
+            return new FogBox(ViewSpace.ToView(v.Position.X, v.Position.Y, v.Position.Z), permutation * rotation * permutation.Transposed(),
+                new Vector3(v.Size.X, v.Size.Y, v.Size.Z) / 2f, v.ThicknessPerYard, new Color(v.Color.X, v.Color.Y, v.Color.Z), v.EdgePower);
+        })];
+    }
+
+    /// <summary>
+    /// The nearest few volumes to the camera into the shared texture. Distance is to the box's bounding sphere, so a vast
+    /// volume around the camera always counts.
+    /// </summary>
+    void UpdateFogVolumes(Camera3D camera)
+    {
+        if (fogBoxes.Length == 0)
+        {
+            ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeCount, 0f);
+            return;
+        }
+
+        var position = camera.GlobalPosition;
+        var chosen = fogBoxes.OrderBy(b => Mathf.Max(0f, position.DistanceTo(b.Center) - b.Half.Length())).Take(ClientShaderGlobals.MaxFogVolumes).ToArray();
+        for (int i = 0; i < chosen.Length; i++)
+        {
+            var b = chosen[i];
+            int at = i * ClientShaderGlobals.FogVolumeTexels;
+            fogVolumeImage.SetPixel(at, 0, new Color(b.Center.X, b.Center.Y, b.Center.Z, b.Thickness));
+            fogVolumeImage.SetPixel(at + 1, 0, new Color(b.Axes.X.X, b.Axes.X.Y, b.Axes.X.Z, b.Half.X));
+            fogVolumeImage.SetPixel(at + 2, 0, new Color(b.Axes.Y.X, b.Axes.Y.Y, b.Axes.Y.Z, b.Half.Y));
+            fogVolumeImage.SetPixel(at + 3, 0, new Color(b.Axes.Z.X, b.Axes.Z.Y, b.Axes.Z.Z, b.Half.Z));
+            fogVolumeImage.SetPixel(at + 4, 0, new Color(b.Color.R, b.Color.G, b.Color.B, b.Power));
+        }
+
+        if (fogVolumeTexture == null)
+        {
+            fogVolumeTexture = ImageTexture.CreateFromImage(fogVolumeImage);
+            ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumes, fogVolumeTexture);
+        }
+        else
+        {
+            fogVolumeTexture.Update(fogVolumeImage);
+        }
+
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeCount, (float)chosen.Length);
     }
 
     /// <summary>

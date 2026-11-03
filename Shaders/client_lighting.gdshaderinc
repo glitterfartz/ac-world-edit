@@ -94,9 +94,60 @@ vec3 client_fog_sun_scatter(vec3 view_position, mat4 inv_view) {
     return client_gamma_to_linear(client_fog_sun.rgb) * client_fog_sun.w * phase;
 }
 
+// Placed retail fog volumes (the retail "volumefogmaterialinjection" pass): the few boxes nearest the camera, five
+// texels each (see ClientShaderGlobals). Each ray from the eye to the fragment is clipped to the box, and the
+// extinction is the box's thickness times the length inside, shaped by how far the segment's middle sits from the
+// box's faces (the client's signed-distance falloff, raised to the edge power). The haze takes the volume's color,
+// lit by the sun and ambient. The thickness scale, the box height and the falloff distance are estimates.
+global uniform sampler2D client_fog_volumes : filter_nearest, repeat_disable;
+global uniform float client_fog_volume_count;
+const int CLIENT_FOG_VOLUME_MAX = 6;
+
+vec4 client_fog_volume_layer(vec3 origin, vec3 direction, float eye_distance) {
+    float transmittance = 1.0;
+    vec3 scattered = vec3(0.0);
+    vec3 lit = clamp(client_sun_ambient + client_sun_diffuse * 0.5, 0.0, 1.0);
+    int count = int(client_fog_volume_count + 0.5);
+    for (int i = 0; i < CLIENT_FOG_VOLUME_MAX; i++) {
+        if (i >= count) {
+            break;
+        }
+        int at = i * 5;
+        vec4 t0 = texelFetch(client_fog_volumes, ivec2(at, 0), 0);
+        vec4 ax = texelFetch(client_fog_volumes, ivec2(at + 1, 0), 0);
+        vec4 ay = texelFetch(client_fog_volumes, ivec2(at + 2, 0), 0);
+        vec4 az = texelFetch(client_fog_volumes, ivec2(at + 3, 0), 0);
+        vec4 t4 = texelFetch(client_fog_volumes, ivec2(at + 4, 0), 0);
+        vec3 half_size = vec3(ax.w, ay.w, az.w);
+        vec3 o = origin - t0.xyz;
+        vec3 local_origin = vec3(dot(o, ax.xyz), dot(o, ay.xyz), dot(o, az.xyz));
+        vec3 local_direction = vec3(dot(direction, ax.xyz), dot(direction, ay.xyz), dot(direction, az.xyz));
+        vec3 safe = mix(local_direction, vec3(1e-5), lessThan(abs(local_direction), vec3(1e-5)));
+        vec3 ta = (-half_size - local_origin) / safe;
+        vec3 tb = (half_size - local_origin) / safe;
+        vec3 t_near = min(ta, tb);
+        vec3 t_far = max(ta, tb);
+        float t_in = max(max(t_near.x, t_near.y), max(t_near.z, 0.0));
+        float t_out = min(min(t_far.x, t_far.y), min(t_far.z, eye_distance));
+        float length_inside = t_out - t_in;
+        if (length_inside <= 0.0) {
+            continue;
+        }
+        vec3 middle = local_origin + local_direction * (t_in + t_out) * 0.5;
+        vec3 to_face = half_size - abs(middle);
+        float falloff = max(min(min(half_size.x, half_size.y), half_size.z), 0.001);
+        float edge = pow(clamp(min(min(to_face.x, to_face.y), to_face.z) / falloff, 0.0, 1.0), t4.w);
+        float opacity = 1.0 - exp(-t0.w * edge * length_inside);
+        scattered += transmittance * opacity * client_gamma_to_linear(t4.rgb) * lit;
+        transmittance *= 1.0 - opacity;
+    }
+    float alpha = 1.0 - transmittance;
+    return vec4(alpha > 0.0001 ? scattered / alpha : vec3(0.0), alpha);
+}
+
 // Fog as Godot's custom fog output: rgb color, a how much of it covers the surface. view_position is the
 // fragment's view-space VERTEX and inv_view its INV_VIEW_MATRIX.
-vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
+vec4 client_fog_base(vec3 view_position, mat4 inv_view) {
     if (client_fog.w > 1.5 && client_fog_height.w > 0.5) {
         vec4 layered = client_fog_layered(view_position, inv_view);
         return vec4(layered.rgb + client_fog_sun_scatter(view_position, inv_view), layered.a);
@@ -133,4 +184,17 @@ vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 v
     vec3 specular = clamp(client_sun_specular * highlight * shadow * specular_mask * CLIENT_SPECULAR_STRENGTH, 0.0, 1.0);
     vec3 color = albedo * lit + specular;
     return color * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
+}
+
+// The light's fog with any placed volumes over it: the two coverages combine as independent layers.
+vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
+    vec4 base = client_fog_base(view_position, inv_view);
+    if (client_fog_volume_count < 0.5) {
+        return base;
+    }
+    vec3 direction = normalize((inv_view * vec4(view_position, 0.0)).xyz);
+    vec4 volumes = client_fog_volume_layer(inv_view[3].xyz, direction, length(view_position));
+    float alpha = base.a + volumes.a * (1.0 - base.a);
+    vec3 color = (base.rgb * base.a + volumes.rgb * volumes.a * (1.0 - base.a)) / max(alpha, 0.0001);
+    return vec4(alpha > 0.0001 ? color : base.rgb, alpha);
 }

@@ -51,6 +51,15 @@ public static class ClientShaderGlobals
     public const string OceanDeep = "client_water_ocean_deep";
     public const string RiverShallow = "client_water_river_shallow";
     public const string RiverDeep = "client_water_river_deep";
+    /// <summary>
+    /// The nearest fog volumes as a texture of five RGBA-float texels each: center and thickness; the box's three view-space
+    /// axes with its half sizes; color and edge power. The count is how many are filled in.
+    /// </summary>
+    public const string FogVolumes = "client_fog_volumes";
+    public const string FogVolumeCount = "client_fog_volume_count";
+    /// <summary>Volumes the shaders integrate at once.</summary>
+    public const int MaxFogVolumes = 6;
+    public const int FogVolumeTexels = 5;
     static bool registered;
 
     /// <summary>
@@ -77,6 +86,8 @@ public static class ClientShaderGlobals
         Add(FogHeightColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(FogHeightEndColor, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
         Add(FogSun, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 0, 0, 0));
+        Add(FogVolumes, RenderingServer.GlobalShaderParameterType.Sampler2D, ImageTexture.CreateFromImage(Image.CreateEmpty(MaxFogVolumes * FogVolumeTexels, 1, false, Image.Format.Rgbaf)));
+        Add(FogVolumeCount, RenderingServer.GlobalShaderParameterType.Float, 0f);
         Add(SunDisc, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 1, 0));
         Add(SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.4f, -0.8f, 0.3f).Normalized());
         Add(SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f));
