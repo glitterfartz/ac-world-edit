@@ -161,3 +161,12 @@ Assigning or creating a TrinityCore gossip menu also sets the gossip bit in `cre
 ## MMap inspection
 
 Implemented generated navigation inspection for AC MMap 20 / TC MMap 16, Detour 7 with 64-bit references: independent disk streaming, detail surfaces, polygon edges, tile boundaries, off-mesh lines, opacity/X-ray, terrain filters, explicit polygon picking and metadata. Retail parent lookup includes the complete Map table and uses immediate-parent fallback only for absent child tiles. Source files remain static snapshots; route finding, editing/generation, live obstacles and instance-specific rebuilds remain outside scope. Deterministic parser tests, opt-in full-folder corpus checks and a Godot navigation smoke workflow accompany the feature.
+
+### Retail material 13 core
+
+Partial: the two-layer `fel` core is implemented with inferred DB2 constants and
+checked in a Godot depth-gradient fixture; real type 898 resolves in corpus tests.
+`procfel` normal animation, overlays and advanced surface variants remain open.
+Venom 1233/1234 on Azeroth 52,22 still uses the generic fallback: its deep/shallow
+textures have no names in the installed or current community listfile. No client
+visual parity is claimed for this partial implementation.

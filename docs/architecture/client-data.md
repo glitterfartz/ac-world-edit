@@ -242,3 +242,14 @@ AC map parameters are 28 bytes, and tile headers include the generator's Recast 
 `NavigationSource` tries the requested tile first. TC falls back only when that file is missing, to its immediate parent, without walking ancestors or replacing corrupt child tiles. `Db2Tables.NavigationParents` reads the complete retail Map table, including rows excluded from the map picker: ParentMapID takes precedence over CosmeticParentMapID. Requested and source map IDs, filename coordinates and Detour grid coordinates remain separate. Filename X/Y are reversed relative to viewer tile X/Y. Detour stores `(server Y, server Z, server X)`; the explicit viewer conversion is `(-detour X, detour Y, -detour Z)`.
 
 These files are a snapshot of generated navigation surfaces. The viewer does not calculate routes, edit or generate meshes, apply live obstacles, or rebuild instance-specific navigation.
+
+### Material 13 liquid inputs
+
+`RetailLiquids.FelSettings` retains texture slot 1 and the inferred layer UV/depth
+constants for material 13. `LiquidTextures.Style` builds an engine-free
+`FelLiquidStyle` when the shallow texture resolves; its settings and decoded
+texture identity participate in the material cache key. Missing extra textures
+retain the generic liquid fallback. The common base texture decoder continues
+to load slot 0. Current listfiles do not name the two venom base textures for
+types 1233/1234, although the DB2 rows name them. Type 898 resolves both layers.
+Animated normal and other procedural inputs are not bound by this core port.

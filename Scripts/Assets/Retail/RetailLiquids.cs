@@ -24,6 +24,11 @@ public sealed class RetailLiquids
     readonly Dictionary<uint, string> bumpMaps = [];
     readonly Dictionary<uint, (float U, float V)> scrolls = [];
     readonly Dictionary<uint, SwampSettings> swamps = [];
+    readonly Dictionary<uint, FelSettings> fels = [];
+
+    // Material 13: two scale/angle/scroll triples; depth mapping remains inferred.
+    public sealed record FelSettings(string Shallow, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 ShallowUv, float DepthCoefficient);
+    public FelSettings? Fel(uint type) => fels.GetValueOrDefault(type);
 
     /// <summary>
     /// Material 14 depth layers, shore texture, ripple sequence and surface constants. The
@@ -50,6 +55,11 @@ public sealed class RetailLiquids
             if (row.Field<float[]>("Float") is { Length: > 1 } floats)
             {
                 result.scrolls[(uint)row.ID] = (floats[0], floats[1]);
+                if (row.FieldAs<uint>("MaterialID") == 13 && floats.Length >= 15 && textures.Length >= 2)
+                {
+                    result.fels[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
+                        new(floats[3], floats[4], floats[5]), floats[14]);
+                }
                 if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 18 && textures.Length >= 3)
                 {
                     result.swamps[(uint)row.ID] = new(textures[1], textures[2],

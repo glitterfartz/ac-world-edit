@@ -306,3 +306,19 @@ Shared unlit materials draw translucent detail surfaces with depth testing and a
 Navigation picking uses loaded terrain heights and visible building render triangles to reject occluded surfaces when X-ray is off. Like ground probes, these are render data rather than server collision: texture transparency and animated foliage are not a pixel-exact visibility test. X-ray deliberately bypasses these blockers.
 
 For targeted visual checks, add `--navigation-smoke-map=48` (a selectable map ID) or `--navigation-smoke-tile=31,49` (viewer tile axes). Instance screenshot filenames include their map ID. An absent generated tile is reported rather than inferred from the client terrain.
+
+### Material 13 core (fel and venom)
+
+`LiquidRendering` selects `fel.gdshader` when both base layers resolve. This ports
+`fel_0`: deep/shallow RGB blend by `saturate(1 - nativeDepth * coefficient)`, opaque,
+unlit, then client fog. LiquidType floats 0..2 and 3..5 are interpreted as each
+layer's scale, angle in degrees and scroll speed; float 14 is the inferred depth
+coefficient. CPU scroll direction is estimated along rotated U. These bindings
+are inferred, not recovered CPU code. The `procfel` animated normals, masked
+overlay, lighting and shore/specular variants remain unported.
+
+The core was inspected in a windowed Godot depth-gradient fixture; corpus checks
+resolve real material-13 type 898. Venom types 1233/1234 on Azeroth 52,22 retain
+the generic fallback because their deep/shallow texture names are absent from
+both the installed and freshly downloaded community listfiles. This is not a
+completed venom port or a retail visual-parity check.

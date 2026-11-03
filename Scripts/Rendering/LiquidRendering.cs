@@ -11,6 +11,7 @@ namespace ACWorldEdit;
 public static class LiquidRendering
 {
     public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
+    static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/fel.gdshader");
     static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/swamp.gdshader");
 
     /// <summary>
@@ -20,10 +21,20 @@ public static class LiquidRendering
     public static void Configure(ShaderMaterial material, Texture2D texture, uint kind, LiquidStyle? style = null)
     {
         style ??= kind == 1 ? LiquidStyle.Ocean : LiquidStyle.River;
-        material.Shader = style.Swamp != null ? SwampShader : Shader;
+        material.Shader = style.Fel != null ? FelShader : style.Swamp != null ? SwampShader : Shader;
         material.SetShaderParameter("albedo_tex", texture);
         material.SetShaderParameter("frames", (float)texture.GetWidth() / texture.GetHeight());
         material.SetShaderParameter("period_ms", (float)style.PeriodMs);
+        if (style.Fel is { } fel)
+        {
+            material.SetShaderParameter("shallow_tex", ExtraTexture(fel.Shallow));
+            var deep = fel.Settings.DeepUv;
+            var shallow = fel.Settings.ShallowUv;
+            material.SetShaderParameter("deep_uv", new Vector3(deep.X, deep.Y, deep.Z));
+            material.SetShaderParameter("shallow_uv", new Vector3(shallow.X, shallow.Y, shallow.Z));
+            material.SetShaderParameter("depth_coefficient", fel.Settings.DepthCoefficient);
+            return;
+        }
         if (style.Swamp is { } swamp)
         {
             material.SetShaderParameter("swamp_middle_tex", ExtraTexture(swamp.Middle));

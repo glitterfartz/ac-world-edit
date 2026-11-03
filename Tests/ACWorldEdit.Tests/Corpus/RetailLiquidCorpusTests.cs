@@ -29,6 +29,36 @@ public class RetailLiquidCorpusTests
     }
 
     [RetailListfileFact]
+    public void VenomTileResolvesDistinctDepthLayersAndUvSettings()
+    {
+        var tile = Azeroth().ReadTile(RetailData.Files, new TileKey(52, 22));
+        var textures = LiquidTextures.For(RetailData.Files);
+        foreach (uint type in new uint[] { 1233, 1234 })
+        {
+            Assert.Contains(tile.Liquids, surface => surface.LiquidType == type);
+            var style = textures.Style(type);
+            var settings = RetailLiquids.For(RetailData.Files)!.Fel(type);
+            Assert.NotNull(settings);
+            // These newly named venom base textures are absent from current community listfiles.
+            // Until they resolve, the material must retain the existing generic fallback.
+            if (RetailData.Files.Exists(settings.Shallow))
+                Assert.NotNull(style.Fel);
+            else
+                Assert.Null(style.Fel);
+            Assert.Null(style.Swamp);
+            Assert.Null(style.Bump);
+            Assert.NotEmpty(textures.Decode(type).Rgba);
+            Assert.Equal(0.45f, settings.DeepUv.X);
+            Assert.Equal(90, settings.ShallowUv.Y);
+            Assert.Equal(15, settings.DepthCoefficient);
+        }
+        var felStyle = textures.Style(898);
+        Assert.NotNull(felStyle.Fel);
+        Assert.NotEmpty(felStyle.Fel.Shallow.Rgba);
+        Assert.NotEqual(felStyle.CacheKey, LiquidStyle.River.CacheKey);
+    }
+
+    [RetailListfileFact]
     public void ReportedSwampTilesResolveThreeDepthTextures()
     {
         var map = Azeroth();
