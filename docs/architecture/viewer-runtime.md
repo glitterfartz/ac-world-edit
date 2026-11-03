@@ -350,16 +350,24 @@ before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
 
 `LiquidRendering` selects `azerite.gdshader` when `LiquidStyle.Azerite` resolves.
 The port follows `azerite_0`: two body textures are sampled and mixed by
-`saturate(1 - nativeDepth * coefficient)`, then drawn opaque and unlit with
-client fog. The vertex colour alpha carries native depth for
+`saturate(1 - nativeDepth * coefficient)`, then drawn fully opaque (`ALPHA = 1`)
+and unlit with client fog. The vertex colour alpha carries native depth for
 terrain liquids, so the centre colour shows where the pool is shallow and the
 deep-swirl layer takes over as it deepens. Both azerite types (940 and 951) share
 one material because they name the same six textures and floats.
 
-Inferred bindings: slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are the
-two layers — the unit order is inferred from the texture names — and floats 0
-and 1 are the layers' scroll speeds, read the way the other materials read
-their first two floats. Floats 2..5 are not applied. Reading them as material
+The render mode still keeps the surface in the same transparent, no-depth-write
+pass as the other liquid shaders, so an overlapping liquid can blend over it
+instead of being occluded by it; "opaque" here means the alpha is fixed at one,
+not that the surface writes depth.
+
+Bindings: slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are the two layers,
+each uploaded from its own decoded texture (`deep_tex`/`center_tex`), so the deep
+layer never depends on the type's frame-atlas fallback. The slot order is
+inferred from the texture names. Floats 0 and 1 are the layers' scroll speeds,
+read the way the other materials read their first two floats; the shipped rows
+store the same value in both, so the split is not confirmable from the data.
+Floats 2..5 are not applied. Reading them as material
 13's per-layer scale/angle/scroll triples tiled the centre layer about twenty
 times across the pool and produced a fine diagonal weave that is not an
 authored look. The client's per-layer texture matrices are CPU constants that

@@ -55,9 +55,11 @@ public sealed class RetailLiquids
     /// <summary>
     /// Material 18 (azerite): slots 0 and 1 are the two body layers. Both sample the native liquid UV at
     /// unit scale; floats 0 and 1 are inferred to be each layer's scroll speed, the same reading the
-    /// other materials use for their first two floats. Floats 2..5 are not applied: reading them as a
-    /// per-layer scale/angle triple tiled the centre texture about 20 times per layer, which is not an
-    /// authored look. The masked variants and the depth coefficient's source are not in the table.
+    /// other materials use for their first two floats. The shipped rows store the same value in both
+    /// floats, so which float belongs to which layer cannot be confirmed from the data. Floats 2..5 are
+    /// not applied: reading them as a per-layer scale/angle triple tiled the centre texture about 20
+    /// times per layer, which is not an authored look. The masked variants and the depth coefficient's
+    /// source are not in the table.
     /// </summary>
     public sealed record AzeriteSettings(string Deep, string Center, float DeepScroll, float CenterScroll);
     public AzeriteSettings? Azerite(uint type) => azerites.GetValueOrDefault(type);

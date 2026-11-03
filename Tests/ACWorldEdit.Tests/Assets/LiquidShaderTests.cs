@@ -64,12 +64,15 @@ public class LiquidShaderTests
         Assert.Contains("1.0-COLOR.a*depth_coefficient", shader);
         Assert.Contains("mix(deep, center, blend)", shader);
         Assert.Contains("ALPHA = 1.0;", shader);
-        // Both layers sample the native liquid UV; the inferred per-layer scale/angle triple tiled
-        // the centre texture into fine noise, so it must not come back.
-        Assert.Contains("uv * uv_scale", shader);
+        // Both body layers come from their own bound textures and sample the native liquid UV at
+        // unit scale; the inferred per-layer scale/angle triple tiled the centre into fine noise.
+        Assert.Contains("texture(deep_tex", shader);
+        Assert.Contains("texture(center_tex", shader);
+        Assert.DoesNotContain("albedo_tex", shader);
         Assert.DoesNotContain("radians", shader);
         Assert.DoesNotContain("deep_uv", shader);
         Assert.DoesNotContain("center_uv", shader);
+        Assert.DoesNotContain("uv_scale", shader);
         // The surface must not borrow water ripples or reflections the shipped shader does not sample.
         Assert.DoesNotContain("liquid_surface.gdshaderinc", shader);
         Assert.DoesNotContain("liquid_reflection", shader);

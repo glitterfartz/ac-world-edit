@@ -239,9 +239,14 @@ fluid simulation.
 
 `LiquidRendering` selects `azerite.gdshader` when both body layers resolve. The
 surface ports `azerite_0`: two texture samples are mixed by
-`saturate(1 - nativeDepth * coefficient)`, opaque and unlit, then client fog.
-LiquidType slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are bound as the
-deep and centre layers, and floats 0 and 1 are read as their scroll speeds.
+`saturate(1 - nativeDepth * coefficient)`, drawn fully opaque (`ALPHA = 1`) and
+unlit, then client fog. LiquidType slots 0 and 1 (`azeritedeep`,
+`azeritecentercolor`) are uploaded as their own decoded textures (`deep_tex` /
+`center_tex`), so the deep layer does not ride the type's frame-atlas fallback.
+The surface keeps the shared transparent, no-depth-write liquid pass, so
+"opaque" means the alpha is fixed at one, not that it occludes other liquids.
+Floats 0 and 1 are read as the layers' scroll speeds; the shipped rows store the
+same value in both, so the split is inferred.
 Which shader unit each slot feeds is inferred from the texture names; the slot
 order is not recovered CPU code. Floats 2..5 are not applied: reading them as
 material 13's per-layer scale/angle/scroll triples tiled the centre texture

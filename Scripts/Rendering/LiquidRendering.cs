@@ -91,6 +91,10 @@ public static class LiquidRendering
         }
         if (style.Azerite is { } azerite)
         {
+            // Bind both body layers from their own decoded textures. Sampling the surface's frame atlas for
+            // the deep layer would silently draw the type's fallback whenever Decode() cannot resolve the
+            // type's slot 0, even though the material still resolved.
+            material.SetShaderParameter("deep_tex", ExtraTexture(azerite.Deep));
             material.SetShaderParameter("center_tex", ExtraTexture(azerite.Center));
             material.SetShaderParameter("deep_scroll", azerite.Settings.DeepScroll);
             material.SetShaderParameter("center_scroll", azerite.Settings.CenterScroll);
