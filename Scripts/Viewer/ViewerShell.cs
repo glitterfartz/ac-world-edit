@@ -591,7 +591,7 @@ public partial class ViewerShell : Node3D
     /// Worker-only tile/texture decode with cancellation checks. Carry decode errors to the main
     /// thread for explicit warnings.
     /// </summary>
-    PreparedTile Prepare(IClientFiles assets, WorldMap map, TileKey key, int version, CancellationToken token)
+    static PreparedTile Prepare(IClientFiles assets, WorldMap map, TileKey key, int version, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         var tile = map.ReadTile(assets, key);
