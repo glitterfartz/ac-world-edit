@@ -29,14 +29,15 @@ The dotted links show why `Scripts/Assets` and `Scripts/Data` must stay free of 
 
 Folders mirror the layers:
 
-- `Assets/`: area lookup, asset references, client folder, light bands, listfile store, malformed input, retail client, retail liquids, split terrain, terrain geometry.
-- `Corpus/`: tests that need real client data (world, model, liquid, retail).
-- `Data/`: database settings, read-only guard, settings resolution.
-- `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`).
-- `Drafts/`: creature, graveyard, content and interaction drafts, history, pending changes.
-- `Placement/`: AreaTrigger shapes, pose text, spawn preview, world coordinates.
+- `Assets/`: area lookup, asset references, animations, BLP, client folder, fog curves and volumes, geoset variants, light bands, liquid styles, listfile store, malformed input, model layers and data, MPQ, navigation, retail client, retail liquids, sky dome, split terrain, surface merge, terrain geometry.
+- `Conditions/`: the condition catalog for both dialects.
+- `Corpus/`: tests that need real client data (world, model, liquid, item details, parallel model decode, retail catalog, retail client, listfile).
+- `Data/`: database settings, read-only guard, settings resolution, user-data reset.
+- `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`), plus spawn rows/impact, phase catalog, template search, graveyards, AreaTriggers, content and the real-data phase tests.
+- `Drafts/`: creature, graveyard, content, spawn and interaction drafts, history, pending changes, item lists, tooltips, stat rules.
+- `Placement/`: AreaTrigger shapes, placement ownership and geometry, pose text, spawn preview, world coordinates.
 - `Smart/`: quest model, SmartAI behaviour, catalog and rule edits.
-- `Sql/`: SQL export scripts.
+- `Sql/`: SQL export scripts and nullable-column guards.
 - `Support/`: attributes, DBC and terrain builders, the read-only guard for test SQL, and the old `Check` helpers.
 
 Categories and runsettings:
@@ -50,11 +51,11 @@ Categories and runsettings:
 
 Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, `TcDbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).
 
-Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehaviorTests` and `LightBandTests`. They are listed in the test attributes, not in this document.
+Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehaviorTests` and `LightBandTests`. They are listed in the test attributes, not in this document. Tests deferred until their feature works are in `docs/status/needed-tests.md`.
 
 ### `Tests/ACWorldEdit.GdTests` (gdUnit4)
 
-Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, and user settings. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout.
+Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, creature properties and user settings. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
 
 ### `Tests/run_stormlib_checks.py` (StormLib differential)
 
@@ -64,15 +65,29 @@ Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/S
 
 | Tool | Purpose |
 |---|---|
-| `launch_viewer.py` | Builds `ACWorldEdit.csproj` and launches Godot. `--smoke` runs the terrain smoke headless. `--check-assets` runs the corpus tests. Godot is found through `--godot-path`, `GODOT_BIN` or `PATH`. Sets `APPDATA` and `LOCALAPPDATA` into `.build-env/` |
-| `Tools/generate_condition_catalog.py` | Regenerates `Foundation/AzerothCore/AcConditionTypes.cs` from AzerothCore's `ConditionMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcConditionTypes.cs` from TrinityCore's (the AzerothCore header is a third argument, for reusing labels). Curated names, sentences and source key labels live in the script |
-| `Tools/generate_smart_catalog.py` | Regenerates `Foundation/AzerothCore/AcSmartTypes.cs` from AzerothCore's `SmartScriptMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcSmartTypes.cs` from TrinityCore's |
-| `Tools/setup.py` | Syncs the pinned submodules and builds `ThirdParty/CascLib` (and with `--with-tests` `ThirdParty/StormLib`) out of tree under `.build-env/cmake/`, then copies the DLLs and licences into `native/win-x64/`. A stamp (submodule commit plus CMake options) skips rebuilds; `--force` rebuilds, `--check` only reports. Builds use the static MSVC runtime, so the DLLs need no VC++ redistributable. `ACWORLD_CMAKE_GENERATOR` overrides the CMake generator. A checkout path long enough to push MSVC's `.tlog` files past 260 characters moves the build to a short temp folder (`ACWORLD_CMAKE_BUILD_DIR` overrides it) |
-| `Tools/package.py` | Builds, imports and exports the `Windows Desktop` preset (`export_presets.cfg`) to `build/win-x64/`, then fails unless the build's `data_ACWorldEdit_windows_x86_64` folder holds the game assemblies, `CascLib.dll`, `definitions/` and the licences (the csproj publishes the last three; the loader searches `AppContext.BaseDirectory`). Godot exits 0 with only a warning when the export lacks the game assembly, which the check catches. The export needs `ACWorldEdit.sln` (kept at the repo root, listing the game and `Foundation` projects) and fails on a missing output folder, so the script creates it. Verified: a full export builds and the exe starts headless `--pack-only` exports just the `.pck` and needs no export templates. `--version X.Y.Z` stamps the exe's file and product version by patching the preset's `application/file_version`, `application/product_version` and `application/modify_resources` for the export and restoring the file afterwards (a hyphenated version such as `0.1.0-rc1` keeps the suffix in the product version and uses `0.1.0.0` as the file version). The GitHub workflows run `setup.py` then `package.py` |
-| `ThirdParty/` | `CascLib` and `StormLib` git submodules (MIT), pinned by commit; a `.gdignore` keeps Godot from scanning them. `native/` and `build/` are git-ignored outputs |
-| `Data/WoWDBDefs/` | WoWDBDefs git submodule (CC BY-SA 4.0), pinned by its commit; `definitions/*.dbd` are copied to output as `definitions/` |
-| `THIRD-PARTY.md` | Licences and purpose of every third-party component; shipped with builds together with `LICENSE` |
+| `launch_viewer.py` | Builds `ACWorldEdit.csproj` and launches Godot; `--smoke` runs the terrain smoke headless, `--check-assets` runs the corpus tests |
+| `Tools/setup.py` | Syncs the pinned submodules and builds CascLib (and StormLib with `--with-tests`) into `native/win-x64/` |
+| `Tools/package.py` | Builds, imports and exports the `Windows Desktop` preset to `build/win-x64/`, then validates the output |
+| `Tools/generate_smart_catalog.py` | Regenerates the SmartAI type arrays for both dialects |
+| `Tools/generate_condition_catalog.py` | Regenerates the condition type arrays for both dialects |
 | `.claude/hooks/format_cs.py` | Runs `dotnet format whitespace` on each edited `.cs` file |
+| `ThirdParty/`, `Data/WoWDBDefs/`, `THIRD-PARTY.md` | Pinned submodules and the licence/purpose record shipped with builds |
+
+`launch_viewer.py` finds Godot through `--godot-path`, `GODOT_BIN` or `PATH`, and sets `APPDATA` and `LOCALAPPDATA` into `.build-env/`.
+
+### `Tools/setup.py`
+
+Builds `ThirdParty/CascLib` (and with `--with-tests` `ThirdParty/StormLib`) out of tree under `.build-env/cmake/`, then copies the DLLs and licences into `native/win-x64/`. A stamp (submodule commit plus CMake options) skips rebuilds; `--force` rebuilds and `--check` only reports. Builds use the static MSVC runtime, so the DLLs need no VC++ redistributable. `ACWORLD_CMAKE_GENERATOR` overrides the CMake generator. A checkout path long enough to push MSVC's `.tlog` files past 260 characters moves the build to a short temp folder (`ACWORLD_CMAKE_BUILD_DIR` overrides it).
+
+### `Tools/package.py`
+
+Exports `export_presets.cfg`'s `Windows Desktop` preset and fails unless the build's `data_ACWorldEdit_windows_x86_64` folder holds the game assemblies, `CascLib.dll`, `definitions/` and the licences (the csproj publishes the last three; the loader searches `AppContext.BaseDirectory`). Godot exits 0 with only a warning when the export lacks the game assembly, which the check catches. The export needs `ACWorldEdit.sln` at the repo root (listing the game and `Foundation` projects) and fails on a missing output folder, so the script creates it. A full export builds and the exe starts headless; `--pack-only` exports just the `.pck` and needs no export templates. `--version X.Y.Z` stamps the exe's file and product version by patching the preset's `application/file_version`, `application/product_version` and `application/modify_resources` for the export and restoring the file afterwards (a hyphenated version such as `0.1.0-rc1` keeps the suffix in the product version and uses `0.1.0.0` as the file version). The GitHub workflows run `setup.py` then `package.py`.
+
+### Generated catalogs
+
+`Tools/generate_smart_catalog.py` regenerates `Foundation/AzerothCore/AcSmartTypes.cs` from AzerothCore's `SmartScriptMgr.h`, and with `--trinity` `Foundation/TrinityCore/TcSmartTypes.cs` from TrinityCore's. `Tools/generate_condition_catalog.py` regenerates `AcConditionTypes.cs` from AzerothCore's `ConditionMgr.h`, and with `--trinity` `TcConditionTypes.cs` from TrinityCore's (the AzerothCore header is a third argument, for reusing labels). Curated names, sentences and source key labels live in the scripts.
+
+`ThirdParty/CascLib` and `ThirdParty/StormLib` are MIT submodules pinned by commit, with a `.gdignore` so Godot does not scan them; `native/` and `build/` are git-ignored outputs. `Data/WoWDBDefs` is a CC BY-SA 4.0 submodule pinned by its commit, and its `definitions/*.dbd` are copied to the output as `definitions/`. `THIRD-PARTY.md` records the licences and purpose of every third-party component and ships with builds together with `LICENSE`.
 
 Build configuration:
 
@@ -80,7 +95,6 @@ Build configuration:
 - `ACWorldEdit.csproj` uses `Godot.NET.Sdk` 4.7.1 and references `SharpZipLib`, `DBCD` and `MySqlConnector` (versions in the project file).
 - `Experiments/` holds no tracked source; it only contains leftover build output.
 - `artifacts/` and `Tests/artifacts/` hold only generated output, so each carries a `.gdignore` and Godot never imports it. `.gitignore` excludes their contents but re-includes the marker.
-- `docs/NEEDED-TESTS.md` lists deferred tests for retail milestones 3 to 5 (terrain, placements and models, liquids and sky) and retail humanoid creatures.
 
 ## Continuous integration
 
@@ -88,7 +102,7 @@ Workflows live in `.github/workflows`; the steps they share are composite action
 
 | File | Runs | Does |
 |---|---|---|
-| `workflows/ci.yml` | push to `master` or `ci/**`, pull requests, manual | Job `test`: `setup-build`, `dotnet build ACWorldEdit.csproj -c Release`, `dotnet test Tests/ACWorldEdit.Tests` (`.trx` uploaded on failure). Job `package` (not on pull requests): `setup-godot`, `package`, then uploads `ACWorldEdit-dev-<sha>-win-x64` with `retention-days: 7` |
+| `workflows/ci.yml` | push to `master` or `ci/**`, pull requests, manual | Job `test`: `setup-build`, `dotnet build ACWorldEdit.csproj -c Release`, `dotnet test Tests/ACWorldEdit.Tests` (`.trx` uploaded on failure). Job `viewer-tests`: `setup-build`, `setup-godot`, `dotnet test Tests/ACWorldEdit.GdTests`. Job `package` (not on pull requests): `setup-godot`, `package`, then uploads `ACWorldEdit-dev-<sha>-win-x64` with `retention-days: 7` |
 | `workflows/release.yml` | push of a `vMAJOR.MINOR.PATCH[-suffix]` tag | Checks the tag format and that the commit is on `master`, builds and tests, packages with the tag as the version, and runs `gh release create --draft --verify-tag` with the zip, its `.sha256`, a commit list since the previous tag and GitHub's generated notes (`--prerelease` when the tag has a hyphen) |
 | `actions/setup-build` | | `setup-dotnet` (`global.json` plus 8.0.x), `setup-python`, caches, then `python Tools/setup.py --no-godot`. The `native/win-x64` cache key is the CascLib submodule commit plus a hash of `Tools/setup.py`; `setup.py` skips the CMake build when its stamp matches the restored files. The NuGet cache key hashes the csproj files and `global.json` |
 | `actions/setup-godot` | | Downloads Godot 4.7.1 .NET and the export templates from `godotengine/godot-builds`, verifies SHA-512 against hashes pinned in the action, keeps only the Windows x86_64 templates (about 210 MB instead of the 1.2 GB archive), caches the result and sets `GODOT_BIN` |
@@ -106,7 +120,7 @@ git push origin v0.1.0
 
 `release.yml` checks that the tag is `vMAJOR.MINOR.PATCH` (optionally `-suffix`, which marks a pre-release) and that the commit is on `master`, runs the build and tests, packages with the tag as the exe's file and product version, and creates a **draft** release with `ACWorldEdit-<version>-win-x64.zip` and its `.sha256`. Review the draft under Releases on GitHub, edit the notes if needed, and publish it. The build is unsigned, so Windows SmartScreen may warn.
 
-To upgrade Godot, change the version, asset names, both SHA-512 values (from the release's `SHA512-SUMS.txt`) and the cache key in `actions/setup-godot/action.yml` together, along with the `Godot.NET.Sdk` version in `ACWorldEdit.csproj`. To change a submodule pin, check out the new commit inside the submodule and `git add` it; the cache key follows the commit. Private-repo limits apply: Windows minutes count double and artifact storage is 500 MB, so lower `retention-days` if the 7-day artifacts reach the quota. The test job does not run the gdUnit4 project or any test that needs client data.
+To upgrade Godot, change the version, asset names, both SHA-512 values (from the release's `SHA512-SUMS.txt`) and the cache key in `actions/setup-godot/action.yml` together, along with the `Godot.NET.Sdk` version in `ACWorldEdit.csproj`. To change a submodule pin, check out the new commit inside the submodule and `git add` it; the cache key follows the commit. Private-repo limits apply: Windows minutes count double and artifact storage is 500 MB, so lower `retention-days` if the 7-day artifacts reach the quota. The `test` job does not run any test that needs client data. The `viewer-tests` job runs the gdUnit4 project, which needs Godot but no client data or database.
 
 Never name a workflow environment variable `VERSION` (or anything else that matches an MSBuild property). MSBuild turns every environment variable into a property, so `VERSION=dev-abc1234` becomes `$(Version)` and NuGet restore fails with only `MSB4181`. The package action passes the version as `ACW_VERSION`, and `Tools/package.py` drops `VERSION` from the environment of `dotnet` and Godot. `package.py` stamps the version into `export_presets.cfg` and restores the file afterwards; if a killed run leaves it stamped, the next stamped run refuses to start until you run `git checkout export_presets.cfg`.
 

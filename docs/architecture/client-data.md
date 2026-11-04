@@ -167,7 +167,7 @@ flowchart LR
 - **Placements**: MDDF/MODF entries flagged as FileDataIDs become `fdid:N` references (WMO ones `fdid:N.wmo`). Placements that name a model by path instead (some old-style WDTs) resolve only through the listfile, for example the "Garrison - …" interiors, whose global WMO is named by path.
 - **Character skeletons**: retail character models keep bones, sequences and global loops in a `.skel` file (M2 `SKID` chunk: `SKB1`/`SKS1`/`AFID`, offsets relative to each chunk); their `.anim` files hold bone tracks in `AFSB`. Parent skeletons (`SKPD`) are not followed.
 - **Creature displays** (`RetailCreatureCatalog`): use `CreatureDisplayInfo` model data and skins. Humanoids (displays with a `CreatureDisplayInfoExtra`) draw the extra's pre-baked skin (TextureFileData by MaterialResourcesID) and apply their customization choices (`CreatureDisplayInfoOption` → `ChrCustomizationElement`): geoset variants per group (`GeosetVariants`) plus the hair (type 6), eye (type 19), skin extra (type 8) and second extra (type 20) textures. Ungiven groups show variant 1, except ears (7) and head (32), whose variant 1 is an empty stub on character models, and the eye glow (17), which stays hidden unless a choice names a variant. A hotfixed display keeps its `ExtendedDisplayInfoID`, resolved against the client's extras (TrinityCore's hotfixes copy of that table is empty). Equipment is not composed.
-- **Liquids**: MH2O is read from the root ADT; its second `uint16` is a vertex format (below 42, format 3 = heights+UV+depth) or a LiquidObject ID (ocean stores 42, which has no row and means depth only). `RetailLiquids` (LiquidType/LiquidObject/LiquidMaterial) is registered per client in `ClientServices.OpenRetail`. Liquid textures are named by path in LiquidType, so they need the listfile; types whose texture is not listed (or when no listfile is downloaded) fall back to the base liquid of their kind. Retail WMO liquids load through `RetailLiquids`. Material 14 also keeps `SwampSettings`: depth thresholds/scales/opacity, texture slot 3 for the shore overlay, slot 5 for the animated normal sequence, and inferred surface constants. `LiquidTextures.Style` builds `SwampLiquidStyle` with shared middle/deep/shore pixels and a horizontal normal atlas; base colours and normals share the bounded 60-frame sequence decoder (128 pixels per frame). Missing normal or shore assets are optional; missing middle/deep textures retain the generic base fallback. All surface settings and texture identities participate in `LiquidStyle.CacheKey`, so identical base atlases cannot merge different surface effects. `BlpTexture` supports retail BC5_UNORM (preferred format 11: independent red and green BC4 blocks, blue zero and alpha opaque); shaders reconstruct normal Z. Endpoint interpolation follows [Microsoft's BC5 format](https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/block-compression#bc5). No engine types enter the asset layer. The DB2 float mapping and renderer substitutions are documented in viewer-runtime.md; floats 7 and 16 remain unassigned.
+- **Liquids**: MH2O is read from the root ADT; its second `uint16` is a vertex format (below 42, format 3 = heights+UV+depth) or a LiquidObject ID (ocean stores 42, which has no row and means depth only). `RetailLiquids` (LiquidType/LiquidObject/LiquidMaterial) is registered per client in `ClientServices.OpenRetail`. Liquid textures are named by path in LiquidType, so they need the listfile; types whose texture is not listed (or when no listfile is downloaded) fall back to the base liquid of their kind. Retail WMO liquids load through `RetailLiquids`. Material 14 also keeps `SwampSettings`: depth thresholds/scales/opacity, texture slot 3 for the shore overlay, slot 5 for the animated normal sequence, and inferred surface constants. `LiquidTextures.Style` builds `SwampLiquidStyle` with shared middle/deep/shore pixels and a horizontal normal atlas; base colours and normals share the bounded 60-frame sequence decoder (128 pixels per frame). Missing normal or shore assets are optional; missing middle/deep textures retain the generic base fallback. All surface settings and texture identities participate in `LiquidStyle.CacheKey`, so identical base atlases cannot merge different surface effects. `BlpTexture` supports retail BC5_UNORM (preferred format 11: independent red and green BC4 blocks, blue zero and alpha opaque); shaders reconstruct normal Z. Endpoint interpolation follows [Microsoft's BC5 format](https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/block-compression#bc5). No engine types enter the asset layer. The DB2 float mapping and renderer substitutions are documented in [rendering.md](rendering.md); floats 7 and 16 remain unassigned.
 - **Fog volumes**: retail maps may have a `<map>_fogs.wdt` (a `VFOG` chunk of 104-byte entries, optional `VFEX` and `VFE2` chunks); `FogVolumes.Load` reads it through the file source and returns an empty list where it is absent (MPQ clients, classic continents).
 - **Lighting and sky**: `LightRegion.IsDefault` marks the map's default light, which the client identifies by its coordinates being (0, 0, 0). Retail profiles also carry `RetailFog` (LightData `FogDensity`, `EndFogColor` and `EndFogColorDistance` per time sample, plus the height layer as `FogHeightLayer` and the sun scattering `SunFogColor` and `SunFogStrength`; the `MainFog*` fields are not read yet). Each light profile also carries `CloudBands` (the cloud density, LightFloatBand 3 or retail `CloudDensity`, and the sunlit, shaded and base cloud colours, LightIntBand 10 to 12) and `SkyBands` (the middle, band 1 and band 2 sky colours, LightIntBand 3 to 5 or retail `SkyMiddleColor`, `SkyBand1Color`, `SkyBand2Color`, and the LightParams `HighlightSky` flag) for the sky dome. `ClientLighting.TryLoadRetail` reads Light/LightParams/LightData/LightSkybox DB2 (only the default weather slot; LightData `FogEnd` and `FogScaler` per time sample become a `FogCurve`, and the Ocean/River close and far colours, the four LightParams water alphas and `SunColor` fill `LightProfile.Water`, `WaterAlpha` and `SunColor`); skyboxes load by FileDataID. Wrath builds the same from LightFloatBand (six rows per LightParams entry in file order: band 0 fog end, band 1 start multiplier; checked against the client's `6 * id - 5 + band` row formula) and LightIntBand bands 9 and 14 to 17.
 - **Community listfile**: `ListfileStore` downloads wowdev/wow-listfile `community-listfile.csv` to `user://community-listfile.csv` (override `ACWORLD_LISTFILE`), only on user request: a one-time prompt on the first retail load, then File → Update listfile…. `PathListfile` loads it keyed by a 64-bit path hash (millions of entries) and `ClientServices.OpenRetail` installs it as `CascFiles.PathResolver`. Nothing is bundled; corpus tests that need it (`RetailListfileFact`) skip unless it is present.
@@ -201,6 +201,53 @@ Callers choose the reader that matches their client. `ClientLighting` has both `
 
 The Wrath-only catalogs read `DBFilesClient/*.dbc` through `IClientFiles`. `ModelLibrary` only builds them when `Kind == Wrath335`.
 
+### Liquid styles
+
+`RetailLiquids` parses each type's rows; `LiquidTextures.Style` turns them into an engine-free
+`LiquidStyle`, and `LiquidRendering` picks the shader from it. Asset-layer facts that the shader port
+relies on:
+
+- **Material 13 (fel and venom):** `RetailLiquids.FelSettings` keeps texture slot 1 and the inferred
+  layer UV/depth constants. `Style` builds `FelLiquidStyle` when the shallow texture resolves; slot 0
+  still uses the base decoder, and missing extra textures fall back to the generic style. Type 898
+  resolves both layers. Venom types 1233/1234 have no listfile names for their deep/shallow textures,
+  so they keep the generic fallback (see the venom note below).
+- **Material 12 (ley line):** `RetailLiquids.LeySettings` carries texture slot 1, the first two inferred
+  UV triples and packed Color[0]. `Style` returns `LeyLiquidStyle` with the shared decoded second atlas;
+  both static and printf-style animated details are supported, and a missing second layer falls back.
+- **Material 5 (mercury):** `RetailLiquids.Material` exposes the LiquidMaterial ID independently of
+  SoundBank. Material 5 sets `LiquidStyle.Mercury` and retains the shared slot-2 bump map; the marker
+  is part of cache identity, so ordinary ocean water with the same texture and sound bank cannot share
+  the mercury material. A missing bump keeps the marker and draws a flat reflective surface. The base
+  atlas is still loaded although the mercury shader does not sample it.
+- **Material 10 (fog liquid):** `RetailLiquids.FogSettings` keeps Color[0] RGB and Float[1] as the
+  opacity scale; `Style` carries them as `LiquidStyle.Fog` and bypasses the water bump lookup. Slot 0
+  uses the bounded base-atlas decoder. Tint alpha, depth/height extinction and auxiliary masks are not
+  bound.
+- **Material 4 (procedural magma):** the LiquidType rows name `Magma0`, `Magma1` and `Magma2` without
+  extensions, so `RetailLiquids.Pattern` appends `.blp` for material 4 only (explicit extensions and
+  all other material names are left alone). `MagmaSettings` keeps the normalized extra paths, inferred
+  layer scales, base colour, scroll and noise speed; `Style` builds `MagmaLiquidStyle` with shared
+  middle/top pixels. Missing extra layers fall back to the base layer.
+- **Material 3 (procedural water):** `RetailLiquids.ProceduralWaterSettings` keeps the authored depth
+  gradient from texture slot 1 (not the SoundBank), the depth table from Int[0], and the inferred floats
+  for depth scale (2), wave scale (0), normal strength (4), refraction (3) and specular exponent (11,
+  floored at 1). The `RetailLiquids.From` test seam takes an optional `waters` argument. An
+  intentionally empty frame slot returns a shared white 1×1 placeholder instead of decoding ordinary
+  ocean fallback frames.
+
+`LiquidStyle.CacheKey` includes every surface setting and the decoded texture identity, so two types
+never share a material when their effects differ (for example terrain magma 302 and faster WMO magma
+303). The styles and decoded layers stay Godot-free. The shader formulas, routing and fidelity limits
+are in [rendering.md](rendering.md).
+
+Venom input follow-up (deferred at the user's request): the listfile lookup gap does not establish
+missing game assets. Current listfiles resolve shore/specular to 7568587/7568588, both readable from
+CASC, but do not name deep/shallow/emissive. Direct name lookup also fails for the known readable files,
+so it is not a valid absence check. DB2 frame counts for the three unresolved slots are zero.
+Investigate generated/substituted inputs, stale names and unnamed FileDataIDs before treating this as an
+asset block. Do not substitute guessed FileDataIDs.
+
 ## Type reference by folder
 
 | Folder | Key types |
@@ -209,8 +256,9 @@ The Wrath-only catalogs read `DBFilesClient/*.dbc` through `IClientFiles`. `Mode
 | `Retail/` | `CascFiles`, `RetailInstall`, `CascReadException`, `CascNative`, `ListfileStore`, `PathListfile`, `Db2Tables`, `RetailLiquids`, `RetailTerrain` |
 | `Formats/` | `BinaryAsset` (bounds-checked little-endian reader), `Chunks` / `ChunkHeader`, `DbcTable`, `BlpTexture` |
 | `Models/` | `ModelData` family, `ModelLayers`, `M2Model`, `WmoModel`, `AnimationPalette`, `MaterialPalette`, `SurfaceMaterial`, `SurfaceMerge` |
-| `World/` | `WorldMap`, `TileFiles`, `TileKey`, `TerrainTile`, `TerrainChunk`, `TerrainLayer`, `TerrainGeometry`, `TerrainHeights`, `WorldObject`, `WorldObjects`, `LiquidData`, `GroundProbe`, `AreaLookup`, `LightBand`, `LightFloatBand`, `FogCurve`, `SkyDome`, `LightCoordinates` |
-| `Client/` | `CreatureCatalog`, `GameObjectCatalog`, `InteractionCatalog`, `LiquidTextures`, `ICreatureCatalog`, `IGameObjectCatalog`, `RetailCreatureCatalog`, `RetailGameObjectCatalog`, `IClientLookup`, `RetailClientLookup` |
+| `World/` | `WorldMap`, `TileFiles`, `TileKey`, `TerrainTile`, `TerrainChunk`, `TerrainLayer`, `TerrainGeometry`, `TerrainHeights`, `WorldObject`, `WorldObjects`, `LiquidData`, `GroundProbe`, `AreaLookup`, `LightBand`, `LightFloatBand`, `FogCurve`, `SkyDome`, `LightCoordinates`, `FogVolumes` |
+| `Navigation/` | `DetourReader`, `NavigationSource`, `INavigationReader`, `AcNavigationReader` (`AzerothCore/`), `TcNavigationReader` (`TrinityCore/`), the `NavigationTile`/`NavigationPolygon`/`NavigationTriangle`/`NavigationConnection` records |
+| `Client/` | `CreatureCatalog`, `GameObjectCatalog`, `InteractionCatalog`, `LiquidTextures`, `ICreatureCatalog`, `IGameObjectCatalog`, `RetailCreatureCatalog`, `RetailGameObjectCatalog`, `IClientLookup`, `RetailClientLookup`, `RetailItemTables` |
 
 ## Dependency directions
 
@@ -242,82 +290,3 @@ AC map parameters are 28 bytes, and tile headers include the generator's Recast 
 `NavigationSource` tries the requested tile first. TC falls back only when that file is missing, to its immediate parent, without walking ancestors or replacing corrupt child tiles. `Db2Tables.NavigationParents` reads the complete retail Map table, including rows excluded from the map picker: ParentMapID takes precedence over CosmeticParentMapID. Requested and source map IDs, filename coordinates and Detour grid coordinates remain separate. Filename X/Y are reversed relative to viewer tile X/Y. Detour stores `(server Y, server Z, server X)`; the explicit viewer conversion is `(-detour X, detour Y, -detour Z)`.
 
 These files are a snapshot of generated navigation surfaces. The viewer does not calculate routes, edit or generate meshes, apply live obstacles, or rebuild instance-specific navigation.
-
-### Material 13 liquid inputs
-
-`RetailLiquids.FelSettings` retains texture slot 1 and the inferred layer UV/depth
-constants for material 13. `LiquidTextures.Style` builds an engine-free
-`FelLiquidStyle` when the shallow texture resolves; its settings and decoded
-texture identity participate in the material cache key. Missing extra textures
-retain the generic liquid fallback. The common base texture decoder continues
-to load slot 0. Current listfiles do not name the two venom base textures for
-types 1233/1234, although the DB2 rows name them. Type 898 resolves both layers.
-Animated normal and other procedural inputs are not bound by this core port.
-
-### Material 12 detail inputs
-
-`RetailLiquids.LeySettings` carries texture slot 1, the first two inferred UV
-triples and packed Color[0] for material 12. `LiquidTextures.Style` returns
-`LeyLiquidStyle` with the shared decoded second atlas; slot 0 uses the existing
-base decoder. Both static and printf-style animated details are supported.
-Settings and texture identity participate in material caching. Missing second
-layers retain the generic fallback. The additional procedural surface inputs
-are not bound by this core port.
-
-Venom input follow-up (deferred at user request): the listfile lookup gap does
-not establish missing game assets. Current listfiles resolve shore/specular to
-7568587/7568588, both readable from CASC, but do not name deep/shallow/emissive.
-Direct name lookup also fails for the known readable files, so it is not a
-valid absence check. DB2 frame counts for the three unresolved slots are zero.
-Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
-before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
-
-### Material 5 mercury routing
-
-`RetailLiquids.Material` exposes the parsed LiquidMaterial ID independently of
-SoundBank. Material 5 makes `LiquidTextures.Style` set `LiquidStyle.Mercury` and
-retain the shared decoded bump map from texture slot 2. The marker participates
-in cache identity, preventing ordinary ocean water with the same source texture
-and sound bank from sharing a mercury material. A missing bump map keeps the
-mercury marker and renders a flat reflective surface. Existing base atlas loading
-is retained, although the procedural mercury shader does not sample that atlas.
-Per-type mercury float-to-buffer bindings are not asserted; runtime ripple
-transforms and highlight parameters currently use documented estimates.
-
-### Material 10 fog-liquid inputs
-
-`RetailLiquids.FogSettings` retains inferred Color[0] RGB and Float[1] opacity
-for material 10. `LiquidTextures.Style` carries those settings as `LiquidStyle.Fog`
-and bypasses the ordinary water bump lookup. Texture slot 0 uses the existing
-bounded base-atlas decoder; multiple authored fog colors share decoded density
-pixels but their settings participate in cache identity. Material tint alpha,
-depth/height extinction parameters and auxiliary masks remain unbound by this
-basic port. Both the parsed settings and cached styles remain Godot-free.
-
-### Material 4 magma inputs
-
-Material 4 is procedural magma; material 3 is procedural water. Its LiquidType
-rows name `Magma0`, `Magma1` and `Magma2` without extensions. `RetailLiquids.Pattern`
-appends `.blp` for material 4 only, preserving explicit extensions and all other
-material names. `MagmaSettings` retains normalized extra paths and inferred
-layer scales, base color, scroll and noise speed. `LiquidTextures.Style` builds
-`MagmaLiquidStyle` with shared middle/top pixels; absent extra layers retain the
-generic base-layer fallback. All settings and texture identities participate
-in cache identity, so terrain 302 and faster WMO 303 keep distinct materials.
-The settings and decoded layers remain Godot-free. The client 3D noise source
-has not been identified; runtime uses a documented shader-only approximation.
-
-### Material 3 procedural-water inputs
-
-Material 3 is procedural water. `RetailLiquids.ProceduralWaterSettings` retains the
-authored depth gradient from texture slot 1 (not the SoundBank), the depth table
-from Int[0], and inferred floats for depth scale (2), wave scale (0), normal
-strength (4), refraction (3) and specular exponent (11, floored at 1). The synthetic
-`RetailLiquids.From` test seam gains an optional `waters` argument. `LiquidTextures.Style`
-builds `LiquidStyle.ProceduralWater` and loads the native bump map from texture slot
-2; an intentionally empty frame slot returns a shared white 1×1 placeholder rather
-than decoding ordinary ocean fallback frames. Settings, bump identity and the
-placeholder all participate in cache identity, so material-3 water cannot share a
-material with stock ocean or river. Missing bump keeps the marker and renders flat.
-Settings and decoded layers remain Godot-free. Remaining floats and the CPU UV
-matrices are not bound by this port.

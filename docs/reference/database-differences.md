@@ -1,5 +1,10 @@
 # AzerothCore vs TrinityCore world database differences
 
+Findings compare `acore_world` with the TrinityCore master `world` schema (TDB 1210.26091) plus its
+`hotfixes` database, against retail client 12.1.5.70575. Re-check a table against the live databases
+and the official pages before relying on a difference, and update this page when a finding changes an
+editor.
+
 ACWorldEdit edits against the AzerothCore (3.3.5) world schema for Wrath clients and, as the TrinityCore backend lands, against the TrinityCore master world schema for the retail client. The dialect follows the client kind (`ClientKind.Wrath335` uses AzerothCore, `ClientKind.Retail` uses TrinityCore); there is no autodetection.
 
 Findings compare `acore_world` with the TrinityCore master `world` schema (TDB 1210.26091) plus its `hotfixes` database. Add to this document whenever a new difference affects the editors.

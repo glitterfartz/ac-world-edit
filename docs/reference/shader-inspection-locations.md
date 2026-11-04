@@ -6,6 +6,8 @@ resolvable base assets: each entry is a surface triangle whose LiquidType routes
 the named material and whose authored textures/bump resolve. They are
 **data- and routing-verified, not all visually inspected or compared against
 retail** — treat them as a reliable place to look, not proof of visual parity.
+The shader port itself, its routing and its fidelity limits are in
+[rendering.md](../architecture/rendering.md).
 
 To use one: open the named map first (the server XYZ is map-relative), then enter the
 XYZ in the teleport box and look down. `XYZ` is 10 yards above the center of a

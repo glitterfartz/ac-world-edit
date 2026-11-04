@@ -1,6 +1,6 @@
 # Sniff import proposal
 
-> **Research only.** This page is a design proposal, not a plan of record. Agents must not implement any part of it unless explicitly asked to. Don't use it to justify changes elsewhere, and don't add it to `docs/tc-status.md` without being asked.
+> **Research only. Status: not started.** This page is a design proposal, not a plan of record. Agents must not implement any part of it unless explicitly asked to. Don't use it to justify changes elsewhere, and don't add it to `../status/open-work.md` without being asked.
 
 How the editor could take packet sniffs, parsed by WowPacketParser (WPP, `X:\PrivateServer\WowPacketParser`), and turn them into spawns, creature data, paths, quests and scripting help. Scope is TrinityCore only; AzerothCore won't use sniffs this way.
 
@@ -23,7 +23,7 @@ WPP's **UniversalProto** output (`DumpFormat` 14 or 15, `.dat`) is a typed packe
                                                               InteractionDraft RowEdits ──► SqlExport (unchanged)
 ```
 
-Sniffs are evidence, not edits. Drafts stay the only source of SQL, so the read-only guarantee in `docs/architecture/editing-and-export.md` holds.
+Sniffs are evidence, not edits. Drafts stay the only source of SQL, so the read-only guarantee in `../architecture/editing-and-export.md` holds.
 
 1. **Reader** (Godot-free, e.g. `Scripts/Data/Sniff/`). C# generated from `structures.proto` (Google.Protobuf). It groups packets into per-object observations:
    - from `CreateObject`: position, CreateObject1 vs 2, entry, display, faction, flags, auras, emote, stand state, mount, visible items
@@ -53,9 +53,9 @@ Several sniffs merge their evidence: confidence rises when observations agree, a
 
 ## Per-area automation
 
-**Spawns.** `creature` and `creature_addon` (auras, emote, stand state, mount), `creature_equip_template` from visible items, and per-field template differences the author accepts one at a time. This needs a capability the editor lacks today: spawn inserts. Use a reserved GUID range per project and give drafts concrete GUIDs rather than `@CGUID` variables, since addon rows, paths and formations refer to the GUID. The export preflight (`COUNT(*)=0`) can confirm the range is still free.
+**Spawns.** `creature` and `creature_addon` (auras, emote, stand state, mount), `creature_equip_template` from visible items, and per-field template differences the author accepts one at a time. Spawn inserts now exist (Phase 11): use a reserved GUID range per project and give drafts concrete GUIDs rather than `@CGUID` variables, since addon rows, paths and formations refer to the GUID. The export preflight (`COUNT(*)=0`) can confirm the range is still free.
 
-**Paths** (after Phase 9 in `docs/tc-status.md`). The editor does the cleanup WPP leaves to the author:
+**Paths** (the waypoint layer is built; node authoring is Phase 14 in [`editor-gap-plan.md`](editor-gap-plan.md)). The editor does the cleanup WPP leaves to the author:
 - drop combat and chase splines (in-combat flag, splines aimed at the player, look-target splines)
 - find the loop and keep one lap
 - derive node `Delay` from timestamps and stop facing from `LookOrientation`

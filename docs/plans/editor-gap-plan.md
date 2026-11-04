@@ -2,21 +2,44 @@
 
 ## Context
 
-ACWorldEdit can already **inspect** most of a zone and **deeply edit** four things: creature properties (template, stats, vendor, gossip, trainer, quest links), quests (the five quest tables), SmartAI and speech (`smart_scripts`, `creature_text`, AreaTrigger rules), and graveyards, with waypoint nodes editable in a limited way. Everything else is read-only or invisible. The most important gap is that **nothing can be created or removed in the world**: creatures and GameObjects can only be *moved* (before Phase 10 the pose drafts recorded poses only), and no spawn-level column (respawn, wander, phase, equipment, overrides) is editable.
+ACWorldEdit can **inspect** most of a zone and **deeply edit** creature properties (template, stats, vendor, gossip, trainer, quest links), quests (the five quest tables), SmartAI and speech (`smart_scripts`, `creature_text`, AreaTrigger rules), graveyards and waypoint nodes. At planning time the important gap was that **nothing could be created or removed in the world**: creatures and GameObjects could only be *moved* and no spawn-level column was editable. Phases 10 and 11 have since closed most of that (spawns can be placed, duplicated, deleted and edited; the content browser exists), and each phase below carries its own status line.
 
-TrinityCore's `world` has about 230 tables (TDB 1210.26091; counts below come from the live DB). This plan sorts them by domain, separates what designers touch from server configuration, and plans the missing editors as **viewport-first tools** in the spirit of Unity and Unreal: a content browser, drag-to-place, prefab/instance overrides, gizmos, graphs and timelines. The plan deliberately avoids table grids.
+TrinityCore's `world` has about 230 tables (TDB 1210.26091; counts below come from the live DB). The "Before this plan" column records the state when phases 10+ were designed; the status table above says what is built now. This plan sorts the domains, separates what designers touch from server configuration, and plans the missing editors as **viewport-first tools** in the spirit of Unity and Unreal: a content browser, drag-to-place, prefab/instance overrides, gizmos, graphs and timelines. The plan deliberately avoids table grids.
 
 Decisions taken with the user:
 - **Every phase ships both dialects** (AzerothCore + TrinityCore). Where a system exists only in TrinityCore (spawn groups, conversations, scenes, player choice, spawned AreaTrigger templates), the AzerothCore half is "not applicable" and says so in the UI.
 - **Hotfix-backed editors are in scope as late phases**: a hotfix export path, then text, then items. Spells stay out of scope.
 
-Phases continue the numbering in `docs/tc-status.md` (1–9 are done), so the first new phase is 10. Each phase lands as rows in `tc-status.md` (no separate roadmap doc), with tests after the feature works and a visual check in Godot.
+Phases continue the numbering in [`open-work.md`](../status/open-work.md) (1–9 are done), so the first new phase is 10. Each phase lands as its own rows in `open-work.md`; this page keeps the design and a `Status` line per phase. Tests come after the feature works, with a visual check in Godot.
+
+## Implementation status
+
+| Phase | State | Main work left |
+|---|---|---|
+| 10 Editor foundation | mostly | Reference index, cascade-delete specs, allocator adoption, browser drag |
+| 11 Spawn authoring | mostly | Browser drag, model ghost, cross-zone paste, dependency delete, new template |
+| 12 Conditions builder | not started | Strip, builder, tester, `ReadConditionsAsync` |
+| 13 GameObject editor | not started | Data field catalog and GO properties window |
+| 14 Movement authoring | partial | Node insert/delete, new paths, links/orphans, formations |
+| 15 Loot editor | not started | Loot source, model, roller, rules, window |
+| 16 Population control | not started | Pool, spawn-group and linked-respawn editors |
+| 17 Events and phases | not started | Event timeline, phase authoring |
+| 18 Creature completion | partial | Models/equipment, combat, rewards, movement, interactions, summons, new template |
+| 19 Quest completion | partial | POI, GO/item givers, conditional text, greetings, pools, objective gaps |
+| 20 Travel and instances | mostly not started | Destination editing, instances, access requirements |
+| 21 Areas and ambience | mostly not started | Weather, area auras, taverns, disables, spawned triggers |
+| 22 Cinematics | not started | Conversations, scenes, player choice |
+| 23 Text pipeline | partial | Hotfix script, speech/page text, editing existing text |
+| 24 Item editor | not started | Item source, editor, creation flow |
+
+States: **done**, **mostly**, **partial**, **not started**. The detailed gaps are in
+[status/open-work.md](../status/open-work.md).
 
 ---
 
 ## Coverage inventory
 
-| Domain | Main tables (TC; AC differences in brackets) | Today | Gap |
+| Domain | Main tables (TC; AC differences in brackets) | Before this plan | Gap |
 |---|---|---|---|
 | Creature spawns | `creature` (260k), `creature_addon`, `spawn_group`, `linked_respawn` | Move only | **No place, duplicate or delete; no spawn fields; no addon (auras, emote, mount, stand state)** |
 | Creature templates | `creature_template*`, `_difficulty`, `_model`, `_spell`, `_resistance`, `_movement`, `creature_equip_template`, `creature_onkill_reputation`, `creature_immunities`, `creature_template_addon`, `creature_summon_groups`, `npc_spellclick_spells`, `vehicle_template_accessory` | Template, stats, vendor, gossip, trainer, quests, behavior, speech | Models, equipment, spells, addon, on-kill rep, immunities, movement, spell-click, vehicles, summon groups; **no new template** |
@@ -42,38 +65,42 @@ Phases continue the numbering in `docs/tc-status.md` (1–9 are done), so the fi
 3. **Plain language over columns.** Show "Respawns after 5 min", not `spawntimesecs`. Show "Drops one of these (40%)" instead of `GroupId`. Show "Only when the player has quest X complete" instead of `ConditionTypeOrReference=8`. Column names appear only in tooltips.
 4. **Reference safety.** Every ID field is a search picker with name and icon. Every entity page has a "Used by" panel (reverse references), and every delete shows its impact before it happens.
 5. **One draft, one export.** Everything is a `RowEdit` through `InteractionDraft` and leaves only through `SqlExport`, with undo, redo, freshness checks and stale preflights.
-6. **Descriptors, not per-dialect classes.** Each dialect fills one descriptor; one renderer draws it (the existing `CreaturePage`, `ItemListSpec` and `PageRenderer` pattern). New reads go only through `IDBSource` / `IWorldSchema`. `Ac`/`Tc` prefixes and folders as in CLAUDE.md. Foundation, Data and Assets stay Godot-free.
+6. **Descriptors, not per-dialect classes.** Each dialect fills one descriptor; one renderer draws it (the `EntityPage`, `ItemListSpec` and `PageRenderer` pattern). New reads go only through `IDBSource` / `IWorldSchema`. `Ac`/`Tc` prefixes and folders as in CLAUDE.md. Foundation, Data and Assets stay Godot-free.
 7. **Status text says what happened** ("Placed Stormwind Guard.", "Deleted 3 spawns."), and it goes to the `StatusBar`.
 
 ---
 
 ## Phase 10: Editor foundation (shared infrastructure)
 
+**Status:** mostly built. `EntityPage` and the Properties shell, spawn poses as row edits, nullable columns, `IdAllocator`, `ConditionCatalog` and the content browser are in. Open: a generic reference index (`FindReferencesAsync`), cascade-delete specs, moving the old per-editor `MAX(id)` reads onto `IdAllocator`, and drag-to-place from the browser. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
+
 **Why:** Every later phase creates rows, deletes linked rows, edits NULL-able columns or needs conditions. Today each of those is solved ad hoc: `MAX(id)` per source in `TcInteractionSource.cs:90-92` and `AcContentSource.cs:39`, and the creature page renderer is creature-only. Building these once means each later phase is mostly a descriptor plus a source, not a new subsystem.
 
 **Benefit to the user:** Indirect, but it is what makes every later editor behave the same way: same pickers, same undo, same safe IDs and same delete warnings.
 
 Implementation:
-- **Entity page descriptors.** Generalize `CreaturePage` / `FieldSpec` / `ItemListSpec` (`Foundation/CreaturePage.cs`) into `EntityPage` (renamed; the creature groups come from `EntityPage.CreatureGroups`) keyed by an entity kind (creature, gameobject, loot table, pool, event, …). Generalize `PageRenderer` (`Scripts/Ui/Properties/PageRenderer.cs`) and the section registry into a reusable **Properties window shell** with a left picker and pages. This lands the tc-status item "Schema-driven section registry and field groups". The creature window becomes the first client of the shell.
+- **Entity page descriptors.** `CreaturePage` / `FieldSpec` / `ItemListSpec` were generalized into `EntityPage` (`Foundation/EntityPage.cs`; the creature groups come from `EntityPage.CreatureGroups`) keyed by an entity kind (creature, gameobject, loot table, pool, event, …). Generalize `PageRenderer` (`Scripts/Ui/Properties/PageRenderer.cs`) and the section registry into a reusable **Properties window shell** with a left picker and pages. This lands the open-work item "Schema-driven section registry and field groups". The creature window becomes the first client of the shell.
 - **Spawn poses become row edits.** Move creature and GameObject poses off `CreatureDraft` / `GameObjectDraft` and onto `RowEdit` against `creature` / `gameobject` schemas in `InteractionDraft`.
   - Migrate existing `creature-positions.json` and `gameobject-positions.json` entries into `interactions.json` on first open, the way `SettingsResolver.LegacyDatabaseMigration` moves old settings, and then retire the pose drafts.
   - The goal is one history, so move → delete → undo has a defined order. A delete's every-column guard then sees the moved pose instead of going STALE against the old one.
   - The move export keeps its float-tolerant guard (`ABS(col - v) < 0.0001`), so `SqlExport` needs float-tolerant guards for content-row updates and deletes too.
   - `GraveyardDraft` and `WaypointDraft` stay as they are; waypoints move to row edits in Phase 14.
 - **Nullable columns.** Add NULL to `TableSchema` / `Row` (`Foundation/InteractionRows.cs`) and to `SqlExport` (`col IS NULL` guards, `NULL` literals), plus an "inherit" state in `FieldSpec`.
-- **`IdAllocator`** (Foundation). Next free ID per (table, key column) = max(database max, draft-staged inserts) + 1, with an optional **user ID range** per entity kind in Settings so custom content doesn't collide with future TDB imports. The database max comes from one new `IDBSource.MaxIdsAsync(tables)`. Inserts keep their existing `COUNT(*)=0` preflight. Replace the existing `MaxMenuId` / `MaxTextId` / `MaxTrainerId` and the quest `max` with it.
+- **`IdAllocator`** (Foundation). Next free ID per (table, key column) = max(database max, draft-staged inserts) + 1, with an optional **user ID range** per entity kind in Settings so custom content doesn't collide with future TDB imports. The database max comes from one new `IDBSource.MaxIdsAsync(tables)`. Inserts keep their existing `COUNT(*)=0` preflight. The existing `MaxMenuId` / `MaxTextId` / `MaxTrainerId` and the quest `max` still read their own maxima and are not moved onto it yet.
 - **Reference index.** `IDBSource.FindReferencesAsync(kind, id)` returns which tables point at an entity. Each `IWorldSchema` holds a per-dialect reference map (e.g. creature entry ← `creature.id`, `smart_scripts` target params, `quest_objectives` ObjectID, `creature_queststarter`, …). It feeds the "Used by" panel and delete-impact dialogs.
 - **Cascade delete specs.** Each entity kind declares its dependents, mirroring the server's own `DeleteFromDB`. TrinityCore's `Creature::DeleteFromDB` (`Creature.cpp:2042+`) removes `spawn_group`, `creature_addon`, `game_event_creature`, `game_event_model_equip` and `linked_respawn` rows. It does **not** remove pool, formation, SmartAI or `conditions` rows, so the dialog lists those and offers to remove them too.
 - **Condition engine (model only).** Add `ConditionCatalog` per dialect: source types from `ConditionMgr.h` (TC; AC's equivalent), condition types with parameter kinds, and sentences such as "Player has aura {spell}". Generate it with a script modelled on `Tools/generate_smart_catalog.py`. The visual builder is Phase 12.
 - **Content browser shell.** A dockable bottom panel (Unreal "Content Browser" style) with tabs per entity kind (creature templates, GO templates, later loot tables, pools, events). It offers search, filters and a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Phase 11 makes it drag-to-place.
 
-Docs: `editing-and-export.md` (allocator, nullable, references), `viewer-runtime.md` (shell, browser), `tc-status.md` rows. TrinityCore's condition source ids run 0-36 with 20 unused (the catalog skips it).
+Docs: `architecture/editing-and-export.md` (allocator, nullable, references), `architecture/viewer-runtime.md` (shell, browser), `open-work.md` rows. TrinityCore's condition source ids run 0-36 with 20 unused (the catalog skips it).
 
 ---
 
 ## Phase 11: Spawn authoring (place, duplicate, delete, instance overrides)
 
-**Why:** This is the core of a world editor. Today a designer can move Hogger but cannot add a second Hogger, remove a misplaced crate, give a guard a longer respawn, make a creature wander, or put it in a phase. Every content task ("populate this camp", "add a quest object") starts with placement.
+**Status:** mostly built: place (pick, then click), duplicate, delete with an impact warning, multi-select, the spawn inspector and the template addon. Open: drag from the browser, a model ghost, cross-zone copy/paste, group field editing, preview-this-phase, GameObject parent rotation, removing dependent rows on delete, new template from selection, `SpawnFacts` lookups, multi-floor picking, and WMO/equipment thumbnails. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
+
+**Why:** This is the core of a world editor. At planning time a designer could move Hogger but could not add a second Hogger, remove a misplaced crate, give a guard a longer respawn, make a creature wander, or put it in a phase. Every content task ("populate this camp", "add a quest object") starts with placement. Placement, duplication, deletion, multi-select and the spawn inspector are now built; see the status line above.
 
 **Benefit to the user:** You can build a camp in minutes by dragging templates from the browser onto the terrain. Ctrl+D duplicates a selection, Delete removes it, and the inspector sets per-spawn behavior. This is the Unity/Unreal "drop prefab, tweak instance" loop.
 
@@ -96,7 +123,7 @@ Implementation:
 - Add `creature`, `creature_addon`, `gameobject`, `gameobject_addon`, `creature_template_addon` and `gameobject_template_addon` to `AcTables` / `TcTables` with dialect columns, nullable on TC.
 - **One history:** poses are row edits since Phase 10, so place, move, edit and delete share one undo stack. A move of a spawn placed in this draft collapses into its staged insert (net change). Overlays render staged inserts from the effective `RowSet`, so new spawns appear immediately. A delete cascades in one command.
 - **New-row defaults** follow what the server writes itself (`cs_npc.cpp:133-151` → `Creature::SaveToDB`, `cs_gobject.cpp:141` → `GameObject::SaveToDB`; AC's equivalents). `zoneId`/`areaId` are filled from the client area lookup when one exists, otherwise 0. TC treats them as a cache (`Calculate.Creature.Zone.Area.Data`), so a missing retail `AreaLookup` does not block this phase.
-- Rules: `TcSpawnRules` / `AcSpawnRules` cover template exists, map exists, difficulty valid for the map (`ClientRecord.Difficulty`), phase exists (TC `phase_name` / client), movement type vs wander radius, and equipment ID exists.
+- Rules: the shared `SpawnRules` (built) covers template exists, map exists, difficulty valid for the map (`ClientRecord.Difficulty`), phase exists (TC `phase_name` / client), movement type vs wander radius, and equipment ID exists; the client/database lookups ride on optional `SpawnFacts`, which nothing fills yet.
 - Reuse: `TransformGizmo`, `RegionOverlay`, `SpawnPreview` (staged spawns must pass the preview filter or show a "hidden by preview" badge).
 
 Verify: `--client-shot-overlays` place/duplicate/delete flow in both dialects. Export, then run against a scratch `world`. Confirm with `.npc info` in-game that the placed spawn loads.
@@ -105,7 +132,9 @@ Verify: `--client-shot-overlays` place/duplicate/delete flow in both dialects. E
 
 ## Phase 12: Conditions builder (one visual editor for "when does this apply")
 
-**Why:** `conditions` gates gossip options, quest availability, loot, vendor items, phases, spell targets, SmartAI events and graveyards: 17k rows in ~30 source types. Every existing editor shows "has conditions" counts (quest links, gossip) but can't edit them. Copying a gossip menu doesn't copy its conditions (open tc-status gap).
+**Status:** not started. The catalog, sentences and source labels are built (Phase 10); menu copy carries types 14/15, graveyard team rows (27) and quest counts (19) read conditions. Open: `ConditionStrip`, `ReadConditionsAsync`, the builder, the tester and the wiring.
+
+**Why:** `conditions` gates gossip options, quest availability, loot, vendor items, phases, spell targets, SmartAI events and graveyards: 17k rows in ~30 source types. Every existing editor shows "has conditions" counts (quest links, gossip) but can't edit them. Copying a gossip menu doesn't copy its conditions (open open-work gap).
 
 **Benefit to the user:** "Show this option only to Alliance players on quest X" becomes three clicks in a readable sentence instead of decoding `SourceTypeOrReferenceId`/`ElseGroup`/`NegativeCondition`. One editor works everywhere.
 
@@ -121,7 +150,9 @@ Implementation: a `ConditionCatalog` (Phase 10) plus a `ConditionStrip` control 
 
 ## Phase 13: GameObject editor (template + type-aware properties)
 
-**Why:** GameObjects are half of world content: chests (type 3, 7k), doors (0, 5k), quest objects (2, 10), traps (6), spell focuses (8, 10k), chairs (7, 17.6k). Today they are move-only, and nothing about them can be seen or changed. The template's 35 `Data` columns mean different things per type, which is why raw editing is hopeless.
+**Status:** not started. GameObject spawns are editable from Phase 11; `Foundation/GameObjectTypes.cs` is only a name table. Open: the Data0–34 field catalog, its generator, the GO properties window, GO quest links, SmartAI type 1 and the right-click entry point.
+
+**Why:** GameObjects are half of world content: chests (type 3, 7k), doors (0, 5k), quest objects (2, 10), traps (6), spell focuses (8, 10k), chairs (7, 17.6k). At planning time they were move-only; their spawns are now editable (Phase 11), but nothing about the template can be seen or changed. The template's 35 `Data` columns mean different things per type, which is why raw editing is hopeless.
 
 **Benefit to the user:** Pick a chest and the page reads "Lock: Rusty Lock · Loot: (table) · Despawn after loot · Respawn 5 min". Pick a door and it reads "Starts closed · Auto-close after 3 s". It works like a Unity component inspector that changes with the object type.
 
@@ -130,14 +161,16 @@ UX: a Properties window (Phase 10 shell) with pages Template (name, display with
 Implementation:
 - **Generated type catalog:** `TrinityCore/GameObjectData.h` comments are machine-readable per field (`// 1 open, References: Lock_, NoValue = 0`, `enum { false, true, }; Default: false`, `Min value / Max value`). Write `Tools/generate_gameobject_catalog.py` (pattern from `generate_smart_catalog.py`) to emit `TcGameObjectTypes.cs` and `AcGameObjectTypes.cs` (AC: Data0–23 from its `GameObjectData.h`). Each field carries a kind (bool, int range, ms, reference → picker kind: Lock, BroadcastText, GameObject, Spell, Loot, QuestGiver, Gossip, PlayerCondition…).
 - `EntityPage` for GO: the type-properties group is built at runtime from the catalog for the row's `type`. Changing the type asks before it resets the Data fields to their defaults.
-- Tables: `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter`/`questender`/`questitem`, SmartAI type 1 (closes a tc-status Phase 8 gap). The reads go through a new `Tc/AcGameObjectPropertiesSource`.
+- Tables: `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter`/`questender`/`questitem`, SmartAI type 1 (closes a open-work Phase 8 gap). The reads go through a new `Tc/AcGameObjectPropertiesSource`.
 - Right-click a GO in the world → Properties… (same entry point as creatures).
 
 ---
 
 ## Phase 14: Movement authoring (paths, formations)
 
-**Why:** Paths can be nudged but not built: no new path, no inserting nodes, no deleting nodes (tc-status Phase 9 gap). Patrols and escorts are among the most common content tasks. Formations (3.1k rows) decide how groups move together and are invisible today.
+**Status:** partial. Existing node move/facing/delay (both dialects) and the path-orphan warning are in. Open: add/insert/delete/renumber, new paths, path-level properties, "Link to path…", the unused-paths list, formations, SmartAI path users and the preview animation.
+
+**Why:** Paths can be nudged but not built: no new path, no inserting nodes, no deleting nodes (open-work Phase 9 gap). Patrols and escorts are among the most common content tasks. Formations (3.1k rows) decide how groups move together and are invisible today.
 
 **Benefit to the user:** Click "New path", click points on the ground, and the creature walks it. Drag a follower around its leader to set the formation offset. It works like a spline tool in Unreal.
 
@@ -146,7 +179,7 @@ UX:
 - A preview button animates a ghost along the path at the path's speed.
 - **Formations:** select a leader to see its members linked by lines. Dragging a member around the leader edits `dist`/`angle` (polar). Group AI flags appear as checkboxes, and patrol turn-around points can be picked from the path.
 
-Implementation: extend `WaypointDraft` or move waypoints onto `RowEdit` for node insert/delete/renumber (renumbering = delete + insert in one command). Add path creation through `IdAllocator` and the creature's `creature_addon.PathId` plus `MovementType=2` together. AC: `waypoint_data` / `creature_addon.path_id`. Follow SmartAI `WAYPOINT_START` users (tc-status gap). Formations go in both catalogs (same schema).
+Implementation: extend `WaypointDraft` or move waypoints onto `RowEdit` for node insert/delete/renumber (renumbering = delete + insert in one command). Add path creation through `IdAllocator` and the creature's `creature_addon.PathId` plus `MovementType=2` together. AC: `waypoint_data` / `creature_addon.path_id`. Follow SmartAI `WAYPOINT_START` users (open-work gap). Formations go in both catalogs (same schema).
 
 Path links and orphans (added after the spawn delete shipped):
 - **Orphan warning on delete (Phase 11, built).** Deleting a creature also deletes its `creature_addon` row, which is the only link to its path, so a path nothing else uses is left behind. The delete dialog says "walks waypoint path N (X nodes) that nothing else uses" and counts other users in `creature_addon` and `creature_template_addon`.
@@ -156,6 +189,8 @@ Path links and orphans (added after the spawn delete shipped):
 ---
 
 ## Phase 15: Loot editor
+
+**Status:** not started. Only LootID, PickPocketLootID and SkinLootID are shown (creature Stats page).
 
 **Why:** Loot is what players experience most directly, and it's huge (311k creature rows plus 12 other loot tables, with 14k shared references). The difficulty page already shows `LootID`, `PickPocketLootID` and `SkinLootID`, but they lead nowhere.
 
@@ -175,6 +210,8 @@ Implementation: `Tc/AcLootSource` with one `TableSchema` per loot table. The dia
 
 ## Phase 16: Population control (pools, spawn groups, linked respawns)
 
+**Status:** not started. Pools filter the preview and count in the delete warning; no pool, spawn-group or linked-respawn editor exists.
+
 **Why:** Rare spawns, rotating mining nodes and "one of these five chests" are all pools (4k pools, 13k members). Spawn groups (TC) toggle entire camps for bosses and events. Today they only filter the preview; you can't see or build them.
 
 **Benefit to the user:** Select five ore nodes and choose "Make pool: spawn 2 at a time". The viewport colour-codes pool members, and a hover card shows "Rare: 10% of pool 'Elwynn rares'".
@@ -186,6 +223,8 @@ Implementation: `TcPoolSource` (`pool_template`, `pool_members`) and `AcPoolSour
 ---
 
 ## Phase 17: Events and phases (world-state timeline)
+
+**Status:** not started. `VisibilityPreviewPanel` filters by event and phase and counts spawns per phase; there is no event or phase authoring.
 
 **Why:** Holidays, Darkmoon Faire and seasonal decorations are `game_event` (89 events, 42k linked spawns), and phasing (`phase_area` 660, `conditions` source 26) is how modern zones change after quests. The preview already understands both but can't edit either.
 
@@ -202,12 +241,14 @@ Implementation: `game_event` and its children go into both catalogs (AC lacks `W
 
 ## Phase 18: Creature completion (the missing creature pages)
 
+**Status:** partial. The Template, Stats, Gossip, Vendor, Trainer, Quests, Behavior and Speech pages and the template appearance addon are built. Open: models and equipment sets, combat, rewards, movement, spell-click editing, vehicles, summons and the new-template wizard.
+
 **Why:** The creature window covers services but not how the creature looks or fights. Equipment (42k rows), spells (9.6k), on-kill reputation (2k), resistances, immunities, movement capabilities, spell-click (841), vehicle accessories (528) and summon groups (1.1k) all need hand-written SQL today.
 
 **Benefit to the user:** One window holds the whole NPC: what it holds in its hands, what it casts, what rep it gives, what it summons and where. Summon positions can be placed in the world.
 
 Pages (each an `EntityPage` / `ItemListSpec`):
-- **Appearance:** model list with weights and per-model scale (`creature_template_model`), live preview, and equipment sets (`creature_equip_template`; TC adds appearance mod and visual). Retail equipment rendering is a known tc-status gap, so show the item icons until it lands.
+- **Appearance:** model list with weights and per-model scale (`creature_template_model`), live preview, and equipment sets (`creature_equip_template`; TC adds appearance mod and visual). Retail equipment rendering is a known open-work gap, so show the item icons until it lands.
 - **Combat:** spells (`creature_template_spell`, spell picker), resistances, immunities (TC), and the template addon (default auras, emote, mount).
 - **Rewards:** on-kill reputation as faction pickers with standing caps.
 - **Movement:** ground, swim, flight, rooted (TC `creature_template_movement` and its overrides).
@@ -219,7 +260,9 @@ Pages (each an `EntityPage` / `ItemListSpec`):
 
 ## Phase 19: Quest completion (world-placed quest data)
 
-**Why:** The quest editor edits the quest but not where it shows on the map (`quest_poi`, 136k plus 307k points), who gives it when it isn't a creature (GO starters, item starters), conditional texts, greetings, or the condition-based availability (the tc-status Phase 7 gap list).
+**Status:** partial. The five quest tables, objectives (TrinityCore), rewards, story/chain/givers/preview pages and creature links are built. Open: POI and points, GO/item givers, conditional text, greetings, quest pools, the objective-field gaps and the missing reference checks.
+
+**Why:** The quest editor edits the quest but not where it shows on the map (`quest_poi`, 136k plus 307k points), who gives it when it isn't a creature (GO starters, item starters), conditional texts, greetings, or the condition-based availability (the open-work Phase 7 gap list).
 
 **Benefit to the user:** Quest map blobs are drawn by clicking polygon corners on the terrain, right where the objective is. A quest can be given by a wanted poster.
 
@@ -230,6 +273,8 @@ Implementation: add `quest_poi`, `quest_poi_points`, `quest_*_conditional`, `que
 ---
 
 ## Phase 20: Travel and instances
+
+**Status:** mostly not started. `game_tele` bookmarks, `areatrigger_teleport` reads and graveyard/`world_safe_locs` editing exist. Open: destination editing, `spell_target_position`, instances, access requirements and an editable shared `game_tele` source.
 
 **Why:** Teleports, portals, instance entrances and spell destinations make up the world's connectivity: `areatrigger_teleport` 344, `spell_target_position` 2.5k, `access_requirement`, `game_tele` 2.3k. Today they're read-only lines in the viewport at best.
 
@@ -243,6 +288,8 @@ Implementation: `world_safe_locs` creation (TC; reuse the graveyard draft model)
 
 ## Phase 21: Areas and ambience
 
+**Status:** mostly not started. Client and spawned AreaTriggers are drawn read-only, their SmartAI rules edit and their create properties are read. Open: weather, `spell_area`, taverns, `disables`, spawned-trigger placement/shape editing and `areatrigger_template_actions`.
+
 **Why:** These are small tables with big gameplay effects: area auras on enter (`spell_area` 968), weather (`game_weather`), rest areas (`areatrigger_tavern`), disabled content (`disables` 5.3k), and server-spawned AreaTrigger authoring (`areatrigger_template`, `_actions`, `_create_properties*`; spawns are read-only today).
 
 **Benefit to the user:** You can author the feel of a zone: weather sliders per season, "players in this area get this aura while on quest X", tavern zones painted as triggers. Server-spawned AreaTriggers can be placed and shaped with gizmos (sphere radius, box extents, polygon vertices).
@@ -252,6 +299,8 @@ Implementation: a zone page (opened from the minimap or area name) for weather, 
 ---
 
 ## Phase 22: Cinematics: conversations, scenes, player choice (TrinityCore only)
+
+**Status:** not started.
 
 **Why:** Retail storytelling uses conversations (248 templates, 702 lines; talking-head dialogue between actors), scenes and player choices. Without an editor, modern quest content can't be authored. AC has no such systems.
 
@@ -263,12 +312,14 @@ Implementation: `conversation_template`, `_actors`, `_line_template` (with condi
 
 ## Phase 23: Text pipeline (hotfix export + broadcast and page text)
 
-**Why:** On retail, every line of NPC dialogue, gossip and emote is a `broadcast_text` row in the **hotfixes** DB (238k), and the editor can only *link* existing text (tc-status Phase 8 "Speech" gap). New content needs new words. Books and plaques use `page_text` (world).
+**Status:** partial. TrinityCore can create a gossip broadcast text and its inline `hotfix_data` row. Open: a separate hotfixes apply/revert script, speech and page text, editing existing text, the AzerothCore path, and the male/female plus sound/emote strips.
+
+**Why:** On retail, every line of NPC dialogue, gossip and emote is a `broadcast_text` row in the **hotfixes** DB (238k), and the editor can only *link* existing text (open-work Phase 8 "Speech" gap). New content needs new words. Books and plaques use `page_text` (world).
 
 **Benefit to the user:** You type the new line where it's used (gossip option, speech line, GO page), and it's created, linked and shipped to clients. There is no ID hunting.
 
 Implementation:
-- **Hotfix export path:** a second `ITableCatalog` for `hotfixes`, an `SqlExport` target that writes a separate `hotfixes-apply/revert.sql`, and an automatic `hotfix_data` row per changed record (TableHash from WoWDBDefs; `RecordId`; `Status`; a new `Id` from `IdAllocator`). Stale checks run against both databases (the plan the tc-status Speech row already describes). Pending changes show both scripts together.
+- **Hotfix export path:** a second `ITableCatalog` for `hotfixes`, an `SqlExport` target that writes a separate `hotfixes-apply/revert.sql`, and an automatic `hotfix_data` row per changed record (TableHash from WoWDBDefs; `RecordId`; `Status`; a new `Id` from `IdAllocator`). Stale checks run against both databases (the plan the open-work Speech row already describes). Pending changes show both scripts together.
 - AC side: `broadcast_text` lives in `acore_world`, so it's a world write with no hotfix rows.
 - Inline "New text…" / "Edit text" in the speech, gossip and GO page-text pickers, with a male/female variant and an emote/sound strip. `page_text` gets a book editor with next-page chaining shown as pages.
 
@@ -276,11 +327,13 @@ Implementation:
 
 ## Phase 24: Item editor
 
+**Status:** not started. Retail item tooltips are computed for the vendor page; there is no item source, editor or creation flow.
+
 **Why:** Custom rewards, vendor goods and quest items need new items. Today vendors and loot can only reference existing ones. TC items are `hotfixes.item` plus `item_sparse` (plus extras); AC items are `world.item_template`.
 
 **Benefit to the user:** "Create item" from a loot table, vendor or quest reward opens a tooltip-first editor. You edit the in-game tooltip directly (name, quality colour, stats, armor, damage, icon picker over the client's icon list), and the generated tooltip updates live.
 
-Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail item tooltip gap in tc-status), the Phase 23 hotfix path for TC, and rules for stat and slot validity. Spells stay out of scope; a spell editor is a separate product.
+Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail item tooltip gap in open-work), the Phase 23 hotfix path for TC, and rules for stat and slot validity. Spells stay out of scope; a spell editor is a separate product.
 
 **AC parity caveat (verify first):** the app never writes game files, and a 3.3.5 client may need a matching `Item.dbc` row (display and inventory type) for a new `item_template` ID. Start the phase by testing a new ID on a 3.3.5 client.
 - If the item doesn't display correctly, AC item creation is limited to IDs or display info the client already has. That means cloning an existing item's ID range, or an external client patch the UI tells the user about. It is not full parity.
@@ -292,7 +345,7 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 
 | Need | Reuse |
 |---|---|
-| Page layout and fields | `CreaturePage` / `FieldSpec` / `ItemListSpec` → `EntityPage` (Phase 10), `PageRenderer` |
+| Page layout and fields | `EntityPage` / `FieldSpec` / `ItemListSpec` (Phase 10), `PageRenderer` |
 | Edits, undo, export | `InteractionDraft`, `RowEdit`, `DraftHistory`, `SqlExport`, `PendingChanges` |
 | Pickers | `PickerPopup` (`Scripts/Ui/EditorFields.cs:311`), `CreatureSection.SearchState<T>`, `IClientLookup.Search*` / `Exists(ClientRecord, id)` |
 | Positions and gizmos | `TransformGizmo`, `ScenePicking`, `TerrainViewer.Ground`, `RegionOverlay` / `RegionQuery` |
@@ -302,9 +355,9 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 ## Verification (per phase)
 
 - `dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false`; Db tests with `ACWORLD_DB_INFO` (AC) and `ACWORLD_TC_DB_INFO` (TC); unit tests for each new descriptor, rules and export after the feature works.
-- Visual check in Godot in **both** client profiles: open the new editor, run the create/edit/delete/undo flow, and screenshot via a smoke stage (extend the TC client smoke and `--content-smoke`).
+- Visual check in Godot in **both** client profiles: open the new editor, run the create/edit/delete/undo flow, and screenshot via a stage in an existing smoke or a new `--*-smoke` flag (`--content-smoke`, `--interaction-smoke` and `--spawn-authoring-smoke` are the closest patterns).
 - Export from Pending Changes, run apply then revert against a scratch copy of `world` (and `hotfixes` for 23–24), and confirm the server loads the rows without `sql.sql` errors (the rules phases mirror those loader checks).
-- Update `tc-status.md`, the matching architecture page and `DB-DIFFERENCES.md` in the same change.
+- Update `open-work.md`, the matching architecture page and `database-differences.md` in the same change.
 
 ## Recommended order and sizing
 

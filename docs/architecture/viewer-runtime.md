@@ -44,15 +44,19 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 |---|---|
 | `Viewer/TerrainViewer.cs` | Core coordinator: `_Ready`, `LoadClient`, `OpenMap`, streaming state, `Prepare`, camera movement, input, `_Process` |
 | `Viewer/TerrainViewer.Ui.cs` | `BuildUi`: menus, toolbar, left navigation, bottom telemetry bar, editor window wiring, client and connection prompts |
+| `Viewer/TerrainViewer.MenuBar.cs` | The command strip at the top: the File/Edit/View/Help menu bar and its commands |
 | `Viewer/TerrainViewer.Export.cs` | Pending changes, SQL export, polling every 0.4 s, discard and export actions; File → Clear cache… (saved edits, exported record and the model thumbnails of both profiles) and File → Reset configs and delete cache… (`BeginReset`: starts the cleanup helper, then quits) |
-| `Data/UserDataReset.cs` | Godot-free reset logic: the safe-target check (the project's own `app_userdata` folder), the count of exported scripts shown in the confirmation, and `StartCleanerAsync`, which launches a hidden PowerShell through WMI (`Win32_Process.Create`) that waits for the viewer process to exit and then deletes the whole user folder, retrying for up to a minute. WMI creates it with no inherited handles; a plain child would inherit the viewer's open log file and block its own deletion. Windows only |
 | `Viewer/TerrainViewer.Ground.cs` | `GroundAt`: combines terrain height and WMO floors for snapping |
+| `Viewer/TerrainViewer.Placement.cs` | Placing a new spawn from a template with the mouse (the viewer side of `PlacementTool`) |
+| `Viewer/TerrainViewer.Selection.cs` | Selecting several spawns: Ctrl-click adds or removes one, Shift-drag draws a box |
+| `Viewer/TerrainViewer.NavigationPicking.cs` | Navigation picks bounded by loaded terrain and visible building render triangles |
+| `Viewer/TerrainViewer.Hotfixes.cs` | Layers the server's creature display hotfixes over the retail client's display table at client load |
 | `Viewer/TerrainViewer.Listfile.cs` | One-time listfile prompt and in-app update (download on a worker, then reload the retail client) |
 | `Viewer/TerrainViewer.Locate.cs` | Locate a creature from quest links: fly to a loaded spawn, or query the database and wait for the region to stream in |
 | `Viewer/TerrainViewer.Teleports.cs` | `game_tele` dropdown with a generation guard, plus same-map server XYZ navigation |
 | `Diagnostics/TerrainViewer.*.cs` | Smoke workflows and the F12 diagnostic dump (see Diagnostics below) |
 
-Other viewer files: `SkyLighting.cs` (sun, environment, skybox and the client fog, sun and water values it publishes), `ClientLighting.cs` (light regions and profiles), `ClientServices.cs` (client open), `TerrainMinimap.cs` (a `Control` that raises `Jump` on click), `ScenePicking.cs` (box and sphere ray hits), `AreaTable.cs`.
+Other viewer files: `SkyLighting.cs` (sun, environment, skybox and the client fog, sun and water values it publishes), `ClientLighting.cs` (light regions and profiles), `ClientServices.cs` (client open), `TerrainMinimap.cs` (a `Control` that raises `Jump` on click), `ScenePicking.cs` (box and sphere ray hits), `AreaTable.cs`, and `NodeExtensions.cs` / `ViewSpace.cs` helpers. `Data/UserDataReset.cs` (not a viewer partial) holds the reset logic: the safe-target check (the project's own `app_userdata` folder), the count of exported scripts shown in the confirmation, and `StartCleanerAsync`, which launches a hidden PowerShell through WMI (`Win32_Process.Create`) that waits for the viewer process to exit and then deletes the whole user folder, retrying for up to a minute. WMI creates it with no inherited handles; a plain child would inherit the viewer's open log file and block its own deletion. Windows only.
 
 ## Streaming
 
@@ -123,9 +127,8 @@ flowchart LR
 
 - **Terrain** (`Rendering/TerrainRenderer.cs`): the tile worker (`PrepareTile`) groups a tile's MCNKs by their layer list and concatenates each group into one surface, so a tile draws as one `MeshInstance3D` per distinct layer list (about 20–40) instead of 256 chunk meshes. UV is chunk-local; UV2 is the chunk's cell in the tile's 1024x1024 RGBA splat atlas (64x64 per chunk: RGB layer opacity, A baked shadow), uploaded once per tile by `BeginTerrain`. Each group gets a `ShaderMaterial` on `terrain.gdshader` with its four layer textures, which stay shared and reference-counted across tiles (a per-tile texture array would copy them into every tile). `CellCount` feeds the status bar. Liquids are children of a `Liquids` node and use `liquid.gdshader`, one shared material per texture.
 - **Terrain shader**: samples the splat atlas at the chunk-local UV clamped to texel centers inside the chunk's cell, which matches the old per-chunk clamp-to-edge maps. Big-alpha mode uses independent layer weights; legacy mode blends in sequence. Lighting is the client's (`client_surface_light`, from the retail `terrain` pixel shader): unshaded, in gamma space like the client, so layer textures are sampled raw and only the finished color is converted to linear. The doubled vertex tint scales the layers, `clamp(ambient + diffuse * N.L)` scales that, a Blinn-Phong highlight (exponent 20, sun specular color) masked by the layers' alpha channel adds on top, and the baked shadow takes 30 % off (it was `1 - 0.3 * shadow` before as well). The retail permutations that use per-layer color LUTs and a hemisphere ambient (36 to 39) are not ported, nor is the light buffer's contribution from point lights, and the highlight strength (`CLIENT_SPECULAR_STRENGTH`) is an estimate. The terrain does not receive Godot's dynamic sun shadows any more. An optional cell grid draws on top.
-- **Liquid shader** (`Shaders/liquid.gdshader`): unshaded, no depth writes, with two water models (`water_model`) and a magma/slime path; retail swamp selects its own shader. `water_wrath` is the 3.3.5a client's `psLiquidWater` (disassembled from the `.bls` files): `(ambient + diffuse * N.L) * gradient + frame texture + (specular + 0.25) * frame alpha`, with Blinn-Phong exponent 6 and the sun band as colour. `water_retail` is the retail `mediumwater` shader: scrolling ripple normal map, fresnel mix toward the fog colour, and a sun glint, with alpha 1.25 times the gradient alpha, described below. A type uses the retail model when its LiquidType names a ripple normal map (LiquidType texture 2, `newoceanbump.blp` on the retail stock types; `RetailLiquids.Bump`, carried as `LiquidStyle.Bump`), which retail data does and 3.3.5a data does not (its MPQs do not even contain the file), so the model follows the data rather than a client check. Both models share the depth gradient (the client's 64-row procedural depth texture computed in the shader from the active light's four water colours and alphas, `client_water_*`, indexed by the depth byte kept in the vertex alpha through the type's depth table), the sun values and the fog, and run on raw gamma-space values with only the result converted to linear. Frames loop over the type's period (`LiquidType` int 1) and `LiquidStyle` (from `LiquidTextures.Style`) carries the gradient, depth table, texture scale, rotation and depth scale. Lava and slime (kind 2 or higher) are vertex colour times frame, opaque and unlit. The retail model: two near and two far scrolling samples of the map, blended by camera distance, bend the surface; the animated frames are not used. The retail vertex shader is not shipped, so the ripple UV scales, scroll rates and the specular exponent are chosen to look like the stock water, and the sky reflection uses the fog colour. The two retail water shaders share that ripple normal through `Shaders/liquid_surface.gdshaderinc` (`liquid_ripple`). Both also have the shipped underwater face: `water_retail` draws `mediumwaterbelow` when the eye is under the surface (`INV_VIEW_MATRIX[3].y < world_position.y`, per fragment), which turns the ripple normal toward the viewer, lets the lit gradient take the surface in proportion to the gradient alpha (a tenth less at grazing angles) instead of the sky, drops the glint's 0.2 floor, and adds 40 % of the above-water sun response behind a fourth-power Fresnel with the gradient's own alpha. The 3.3.5a model has no such variant, so its underside keeps the above-surface path. Magma and slime scroll their frames at the type's first two floats in texture widths per second (`Liquid::GetTexScrollMtx`, `LiquidStyle.ScrollU` and `ScrollV`, `RetailLiquids.Scroll`); terrain liquid materials are shared per texture and style (`LiquidStyle.CacheKey`), so magma and faster WMO magma do not share one. Retail swamp (material 14) uses `Shaders/swamp.gdshader`, selected in `LiquidRendering.Configure`; its screen/depth inputs are isolated from ordinary water and magma. It combines the three-texture core of `procswamp_0/6`, the surface math of `procswamp_20` and the shore overlay of `procswampabovefog_6` in one pass. Native MH2O depth drives the shallow/middle/deep smoothsteps (equal adjacent thresholds stay finite). Two near and two coarse RG samples from the type's BC5 normal sequence bend the depth textures; adjacent reconstructed normals interpolate over time. The near/coarse factors 2.0, 2.34 and 0.15 and 1/32 UV factor come from the bytecode. Scene depth drives the cubic 25-per-yard intersection fade, foreground-rejected refraction, and view-angle-weighted shore texture overlay. Squared Fresnel blends toward reflection; Blinn-Phong sunlight and the shader's small normal-up lobe add highlights. The captured scene already has lighting and fog, so the single-pass composite applies client fog to local material contributions only. Missing normals leave a flat surface; missing shore texture omits that overlay; missing depth textures retain the generic base fallback. Textures and all surface settings participate in the material cache key.
+- **Liquid shader** (`Shaders/liquid.gdshader`): unshaded, no depth writes, with two water models (`water_model`) and a magma/slime path; retail swamp selects its own shader. `water_wrath` is the 3.3.5a client's `psLiquidWater` (disassembled from the `.bls` files): `(ambient + diffuse * N.L) * gradient + frame texture + (specular + 0.25) * frame alpha`, with Blinn-Phong exponent 6 and the sun band as colour. `water_retail` is the retail `mediumwater` shader: scrolling ripple normal map, fresnel mix toward the fog colour, and a sun glint, with alpha 1.25 times the gradient alpha. A type uses the retail model when its LiquidType names a ripple normal map (LiquidType texture 2, `newoceanbump.blp` on the retail stock types; `RetailLiquids.Bump`, carried as `LiquidStyle.Bump`), which retail data does and 3.3.5a data does not (its MPQs do not even contain the file), so the model follows the data rather than a client check. Both models share the depth gradient (the client's 64-row procedural depth texture computed in the shader from the active light's four water colours and alphas, `client_water_*`, indexed by the depth byte kept in the vertex alpha through the type's depth table), the sun values and the fog, and run on raw gamma-space values with only the result converted to linear. Frames loop over the type's period (`LiquidType` int 1) and `LiquidStyle` (from `LiquidTextures.Style`) carries the gradient, depth table, texture scale, rotation and depth scale. Lava and slime (kind 2 or higher) are vertex colour times frame, opaque and unlit. The retail model: two near and two far scrolling samples of the map, blended by camera distance, bend the surface; the animated frames are not used. The retail vertex shader is not shipped, so the ripple UV scales, scroll rates and the specular exponent are chosen to look like the stock water, and the sky reflection uses the fog colour. The two retail water shaders share that ripple normal through `Shaders/liquid_surface.gdshaderinc` (`liquid_ripple`). Both also have the shipped underwater face: `water_retail` draws `mediumwaterbelow` when the eye is under the surface (`INV_VIEW_MATRIX[3].y < world_position.y`, per fragment), which turns the ripple normal toward the viewer, lets the lit gradient take the surface in proportion to the gradient alpha (a tenth less at grazing angles) instead of the sky, drops the glint's 0.2 floor, and adds 40 % of the above-water sun response behind a fourth-power Fresnel with the gradient's own alpha. The 3.3.5a model has no such variant, so its underside keeps the above-surface path. Magma and slime scroll their frames at the type's first two floats in texture widths per second (`Liquid::GetTexScrollMtx`, `LiquidStyle.ScrollU` and `ScrollV`, `RetailLiquids.Scroll`); terrain liquid materials are shared per texture and style (`LiquidStyle.CacheKey`), so magma and faster WMO magma do not share one. Retail swamp (material 14) selects `Shaders/swamp.gdshader` in `LiquidRendering.Configure`, with its screen and depth inputs isolated from ordinary water and magma. Its composition, texture fallbacks and fidelity limits are in [Material 14](rendering.md#material-14-swamp).
 
-  Swamp fidelity limits: the DB2-to-buffer mapping is inferred, not recovered CPU code (floats 0..3 depth thresholds, 4 normal strength, 5 specular exponent, 6 refraction, 8 reflection, 9 shore width, 10 animation rate, 11 ripple scale, 12 opacity, 13..15 layer scales, 17 highlight strength). Floats 7 and 16 are not bound: their CPU role remains unknown and captured scene lighting is preserved. The coarse UV ratio and scroll directions/speed are estimates because the vertex shader's texture matrices are populated by stripped CPU code. Retail's separate reflection render is replaced by a shared 32-sample screen trace (`liquid_reflection.gdshaderinc`, also used by mercury and procedural water): per-pixel jitter, fine near steps, the first depth crossing, binary refinement, a distance-scaled cross blur and retail's radial map window (1−x²)·(1−y²), faded to the region fog/sky colour between 12 and 40 yards so far scenery reads as water rather than a mirror (offscreen objects cannot reflect; the client's 0.75−z² ray-elevation factor is not applied because on a trace it suppresses steep reflections of tall nearby objects); local interaction-ripple buffers and the client's spatial water simulation are absent. These are renderer substitutions, not a claim of pixel parity. Checked in Godot on Azeroth 46,22 / 46,23 / 47,23 / 45,23; corpus coverage decodes the 30-frame ripple sequence and shoreline texture for these tiles. Materials 13 (fel/venom) and 12 (ley line and related liquids) now have partial core paths described below; unresolved inputs still fall back. Mercury (5) uses a dedicated reflective surface described below. Fog liquids (10) use a partial sheet-composition path described below. Procedural magma (4) now has a dedicated layer path described below. Procedural water (3) now uses a dedicated surface path described below. Not ported: WMO water depth (WMO water draws at full depth) and the other retail per-type floats (retail otherwise uses the stock river or ocean style by sound bank).
 - **Models** (`Rendering/ModelInstance.cs`, `Rendering/ModelLibrary.cs`): `ModelInstance` is a `Node3D` that holds its transforms. The decode worker merges opaque batches that share every material input (`SurfaceMerge`, skyboxes excepted) and the entry uploads that list, then drops it; ground probes read the unmerged batch positions and indices the entry keeps (`ModelData.ForProbes`). Unskinned, unanimated, non-sky batches share one `ShaderMaterial` per material key (shader variant, texture, blend, colour mode, static colour and UV rows), reference-counted per entry. Instanced placements use a `MultiMeshInstance3D` per mesh with visibility range 1600. Single instances use range 400. Skyboxes are unculled and shadowless.
 - **Model shader** (`Shaders/model.gdshader`): unshaded, with the client's own lighting (`client_model_light`, from the retail `combiners_*` pixel shaders) computed in gamma space like the terrain: `ambient * (0.7 + 0.4 * (0.5 * N.L + 0.5)) + diffuse * max(N.L, 0)` times the surface color, no specular, textures sampled raw and only the finished color converted to linear. Godot's lights and dynamic shadows no longer touch models (`ModelLibrary` adds `unshaded` to every variant and sets `LIT` false for unlit and skybox ones). The retail hemisphere ambient (separate top, horizon and bottom colors) is not ported: the sky ambient is used for all three. GPU skinning from the `animation_palette` texture; batch colour and UV animation from `material_palette`; `vertex_color` mode 1 (interior baked light) or 2 (exterior colour as emission). Multi-texture batches set `combiner` (a `LayerCombiner` value), `layer_tex2` to `layer_tex4` and `layer_coords`; the fragment stage runs the client's `Combiners_*` / MapObj pixel shader, adding reflections and glows as emission, and `edge_fade` fades a surface where it turns from the viewer. A WMO's second vertex-colour alpha arrives in custom channel 2. `ModelLibrary` patches the shader text per variant (`render_mode` and an `ALPHA` line). The skybox variant places vertices on a 7500-yard shell.
 - **Thumbnails** (`Rendering/ModelThumbnails.cs`, behind `IThumbnailSource`): the content browser's model pictures. A request resolves a creature display (`ModelKey.ForCreature`, shared with `CreatureOverlay`) or a GameObject display (`.wmo` models are skipped) and attaches the model through the viewer's `ModelLibrary` inside a 128-pixel `SubViewport` with its own world, ambient and directional light and a transparent background. The library decodes the nearest unbuilt models first, measured from the main camera, so the off-screen root follows the main camera and thumbnails decode ahead of the world. Three models are attached at a time; each built one is shown alone, framed on its `Bounds` from in front (models face −Z), rendered once and read back two frames later. PNGs are cached in `user://thumbs/<wrath|retail>/<sha1>.png`, the hash covering a version number and the whole `ModelKey`, so display hotfixes and framing changes get new files. Smoke runs start from an empty `res://artifacts/thumbs/<guid>/` (`TerrainViewer.ThumbnailDirectory`), so every run renders what it checks. Failures (a display the client lacks, no model, a failed decode, empty bounds such as the invisible stalker model) are remembered until the next client loads (`Reset`); a model still not built after 30 s is only dropped, so the next search asks again. Headless runs have no renderer, so they never call back. File → Clear cache… does not touch thumbnails (it is about saved edits); delete the folder to rebuild them.
@@ -141,7 +144,7 @@ All camera and input handling is in `TerrainViewer.cs`.
 - **Flight:** hold right mouse to capture the cursor. Mouse motion changes yaw and pitch (pitch clamped to ±1.55). `MoveCamera` reads physical W, A, S, D, Q and E; Shift multiplies speed by 4; the wheel changes speed between 5 and 1500.
 - **Teleport:** choose a `game_tele` bookmark to open its map and focus that location, or enter `X, Y, Z` and press Enter/Go to move the camera to that exact server position on the current map. XYZ entry preserves the camera heading, does not require a bookmark or database connection, rejects non-finite coordinates and waits until a map is open and not loading. Coordinates use decimal points regardless of the system locale; later terrain uploads do not lift the entered eye height.
 - **`_Input`** runs before shortcuts. While captured it swallows keys other than Escape, so flight keys do not trigger toolbar modes. While an editor is dragging it routes motion, release and Escape to that editor.
-- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window (for TrinityCore only the template page is editable so far). Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
+- **`_UnhandledInput`** runs after the UI. Left click tries the active editor's gizmo first, then the nearest ray hit across creatures, GameObjects, graveyards and triggers (triggers lose ties). A short right click selects a creature and opens its properties window. Creatures, GameObjects, graveyards and waypoints each have their own draft; the selected kind owns the gizmo, undo and drop-to-ground.
 - **Focus loss** releases capture and cancels drags.
 - **F12** (handled in `_Input`, so it works while flying) saves a diagnostic dump; see [Diagnostic dump](#diagnostic-dump-f12).
 - **Shortcuts** come from `EditorMenu` (Ctrl+Z, Ctrl+Y, End, Ctrl+Shift+C, F, Ctrl+B, Ctrl+Q) and `EditorToolbar` (Q, W, E for modes, Ctrl+Shift+Z).
@@ -163,17 +166,17 @@ Per-frame order in `_Process`:
 
 ## Overlays
 
-Five overlays are children of `TerrainViewer`. They share one shape (`RegionOverlay`):
+Six overlays are children of `TerrainViewer`. Creature, GameObject, graveyard, waypoint and AreaTrigger share one shape (`RegionOverlay`); `NavigationOverlay` is independent (see [Navigation overlay](#navigation-overlay)). The shared shape:
 
-- `Connection` gives the `WorldConnection` (settings, hotfixes database and dialect); queries open it with `DBSource.Open`. `SetRegion` `SetRegion` receives the query region from `UpdateWanted`.
+- `Connection` gives the `WorldConnection` (settings, hotfixes database and dialect); queries open it with `DBSource.Open`. `SetRegion` receives the query region from `UpdateWanted`.
 - `RegionQuery<T>` (`Overlays/RegionQuery.cs`) runs one cancellable, generation-checked query on a worker. A search box has a 0.3 s debounce.
 - Results are diffed against existing markers by ID.
 - Each overlay exposes `FindHit`, `Select`, `Deselect`, `SelectionChanged`, `FocusRequested(WorldPose)`, `SetLayerEnabled` and `BuildPanel()`, which the sidebar hosts.
 
 | Overlay | Files | Data source | Editable |
 |---|---|---|---|
-| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Staged.cs`, `.Ui.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, undo and redo through `SpawnPoses`; opens the properties window and the behavior editor |
-| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Staged.cs`, `.Ui.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move and rotate through `SpawnPoses` |
+| `CreatureOverlay` | `CreatureOverlay.cs`, `.Editing.cs`, `.Staged.cs`, `.Ui.cs`, `.Fields.cs`, `.Group.cs`, `.Placing.cs` | `IDBSource.ReadCreaturesAsync` | Yes: move, rotate, drop, place, duplicate, delete, multi-select, spawn fields and appearance, undo and redo through `SpawnPoses`; opens the properties window and the behavior editor |
+| `GameObjectOverlay` | `GameObjectOverlay.cs`, `.Editing.cs`, `.Staged.cs`, `.Ui.cs`, `.Fields.cs`, `.Group.cs`, `.Placing.cs` | `IDBSource.ReadGameObjectsAsync` | Yes: move, rotate, drop, place, duplicate, delete, multi-select, spawn fields and appearance through `SpawnPoses` |
 | `GraveyardOverlay` | `GraveyardOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadGraveyardsAsync` | Yes: position, name and zone links through `GraveyardDraft` |
 | `WaypointOverlay` | `WaypointOverlay.cs`, `.Editing.cs`, `.Ui.cs` | `IDBSource.ReadWaypointsAsync` | Yes: point positions and properties through `WaypointDraft`. For TrinityCore the card shows only facing and delay as editable, the path's move type and velocity read-only, and hides smooth transition and actions |
 | `AreaTriggerOverlay` | `AreaTriggerOverlay.cs`, `.Ui.cs`, `AreaTriggerShapes.cs` | `IDBSource.ReadAreaTriggersAsync` | No; opens the behavior editor on a client trigger's rules or (TrinityCore) a spawned trigger template's |
@@ -186,7 +189,7 @@ Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures w
 
 `IPlacementEditor` (`Overlays/IPlacementEditor.cs`) is implemented by `CreatureOverlay`, `GameObjectOverlay`, `GraveyardOverlay` and `WaypointOverlay`. `TerrainViewer.ActiveEditor` sends menu, toolbar and viewport commands to whichever editor owns the selection.
 
-Spawn editors (`CreatureOverlay`, `GameObjectOverlay`) also implement the default members `CanDuplicate`, `CanDelete`, `Duplicate()` and `Delete()`, which graveyards and waypoints leave off. They appear as Edit menu items (Duplicate Ctrl+D, Delete Del), toolbar actions and inspector buttons. A copy goes two yards ahead of its source, dropped to the ground, under the next free GUID, and is selected; a delete removes the spawn and its addon row in one command. Both need the spawn's row, which is read when it is selected, so the commands stay disabled until it arrives. A delete removes only those two rows. When pools, spawn groups, event links, linked respawns, formations or per-GUID SmartAI still name the spawn, a dialog lists them first (`SpawnDeleteDialog`, counts from `IDBSource.CountSpawnReferencesAsync`; for a creature also the waypoint path it walks when nothing else uses it, from `IDBSource.ReadSpawnPathsAsync`); removing them with the spawn is not built yet (see `tc-status.md`).
+Spawn editors (`CreatureOverlay`, `GameObjectOverlay`) also implement the default members `CanDuplicate`, `CanDelete`, `Duplicate()` and `Delete()`, which graveyards and waypoints leave off. They appear as Edit menu items (Duplicate Ctrl+D, Delete Del), toolbar actions and inspector buttons. A copy goes two yards ahead of its source, dropped to the ground, under the next free GUID, and is selected; a delete removes the spawn and its addon row in one command. Both need the spawn's row, which is read when it is selected, so the commands stay disabled until it arrives. A delete removes only those two rows. When pools, spawn groups, event links, linked respawns, formations or per-GUID SmartAI still name the spawn, a dialog lists them first (`SpawnDeleteDialog`, counts from `IDBSource.CountSpawnReferencesAsync`; for a creature also the waypoint path it walks when nothing else uses it, from `IDBSource.ReadSpawnPathsAsync`); removing them with the spawn is not built yet (see [open-work.md](../status/open-work.md)).
 
 The creature properties window (`CreaturePropertiesWindow`) edits the creature template: its title reads "Creature template: {name}" and its subtitle (`ScopeText.Header`) names the entry and spawn count and points to the inspector for a single spawn. The Appearance tab (`AppearanceSection`) edits `creature_template_addon` with `TemplateAddons`, reusing `SpawnInspector` in its appearance-only mode.
 
@@ -205,6 +208,8 @@ A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before,
 | Client picker | `ClientPickerDialog` in `Ui/ConnectionForm.cs` | Profile and folder selection |
 | Connection | `Ui/ConnectionForm.cs` | Database settings; tested on a worker before saving |
 | Sidebar | `Ui/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
+| Content browser | `Ui/ContentBrowser.cs` | Bottom panel (Ctrl+B) with Creatures and Game objects tabs, template search, type filter and model thumbnails; double-click opens a creature (see below) |
+| Spawn inspector | `Ui/SpawnInspector.cs`, `Ui/PlaceCard.cs` with `Overlays/PlacementTool.cs` | The selected spawn's row fields (respawn, movement, visibility, template overrides, appearance) in the creature and GameObject overlays; the Place card arms click-to-place |
 | Visibility preview | `Ui/VisibilityPreview/VisibilityPreviewPanel*.cs` | The sidebar's visibility card: preset with a description and a one-sentence summary (`Foundation/PreviewSummary`), then "Who is looking" (a phase dropdown of checkable items, each with how many stored spawns of the loaded area sit in it: AzerothCore phases are mask bits, any number tickable, with "Normal world" / "All phases" buttons and the typed mask underneath, `Foundation/AzerothCore/AcPhaseMasks`; TrinityCore previews one phase at a time, named from `phase_name`, with the phase ID typed underneath). The counts come with every region read (`AcPhaseSource` / `TcPhaseSource` → `PhaseCatalog` on the region result) and ignore the preview's phase filter, "Events" and "Also show". The panel builds the visibility rules and the sidebar merges in the display budget |
 | Editor base | `Ui/ContentEditorWindow.cs`, `Ui/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
@@ -275,8 +280,8 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--content-smoke` | Behavior rules, speech, quest create and validation |
 | `--reset-smoke` | Runs the Reset action without its dialog and quits. It deletes the whole user folder, so it refuses unless `ACWORLD_RESET_SMOKE=1` is set; point `APPDATA` at a throwaway folder and check the folder is gone after the viewer exits |
 | `--behavior-smoke` | Behavior editor driven by mouse and key events (headless works; AzerothCore only, so set `ACWORLD_CLIENT_PROFILE=wrath`) |
-| `--perf-breakdown` | Parks the camera at five Stormwind poses once streaming is idle and measures render CPU/GPU time and main/shadow-pass draw counts with each scene category (terrain, liquid, WMO shells, embedded doodads, ADT doodads, creatures, GameObjects, markers) hidden or shadow-less, plus sun shadows off. Run windowed; method and results in [`performance.md`](../performance.md) |
-| `--perf-smoke` | Stormwind City streaming benchmark (run windowed): arrival, a fixed 70 yd/s flight and settle phases, printing `PERF_*` frame-time percentiles, per-step `_Process` time, render CPU/GPU time, tile and region-query latency, model counts and GC. Method and results in [`performance.md`](../performance.md) |
+| `--perf-breakdown` | Parks the camera at five Stormwind poses once streaming is idle and measures render CPU/GPU time and main/shadow-pass draw counts with each scene category (terrain, liquid, WMO shells, embedded doodads, ADT doodads, creatures, GameObjects, markers) hidden or shadow-less, plus sun shadows off. Run windowed; method and results in [`performance.md`](../status/performance.md) |
+| `--perf-smoke` | Stormwind City streaming benchmark (run windowed): arrival, a fixed 70 yd/s flight and settle phases, printing `PERF_*` frame-time percentiles, per-step `_Process` time, render CPU/GPU time, tile and region-query latency, model counts and GC. Method and results in [`performance.md`](../status/performance.md) |
 | `--client-smoke`, `--client-shot`, `--client-shot-tile=X,Y`, `--client-shot-water`, `--client-shot-sky=HOUR[,YAW[,LIFT[,PITCH]]]`, `--client-shot-map=DIRECTORY`, `--client-shot-eye=X,Y,Z[,YAW[,PITCH]]` (camera at a map position in server axes, for looking around inside a building; needs `--client-shot-sky` for the hour and `--client-shot-tile` to load the tile, e.g. the Lion's Pride Inn at `-9470,14,59.5` on tile `31,49`), `--client-shot-overlays` | Client open check; screenshots to `artifacts/` (combine `--client-shot --client-shot-overlays` to keep the UI, show database layers over Goldshire, and capture gossip, Template, vendor, trainer, stats and quest pages for either dialect; TC also checks gossip submenu/Back navigation, add/text, greeting saves, validation, history and export (saving `client-shot-creature-submenu.png` and `client-shot-creature-greeting.png`), plus adding and removing a difficulty row (`client-shot-difficulty-add.png`), item search, add, stock validation and undo/redo (`client-shot-vendor-search.png`), a trainer spell edit with validation and undo and a refused unknown trainer binding (`client-shot-trainer-edit.png`), a gossip menu copy and its undo, the New menu control, an unknown extended cost refused after the client reference tables load, and a vendor row pointing at a shared vendor list showing its items (`client-shot-vendor-shared.png`), the stats page with scaling validation and undo (`client-shot-creature-stats.png`), and unlinking a quest with validation and undo, then opening the TC quest editor on that quest: adding an objective (a missing target is only a warning) and undoing it, renaming the quest, an unknown reward item or currency refused (`client-shot-quest-editor.png`), and the Hogger quest's objectives page (`client-shot-quest-objectives.png`), then the creature template search and Hogger's behavior editor: his four SmartAI rules read as sentences, a template rule added, a chance of 101% refused, the Difficulties field set and everything undone (`client-shot-behavior.png`, the expanded rule `client-shot-behavior-rule.png`), and his speech lines with their broadcast texts and sound play type (`client-shot-speech.png`)) |
 
 Side effects of any flag ending in `-smoke`: startup database and client prompts are skipped, drafts go to `res://artifacts/drafts/<guid>/` instead of `user://drafts/<profile>/`, and model thumbnails to `res://artifacts/thumbs/<guid>/` instead of `user://thumbs/<profile>/`. Success prints `*_PASSED` and quits; failure pushes an error and quits with code 1.
@@ -307,199 +312,6 @@ Navigation picking uses loaded terrain heights and visible building render trian
 
 For targeted visual checks, add `--navigation-smoke-map=48` (a selectable map ID) or `--navigation-smoke-tile=31,49` (viewer tile axes). Instance screenshot filenames include their map ID. An absent generated tile is reported rather than inferred from the client terrain.
 
-### Material 13 core (fel and venom)
 
-`LiquidRendering` selects `fel.gdshader` when both base layers resolve. This ports
-`fel_0`: deep/shallow RGB blend by `saturate(1 - nativeDepth * coefficient)`, opaque,
-unlit, then client fog. LiquidType floats 0..2 and 3..5 are interpreted as each
-layer's scale, angle in degrees and scroll speed; float 14 is the inferred depth
-coefficient. CPU scroll direction is estimated along rotated U. These bindings
-are inferred, not recovered CPU code. The `procfel` animated normals, masked
-overlay, lighting and shore/specular variants remain unported.
-
-The core was inspected in a windowed Godot depth-gradient fixture; corpus checks
-resolve real material-13 type 898. Venom types 1233/1234 on Azeroth 52,22 retain
-the generic fallback because their deep/shallow texture names are absent from
-both the installed and freshly downloaded community listfiles. This is not a
-completed venom port or a retail visual-parity check.
-
-### Material 12 ley-line core
-
-`LiquidRendering` selects `leyline.gdshader` when both detail layers resolve.
-The `leyline_0` formula uses P = first.alpha * second.alpha, RGB =
-2*P*first.rgb*second.rgb + (1-P)*baseColor and alpha =
-(2*P+0.5)*vertexOpacity, followed by client fog. LiquidType floats 0..2 and
-3..5 are inferred scale/angle/scroll triples, and Color[0] is interpreted as
-packed RGB for the base color. CPU UV direction (rotated U), vertex opacity
-(native depth), and atlas period (1250ms) are approximations. Both texture
-sequences use the bounded shared atlas decoder with per-frame UV insets.
-Real Ley Line (868) and Suramar Illuminated Water (890) assets resolve in corpus
-tests; the ley textures were inspected in a windowed Godot plane fixture.
-No retail parity or complete material-12 port is claimed: the `procleyline`
-normal, refraction, reflection, diffuse and shore passes remain unimplemented.
-
-Venom input follow-up (deferred at user request): the listfile lookup gap does
-not establish missing game assets. Current listfiles resolve shore/specular to
-7568587/7568588, both readable from CASC, but do not name deep/shallow/emissive.
-Direct name lookup also fails for the known readable files, so it is not a
-valid absence check. DB2 frame counts for the three unresolved slots are zero.
-Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
-before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
-
-### Material 18 azerite
-
-`LiquidRendering` selects `azerite.gdshader` when `LiquidStyle.Azerite` resolves.
-The port now follows `azerite_0`, `azerite_1` and the body half of
-`procazerite`, drawn fully opaque (`ALPHA = 1`) and unshaded with client fog.
-Both azerite types (940 and 951) share one material because they name the same
-six textures and floats.
-
-The body is a three-stop depth ramp. `azeritedeep` (slot 0) is the thick gold
-marble with cream ridges and iridescent flecks and supplies the body;
-`azeritetranscolor` (slot 4) is the flat yellow transition band; and
-`azeritecentercolor` (slot 1) is the blue speckle that belongs at the shallow
-edge. The vertex colour alpha carries native depth for terrain liquids.
-
-Flow comes from the slot-5 animation, not from the shipped normal slot:
-`azeriteanim_%d.blp` is a 30-frame sequence of real normal maps, decoded into a
-horizontal atlas and crossfaded between adjacent frames the way `procazerite`
-does, then used to offset every layer UV and to shade the body with the client
-sun. The slot-3 `azerite_basenormal.blp` is a flat placeholder in the shipped
-data (every DXT block is byte-identical), so binding it would add nothing.
-`azeriteblend` (slot 2) adds the sparse cyan/white/pink flecks. A short
-screen-space reflection and a self-lit term approximate `procazerite`'s
-environment sample and glow.
-
-The render mode still keeps the surface in the same transparent, no-depth-write
-pass as the other liquid shaders, so an overlapping liquid can blend over it
-instead of being occluded by it; "opaque" here means the alpha is fixed at one,
-not that the surface writes depth.
-
-Bindings: each layer is uploaded from its own decoded texture (`deep_tex`,
-`center_tex`, `transcolor_tex`, `blend_tex`, `normal_tex`), so no layer depends
-on the type's frame-atlas fallback. The slot order is inferred from the texture
-names. Floats 0 and 1 are the layers' scroll speeds, read the way the other
-materials read their first two floats; the shipped rows store the same value in
-both, so the split is not confirmable from the data. Floats 2..5 are not applied:
-reading them as material 13's per-layer scale/angle/scroll triples tiled the
-centre layer about twenty times across the pool and produced a fine diagonal
-weave that is not an authored look. The client's per-layer texture matrices are
-CPU constants that are not in the table, so all layers share one world-space UV
-(a little larger than the ~33-yard chunk scale so the swirls span several yards).
-
-The depth coefficient is not in the table and is a fixed estimate. Native depth
-is an 8-bit MH2O vertex value, so reading it at 0..1 painted whole triangles blue
-wherever it dipped, which read as blotches rather than an edge. It is scaled by
-4.0 first, which keeps the blue centre layer on the true zero-depth edge and
-leaves a soft yellow band before the gold body. The coefficient is tuned to the
-retail surface, not recovered; it and the client's unknown depth scale cannot be
-separated. Missing either body layer keeps the previous generic lava/slime
-fallback instead of drawing a half material.
-
-Fidelity limits: the per-layer UV matrices (`CB1[13..20]`) and the per-light
-medium accumulation are not ported, and the flow's speeds, warp strength and
-emission are estimates. This is not a retail parity claim. Real types 940/951
-resolve the body layers in corpus checks; see
-[shader inspection locations](shader-inspection-locations.md) for the Zandalar
-pool used for the windowed check.
-
-### Material 5 mercury surface
-
-Material 5 selects `mercury.gdshader`, independent of sound bank. It uses the
-native `mercurybump.blp`, four scrolling RG samples, the `procmercury_0` distance
-blend (.2 + eyeDistance*.001), far amplitude 1.4, squared then fourth-power
-Fresnel, two desaturation lobes (luminance weights .3/.6/.1), fixed .2 pedestal,
-and the reflection-dependent highlight. Composition stays in gamma space until
-one final conversion, then client fog applies. The surface is opaque. Missing
-bump data produces a flat normal while retaining the mercury material.
-
-Fidelity limits: one shared bounded screen trace (32 samples, distance fade) with
-fog-color fallback replaces
-the two dedicated retail reflection inputs and their projection/edge blend.
-Offscreen geometry and transparent surfaces cannot reflect. Captured scene fog
-can be attenuated again by the mercury surface fog. CPU ripple UV matrices,
-normal-strength/slope multipliers (1), and highlight exponent (16) are estimated;
-additional permutations and interaction buffers are unported. This is not a
-retail parity claim. Real exterior/interior types 350/412 resolve the same native
-bump map in corpus tests; a windowed Godot fixture with that texture and opaque
-colored boxes verifies surface rendering and screen reflections.
-
-### Material 10 fog-liquid sheets
-
-`LiquidRendering` selects `liquidfog.gdshader` for `LiquidStyle.Fog`. The basic
-`liquidfog_0` composition samples the same density atlas twice, computes
-RGB = (first.rgb*second.rgb + second.rgb)*tint, and alpha =
-(.3 + saturate(first.a*second.a + second.a)*opacityScale)*.5. The result uses
-client gamma conversion and scene fog, with ordinary alpha blending and no depth
-writes. It does not use water ripples, sunlight, highlights or native liquid-depth
-opacity. Atlas sampling clamps within frames. The second UV has the vertex
-shader's .5 offset. CPU texture transforms are unavailable: unit UV scales and
-orthogonal .01 cycles/second motion are estimates.
-
-Color[0] RGB and Float[1] -> opacityScale are inferred DB2 bindings. Packed color
-alpha and the remaining floats are not bound by this basic permutation. Types
-750/751 share the native density pixels while preserving separate tint/material
-keys in corpus tests. A windowed Godot fixture using type 750's texture and tint
-over a checker was inspected. This is a partial port, not retail parity:
-`liquidfog_1` auxiliary masks and later depth-aware exponential extinction,
-height parameters and secondary output targets remain unported. The basic
-sheet must not be described as a volumetric fog simulation.
-
-### Material 4 procedural magma
-
-Material 4 is procedural magma, not procedural water (material 3).
-`LiquidRendering` selects `procmagma.gdshader` when all three layers resolve.
-`procmagma_0` blends baseColor -> texture0 by noise.R, then -> texture1 by
-noise.G*texture1.alpha, then -> texture2 by noise.B*texture2.alpha. The surface
-is unlit and opaque, converted once from gamma space and fogged by client fog.
-The vertex shader's three half-weighted sin/cos harmonic pairs and *.15 + .5
-noise interpolation factor are retained. Texture atlases clamp within frames.
-
-Inferred bindings: floats 0/1 scroll, 2..4 layer scales, 9 noise animation speed,
-Int[2] packed RGB base color. CPU UV transforms and noise coordinates remain
-estimates. The unidentified client 3D noise resource is replaced with a bounded
-analytic three-channel value field (six value-noise evaluations per fragment);
-its hash, channel offsets and unit coordinate scale are estimates, so noise
-patterns differ. No fluid simulation is added. Mask/secondary-target variants
-and retail reference comparison remain open. Real types 302/303 resolve all
-layers in corpus checks; a windowed Godot fixture using those layers was inspected.
-
-### Material 3 procedural water
-
-Material 3 is procedural water, not procedural magma (material 4).
-`LiquidRendering` selects `procwater.gdshader` for `LiquidStyle.ProceduralWater`.
-The surface uses `procwaterabove_0`-derived near and far scrolling normals from the
-native bump map (far amplitude 1.4, distance blend .2 + eyeDistance*.001), the depth
-gradient colors, foreground-rejected screen refraction, squared Fresnel, a
-reflection drawn 60% toward the lit depth color, and sun highlights. Composition
-stays in gamma space until one final conversion, then client fog applies.
-
-The eye's side of the surface picks the shipped pair: `procwaterbelow_0` draws the
-underside when the eye is under the water, in the same fragment shader because one
-material covers a whole type. The below path folds both ripple pairs at full
-strength instead of blending them by distance, reads the stored depth unperturbed,
-offsets refraction by the ripple alone, keeps no reflection or foam, weights the
-water body by the gradient alpha (a tenth less at grazing angles), and adds the
-sun's underwater response at 40 % with a fourth-power Fresnel. It writes an opaque,
-already-composited pixel, so there is no shore edge. The eye test is
-`INV_VIEW_MATRIX[3].y < world_position.y` per fragment, which also handles surfaces
-at different heights; no CPU camera-medium state is needed for the surface (it is
-still needed for underwater post effects, which are not ported).
-
-Inferred bindings: the depth gradient comes from texture slot 1 (not the SoundBank),
-the depth table from Int[0], and floats 2 (depth scale), 0 (wave scale), 4 (normal
-strength), 3 (refraction) and 11 (specular exponent, floored at 1). An intentionally
-empty frame slot returns a shared white 1×1 placeholder instead of decoding ordinary
-ocean fallback frames. Missing bump data produces a flat normal while retaining the
-material.
-
-Fidelity limits: CPU UV matrices, scroll rates and the remaining floats are
-estimated; one shared bounded screen trace with fog-color fallback replaces the retail
-reflection inputs; the final soft alpha edge is a cubic scene-depth approximation;
-and captured scene fog can be attenuated again by the surface fog. Foam and
-auxiliary lighting/masks remain unported. This is
-not a retail parity claim. Real types 100/321 resolve the native bump map in corpus
-tests; a windowed Godot fixture with that texture and a checkerboard ground was
-inspected, and the underside was checked under the Den of Nalorakk water. See
-[shader inspection locations](shader-inspection-locations.md) for a
-map/tile reference for each implemented liquid shader.
+Shader routing and the ported liquid passes are in [rendering.md](rendering.md), together with
+their fidelity limits and the capture notes.

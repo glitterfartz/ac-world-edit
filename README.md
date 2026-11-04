@@ -41,12 +41,15 @@ Explore the world, inspect server content, and preview edits in context. Click a
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams and an overview. Detail pages:
+See [docs/architecture/overview.md](docs/architecture/overview.md) for diagrams and an overview, or the
+[docs index](docs/README.md) for the whole documentation map. Detail pages:
 
 - [Client data and asset pipeline](docs/architecture/client-data.md)
 - [Viewer runtime](docs/architecture/viewer-runtime.md)
+- [Rendering and the retail shader port](docs/architecture/rendering.md)
 - [Editing, data access and SQL export](docs/architecture/editing-and-export.md)
 - [Testing and tooling](docs/architecture/testing-and-tooling.md)
+- [Status and open work](docs/status/open-work.md)
 
 ## Prerequisites
 
@@ -99,7 +102,7 @@ python Tools/package.py                   # build/win-x64/ACWorldEdit.exe plus i
 python Tools/package.py --pack-only       # just ACWorldEdit.pck; needs no export templates
 ```
 
-This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. A CI job would run `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed; no CI is configured yet. Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
+This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. CI runs `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed (`.github/workflows/`, described in [testing-and-tooling.md](docs/architecture/testing-and-tooling.md)). Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
 
 ## Test
 

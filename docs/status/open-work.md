@@ -1,10 +1,27 @@
-# Status
+# Status and open work
 
-The plan and open work for the TrinityCore database overhaul, and the project's other known gaps. Finished work is described in the architecture docs, not here. Schema differences are in `docs/DB-DIFFERENCES.md`. Target: TrinityCore `master` `world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575.
+What is built, what is partial and what is open, per area and per editor phase. Finished work is
+described in the architecture docs, not here. Schema differences are in
+[reference/database-differences.md](../reference/database-differences.md). Target: TrinityCore `master`
+`world` schema (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575.
 
-Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks against the client and database. What remains of it is listed below as refinements, none of which blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is built for TrinityCore: the waypoint layer reads `waypoint_path` and `waypoint_path_node`, and a node's position, facing and delay edit and export, with refinements listed below. All nine phases are built, and the behavior panel also edits TrinityCore AreaTrigger rules: client triggers (source type 2) and server-spawned triggers' templates (types 11 and 12), with refinements listed below.
+Phases 1–5 (interface extraction, connection and hotfixes, retail catalogs, read-only overlays and spawn
+moves, graveyard editing) are done. Phase 6 (creature properties) is built for TrinityCore: the
+template, stats, vendor, gossip, trainer and quest-link pages edit and export, with reference checks
+against the client and database. What remains of it is listed below as refinements, none of which
+blocks Phase 7. Phase 7 (quests) is built for TrinityCore: the quest editor edits and exports the five
+quest tables, with refinements listed below. Phase 8 (SmartAI and speech) is built for TrinityCore: the
+shared behavior panel edits a creature's `smart_scripts` rules, timed action lists, AIName and
+`creature_text` lines and exports them, with refinements listed below. Phase 9 (waypoints) is built for
+TrinityCore: the waypoint layer reads `waypoint_path` and `waypoint_path_node`, and a node's position,
+facing and delay edit and export, with refinements listed below. All nine phases are built, and the
+behavior panel also edits TrinityCore AreaTrigger rules: client triggers (source type 2) and
+server-spawned triggers' templates (types 11 and 12), with refinements listed below.
 
-**Next: editor gap plan.** Phases 10 onward (spawn authoring, conditions, GameObjects, loot, movement, pools, events, creature pages, quest map data, travel, ambience, cinematics, text and items) are planned in [`gap-plan.md`](gap-plan.md); each phase lands as its own rows in this file when it starts.
+**Next: editor gap plan.** Phases 10 onward are designed in
+[plans/editor-gap-plan.md](../plans/editor-gap-plan.md), which carries a per-phase status line. Phases
+10 and 11 have their detailed gap rows below; phases 12–24 are summarized under
+[Gap plan phases 12–24](#gap-plan-phases-1224).
 
 ## Decisions and design
 
@@ -69,7 +86,9 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 | Path links and orphans | partly done | **Built:** the creature delete dialog warns when the creature's path would be left unused (see Phase 11 slice 3). **Not started (Phase 14):** "Link to path…" (point a creature or template at an existing path, re-attach an orphan) and an "Unused paths" list that also warns before deleting a path other creatures use. |
 | Smokes                        | partial     | The TC client smoke (stages 80–82) selects a Goldshire path point, checks which fields are editable and runs the move, delay, undo, redo and revert workflow with the TC export. `--waypoint-smoke` still has no TC run of its own.                                                                                                                                                     |
 
-### Gap plan phases 10 and 11 (see [`gap-plan.md`](gap-plan.md))
+### Gap plan phases 10 and 11
+
+Design: [`editor-gap-plan.md`](../plans/editor-gap-plan.md) phases 10 and 11.
 
 | Item | Status | Notes |
 | --- | --- | --- |
@@ -116,13 +135,13 @@ Status values: **partial**, **not started**, **deviates** (built differently fro
 
 ### Performance
 
-Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/performance.md`.
+Measured with `--perf-smoke` on retail Stormwind; numbers and designs in [performance.md](performance.md).
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Draw calls | done | Terrain draws one mesh per layer list per tile over a splat atlas; opaque same-material model batches merge at decode; static materials are shared. Render CPU and GPU roughly halved (one run; see `docs/performance.md`). |
-| Renderer | in progress | The project now runs Forward+ (`project.godot` change not yet committed); the settled Stormwind frame is 8.5-13 ms and CPU-bound, mostly WMO shells, embedded doodads, ADT doodads and shadows (`--perf-breakdown`, see `docs/performance.md`). Re-baseline `--perf-smoke` on Forward+; reducing building and shadow cost needs the user's decision. |
-| Parallel model decode | done | Three decode workers (`ModelLibrary.DecodeWorkers`); arrival in Stormwind (1416 models) 30.3 s → 19.1–19.3 s, flight frame times unchanged (two clean runs; see `docs/performance.md`). The workers are idle about 40 % of arrival, so something else now gates it (see "Upload budget"). |
+| Draw calls | done | Terrain draws one mesh per layer list per tile over a splat atlas; opaque same-material model batches merge at decode; static materials are shared. Render CPU and GPU roughly halved (one run; see [performance.md](performance.md)). |
+| Renderer | in progress | The project runs Forward+ (Godot's desktop default; `project.godot` only overrides the mobile renderer to Compatibility); the settled Stormwind frame is 8.5-13 ms and CPU-bound, mostly WMO shells, embedded doodads, ADT doodads and shadows (`--perf-breakdown`, see [performance.md](performance.md)). Re-baseline `--perf-smoke` on Forward+; reducing building and shadow cost needs the user's decision. |
+| Parallel model decode | done | Three decode workers (`ModelLibrary.DecodeWorkers`); arrival in Stormwind (1416 models) 30.3 s → 19.1–19.3 s, flight frame times unchanged (two clean runs; see [performance.md](performance.md)). The workers are idle about 40 % of arrival, so something else now gates it (see "Upload budget"). |
 | Model memory | done | A published model keeps only its doodads, animation IDs and (WMOs) probe geometry; the 256 MiB limit now applies to models no instance uses. Stormwind cache 1903 → 318 MiB after arrival; flight evictions about 390 → about 205 (the dormant limit is full during a flight, so some rebuilds remain). Video memory in flight rose from about 1.8–1.9 to 2.2 GB because dormant meshes now stay resident. |
 | Upload budget | not started | Model uploads are capped at 8 surfaces and 1.5 ms per frame. With three workers about 40 % idle during arrival, the cap or the decoded-queue backpressure (three entries, 256 MiB) is the likely limit; not measured yet. Moving the numerics-to-Godot array conversion onto the decode worker is the first candidate. |
 | Spawn table indexes | not started | `creature` (map index only) and `gameobject` (no map index) are scanned for every region query (150 ms of about 200 ms). Suggested `(map, position_x, position_y)` indexes are in `docs/performance.md`; the app cannot add them. |
@@ -132,7 +151,7 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 
 | Item                                                                                  | Status      | Notes                                                                                                                                         |
 | ------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| CI | done | GitHub Actions (`.github/`, described in `docs/architecture/testing-and-tooling.md`): every push and pull request builds and runs the xUnit suite; `master` pushes also export, smoke-run and upload a 7-day Windows build; a `vX.Y.Z` tag creates a draft release. Not covered: the gdUnit4 project, tests that need client data, and an exported build run against a real Retail client. |
+| CI | done | GitHub Actions (`.github/`, described in [testing-and-tooling.md](../architecture/testing-and-tooling.md)): every push and pull request builds and runs the xUnit suite; the gdUnit4 project runs in its own `viewer-tests` job; `master` pushes also export, smoke-run and upload a 7-day Windows build; a `vX.Y.Z` tag creates a draft release. Not covered: tests that need client data, a smoke against a real Retail client in an exported build, and a full smoke suite in CI. |
 | `Db2Tables` thread safety                                                             | partial     | Retail test classes still run one at a time (`[Collection(RetailData.Collection)]`); drop that once the retail corpus tests pass in parallel. |
 | `RetailCorpusTests.EveryMapWdtParsesAndOneTilePerTerrainMapDecodes` accepted failures | not started | Stale "until the retail WMO milestone" comments; tighten or remove the filter.                                                                |
 
@@ -148,123 +167,38 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in `docs/p
 | Animation names (AnimationData DB2)                           | not started | Preview menu shows IDs only.                                                                          |
 | M2 multitexture batches and spline tracks                     | partial     | Layers draw through the client's combiner table (`ModelLayers.cs`); texture weights and per-layer UV animation are not applied (weighted layers draw at full weight, crossfades show their base texture); guild tabard shaders (26 to 28) and more than four units still use the base texture with a warning. Splines are interpolated linearly. |
 | WMO material shaders                                          | partial     | MOMT shaders 0 to 23 are mapped (`WmoCombiners`; the water and submarine window shaders draw the base texture, as the client has no pixel shader for them; the DF shader (23) draws its texture_2 diffuse and ignores its extra normal-style maps); the second UV set and second vertex colour are read when the group has them. The third UV set (third layers read the second) is not; an unmapped shader still warns. A retail interior group (MOHD flag 0x2, unified render path) lights itself as mix(interior, world, vertex alpha): the interior term is its vertex colour plus half the header ambient (the shader doubles it), emissive and scaled by (1 - alpha), and the alpha weights the albedo through the scene's normal lighting (`VertexColorMode.RetailInterior`). Taken from the wowdev.wiki MOCV and MOHD notes and checked by eye in the Khaz Algar cave `fdid:5305801` only; the `* 2` on the interior term and the lack of portal attenuation are unverified, and no other retail interior has been compared. |
-| Height texturing (MHID/MTXP), MAMP scale                      | not started |                                                                                                       |
 | Terrain layers 5–8                                            | not started | Only the first 4 are drawn.                                                                           |
 | Terrain height blending (MHID/MTXP)                           | done        | Layers weight by `height * scale + offset` from the `_h` alpha and MTXP, with the client's suppression of layers far below the tallest; MTXP texture scale applies too. Not done: MAMP scale, the `_s` specular and cube-map reflection layers. Test: `SplitTerrainTests` (parameters read); the blend itself is checked by eye in Khaz Algar (`--tele-name=TheDawnbreaker --tele-tile=33,29`). |
 | Retail swamp liquid (material 14) | deviates | Depth layers, BC5 ripple animation, shore overlay/fade, refraction, Fresnel reflection and sunlight are in; screen reflections replace the client reflection render, interaction buffers are absent and constant mapping is inferred. |
-| Retail azerite liquid (material 18) | partial | Both authored body layers (`azeritedeep`, `azeritecentercolor`) blend by native depth in `azerite.gdshader`, unlit and opaque, with client fog; the two azerite types route there instead of the lava/slime fallback. The mask permutation, the nine-texture procedural variant and the yellow transition/blend/animation slots are not ported, and the depth coefficient is an estimate. |
-| Underwater lighting and fog                                   | partial     | The water surface now draws its shipped underside (`mediumwaterbelow`/`procwaterbelow`; see the liquid sections), so looking up through a liquid no longer reads as a flat sky reflection. What is still missing is the camera's medium: under a liquid surface the viewer keeps the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog), and there is no underwater post pass (tint, distortion, the water-line window). Khaz Algar tile 33,29 is mostly seabed, so its view is the plain above-water fog at the wrong depth. Fog distance comes from `LightData.FogEnd`/`FogScaler` (retail) or LightFloatBand (Wrath) and follows the client's linear-start-to-end ramp with the end capped at an emulated view distance (`SkyLighting.ViewDistance`, 777 yd; the fog shaders are in `client_lighting.gdshaderinc`). Only the default weather slot is read. |
+| Retail azerite liquid (material 18) | partial | `azerite.gdshader` ports `azerite_0`, the `azerite_1` blend mask and the body half of `procazerite`: the three-stop depth ramp (gold `azeritedeep` body, yellow `azeritetranscolor` band, blue `azeritecentercolor` zero-depth edge), `azeriteblend` flecks and the 30-frame `azeriteanim` normal sequence, unlit and opaque with client fog. Both azerite types route there instead of the lava/slime fallback. Not ported: the per-layer UV matrices, the per-light medium loop, and the refraction/reflection/glow beyond the body approximation; the depth coefficient is an estimate. See [rendering.md](../architecture/rendering.md#material-18-azerite). |
+| Underwater lighting and fog                                   | partial     | The water surface now draws its shipped underside (`mediumwaterbelow`/`procwaterbelow`; see [rendering.md](../architecture/rendering.md)), so looking up through a liquid no longer reads as a flat sky reflection. What is still missing is the camera's medium: under a liquid surface the viewer keeps the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog), and there is no underwater post pass (tint, distortion, the water-line window). Khaz Algar tile 33,29 is mostly seabed, so its view is the plain above-water fog at the wrong depth. Fog distance comes from `LightData.FogEnd`/`FogScaler` (retail) or LightFloatBand (Wrath) and follows the client's linear-start-to-end ramp with the end capped at an emulated view distance (`SkyLighting.ViewDistance`, 777 yd; the fog shaders are in `client_lighting.gdshaderinc`). Only the default weather slot is read. |
 | Uncompressed alpha size                                       | partial     | Follows the WDT big-alpha flag; decide per layer if a map disagrees.                                  |
 | Path-named placements                                         | partial     | Resolve only through the community listfile.                                                          |
 
 Assigning or creating a TrinityCore gossip menu also sets the gossip bit in `creature_template.npcflag` when it is missing. That is a template edit and affects every spawn of the entry; the exported SQL shows it as a separate `UPDATE`.
 
-## MMap inspection
+### Navigation
 
-Implemented generated navigation inspection for AC MMap 20 / TC MMap 16, Detour 7 with 64-bit references: independent disk streaming, detail surfaces, polygon edges, tile boundaries, off-mesh lines, opacity/X-ray, terrain filters, explicit polygon picking and metadata. Retail parent lookup includes the complete Map table and uses immediate-parent fallback only for absent child tiles. Source files remain static snapshots; route finding, editing/generation, live obstacles and instance-specific rebuilds remain outside scope. Deterministic parser tests, opt-in full-folder corpus checks and a Godot navigation smoke workflow accompany the feature.
+| Item | Status | Notes |
+| --- | --- | --- |
+| Generated navigation inspection | done | AzerothCore MMap 20 and TrinityCore MMap 16 readers, detail surfaces, polygon edges, tile bounds, off-mesh lines, opacity/X-ray, terrain filters and polygon picking; see [viewer-runtime.md](../architecture/viewer-runtime.md#navigation-overlay) and [client-data.md](../architecture/client-data.md#generated-navigation-files). Route finding, mesh editing/generation, live obstacles and instance rebuilds are out of scope. |
 
-### Retail material 13 core
+### Gap plan phases 12–24
 
-Partial: the two-layer `fel` core is implemented with inferred DB2 constants and
-checked in a Godot depth-gradient fixture; real type 898 resolves in corpus tests.
-`procfel` normal animation, overlays and advanced surface variants remain open.
-Venom 1233/1234 on Azeroth 52,22 still uses the generic fallback: its deep/shallow
-textures have no names in the installed or current community listfile. No client
-visual parity is claimed for this partial implementation.
+Design and per-phase status are in [plans/editor-gap-plan.md](../plans/editor-gap-plan.md). Only the gaps not covered by a row above are listed here.
 
-### Retail material 12 core
-
-Partial: `leyline_0` detail composition is implemented with inferred DB2 UV/color
-bindings. Real types 868/890 resolve in corpus checks and real ley textures were
-inspected in a Godot fixture. Procedural surface passes and retail comparison
-remain open; native depth opacity and fixed animation period are approximations.
-
-Venom input follow-up (deferred at user request): the listfile lookup gap does
-not establish missing game assets. Current listfiles resolve shore/specular to
-7568587/7568588, both readable from CASC, but do not name deep/shallow/emissive.
-Direct name lookup also fails for the known readable files, so it is not a
-valid absence check. DB2 frame counts for the three unresolved slots are zero.
-Investigate generated/substituted inputs, stale names and unnamed FileDataIDs
-before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
-
-### Retail mercury surface
-
-Material 5 now uses a dedicated `procmercury_0`-based reflective surface, with
-native bump texture, gamma-space desaturation/Fresnel/highlight composition and
-client fog. Real types 350/412 pass corpus checks; a Godot fixture using the
-native bump texture and colored boxes was visually inspected. Fidelity deviates:
-single bounded screen reflection replaces two client reflection inputs, CPU UV
-matrices/normal multipliers/highlight exponent remain estimates, and captured
-fog may receive surface fog again. Other permutations and interaction buffers
-remain open. Ordinary water and missing-bump routing have deterministic coverage.
-
-### Retail fog-liquid core
-
-Partial: material 10 now renders the `liquidfog_0` two-density-sample RGB/alpha
-composition, with inferred authored tint/opacity, alpha blending and client fog.
-Types 750/751 pass corpus checks and the real density texture was inspected over
-a checker in Godot. Unit-scale scrolling UVs are estimated. Auxiliary mask,
-depth-aware extinction/height variants, secondary outputs and retail comparison
-remain open. This is a fog sheet, not a volume simulation.
-
-### Retail procedural magma
-
-Material 4 (types 302/303) now resolves extensionless native layer names and uses
-the three-stage `procmagma_0` composition. Real layers were inspected in Godot;
-corpus checks cover sharing and distinct terrain/WMO motion. This corrects the
-earlier classification of both materials 3/4 as procedural water: only 3 is water.
-Partial fidelity: client 3D noise is replaced by analytic value noise, DB2 constant
-bindings and UV transforms are inferred, and auxiliary variants/client comparison
-remain open. This adds visual noise animation, not fluid simulation.
-
-### Retail procedural water
-
-Material 3 now uses a dedicated `procwaterabove`-derived surface
-(`procwater.gdshader`): near/far scrolling normals, depth colors, foreground-rejected
-screen refraction, squared Fresnel, reflection drawn 60% toward lit water, and sun
-highlights. The eye under the surface switches the same fragment shader to
-`procwaterbelow`: both ripple pairs at full strength, unperturbed depth, plain ripple
-refraction, no reflection or foam, the gradient alpha as the body weight, and a
-weaker fourth-power-Fresnel sun response. Real types 100/321 resolve the native bump
-map in corpus checks; a Godot
-fixture using that texture over a checkerboard ground was inspected, and the
-underside was checked under the Den of Nalorakk water. Partial
-fidelity: UV matrices and float bindings are inferred, one shared bounded screen trace
-replaces the retail reflection inputs, the final soft edge is simplified, captured
-pixels may receive fog twice, and foam/masks/auxiliary permutations remain
-open. Not verified against a retail reference. This is a surface approximation, not
-fluid simulation.
-
-### Retail azerite (material 18)
-
-`LiquidRendering` selects `azerite.gdshader` when both body layers resolve. The
-surface ports `azerite_0`: two texture samples are mixed by
-`saturate(1 - nativeDepth * coefficient)`, drawn fully opaque (`ALPHA = 1`) and
-unlit, then client fog. LiquidType slots 0 and 1 (`azeritedeep`,
-`azeritecentercolor`) are uploaded as their own decoded textures (`deep_tex` /
-`center_tex`), so the deep layer does not ride the type's frame-atlas fallback.
-The surface keeps the shared transparent, no-depth-write liquid pass, so
-"opaque" means the alpha is fixed at one, not that it occludes other liquids.
-Floats 0 and 1 are read as the layers' scroll speeds; the shipped rows store the
-same value in both, so the split is inferred.
-Which shader unit each slot feeds is inferred from the texture names; the slot
-order is not recovered CPU code. Floats 2..5 are not applied: reading them as
-material 13's per-layer scale/angle/scroll triples tiled the centre texture
-about twenty times and gave a fine diagonal weave. Both layers instead sample
-the native MH2O liquid UV at unit scale, about one texture per layer, because
-the client's per-layer matrices are CPU constants that are not in the table.
-The depth coefficient has no table column, so it stays a fixed estimate (1.0).
-
-Both types (940 `8XP Azerite`, 951 `8XP Azerite (THe Motherlode)`) and their 23
-`LiquidObject`s resolve in corpus checks, and the shipped `azeritedeep` /
-`azeritecentercolor` pixels are used. A Zandalar pool was inspected in a windowed
-capture: the blue centre layer carries the cream deep-swirl layer, brightening
-with depth and banded by the 8-bit depth interpolation (capture:
-`artifacts/azerite-pool.png`, git-ignored).
-
-Unported: `azerite_1` (`t14`/`t15` masks and its alpha), `procazerite` (a
-nine-input procedural body: two normal maps, refraction, reflection and glow),
-and the `azeriteblend`, `azeritetranscolor` and `azeriteanim.%d` slots that the
-fuller variant reads. The client's per-light medium accumulation is not ported
-either, so the base colour is drawn unshaded like the other liquid cores. This is
-not a retail parity claim.
+| Phase | State | Open now |
+| --- | --- | --- |
+| 12 Conditions builder | not started | Catalog and sentence model are built; no strip, builder, tester or `ReadConditionsAsync`. Only menu copy (types 14/15), graveyard teams (27) and quest counts (19) read conditions today. |
+| 13 GameObject editor | not started | No `GameObjectData` field catalog or GO properties window; GO spawns are editable from Phase 11. |
+| 14 Movement authoring | partial | Node move/facing/delay and the orphan warning exist. Missing: add/insert/delete/renumber, new paths, path-level properties, "Link to path…", unused-paths list, formations. |
+| 15 Loot editor | not started | Loot IDs are shown only. |
+| 16 Population control | not started | Pools filter the preview and count for delete impact; no editor. |
+| 17 Events and phases | not started | Preview filters by event and phase; no timeline or phase authoring. |
+| 18 Creature completion | partial | Template/section pages and the template addon exist. Missing: model/equipment, combat, rewards, movement, spell-click editing, vehicles, summons, new-template wizard. |
+| 19 Quest completion | partial | Five quest tables and creature givers edit. Missing: POI, GO/item givers, conditional text, greetings, quest pools, objective-field gaps. |
+| 20 Travel and instances | mostly not started | Teleports and graveyards read; destination editing, `spell_target_position`, instances and access requirements are missing. |
+| 21 Areas and ambience | mostly not started | AreaTriggers draw read-only and their SmartAI rules edit. Weather, `spell_area`, taverns, `disables` and spawned-trigger authoring are missing. |
+| 22 Cinematics | not started | Nothing read or edited. |
+| 23 Text pipeline | partial | TrinityCore gossip can create a broadcast text and its hotfix rows inline. Missing: a separate hotfixes script, speech/page text, editing existing text, the AzerothCore path. |
+| 24 Item editor | not started | Retail item tooltips are computed for the vendor page; no item editor. |

@@ -2,22 +2,26 @@
 
 ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor. It renders WoW client data (3.3.5 MPQ or retail CASC) and overlays world-database content: AzerothCore for the 3.3.5 client, TrinityCore master (`world` plus `hotfixes`) for retail. Edits are staged as drafts and exported as SQL; the database connection is read-only.
 
-> **TrinityCore backend** (merged into `master`; plan, phase status and open work in `docs/tc-status.md`).
+> **TrinityCore backend** (merged into `master`; plan, phase status and open work in `docs/status/open-work.md`).
 > - New database code goes through one interface: reads through `DBSource.Open(...)` → `IDBSource`, schema knowledge through `IDBSource.Schema` (`IWorldSchema`; Foundation code uses `WorldSchemas.For(dialect)`). Don't construct `Ac*Source`/`Tc*Source` outside `Scripts/Data` or use the AzerothCore statics (`AcTables`, `AcQuestModel`, `AcNpcFlags`) from shared or TrinityCore code; add missing descriptors to `IWorldSchema`.
 
 ## Docs
 
-Architecture lives in `docs/`, not here. Read the relevant page before working in an area:
+Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the relevant page before working in an area:
 
-- `docs/ARCHITECTURE.md`: overview, layers and dependency rules, threading, repository layout, glossary.
-- `docs/architecture/client-data.md`: `Scripts/Assets` (MPQ/CASC, formats, terrain, models, retail, listfile).
-- `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, shaders, smoke flags.
-- `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, SQL export).
-- `docs/architecture/testing-and-tooling.md`: test projects, test commands and settings, environment variables, tooling, commit message rules (read before committing).
-- `docs/DB-DIFFERENCES.md`: AzerothCore vs TrinityCore schema differences. Official schema docs: AzerothCore https://www.azerothcore.org/wiki/database-world, TrinityCore https://trinitycore.info/database/master/world/home.
-- `docs/tc-status.md`: status of the TrinityCore work and the project's other open work and known gaps.
-- `docs/NEEDED-TESTS.md`: tests deferred until their feature works.
-- `docs/performance.md`: the `--perf-smoke` benchmark, measured costs and open performance work.
+- `docs/architecture/overview.md`: overview, layers and dependency rules, threading, repository layout, glossary.
+- `docs/architecture/client-data.md`: `Scripts/Assets` (MPQ/CASC, formats, terrain, models, retail, listfile, navigation readers).
+- `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
+- `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
+- `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, spawn authoring, SQL export).
+- `docs/architecture/testing-and-tooling.md`: test projects, test commands and settings, environment variables, tooling, CI, commit message rules (read before committing).
+- `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs: AzerothCore https://www.azerothcore.org/wiki/database-world, TrinityCore https://trinitycore.info/database/master/world/home.
+- `docs/reference/shader-inspection-locations.md`: a map/tile/XYZ for inspecting each implemented liquid shader.
+- `docs/status/open-work.md`: what is built, partial and open, per area and per gap-plan phase.
+- `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.
+- `docs/status/needed-tests.md`: tests deferred until their feature works.
+- `docs/plans/editor-gap-plan.md`: the design of editor phases 10 onward, with a status line per phase.
+- `docs/plans/sniff-import-proposal.md`: research only; do not implement it unless asked.
 
 ## Commands
 
@@ -46,10 +50,10 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 
 ## Rules
 
-- This file holds only commands, workflow notes and rules. Architecture goes in `docs/ARCHITECTURE.md` or the matching `docs/architecture/*.md` page.
-- Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/tc-status.md` when work lands or a gap is found, `docs/NEEDED-TESTS.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
+- This file holds only commands, workflow notes and rules. Architecture goes in `docs/architecture/overview.md` or the matching `docs/architecture/*.md` page.
+- Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/status/open-work.md` when work lands or a gap is found, `docs/status/needed-tests.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
-- For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/DB-DIFFERENCES.md`.
+- For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/reference/database-differences.md`.
 - `azerothcore-wotlk` and `wow-data` are read-only reference and must never be modified.
 - Dialect-specific classes use the `Ac` / `Tc` prefix (file names too) and live in `AzerothCore/` / `TrinityCore/` directories under their feature or layer; shared interfaces, descriptors, context and renderers stay unprefixed. When working in a feature, rename and move legacy dialect-specific classes to match, moving `.cs.uid` companions with them.
 - Write tests after a feature works (not test-first for large features). Skip trivial getters/setters and Godot UI wiring. Keep tests fast and deterministic; slow corpus tests are opt-in.
