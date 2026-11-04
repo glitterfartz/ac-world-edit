@@ -79,6 +79,7 @@ Build configuration:
 - `global.json` pins the SDK (10.0.400, roll forward to latest feature). Projects target `net8.0`.
 - `ACWorldEdit.csproj` uses `Godot.NET.Sdk` 4.7.1 and references `SharpZipLib`, `DBCD` and `MySqlConnector` (versions in the project file).
 - `Experiments/` holds no tracked source; it only contains leftover build output.
+- `artifacts/` and `Tests/artifacts/` hold only generated output, so each carries a `.gdignore` and Godot never imports it. `.gitignore` excludes their contents but re-includes the marker.
 - `docs/NEEDED-TESTS.md` lists deferred tests for retail milestones 3 to 5 (terrain, placements and models, liquids and sky) and retail humanoid creatures.
 
 ## Continuous integration
