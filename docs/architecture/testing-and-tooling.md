@@ -67,10 +67,12 @@ The viewer writes machine-readable state that nothing used to compare. `Tests/go
 | `client-smoke-retail.txt` | `--client-smoke` | client kind, build, map list size, first streamed tile |
 | `state-{wrath,retail}.json` | `--state-dump` | wanted/loaded/failed tile sets after a fixed teleport path, zone/continent, lighting at five times of day (light ids, falloff weight, fog, sky, skybox), eight ground probes, eight pick rays, and the exact SQL text grouped by source |
 | `ui-{wrath,retail}.json` | `--ui-dump` | every built control in creation order: menu items and accelerators, toolbar buttons, fields, option lists, overlay pages |
+| `ui-behavior-295-wrath.json` | `--dump-target=behavior:295` | the rendered behavior panel for one creature: scope buttons, rule cards and their edit/delete/swap buttons, speech page hooks |
+| `ui-creature-15192-gossip-wrath.json` | `--dump-target=creature:15192,gossip` | the rendered TrinityCore creature window on a real gossip menu: navigation, greeting, option rows and their field editors |
 
-`python Tools/smoke_golden.py` and `python Tools/state_golden.py` run one capture and diff it. `--update` is the only way to rewrite a golden; it also rewrites `Tests/golden/.sha256`, and the gate fails if a golden changed without it. `--state-dump` and `--ui-dump` are non-interactive: they suppress startup prompts and the random `game_tele` start, which `--client-shot` does not. The dump keeps structure, not live server data: the Scene explorer's "`n` SQL matches" tooltip is normalised because it changes whenever someone edits the world database.
+`python Tools/smoke_golden.py`, `python Tools/state_golden.py` and `python Tools/ui_golden.py` run one capture and diff it. `--update` is the only way to rewrite a golden; it also rewrites `Tests/golden/.sha256`, and the gate fails if a golden changed without it. `--state-dump`, `--ui-dump` and `--dump-target` are non-interactive: they suppress startup prompts and the random `game_tele` start, which `--client-shot` does not. The dump keeps structure, not live server data: the Scene explorer's "`n` SQL matches" tooltip is normalised because it changes whenever someone edits the world database, and the target dump replaces Godot's auto-generated `@Type@123` node numbers because a lazily opened window starts the counter at a different value each run. `--dump-target` opens `behavior:<entry>[,<guid>]`, `creature:<entry>[,<section>]` or `quest:<id>[,<tab>]` and waits for the page's rows; it needs a world database, so it is opt-in.
 
-`python Tools/refactor_gate.py` is the standing gate: structural invariants (Godot-free folders, file/method budgets in `Tools/viewer-budget.json` and `Tools/viewer-long-methods.json`, golden manifest), then build plus both test projects, then all six goldens. `--fast` stops after the tests and needs no client data; `--structural` is under a second. The burn-down ratchets are lowered in the same commit as the refactor that earns it.
+`python Tools/refactor_gate.py` is the standing gate: structural invariants (Godot-free folders, the viewer and UI file/method budgets in `Tools/viewer-budget.json`, `Tools/viewer-long-methods.json`, `Tools/ui-budget.json` and `Tools/ui-long-methods.json`, golden manifest), then build plus both test projects, then the six client-golden captures. `--fast` stops after the tests and needs no client data; `--structural` is under a second; `--ui-goldens` runs the two rendered editor captures and needs `ACWORLD_DB_INFO` or `ACWORLD_TC_DB_INFO`. The burn-down ratchets are lowered in the same commit as the refactor that earns it.
 
 ### `Tests/run_stormlib_checks.py` (StormLib differential)
 
@@ -87,7 +89,7 @@ Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/S
 | `Tools/generate_condition_catalog.py` | Regenerates the condition type arrays for both dialects |
 | `Tools/refactor_gate.py` | Structural invariants, build, both test projects and the golden captures |
 | `.claude/skills/refactor-module` | Agent workflow for a behaviour-preserving module refactor: regression net, gated phases, class seams, budgets and commit protocol |
-| `Tools/smoke_golden.py`, `Tools/state_golden.py` | Run and diff one smoke or one state/UI dump against `Tests/golden` |
+| `Tools/smoke_golden.py`, `Tools/state_golden.py`, `Tools/ui_golden.py` | Run and diff one smoke, state/UI dump or rendered editor target against `Tests/golden` |
 | `.claude/hooks/format_cs.py` | Runs `dotnet format whitespace` on each edited `.cs` file |
 | `ThirdParty/`, `Data/WoWDBDefs/`, `THIRD-PARTY.md` | Pinned submodules and the licence/purpose record shipped with builds |
 
