@@ -421,24 +421,14 @@ public partial class ViewerShell
             graveyards.SnapOnDrop = value;
             waypoints.SnapOnDrop = value;
         }, () => creatures.SnapOnDrop);
-        toolbar.AddChild(new Label { Text = "Rotation step", Modulate = new Color("aabac8") });
-        var step = new OptionButton
-        {
-            TooltipText = "Fixed heading increments while rotating",
-            FocusMode = Control.FocusModeEnum.None
-        };
+        toolbar.Label("Rotation step");
         float[] steps = [0, 5, 15, 45];
-        foreach (float degrees in steps)
-        {
-            step.AddItem(degrees == 0 ? "Free" : $"{degrees:0}°");
-        }
-
-        step.ItemSelected += index =>
-        {
-            creatures.RotationStep = Mathf.DegToRad(steps[index]);
-            gameObjects.RotationStep = Mathf.DegToRad(steps[index]);
-        };
-        toolbar.AddChild(step);
+        toolbar.Choice("Fixed heading increments while rotating",
+            steps.Select(degrees => degrees == 0 ? "Free" : $"{degrees:0}°").ToArray(), 0, index =>
+            {
+                creatures.RotationStep = Mathf.DegToRad(steps[index]);
+                gameObjects.RotationStep = Mathf.DegToRad(steps[index]);
+            });
         toolbar.Separator();
         toolbar.Action("Fly to selection", "Move the camera to the selection (F)", FlyToSelection, () => HasSelection);
         toolbar.Separator();

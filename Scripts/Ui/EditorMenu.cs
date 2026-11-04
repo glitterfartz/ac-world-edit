@@ -13,6 +13,7 @@ public partial class EditorMenu : MenuBar
 {
     sealed record Item(PopupMenu Menu, int Index, Action Action, Func<bool>? Enabled, Func<bool>? Checked, Key Accelerator);
     readonly Dictionary<(PopupMenu, long), Item> items = [];
+    readonly List<MenuEntry> entries = [];
     int nextId;
 
     public EditorMenu()
@@ -20,6 +21,87 @@ public partial class EditorMenu : MenuBar
         Name = "MenuBar";
         // A native global menu would bypass the in-window theme and shortcut path on some platforms.
         PreferGlobalMenu = false;
+    }
+
+    /// <summary>Every entry the sheet asked for, in display order, including submenu children.</summary>
+    public IReadOnlyList<MenuEntry> Manifest => entries;
+
+    /// <summary>
+    /// Build the whole bar from a sheet. Called once: IDs come from a counter, so a second load would
+    /// duplicate every entry. Two items may not share an accelerator.
+    /// </summary>
+    public void Load(IReadOnlyList<(string Title, IReadOnlyList<MenuEntry> Items)> sheet)
+    {
+        var accelerators = new Dictionary<Key, string>();
+        foreach (var (title, items) in sheet)
+        {
+            Collect(items, accelerators);
+        }
+
+        foreach (var (title, items) in sheet)
+        {
+            Add(title, items);
+        }
+    }
+
+    void Collect(IReadOnlyList<MenuEntry> items, Dictionary<Key, string> accelerators)
+    {
+        foreach (var entry in items)
+        {
+            if (entry is MenuSubmenu submenu)
+            {
+                Collect(submenu.Items, accelerators);
+                continue;
+            }
+
+            Key accelerator = entry switch
+            {
+                MenuCommand command => command.Accelerator,
+                MenuCheck check => check.Accelerator,
+                _ => Key.None
+            };
+            if (accelerator == Key.None)
+            {
+                continue;
+            }
+
+            string label = entry is MenuCommand c ? c.Label : ((MenuCheck)entry).Label;
+            if (accelerators.TryGetValue(accelerator, out string? other))
+            {
+                throw new InvalidOperationException($"Accelerator {accelerator} is used by both \"{other}\" and \"{label}\".");
+            }
+
+            accelerators[accelerator] = label;
+        }
+    }
+
+    void Add(string title, IReadOnlyList<MenuEntry> items)
+    {
+        var menu = Menu(title);
+        Add(menu, items);
+    }
+
+    void Add(PopupMenu menu, IReadOnlyList<MenuEntry> items)
+    {
+        foreach (var entry in items)
+        {
+            entries.Add(entry);
+            switch (entry)
+            {
+                case MenuCommand command:
+                    Command(menu, command.Label, command.Run, command.Enabled, command.Accelerator);
+                    break;
+                case MenuCheck check:
+                    Check(menu, check.Label, check.Toggle, check.Checked, check.Accelerator);
+                    break;
+                case MenuSeparator:
+                    menu.AddSeparator();
+                    break;
+                case MenuSubmenu submenu:
+                    Add(Submenu(menu, submenu.Label), submenu.Items);
+                    break;
+            }
+        }
     }
 
     /// <summary>
@@ -196,6 +278,36 @@ public partial class EditorToolbar : HBoxContainer
     }
 
     public void Separator() => AddChild(new VSeparator());
+
+    /// <summary>A muted caption in the strip, before a control that needs naming.</summary>
+    public Label Label(string text)
+    {
+        var label = new Label { Text = text, Modulate = new Color("aabac8") };
+        AddChild(label);
+        return label;
+    }
+
+    /// <summary>
+    /// A compact option list with no keyboard focus, so a shortcut key still reaches the viewport.
+    /// The callback runs only on a user pick, as with <see cref="OptionButton.ItemSelected"/>.
+    /// </summary>
+    public OptionButton Choice(string tooltip, IReadOnlyList<string> labels, int selected, Action<int> onChanged)
+    {
+        var option = new OptionButton
+        {
+            TooltipText = tooltip,
+            FocusMode = FocusModeEnum.None
+        };
+        foreach (string label in labels)
+        {
+            option.AddItem(label);
+        }
+
+        option.Select(selected);
+        option.ItemSelected += index => onChanged((int)index);
+        AddChild(option);
+        return option;
+    }
 
     public void Refresh()
     {

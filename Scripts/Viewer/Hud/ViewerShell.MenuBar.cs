@@ -54,58 +54,55 @@ public partial class ViewerShell
     {
         const Key ctrl = (Key)KeyModifierMask.MaskCtrl;
         const Key shift = (Key)KeyModifierMask.MaskShift;
-        var file = menu.Menu("File");
-        menu.Command(file, "Load client…", ChooseClient, () => !busy);
-        menu.Command(file, "Update listfile…", () => _ = UpdateListfile(), () => !busy && listfileDownload == null);
-        menu.Command(file, "Database connection…", () =>
-        {
-            _ = PromptConnection();
-        });
-        file.AddSeparator();
-        menu.Command(file, "Pending changes…", OpenPendingChanges);
-        menu.Command(file, "Clear cache…", ClearCache, () => !busy);
-        menu.Command(file, "Reset configs and delete cache…", ResetEverything, () => OperatingSystem.IsWindows());
-        file.AddSeparator();
-        menu.Command(file, "Quit", () => GetTree().Quit(), accelerator: ctrl | Key.Q);
-
-        var edit = menu.Menu("Edit");
-        menu.Command(edit, "Undo", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging, ctrl | Key.Z);
-        menu.Command(edit, "Redo", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, ctrl | Key.Y);
-        edit.AddSeparator();
-        menu.Command(edit, "Duplicate", () => ActiveEditor.Duplicate(), () => ActiveEditor.CanDuplicate && !ActiveEditor.IsDragging, ctrl | Key.D);
-        menu.Command(edit, "Delete", () => ActiveEditor.Delete(), () => ActiveEditor.CanDelete && !ActiveEditor.IsDragging, Key.Delete);
-        edit.AddSeparator();
-        menu.Command(edit, "Drop to ground", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit, Key.End);
-        menu.Command(edit, "Reset to source", () => ActiveEditor.ResetToSource(), () => ActiveEditor.CanEdit);
-        menu.Command(edit, "Copy .go command", () => ActiveEditor.CopyGoCommand(), () => ActiveEditor.HasSelection, ctrl | shift | Key.C);
-
-        var view = menu.Menu("View");
-        menu.Command(view, "Fly to selection", FlyToSelection, () => HasSelection, Key.F);
-        menu.Command(view, "Quest editor", () => questEditor.Open(0), () => databaseEnabled);
-        menu.Command(view, "Creature behavior (selected)", OpenBehaviorEditor, () => BehaviorEditors);
-        menu.Command(view, "Scene explorer", () =>
-        {
-            sidebar.Visible = true;
-            sidebar.ShowSceneTab();
-        });
-        view.AddSeparator();
-        menu.Check(view, "Terrain cell borders", () =>
-        {
-            showCellBorders = !showCellBorders;
-            renderer.SetGrid(showCellBorders);
-        }, () => showCellBorders);
-        menu.Check(view, "Navigation panel", () => leftPanel.Visible = !leftPanel.Visible, () => leftPanel.Visible);
-        menu.Check(view, "Scene explorer panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible);
-        menu.Check(view, "Content browser", ToggleContentBrowser, () => contentBrowser.Visible, ctrl | Key.B);
-        var scale = menu.Submenu(view, "UI scale");
-        foreach (int percent in UiScalePercents)
-        {
-            menu.Check(scale, $"{percent}%", () => SetUiScale(percent, true), () => uiScalePercent == percent);
-        }
-
-        var help = menu.Menu("Help");
-        menu.Command(help, "Controls…", () => ShowInfo("Controls", ControlsText));
-        menu.Command(help, "About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore. Clients: Wrath 3.3.5a (with the world database) and Retail (viewing only, no database yet).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."));
+        menu.Load(MenuSheet.Of(
+            ("File", [
+                new MenuCommand("Load client…", ChooseClient, () => !busy),
+                new MenuCommand("Update listfile…", () => _ = UpdateListfile(), () => !busy && listfileDownload == null),
+                new MenuCommand("Database connection…", () => _ = PromptConnection()),
+                new MenuSeparator(),
+                new MenuCommand("Pending changes…", OpenPendingChanges),
+                new MenuCommand("Clear cache…", ClearCache, () => !busy),
+                new MenuCommand("Reset configs and delete cache…", ResetEverything, () => OperatingSystem.IsWindows()),
+                new MenuSeparator(),
+                new MenuCommand("Quit", () => GetTree().Quit(), Accelerator: ctrl | Key.Q)
+            ]),
+            ("Edit", [
+                new MenuCommand("Undo", () => ActiveEditor.Undo(), () => ActiveEditor.CanUndo && !ActiveEditor.IsDragging, ctrl | Key.Z),
+                new MenuCommand("Redo", () => ActiveEditor.Redo(), () => ActiveEditor.CanRedo && !ActiveEditor.IsDragging, ctrl | Key.Y),
+                new MenuSeparator(),
+                new MenuCommand("Duplicate", () => ActiveEditor.Duplicate(), () => ActiveEditor.CanDuplicate && !ActiveEditor.IsDragging, ctrl | Key.D),
+                new MenuCommand("Delete", () => ActiveEditor.Delete(), () => ActiveEditor.CanDelete && !ActiveEditor.IsDragging, Key.Delete),
+                new MenuSeparator(),
+                new MenuCommand("Drop to ground", () => ActiveEditor.DropToGround(), () => ActiveEditor.CanEdit, Key.End),
+                new MenuCommand("Reset to source", () => ActiveEditor.ResetToSource(), () => ActiveEditor.CanEdit),
+                new MenuCommand("Copy .go command", () => ActiveEditor.CopyGoCommand(), () => ActiveEditor.HasSelection, ctrl | shift | Key.C)
+            ]),
+            ("View", [
+                new MenuCommand("Fly to selection", FlyToSelection, () => HasSelection, Key.F),
+                new MenuCommand("Quest editor", () => questEditor.Open(0), () => databaseEnabled),
+                new MenuCommand("Creature behavior (selected)", OpenBehaviorEditor, () => BehaviorEditors),
+                new MenuCommand("Scene explorer", () =>
+                {
+                    sidebar.Visible = true;
+                    sidebar.ShowSceneTab();
+                }),
+                new MenuSeparator(),
+                new MenuCheck("Terrain cell borders", () =>
+                {
+                    showCellBorders = !showCellBorders;
+                    renderer.SetGrid(showCellBorders);
+                }, () => showCellBorders),
+                new MenuCheck("Navigation panel", () => leftPanel.Visible = !leftPanel.Visible, () => leftPanel.Visible),
+                new MenuCheck("Scene explorer panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible),
+                new MenuCheck("Content browser", ToggleContentBrowser, () => contentBrowser.Visible, ctrl | Key.B),
+                new MenuSubmenu("UI scale", UiScalePercents
+                    .Select(percent => (MenuEntry)new MenuCheck($"{percent}%", () => SetUiScale(percent, true), () => uiScalePercent == percent))
+                    .ToArray())
+            ]),
+            ("Help", [
+                new MenuCommand("Controls…", () => ShowInfo("Controls", ControlsText)),
+                new MenuCommand("About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore. Clients: Wrath 3.3.5a (with the world database) and Retail (viewing only, no database yet).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."))
+            ])));
     }
 
     /// <summary>
