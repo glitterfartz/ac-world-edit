@@ -1,7 +1,6 @@
 using System.Globalization;
 using Godot;
 using ACWorldEdit.Foundation;
-using static ACWorldEdit.Foundation.InteractionEdits;
 
 namespace ACWorldEdit;
 
@@ -14,6 +13,7 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class PageRenderer(IEntityContext ctx)
 {
+    readonly PageFields fields = new(ctx);
     int? difficulty;
     GridContainer? grid;
 
@@ -52,25 +52,26 @@ public sealed class PageRenderer(IEntityContext ctx)
                 head.AddChild(remove);
             }
 
-            var fields = new GridContainer { Columns = columns };
-            fields.AddThemeConstantOverride("h_separation", 8);
-            card.AddChild(fields);
+            var fieldsGrid = new GridContainer { Columns = columns };
+            fieldsGrid.AddThemeConstantOverride("h_separation", 8);
+            card.AddChild(fieldsGrid);
             foreach (var field in spec.Fields)
             {
-                fields.AddChild(ClientStyle.Caption(field.Label, field.Tip));
-                var control = fieldControl?.Invoke(field, row) ?? (editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 13));
+                fieldsGrid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
+                var control = fieldControl?.Invoke(field, row) ?? (editable ? fields.Editor(field, row) : ClientStyle.Text(fields.Shown(field, row), 13));
                 control.TooltipText = field.Tip;
                 if (control is Label label)
                 {
                     label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
                     label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
                 }
-                fields.AddChild(control);
+                fieldsGrid.AddChild(control);
             }
             afterItem?.Invoke(card, row);
         }
     }
 
+    /// <summary>Draw every group of the page, in order, and show the difficulty row the fields bind to.</summary>
     public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
@@ -79,67 +80,77 @@ public sealed class PageRenderer(IEntityContext ctx)
         bool difficultyShown = false;
         foreach (var group in page.Groups)
         {
-            var fields = page.In(group.Id).ToList();
-            bool any = fields.Count > 0;
-            if (any || After.ContainsKey(group.Id))
+            RenderGroup(parent, page, group, rows, key, entry, editable, ref picked, ref difficultyShown);
+        }
+    }
+
+    void RenderGroup(Control parent, EntityPage page, GroupSpec group, RowSet rows, string key, uint entry, bool editable,
+        ref Row? picked, ref bool difficultyShown)
+    {
+        var groupFields = page.In(group.Id).ToList();
+        if (groupFields.Count > 0 || After.ContainsKey(group.Id))
+        {
+            parent.AddChild(ClientStyle.Text(group.Title, 16, ClientStyle.Header));
+            if (group.Hint != null)
             {
-                parent.AddChild(ClientStyle.Text(group.Title, 16, ClientStyle.Header));
-                if (group.Hint != null)
-                {
-                    parent.AddChild(ClientStyle.Text(group.Hint, 12, ClientStyle.Faded));
-                }
-            }
-
-            if (page.Difficulty is { } spec && !difficultyShown && fields.Any(f => f.Row == RowBinding.Difficulty))
-            {
-                difficultyShown = true;
-                picked = Picked = ShowPicker(parent, spec, rows, entry, editable);
-            }
-
-            grid = null;
-            foreach (var field in fields)
-            {
-                var row = field.Row == RowBinding.Template ? rows.Get(field.Table, key) : picked;
-                if (row == null)
-                {
-                    continue;
-                }
-
-                if (field.Kind == FieldKind.Flags)
-                {
-                    grid = null;
-                    Flags(parent, field, row, editable);
-                    continue;
-                }
-
-                if (grid == null)
-                {
-                    grid = new GridContainer
-                    {
-                        Columns = 2
-                    };
-                    grid.AddThemeConstantOverride("h_separation", 10);
-                    parent.AddChild(grid);
-                }
-
-                grid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
-                var control = editable ? Editor(field, row) : ClientStyle.Text(Shown(field, row), 14);
-                control.TooltipText = field.Tip;
-                if (control is Label label)
-                {
-                    label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-                    label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                }
-
-                grid.AddChild(control);
-            }
-
-            grid = null;
-            if (After.TryGetValue(group.Id, out var extras))
-            {
-                extras();
+                parent.AddChild(ClientStyle.Text(group.Hint, 12, ClientStyle.Faded));
             }
         }
+
+        if (page.Difficulty is { } spec && !difficultyShown && groupFields.Any(f => f.Row == RowBinding.Difficulty))
+        {
+            difficultyShown = true;
+            picked = Picked = ShowPicker(parent, spec, rows, entry, editable);
+        }
+
+        grid = null;
+        foreach (var field in groupFields)
+        {
+            RenderField(parent, field, rows, key, picked, editable);
+        }
+
+        grid = null;
+        if (After.TryGetValue(group.Id, out var extras))
+        {
+            extras();
+        }
+    }
+
+    void RenderField(Control parent, FieldSpec field, RowSet rows, string key, Row? picked, bool editable)
+    {
+        var row = field.Row == RowBinding.Template ? rows.Get(field.Table, key) : picked;
+        if (row == null)
+        {
+            return;
+        }
+
+        if (field.Kind == FieldKind.Flags)
+        {
+            grid = null;
+            fields.Flags(parent, field, row, editable);
+            return;
+        }
+
+        if (grid == null)
+        {
+            grid = new GridContainer
+            {
+                Columns = 2
+            };
+            grid.AddThemeConstantOverride("h_separation", 10);
+            parent.AddChild(grid);
+        }
+
+        grid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
+        var control = editable ? fields.Editor(field, row) : ClientStyle.Text(fields.Shown(field, row), 14);
+        control.TooltipText = field.Tip;
+        if (control is Label label)
+        {
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        }
+
+        grid.AddChild(control);
     }
 
     /// <summary>
@@ -255,231 +266,5 @@ public sealed class PageRenderer(IEntityContext ctx)
         other.TextSubmitted += _ => AddOther();
         box.AddChild(other);
         box.AddChild(add);
-    }
-
-    static ColumnKind KindOf(FieldSpec field) => field.Table.Columns.First(c => c.Name == field.Column).Kind;
-
-    static ulong Number(FieldSpec field, Row row) => KindOf(field) == ColumnKind.ULong ? row.UL(field.Column) : row.U(field.Column);
-
-    static string Hex(ulong value) => value == 0 ? "0" : "0x" + value.ToString("X", CultureInfo.InvariantCulture);
-
-    string Shown(FieldSpec field, Row row)
-    {
-        string raw = row.T(field.Column);
-        switch (field.Kind)
-        {
-            case FieldKind.Check:
-                return raw != "0" ? "Yes" : "No";
-            case FieldKind.Choice:
-                int value = int.Parse(raw, CultureInfo.InvariantCulture);
-                return field.Options!.Where(o => o.Value == value).Select(o => o.Name).FirstOrDefault() ?? $"Unknown ({value})";
-            case FieldKind.Decimal:
-                return field.Display?.Invoke(raw) ?? float.Parse(raw, CultureInfo.InvariantCulture).ToString("0.###", CultureInfo.InvariantCulture);
-            default:
-                return field.Display?.Invoke(raw) ?? raw;
-        }
-    }
-
-    Control Editor(FieldSpec field, Row row) => field.Kind switch
-    {
-        FieldKind.Text => TextBox(field, row),
-        FieldKind.Whole => WholeBox(field, row),
-        FieldKind.Decimal => DecimalBox(field, row),
-        FieldKind.Choice => Choice(field, row),
-        FieldKind.Check => Check(field, row),
-        _ => throw new InvalidOperationException($"{field.Kind} is not a single-row editor.")
-    };
-
-    bool Commit(string label, FieldSpec field, Row row, object value) => ctx.Commit(label, ItemListSpec.Change(field.Table, row, row.With(field.Column, value)));
-
-    void Reject(string message)
-    {
-        ctx.Status = $"Not saved: {message}";
-        ctx.Redraw();
-    }
-
-    LineEdit TextBox(FieldSpec field, Row row)
-    {
-        int max = field.Table.Columns.First(c => c.Name == field.Column).MaxLength;
-        var edit = new LineEdit
-        {
-            Text = row.T(field.Column),
-            MaxLength = max,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new(220, 0)
-        };
-        edit.TextSubmitted += text =>
-        {
-            if (!field.AllowEmpty && text.Trim().Length == 0)
-            {
-                Reject($"the {field.Label.ToLowerInvariant()} cannot be empty.");
-                return;
-            }
-
-            Commit($"Change {field.Label.ToLowerInvariant()}", field, row, text.Trim());
-        };
-        return edit;
-    }
-
-    LineEdit WholeBox(FieldSpec field, Row row)
-    {
-        var edit = new LineEdit
-        {
-            Text = row.T(field.Column),
-            CustomMinimumSize = new(110, 0)
-        };
-        edit.TextSubmitted += text => ctx.Try(() =>
-        {
-            object value = KindOf(field) switch
-            {
-                ColumnKind.Int => int.Parse(text.Trim(), CultureInfo.InvariantCulture),
-                ColumnKind.Long => long.Parse(text.Trim(), CultureInfo.InvariantCulture),
-                ColumnKind.ULong => ParseULong(text),
-                _ => ParseUInt(text)
-            };
-            if (field.Max > 0 && Convert.ToDecimal(value, CultureInfo.InvariantCulture) > field.Max)
-            {
-                Reject($"{field.Label.ToLowerInvariant()} cannot be more than {field.Max}.");
-                return;
-            }
-
-            Commit($"Change {field.Label.ToLowerInvariant()}", field, row, value);
-        });
-        return edit;
-    }
-
-    LineEdit DecimalBox(FieldSpec field, Row row)
-    {
-        var edit = new LineEdit
-        {
-            Text = float.Parse(row.T(field.Column), CultureInfo.InvariantCulture).ToString("0.###", CultureInfo.InvariantCulture),
-            CustomMinimumSize = new(110, 0)
-        };
-        edit.TextSubmitted += text => ctx.Try(() =>
-        {
-            float value = float.Parse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture);
-            if (!float.IsFinite(value) || value < 0)
-            {
-                Reject($"{field.Label.ToLowerInvariant()} must be zero or more.");
-                return;
-            }
-
-            Commit($"Change {field.Label.ToLowerInvariant()}", field, row, value);
-        });
-        return edit;
-    }
-
-    OptionButton Choice(FieldSpec field, Row row)
-    {
-        bool signed = KindOf(field) == ColumnKind.Int;
-        int current = int.Parse(row.T(field.Column), CultureInfo.InvariantCulture);
-        var picker = new OptionButton();
-        foreach (var (value, name) in field.Options!)
-        {
-            picker.AddItem(name, value);
-        }
-
-        int index = picker.GetItemIndex(current);
-        if (index < 0)
-        {
-            picker.AddItem($"Unknown ({current})", current);
-            index = picker.ItemCount - 1;
-        }
-
-        picker.Selected = index;
-        picker.ItemSelected += i =>
-        {
-            int chosen = picker.GetItemId((int)i);
-            Commit($"Change {field.Label.ToLowerInvariant()}", field, row, signed ? chosen : (uint)chosen);
-        };
-        return picker;
-    }
-
-    CheckBox Check(FieldSpec field, Row row)
-    {
-        var check = new CheckBox
-        {
-            ButtonPressed = row.U(field.Column) != 0
-        };
-        check.Toggled += on => Commit($"{(on ? "Enable" : "Disable")} {field.Label.ToLowerInvariant()}", field, row, on ? 1u : 0u);
-        return check;
-    }
-
-    void Flags(Control parent, FieldSpec field, Row row, bool editable)
-    {
-        ulong value = Number(field, row);
-        var bits = field.Flags ?? [];
-        parent.AddChild(ClientStyle.Caption(field.Label, field.Tip));
-        if (!editable)
-        {
-            var names = bits.Where(f => (value & f.Bit) != 0).Select(f => f.Name).ToList();
-            ulong unnamed = value & ~bits.Aggregate(0ul, (all, f) => all | f.Bit);
-            if (unnamed != 0)
-            {
-                names.Add($"other bits {Hex(unnamed)}");
-            }
-
-            var text = ClientStyle.Text(names.Count == 0 ? "None" : string.Join(", ", names), 14);
-            text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            parent.AddChild(text);
-            return;
-        }
-
-        bool wide = KindOf(field) == ColumnKind.ULong;
-        object Store(ulong v) => wide ? v : (uint)v;
-        if (bits.Length > 0)
-        {
-            var checks = new GridContainer
-            {
-                Columns = 3
-            };
-            parent.AddChild(checks);
-            foreach (var bit in bits)
-            {
-                var check = new CheckBox
-                {
-                    Text = bit.Name,
-                    TooltipText = bit.Tip,
-                    ButtonPressed = (value & bit.Bit) != 0
-                };
-                check.Toggled += on => Commit($"{(on ? "Add" : "Remove")} {bit.Name.ToLowerInvariant()}", field, row, Store(on ? value | bit.Bit : value & ~bit.Bit));
-                checks.AddChild(check);
-            }
-        }
-
-        if (!field.Raw && bits.Length > 0)
-        {
-            return;
-        }
-
-        var raw = new HBoxContainer();
-        parent.AddChild(raw);
-        raw.AddChild(ClientStyle.Tag("Raw value"));
-        var edit = new LineEdit
-        {
-            Text = Hex(value),
-            CustomMinimumSize = new(wide ? 160 : 110, 0),
-            TooltipText = "The combined number stored in the database. Decimal or 0x hex."
-        };
-        edit.TextSubmitted += text => ctx.Try(() =>
-        {
-            ulong parsed = ParseULong(text);
-            if (!wide && parsed > uint.MaxValue)
-            {
-                throw new OverflowException();
-            }
-
-            Commit($"Change {field.Label.ToLowerInvariant()}", field, row, Store(parsed));
-        });
-        raw.AddChild(edit);
-    }
-
-    static ulong ParseULong(string text)
-    {
-        string trimmed = text.Trim();
-        return trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
-            ? ulong.Parse(trimmed[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture)
-            : ulong.Parse(trimmed, CultureInfo.InvariantCulture);
     }
 }
