@@ -7,7 +7,7 @@ using static ACWorldEdit.Foundation.InteractionEdits;
 namespace ACWorldEdit;
 
 /// <summary>TC gossip navigation and editing through the dialect's shared descriptors.</summary>
-public sealed partial class TcGossipSection(CreatureContext ctx) : TcSection(ctx)
+public sealed partial class TcGossipSection(CreatureContext ctx) : TcCreatureSection(ctx)
 {
     public override string Id => PickerPages.Gossip.Id;
     public override string Title => PickerPages.Gossip.Title;

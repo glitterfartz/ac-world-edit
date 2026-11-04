@@ -10,7 +10,7 @@ namespace ACWorldEdit;
 /// with editing enabled separately by each implemented page. They use the AzerothCore sections' ids, so
 /// opening the window on "gossip" or "vendor" finds the page of the open database.
 /// </summary>
-public abstract partial class TcSection(CreatureContext ctx) : CreatureSection(ctx)
+public abstract partial class TcCreatureSection(CreatureContext ctx) : CreatureSection(ctx)
 {
     public override bool Supports(WorldDialect dialect) => dialect == WorldDialect.TrinityCore;
 

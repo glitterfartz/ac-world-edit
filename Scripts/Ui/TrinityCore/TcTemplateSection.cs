@@ -9,7 +9,7 @@ namespace ACWorldEdit;
 /// from <see cref="TcCreaturePage"/> by the shared <see cref="PageRenderer"/>. With a draft open the
 /// fields are editable and a missing difficulty row can be added.
 /// </summary>
-public sealed partial class TcTemplateSection(CreatureContext ctx) : TcSection(ctx)
+public sealed partial class TcTemplateSection(CreatureContext ctx) : TcCreatureSection(ctx)
 {
     readonly PageRenderer renderer = new(ctx);
 
@@ -36,7 +36,7 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcSection(c
 /// the level, health, mana, armor, damage and attack power they give (<see cref="TcStatCalculator"/>).
 /// The values need the retail client's expected-stat tables.
 /// </summary>
-public sealed partial class TcStatsSection(CreatureContext ctx) : TcSection(ctx)
+public sealed partial class TcStatsSection(CreatureContext ctx) : TcCreatureSection(ctx)
 {
     static readonly (uint Id, string Name)[] Classes = [(1, "Warrior"), (2, "Paladin"), (4, "Rogue"), (8, "Mage")];
 

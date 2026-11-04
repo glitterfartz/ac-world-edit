@@ -11,7 +11,7 @@ namespace ACWorldEdit;
 /// the default trainer when bound to menu 0 option 0, and lists its trainer_spell rows. Edits the trainer's
 /// type and greeting and its spells, and assigns, rebinds, copies and removes the bindings.
 /// </summary>
-public sealed partial class TcTrainerSection(CreatureContext ctx) : TcSection(ctx)
+public sealed partial class TcTrainerSection(CreatureContext ctx) : TcCreatureSection(ctx)
 {
     public override string Id => PickerPages.Trainer.Id;
     public override string Title => PickerPages.Trainer.Title;
