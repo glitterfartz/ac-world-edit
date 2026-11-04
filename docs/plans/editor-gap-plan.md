@@ -347,7 +347,7 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 |---|---|
 | Page layout and fields | `EntityPage` / `FieldSpec` / `ItemListSpec` (Phase 10), `PageRenderer` |
 | Edits, undo, export | `InteractionDraft`, `RowEdit`, `DraftHistory`, `SqlExport`, `PendingChanges` |
-| Pickers | `PickerPopup` (`Scripts/Ui/EditorFields.cs:311`), `CreatureSection.SearchState<T>`, `IClientLookup.Search*` / `Exists(ClientRecord, id)` |
+| Pickers | `PickerPopup` (`Scripts/Ui/Framework/PickerPopup.cs`), `CreatureSection.SearchState<T>`, `IClientLookup.Search*` / `Exists(ClientRecord, id)` |
 | Positions and gizmos | `TransformGizmo`, `ScenePicking`, `ViewerShell.Ground`, `RegionOverlay` / `RegionQuery` |
 | Generated catalogs | `Tools/generate_smart_catalog.py` pattern → GO types, conditions |
 | Behavior | `BehaviorPanel` with new SmartAI source types (1 for GOs, etc.) |

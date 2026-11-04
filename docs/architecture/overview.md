@@ -149,9 +149,10 @@ Rules that follow from the layering:
   `LiquidTextures` are looked up through `ConditionalWeakTable` keyed on the `IClientFiles` instance.
 - **Edits only reach Foundation drafts.** Overlays and editors never write to the database. SQL leaves
   the app only through `Foundation/SqlExport.cs`.
-- **Dialect-specific classes are prefixed.** `Ac`/`Tc` classes (and file and folder names) live under
-  `AzerothCore/` or `TrinityCore/` in their feature or layer; shared interfaces, descriptors, context
-  and renderers stay unprefixed.
+- **Dialect-specific classes are prefixed.** `Ac`/`Tc` classes (and file names) live in the layer's
+  `AzerothCore/` / `TrinityCore/` folders (`Scripts/Ui/AzerothCore`, `Scripts/Data/AzerothCore`), not
+  in a copy of those folders under each feature. Shared interfaces, descriptors, context, renderers
+  and the one factory or registry that names both dialects stay unprefixed.
 
 ## Threading model
 
@@ -195,7 +196,7 @@ marks them, and the drafts stay as they are.
 | `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
 | `Scripts/Overlays/` | Creature, GameObject, graveyard, AreaTrigger, waypoint and navigation overlays, gizmo, region query, placement tool |
-| `Scripts/Ui/` | Properties window shell, creature and quest editors, content browser, spawn inspector, visibility preview, sidebar, menus, pickers, settings |
+| `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
 | `Foundation/` | Drafts and spawn authoring, entity pages and rules, SQL export, tooltips, coordinates |
 | `Shaders/` | `*.gdshader` (terrain, liquid, model, sky, clouds, glare, sunshafts, swamp, mercury, fel, leyline, liquidfog, procmagma, procwater, azerite) and the shared `*.gdshaderinc` includes |
