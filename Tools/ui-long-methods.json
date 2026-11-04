@@ -7,7 +7,6 @@
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderOptions",
     "Scripts/Ui/TrinityCore/TcGossipSection.cs::Populate",
     "Scripts/Ui/TrinityCore/TcStatsSection.cs::Results",
-    "Scripts/Ui/Quest/QuestPanel.cs::Render",
     "Scripts/Ui/Scene/SceneSidebar.cs::BuildScenePage",
     "Scripts/Ui/Scene/SceneSidebar.cs::SceneSidebar",
     "Scripts/Ui/VisibilityPreview/VisibilityPreviewPanel.Phase.cs::BuildPhaseSection"
