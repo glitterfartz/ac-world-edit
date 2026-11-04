@@ -1,8 +1,5 @@
 {
   "allowed": [
-    "Scripts/Viewer/Lighting/SkyLighting.cs::ApplySky",
-    "Scripts/Viewer/Lighting/SkyLighting.cs::SkyLighting",
-    "Scripts/Viewer/Lighting/SkyLighting.cs::Update",
     "Scripts/Viewer/Session/ClientServices.cs::ClientServices",
     "Scripts/Viewer/Session/ViewerShell.Listfile.cs::UpdateListfile"
   ]
