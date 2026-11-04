@@ -98,6 +98,15 @@ public static class LiquidRendering
             material.SetShaderParameter("center_tex", ExtraTexture(azerite.Center));
             material.SetShaderParameter("deep_scroll", azerite.Settings.DeepScroll);
             material.SetShaderParameter("center_scroll", azerite.Settings.CenterScroll);
+            material.SetShaderParameter("has_masks", azerite.Blend != null);
+            if (azerite.Blend is { } blend) material.SetShaderParameter("blend_tex", ExtraTexture(blend));
+            if (azerite.Transcolor is { } transcolor) material.SetShaderParameter("transcolor_tex", ExtraTexture(transcolor));
+            material.SetShaderParameter("has_normals", azerite.Normals != null);
+            if (azerite.Normals is { } normals)
+            {
+                material.SetShaderParameter("normal_tex", ExtraTexture(normals, mipmaps: false));
+                material.SetShaderParameter("normal_frames", (float)normals.Width / normals.Height);
+            }
             return;
         }
         if (style.Swamp is { } swamp)

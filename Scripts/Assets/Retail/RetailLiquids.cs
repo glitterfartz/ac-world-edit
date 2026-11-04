@@ -53,15 +53,18 @@ public sealed class RetailLiquids
     public FelSettings? Fel(uint type) => fels.GetValueOrDefault(type);
 
     /// <summary>
-    /// Material 18 (azerite): slots 0 and 1 are the two body layers. Both sample the native liquid UV at
-    /// unit scale; floats 0 and 1 are inferred to be each layer's scroll speed, the same reading the
-    /// other materials use for their first two floats. The shipped rows store the same value in both
-    /// floats, so which float belongs to which layer cannot be confirmed from the data. Floats 2..5 are
+    /// Material 18 (azerite): slots 0 and 1 are the two body layers, slot 2 is the teal blend mask,
+    /// slot 4 the gold transition colour and slot 5 the animated normal-map sequence
+    /// (<c>azeriteanim_%d.blp</c>). Floats 0 and 1 are inferred to be each layer's scroll speed, the
+    /// same reading the other materials use for their first two floats; the shipped rows store the
+    /// same value in both, so which float belongs to which layer cannot be confirmed. Floats 2..5 are
     /// not applied: reading them as a per-layer scale/angle triple tiled the centre texture about 20
-    /// times per layer, which is not an authored look. The masked variants and the depth coefficient's
-    /// source are not in the table.
+    /// times per layer, which is not an authored look. The depth coefficient's source is not in the
+    /// table. The shipped slot-3 <c>azerite_basenormal</c> is a flat placeholder (every DXT block
+    /// identical), so the flow comes from the slot-5 sequence instead.
     /// </summary>
-    public sealed record AzeriteSettings(string Deep, string Center, float DeepScroll, float CenterScroll);
+    public sealed record AzeriteSettings(string Deep, string Center, float DeepScroll, float CenterScroll,
+        string Blend = "", string Transcolor = "", string NormalPattern = "");
     public AzeriteSettings? Azerite(uint type) => azerites.GetValueOrDefault(type);
 
     /// <summary>
@@ -128,7 +131,10 @@ public sealed class RetailLiquids
                 if (row.FieldAs<uint>("MaterialID") == 18 && floats.Length >= 2 && textures.Length >= 2)
                 {
                     result.azerites[(uint)row.ID] = new(BlpPath(textures[0] ?? ""), BlpPath(textures[1] ?? ""),
-                        floats[0], floats[1]);
+                        floats[0], floats[1],
+                        textures.Length > 2 ? BlpPath(textures[2] ?? "") : "",
+                        textures.Length > 4 ? BlpPath(textures[4] ?? "") : "",
+                        textures.Length > 5 ? textures[5] ?? "" : "");
                 }
                 if (row.FieldAs<uint>("MaterialID") == 14 && floats.Length >= 18 && textures.Length >= 3)
                 {

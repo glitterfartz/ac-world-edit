@@ -63,10 +63,11 @@ public sealed record FelLiquidStyle(BlpTexture Shallow, RetailLiquids.FelSetting
     public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Shallow)}";
 }
 
-/// <summary>Decoded material 18 deep and center body layers; no engine resources.</summary>
-public sealed record AzeriteLiquidStyle(BlpTexture Deep, BlpTexture Center, RetailLiquids.AzeriteSettings Settings)
+/// <summary>Decoded material 18 body layers, masks and animated normal sequence; no engine resources.</summary>
+public sealed record AzeriteLiquidStyle(BlpTexture Deep, BlpTexture Center, RetailLiquids.AzeriteSettings Settings,
+    BlpTexture? Blend = null, BlpTexture? Transcolor = null, BlpTexture? Normals = null)
 {
-    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Deep)}|{RuntimeHelpers.GetHashCode(Center)}";
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Deep)}|{RuntimeHelpers.GetHashCode(Center)}|{(Blend == null ? 0 : RuntimeHelpers.GetHashCode(Blend))}|{(Transcolor == null ? 0 : RuntimeHelpers.GetHashCode(Transcolor))}|{(Normals == null ? 0 : RuntimeHelpers.GetHashCode(Normals))}";
 }
 
 /// <summary>Decoded material 14 depth layers; shared CPU textures, with no engine resources.</summary>
@@ -162,9 +163,13 @@ public sealed class LiquidTextures
             }
 
             // Azerite (material 18) needs both body layers; one missing leaves the lava/slime fallback.
-            if (retail!.Azerite(type) is { } azerite && Extra(azerite.Deep) is { } azeriteDeep && Extra(azerite.Center) is { } azeriteCenter)
+            // The mask and animation slots are optional so a type that names only the body still draws.
+            if (retail!.Azerite(type) is { } azerite && Extra(azerite.Deep, 512) is { } azeriteDeep && Extra(azerite.Center) is { } azeriteCenter)
             {
-                return stock with { Azerite = new(azeriteDeep, azeriteCenter, azerite) };
+                var blend = OptionalExtra(azerite.Blend, 512);
+                var transcolor = OptionalExtra(azerite.Transcolor);
+                var normals = OptionalSequence(azerite.NormalPattern, 256);
+                return stock with { Azerite = new(azeriteDeep, azeriteCenter, azerite, blend, transcolor, normals) };
             }
 
             if (Kind(type) >= 2)
@@ -198,29 +203,33 @@ public sealed class LiquidTextures
         return Extra(path);
     }
 
-    BlpTexture? Extra(string path)
+    BlpTexture? Extra(string path, int maximumDimension = 256)
     {
         path = path.Replace('\\', '/');
+        string key = $"{maximumDimension}|{path}";
 
         lock (extraTextures)
         {
-            if (!extraTextures.TryGetValue(path, out var texture))
+            if (!extraTextures.TryGetValue(key, out var texture))
             {
                 try
                 {
-                    texture = store.Exists(path) ? BlpTexture.Decode(store.Read(path), 256) : null;
+                    texture = store.Exists(path) ? BlpTexture.Decode(store.Read(path), maximumDimension) : null;
                 }
                 catch (Exception e) when (e is InvalidDataException or FileNotFoundException)
                 {
                     texture = null;
                 }
 
-                extraTextures[path] = texture;
+                extraTextures[key] = texture;
             }
 
             return texture;
         }
     }
+
+    /// <summary>An optional extra texture: an empty slot or an unreadable file leaves the caller's fallback.</summary>
+    BlpTexture? OptionalExtra(string path, int maximumDimension = 256) => string.IsNullOrWhiteSpace(path) ? null : Extra(path, maximumDimension);
 
     /// <summary>
     /// Resolve the first native texture slot and normalize separators, retaining printf-style frame
@@ -228,11 +237,16 @@ public sealed class LiquidTextures
     /// </summary>
     public string Pattern(uint type) => (retail?.Pattern(type) ?? types!.Str(type, 15)).Replace('\\', '/');
 
-    BlpTexture? OptionalSequence(string pattern)
+    BlpTexture? OptionalSequence(string pattern, int frameSize = 128)
     {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return null;
+        }
+
         lock (atlases)
         {
-            try { return Sequence(pattern.Replace('\\', '/')); }
+            try { return Sequence(pattern.Replace('\\', '/'), frameSize); }
             catch (Exception e) when (e is InvalidDataException or FileNotFoundException or NotSupportedException) { return null; }
         }
     }
@@ -256,7 +270,7 @@ public sealed class LiquidTextures
             {
                 return atlases[type] = proceduralPlaceholder;
             }
-            if (sequences.TryGetValue(pattern, out cached))
+            if (sequences.TryGetValue($"128|{pattern}", out cached))
             {
                 return atlases[type] = cached;
             }
@@ -279,9 +293,12 @@ public sealed class LiquidTextures
     }
 
     // Called under the atlas lock; base colors and animated normal maps share decoded sequences.
-    BlpTexture? Sequence(string pattern)
+    // The frame size is part of the cache key because the body atlases want small frames and the
+    // azerite normal sequence wants enough detail to warp a whole pool.
+    BlpTexture? Sequence(string pattern, int frameSize = 128)
     {
-        if (sequences.TryGetValue(pattern, out var cached)) return cached;
+        string key = $"{frameSize}|{pattern}";
+        if (sequences.TryGetValue(key, out var cached)) return cached;
         List<BlpTexture> frames = [];
         if (pattern.Contains('%'))
         {
@@ -293,12 +310,12 @@ public sealed class LiquidTextures
                     break;
                 }
 
-                frames.Add(BlpTexture.Decode(store.Read(path), 128));
+                frames.Add(BlpTexture.Decode(store.Read(path), frameSize));
             }
         }
         else if (pattern.Length > 0 && store.Exists(pattern))
         {
-            frames.Add(BlpTexture.Decode(store.Read(pattern), 128));
+            frames.Add(BlpTexture.Decode(store.Read(pattern), frameSize));
         }
 
         if (frames.Count == 0) return null;
@@ -317,6 +334,6 @@ public sealed class LiquidTextures
             }
         }
 
-        return sequences[pattern] = new(w * frames.Count, h, rgba);
+        return sequences[key] = new(w * frames.Count, h, rgba);
     }
 }

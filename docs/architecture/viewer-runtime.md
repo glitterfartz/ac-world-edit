@@ -349,40 +349,57 @@ before treating this as an asset blocker. Do not substitute guessed FileDataIDs.
 ### Material 18 azerite
 
 `LiquidRendering` selects `azerite.gdshader` when `LiquidStyle.Azerite` resolves.
-The port follows `azerite_0`: two body textures are sampled and mixed by
-`saturate(1 - nativeDepth * coefficient)`, then drawn fully opaque (`ALPHA = 1`)
-and unlit with client fog. The vertex colour alpha carries native depth for
-terrain liquids, so the centre colour shows where the pool is shallow and the
-deep-swirl layer takes over as it deepens. Both azerite types (940 and 951) share
-one material because they name the same six textures and floats.
+The port now follows `azerite_0`, `azerite_1` and the body half of
+`procazerite`, drawn fully opaque (`ALPHA = 1`) and unshaded with client fog.
+Both azerite types (940 and 951) share one material because they name the same
+six textures and floats.
+
+The body is a three-stop depth ramp. `azeritedeep` (slot 0) is the thick gold
+marble with cream ridges and iridescent flecks and supplies the body;
+`azeritetranscolor` (slot 4) is the flat yellow transition band; and
+`azeritecentercolor` (slot 1) is the blue speckle that belongs at the shallow
+edge. The vertex colour alpha carries native depth for terrain liquids.
+
+Flow comes from the slot-5 animation, not from the shipped normal slot:
+`azeriteanim_%d.blp` is a 30-frame sequence of real normal maps, decoded into a
+horizontal atlas and crossfaded between adjacent frames the way `procazerite`
+does, then used to offset every layer UV and to shade the body with the client
+sun. The slot-3 `azerite_basenormal.blp` is a flat placeholder in the shipped
+data (every DXT block is byte-identical), so binding it would add nothing.
+`azeriteblend` (slot 2) adds the sparse cyan/white/pink flecks. A short
+screen-space reflection and a self-lit term approximate `procazerite`'s
+environment sample and glow.
 
 The render mode still keeps the surface in the same transparent, no-depth-write
 pass as the other liquid shaders, so an overlapping liquid can blend over it
 instead of being occluded by it; "opaque" here means the alpha is fixed at one,
 not that the surface writes depth.
 
-Bindings: slots 0 and 1 (`azeritedeep`, `azeritecentercolor`) are the two layers,
-each uploaded from its own decoded texture (`deep_tex`/`center_tex`), so the deep
-layer never depends on the type's frame-atlas fallback. The slot order is
-inferred from the texture names. Floats 0 and 1 are the layers' scroll speeds,
-read the way the other materials read their first two floats; the shipped rows
-store the same value in both, so the split is not confirmable from the data.
-Floats 2..5 are not applied. Reading them as material
-13's per-layer scale/angle/scroll triples tiled the centre layer about twenty
-times across the pool and produced a fine diagonal weave that is not an
-authored look. The client's per-layer texture matrices are CPU constants that
-are not in the table, so both layers sample the native MH2O liquid UV at unit
-scale: one texture per layer, about 33 yards on a side. The depth coefficient
-is not in the table and is a fixed estimate (1.0). Missing either layer keeps
-the previous generic lava/slime fallback instead of drawing a half material.
+Bindings: each layer is uploaded from its own decoded texture (`deep_tex`,
+`center_tex`, `transcolor_tex`, `blend_tex`, `normal_tex`), so no layer depends
+on the type's frame-atlas fallback. The slot order is inferred from the texture
+names. Floats 0 and 1 are the layers' scroll speeds, read the way the other
+materials read their first two floats; the shipped rows store the same value in
+both, so the split is not confirmable from the data. Floats 2..5 are not applied:
+reading them as material 13's per-layer scale/angle/scroll triples tiled the
+centre layer about twenty times across the pool and produced a fine diagonal
+weave that is not an authored look. The client's per-layer texture matrices are
+CPU constants that are not in the table, so all layers share one world-space UV
+(a little larger than the ~33-yard chunk scale so the swirls span several yards).
 
-Fidelity limits: `azerite_1`'s two mask textures and its alpha, `procazerite`'s
-nine-input procedural body (two normal maps, refraction, reflection and glow), and
-the `azeriteblend`/`azeritetranscolor`/`azeriteanim` slots are unported, so the
-authored gold transition and animation do not appear. The client's per-light
-medium accumulation is not ported either; like the other liquid cores this one is
-unshaded. This is not a retail parity claim. Real types 940/951 resolve both
-layers in corpus checks; see
+The depth coefficient is not in the table and is a fixed estimate. Native depth
+is an 8-bit MH2O vertex value, so reading it at 0..1 painted whole triangles blue
+wherever it dipped, which read as blotches rather than an edge. It is scaled by
+4.0 first, which keeps the blue centre layer on the true zero-depth edge and
+leaves a soft yellow band before the gold body. The coefficient is tuned to the
+retail surface, not recovered; it and the client's unknown depth scale cannot be
+separated. Missing either body layer keeps the previous generic lava/slime
+fallback instead of drawing a half material.
+
+Fidelity limits: the per-layer UV matrices (`CB1[13..20]`) and the per-light
+medium accumulation are not ported, and the flow's speeds, warp strength and
+emission are estimates. This is not a retail parity claim. Real types 940/951
+resolve the body layers in corpus checks; see
 [shader inspection locations](shader-inspection-locations.md) for the Zandalar
 pool used for the windowed check.
 

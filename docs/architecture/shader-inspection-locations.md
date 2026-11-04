@@ -50,10 +50,13 @@ Notes:
 - The azerite entry is inside a large Zandalar pool (type 940) that spans server
   X 1258..1600 and Y 2154..2667 across tile 27,29. The surface under
   `1425, 2516.67` is that pool at height 136.2, so the listed XYZ sits about 10
-  yards above it. Eye `1425, 2516.67, 168` with pitch 89 looks straight down at
-  the pool and shows the blue centre layer with the cream `azeritedeep` swirls
-  banded by the 8-bit depth interpolation. The stock water (type 5) in this tile
-  is 300 yards west at X 1067..1146, so it never covers this point.
+  yards above it. Eye `1425, 2516.67, 168` with a downward pitch (`-89`, not `89`,
+  which faces the sky) looks straight down at the pool: the whole surface reads as
+  the thick gold `azeritedeep` marble, warped by the animated `azeriteanim` normal
+  sequence, with the blue centre layer only on the true zero-depth edge. A higher
+  eye (`1425, 2516.67, 330`) frames several neighbouring azerite pools at once, so
+  the depth ramp's patchiness is easy to spot there. The stock water (type 5) in
+  this tile is 300 yards west at X 1067..1146, so it never covers this point.
 - The map, tile, type and XYZ are read from the retail client data. Visual parity
   against a retail reference is a separate, manual step and is not claimed by this
   table.

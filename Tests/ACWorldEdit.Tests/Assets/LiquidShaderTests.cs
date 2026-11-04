@@ -57,25 +57,33 @@ public class LiquidShaderTests
     }
 
     [Fact]
-    public void AzeriteBlendsItsTwoBodyLayersByNativeDepth()
+    public void AzeriteRampsItsThreeBodyLayersAndWarpsThemWithTheAnimatedNormals()
     {
         string shader = Shader("azerite.gdshader");
-        // azerite_0: 1 - depth * coefficient picks between the deep and centre textures, opaque.
-        Assert.Contains("1.0-COLOR.a*depth_coefficient", shader);
-        Assert.Contains("mix(deep, center, blend)", shader);
-        Assert.Contains("ALPHA = 1.0;", shader);
-        // Both body layers come from their own bound textures and sample the native liquid UV at
-        // unit scale; the inferred per-layer scale/angle triple tiled the centre into fine noise.
+        // Material 18 body: azeritedeep (gold marble), azeritetranscolor (yellow
+        // transition) and azeritecentercolor (blue shallow fringe), weighted by native depth.
         Assert.Contains("texture(deep_tex", shader);
         Assert.Contains("texture(center_tex", shader);
+        Assert.Contains("texture(transcolor_tex", shader);
+        Assert.Contains("COLOR.a * depth_coefficient", shader);
+        Assert.Contains("center_weight", shader);
+        Assert.Contains("trans_weight", shader);
+        Assert.Contains("ALPHA = 1.0;", shader);
+        // azerite_1 masks the blend with azeriteblend, and procazerite crossfades two
+        // frames of the animated normal sequence before warping every layer UV.
+        Assert.Contains("texture(blend_tex", shader);
+        Assert.Contains("normal_frame(", shader);
+        Assert.Contains("warp", shader);
+        // The pools are self-lit, so the shader adds an emissive term rather than only
+        // raising the albedo.
+        Assert.Contains("emission_strength", shader);
+        // procazerite samples a reflection (t7); the swamp/water ripple include is still
+        // not shared, and the inferred per-layer scale/angle triple is not applied.
+        Assert.Contains("liquid_reflection(", shader);
+        Assert.DoesNotContain("liquid_surface.gdshaderinc", shader);
         Assert.DoesNotContain("albedo_tex", shader);
         Assert.DoesNotContain("radians", shader);
-        Assert.DoesNotContain("deep_uv", shader);
-        Assert.DoesNotContain("center_uv", shader);
         Assert.DoesNotContain("uv_scale", shader);
-        // The surface must not borrow water ripples or reflections the shipped shader does not sample.
-        Assert.DoesNotContain("liquid_surface.gdshaderinc", shader);
-        Assert.DoesNotContain("liquid_reflection", shader);
     }
 
     static int Count(string text, string value)
