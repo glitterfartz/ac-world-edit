@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: plan-behavior-panel
+expected_outcome: |
+  A staged plan that treats the behavior editor as UI with an observable control tree, captures or
+  relies on the UI golden and behavior smoke before touching code, splits presentation/wiring from
+  rule editing, names the resulting classes, keeps commits mechanical first, and preserves the
+  editor's callbacks and layout.

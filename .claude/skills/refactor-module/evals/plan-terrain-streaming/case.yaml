@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: plan-terrain-streaming
+expected_outcome: |
+  A staged, behaviour-preserving refactor plan for the terrain streaming area that starts with a
+  deterministic regression capture, separates mechanical moves from logic changes, names concrete
+  classes/seams, keeps the gate green after each commit, and does not propose changing behaviour.

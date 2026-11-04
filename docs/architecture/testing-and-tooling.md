@@ -86,6 +86,7 @@ Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/S
 | `Tools/generate_smart_catalog.py` | Regenerates the SmartAI type arrays for both dialects |
 | `Tools/generate_condition_catalog.py` | Regenerates the condition type arrays for both dialects |
 | `Tools/refactor_gate.py` | Structural invariants, build, both test projects and the golden captures |
+| `.claude/skills/refactor-module` | Agent workflow for a behaviour-preserving module refactor: regression net, gated phases, class seams, budgets and commit protocol |
 | `Tools/smoke_golden.py`, `Tools/state_golden.py` | Run and diff one smoke or one state/UI dump against `Tests/golden` |
 | `.claude/hooks/format_cs.py` | Runs `dotnet format whitespace` on each edited `.cs` file |
 | `ThirdParty/`, `Data/WoWDBDefs/`, `THIRD-PARTY.md` | Pinned submodules and the licence/purpose record shipped with builds |
