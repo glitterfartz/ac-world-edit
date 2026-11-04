@@ -17,7 +17,8 @@ namespace ACWorldEdit;
 /// ScriptName of the spawn it was opened from. Then <c>entry</c> holds the trigger or template ID and
 /// the creature-only parts (AI, speech, spawn) are hidden.
 /// Every change is one validated command in the shared local content draft; nothing is written to
-/// the database. Rule cards are in BehaviorPanel.Rules.cs; the speech page is at the end of this file.
+/// the database. Rule cards are in BehaviorPanel.Rules.cs; the speech page and the scope/AI banner
+/// are in their own partial files.
 /// </summary>
 public partial class BehaviorPanel : ContentPanel
 {
@@ -223,38 +224,6 @@ public partial class BehaviorPanel : ContentPanel
     List<SmartRule> RulesOf(RowSet rows, SmartScope of) => SmartRuleEdits.RulesOf(smart, rows, of);
 
     /// <summary>
-    /// The creature's scopes: entry, spawn (when opened from one), then every action list reachable
-    /// from them through "Run action list", in discovery order.
-    /// </summary>
-    List<SmartScope> Scopes(RowSet rows)
-    {
-        var list = new List<SmartScope> { EntryScope };
-        if (guid != 0)
-        {
-            list.Add(SpawnScope);
-        }
-
-        for (int i = 0; i < list.Count && list.Count < 64; i++)
-        {
-            foreach (var rule in RulesOf(rows, list[i]).Where(r => r.Action == SmartCatalog.RunActionList && r.ActionParam(1) != 0))
-            {
-                var next = new SmartScope((int)rule.ActionParam(1), SmartScope.ActionList);
-                if (!list.Contains(next))
-                {
-                    list.Add(next);
-                }
-            }
-        }
-
-        if (scope is { IsActionList: true } shown && !list.Contains(shown))
-        {
-            list.Add(shown);
-        }
-
-        return list;
-    }
-
-    /// <summary>
     /// Loader rules over every scope, plus checks the per-scope rules cannot see.
     /// </summary>
     IEnumerable<InteractionIssue> CheckAll(RowSet rows)
@@ -436,38 +405,6 @@ public partial class BehaviorPanel : ContentPanel
         Rendered?.Invoke();
     }
 
-    void ScopeButton(string text, SmartScope? value)
-    {
-        var button = new Button
-        {
-            Text = text,
-            ToggleMode = true,
-            ButtonPressed = scope == value
-        };
-        button.Pressed += () => ShowScope(value);
-        scopes.AddChild(button);
-    }
-
-    /// <summary>
-    /// Which brain the creature uses, in words, with a one-click switch to SmartAI.
-    /// </summary>
-    void RenderAiBanner()
-    {
-        if (trigger is { } at)
-        {
-            string name = RunningScript(effective), wanted = SmartCatalog.SmartScriptName(at);
-            string runs = name == wanted ? ""
-                : name.Length == 0 ? $" · no script: the rules below do not run until {wanted} is set" : $" · C++ script {name}: the rules below are ignored";
-            subtitle.Text = (at.IsEntity ? $"Spawned AreaTrigger {at.SpawnId} · template {entry}{(at.SourceType == SmartScope.AreaTriggerEntityCustom ? " (custom)" : "")}" : $"AreaTrigger {entry}") + runs;
-            return;
-        }
-
-        string ai = CreatureAi(effective)?.T("AIName") ?? "";
-        string warning = snapshot!.ScriptName.Length > 0 ? $" · C++ script {snapshot.ScriptName} (SmartAI rules below are ignored by the server)"
-            : ai == "SmartAI" ? "" : ai.Length == 0 ? " · default AI: rules below do not run until SmartAI is enabled" : $" · {ai}: rules below do not run";
-        subtitle.Text = $"Entry {entry}{(guid != 0 ? $" · spawn #{guid}" : "")}{warning}";
-    }
-
     /// <summary>
     /// The AIName change that makes rules run, when the creature uses the default AI. Other AIs are
     /// a deliberate choice, so they only get a warning with a Fix button.
@@ -496,162 +433,4 @@ public partial class BehaviorPanel : ContentPanel
         return [];
     }
 
-    // Speech page over creature_text: lines grouped the way "Say text" picks them (one random line
-    // of a group, weighted by chance). Rules follow CreatureTextMgr::LoadCreatureTexts: a valid
-    // BroadcastTextId replaces the line's own text, so such lines show that clearly.
-
-    /// <summary>
-    /// ChatMsg values creatures use (SharedDefines.h).
-    /// </summary>
-    static readonly (uint Value, string Name)[] SpeechTypes = [(12, "Says"), (14, "Yells"), (16, "Emote text"), (15, "Whispers"), (41, "Boss emote"), (42, "Boss whisper"), (13, "Party")];
-    static readonly (uint Value, string Name)[] Languages = [(0, "Universal"), (7, "Common"), (1, "Orcish"), (2, "Darnassian"), (3, "Taurahe"), (6, "Dwarvish"), (10, "Thalassian"), (11, "Draconic"), (13, "Gnomish"), (14, "Troll"), (33, "Gutterspeak"), (35, "Draenei"), (8, "Demonic"), (9, "Titan")];
-    static readonly (uint Value, string Name)[] Ranges = [(0, "Nearby"), (1, "Area"), (2, "Zone"), (3, "Map"), (4, "World")];
-
-    void RenderSpeech()
-    {
-        var help = ClientStyle.Text("\"Say text\" actions pick one line of a group at random (weighted by chance). Use $n for the player's name.", 12, ClientStyle.Faded);
-        help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        page.AddChild(help);
-        var lines = effective.All(smart.CreatureText).Where(t => t.U("CreatureID") == entry).ToList();
-        var allRules = Scopes(effective).SelectMany(s => RulesOf(effective, s)).ToList();
-        foreach (var group in lines.GroupBy(t => t.U("GroupID")).OrderBy(g => g.Key))
-        {
-            int users = allRules.Count(r => r.Action == SmartCatalog.Talk && r.ActionParam(1) == group.Key);
-            page.AddChild(ClientStyle.Text($"Group {group.Key}{(users == 0 ? " · not used by any rule" : $" · used by {users} rule(s)")}", 16, ClientStyle.Header));
-            foreach (var line in group.OrderBy(t => t.U("ID")))
-            {
-                RenderLine(line);
-            }
-
-            uint groupId = group.Key;
-            page.AddChild(ButtonOf("+ Add line to this group", () => AddLine(groupId)));
-        }
-
-        if (lines.Count == 0)
-        {
-            page.AddChild(ClientStyle.Text("This creature has no lines yet.", 14, ClientStyle.Faded));
-        }
-
-        uint nextGroup = SpeechEdits.NextGroup(smart, effective, entry);
-        var add = ButtonOf("+ New group", () => AddLine(nextGroup));
-        add.Name = "AddSpeechGroup";
-        page.AddChild(add);
-    }
-
-    void RenderLine(Row line)
-    {
-        var table = smart.CreatureText;
-        bool edited = snapshot!.Rows.Get(table, table.KeyOf(line)) != line;
-        void Put(string label, params (string Column, object Value)[] values)
-        {
-            if (SpeechEdits.Change(smart, effective, line, values) is { } edit)
-            {
-                Commit(label, edit);
-            }
-        }
-
-        var text = EditorFields.Line(line.T("Text"), value => Put("Edit line", ("Text", value)), "What the creature says");
-        if (edited)
-        {
-            text.AddThemeColorOverride("font_color", ClientStyle.Edited);
-        }
-
-        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(smart, effective.Get(table, table.KeyOf(line)) ?? line)))));
-        var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
-        page.AddChild(EditorFields.Row("",
-            EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value))),
-            ClientStyle.Tag("in"), EditorFields.Choice(Languages, (uint)Math.Max(0, line.I("Language")), value => Put("Change language", ("Language", (int)value))),
-            ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value))),
-            ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50), ClientStyle.Tag("%"),
-            ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)))));
-        if (smart.HasStringParams)
-        {
-            // TrinityCore: the sound plays to everyone in range, or from the creature itself (SoundKitPlayType).
-            (uint, string)[] playTypes = [(0, "Normal"), (1, "From the creature")];
-            var sound = EditorFields.Number(line.U("Sound"), value => Put("Change line sound", ("Sound", (uint)Math.Clamp(value, 0, uint.MaxValue))), 80, "Sound kit ID (0 = none)");
-            sound.Name = "LineSound";
-            page.AddChild(EditorFields.Row("Sound", sound, ClientStyle.Tag("played"), EditorFields.Choice(playTypes, line.U("SoundPlayType"), value => Put("Change how the sound plays", ("SoundPlayType", value)))));
-        }
-
-        int broadcast = line.I("BroadcastTextId");
-        string shown = broadcast <= 0 ? "none (the line's own text is used)"
-            : snapshot!.Names.Broadcasts.TryGetValue((uint)broadcast, out var preview) ? $"#{broadcast}: {Shorten(preview)}" : $"#{broadcast}";
-        var reference = EditorFields.Reference(shown, () => ChooseBroadcast(line, id => Put("Link broadcast text", ("BroadcastTextId", (int)id))), broadcast > 0 ? () => Put("Unlink broadcast text", ("BroadcastTextId", 0)) : null);
-        reference.Name = "BroadcastReference";
-        page.AddChild(EditorFields.Row("Broadcast text", reference));
-        if (broadcast > 0)
-        {
-            page.AddChild(EditorFields.Row("", ClientStyle.Text("The server shows this (localized) text instead of the line above.", 11, ClientStyle.Warning)));
-        }
-    }
-
-    void ChooseBroadcast(Row line, Action<uint> choose)
-    {
-        var source = DBSource.Open(Connection(), Lookup());
-        PickerPopup.Show(this, "Choose broadcast text", async term =>
-        {
-            var found = await source.SearchBroadcastAsync(term, CancellationToken.None);
-            foreach (var (id, name) in found)
-            {
-                snapshot!.Names.Broadcasts[id] = name;
-            }
-
-            return found.Select(f => (f.Id, $"{f.Id}: {Shorten(f.Name)}")).ToList();
-        }, (id, _) => choose(id), current: (uint)Math.Max(0, line.I("BroadcastTextId")));
-    }
-
-    void AddLine(uint group)
-    {
-        var (label, edit) = SpeechEdits.NewLine(smart, effective, entry, group, snapshot!.CreatureName);
-        Commit(label, edit);
-    }
-}
-
-/// <summary>
-/// Standalone window around a <see cref="BehaviorPanel"/>, used for AreaTrigger rules (source_type 2)
-/// which have no creature to open the creature properties window on.
-/// </summary>
-public partial class BehaviorEditorWindow : ContentEditorWindow
-{
-    protected override Vector2 TargetSize => new(980, 720);
-    public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
-    Label title = null!;
-    Button undo = null!, redo = null!;
-
-    public BehaviorEditorWindow() : base("BehaviorEditor")
-    {
-        Size = TargetSize;
-    }
-
-    public override void _Ready()
-    {
-        Panel.Connection = () => Connection();
-        Panel.Store = () => Store();
-        Panel.Drafts = Drafts;
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Behavior");
-        title = header.Title;
-        undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
-        redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
-        ButtonIn(header.Row, "✕", () => Visible = false);
-        root.AddChild(Panel);
-        Panel.Rendered += Sync;
-        Sync();
-    }
-
-    void Sync()
-    {
-        title.Text = Panel.Title;
-        Panel.SyncHistoryButtons(undo, redo);
-    }
-
-    /// <summary>Show the SmartAI rules of one AreaTrigger or spawned trigger template.</summary>
-    public void OpenAreaTrigger(AreaTriggerOwner trigger)
-    {
-        Visible = true;
-        PlaceOnFirstOpen(40, 90);
-        Panel.OpenAreaTrigger(trigger);
-    }
 }
