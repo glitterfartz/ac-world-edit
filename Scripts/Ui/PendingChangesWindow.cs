@@ -30,14 +30,8 @@ public partial class PendingChangesWindow : ContentEditorWindow
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
-        var header = new HBoxContainer();
-        header.GuiInput += DragHeader;
-        root.AddChild(header);
-        var heading = ClientStyle.Text("Pending Changes", 19, ClientStyle.Header);
-        heading.MouseFilter = MouseFilterEnum.Ignore;
-        heading.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        header.AddChild(heading);
-        ButtonIn(header, "✕", () => Visible = false);
+        var header = AddHeader(root, "Pending Changes");
+        ButtonIn(header.Row, "✕", () => Visible = false);
         summary = ClientStyle.Text("", 12, ClientStyle.Faded);
         root.AddChild(summary);
         var scroll = new ScrollContainer

@@ -29,12 +29,7 @@ public partial class GameObjectOverlay
         details = InspectorUi.Text("Selection details appear here.", 13, true);
         card.AddChild(details);
         card.AddChild(new HSeparator());
-        var history = new HBoxContainer();
-        card.AddChild(history);
-        undo = InspectorUi.Button("Undo move", () => History(false));
-        redo = InspectorUi.Button("Redo move", () => History(true));
-        history.AddChild(undo);
-        history.AddChild(redo);
+        (undo, redo) = InspectorUi.HistoryRow(card, () => History(false), () => History(true));
         var copies = new HBoxContainer();
         card.AddChild(copies);
         duplicate = InspectorUi.Button("Duplicate", Duplicate);
@@ -43,13 +38,7 @@ public partial class GameObjectOverlay
         remove.TooltipText = "Delete this spawn (Del)";
         copies.AddChild(duplicate);
         copies.AddChild(remove);
-        card.AddChild(new HSeparator());
-        card.AddChild(InspectorUi.Text("Pose (server coordinates)", 12, true));
-        EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], poseFields, SubmitPose);
-        foreach (var field in poseFields)
-        {
-            field.Editable = false;
-        }
+        InspectorUi.PoseCard(card, poseFields, SubmitPose);
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
         BuildSpawnFields(card);

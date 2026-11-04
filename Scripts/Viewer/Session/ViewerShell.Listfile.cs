@@ -24,18 +24,8 @@ public partial class ViewerShell
         }
 
         UserSettings.SaveListfilePrompted();
-        var dialog = new ConfirmationDialog
-        {
-            Title = "Download listfile",
-            OkButtonText = "Download",
-            CancelButtonText = "Not now",
-            DialogText = "Retail clients name many files (garrison interiors, WMO textures, liquid textures) by path, which only the community listfile can map to files.\n\nDownload it now from github.com/wowdev/wow-listfile? It is saved in your user data folder and only updated when you choose File → Update listfile…"
-        };
-        dialog.Confirmed += () => _ = UpdateListfile();
-        dialog.Confirmed += dialog.QueueFree;
-        dialog.Canceled += dialog.QueueFree;
-        AddChild(dialog);
-        dialog.PopupCentered(new Vector2I(520, 0));
+        Dialogs.Confirm(this, "Download listfile", "Retail clients name many files (garrison interiors, WMO textures, liquid textures) by path, which only the community listfile can map to files.\n\nDownload it now from github.com/wowdev/wow-listfile? It is saved in your user data folder and only updated when you choose File → Update listfile…",
+            () => _ = UpdateListfile(), ok: "Download", cancel: "Not now", size: new Vector2I(520, 0));
     }
 
     /// <summary>

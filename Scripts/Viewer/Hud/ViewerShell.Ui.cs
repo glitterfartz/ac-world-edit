@@ -513,18 +513,7 @@ public partial class ViewerShell
         _ = LoadTeleports();
     }
 
-    void ShowInfo(string title, string text)
-    {
-        var dialog = new AcceptDialog
-        {
-            Title = title,
-            DialogText = text
-        };
-        dialog.Confirmed += dialog.QueueFree;
-        dialog.Canceled += dialog.QueueFree;
-        AddChild(dialog);
-        dialog.PopupCentered();
-    }
+    void ShowInfo(string title, string text) => Dialogs.Info(this, title, text);
 
     /// <summary>
     /// Interactive launches only: verify the saved database settings with a real read-only session and

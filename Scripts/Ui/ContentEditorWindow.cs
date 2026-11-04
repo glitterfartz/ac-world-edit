@@ -68,6 +68,47 @@ public partial class ContentEditorWindow : PanelContainer
 
     protected void EndDrag() => dragOffset = null;
 
+    /// <summary>The draggable title area and the labels the window updates later.</summary>
+    public sealed record WindowHeader(HBoxContainer Row, Label Title, Label? Subtitle);
+
+    /// <summary>
+    /// The draggable title row every editor window built by hand. A subtitle adds the stacked titles
+    /// box the properties window uses; without one the title sits directly in the row. Callers append
+    /// their own buttons to <see cref="WindowHeader.Row"/>.
+    /// </summary>
+    protected WindowHeader AddHeader(VBoxContainer root, string title, string? subtitle = null)
+    {
+        var header = new HBoxContainer();
+        header.GuiInput += DragHeader;
+        root.AddChild(header);
+        Label heading;
+        Label? under = null;
+        if (subtitle == null)
+        {
+            heading = ClientStyle.Text(title, 19, ClientStyle.Header);
+            heading.MouseFilter = MouseFilterEnum.Ignore;
+            heading.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            header.AddChild(heading);
+        }
+        else
+        {
+            var titles = new VBoxContainer
+            {
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                MouseFilter = MouseFilterEnum.Ignore
+            };
+            header.AddChild(titles);
+            heading = ClientStyle.Text(title, 19, ClientStyle.Header);
+            heading.MouseFilter = MouseFilterEnum.Ignore;
+            titles.AddChild(heading);
+            under = ClientStyle.Text(subtitle, 13, ClientStyle.Faded);
+            under.MouseFilter = MouseFilterEnum.Ignore;
+            titles.AddChild(under);
+        }
+
+        return new(header, heading, under);
+    }
+
     /// <summary>
     /// First time shown: center horizontally (shifted by xShift) at the given height. Later opens
     /// keep wherever the user dragged it.

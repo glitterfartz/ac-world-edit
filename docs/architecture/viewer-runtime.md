@@ -217,8 +217,9 @@ A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before,
 | Behavior panel | `Ui/BehaviorPanel.cs` (with the speech page), `.Rules.cs` | SmartAI rules written as sentences, with entry, spawn and action-list scopes, plus speech; embedded in the creature window by the shared `BehaviorSection` and `SpeechSection`. The same panel serves both databases through `SmartCatalog.For(dialect)`: TrinityCore adds a Difficulties field, text fields for the string parameters and a speech line's sound play type |
 | AreaTrigger behavior | `BehaviorEditorWindow` in `Ui/BehaviorPanel.cs` | A window around `BehaviorPanel` for AreaTrigger rules, which have no creature: a client trigger's (source type 2, with its `areatrigger_scripts` name) or a TrinityCore spawned trigger template's (11/12, with the spawn's `areatrigger.ScriptName`), opened with an `AreaTriggerOwner` |
 | Pending changes | `Ui/PendingChangesWindow.cs` (`PendingChangesWindow`, `SqlPreviewWindow`) | Lists pending changes; the viewer performs discard and export. The SQL preview shows the apply or revert script an export would write |
-| Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | Callback-driven menus and mode buttons |
-| Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs` | Number, text and picker fields; shared inspector layout |
+| Menus and toolbar | `Ui/EditorMenu.cs` (`EditorMenu`, `EditorToolbar`) | The bar is loaded once from a `Ui/MenuSheet.cs` sheet (`MenuCommand`, `MenuCheck`, `MenuSeparator`, `MenuSubmenu`); loading rejects a chord claimed twice. The toolbar adds mode buttons, captions (`Label`) and option lists (`Choice`) |
+| Form controls | `Ui/EditorFields.cs`, `Ui/InspectorUi.cs`, `Ui/UiForm.cs` | Number, text and picker fields; shared inspector layout and card parts (`HistoryRow`, `PoseCard`, `Choice`); `UiForm` builds a panel from an existing `VBoxContainer` without inserting a node |
+| Dialogs | `Ui/Dialogs.cs` | The shared `Info` and `Confirm` shapes; both configure the dialog before adding it and free it on either answer |
 | Client styling | `Ui/ClientStyle.cs` | Dark editor-window theme, quality colours, gossip icons |
 
 ### Creature properties window

@@ -104,15 +104,8 @@ public partial class ViewerShell
             return;
         }
 
-        var confirm = new ConfirmationDialog
+        Dialogs.Confirm(this, "Discard all", $"Discard all {changes.Count} unsaved change(s) and return them to the database values? This only affects local drafts.", () =>
         {
-            Title = "Discard all",
-            DialogText = $"Discard all {changes.Count} unsaved change(s) and return them to the database values? This only affects local drafts.",
-            OkButtonText = "Discard all"
-        };
-        confirm.Confirmed += () =>
-        {
-            confirm.QueueFree();
             foreach (var change in changes)
             {
                 DiscardPending(change);
@@ -120,10 +113,7 @@ public partial class ViewerShell
 
             RefreshPending();
             pendingWindow.SetStatus("Discarded all unsaved changes.");
-        };
-        confirm.Canceled += confirm.QueueFree;
-        AddChild(confirm);
-        confirm.PopupCentered();
+        }, ok: "Discard all");
     }
 
     /// <summary>
@@ -133,15 +123,8 @@ public partial class ViewerShell
     /// </summary>
     void ClearCache()
     {
-        var confirm = new ConfirmationDialog
+        Dialogs.Confirm(this, "Clear cache", "Clear all saved edits, undo history, the exported-changes record and model thumbnails? Unexported changes are lost.", () =>
         {
-            Title = "Clear cache",
-            DialogText = "Clear all saved edits, undo history, the exported-changes record and model thumbnails? Unexported changes are lost.",
-            OkButtonText = "Clear cache"
-        };
-        confirm.Confirmed += () =>
-        {
-            confirm.QueueFree();
             graveyards.ClearDraft();
             waypoints.ClearDraft();
             drafts.Clear();
@@ -154,10 +137,7 @@ public partial class ViewerShell
             string result = thumbsGone ? "Cache cleared." : "Cache cleared, but some thumbnails are still in use.";
             pendingWindow.SetStatus(result);
             statusLog.Post(result);
-        };
-        confirm.Canceled += confirm.QueueFree;
-        AddChild(confirm);
-        confirm.PopupCentered();
+        }, ok: "Clear cache");
     }
 
     /// <summary>

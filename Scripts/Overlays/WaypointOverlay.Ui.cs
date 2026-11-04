@@ -132,19 +132,8 @@ public partial class WaypointOverlay
         moveLabel.AutowrapMode = TextServer.AutowrapMode.Off;
         moveLabel.CustomMinimumSize = new(120, 0);
         moveRow.AddChild(moveLabel);
-        moveType = new OptionButton
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            FitToLongestItem = false,
-            TooltipText = "How the creature travels to this point."
-        };
-        foreach (string name in MoveTypes)
-        {
-            moveType.AddItem(name);
-        }
-
-        moveType.ItemSelected += index => SetMoveType((int)index);
-        moveRow.AddChild(moveType);
+        moveType = InspectorUi.Choice(MoveTypes, 0, index => SetMoveType((int)index), moveRow,
+            "How the creature travels to this point.", expand: true, fitToLongest: false);
         facing = Field("Facing (°)", "Direction to face while waiting; empty for none. The server only applies it to points with a delay.", text =>
         {
             if (text.Length == 0)
