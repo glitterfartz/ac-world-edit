@@ -51,26 +51,7 @@ public partial class ViewerShell
         dialog.CloseRequested += cancel.Cancel;
         AddChild(dialog);
         dialog.PopupCentered();
-        // Progress callbacks arrive on pool threads; touch the UI only through deferred calls.
-        long shownMegabytes = -1;
-        var progress = new Progress<(long Read, long Total)>(p =>
-        {
-            // The label shows whole megabytes, so reads inside the same one need no deferred call.
-            long megabytes = p.Read / 1048576;
-            if (Interlocked.Exchange(ref shownMegabytes, megabytes) == megabytes)
-            {
-                return;
-            }
-
-            Callable.From(() =>
-            {
-                if (IsInstanceValid(bar))
-                {
-                    bar.Value = p.Total > 0 ? (double)p.Read / p.Total : 0;
-                    label.Text = p.Total > 0 ? $"{megabytes} / {p.Total / 1048576} MB" : $"{megabytes} MB";
-                }
-            }).CallDeferred();
-        });
+        var progress = ListfileProgress(bar, label);
         string destination = UserSettings.ListfilePath();
         string? error = null;
         try
@@ -99,5 +80,31 @@ public partial class ViewerShell
         {
             await LoadClient();
         }
+    }
+
+    /// <summary>
+    /// Progress reports arrive on pool threads; touch the UI only through deferred calls, and only
+    /// when the whole-megabyte label changes.
+    /// </summary>
+    static IProgress<(long Read, long Total)> ListfileProgress(ProgressBar bar, Label label)
+    {
+        long shownMegabytes = -1;
+        return new Progress<(long Read, long Total)>(p =>
+        {
+            long megabytes = p.Read / 1048576;
+            if (Interlocked.Exchange(ref shownMegabytes, megabytes) == megabytes)
+            {
+                return;
+            }
+
+            Callable.From(() =>
+            {
+                if (IsInstanceValid(bar))
+                {
+                    bar.Value = p.Total > 0 ? (double)p.Read / p.Total : 0;
+                    label.Text = p.Total > 0 ? $"{megabytes} / {p.Total / 1048576} MB" : $"{megabytes} MB";
+                }
+            }).CallDeferred();
+        });
     }
 }

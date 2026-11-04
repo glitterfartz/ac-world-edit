@@ -1,6 +1,3 @@
 {
-  "allowed": [
-    "Scripts/Viewer/Session/ClientServices.cs::ClientServices",
-    "Scripts/Viewer/Session/ViewerShell.Listfile.cs::UpdateListfile"
-  ]
+  "allowed": []
 }
