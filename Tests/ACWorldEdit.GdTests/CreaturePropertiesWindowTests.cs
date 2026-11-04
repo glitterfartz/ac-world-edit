@@ -1,4 +1,6 @@
 using ACWorldEdit;
+using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 using Godot;
 using GdUnit4;
 using static GdUnit4.Assertions;
@@ -13,12 +15,13 @@ namespace ACWorldEdit.GdTests;
 [RequireGodotRuntime]
 public class CreaturePropertiesWindowTests
 {
-    static CreaturePropertiesWindow Spawn()
+    static CreaturePropertiesWindow Spawn(WorldDialect dialect = WorldDialect.AzerothCore)
     {
         string path = Path.Combine(Path.GetTempPath(), "acwe-gdtest-" + Guid.NewGuid().ToString("N") + ".json");
         var window = new CreaturePropertiesWindow
         {
-            Drafts = new Foundation.ContentDrafts(path)
+            Drafts = new Foundation.ContentDrafts(path),
+            Connection = () => WorldConnection.DefaultFor(dialect)
         };
         ((SceneTree)Engine.GetMainLoop()).Root.AddChild(window);
         AutoFree(window);
@@ -26,15 +29,34 @@ public class CreaturePropertiesWindowTests
     }
 
     [TestCase]
-    public void PickerListsEverySectionInRegistryOrder()
+    public void PickerListsEachDialectsSectionsInRegistryOrder()
     {
-        var window = Spawn();
+        AssertSections(WorldDialect.AzerothCore,
+            "behavior,stats,gossip,quests,speech,template,trainer,vendor,appearance",
+            typeof(TcStatsSection),
+            typeof(AcStatsSection), typeof(AcGossipSection), typeof(AcTemplateSection), typeof(AcTrainerSection), typeof(AcVendorSection));
+        AssertSections(WorldDialect.TrinityCore,
+            "behavior,quests,speech,stats,gossip,template,trainer,vendor,appearance",
+            typeof(AcStatsSection),
+            typeof(TcStatsSection), typeof(TcGossipSection), typeof(TcTemplateSection), typeof(TcTrainerSection), typeof(TcVendorSection));
+    }
+
+    static void AssertSections(WorldDialect dialect, string expected, Type absent, params Type[] pages)
+    {
+        var window = Spawn(dialect);
         var picker = (ItemList)window.FindChild("SectionPicker", true, false)!;
-        // Every registered section exists; the picker lists the ones of the open database's dialect (AzerothCore here).
+        // Every registered section exists; the picker lists the ones of the open database's dialect.
         AssertThat(window.Sections.Count).IsEqual(CreatureSectionRegistry.Factories.Count);
-        var listed = window.Sections.Where(s => s.Supports(window.Context.Dialect)).ToArray();
+        var listed = window.Sections.Where(s => s.Supports(dialect)).ToArray();
         AssertThat(picker.ItemCount).IsEqual(listed.Length);
-        AssertThat(listed.Select(s => s.Id).ToArray()).IsEqual(new[] { "behavior", "stats", "gossip", "quests", "speech", "template", "trainer", "vendor" });
+        AssertThat(string.Join(",", listed.Select(s => s.Id))).IsEqual(expected);
+        AssertThat(listed.Length).IsEqual(expected.Split(',').Length);
+        foreach (var page in pages)
+        {
+            AssertThat(listed.Any(s => s.GetType() == page)).IsTrue();
+        }
+
+        AssertThat(listed.Any(s => s.GetType() == absent)).IsFalse();
         AssertThat(window.ActiveSection).IsEqual(CreaturePropertiesWindow.DefaultSectionId);
     }
 
