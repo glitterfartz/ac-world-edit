@@ -55,7 +55,7 @@ Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehavio
 
 ### `Tests/ACWorldEdit.GdTests` (gdUnit4)
 
-Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, creature properties and user settings. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
+Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, creature properties, user settings and the UI framework (`UiForm`, `MenuSheet`, dialogs, window headers and the inspector card parts). `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
 
 ### Golden regression captures (`Tests/golden`)
 
