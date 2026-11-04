@@ -43,8 +43,12 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 | File | Concern |
 |---|---|
 | `Viewer/ViewerShell.cs` | Core coordinator: `_Ready`, `LoadClient`, `OpenMap`, streaming state, `Prepare`, camera movement, input, `_Process` |
-| `Viewer/Hud/ViewerShell.Ui.cs` | `BuildUi`: menus, toolbar, left navigation, bottom telemetry bar, editor window wiring, client and connection prompts |
-| `Viewer/Hud/ViewerShell.MenuBar.cs` | The command strip at the top: the File/Edit/View/Help menu bar and its commands |
+| `Viewer/Hud/ViewerShell.Layout.cs` | `BuildUi`: the canvas, the shared theme, the strip/body split, and the one place the region builders are called |
+| `Viewer/Hud/LeftPanel.cs` | The left navigation panel: world settings, teleports, day-night scrubber, status line, zone labels and minimap, then the Scene explorer |
+| `Viewer/Hud/EditorsWiring.cs` | Editor windows and the content browser, plus every signal that ties them to the overlays; selection precedence and tool modes |
+| `Viewer/Hud/ViewerShell.Toolbar.cs` | The tool strip's mode buttons and edit actions |
+| `Viewer/Hud/ViewerShell.ClientPrompts.cs` | Client profile choice, draft-profile switch, startup checks, connection prompt and info box |
+| `Viewer/Hud/ViewerShell.MenuBar.cs` | The command strip at the top: the File/Edit/View/Help menu bar loaded from its sheet |
 | `Viewer/Export/ViewerShell.Export.cs` | Pending changes, SQL export, polling every 0.4 s, discard and export actions; File → Clear cache… (saved edits, exported record and the model thumbnails of both profiles) and File → Reset configs and delete cache… (`BeginReset`: starts the cleanup helper, then quits) |
 | `Viewer/Interaction/ViewerShell.Ground.cs` | `GroundAt`: combines terrain height and WMO floors for snapping |
 | `Viewer/Interaction/ViewerShell.Placement.cs` | Placing a new spawn from a template with the mouse (the viewer side of `PlacementTool`) |
