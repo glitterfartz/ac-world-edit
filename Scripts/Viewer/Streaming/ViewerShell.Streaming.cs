@@ -27,23 +27,12 @@ public partial class ViewerShell
     void UpdateWantedTiles(TileKey center)
     {
         wanted.Clear();
-        for (int y = -radius; y <= radius; y++)
-        {
-            for (int x = -radius; x <= radius; x++)
-            {
-                var key = new TileKey(center.X + x, center.Y + y);
-                if (world!.Tiles.Contains(key))
-                {
-                    wanted.Add(key);
-                }
-            }
-        }
+        wanted.UnionWith(TileWindow.Wanted(world!.Tiles, center, radius));
 
         // Release with one extra ring of hysteresis beyond the load radius: turning or wobbling
         // right at the boundary must not repeatedly tear down and reload the same tile, which is
         // what made streamed terrain/scenery appear to flicker in and out while flying.
-        bool KeepLoaded(TileKey key) => Math.Abs(key.X - center.X) <= radius + 1 && Math.Abs(key.Y - center.Y) <= radius + 1;
-        foreach (var key in loaded.Keys.Where(k => !KeepLoaded(k)).ToArray())
+        foreach (var key in loaded.Keys.Where(k => !TileWindow.KeepLoaded(k, center, radius)).ToArray())
         {
             renderer.Release(loaded[key]);
             loaded.Remove(key);
@@ -52,7 +41,7 @@ public partial class ViewerShell
             objects.RemoveTile(key);
         }
 
-        if (building != null && !KeepLoaded(building.Tile.Key))
+        if (building != null && !TileWindow.KeepLoaded(building.Tile.Key, center, radius))
         {
             if (buildingNode != null)
             {
@@ -381,19 +370,7 @@ public partial class ViewerShell
 
     void ScheduleNextTile(IClientFiles activeAssets, WorldMap activeWorld)
     {
-        var center = CameraTile();
-        TileKey? next = null;
-        int nearest = int.MaxValue;
-        foreach (var k in wanted)
-        {
-            int distance = (k.X - center.X) * (k.X - center.X) + (k.Y - center.Y) * (k.Y - center.Y);
-            if (distance < nearest && !loaded.ContainsKey(k) && !failed.Contains(k))
-            {
-                nearest = distance;
-                next = k;
-            }
-        }
-
+        var next = TileWindow.NextMissing(wanted, loaded.ContainsKey, failed.Contains, CameraTile());
         if (next.HasValue)
         {
             var key = next.Value;

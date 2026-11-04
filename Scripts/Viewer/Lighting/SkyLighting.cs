@@ -236,13 +236,8 @@ public sealed partial class SkyLighting : Node3D
         }
 
         ActiveLights = light.ActiveLights;
-        var backgroundProfile = light.Background;
-        var foregroundProfile = light.ForegroundProfile;
-        float bestWeight = light.Weight;
-        double tick = light.Tick;
         var diffuse = new Color(light.Diffuse.R, light.Diffuse.G, light.Diffuse.B);
         var ambient = new Color(light.Ambient.R, light.Ambient.G, light.Ambient.B);
-        var fog = new Color(light.Fog.R, light.Fog.G, light.Fog.B);
         // The client lights everything along one direction (DayNight::SetDirection) with the diffuse and ambient bands at
         // full strength; it has no exposure curve, so the light's energy stays 1 (the tonemapper is linear).
         var sunDirection = new Vector3(light.SunDirection.X, light.SunDirection.Y, light.SunDirection.Z);
@@ -256,25 +251,16 @@ public sealed partial class SkyLighting : Node3D
         {
             SkyMaterial = skyMaterial
         };
-        ApplySky(backgroundProfile, foregroundProfile, bestWeight, tick, camera);
+        var detail = LightingBlend.Describe(light, Retail, ViewDistance);
+        PublishSky(detail.Sky);
+        PublishClouds(detail.Clouds, camera);
+        PublishCelestials(detail, camera);
         UpdateFogVolumes(camera);
-        // The client's fog (DayNight::UpdateFog): it ramps from end * startMul to end, with the end capped at the
-        // view distance. The shaders apply it (client_lighting.gdshaderinc), so Godot's own fog stays off.
-        var backgroundFog = backgroundProfile.FogAt(tick);
-        var foregroundFog = foregroundProfile?.FogAt(tick);
-        (float End, float StartMul)? curve = backgroundFog is { } b && foregroundFog is { } f && bestWeight > 0
-            ? (Mathf.Lerp(b.End, f.End, bestWeight), Mathf.Lerp(b.StartMul, f.StartMul, bestWeight))
-            : backgroundFog ?? foregroundFog;
-        // A retail light with no fog distance (the newer lights, FogEnd 0) scales its density over a fixed span:
-        // their FogDensity runs 4 to 25, which over the view distance would leave a few hundred yards of sight, while
-        // their EndFogColorDistance of 1000 to 2400 yards only means something if the fog is still thin out there.
-        float fogEnd = curve == null && Retail ? ModernFogSpan : Math.Min(ViewDistance, curve?.End ?? ViewDistance);
-        // A retail light with no fog distance (the newer lights) starts its fog at the eye.
-        float fogStart = fogEnd * (curve?.StartMul ?? (Retail ? 0f : DefaultFogStartMultiplier));
+        // The client's fog (DayNight::UpdateFog): the shaders apply it, so Godot's own fog stays off.
         environment.Environment.FogEnabled = false;
-        SetClientFog(fogStart, fogEnd, fog, RetailFogTerms(backgroundProfile, foregroundProfile, bestWeight, tick));
-        ApplyWater(backgroundProfile, foregroundProfile, bestWeight, tick);
-        ApplySunUniforms(diffuse, ambient, backgroundProfile, foregroundProfile, bestWeight, tick);
+        SetClientFog(detail.Fog);
+        PublishWater(detail.Water);
+        PublishSunUniforms(diffuse, ambient, detail.SunSpecular);
         SetSkybox(table.SkyboxPath(table.Profile(light.ActiveParamsId)?.SkyboxId ?? 0));
         skyboxAnchor.Position = camera.Position;
         ApplyFlat();
@@ -293,12 +279,6 @@ public sealed partial class SkyLighting : Node3D
     public float ViewDistance { get; set; } = ClassicViewDistance;
     const float ClassicViewDistance = 777;
     const float RetailViewDistance = 2500;
-    // The yards a newer retail light's FogDensity is spread over (an estimate; the client's own code is not readable here).
-    const float ModernFogSpan = 10000;
-    /// <summary>
-    /// Fog start as a fraction of its end when a light has no fog data (DayNight DEFAULT_FOG_SCALER).
-    /// </summary>
-    const float DefaultFogStartMultiplier = 0.5f;
     Vector4 clientFog = new(0, 1, 1, 0);
     /// <summary>The fog values the shaders last received: start, end, density and mode.</summary>
     public Vector4 ClientFogValues => clientFog;

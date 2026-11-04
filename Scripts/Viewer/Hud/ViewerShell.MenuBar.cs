@@ -1,6 +1,4 @@
 using Godot;
-using ACWorldEdit.Assets;
-using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -100,7 +98,7 @@ public partial class ViewerShell
                     .ToArray())
             ]),
             ("Help", [
-                new MenuCommand("Controls…", () => ShowInfo("Controls", ControlsText)),
+                new MenuCommand("Controls…", () => ShowInfo("Controls", ViewerControlsText.Text)),
                 new MenuCommand("About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore. Clients: Wrath 3.3.5a (with the world database) and Retail (viewing only, no database yet).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."))
             ])));
     }
@@ -121,21 +119,4 @@ public partial class ViewerShell
         }
     }
 
-    const string ControlsText = """
-        Camera
-          Right mouse (hold)    look / fly
-          W A S D               move;  Q / E  down / up
-          Shift                 faster;  Wheel  flight speed
-          Esc                   release mouse
-
-        Editing (selected creature)
-          Q / W / E             Select / Move / Rotate tool
-          Drag colored axis     move along that axis
-          Drag yellow ring      rotate heading (hold Ctrl for 15° steps)
-          End                   drop to ground
-          Ctrl+Z / Ctrl+Y       undo / redo (also Ctrl+Shift+Z)
-          F                     fly to selection
-          Right-click (no drag) a creature to see its gossip, quests, vendor and trainer
-          Esc during a drag     cancel
-        """;
 }

@@ -3,7 +3,10 @@ using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
 
-/// <summary>Sky, celestial bodies, glare, shafts and stars.</summary>
+/// <summary>
+/// Publication half of the lighting rig: turn one pure <see cref="LightingDetail"/> into Godot Color
+/// and Vector values and push them to the dome, cloud, water and celestial shaders. No blending here.
+/// </summary>
 public sealed partial class SkyLighting
 {
     /// <summary>
@@ -51,43 +54,6 @@ public sealed partial class SkyLighting
         material.SetShaderParameter("cloud_density", cloudDensity);
     }
 
-
-    /// <summary>
-    /// Sun shafts: the light's LightShaft color, intensity and radius blended like the other bands, scaled by how high
-    /// the sun is. Lights without shafts (most of them) leave the quad off.
-    /// </summary>
-    void UpdateShafts(LightProfile background, LightProfile? foreground, float weight, double tick, float dayFraction)
-    {
-        float Intensity(LightProfile p) => p.Shafts?.Intensity.At(tick) ?? 0f;
-        float intensity = Intensity(background);
-        if (foreground != null && weight > 0)
-        {
-            intensity = Mathf.Lerp(intensity, Intensity(foreground), weight);
-        }
-
-        var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
-        float amount = intensity * SkyDome.ShaftSunVisibility(sz);
-        shaftQuad.Visible = amount > 0.001f;
-        if (!shaftQuad.Visible)
-        {
-            return;
-        }
-
-        float Radius(LightProfile p) => p.Shafts?.Radius.At(tick) ?? 0f;
-        float radius = Radius(background);
-        var color = background.Shafts?.Color.At(tick) ?? Colors.White;
-        if (foreground != null && weight > 0)
-        {
-            radius = Mathf.Lerp(radius, Radius(foreground), weight);
-            color = color.Lerp(foreground.Shafts?.Color.At(tick) ?? color, weight);
-        }
-
-        shaftMaterial.SetShaderParameter("shaft_color", new Vector3(color.R, color.G, color.B));
-        shaftMaterial.SetShaderParameter("shaft_amount", amount);
-        shaftMaterial.SetShaderParameter("shaft_reach", SkyDome.ShaftReach(radius));
-        shaftMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx).Normalized());
-    }
-
     /// <summary>
     /// Give the sky the client's star model (Environments/Stars/stars.m2); null removes it. It is drawn like a
     /// LightSkybox model and fades with the day (<see cref="SkyDome.StarFade"/>).
@@ -103,12 +69,10 @@ public sealed partial class SkyLighting
         appliedStarFade = -1;
     }
 
-    // Follow the camera, and fade the stars by the day. The model's batches are plain geometry instances, so the
-    // fade is the instance transparency, applied only when it changes.
-    void ApplyStars(float dayFraction, Camera3D camera)
+    /// <summary>Follow the camera, and fade the stars by the day.</summary>
+    void ApplyStars(float fade, Camera3D camera)
     {
         starsAnchor.Position = camera.Position;
-        float fade = SkyDome.StarFade(dayFraction);
         bool show = starsInstance != null && GodotObject.IsInstanceValid(starsInstance) && skyboxPath == null && fade > 0.01f;
         starsAnchor.Visible = show;
         if (!show || starsInstance!.ModelReady == false || Math.Abs(fade - appliedStarFade) < 0.004f)
@@ -123,186 +87,102 @@ public sealed partial class SkyLighting
         }
     }
 
-    /// <summary>
-    /// Publish the six sky colors, the sunrise/sunset highlight, the camera heading and the sun's place for
-    /// the dome shader (Shaders/sky.gdshader), blending the two profiles as the other bands are blended.
-    /// </summary>
-    void ApplySky(LightProfile background, LightProfile? foreground, float weight, double tick, Camera3D camera)
-    {
-        ApplySkyBands(background, foreground, weight, tick);
-        float density = ApplyClouds(background, foreground, weight, tick, camera);
-        ApplyCelestials(background, foreground, weight, tick, camera, density);
-    }
+    static Vector3 Vec(RgbBand band) => new(band.R, band.G, band.B);
 
-    /// <summary>The six dome bands, blended as the other colors are.</summary>
-    void ApplySkyBands(LightProfile background, LightProfile? foreground, float weight, double tick)
+    /// <summary>Publish the six dome bands, the sun glow, the highlight and the celestial switch.</summary>
+    void PublishSky(SkyDetail sky)
     {
-        // Profiles without the in-between bands blend the zenith into the horizon.
-        var top = BlendColor(background, foreground, weight, tick, p => p.SkyTop);
-        var horizon = BlendColor(background, foreground, weight, tick, p => p.SkyHorizon);
-        skyTopColor = new(top.X, top.Y, top.Z);
+        var zenith = Vec(sky.Zenith);
+        var horizon = Vec(sky.Smog);
+        skyTopColor = new(zenith.X, zenith.Y, zenith.Z);
         skyHorizonColor = new(horizon.X, horizon.Y, horizon.Z);
-        skyMaterial.SetShaderParameter("sky_zenith", top);
-        skyMaterial.SetShaderParameter("sky_middle", BlendColor(background, foreground, weight, tick, p => p.Sky?.Middle ?? p.SkyTop));
-        skyMaterial.SetShaderParameter("sky_band1", BlendColor(background, foreground, weight, tick, p => p.Sky?.Band1 ?? p.SkyHorizon));
-        skyMaterial.SetShaderParameter("sky_band2", BlendColor(background, foreground, weight, tick, p => p.Sky?.Band2 ?? p.SkyHorizon));
+        skyMaterial.SetShaderParameter("sky_zenith", zenith);
+        skyMaterial.SetShaderParameter("sky_middle", Vec(sky.Middle));
+        skyMaterial.SetShaderParameter("sky_band1", Vec(sky.Band1));
+        skyMaterial.SetShaderParameter("sky_band2", Vec(sky.Band2));
         skyMaterial.SetShaderParameter("sky_smog", horizon);
-        skyMaterial.SetShaderParameter("sky_fog", BlendColor(background, foreground, weight, tick, p => p.Fog));
-        skyMaterial.SetShaderParameter("sun_glow_color", BlendColor(background, foreground, weight, tick, p => p.SunColor ?? p.Diffuse));
+        skyMaterial.SetShaderParameter("sky_fog", Vec(sky.Fog));
+        skyMaterial.SetShaderParameter("sun_glow_color", Vec(sky.SunGlow));
         // A LightSkybox model brings its own sun, moons and clouds, and the client then draws none of ours.
         skyMaterial.SetShaderParameter("celestial_enabled", skyboxPath == null);
     }
 
-    /// <summary>The cloud dome's colors, density and follow position; returns the blended density.</summary>
-    float ApplyClouds(LightProfile background, LightProfile? foreground, float weight, double tick, Camera3D camera)
+    /// <summary>Publish the cloud dome's colors, density, follow position and the planet that lights it.</summary>
+    void PublishClouds(CloudDetail clouds, Camera3D camera)
     {
-        float Density(LightProfile p) => p.Clouds?.Density.At(tick) ?? 0f;
-        float density = Density(background);
-        if (foreground != null && weight > 0)
-        {
-            density = Mathf.Lerp(density, Density(foreground), weight);
-        }
-
-        cloudMaterial.SetShaderParameter("cloud_density", density);
-        cloudMaterial.SetShaderParameter("cloud_sun_color", BlendColor(background, foreground, weight, tick, p => p.Clouds?.Sun ?? p.Diffuse));
-        cloudMaterial.SetShaderParameter("cloud_shade_color", BlendColor(background, foreground, weight, tick, p => p.Clouds?.Shade ?? p.Ambient));
-        cloudMaterial.SetShaderParameter("cloud_base_color", BlendColor(background, foreground, weight, tick, p => p.Clouds?.Base ?? p.Ambient));
-        cloudDome.Visible = skyboxPath == null && density > 0f;
+        cloudMaterial.SetShaderParameter("cloud_density", clouds.Density);
+        cloudMaterial.SetShaderParameter("cloud_sun_color", Vec(clouds.Sun));
+        cloudMaterial.SetShaderParameter("cloud_shade_color", Vec(clouds.Shade));
+        cloudMaterial.SetShaderParameter("cloud_base_color", Vec(clouds.Base));
+        cloudMaterial.SetShaderParameter("cloud_light_direction", new Vector3(-clouds.LightY, clouds.LightZ, -clouds.LightX));
+        cloudDome.Visible = skyboxPath == null && clouds.Density > 0f;
         cloudDome.Position = camera.Position;
-        return density;
     }
 
     /// <summary>Highlight, sun/moon discs, glare, shafts, stars and the camera yaw.</summary>
-    void ApplyCelestials(LightProfile background, LightProfile? foreground, float weight, double tick, Camera3D camera, float density)
+    void PublishCelestials(LightingDetail detail, Camera3D camera)
     {
-        float flag = (background.Sky?.Highlight ?? false ? 1f : 0f);
-        if (foreground != null && weight > 0)
-        {
-            flag = Mathf.Lerp(flag, foreground.Sky?.Highlight ?? false ? 1f : 0f, weight);
-        }
-
-        float dayFraction = (float)(TimeOfDayHours / 24.0);
-        skyMaterial.SetShaderParameter("highlight", SkyDome.Highlight(dayFraction) * flag);
+        var celestial = detail.Celestials;
+        skyMaterial.SetShaderParameter("highlight", detail.Sky.Highlight);
         // The dome's axes are the client's: view X = -y, view Y = z, view Z = -x.
-        var (sx, sy, sz) = SkyDome.SunDirection(dayFraction);
-        skyMaterial.SetShaderParameter("sun_direction", new Vector3(-sy, sz, -sx));
-        ClientShaderGlobals.Set(ClientShaderGlobals.SunDisc, new Vector3(-sy, sz, -sx).Normalized());
+        var sun = new Vector3(-celestial.SunY, celestial.SunZ, -celestial.SunX);
+        skyMaterial.SetShaderParameter("sun_direction", sun);
+        ClientShaderGlobals.Set(ClientShaderGlobals.SunDisc, sun.Normalized());
         // Quads whose texture the client does not have stay off (width 0).
-        void Disc(string name, SkyDome.Planet planet, bool present)
+        void Disc(string name, float x, float y, float z, float scale, bool present)
         {
-            var (px, py, pz) = planet.Direction;
-            skyMaterial.SetShaderParameter(name, new Vector4(-py, pz, -px, present ? planet.Scale : 0f));
+            skyMaterial.SetShaderParameter(name, new Vector4(-y, z, -x, present ? scale : 0f));
         }
 
-        // The clouds are lit by the moon at night (before about 04:50 and after about 22:10) and by the sun otherwise.
-        var lightPlanet = dayFraction < 0.2013889f || dayFraction > 0.9236111f ? SkyDome.Moon(dayFraction) : SkyDome.Sun(dayFraction);
-        var (lx, ly, lz) = lightPlanet.Direction;
-        cloudMaterial.SetShaderParameter("cloud_light_direction", new Vector3(-ly, lz, -lx));
-        Disc("sun_disc", SkyDome.Sun(dayFraction), hasSunTexture);
-        Disc("moon_disc", SkyDome.Moon(dayFraction), hasMoonTexture);
-        Disc("moon2_disc", SkyDome.SecondMoon(dayFraction), hasMoon2Texture);
+        Disc("sun_disc", celestial.SunX, celestial.SunY, celestial.SunZ, SkyDome.Sun(detail.DayFraction).Scale, hasSunTexture);
+        Disc("moon_disc", celestial.MoonX, celestial.MoonY, celestial.MoonZ, SkyDome.Moon(detail.DayFraction).Scale, hasMoonTexture);
+        Disc("moon2_disc", celestial.Moon2X, celestial.Moon2Y, celestial.Moon2Z, SkyDome.SecondMoon(detail.DayFraction).Scale, hasMoon2Texture);
         var forward = -camera.GlobalTransform.Basis.Z;
-        var sunPlanet = SkyDome.Sun(dayFraction);
-        var moonPlanet = SkyDome.Moon(dayFraction);
-        var glow = BlendColor(background, foreground, weight, tick, p => p.SunColor ?? p.Diffuse);
-        UpdateGlare(0, camera, forward, new Vector3(-sunPlanet.Direction.Y, sunPlanet.Direction.Z, -sunPlanet.Direction.X), sunPlanet.Scale, hasSunGlare, density, glow, dayFraction);
-        UpdateGlare(1, camera, forward, new Vector3(-moonPlanet.Direction.Y, moonPlanet.Direction.Z, -moonPlanet.Direction.X), moonPlanet.Scale, hasMoonGlare, density, glow, dayFraction);
-        UpdateShafts(background, foreground, weight, tick, dayFraction);
-        ApplyStars(dayFraction, camera);
+        var sunPlanet = SkyDome.Sun(detail.DayFraction);
+        var moonPlanet = SkyDome.Moon(detail.DayFraction);
+        var glow = Vec(detail.Sky.SunGlow);
+        UpdateGlare(0, camera, forward, new Vector3(-sunPlanet.Direction.Y, sunPlanet.Direction.Z, -sunPlanet.Direction.X), sunPlanet.Scale, hasSunGlare, detail.Clouds.Density, glow, detail.DayFraction);
+        UpdateGlare(1, camera, forward, new Vector3(-moonPlanet.Direction.Y, moonPlanet.Direction.Z, -moonPlanet.Direction.X), moonPlanet.Scale, hasMoonGlare, detail.Clouds.Density, glow, detail.DayFraction);
+        PublishShafts(detail.Shafts, celestial);
+        ApplyStars(detail.StarsFade, camera);
         skyMaterial.SetShaderParameter("camera_yaw", Mathf.Atan2(-forward.X, -forward.Z));
     }
 
-    /// <summary>Blend one band of two profiles as a Godot vector.</summary>
-    static Vector3 BlendColor(LightProfile background, LightProfile? foreground, float weight, double tick, Func<LightProfile, LightBand> pick)
+    /// <summary>Shaft colour, amount and reach, with the sun direction the shader marches toward.</summary>
+    void PublishShafts(ShaftDetail shafts, CelestialDetail celestial)
     {
-        var (r, g, b) = pick(background).Rgb(tick);
-        if (foreground != null && weight > 0)
-        {
-            var (fr, fg, fb) = pick(foreground).Rgb(tick);
-            return new Vector3(r + (fr - r) * weight, g + (fg - g) * weight, b + (fb - b) * weight);
-        }
-
-        return new Vector3(r, g, b);
-    }
-
-    /// <summary>
-    /// Blend the profile's four water gradient ends the same way the other bands are blended and
-    /// publish them for the liquid shader. Profiles without water bands keep the previous values.
-    /// </summary>
-    void ApplyWater(LightProfile background, LightProfile? foreground, float weight, double tick)
-    {
-        if (background.Water is not { } bw || background.WaterAlpha is not { } ba)
+        shaftQuad.Visible = shafts.Visible;
+        if (!shafts.Visible)
         {
             return;
         }
 
-        Vector4 Gradient(Func<WaterColors, LightBand> band, Func<WaterAlphas, float> alpha)
-        {
-            var color = band(bw).At(tick);
-            float a = alpha(ba);
-            if (foreground is { Water: { } fw, WaterAlpha: { } fa } && weight > 0)
-            {
-                color = color.Lerp(band(fw).At(tick), weight);
-                a = Mathf.Lerp(a, alpha(fa), weight);
-            }
-
-            return new(color.R, color.G, color.B, a);
-        }
-
-        ClientShaderGlobals.Set(ClientShaderGlobals.OceanShallow, Gradient(w => w.OceanShallow, a => a.OceanShallow));
-        ClientShaderGlobals.Set(ClientShaderGlobals.OceanDeep, Gradient(w => w.OceanDeep, a => a.OceanDeep));
-        ClientShaderGlobals.Set(ClientShaderGlobals.RiverShallow, Gradient(w => w.RiverShallow, a => a.RiverShallow));
-        ClientShaderGlobals.Set(ClientShaderGlobals.RiverDeep, Gradient(w => w.RiverDeep, a => a.RiverDeep));
+        shaftMaterial.SetShaderParameter("shaft_color", Vec(shafts.Color));
+        shaftMaterial.SetShaderParameter("shaft_amount", shafts.Amount);
+        shaftMaterial.SetShaderParameter("shaft_reach", shafts.Reach);
+        shaftMaterial.SetShaderParameter("sun_direction", new Vector3(-celestial.SunY, celestial.SunZ, -celestial.SunX).Normalized());
     }
 
-    /// <summary>
-    /// Publish the map sun for shaders that light themselves the client's way (water): the direction
-    /// the light travels, its ambient and diffuse colors and the specular color (the sun band).
-    /// </summary>
-    void ApplySunUniforms(Color diffuse, Color ambient, LightProfile background, LightProfile? foreground, float weight, double tick)
+    /// <summary>Publish the four water gradient ends.</summary>
+    static void PublishWater(WaterDetail water)
     {
-        var specular = background.SunColor?.At(tick) ?? Colors.White;
-        if (foreground?.SunColor is { } sunBand && weight > 0)
-        {
-            specular = specular.Lerp(sunBand.At(tick), weight);
-        }
+        Vector4 Band(WaterBand band) => new(band.Color.R, band.Color.G, band.Color.B, band.Alpha);
+        ClientShaderGlobals.Set(ClientShaderGlobals.OceanShallow, Band(water.OceanShallow));
+        ClientShaderGlobals.Set(ClientShaderGlobals.OceanDeep, Band(water.OceanDeep));
+        ClientShaderGlobals.Set(ClientShaderGlobals.RiverShallow, Band(water.RiverShallow));
+        ClientShaderGlobals.Set(ClientShaderGlobals.RiverDeep, Band(water.RiverDeep));
+    }
 
+    /// <summary>Publish the map sun for shaders that light themselves the client's way (water).</summary>
+    void PublishSunUniforms(Color diffuse, Color ambient, RgbBand specular)
+    {
         ClientShaderGlobals.Set(ClientShaderGlobals.SunDirection, (-sun.GlobalTransform.Basis.Z).Normalized());
         ClientShaderGlobals.Set(ClientShaderGlobals.SunAmbient, new Vector3(ambient.R, ambient.G, ambient.B));
         ClientShaderGlobals.Set(ClientShaderGlobals.SunDiffuse, new Vector3(diffuse.R, diffuse.G, diffuse.B));
         ClientShaderGlobals.Set(ClientShaderGlobals.SunSpecular, new Vector3(specular.R, specular.G, specular.B));
     }
 
-    /// <summary>
-    /// Diagnostic override: a solid background color replacing the procedural sky, so the skybox
-    /// smoke can tell opaque world pixels (unchanged by the background) from sky and translucent
-    /// surfaces. Null restores normal behavior on the next update.
-    /// </summary>
-    public Color? DiagnosticBackground { get; set; }
-
-    void ApplyDiagnosticBackground()
-    {
-        if (DiagnosticBackground is Color color)
-        {
-            // Fog covers the background in the Compatibility renderer even with sky affect 0, so it
-            // is off for diagnostic frames; the next normal update re-enables it.
-            environment.Environment.FogEnabled = false;
-            environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
-            environment.Environment.BackgroundColor = color;
-        }
-    }
-
-    /// <summary>
-    /// Eye distance the skybox shader projects sky vertices to. Must stay inside the camera far
-    /// plane (ViewerShell uses 8000) and beyond all streamed world geometry (about 2 km at the
-    /// largest tile radius).
-    /// </summary>
-    public const float ShellDistance = 7500;
-
-    /// <summary>
-    /// Swap the attached LightSkybox model when the resolved path changes. Reuses ModelLibrary's
-    /// shared decode/upload pipeline rather than a bespoke loader.
-    /// </summary>
+    /// <summary>Swap the attached LightSkybox model when the resolved path changes.</summary>
     void SetSkybox(string? path)
     {
         if (path == skyboxPath)

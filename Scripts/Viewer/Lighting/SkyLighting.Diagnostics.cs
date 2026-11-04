@@ -78,4 +78,30 @@ public sealed partial class SkyLighting
             }
         }
     }
+
+    /// <summary>
+    /// Diagnostic override: a solid background color replacing the procedural sky, so the skybox
+    /// smoke can tell opaque world pixels (unchanged by the background) from sky and translucent
+    /// surfaces. Null restores normal behavior on the next update.
+    /// </summary>
+    public Color? DiagnosticBackground { get; set; }
+
+    void ApplyDiagnosticBackground()
+    {
+        if (DiagnosticBackground is Color color)
+        {
+            // Fog covers the background in the Compatibility renderer even with sky affect 0, so it
+            // is off for diagnostic frames; the next normal update re-enables it.
+            environment.Environment.FogEnabled = false;
+            environment.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
+            environment.Environment.BackgroundColor = color;
+        }
+    }
+
+    /// <summary>
+    /// Eye distance the skybox shader projects sky vertices to. Must stay inside the camera far
+    /// plane (ViewerShell uses 8000) and beyond all streamed world geometry (about 2 km at the
+    /// largest tile radius).
+    /// </summary>
+    public const float ShellDistance = 7500;
 }

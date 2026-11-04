@@ -5,6 +5,7 @@ namespace ACWorldEdit.Assets;
 /// and sun direction the renderer should publish. Plain floats; the Godot view converts them.
 /// </summary>
 public readonly record struct LightingSample(
+    double Hours,
     double Tick,
     LightProfile Background,
     LightRegion? Foreground,
@@ -85,7 +86,7 @@ public static class LightingSampler
         var (lx, ly, lz) = SkyDome.LightDirection((float)(request.Hours / 24.0));
         var sun = Normalize(-ly, lz, -lx);
         uint activeParamsId = best != null && bestWeight >= 0.999f ? best.ParamsId : background!.ParamsId;
-        return new(tick, backgroundProfile, best, foregroundProfile, bestWeight, diffuse, ambient, fog, sun,
+        return new(request.Hours, tick, backgroundProfile, best, foregroundProfile, bestWeight, diffuse, ambient, fog, sun,
             background!.Id, background.ParamsId, activeParamsId, activeLights);
     }
 

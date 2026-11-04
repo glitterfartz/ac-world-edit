@@ -3,63 +3,27 @@ using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
 
-/// <summary>Fog: the client fog terms, retail extras and placed volumes.</summary>
+/// <summary>
+/// Fog publication and the retail placed fog volumes: the shader terms come from
+/// <see cref="FogDetail"/>, the volumes from the map's WDT.
+/// </summary>
 public sealed partial class SkyLighting
 {
-    /// <summary>
-    /// Retail's fog terms beyond the 3.3.5a ones, at one tick: density, the end-fog color and distance, and the
-    /// height layer.
-    /// </summary>
-    readonly record struct RetailFogValues(float Density, Color EndColor, float EndDistance, Vector4 Height, Vector4 Poly, Color HeightColor, Color HeightEndColor, Vector4 Sun)
+    void SetClientFog(FogDetail fog)
     {
-        public static RetailFogValues None { get; } = new(1, Colors.Black, 0, Vector4.Zero, Vector4.Zero, Colors.Black, Colors.Black, Vector4.Zero);
-    }
-
-    void SetClientFog(float start, float end, Color color, RetailFogValues terms)
-    {
-        clientFog = new(start, end, Retail ? terms.Density : 1, Retail ? 2 : 1);
+        var terms = fog.Retail;
+        clientFog = new(fog.Start, fog.End, Retail && terms.Present ? terms.Density : 1, Retail ? 2 : 1);
         ClientShaderGlobals.Set(ClientShaderGlobals.Fog, clientFog);
-        ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(color.R, color.G, color.B));
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogColor, new Vector3(fog.Color.R, fog.Color.G, fog.Color.B));
         ClientShaderGlobals.Set(ClientShaderGlobals.FogEnd, new Vector4(terms.EndColor.R, terms.EndColor.G, terms.EndColor.B, terms.EndDistance));
-        ClientShaderGlobals.Set(ClientShaderGlobals.FogHeight, terms.Height);
-        ClientFogHeightValues = terms.Height;
-        ClientShaderGlobals.Set(ClientShaderGlobals.FogPoly, terms.Poly);
+        var height = new Vector4(terms.Plane, terms.Scaler, terms.HeightDensity, terms.Layered);
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogHeight, height);
+        ClientFogHeightValues = height;
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogPoly, new Vector4(terms.PolyX, terms.PolyY, terms.PolyZ, terms.PolyW));
         ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightColor, new Vector4(terms.HeightColor.R, terms.HeightColor.G, terms.HeightColor.B, 0));
-        ClientShaderGlobals.Set(ClientShaderGlobals.FogSun, terms.Sun);
+        ClientShaderGlobals.Set(ClientShaderGlobals.FogSun, new Vector4(terms.SunR, terms.SunG, terms.SunB, terms.SunStrength));
         ClientShaderGlobals.Set(ClientShaderGlobals.FogHeightEndColor, new Vector4(terms.HeightEndColor.R, terms.HeightEndColor.G, terms.HeightEndColor.B, 0));
     }
-
-    /// <summary>
-    /// Retail's extra fog terms at a tick, blended like the other bands: the density (4.5 when a light has
-    /// none), the color the fog turns toward with distance and the height layer. The layer counts only when its
-    /// transition cubic is not all zero, as the client's shader treats the classic lights. Not used for 3.3.5a clients.
-    /// </summary>
-    RetailFogValues RetailFogTerms(LightProfile background, LightProfile? foreground, float weight, double tick)
-    {
-        if (!Retail || background.RetailFog is not { } bg)
-        {
-            return RetailFogValues.None;
-        }
-
-        var fg = foreground?.RetailFog is { } other && weight > 0 ? other : null;
-        float Mix(Func<RetailFog, float> pick) => fg == null ? pick(bg) : Mathf.Lerp(pick(bg), pick(fg), weight);
-        Color MixColor(Func<RetailFog, LightBand> pick)
-        {
-            var color = pick(bg).At(tick);
-            return fg == null ? color : color.Lerp(pick(fg).At(tick), weight);
-        }
-
-        float density = Mix(r => r.Density.At(tick));
-        var poly = new Vector4(Mix(r => r.Height.Coefficients[0].At(tick)), Mix(r => r.Height.Coefficients[1].At(tick)), Mix(r => r.Height.Coefficients[2].At(tick)), Mix(r => r.Height.Coefficients[3].At(tick)));
-        bool layered = poly != Vector4.Zero;
-        var height = new Vector4(Mix(r => r.Height.Plane.At(tick)), Mix(r => r.Height.Scaler.At(tick)), Mix(r => r.Height.Density.At(tick)), layered ? 1 : 0);
-        var sunColor = MixColor(r => r.SunColor);
-        float sunStrength = Mix(r => r.SunStrength.At(tick));
-        // A light with no sun fog color has no scattering; the LightData default of white would otherwise light every fog.
-        var sun = sunColor.R + sunColor.G + sunColor.B > 0.0001f ? new Vector4(sunColor.R, sunColor.G, sunColor.B, sunStrength) : Vector4.Zero;
-        return new(density > 0 ? density : 4.5f, MixColor(r => r.EndColor), Mix(r => r.EndColorDistance.At(tick)), height, poly, MixColor(r => r.Height.Color), MixColor(r => r.Height.EndColor), sun);
-    }
-
 
     /// <summary>One fog volume placed in the viewer: a view-space box (center, axes, half sizes), its extinction per yard, color and edge power.</summary>
     readonly record struct FogBox(Vector3 Center, Basis Axes, Vector3 Half, float Thickness, Color Color, float Power, bool Ellipsoid, bool Noise, float SpeedA, float SpeedB, float HeightPower);
@@ -119,5 +83,4 @@ public sealed partial class SkyLighting
         ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeCount, (float)chosen.Length);
         ClientShaderGlobals.Set(ClientShaderGlobals.FogVolumeTime, (float)(Time.GetTicksMsec() / 1000.0 % 100000.0));
     }
-
 }

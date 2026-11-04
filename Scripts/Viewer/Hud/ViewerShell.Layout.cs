@@ -1,6 +1,4 @@
 using Godot;
-using ACWorldEdit.Assets;
-using ACWorldEdit.Data;
 
 namespace ACWorldEdit;
 
