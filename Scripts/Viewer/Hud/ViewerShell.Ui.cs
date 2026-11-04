@@ -84,148 +84,79 @@ public partial class ViewerShell
         };
         box.AddThemeConstantOverride("separation", 10);
         scroll.AddChild(box);
-        var title = new Label
-        {
-            Text = "AC WORLD EDIT"
-        };
-        title.AddThemeFontSizeOverride("font_size", 24);
-        box.AddChild(title);
-        clientLabel = new Label
-        {
-            Text = "WORLD VIEWER  /  " + profile.Title
-        };
-        clientLabel.AddThemeColorOverride("font_color", new Color("5bd8c2"));
-        clientLabel.AddThemeFontSizeOverride("font_size", 12);
-        box.AddChild(clientLabel);
-        box.AddChild(new HSeparator());
-        box.AddChild(InspectorUi.Text("World settings", 24));
-        box.AddChild(new Label { Text = "Map" });
+        var form = new UiForm(box);
+        form.Heading("AC WORLD EDIT");
+        clientLabel = form.Caption("WORLD VIEWER  /  " + profile.Title, new Color("5bd8c2"));
+        form.Add(new HSeparator());
+        form.Add(InspectorUi.Text("World settings", 24));
+        form.Add(new Label { Text = "Map" });
         // Map names can be long; clip them instead of letting the button and its dropdown grow.
-        maps = new OptionButton { ClipText = true, FitToLongestItem = false, CustomMinimumSize = new Vector2(220, 0), TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
-        box.AddChild(maps);
-        maps.ItemSelected += id =>
+        maps = form.Add(form.Options([], -1, id =>
         {
-            if ((int)id < mapList.Count)
+            if (id < mapList.Count)
             {
-                var m = mapList[(int)id];
+                var m = mapList[id];
                 tileX.Value = m.Directory == "Azeroth" ? 34 : 32;
                 tileY.Value = m.Directory == "Azeroth" ? 49 : 32;
             }
-        };
-        var row = new HBoxContainer();
-        box.AddChild(row);
-        row.AddChild(new Label { Text = "Tile X" });
-        tileX = new SpinBox
-        {
-            MinValue = 0,
-            MaxValue = 63,
-            Value = 34
-        };
-        row.AddChild(tileX);
-        row.AddChild(new Label { Text = "Y" });
-        tileY = new SpinBox
-        {
-            MinValue = 0,
-            MaxValue = 63,
-            Value = 49
-        };
-        row.AddChild(tileY);
-        open = new Button
-        {
-            Text = "Open world",
-            Disabled = true
-        };
-        open.Pressed += async () => await OpenMap();
-        box.AddChild(open);
+        }, clip: true, minWidth: 220));
+        var tileRow = form.Row();
+        tileRow.AddChild(new Label { Text = "Tile X" });
+        tileX = form.Spin(0, 63, 34);
+        tileRow.AddChild(tileX);
+        tileRow.AddChild(new Label { Text = "Y" });
+        tileY = form.Spin(0, 63, 49);
+        tileRow.AddChild(tileY);
+        open = form.Action("Open world", () => _ = OpenMap(), disabled: true);
         BuildTeleportUi(box);
-        var radiusRow = new HBoxContainer();
-        box.AddChild(radiusRow);
+        var radiusRow = form.Row();
         radiusRow.AddChild(new Label { Text = "Tile view distance" });
-        distance = new SpinBox
-        {
-            MinValue = 0,
-            MaxValue = 3,
-            Value = 1
-        };
-        radiusRow.AddChild(distance);
-        distance.ValueChanged += value =>
+        distance = form.Spin(0, 3, 1, value =>
         {
             radius = (int)value;
             UpdateWanted();
-        };
-        box.AddChild(new HSeparator());
-        box.AddChild(new Label { Text = "Time of day" });
-        var timeRow = new HBoxContainer();
-        box.AddChild(timeRow);
-        playTime = new Button
-        {
-            Text = sky.Playing ? "⏸" : "▶",
-            CustomMinimumSize = new Vector2(32, 0),
-            TooltipText = "Pause/resume the day-night cycle"
-        };
-        playTime.Pressed += () =>
+        });
+        radiusRow.AddChild(distance);
+        form.Add(new HSeparator());
+        form.Add(new Label { Text = "Time of day" });
+        var timeRow = form.Row();
+        playTime = form.Button(sky.Playing ? "⏸" : "▶", () =>
         {
             sky.Playing = !sky.Playing;
             playTime.Text = sky.Playing ? "⏸" : "▶";
-        };
+        }, "Pause/resume the day-night cycle");
+        playTime.CustomMinimumSize = new Vector2(32, 0);
         timeRow.AddChild(playTime);
-        timeOfDay = new HSlider
-        {
-            MinValue = 0,
-            MaxValue = 24,
-            Step = 1.0 / 60,
-            Value = sky.TimeOfDayHours,
-            CustomMinimumSize = new Vector2(190, 0),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            TooltipText = "Scrub the time of day"
-        };
-        timeOfDay.ValueChanged += value => sky.SetTimeOfDay(value);
+        timeOfDay = form.Slider(0, 24, sky.TimeOfDayHours, 1.0 / 60, value => sky.SetTimeOfDay(value),
+            "Scrub the time of day", 190);
         timeRow.AddChild(timeOfDay);
         timeOfDayLabel = new Label
         {
             CustomMinimumSize = new Vector2(48, 0)
         };
         timeRow.AddChild(timeOfDayLabel);
-        var speedRow = new HBoxContainer();
-        box.AddChild(speedRow);
+        var speedRow = form.Row();
         speedRow.AddChild(new Label { Text = "Cycle speed" });
-        var speed = new OptionButton();
         string[] speedLabels = ["0.5x", "1x", "2x", "5x", "20x"];
         float[] speedValues = [0.5f, 1f, 2f, 5f, 20f];
-        foreach (string label in speedLabels)
-        {
-            speed.AddItem(label);
-        }
-
-        speed.Select(1);
-        speed.ItemSelected += id => sky.Speed = speedValues[id];
+        var speed = form.Options(speedLabels, 1, id => sky.Speed = speedValues[id]);
         speedRow.AddChild(speed);
-        box.AddChild(new HSeparator());
-        status = new Label
+        form.Add(new HSeparator());
+        status = form.Add(new Label
         {
             Text = message,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             CustomMinimumSize = new Vector2(294, 55)
-        };
-        box.AddChild(status);
+        });
         ui.AddChild(statusBar = new StatusBar(statusLog));
-        zoneLabel = new Label
-        {
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        zoneLabel.AddThemeColorOverride("font_color", new Color("5bd8c2"));
-        zoneLabel.AddThemeFontSizeOverride("font_size", 17);
-        box.AddChild(zoneLabel);
-        continentLabel = new Label();
-        continentLabel.AddThemeColorOverride("font_color", new Color("aabac8"));
-        continentLabel.AddThemeFontSizeOverride("font_size", 12);
-        box.AddChild(continentLabel);
-        minimap = new TerrainMinimap
+        zoneLabel = form.Text("", 17, new Color("5bd8c2"));
+        zoneLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        continentLabel = form.Text("", 12, new Color("aabac8"));
+        minimap = form.Add(new TerrainMinimap
         {
             CustomMinimumSize = new Vector2(180, 180),
             MouseFilter = Control.MouseFilterEnum.Stop
-        };
-        box.AddChild(minimap);
+        });
         minimap.Jump += key =>
         {
             tileX.Value = key.X;

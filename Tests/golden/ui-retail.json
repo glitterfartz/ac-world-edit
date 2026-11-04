@@ -1308,7 +1308,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "76 SQL matches · 4 admitted · 4 native models ready"
+      "tooltip": "<n> SQL matches · 4 admitted · 4 native models ready"
     },
     {
       "path": "ViewerShell/@CanvasLayer@100/Frame/Interface/SceneExplorer/@VBoxContainer@191/@TabContainer@197/Scene/@VBoxContainer@486/@PanelContainer@487/@VBoxContainer@488/@HBoxContainer@496",
@@ -1341,7 +1341,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "23 SQL matches · 3 admitted · 3 native models ready"
+      "tooltip": "<n> SQL matches · 3 admitted · 3 native models ready"
     },
     {
       "path": "ViewerShell/@CanvasLayer@100/Frame/Interface/SceneExplorer/@VBoxContainer@191/@TabContainer@197/Scene/@VBoxContainer@486/@PanelContainer@487/@VBoxContainer@488/@HBoxContainer@498",

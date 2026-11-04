@@ -20,14 +20,13 @@ public partial class ViewerShell
 
     void BuildTeleportUi(VBoxContainer box)
     {
-        box.AddChild(new Label { Text = "Teleport" });
-        teleports = new OptionButton { Name = "TeleportLocations", TooltipText = "Jump to a location from the game_tele table", Disabled = true };
-        teleports.AddItem("Loading…");
-        teleports.ItemSelected += async index => await TeleportTo((int)index);
-        box.AddChild(teleports);
-        box.AddChild(new Label { Text = "Teleport to XYZ (current map)" });
-        var positionRow = new HBoxContainer();
-        box.AddChild(positionRow);
+        var form = new UiForm(box);
+        form.Add(new Label { Text = "Teleport" });
+        teleports = form.Add(form.Options(["Loading…"], 0, index => _ = TeleportTo(index),
+            "TeleportLocations", "Jump to a location from the game_tele table"));
+        teleports.Disabled = true;
+        form.Add(new Label { Text = "Teleport to XYZ (current map)" });
+        var positionRow = form.Row();
         telePosition = new LineEdit
         {
             Name = "TeleportPosition",
@@ -37,8 +36,8 @@ public partial class ViewerShell
         };
         telePosition.TextSubmitted += TeleportToPosition;
         positionRow.AddChild(telePosition);
-        var go = new Button { Name = "TeleportPositionGo", Text = "Go" };
-        go.Pressed += () => TeleportToPosition(telePosition.Text);
+        var go = form.Button("Go", () => TeleportToPosition(telePosition.Text));
+        go.Name = "TeleportPositionGo";
         positionRow.AddChild(go);
     }
 
