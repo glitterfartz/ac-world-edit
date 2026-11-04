@@ -16,17 +16,35 @@ import json
 import re
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import goldens
 
-VIEWER = goldens.ROOT / "Scripts" / "Viewer"
-BUDGET = goldens.ROOT / "Tools" / "viewer-budget.json"
-LONG = goldens.ROOT / "Tools" / "viewer-long-methods.json"
+TOOLS = goldens.ROOT / "Tools"
+
+
+@dataclass(frozen=True)
+class Layer:
+    """One source tree with its own size and long-method budgets."""
+
+    name: str
+    root: Path
+    budget: Path
+    long_methods: Path
+    shell: str | None = None
+
+
+LAYERS = [
+    Layer("Scripts/Viewer", goldens.ROOT / "Scripts" / "Viewer", TOOLS / "viewer-budget.json", TOOLS / "viewer-long-methods.json", "ViewerShell.cs"),
+    Layer("Scripts/Ui", goldens.ROOT / "Scripts" / "Ui", TOOLS / "ui-budget.json", TOOLS / "ui-long-methods.json"),
+]
+VIEWER = LAYERS[0].root
 GODOT_FREE = ["Foundation", "Scripts/Assets", "Scripts/Data"]
 MAX_METHOD = 60
 CONTROL = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "fixed", "when", "try", "else", "do"}
+NON_METHOD = re.compile(r"\b(class|record|struct|interface|enum|delegate)\b")
 
 
 def csharp_files(root: Path):
@@ -76,24 +94,28 @@ def code_lines(path: Path) -> int:
 
 
 def check_budgets() -> list[str]:
-    if not BUDGET.exists():
-        return [f"missing {BUDGET.relative_to(goldens.ROOT)}"]
-    budget = json.loads(BUDGET.read_text(encoding="utf-8"))
     problems = []
-    total = 0
-    for path in csharp_files(VIEWER):
-        count = code_lines(path)
-        total += count
-        if count > budget["file"]:
-            problems.append(f"{path.name}: {count} lines exceeds the {budget['file']} file budget")
-    shell = VIEWER / "ViewerShell.cs"
-    if not shell.exists():
-        shell = VIEWER / "TerrainViewer.cs"
-    if shell.exists() and code_lines(shell) > budget["shell"]:
-        problems.append(f"{shell.name}: {code_lines(shell)} lines exceeds the {budget['shell']} shell budget")
-    if total > budget["folder"]:
-        problems.append(f"Scripts/Viewer: {total} lines exceeds the {budget['folder']} folder budget")
-    print(f"Scripts/Viewer: {total} lines, {len(list(csharp_files(VIEWER)))} files")
+    for layer in LAYERS:
+        if not layer.budget.exists():
+            problems.append(f"missing {layer.budget.relative_to(goldens.ROOT)}")
+            continue
+        budget = json.loads(layer.budget.read_text(encoding="utf-8"))
+        counts = []
+        for path in csharp_files(layer.root):
+            count = code_lines(path)
+            counts.append(count)
+            if count > budget["file"]:
+                problems.append(f"{path.relative_to(goldens.ROOT).as_posix()}: {count} lines exceeds the {budget['file']} file budget")
+        if layer.shell:
+            shell = layer.root / layer.shell
+            if not shell.exists():
+                shell = layer.root / "TerrainViewer.cs"
+            if shell.exists() and code_lines(shell) > budget["shell"]:
+                problems.append(f"{shell.name}: {code_lines(shell)} lines exceeds the {budget['shell']} shell budget")
+        total = sum(counts)
+        if total > budget["folder"]:
+            problems.append(f"{layer.name}: {total} lines exceeds the {budget['folder']} folder budget")
+        print(f"{layer.name}: {total} lines, {len(counts)} files")
     return problems
 
 
@@ -113,6 +135,9 @@ def long_methods(path: Path) -> list[tuple[str, int]]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     found = []
     for index, line in enumerate(lines):
+        # A primary constructor reads like a call; class/record/etc. declarations are not methods.
+        if NON_METHOD.search(line):
+            continue
         match = SIGNATURE.match(line)
         if not match or match.group(1) in CONTROL:
             continue
@@ -144,21 +169,24 @@ def long_methods(path: Path) -> list[tuple[str, int]]:
     return found
 
 
-def check_long_methods() -> tuple[list[str], dict]:
-    allowed = set()
-    if LONG.exists():
-        allowed = set(json.loads(LONG.read_text(encoding="utf-8"))["allowed"])
+def check_long_methods() -> tuple[list[str], dict[str, dict]]:
     problems = []
-    seen = set()
-    for path in csharp_files(VIEWER):
-        for name, length in long_methods(path):
-            key = f"{path.relative_to(goldens.ROOT).as_posix()}::{name}"
-            seen.add(key)
-            if key not in allowed:
-                problems.append(f"{key} is {length} lines (limit {MAX_METHOD})")
-    for stale in sorted(allowed - seen):
-        problems.append(f"{stale} is allowlisted but no longer exceeds {MAX_METHOD} lines; remove it")
-    return problems, {"allowed": sorted(seen)}
+    results = {}
+    for layer in LAYERS:
+        allowed = set()
+        if layer.long_methods.exists():
+            allowed = set(json.loads(layer.long_methods.read_text(encoding="utf-8"))["allowed"])
+        seen = set()
+        for path in csharp_files(layer.root):
+            for name, length in long_methods(path):
+                key = f"{path.relative_to(goldens.ROOT).as_posix()}::{name}"
+                seen.add(key)
+                if key not in allowed:
+                    problems.append(f"{key} is {length} lines (limit {MAX_METHOD})")
+        for stale in sorted(allowed - seen):
+            problems.append(f"{stale} is allowlisted but no longer exceeds {MAX_METHOD} lines; remove it")
+        results[layer.name] = {"allowed": sorted(seen)}
+    return problems, results
 
 
 def structural(update: bool = False) -> int:
@@ -169,16 +197,18 @@ def structural(update: bool = False) -> int:
     method_problems, methods = check_long_methods()
     problems += method_problems
     if update:
-        LONG.write_text(json.dumps(methods, indent=2) + "\n", encoding="utf-8", newline="\n")
-        print(f"wrote {LONG.relative_to(goldens.ROOT)}")
-        budget = json.loads(BUDGET.read_text(encoding="utf-8")) if BUDGET.exists() else {"file": 0, "shell": 0, "folder": 0}
-        counts = [code_lines(p) for p in csharp_files(VIEWER)]
-        shell = VIEWER / "ViewerShell.cs"
-        if not shell.exists():
-            shell = VIEWER / "TerrainViewer.cs"
-        budget = {"file": max(counts), "shell": code_lines(shell), "folder": sum(counts)}
-        BUDGET.write_text(json.dumps(budget, indent=2) + "\n", encoding="utf-8", newline="\n")
-        print(f"wrote {BUDGET.relative_to(goldens.ROOT)}: {budget}")
+        for layer in LAYERS:
+            layer.long_methods.write_text(json.dumps(methods[layer.name], indent=2) + "\n", encoding="utf-8", newline="\n")
+            print(f"wrote {layer.long_methods.relative_to(goldens.ROOT)}")
+            counts = [code_lines(p) for p in csharp_files(layer.root)]
+            budget = {"file": max(counts) if counts else 0, "folder": sum(counts)}
+            if layer.shell:
+                shell = layer.root / layer.shell
+                if not shell.exists():
+                    shell = layer.root / "TerrainViewer.cs"
+                budget = {"file": budget["file"], "shell": code_lines(shell), "folder": budget["folder"]}
+            layer.budget.write_text(json.dumps(budget, indent=2) + "\n", encoding="utf-8", newline="\n")
+            print(f"wrote {layer.budget.relative_to(goldens.ROOT)}: {budget}")
         return 0
     if not goldens.verify_manifest():
         problems.append("Tests/golden/.sha256 does not match the committed goldens")
