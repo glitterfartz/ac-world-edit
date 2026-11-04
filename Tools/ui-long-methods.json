@@ -6,7 +6,7 @@
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderGossip",
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderOptions",
     "Scripts/Ui/TrinityCore/TcGossipSection.cs::Populate",
-    "Scripts/Ui/TrinityCore/TcTemplateSection.cs::Results",
+    "Scripts/Ui/TrinityCore/TcStatsSection.cs::Results",
     "Scripts/Ui/Properties/PageRenderer.cs::Flags",
     "Scripts/Ui/Properties/PageRenderer.cs::Render",
     "Scripts/Ui/QuestPanel.cs::Render",
