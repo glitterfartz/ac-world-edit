@@ -1,7 +1,7 @@
 {
   "allowed": [
-    "Scripts/Ui/BehaviorPanel.Rules.cs::RenderEditor",
-    "Scripts/Ui/BehaviorPanel.cs::Render",
+    "Scripts/Ui/Behavior/BehaviorPanel.Rules.cs::RenderEditor",
+    "Scripts/Ui/Behavior/BehaviorPanel.cs::Render",
     "Scripts/Ui/Framework/ClientStyle.cs::Theme",
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderGossip",
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderOptions",
@@ -9,7 +9,7 @@
     "Scripts/Ui/TrinityCore/TcStatsSection.cs::Results",
     "Scripts/Ui/Properties/PageRenderer.cs::Flags",
     "Scripts/Ui/Properties/PageRenderer.cs::Render",
-    "Scripts/Ui/QuestPanel.cs::Render",
+    "Scripts/Ui/Quest/QuestPanel.cs::Render",
     "Scripts/Ui/Scene/SceneSidebar.cs::BuildScenePage",
     "Scripts/Ui/Scene/SceneSidebar.cs::SceneSidebar",
     "Scripts/Ui/VisibilityPreview/VisibilityPreviewPanel.Phase.cs::BuildPhaseSection"
