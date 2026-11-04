@@ -57,6 +57,21 @@ Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehavio
 
 Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, creature properties and user settings. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
 
+### Golden regression captures (`Tests/golden`)
+
+The viewer writes machine-readable state that nothing used to compare. `Tests/golden` turns it into assertions:
+
+| Golden | Produced by | Pins |
+|---|---|---|
+| `terrain-smoke-wrath.txt` | `--terrain-smoke` | streamed tile counts, stale-tile ownership, terrain texture count |
+| `client-smoke-retail.txt` | `--client-smoke` | client kind, build, map list size, first streamed tile |
+| `state-{wrath,retail}.json` | `--state-dump` | wanted/loaded/failed tile sets after a fixed teleport path, zone/continent, lighting at five times of day (light ids, falloff weight, fog, sky, skybox), eight ground probes, eight pick rays, and the exact SQL text grouped by source |
+| `ui-{wrath,retail}.json` | `--ui-dump` | every built control in creation order: menu items and accelerators, toolbar buttons, fields, option lists, overlay pages |
+
+`python Tools/smoke_golden.py` and `python Tools/state_golden.py` run one capture and diff it. `--update` is the only way to rewrite a golden; it also rewrites `Tests/golden/.sha256`, and the gate fails if a golden changed without it. `--state-dump` and `--ui-dump` are non-interactive: they suppress startup prompts and the random `game_tele` start, which `--client-shot` does not.
+
+`python Tools/refactor_gate.py` is the standing gate: structural invariants (Godot-free folders, file/method budgets in `Tools/viewer-budget.json` and `Tools/viewer-long-methods.json`, golden manifest), then build plus both test projects, then all six goldens. `--fast` stops after the tests and needs no client data; `--structural` is under a second. The burn-down ratchets are lowered in the same commit as the refactor that earns it.
+
 ### `Tests/run_stormlib_checks.py` (StormLib differential)
 
 Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/StormLib` submodule (v9.40, Unicode build because the oracle passes `LPWStr` paths) to `native/win-x64/StormLib.dll`. The script then runs `dotnet test Tests/ACWorldEdit.Tests` with `STORMLIB_DLL` set to that DLL and `ACWORLD_DATA_DIR` as the client data. The xUnit `WorldCorpusTests` use `Support/StormLibOracle.cs` to compare every asset read against StormLib. Only that test reads the variable. StormLib is a test-only dependency: the runtime MPQ reader is managed (`MpqArchive`).
@@ -70,6 +85,8 @@ Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/S
 | `Tools/package.py` | Builds, imports and exports the `Windows Desktop` preset to `build/win-x64/`, then validates the output |
 | `Tools/generate_smart_catalog.py` | Regenerates the SmartAI type arrays for both dialects |
 | `Tools/generate_condition_catalog.py` | Regenerates the condition type arrays for both dialects |
+| `Tools/refactor_gate.py` | Structural invariants, build, both test projects and the golden captures |
+| `Tools/smoke_golden.py`, `Tools/state_golden.py` | Run and diff one smoke or one state/UI dump against `Tests/golden` |
 | `.claude/hooks/format_cs.py` | Runs `dotnet format whitespace` on each edited `.cs` file |
 | `ThirdParty/`, `Data/WoWDBDefs/`, `THIRD-PARTY.md` | Pinned submodules and the licence/purpose record shipped with builds |
 

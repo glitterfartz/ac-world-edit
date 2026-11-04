@@ -25,6 +25,7 @@ public partial class TerrainViewer
     {
         var flags = OS.GetCmdlineUserArgs().ToHashSet();
         anySmoke = flags.Any(arg => arg.EndsWith("-smoke", StringComparison.Ordinal) || arg == "--perf-breakdown");
+        ConfigureDumpChecks(flags);
         ConfigureTeleSmoke(flags);
         waterInterior = flags.Contains("--water-interior-smoke");
         waterSmoke = flags.Contains("--water-smoke") || waterInterior;
@@ -208,6 +209,8 @@ public partial class TerrainViewer
         {
             PerfBreakdownTick();
         }
+
+        ExecuteDumpTick(delta);
     }
 
     /// <summary>

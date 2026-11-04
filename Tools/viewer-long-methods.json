@@ -1,0 +1,18 @@
+{
+  "allowed": [
+    "Scripts/Viewer/ClientLighting.cs::TryLoadRetail",
+    "Scripts/Viewer/ClientServices.cs::ClientServices",
+    "Scripts/Viewer/SkyLighting.cs::ApplySky",
+    "Scripts/Viewer/SkyLighting.cs::SkyLighting",
+    "Scripts/Viewer/SkyLighting.cs::Update",
+    "Scripts/Viewer/TerrainViewer.Listfile.cs::UpdateListfile",
+    "Scripts/Viewer/TerrainViewer.Ui.cs::BuildUi",
+    "Scripts/Viewer/TerrainViewer.cs::LoadClient",
+    "Scripts/Viewer/TerrainViewer.cs::OpenMap",
+    "Scripts/Viewer/TerrainViewer.cs::Prepare",
+    "Scripts/Viewer/TerrainViewer.cs::UpdateTerrainStreaming",
+    "Scripts/Viewer/TerrainViewer.cs::UpdateWanted",
+    "Scripts/Viewer/TerrainViewer.cs::_Ready",
+    "Scripts/Viewer/TerrainViewer.cs::_UnhandledInput"
+  ]
+}

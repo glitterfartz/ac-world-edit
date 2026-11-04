@@ -19,6 +19,7 @@ build-diagnostic.log
 **/TestResults/
 Tests/artifacts/*
 Tests/ACWorldEdit.GdTests/gdunit4_testadapter_v5/
+__pycache__/
 
 # Packaged builds
 build/

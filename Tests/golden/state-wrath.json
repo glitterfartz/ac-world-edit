@@ -1,0 +1,1655 @@
+{
+  "profile": {
+    "kind": "Wrath335",
+    "title": "WRATH 3.3.5"
+  },
+  "client": {
+    "databaseEnabled": true,
+    "maps": [
+      {
+        "Id": 0,
+        "Name": "Eastern Kingdoms",
+        "Directory": "Azeroth",
+        "Continent": false
+      },
+      {
+        "Id": 1,
+        "Name": "Kalimdor",
+        "Directory": "Kalimdor",
+        "Continent": false
+      },
+      {
+        "Id": 13,
+        "Name": "Testing",
+        "Directory": "test",
+        "Continent": false
+      },
+      {
+        "Id": 25,
+        "Name": "Scott Test",
+        "Directory": "ScottTest",
+        "Continent": false
+      },
+      {
+        "Id": 30,
+        "Name": "Alterac Valley",
+        "Directory": "PVPZone01",
+        "Continent": false
+      },
+      {
+        "Id": 33,
+        "Name": "Shadowfang Keep",
+        "Directory": "Shadowfang",
+        "Continent": false
+      },
+      {
+        "Id": 34,
+        "Name": "Stormwind Stockade",
+        "Directory": "StormwindJail",
+        "Continent": false
+      },
+      {
+        "Id": 35,
+        "Name": "<unused>StormwindPrison",
+        "Directory": "StormwindPrison",
+        "Continent": false
+      },
+      {
+        "Id": 36,
+        "Name": "Deadmines",
+        "Directory": "DeadminesInstance",
+        "Continent": false
+      },
+      {
+        "Id": 37,
+        "Name": "Azshara Crater",
+        "Directory": "PVPZone02",
+        "Continent": false
+      },
+      {
+        "Id": 42,
+        "Name": "Collin's Test",
+        "Directory": "Collin",
+        "Continent": false
+      },
+      {
+        "Id": 43,
+        "Name": "Wailing Caverns",
+        "Directory": "WailingCaverns",
+        "Continent": false
+      },
+      {
+        "Id": 44,
+        "Name": "<unused> Monastery",
+        "Directory": "Monastery",
+        "Continent": false
+      },
+      {
+        "Id": 47,
+        "Name": "Razorfen Kraul",
+        "Directory": "RazorfenKraulInstance",
+        "Continent": false
+      },
+      {
+        "Id": 48,
+        "Name": "Blackfathom Deeps",
+        "Directory": "Blackfathom",
+        "Continent": false
+      },
+      {
+        "Id": 70,
+        "Name": "Uldaman",
+        "Directory": "Uldaman",
+        "Continent": false
+      },
+      {
+        "Id": 90,
+        "Name": "Gnomeregan",
+        "Directory": "GnomeragonInstance",
+        "Continent": false
+      },
+      {
+        "Id": 109,
+        "Name": "Sunken Temple",
+        "Directory": "SunkenTemple",
+        "Continent": false
+      },
+      {
+        "Id": 129,
+        "Name": "Razorfen Downs",
+        "Directory": "RazorfenDowns",
+        "Continent": false
+      },
+      {
+        "Id": 169,
+        "Name": "Emerald Dream",
+        "Directory": "EmeraldDream",
+        "Continent": false
+      },
+      {
+        "Id": 189,
+        "Name": "Scarlet Monastery",
+        "Directory": "MonasteryInstances",
+        "Continent": false
+      },
+      {
+        "Id": 209,
+        "Name": "Zul'Farrak",
+        "Directory": "TanarisInstance",
+        "Continent": false
+      },
+      {
+        "Id": 229,
+        "Name": "Blackrock Spire",
+        "Directory": "BlackRockSpire",
+        "Continent": false
+      },
+      {
+        "Id": 230,
+        "Name": "Blackrock Depths",
+        "Directory": "BlackrockDepths",
+        "Continent": false
+      },
+      {
+        "Id": 249,
+        "Name": "Onyxia's Lair",
+        "Directory": "OnyxiaLairInstance",
+        "Continent": false
+      },
+      {
+        "Id": 269,
+        "Name": "Opening of the Dark Portal",
+        "Directory": "CavernsOfTime",
+        "Continent": false
+      },
+      {
+        "Id": 289,
+        "Name": "Scholomance",
+        "Directory": "SchoolofNecromancy",
+        "Continent": false
+      },
+      {
+        "Id": 309,
+        "Name": "Zul'Gurub",
+        "Directory": "Zul'gurub",
+        "Continent": false
+      },
+      {
+        "Id": 329,
+        "Name": "Stratholme",
+        "Directory": "Stratholme",
+        "Continent": false
+      },
+      {
+        "Id": 349,
+        "Name": "Maraudon",
+        "Directory": "Mauradon",
+        "Continent": false
+      },
+      {
+        "Id": 369,
+        "Name": "Deeprun Tram",
+        "Directory": "DeeprunTram",
+        "Continent": false
+      },
+      {
+        "Id": 389,
+        "Name": "Ragefire Chasm",
+        "Directory": "OrgrimmarInstance",
+        "Continent": false
+      },
+      {
+        "Id": 409,
+        "Name": "Molten Core",
+        "Directory": "MoltenCore",
+        "Continent": false
+      },
+      {
+        "Id": 429,
+        "Name": "Dire Maul",
+        "Directory": "DireMaul",
+        "Continent": false
+      },
+      {
+        "Id": 449,
+        "Name": "Alliance PVP Barracks",
+        "Directory": "AlliancePVPBarracks",
+        "Continent": false
+      },
+      {
+        "Id": 450,
+        "Name": "Horde PVP Barracks",
+        "Directory": "HordePVPBarracks",
+        "Continent": false
+      },
+      {
+        "Id": 469,
+        "Name": "Blackwing Lair",
+        "Directory": "BlackwingLair",
+        "Continent": false
+      },
+      {
+        "Id": 489,
+        "Name": "Warsong Gulch",
+        "Directory": "PVPZone03",
+        "Continent": false
+      },
+      {
+        "Id": 509,
+        "Name": "Ruins of Ahn'Qiraj",
+        "Directory": "AhnQiraj",
+        "Continent": false
+      },
+      {
+        "Id": 529,
+        "Name": "Arathi Basin",
+        "Directory": "PVPZone04",
+        "Continent": false
+      },
+      {
+        "Id": 530,
+        "Name": "Outland",
+        "Directory": "Expansion01",
+        "Continent": false
+      },
+      {
+        "Id": 531,
+        "Name": "Ahn'Qiraj Temple",
+        "Directory": "AhnQirajTemple",
+        "Continent": false
+      },
+      {
+        "Id": 532,
+        "Name": "Karazhan",
+        "Directory": "Karazahn",
+        "Continent": false
+      },
+      {
+        "Id": 533,
+        "Name": "Naxxramas",
+        "Directory": "Stratholme Raid",
+        "Continent": false
+      },
+      {
+        "Id": 534,
+        "Name": "The Battle for Mount Hyjal",
+        "Directory": "HyjalPast",
+        "Continent": false
+      },
+      {
+        "Id": 540,
+        "Name": "Hellfire Citadel: The Shattered Halls",
+        "Directory": "HellfireMilitary",
+        "Continent": false
+      },
+      {
+        "Id": 542,
+        "Name": "Hellfire Citadel: The Blood Furnace",
+        "Directory": "HellfireDemon",
+        "Continent": false
+      },
+      {
+        "Id": 543,
+        "Name": "Hellfire Citadel: Ramparts",
+        "Directory": "HellfireRampart",
+        "Continent": false
+      },
+      {
+        "Id": 544,
+        "Name": "Magtheridon's Lair",
+        "Directory": "HellfireRaid",
+        "Continent": false
+      },
+      {
+        "Id": 545,
+        "Name": "Coilfang: The Steamvault",
+        "Directory": "CoilfangPumping",
+        "Continent": false
+      },
+      {
+        "Id": 546,
+        "Name": "Coilfang: The Underbog",
+        "Directory": "CoilfangMarsh",
+        "Continent": false
+      },
+      {
+        "Id": 547,
+        "Name": "Coilfang: The Slave Pens",
+        "Directory": "CoilfangDraenei",
+        "Continent": false
+      },
+      {
+        "Id": 548,
+        "Name": "Coilfang: Serpentshrine Cavern",
+        "Directory": "CoilfangRaid",
+        "Continent": false
+      },
+      {
+        "Id": 550,
+        "Name": "Tempest Keep",
+        "Directory": "TempestKeepRaid",
+        "Continent": false
+      },
+      {
+        "Id": 552,
+        "Name": "Tempest Keep: The Arcatraz",
+        "Directory": "TempestKeepArcane",
+        "Continent": false
+      },
+      {
+        "Id": 553,
+        "Name": "Tempest Keep: The Botanica",
+        "Directory": "TempestKeepAtrium",
+        "Continent": false
+      },
+      {
+        "Id": 554,
+        "Name": "Tempest Keep: The Mechanar",
+        "Directory": "TempestKeepFactory",
+        "Continent": false
+      },
+      {
+        "Id": 555,
+        "Name": "Auchindoun: Shadow Labyrinth",
+        "Directory": "AuchindounShadow",
+        "Continent": false
+      },
+      {
+        "Id": 556,
+        "Name": "Auchindoun: Sethekk Halls",
+        "Directory": "AuchindounDemon",
+        "Continent": false
+      },
+      {
+        "Id": 557,
+        "Name": "Auchindoun: Mana-Tombs",
+        "Directory": "AuchindounEthereal",
+        "Continent": false
+      },
+      {
+        "Id": 558,
+        "Name": "Auchindoun: Auchenai Crypts",
+        "Directory": "AuchindounDraenei",
+        "Continent": false
+      },
+      {
+        "Id": 559,
+        "Name": "Nagrand Arena",
+        "Directory": "PVPZone05",
+        "Continent": false
+      },
+      {
+        "Id": 560,
+        "Name": "The Escape From Durnholde",
+        "Directory": "HillsbradPast",
+        "Continent": false
+      },
+      {
+        "Id": 562,
+        "Name": "Blade's Edge Arena",
+        "Directory": "bladesedgearena",
+        "Continent": false
+      },
+      {
+        "Id": 564,
+        "Name": "Black Temple",
+        "Directory": "BlackTemple",
+        "Continent": false
+      },
+      {
+        "Id": 565,
+        "Name": "Gruul's Lair",
+        "Directory": "GruulsLair",
+        "Continent": false
+      },
+      {
+        "Id": 566,
+        "Name": "Eye of the Storm",
+        "Directory": "NetherstormBG",
+        "Continent": false
+      },
+      {
+        "Id": 568,
+        "Name": "Zul'Aman",
+        "Directory": "ZulAman",
+        "Continent": false
+      },
+      {
+        "Id": 571,
+        "Name": "Northrend",
+        "Directory": "Northrend",
+        "Continent": false
+      },
+      {
+        "Id": 572,
+        "Name": "Ruins of Lordaeron",
+        "Directory": "PVPLordaeron",
+        "Continent": false
+      },
+      {
+        "Id": 573,
+        "Name": "ExteriorTest",
+        "Directory": "ExteriorTest",
+        "Continent": false
+      },
+      {
+        "Id": 574,
+        "Name": "Utgarde Keep",
+        "Directory": "Valgarde70",
+        "Continent": false
+      },
+      {
+        "Id": 575,
+        "Name": "Utgarde Pinnacle",
+        "Directory": "UtgardePinnacle",
+        "Continent": false
+      },
+      {
+        "Id": 576,
+        "Name": "The Nexus",
+        "Directory": "Nexus70",
+        "Continent": false
+      },
+      {
+        "Id": 578,
+        "Name": "The Oculus",
+        "Directory": "Nexus80",
+        "Continent": false
+      },
+      {
+        "Id": 580,
+        "Name": "The Sunwell",
+        "Directory": "SunwellPlateau",
+        "Continent": false
+      },
+      {
+        "Id": 585,
+        "Name": "Magister's Terrace",
+        "Directory": "Sunwell5ManFix",
+        "Continent": false
+      },
+      {
+        "Id": 595,
+        "Name": "The Culling of Stratholme",
+        "Directory": "StratholmeCOT",
+        "Continent": false
+      },
+      {
+        "Id": 597,
+        "Name": "Craig Test",
+        "Directory": "CraigTest",
+        "Continent": false
+      },
+      {
+        "Id": 598,
+        "Name": "Sunwell Fix (Unused)",
+        "Directory": "Sunwell5Man",
+        "Continent": false
+      },
+      {
+        "Id": 599,
+        "Name": "Halls of Stone",
+        "Directory": "Ulduar70",
+        "Continent": false
+      },
+      {
+        "Id": 600,
+        "Name": "Drak'Tharon Keep",
+        "Directory": "DrakTheronKeep",
+        "Continent": false
+      },
+      {
+        "Id": 601,
+        "Name": "Azjol-Nerub",
+        "Directory": "Azjol_Uppercity",
+        "Continent": false
+      },
+      {
+        "Id": 602,
+        "Name": "Halls of Lightning",
+        "Directory": "Ulduar80",
+        "Continent": false
+      },
+      {
+        "Id": 603,
+        "Name": "Ulduar",
+        "Directory": "UlduarRaid",
+        "Continent": false
+      },
+      {
+        "Id": 604,
+        "Name": "Gundrak",
+        "Directory": "GunDrak",
+        "Continent": false
+      },
+      {
+        "Id": 605,
+        "Name": "Development Land (non-weighted textures)",
+        "Directory": "development_nonweighted",
+        "Continent": false
+      },
+      {
+        "Id": 606,
+        "Name": "QA and DVD",
+        "Directory": "QA_DVD",
+        "Continent": false
+      },
+      {
+        "Id": 607,
+        "Name": "Strand of the Ancients",
+        "Directory": "NorthrendBG",
+        "Continent": false
+      },
+      {
+        "Id": 608,
+        "Name": "Violet Hold",
+        "Directory": "DalaranPrison",
+        "Continent": false
+      },
+      {
+        "Id": 609,
+        "Name": "Ebon Hold",
+        "Directory": "DeathKnightStart",
+        "Continent": false
+      },
+      {
+        "Id": 615,
+        "Name": "The Obsidian Sanctum",
+        "Directory": "ChamberOfAspectsBlack",
+        "Continent": false
+      },
+      {
+        "Id": 616,
+        "Name": "The Eye of Eternity",
+        "Directory": "NexusRaid",
+        "Continent": false
+      },
+      {
+        "Id": 617,
+        "Name": "Dalaran Sewers",
+        "Directory": "DalaranArena",
+        "Continent": false
+      },
+      {
+        "Id": 618,
+        "Name": "The Ring of Valor",
+        "Directory": "OrgrimmarArena",
+        "Continent": false
+      },
+      {
+        "Id": 619,
+        "Name": "Ahn'kahet: The Old Kingdom",
+        "Directory": "Azjol_LowerCity",
+        "Continent": false
+      },
+      {
+        "Id": 624,
+        "Name": "Vault of Archavon",
+        "Directory": "WintergraspRaid",
+        "Continent": false
+      },
+      {
+        "Id": 628,
+        "Name": "Isle of Conquest",
+        "Directory": "IsleofConquest",
+        "Continent": false
+      },
+      {
+        "Id": 631,
+        "Name": "Icecrown Citadel",
+        "Directory": "IcecrownCitadel",
+        "Continent": false
+      },
+      {
+        "Id": 632,
+        "Name": "The Forge of Souls",
+        "Directory": "IcecrownCitadel5Man",
+        "Continent": false
+      },
+      {
+        "Id": 649,
+        "Name": "Trial of the Crusader",
+        "Directory": "ArgentTournamentRaid",
+        "Continent": false
+      },
+      {
+        "Id": 650,
+        "Name": "Trial of the Champion",
+        "Directory": "ArgentTournamentDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 658,
+        "Name": "Pit of Saron",
+        "Directory": "QuarryofTears",
+        "Continent": false
+      },
+      {
+        "Id": 668,
+        "Name": "Halls of Reflection",
+        "Directory": "HallsOfReflection",
+        "Continent": false
+      },
+      {
+        "Id": 723,
+        "Name": "Stormwind",
+        "Directory": "Stormwind",
+        "Continent": false
+      },
+      {
+        "Id": 724,
+        "Name": "The Ruby Sanctum",
+        "Directory": "ChamberofAspectsRed",
+        "Continent": false
+      }
+    ]
+  },
+  "terrain": [
+    {
+      "label": "initial",
+      "map": 0,
+      "camera": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 34,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 27,
+      "zone": "Elwynn Forest — Eastvale Logging Camp",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop1",
+      "map": 0,
+      "camera": {
+        "x": -800,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 30,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 29,
+          "y": 48
+        },
+        {
+          "x": 29,
+          "y": 49
+        },
+        {
+          "x": 29,
+          "y": 50
+        },
+        {
+          "x": 30,
+          "y": 48
+        },
+        {
+          "x": 30,
+          "y": 49
+        },
+        {
+          "x": 30,
+          "y": 50
+        },
+        {
+          "x": 31,
+          "y": 48
+        },
+        {
+          "x": 31,
+          "y": 49
+        },
+        {
+          "x": 31,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 29,
+          "y": 48
+        },
+        {
+          "x": 29,
+          "y": 49
+        },
+        {
+          "x": 29,
+          "y": 50
+        },
+        {
+          "x": 30,
+          "y": 48
+        },
+        {
+          "x": 30,
+          "y": 49
+        },
+        {
+          "x": 30,
+          "y": 50
+        },
+        {
+          "x": 31,
+          "y": 48
+        },
+        {
+          "x": 31,
+          "y": 49
+        },
+        {
+          "x": 31,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 27,
+      "zone": "Elwynn Forest — Thunder Falls",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop2",
+      "map": 0,
+      "camera": {
+        "x": -800,
+        "y": 250,
+        "z": 7199.999
+      },
+      "tile": {
+        "x": 30,
+        "y": 45
+      },
+      "wanted": [
+        {
+          "x": 29,
+          "y": 44
+        },
+        {
+          "x": 29,
+          "y": 45
+        },
+        {
+          "x": 29,
+          "y": 46
+        },
+        {
+          "x": 30,
+          "y": 44
+        },
+        {
+          "x": 30,
+          "y": 45
+        },
+        {
+          "x": 30,
+          "y": 46
+        },
+        {
+          "x": 31,
+          "y": 44
+        },
+        {
+          "x": 31,
+          "y": 45
+        },
+        {
+          "x": 31,
+          "y": 46
+        }
+      ],
+      "loaded": [
+        {
+          "x": 29,
+          "y": 44
+        },
+        {
+          "x": 29,
+          "y": 45
+        },
+        {
+          "x": 29,
+          "y": 46
+        },
+        {
+          "x": 30,
+          "y": 44
+        },
+        {
+          "x": 30,
+          "y": 45
+        },
+        {
+          "x": 30,
+          "y": 46
+        },
+        {
+          "x": 31,
+          "y": 44
+        },
+        {
+          "x": 31,
+          "y": 45
+        },
+        {
+          "x": 31,
+          "y": 46
+        }
+      ],
+      "failed": [],
+      "textures": 14,
+      "zone": "Area 0",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop3",
+      "map": 0,
+      "camera": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 34,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 27,
+      "zone": "Elwynn Forest — Eastvale Logging Camp",
+      "continent": "Eastern Kingdoms"
+    }
+  ],
+  "lighting": [
+    {
+      "hour": 0,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=82",
+      "fog": {
+        "start": 194.25,
+        "end": 777,
+        "density": 1,
+        "mode": 1
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 0,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.38,
+            0.51,
+            0.635
+          ],
+          "rotationDegrees": [
+            -37.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.114,
+            0.235,
+            0.329
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 194.2,
+          "endYards": 777,
+          "viewDistance": 777
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0,
+            0
+          ],
+          "skyHorizon": [
+            0.192,
+            0.337,
+            0.482
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 6,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=82",
+      "fog": {
+        "start": 0,
+        "end": 777,
+        "density": 1,
+        "mode": 1
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 6,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            1,
+            0.404,
+            0
+          ],
+          "rotationDegrees": [
+            -20.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.365,
+            0.49,
+            0.612
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 0,
+          "endYards": 777,
+          "viewDistance": 777
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0.137,
+            0.29,
+            0.329
+          ],
+          "skyHorizon": [
+            1,
+            0.792,
+            0.298
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 12,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=82",
+      "fog": {
+        "start": 194.25,
+        "end": 777,
+        "density": 1,
+        "mode": 1
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 12,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            1,
+            0.533,
+            0
+          ],
+          "rotationDegrees": [
+            -37.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.408,
+            0.51,
+            0.604
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 194.2,
+          "endYards": 777,
+          "viewDistance": 777
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0.122,
+            0.286
+          ],
+          "skyHorizon": [
+            0.706,
+            0.706,
+            0.706
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 18,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=82",
+      "fog": {
+        "start": 194.25,
+        "end": 777,
+        "density": 1,
+        "mode": 1
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 18,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            1,
+            0.463,
+            0
+          ],
+          "rotationDegrees": [
+            -20.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.403,
+            0.41,
+            0.512
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 194.2,
+          "endYards": 777,
+          "viewDistance": 777
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0.123,
+            0.179,
+            0.258
+          ],
+          "skyHorizon": [
+            0.756,
+            0.575,
+            0.348
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 23.999,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=82",
+      "fog": {
+        "start": 194.25,
+        "end": 777,
+        "density": 1,
+        "mode": 1
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 24,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.38,
+            0.51,
+            0.635
+          ],
+          "rotationDegrees": [
+            -36.997177,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.114,
+            0.235,
+            0.329
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 194.2,
+          "endYards": 777,
+          "viewDistance": 777
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0,
+            0
+          ],
+          "skyHorizon": [
+            0.192,
+            0.337,
+            0.482
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    }
+  ],
+  "ground": [
+    {
+      "Name": "center",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "north",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9253.333
+      },
+      "height": 74.84970092773438,
+      "Message": "terrain"
+    },
+    {
+      "Name": "south",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9413.333
+      },
+      "height": 70.1676025390625,
+      "Message": "building floor or terrain"
+    },
+    {
+      "Name": "east",
+      "point": {
+        "x": 1413.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 66.15950012207031,
+      "Message": "terrain"
+    },
+    {
+      "Name": "west",
+      "point": {
+        "x": 1253.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 65.54450225830078,
+      "Message": "terrain"
+    },
+    {
+      "Name": "above",
+      "point": {
+        "x": 1333.3333,
+        "y": 290,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "below",
+      "point": {
+        "x": 1333.3333,
+        "y": 210,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "corner",
+      "point": {
+        "x": 1393.3333,
+        "y": 250,
+        "z": 9393.333
+      },
+      "height": 55.81639862060547,
+      "Message": "terrain"
+    }
+  ],
+  "picks": [
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.5227,
+        "z": -0.8525
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 115.8439,
+        "z": 9113.382
+      }
+    },
+    {
+      "screen": {
+        "x": 0.25,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": -0.3304,
+        "y": -0.4933,
+        "z": -0.8046
+      },
+      "terrain": {
+        "x": 1209.0887,
+        "y": 65.0927,
+        "z": 9030.79
+      }
+    },
+    {
+      "screen": {
+        "x": 0.75,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0.3304,
+        "y": -0.4933,
+        "z": -0.8046
+      },
+      "terrain": {
+        "x": 1410.6556,
+        "y": 135.7887,
+        "z": 9145.048
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.25
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.2116,
+        "z": -0.9774
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 140.564,
+        "z": 8825.11
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.775,
+        "z": -0.6319
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 101.5458,
+        "z": 9212.004
+      }
+    },
+    {
+      "screen": {
+        "x": 0.35,
+        "y": 0.65
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": -0.2014,
+        "y": -0.6727,
+        "z": -0.712
+      },
+      "terrain": {
+        "x": 1281.3812,
+        "y": 76.6344,
+        "z": 9149.644
+      }
+    },
+    {
+      "screen": {
+        "x": 0.65,
+        "y": 0.35
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0.2014,
+        "y": -0.3294,
+        "z": -0.9225
+      },
+      "terrain": {
+        "x": 1392.1317,
+        "y": 154.3028,
+        "z": 9063.97
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.1
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.0394,
+        "z": -0.9992
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 226.8568,
+        "z": 8693.829
+      }
+    }
+  ],
+  "exports": [
+    {
+      "source": "dump_a",
+      "changes": 2,
+      "apply": "-- ACWorldEdit apply script · generated <stamp>\n-- Source database: dump_a\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Guards match the recorded source values: a row changed since the draft was made is left untouched.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- graveyard 4 \"Dump\": position/name\nUPDATE `game_graveyard` SET `x` = 9, `y` = 2, `z` = 3, `Comment` = 'Dump moved' WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\n\n-- waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)\nUPDATE `waypoint_data` SET `position_x` = 4, `position_y` = 5, `position_z` = 6 WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n",
+      "revert": "-- ACWorldEdit revert script · generated <stamp>\n-- Source database: dump_a\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Reverts only rows that still hold the draft values; run it on the same database the apply script ran on.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)\nUPDATE `waypoint_data` SET `position_x` = 1, `position_y` = 2, `position_z` = 3 WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n\n-- graveyard 4 \"Dump\": position/name\nUPDATE `game_graveyard` SET `x` = 1, `y` = 2, `z` = 3, `Comment` = 'Dump' WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n"
+    },
+    {
+      "source": "dump_b",
+      "changes": 2,
+      "apply": "-- ACWorldEdit apply script · generated <stamp>\n-- Source database: dump_b\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Guards match the recorded source values: a row changed since the draft was made is left untouched.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- graveyard 7 \"Other\": position/name\nUPDATE `game_graveyard` SET `x` = 6, `y` = 2, `z` = 3, `Comment` = 'Other moved' WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\n\n-- waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)\nUPDATE `waypoint_data` SET `position_x` = -2, `position_y` = 0, `position_z` = 2 WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n",
+      "revert": "-- ACWorldEdit revert script · generated <stamp>\n-- Source database: dump_b\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Reverts only rows that still hold the draft values; run it on the same database the apply script ran on.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)\nUPDATE `waypoint_data` SET `position_x` = -1, `position_y` = 0, `position_z` = 1 WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n\n-- graveyard 7 \"Other\": position/name\nUPDATE `game_graveyard` SET `x` = 4, `y` = 2, `z` = 3, `Comment` = 'Other' WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n"
+    }
+  ],
+  "ui": null
+}
