@@ -10,8 +10,8 @@
     "Scripts/Ui/Properties/PageRenderer.cs::Flags",
     "Scripts/Ui/Properties/PageRenderer.cs::Render",
     "Scripts/Ui/QuestPanel.cs::Render",
-    "Scripts/Ui/SceneSidebar.cs::BuildScenePage",
-    "Scripts/Ui/SceneSidebar.cs::SceneSidebar",
+    "Scripts/Ui/Scene/SceneSidebar.cs::BuildScenePage",
+    "Scripts/Ui/Scene/SceneSidebar.cs::SceneSidebar",
     "Scripts/Ui/VisibilityPreview/VisibilityPreviewPanel.Phase.cs::BuildPhaseSection"
   ]
 }
