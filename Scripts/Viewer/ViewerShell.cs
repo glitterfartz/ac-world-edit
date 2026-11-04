@@ -128,6 +128,18 @@ public partial class ViewerShell : Node3D
     /// <summary>Renderer, camera, sky, overlays, placement tool and navigation, before any UI exists.</summary>
     void BuildSceneSystems()
     {
+        BuildWorldNodes();
+        BuildOverlays();
+        input = new ViewerInput(this);
+        streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
+            () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
+        viewerSession = new ViewerSession(this);
+        BuildTools();
+    }
+
+    /// <summary>The renderer, the placement root, the camera and the sky.</summary>
+    void BuildWorldNodes()
+    {
         renderer = new TerrainRenderer();
         models = new ModelLibrary();
         // Placements hang under their own node so the world scene is not the shell's direct child.
@@ -145,6 +157,11 @@ public partial class ViewerShell : Node3D
         AddChild(camera);
         sky = new SkyLighting(models);
         AddChild(sky);
+    }
+
+    /// <summary>The five database-backed layers, in draw order.</summary>
+    void BuildOverlays()
+    {
         creatures = new CreatureOverlay
         {
             Models = models,
@@ -167,10 +184,11 @@ public partial class ViewerShell : Node3D
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         overlays = [creatures, gameObjects, graveyards, waypoints, areaTriggers];
-        input = new ViewerInput(this);
-        streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
-            () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
-        viewerSession = new ViewerSession(this);
+    }
+
+    /// <summary>The placement tool and the navigation overlay.</summary>
+    void BuildTools()
+    {
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
         AddChild(placement);
         creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));

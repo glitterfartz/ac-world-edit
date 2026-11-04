@@ -1,5 +1,3 @@
 {
-  "allowed": [
-    "Scripts/Viewer/ViewerShell.cs::BuildSceneSystems"
-  ]
+  "allowed": []
 }
