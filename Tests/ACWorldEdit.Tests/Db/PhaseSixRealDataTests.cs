@@ -215,7 +215,7 @@ public class PhaseSixRealDataTests
 
     // ---- Stats calculator on real database rows and the retail client -----------------------------------------
 
-    [RetailClientFact]
+    [TcRetailFact]
     public async Task ARealCreatureWithoutATuningTakesItsAreasAndTheRealSeasonRulesMatchAnIndependentCalculation()
     {
         var connection = Assert.IsType<WorldConnection>(Environments.TrinityConnection());
