@@ -1,19 +1,6 @@
-using Godot;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Assets;
-
-/// <summary>
-/// Godot Color view of the pure LightBand curve (Scripts/Assets/World/LightBand.cs).
-/// </summary>
-public sealed partial class LightBand
-{
-    public Color At(double tick)
-    {
-        var (r, g, b) = Rgb(tick);
-        return new Color(r, g, b);
-    }
-}
 
 /// <summary>
 /// The four LightParams water alphas: shallow and deep for rivers/lakes and for the ocean (the
@@ -85,9 +72,10 @@ public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Am
 /// <summary>
 /// One Light.dbc region: a falloff sphere referencing a Default-slot LightParams profile, or the map's
 /// default light, which the client identifies by its coordinates being exactly (0, 0, 0) (DayNight::LightLoad), not by
-/// its falloff. Position is pre-converted to the viewer's Y-up basis.
+/// its falloff. The position is pre-converted to the viewer's Y-up basis and kept as plain floats;
+/// the Godot Vector3 view lives in the viewer's partial.
 /// </summary>
-public sealed record LightRegion(uint Id, uint ContinentId, Vector3 ViewPosition, float FalloffStart, float FalloffEnd, uint ParamsId, bool IsDefault = false);
+public sealed partial record LightRegion(uint Id, uint ContinentId, float ViewX, float ViewY, float ViewZ, float FalloffStart, float FalloffEnd, uint ParamsId, bool IsDefault = false);
 
 /// <summary>
 /// Client Light.dbc/LightParams.dbc/LightSkybox.dbc/LightIntBand.dbc, resolved into per-map regions
@@ -125,7 +113,7 @@ public sealed class ClientLighting
     /// (default weather) LightParams slot is read. LightData rows carry one (time, color) sample each
     /// and are grouped per LightParams. Returns null on any failure.
     /// </summary>
-    public static ClientLighting? TryLoadRetail(Db2Tables tables)
+    public static ClientLighting? TryLoadRetail(Db2Tables tables, Action<string>? warn = null)
     {
         try
         {
@@ -188,7 +176,9 @@ public sealed class ClientLighting
             {
                 var coords = ((Array)row["GameCoords"]).Cast<object>().Select(Convert.ToDouble).ToArray();
                 uint paramsId = Convert.ToUInt32(((Array)row["LightParamsID"]).GetValue(0));
-                regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), ViewSpace.ToView(coords[0], coords[1], coords[2]),
+                // Retail Light positions are server yards, without the Wrath 1/36 scale.
+                var view = WorldCoordinates.ToView(new Point3(coords[0], coords[1], coords[2]));
+                regions.Add(new((uint)row.ID, Convert.ToUInt32(row["ContinentID"]), (float)view.X, (float)view.Y, (float)view.Z,
                     Convert.ToSingle(row["GameFalloffStart"]), Convert.ToSingle(row["GameFalloffEnd"]), paramsId, coords[0] == 0 && coords[1] == 0 && coords[2] == 0));
             }
 
@@ -258,7 +248,7 @@ public sealed class ClientLighting
         }
         catch (Exception e)
         {
-            GD.PushWarning("Retail lighting unavailable: " + e.Message);
+            warn?.Invoke("Retail lighting unavailable: " + e.Message);
             return null;
         }
     }
@@ -267,7 +257,7 @@ public sealed class ClientLighting
     /// Parse the four client tables and resolve every region's Default-slot profile/skybox. Returns
     /// null rather than a partially valid table on any malformed/missing archive data.
     /// </summary>
-    public static ClientLighting? TryLoad(IClientFiles store)
+    public static ClientLighting? TryLoad(IClientFiles store, Action<string>? warn = null)
     {
         try
         {
@@ -282,7 +272,7 @@ public sealed class ClientLighting
                 double dbcX = light.F(id, 2), dbcY = light.F(id, 3), dbcZ = light.F(id, 4);
                 var view = LightCoordinates.ToView(dbcX, dbcY, dbcZ);
                 uint paramsId = light.U(id, 7);
-                regions.Add(new(id, light.U(id, 1), new((float)view.X, (float)view.Y, (float)view.Z), light.F(id, 5) / 36f, light.F(id, 6) / 36f, paramsId, dbcX == 0 && dbcY == 0 && dbcZ == 0));
+                regions.Add(new(id, light.U(id, 1), (float)view.X, (float)view.Y, (float)view.Z, light.F(id, 5) / 36f, light.F(id, 6) / 36f, paramsId, dbcX == 0 && dbcY == 0 && dbcZ == 0));
             }
 
             Dictionary<uint, LightProfile> profiles = [];
@@ -322,7 +312,7 @@ public sealed class ClientLighting
         }
         catch (Exception e)
         {
-            GD.PushWarning("Client lighting unavailable: " + e.Message);
+            warn?.Invoke("Client lighting unavailable: " + e.Message);
             return null;
         }
     }

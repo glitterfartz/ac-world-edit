@@ -142,8 +142,9 @@ Rules that follow from the layering:
 - **Parsers do not branch on client kind.** `ClientKind` (`Wrath335` or `Retail`) is passed to the
   source abstraction; parsers consume `IClientFiles` and ask it for bytes.
 - **Godot halves of mixed classes live in the viewer.** `AreaLookup` (`Scripts/Viewer/Session/AreaTable.cs`)
-  and `ClientLighting` (`Scripts/Viewer/Lighting/ClientLighting.cs`) are partial classes whose Godot-facing
-  parts sit in `Scripts/Viewer`, while the engine-free parts sit in `Scripts/Assets/World`.
+  and `ClientLighting` (`Scripts/Viewer/Lighting/ClientLightingView.cs`) are partial classes whose Godot-facing
+  parts sit in `Scripts/Viewer`, while the engine-free parts sit in `Scripts/Assets/World`
+  (`ClientLighting.cs`, `LightBand.cs`).
 - **Per-client side data is attached to the source, not passed around.** `RetailLiquids` and
   `LiquidTextures` are looked up through `ConditionalWeakTable` keyed on the `IClientFiles` instance.
 - **Edits only reach Foundation drafts.** Overlays and editors never write to the database. SQL leaves

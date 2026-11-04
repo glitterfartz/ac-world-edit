@@ -45,9 +45,9 @@ for; what is left is below.
 
 ## Retail liquids and sky
 
-- [ ] `ClientLighting.TryLoadRetail` needs Godot types, so it is only covered by the viewer: a smoke that
-  prints the resolved profile (sky/ambient/fog colours, skybox FileDataID) for a camera position on
-  Azeroth.
+- [ ] `ClientLighting.TryLoadRetail` no longer needs Godot types, but it still reads concrete `Db2Tables`,
+  so a unit fixture needs an in-memory row seam. Until then the retail `--state-dump` pins the resolved
+  profile and the whole `--state-retail` golden catches a parser change.
 - [ ] Visual: the skybox model follows the camera and the time-of-day scrub changes the retail sky.
   `--skybox-smoke` covers loading and occlusion against world geometry; the follow and scrub check is
   still manual.

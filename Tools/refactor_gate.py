@@ -61,9 +61,8 @@ def check_godot_free() -> list[str]:
 
 
 def check_viewer_namespace() -> list[str]:
-    # AreaTable is the documented Godot half of AreaLookup. ClientLighting is the last misfiled
-    # file and is split in R1.2; the exception is removed in the same commit.
-    allowed = {"AreaTable.cs", "ClientLighting.cs"}
+    # Both are documented Godot halves of partials whose pure half is in Assets.
+    allowed = {"AreaTable.cs", "ClientLightingView.cs"}
     problems = []
     for path in csharp_files(VIEWER):
         text = code_only(path.read_text(encoding="utf-8", errors="replace"))

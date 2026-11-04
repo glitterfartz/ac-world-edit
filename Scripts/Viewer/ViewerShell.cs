@@ -218,7 +218,7 @@ public partial class ViewerShell : Node3D
         string listfile = UserSettings.ListfilePath();
         try
         {
-            var result = await Task.Run(() => ClientServices.Open(kind, path, listfile));
+            var result = await Task.Run(() => ClientServices.Open(kind, path, listfile, GD.PushWarning));
             store = result.Files;
             mapList = result.Maps;
             navigation.Configure(kind, result.NavigationParents);

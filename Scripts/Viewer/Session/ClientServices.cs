@@ -10,19 +10,19 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, ClientLighting? Lighting, AreaLookup? Areas, bool DatabaseEnabled, string Description, ICreatureCatalog? Creatures = null, IGameObjectCatalog? GameObjects = null, IClientLookup? Lookup = null, IReadOnlyDictionary<int, int>? NavigationParents = null)
 {
-    public static ClientServices Open(ClientKind kind, string directory, string? listfile = null) =>
-        kind == ClientKind.Retail ? OpenRetail(directory, listfile) : OpenWrath(directory);
+    public static ClientServices Open(ClientKind kind, string directory, string? listfile = null, Action<string>? warn = null) =>
+        kind == ClientKind.Retail ? OpenRetail(directory, listfile, warn) : OpenWrath(directory, warn);
 
     /// <summary>
     /// Stock 3.3.5.12340 MPQs. Failure disposes the partly opened store.
     /// </summary>
-    public static ClientServices OpenWrath(string directory)
+    public static ClientServices OpenWrath(string directory, Action<string>? warn = null)
     {
         var store = new AssetStore(ClientFolder.Resolve(ClientKind.Wrath335, directory));
         try
         {
             var maps = store.Maps();
-            return new ClientServices(store, maps, ClientLighting.TryLoad(store), AreaLookup.TryLoadWrath(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
+            return new ClientServices(store, maps, ClientLighting.TryLoad(store, warn), AreaLookup.TryLoadWrath(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
         }
         catch
         {
@@ -35,7 +35,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
     /// Retail CASC storage, served by a TrinityCore world database. Lighting and liquids are loaded
     /// from the DB2 tables; area names are not yet and stay null.
     /// </summary>
-    public static ClientServices OpenRetail(string directory, string? listfile = null)
+    public static ClientServices OpenRetail(string directory, string? listfile = null, Action<string>? warn = null)
     {
         string definitions = Db2Tables.FindDefinitions(System.Environment.GetEnvironmentVariable("ACWORLD_DBD_DIR"), AppContext.BaseDirectory)
             ?? throw new FileNotFoundException(DependencyCheck.DefinitionsMissing);
@@ -65,7 +65,7 @@ public sealed record ClientServices(IClientFiles Files, List<MapInfo> Maps, Clie
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables, warn), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
         }
         catch
         {
