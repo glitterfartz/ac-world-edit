@@ -7,9 +7,6 @@
     "Scripts/Viewer/Session/ViewerShell.Listfile.cs::UpdateListfile",
     "Scripts/Viewer/ViewerShell.cs::LoadClient",
     "Scripts/Viewer/ViewerShell.cs::OpenMap",
-    "Scripts/Viewer/ViewerShell.cs::Prepare",
-    "Scripts/Viewer/ViewerShell.cs::UpdateTerrainStreaming",
-    "Scripts/Viewer/ViewerShell.cs::UpdateWanted",
     "Scripts/Viewer/ViewerShell.cs::_Ready",
     "Scripts/Viewer/ViewerShell.cs::_UnhandledInput"
   ]
