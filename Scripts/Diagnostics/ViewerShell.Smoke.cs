@@ -270,6 +270,14 @@ public partial class ViewerShell
             return;
         }
 
+        // A reload must leave the session ready to open another map, not with a stale busy state
+        // or a permanently disabled button.
+        if (session != SessionState.Ready || open.Disabled)
+        {
+            SmokeFail($"RELOAD_SMOKE_STATE_FAILED state={session} disabled={open.Disabled}");
+            return;
+        }
+
         GD.Print($"RELOAD_SMOKE_PASSED tiles={loaded.Count} models={models.ReadyModels} textures={models.TextureCount}");
         GetTree().Quit();
     }

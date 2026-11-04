@@ -40,7 +40,19 @@ public partial class ViewerShell : Node3D
     PreparedTile? building;
     Node3D? buildingNode;
     int buildIndex, generation;
-    bool busy, capture;
+    bool capture;
+    // One session state drives both the busy guards and the Open world button.
+    SessionState session = SessionState.Unavailable;
+    bool busy => session == SessionState.Loading;
+
+    void SetSession(SessionState value)
+    {
+        session = value;
+        if (open != null)
+        {
+            open.Disabled = value != SessionState.Ready;
+        }
+    }
     float yaw, pitch = -0.4f, speed = 70;
     int radius = 1;
     // The SQL query region is intentionally stickier than the terrain load/release window (see
@@ -190,8 +202,7 @@ public partial class ViewerShell : Node3D
             return;
         }
 
-        busy = true;
-        open.Disabled = true;
+        SetSession(SessionState.Loading);
         ResetTerrain();
         var old = store;
         store = null;
@@ -249,7 +260,7 @@ public partial class ViewerShell : Node3D
 
             maps.Select(selected);
             message = result.Description;
-            open.Disabled = mapList.Count == 0;
+            SetSession(mapList.Count == 0 ? SessionState.Unavailable : SessionState.Ready);
         }
         catch (Exception e)
         {
@@ -258,7 +269,10 @@ public partial class ViewerShell : Node3D
         }
         finally
         {
-            busy = false;
+            if (session == SessionState.Loading)
+            {
+                SetSession(store != null && mapList.Count > 0 ? SessionState.Ready : SessionState.Unavailable);
+            }
         }
 
         if (store != null && chosen.OffersListfile)
@@ -299,13 +313,12 @@ public partial class ViewerShell : Node3D
     /// </summary>
     async Task OpenMap()
     {
-        if (busy || store == null || maps.Selected < 0)
+        if (session != SessionState.Ready || store == null || maps.Selected < 0)
         {
             return;
         }
 
-        busy = true;
-        open.Disabled = true;
+        SetSession(SessionState.Loading);
         ResetTerrain();
         message = "Reading terrain index…";
         var assets = store;
@@ -361,8 +374,7 @@ public partial class ViewerShell : Node3D
         }
         finally
         {
-            busy = false;
-            open.Disabled = false;
+            SetSession(store != null && mapList.Count > 0 ? SessionState.Ready : SessionState.Unavailable);
         }
     }
 
