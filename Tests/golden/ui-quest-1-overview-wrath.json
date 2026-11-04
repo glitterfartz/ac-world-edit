@@ -1,0 +1,918 @@
+{
+  "target": "quest:1,overview",
+  "nodes": [
+    {
+      "path": "AcQuestPanel",
+      "type": "AcQuestPanel",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabOverview",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Overview",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabStory",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Story",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabObjectives",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Objectives",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabRewards",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Rewards",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabChain",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chain & requirements",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabGivers",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Givers",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/TabPreview",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Preview",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Kanrethad's Quest",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Normal|Group (elite)|Life|PvP|Raid|Dungeon|World event|Legendary|Escort|Heroic|Raid (10)|Raid (25)",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "0 = solo"
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Normal|Auto-complete|Disabled",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Disabled quests are hidden; auto-complete quests finish on accept."
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Choose…",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Clear"
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "80",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "0 = no maximum"
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Seconds; 0 = untimed"
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Everyone|Alliance only|Horde only|Specific races…",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "All classes",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Fails on death",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Party accept",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Shareable",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Hidden rewards",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Tracking (auto-rewarded, hidden)",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Daily",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Forces PvP",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Unavailable",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Weekly",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Auto-complete",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Usable item in tracker",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Objective text as completion text",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Auto-accept",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Repeatable",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Completed by exploration or event",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Auto-accept",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Dungeon Finder quest",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Monthly",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Credit by spell, not kill",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "No reputation spillover",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Can fail in any state",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Not counted for Loremaster",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "AcQuestPanel/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    }
+  ]
+}

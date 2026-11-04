@@ -260,6 +260,7 @@ def ui_goldens_check() -> int:
     steps = [
         ["Tools/ui_golden.py", "--target", "behavior:295", "--profile", "wrath"],
         ["Tools/ui_golden.py", "--target", "creature:15192,gossip", "--profile", "wrath"],
+        ["Tools/ui_golden.py", "--target", "quest:1,overview", "--profile", "wrath"],
     ]
     for step in steps:
         if run(python + step) != 0:
