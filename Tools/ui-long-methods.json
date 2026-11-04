@@ -2,7 +2,7 @@
   "allowed": [
     "Scripts/Ui/BehaviorPanel.Rules.cs::RenderEditor",
     "Scripts/Ui/BehaviorPanel.cs::Render",
-    "Scripts/Ui/ClientStyle.cs::Theme",
+    "Scripts/Ui/Framework/ClientStyle.cs::Theme",
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderGossip",
     "Scripts/Ui/AzerothCore/AcGossipSection.cs::RenderOptions",
     "Scripts/Ui/TrinityCore/TcGossipSection.cs::Populate",
