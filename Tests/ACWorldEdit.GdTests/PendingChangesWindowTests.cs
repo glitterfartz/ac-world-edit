@@ -14,16 +14,15 @@ namespace ACWorldEdit.GdTests;
 [RequireGodotRuntime]
 public class PendingChangesWindowTests
 {
-    static readonly WorldPose Base = new(0, 1, 2, 3, 0);
-
+    // A moved creature spawn is a row edit of a "creature" table row, so it tags as CREATURE.
     static PendingChange Creature(string label, uint guid = 1) =>
-        new("id-" + guid, PendingKind.Creature, "s", label, new("s", guid, Base, Base with { X = 9 }), null, null);
+        new("id-" + guid, PendingKind.Row, "s", label, null, new RowEdit("creature", guid.ToString(), null, null));
 
     static PendingChange Graveyard(string label) =>
-        new("gy", PendingKind.Graveyard, "s", label, null, new GraveyardEdit("s", 4, new(4, 0, 1, 2, 3, "GY", []), new(4, 0, 9, 2, 3, "GY", [])), null);
+        new("gy", PendingKind.Graveyard, "s", label, new GraveyardEdit("s", 4, new(4, 0, 1, 2, 3, "GY", []), new(4, 0, 9, 2, 3, "GY", [])), null);
 
     static PendingChange Row(string label) =>
-        new("row", PendingKind.Row, "s", label, null, null, new RowEdit("creature_template", "42", null, null));
+        new("row", PendingKind.Row, "s", label, null, new RowEdit("creature_template", "42", null, null));
 
     /// <summary>
     /// A window added to the scene tree so _Ready builds its controls; freed with the test.
@@ -66,6 +65,7 @@ public class PendingChangesWindowTests
         AssertThat(All<Label>(window).Any(l => l.Text == "No unsaved changes.")).IsTrue();
         AssertThat(ButtonText(window, "Export All…").Disabled).IsTrue();
         AssertThat(ButtonText(window, "Discard All…").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Preview SQL…").Disabled).IsTrue();
         AssertThat(All<Button>(window).Count(b => b.Text == "Discard")).IsEqual(0);
     }
 
@@ -117,14 +117,17 @@ public class PendingChangesWindowTests
         var change = Creature("Move Kobold");
         window.Refresh([change], 0);
         PendingChange? discarded = null;
-        int exports = 0, discardAlls = 0;
+        int exports = 0, discardAlls = 0, previews = 0;
         window.DiscardRequested += c => discarded = c;
         window.ExportAllRequested += () => exports++;
         window.DiscardAllRequested += () => discardAlls++;
+        window.PreviewSqlRequested += () => previews++;
         ButtonText(window, "Discard").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Preview SQL…").EmitSignal(BaseButton.SignalName.Pressed);
         ButtonText(window, "Export All…").EmitSignal(BaseButton.SignalName.Pressed);
         ButtonText(window, "Discard All…").EmitSignal(BaseButton.SignalName.Pressed);
         AssertThat(discarded).IsEqual(change);
+        AssertThat(previews).IsEqual(1);
         AssertThat(exports).IsEqual(1);
         AssertThat(discardAlls).IsEqual(1);
     }

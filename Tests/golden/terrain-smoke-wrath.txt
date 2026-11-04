@@ -1,0 +1,4 @@
+TERRAIN_SMOKE_INITIAL tiles=9 textures=27
+TERRAIN_SMOKE_MOVED position=TileKey { X = 30, Y = 49 } tiles=9 textures=27
+TERRAIN_SMOKE_PASSED returned=TileKey { X = 34, Y = 49 } tiles=9 textures=27
+EXIT 0

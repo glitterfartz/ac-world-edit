@@ -38,19 +38,13 @@ public partial class QuestEditorWindow : ContentEditorWindow
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
-        var header = new HBoxContainer();
-        header.GuiInput += DragHeader;
-        root.AddChild(header);
-        var heading = ClientStyle.Text("Quest Editor", 19, ClientStyle.Header);
-        heading.MouseFilter = MouseFilterEnum.Ignore;
-        heading.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        header.AddChild(heading);
-        undo = ButtonIn(header, "Undo", () => Panel.History(false));
-        redo = ButtonIn(header, "Redo", () => Panel.History(true));
-        ButtonIn(header, "+ New quest", () => _ = Panel.NewQuest(null));
-        duplicate = ButtonIn(header, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
+        var header = AddHeader(root, "Quest Editor");
+        undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
+        ButtonIn(header.Row, "+ New quest", () => _ = Panel.NewQuest(null));
+        duplicate = ButtonIn(header.Row, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
         duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
-        ButtonIn(header, "✕", () => Visible = false);
+        ButtonIn(header.Row, "✕", () => Visible = false);
         split = new HBoxContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill

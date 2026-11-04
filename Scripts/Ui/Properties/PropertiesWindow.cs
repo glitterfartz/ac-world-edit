@@ -73,27 +73,12 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 8);
         AddChild(root);
-        var header = new HBoxContainer
-        {
-            MouseFilter = MouseFilterEnum.Stop
-        };
-        header.GuiInput += DragHeader;
-        root.AddChild(header);
-        var titles = new VBoxContainer
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        header.AddChild(titles);
-        title = ClientStyle.Text("", 19, ClientStyle.Header);
-        title.MouseFilter = MouseFilterEnum.Ignore;
-        titles.AddChild(title);
-        subtitle = ClientStyle.Text("", 13, ClientStyle.Faded);
-        subtitle.MouseFilter = MouseFilterEnum.Ignore;
-        titles.AddChild(subtitle);
-        undo = ButtonIn(header, "Undo", () => History(false));
-        redo = ButtonIn(header, "Redo", () => History(true));
-        ButtonIn(header, "✕", CloseWindow).TooltipText = "Close (Esc)";
+        var header = AddHeader(root, "", "");
+        title = header.Title;
+        subtitle = header.Subtitle!;
+        undo = ButtonIn(header.Row, "Undo", () => History(false));
+        redo = ButtonIn(header.Row, "Redo", () => History(true));
+        ButtonIn(header.Row, "✕", CloseWindow).TooltipText = "Close (Esc)";
         root.AddChild(new HSeparator());
         var split = new HBoxContainer
         {

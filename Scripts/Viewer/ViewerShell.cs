@@ -1,0 +1,293 @@
+using Godot;
+using ACWorldEdit.Assets;
+using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
+
+namespace ACWorldEdit;
+
+/// <summary>
+/// Standalone camera/input/archive/streaming coordinator. UI lives in a partial file and opt-in
+/// smoke workflows under Diagnostics; GPU work stays on the Godot thread.
+/// </summary>
+public partial class ViewerShell : Node3D
+{
+    IClientFiles? store;
+    // The client's star model, drawn like a skybox model; both clients have it under this name.
+    const string StarsModelPath = "Environments/Stars/stars.m2";
+    WorldMap? world;
+    TerrainRenderer renderer = null!;
+    ModelLibrary models = null!;
+    WorldObjectScene objects = null!;
+    Camera3D camera = null!;
+    SkyLighting sky = null!;
+    ClientLighting? lighting;
+    AreaLookup? areas;
+    // Three distinct ownership states: wanted keys, one worker/building result, and
+    // fully uploaded tile roots. Generation guards prevent map/reload races.
+    readonly Dictionary<TileKey, Node3D> loaded = [];
+    // Per-tile MCNK AreaId grid (chunkY*16+chunkX), kept only for the current zone/continent label;
+    // CPU terrain data is otherwise discarded once a tile finishes uploading.
+    readonly Dictionary<TileKey, uint[]> chunkAreas = [];
+    // CPU height copies for ground snapping; same lifetime as the loaded tile node.
+    readonly Dictionary<TileKey, TerrainHeights> terrainHeights = [];
+    PlacementTool placement = null!;
+    readonly HashSet<TileKey> failed = [];
+    readonly HashSet<string> reportedNotices = [];
+    readonly HashSet<TileKey> wanted = [];
+    Task<PreparedTile>? pending;
+    TileKey? pendingKey;
+    CancellationTokenSource cancellation = new();
+    PreparedTile? building;
+    Node3D? buildingNode;
+    int buildIndex, generation;
+    bool capture;
+    // One session state drives both the busy guards and the Open world button.
+    SessionState session = SessionState.Unavailable;
+    bool busy => session == SessionState.Loading;
+
+    void SetSession(SessionState value)
+    {
+        session = value;
+        if (open != null)
+        {
+            open.Disabled = value != SessionState.Ready;
+        }
+    }
+    float yaw, pitch = -0.4f, speed = 70;
+    int radius = 1;
+    // The SQL query region is intentionally stickier than the terrain load/release window (see
+    // UpdateWanted); these remember its last recompute center/radius.
+    TileKey? spawnRegionCenter;
+    int spawnRegionLoadRadius = -1;
+    OptionButton maps = null!;
+    SpinBox tileX = null!, tileY = null!, distance = null!;
+    // Active client profile and one remembered folder per profile (chosen in File → Load client…); empty until chosen.
+    ClientProfile profile = ClientProfile.For(ClientKind.Wrath335);
+    string wrathDirectory = "", retailDirectory = "";
+    // False when the open client cannot be described by the world database (Retail): database layers,
+    // teleports and the content editors stay off instead of querying a mismatched server.
+    bool databaseEnabled = true;
+    IClientLookup? clientLookup;
+    string dataDirectory
+    {
+        get => profile.Kind == ClientKind.Retail ? retailDirectory : wrathDirectory;
+        set
+        {
+            if (profile.Kind == ClientKind.Retail)
+            {
+                retailDirectory = value;
+            }
+            else
+            {
+                wrathDirectory = value;
+            }
+        }
+    }
+
+    Button open = null!;
+    Label status = null!, zoneLabel = null!, continentLabel = null!;
+    Slider timeOfDay = null!;
+    Label timeOfDayLabel = null!;
+    Button playTime = null!;
+    List<MapInfo> mapList = [];
+    TerrainMinimap minimap = null!;
+    string message = "Opening client…";
+    readonly StatusLog statusLog = new();
+    StatusBar statusBar = null!;
+    // The "Started at" note clears itself after a few seconds unless something else replaced it.
+    string startMessage = "";
+    ulong startMessageShown;
+    const ulong StartMessageMs = 6000;
+    /// <summary>
+    /// User-entered world database connection shared by every database-backed layer and editor.
+    /// </summary>
+    readonly ConnectionForm connection = new();
+    /// <summary>The dialect follows the client kind; the form holds the settings saved for that profile.</summary>
+    WorldConnection DatabaseConnection() => connection.Connection;
+    CreatureOverlay creatures = null!;
+    GameObjectOverlay gameObjects = null!;
+    GraveyardOverlay graveyards = null!;
+    WaypointOverlay waypoints = null!;
+    AreaTriggerOverlay areaTriggers = null!;
+    /// <summary>The database-backed layers, in draw order, so a region step fans out from one list.</summary>
+    RegionOverlay[] overlays = [];
+    SceneSidebar sidebar = null!;
+    NavigationOverlay navigation = null!;
+    ushort? currentMapId;
+    /// <summary>
+    /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
+    /// generations cannot be published.
+    /// </summary>
+    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices, TerrainRenderer.PreparedTerrain Terrain);
+    /// <summary>
+    /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
+    /// archives.
+    /// </summary>
+    public override async void _Ready()
+    {
+        ContentDraftFiles.UseProfile(UserSettings.LoadProfile());
+        BuildSceneSystems();
+        BuildUi();
+        navigation.Configure(profile.Kind, null);
+        WarnMissingDependencies(UserSettings.LoadProfile());
+        connection.Applied += () => _ = LoadTeleports();
+        _ = LoadTeleports();
+        ConfigureSmokeChecks();
+        _ = StartupPrompts();
+        await LoadClient();
+    }
+
+    /// <summary>Renderer, camera, sky, overlays, placement tool and navigation, before any UI exists.</summary>
+    void BuildSceneSystems()
+    {
+        renderer = new TerrainRenderer();
+        models = new ModelLibrary();
+        // Placements hang under their own node so the world scene is not the shell's direct child.
+        var objectRoot = new Node3D { Name = "Objects" };
+        AddChild(objectRoot);
+        objects = new WorldObjectScene(objectRoot, models);
+        camera = new Camera3D
+        {
+            Name = "Camera",
+            Far = 8000,
+            Near = 0.2f,
+            Fov = 70,
+            Current = true
+        };
+        AddChild(camera);
+        sky = new SkyLighting(models);
+        AddChild(sky);
+        creatures = new CreatureOverlay
+        {
+            Models = models,
+            Connection = () => DatabaseConnection(),
+            Report = statusLog.Post
+        };
+        AddChild(creatures);
+        creatures.FocusRequested += FocusPose;
+        creatures.GroundAt = GroundAt;
+        gameObjects = new GameObjectOverlay { Models = models, Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post };
+        AddChild(gameObjects);
+        gameObjects.FocusRequested += FocusPose;
+        graveyards = new GraveyardOverlay { Connection = () => DatabaseConnection(), Areas = () => areas, GroundAt = GroundAt, Report = statusLog.Post };
+        AddChild(graveyards);
+        graveyards.FocusRequested += FocusPose;
+        waypoints = new WaypointOverlay { Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
+        AddChild(waypoints);
+        waypoints.FocusRequested += FocusPose;
+        areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection(), Lookup = () => clientLookup };
+        AddChild(areaTriggers);
+        areaTriggers.FocusRequested += FocusPose;
+        overlays = [creatures, gameObjects, graveyards, waypoints, areaTriggers];
+        placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
+        AddChild(placement);
+        creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
+        gameObjects.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.GameObject, entry, name));
+        placement.Changed += template =>
+        {
+            creatures.PlaceCard.SetPlacing(template?.Kind == SpawnKind.Creature ? template.Name : null);
+            gameObjects.PlaceCard.SetPlacing(template?.Kind == SpawnKind.GameObject ? template.Name : null);
+            if (template != null)
+            {
+                statusLog.Post($"Placing {template.Name}. Esc stops.");
+            }
+        };
+        navigation = new NavigationOverlay { Report = statusLog.Post, OcclusionDistance = NavigationOcclusion };
+        AddChild(navigation);
+    }
+
+    /// <summary>
+    /// Move to an available tile and refresh streaming. Adjust elevation from cached geometry now or
+    /// when its pending upload completes.
+    /// </summary>
+    void Teleport(TileKey key)
+    {
+        if (world == null || !world.Tiles.Contains(key))
+        {
+            return;
+        }
+
+        cameraFocused = false;
+        camera.Position = new Vector3((key.X - 32 + 0.5f) * TerrainTile.Size, 250, (key.Y - 32 + 0.5f) * TerrainTile.Size);
+        yaw = 0;
+        pitch = -0.55f;
+        camera.Rotation = new Vector3(pitch, yaw, 0);
+        UpdateWanted();
+        // A loaded tile can supply elevation immediately; otherwise adjust when it finishes.
+        if (loaded.TryGetValue(key, out var node))
+        {
+            RaiseAboveTerrain(node);
+        }
+    }
+
+    /// <summary>
+    /// Convert camera horizontal coordinates to floor-based tile indices. Interiors may have camera
+    /// indices outside the terrain grid.
+    /// </summary>
+    TileKey CameraTile() => TileGrid.FromView(camera.Position.X, camera.Position.Z);
+
+
+    /// <summary>
+    /// Convert the camera's view-space position to server coordinates. The Y is the camera's eye height, not the ground.
+    /// </summary>
+    Vector3 CameraServer()
+    {
+        var position = ViewSpace.ToServer(camera.Position);
+        return new Vector3((float)position.X, (float)position.Y, (float)position.Z);
+    }
+
+    /// <summary>
+    /// Resolve the camera's current zone/subzone and continent for the UI title. Outdoor maps use the
+    /// nearest loaded chunk's MCNK AreaId; interiors have no per-chunk area, so only the map's own
+    /// display name is shown.
+    /// </summary>
+    (string Zone, string Continent) CurrentLocation()
+    {
+        string continent = maps.Selected >= 0 && maps.Selected < mapList.Count ? mapList[maps.Selected].Name : "";
+        if (world == null)
+        {
+            return ("", "");
+        }
+
+        if (world.Tiles.Count == 0)
+        {
+            return (continent, "");
+        }
+
+        var tile = CameraTile();
+        if (areas == null || !chunkAreas.TryGetValue(tile, out var ids) || !loaded.TryGetValue(tile, out var root))
+        {
+            return ("", continent);
+        }
+
+        int cx = Math.Clamp((int)((camera.Position.X - root.Position.X) / TerrainTile.ChunkSize), 0, 15);
+        int cy = Math.Clamp((int)((camera.Position.Z - root.Position.Z) / TerrainTile.ChunkSize), 0, 15);
+        var (zone, parent) = areas.Describe(ids[cy * 16 + cx]);
+        return (parent != null ? $"{parent} — {zone}" : zone, continent);
+    }
+    /// <summary>
+    /// True after a deliberate focus (fly to a creature, object or graveyard): the camera sits just
+    /// above that target on purpose, so a tile finishing underneath must not lift it away. Cleared
+    /// by keyboard movement and teleports, which keep the lift-above-terrain assistance.
+    /// </summary>
+    bool cameraFocused;
+
+    /// <summary>
+    /// Move near a server pose and synchronize mouse-look angles before refreshing the region.
+    /// </summary>
+    void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
+    {
+        cameraFocused = true;
+        var position = ViewSpace.ToView(pose);
+        camera.Position = position + new Vector3(0, 8, 15);
+        camera.LookAt(position + Vector3.Up);
+        yaw = camera.Rotation.Y;
+        pitch = camera.Rotation.X;
+        UpdateWanted();
+    }
+
+
+
+
+
+}

@@ -105,7 +105,7 @@ Docs: `architecture/editing-and-export.md` (allocator, nullable, references), `a
 **Benefit to the user:** You can build a camp in minutes by dragging templates from the browser onto the terrain. Ctrl+D duplicates a selection, Delete removes it, and the inspector sets per-spawn behavior. This is the Unity/Unreal "drop prefab, tweak instance" loop.
 
 UX:
-- **Drag from the Content Browser** shows a ghost model that follows the ground (`TerrainViewer.Ground.cs`, `ScenePicking`) and snaps to WMO floors. Click places it. Shift keeps placing. Facing comes from a rotate-drag or the existing gizmo.
+- **Drag from the Content Browser** shows a ghost model that follows the ground (`ViewerShell.Ground.cs`, `ScenePicking`) and snaps to WMO floors. Click places it. Shift keeps placing. Facing comes from a rotate-drag or the existing gizmo.
 - **Multi-select** (box select, Ctrl-click) for move, duplicate and delete together. Copy/paste across zones keeps relative layout.
 - **Spawn inspector** (in `CreatureOverlay.Ui` / `GameObjectOverlay.Ui`):
   - *Spawn*: respawn timer (min/sec), wander radius drawn as a ring in the viewport, movement type (Idle, Random, Path → Phase 14), current health %.
@@ -348,7 +348,7 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 | Page layout and fields | `EntityPage` / `FieldSpec` / `ItemListSpec` (Phase 10), `PageRenderer` |
 | Edits, undo, export | `InteractionDraft`, `RowEdit`, `DraftHistory`, `SqlExport`, `PendingChanges` |
 | Pickers | `PickerPopup` (`Scripts/Ui/EditorFields.cs:311`), `CreatureSection.SearchState<T>`, `IClientLookup.Search*` / `Exists(ClientRecord, id)` |
-| Positions and gizmos | `TransformGizmo`, `ScenePicking`, `TerrainViewer.Ground`, `RegionOverlay` / `RegionQuery` |
+| Positions and gizmos | `TransformGizmo`, `ScenePicking`, `ViewerShell.Ground`, `RegionOverlay` / `RegionQuery` |
 | Generated catalogs | `Tools/generate_smart_catalog.py` pattern → GO types, conditions |
 | Behavior | `BehaviorPanel` with new SmartAI source types (1 for GOs, etc.) |
 

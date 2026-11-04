@@ -86,20 +86,9 @@ public partial class GraveyardOverlay
         return scroll;
     }
 
-    static OptionButton FactionPicker(ushort faction)
-    {
-        var picker = new OptionButton
-        {
-            FitToLongestItem = false
-        };
-        foreach (var (name, _) in Factions)
-        {
-            picker.AddItem(name);
-        }
-
-        picker.Select(Math.Max(0, Array.FindIndex(Factions, f => f.Value == faction)));
-        return picker;
-    }
+    static OptionButton FactionPicker(ushort faction) =>
+        InspectorUi.Choice(Factions.Select(f => f.Name).ToArray(), Math.Max(0, Array.FindIndex(Factions, f => f.Value == faction)),
+            fitToLongest: false);
 
     void PopulateList()
     {

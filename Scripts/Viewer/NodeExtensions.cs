@@ -37,13 +37,4 @@ public static class NodeExtensions
         node(value).Discard();
         return true;
     }
-
-    /// <summary>Discards and removes every entry the predicate selects.</summary>
-    public static void FreeWhere<TKey, TValue>(this Dictionary<TKey, TValue> items, Func<TKey, TValue, bool> drop, Func<TValue, Node3D> node) where TKey : notnull
-    {
-        foreach (var pair in items.Where(p => drop(p.Key, p.Value)).ToArray())
-        {
-            items.Free(pair.Key, node);
-        }
-    }
 }

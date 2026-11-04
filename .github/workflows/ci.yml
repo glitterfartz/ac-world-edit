@@ -42,6 +42,31 @@ jobs:
           path: TestResults
           retention-days: 7
 
+  viewer-tests:
+    # The Godot-hosted gdUnit4 project. Its suites are in-memory, so no client data or database is
+    # needed. It runs as its own job so a failure names the harness rather than the xUnit suite.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ./.github/actions/setup-build
+
+      - uses: ./.github/actions/setup-godot
+
+      - name: Test (gdUnit4)
+        run: dotnet test Tests/ACWorldEdit.GdTests -c Release -p:NuGetAudit=false --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viewer-test-results
+          path: TestResults
+          retention-days: 7
+
   package:
     # Builds a downloadable Windows build of every master push (and manual runs), not of pull requests.
     if: github.event_name != 'pull_request'

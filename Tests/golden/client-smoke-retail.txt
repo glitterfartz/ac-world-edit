@@ -1,0 +1,2 @@
+CLIENT_SMOKE_OK kind=Retail build=12.1.5.70783 maps=972 map=Azeroth tiles=1176 streamed=1 textures=7 globalWmos=0 database=True catalogs=True message=<text>
+EXIT 0

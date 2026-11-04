@@ -220,4 +220,67 @@ public static class InspectorUi
         button.Pressed += action;
         return button;
     }
+
+    /// <summary>
+    /// The Undo/Redo row of a placement card. Both buttons are enabled by the overlay's own state
+    /// pass, so the helper only builds them.
+    /// </summary>
+    public static (Button Undo, Button Redo) HistoryRow(Container card, Action undo, Action redo)
+    {
+        var row = new HBoxContainer();
+        card.AddChild(row);
+        var undoButton = Button("Undo move", undo);
+        var redoButton = Button("Redo move", redo);
+        row.AddChild(undoButton);
+        row.AddChild(redoButton);
+        return (undoButton, redoButton);
+    }
+
+    /// <summary>
+    /// The capitalised "Pose (server coordinates)" block of a placement card: separator, caption and
+    /// four coordinate fields that submit as one draft command. Fields start read-only.
+    /// </summary>
+    public static void PoseCard(Container card, LineEdit[] fields, Action submit)
+    {
+        card.AddChild(new HSeparator());
+        card.AddChild(Text("Pose (server coordinates)", 12, true));
+        EditorFields.CoordinateGrid(card, ["X", "Y", "Z", "Heading°"], fields, submit);
+        foreach (var field in fields)
+        {
+            field.Editable = false;
+        }
+    }
+
+    /// <summary>
+    /// A plain option list, optionally attached to a parent. <paramref name="selected"/> is applied
+    /// without emitting the callback, as a programmatic selection does today.
+    /// </summary>
+    public static OptionButton Choice(IReadOnlyList<string> labels, int selected, Action<int>? onChanged = null,
+        Container? parent = null, string tooltip = "", bool expand = false, bool fitToLongest = true)
+    {
+        var choice = new OptionButton
+        {
+            FitToLongestItem = fitToLongest,
+            TooltipText = tooltip
+        };
+        if (expand)
+        {
+            choice.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        }
+
+        foreach (string label in labels)
+        {
+            choice.AddItem(label);
+        }
+
+        choice.Select(selected);
+
+        if (onChanged != null)
+        {
+            choice.ItemSelected += index => onChanged((int)index);
+        }
+
+        parent?.AddChild(choice);
+        return choice;
+    }
 }

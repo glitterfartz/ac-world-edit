@@ -8,7 +8,7 @@ each one bought, and experiments that were reverted are in
 
 ## How to measure
 
-`--perf-smoke` (`Scripts/Diagnostics/TerrainViewer.PerfSmoke.cs`) is the streaming benchmark. Run it
+`--perf-smoke` (`Scripts/Diagnostics/ViewerShell.PerfSmoke.cs`) is the streaming benchmark. Run it
 windowed (headless uses a dummy renderer, so uploads and draws cost nothing):
 
 ```powershell
@@ -34,7 +34,7 @@ the time all threads have held the CASC read lock since the process started (it 
 so it bounds the serialized share of model decode from above). It ends with `PERF_SMOKE_PASSED`.
 Discard the first run after a build (shader cache) and compare medians of three.
 
-`--perf-breakdown` (`Scripts/Diagnostics/TerrainViewer.PerfBreakdown.cs`) is the static benchmark: parks
+`--perf-breakdown` (`Scripts/Diagnostics/ViewerShell.PerfBreakdown.cs`) is the static benchmark: parks
 the camera at five Stormwind poses once streaming is idle and measures what each scene category costs.
 It is described under [Current frame budget](#current-frame-budget-forward).
 

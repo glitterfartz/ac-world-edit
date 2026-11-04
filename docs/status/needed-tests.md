@@ -10,7 +10,7 @@ for; what is left is below.
 
 - [ ] Viewer notices: dropped layers and FileDataID-0 layers are reported once per map, not once per
   tile, and not through the "N missing/unsupported textures" message (`reportedNotices` in
-  `TerrainViewer`). Godot-side, so a smoke or a manual check.
+  `ViewerShell`). Godot-side, so a smoke or a manual check.
 - [ ] Path-named placements: a map whose WDT/ADT names models by path (old style) still opens, and the
   "Path is not in the listfile" failure is reported once instead of per placement. Needs the community
   listfile absent to reproduce.
@@ -45,9 +45,9 @@ for; what is left is below.
 
 ## Retail liquids and sky
 
-- [ ] `ClientLighting.TryLoadRetail` needs Godot types, so it is only covered by the viewer: a smoke that
-  prints the resolved profile (sky/ambient/fog colours, skybox FileDataID) for a camera position on
-  Azeroth.
+- [ ] `ClientLighting.TryLoadRetail` no longer needs Godot types, but it still reads concrete `Db2Tables`,
+  so a unit fixture needs an in-memory row seam. Until then the retail `--state-dump` pins the resolved
+  profile and the whole `--state-retail` golden catches a parser change.
 - [ ] Visual: the skybox model follows the camera and the time-of-day scrub changes the retail sky.
   `--skybox-smoke` covers loading and occlusion against world geometry; the follow and scrub check is
   still manual.

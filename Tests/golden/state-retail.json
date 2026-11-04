@@ -1,0 +1,6851 @@
+{
+  "profile": {
+    "kind": "Retail",
+    "title": "RETAIL"
+  },
+  "client": {
+    "databaseEnabled": true,
+    "maps": [
+      {
+        "Id": 0,
+        "Name": "Eastern Kingdoms",
+        "Directory": "Azeroth",
+        "Continent": true
+      },
+      {
+        "Id": 1,
+        "Name": "Kalimdor",
+        "Directory": "Kalimdor",
+        "Continent": true
+      },
+      {
+        "Id": 30,
+        "Name": "Alterac Valley",
+        "Directory": "PVPZone01",
+        "Continent": false
+      },
+      {
+        "Id": 33,
+        "Name": "Shadowfang Keep",
+        "Directory": "Shadowfang",
+        "Continent": false
+      },
+      {
+        "Id": 34,
+        "Name": "Stormwind Stockade",
+        "Directory": "StormwindJail",
+        "Continent": false
+      },
+      {
+        "Id": 36,
+        "Name": "Deadmines",
+        "Directory": "DeadminesInstance",
+        "Continent": false
+      },
+      {
+        "Id": 43,
+        "Name": "Wailing Caverns",
+        "Directory": "WailingCaverns",
+        "Continent": false
+      },
+      {
+        "Id": 47,
+        "Name": "Razorfen Kraul",
+        "Directory": "RazorfenKraulInstance",
+        "Continent": false
+      },
+      {
+        "Id": 48,
+        "Name": "Blackfathom Deeps",
+        "Directory": "Blackfathom",
+        "Continent": false
+      },
+      {
+        "Id": 70,
+        "Name": "Uldaman",
+        "Directory": "Uldaman",
+        "Continent": false
+      },
+      {
+        "Id": 90,
+        "Name": "Gnomeregan",
+        "Directory": "GnomeragonInstance",
+        "Continent": false
+      },
+      {
+        "Id": 109,
+        "Name": "Sunken Temple",
+        "Directory": "SunkenTemple",
+        "Continent": false
+      },
+      {
+        "Id": 129,
+        "Name": "Razorfen Downs",
+        "Directory": "RazorfenDowns",
+        "Continent": false
+      },
+      {
+        "Id": 169,
+        "Name": "Emerald Dream",
+        "Directory": "EmeraldDream",
+        "Continent": false
+      },
+      {
+        "Id": 189,
+        "Name": "Scarlet Monastery of Old",
+        "Directory": "MonasteryInstances",
+        "Continent": false
+      },
+      {
+        "Id": 209,
+        "Name": "Zul'Farrak",
+        "Directory": "TanarisInstance",
+        "Continent": false
+      },
+      {
+        "Id": 229,
+        "Name": "Lower Blackrock Spire",
+        "Directory": "BlackRockSpire",
+        "Continent": false
+      },
+      {
+        "Id": 230,
+        "Name": "Blackrock Depths",
+        "Directory": "BlackrockDepths",
+        "Continent": false
+      },
+      {
+        "Id": 249,
+        "Name": "Onyxia's Lair",
+        "Directory": "OnyxiaLairInstance",
+        "Continent": false
+      },
+      {
+        "Id": 269,
+        "Name": "Opening of the Dark Portal",
+        "Directory": "CavernsOfTime",
+        "Continent": false
+      },
+      {
+        "Id": 289,
+        "Name": "Scholomance",
+        "Directory": "SchoolofNecromancy",
+        "Continent": false
+      },
+      {
+        "Id": 309,
+        "Name": "Ancient Zul'Gurub",
+        "Directory": "Zul'gurub",
+        "Continent": false
+      },
+      {
+        "Id": 329,
+        "Name": "Stratholme",
+        "Directory": "Stratholme",
+        "Continent": false
+      },
+      {
+        "Id": 349,
+        "Name": "Maraudon",
+        "Directory": "Mauradon",
+        "Continent": false
+      },
+      {
+        "Id": 369,
+        "Name": "Deeprun Tram",
+        "Directory": "DeeprunTram",
+        "Continent": true
+      },
+      {
+        "Id": 389,
+        "Name": "Ragefire Chasm",
+        "Directory": "OrgrimmarInstance",
+        "Continent": false
+      },
+      {
+        "Id": 409,
+        "Name": "Molten Core",
+        "Directory": "MoltenCore",
+        "Continent": false
+      },
+      {
+        "Id": 429,
+        "Name": "Dire Maul",
+        "Directory": "DireMaul",
+        "Continent": false
+      },
+      {
+        "Id": 449,
+        "Name": "Alliance PVP Barracks",
+        "Directory": "AlliancePVPBarracks",
+        "Continent": true
+      },
+      {
+        "Id": 450,
+        "Name": "Horde PVP Barracks",
+        "Directory": "HordePVPBarracks",
+        "Continent": true
+      },
+      {
+        "Id": 469,
+        "Name": "Blackwing Lair",
+        "Directory": "BlackwingLair",
+        "Continent": false
+      },
+      {
+        "Id": 489,
+        "Name": "Classic Warsong Gulch",
+        "Directory": "PVPZone03",
+        "Continent": false
+      },
+      {
+        "Id": 509,
+        "Name": "Ruins of Ahn'Qiraj",
+        "Directory": "AhnQiraj",
+        "Continent": false
+      },
+      {
+        "Id": 529,
+        "Name": "Classic Arathi Basin",
+        "Directory": "PVPZone04",
+        "Continent": false
+      },
+      {
+        "Id": 530,
+        "Name": "Outland",
+        "Directory": "Expansion01",
+        "Continent": true
+      },
+      {
+        "Id": 531,
+        "Name": "Ahn'Qiraj Temple",
+        "Directory": "AhnQirajTemple",
+        "Continent": false
+      },
+      {
+        "Id": 532,
+        "Name": "Karazhan",
+        "Directory": "Karazahn",
+        "Continent": false
+      },
+      {
+        "Id": 533,
+        "Name": "Naxxramas",
+        "Directory": "Stratholme Raid",
+        "Continent": false
+      },
+      {
+        "Id": 534,
+        "Name": "The Battle for Mount Hyjal",
+        "Directory": "HyjalPast",
+        "Continent": false
+      },
+      {
+        "Id": 540,
+        "Name": "Hellfire Citadel: The Shattered Halls",
+        "Directory": "HellfireMilitary",
+        "Continent": false
+      },
+      {
+        "Id": 542,
+        "Name": "Hellfire Citadel: The Blood Furnace",
+        "Directory": "HellfireDemon",
+        "Continent": false
+      },
+      {
+        "Id": 543,
+        "Name": "Hellfire Citadel: Ramparts",
+        "Directory": "HellfireRampart",
+        "Continent": false
+      },
+      {
+        "Id": 544,
+        "Name": "Magtheridon's Lair",
+        "Directory": "HellfireRaid",
+        "Continent": false
+      },
+      {
+        "Id": 545,
+        "Name": "Coilfang: The Steamvault",
+        "Directory": "CoilfangPumping",
+        "Continent": false
+      },
+      {
+        "Id": 546,
+        "Name": "Coilfang: The Underbog",
+        "Directory": "CoilfangMarsh",
+        "Continent": false
+      },
+      {
+        "Id": 547,
+        "Name": "Coilfang: The Slave Pens",
+        "Directory": "CoilfangDraenei",
+        "Continent": false
+      },
+      {
+        "Id": 548,
+        "Name": "Coilfang: Serpentshrine Cavern",
+        "Directory": "CoilfangRaid",
+        "Continent": false
+      },
+      {
+        "Id": 550,
+        "Name": "Tempest Keep",
+        "Directory": "TempestKeepRaid",
+        "Continent": false
+      },
+      {
+        "Id": 552,
+        "Name": "Tempest Keep: The Arcatraz",
+        "Directory": "TempestKeepArcane",
+        "Continent": false
+      },
+      {
+        "Id": 553,
+        "Name": "Tempest Keep: The Botanica",
+        "Directory": "TempestKeepAtrium",
+        "Continent": false
+      },
+      {
+        "Id": 554,
+        "Name": "Tempest Keep: The Mechanar",
+        "Directory": "TempestKeepFactory",
+        "Continent": false
+      },
+      {
+        "Id": 555,
+        "Name": "Auchindoun: Shadow Labyrinth",
+        "Directory": "AuchindounShadow",
+        "Continent": false
+      },
+      {
+        "Id": 556,
+        "Name": "Auchindoun: Sethekk Halls",
+        "Directory": "AuchindounDemon",
+        "Continent": false
+      },
+      {
+        "Id": 557,
+        "Name": "Auchindoun: Mana-Tombs",
+        "Directory": "AuchindounEthereal",
+        "Continent": false
+      },
+      {
+        "Id": 558,
+        "Name": "Auchindoun: Auchenai Crypts",
+        "Directory": "AuchindounDraenei",
+        "Continent": false
+      },
+      {
+        "Id": 559,
+        "Name": "Nagrand Arena (old)",
+        "Directory": "PVPZone05",
+        "Continent": false
+      },
+      {
+        "Id": 560,
+        "Name": "The Escape from Durnholde",
+        "Directory": "HillsbradPast",
+        "Continent": false
+      },
+      {
+        "Id": 562,
+        "Name": "zzOldBlade's Edge Arena",
+        "Directory": "bladesedgearena",
+        "Continent": false
+      },
+      {
+        "Id": 564,
+        "Name": "Black Temple",
+        "Directory": "BlackTemple",
+        "Continent": false
+      },
+      {
+        "Id": 565,
+        "Name": "Gruul's Lair",
+        "Directory": "GruulsLair",
+        "Continent": false
+      },
+      {
+        "Id": 566,
+        "Name": "Eye of the Storm",
+        "Directory": "NetherstormBG",
+        "Continent": false
+      },
+      {
+        "Id": 568,
+        "Name": "Zul'Aman",
+        "Directory": "ZulAman",
+        "Continent": false
+      },
+      {
+        "Id": 571,
+        "Name": "Northrend",
+        "Directory": "Northrend",
+        "Continent": true
+      },
+      {
+        "Id": 572,
+        "Name": "Ruins of Lordaeron",
+        "Directory": "PVPLordaeron",
+        "Continent": false
+      },
+      {
+        "Id": 574,
+        "Name": "Utgarde Keep",
+        "Directory": "Valgarde70",
+        "Continent": false
+      },
+      {
+        "Id": 575,
+        "Name": "Utgarde Pinnacle",
+        "Directory": "UtgardePinnacle",
+        "Continent": false
+      },
+      {
+        "Id": 576,
+        "Name": "The Nexus",
+        "Directory": "Nexus70",
+        "Continent": false
+      },
+      {
+        "Id": 578,
+        "Name": "The Oculus",
+        "Directory": "Nexus80",
+        "Continent": false
+      },
+      {
+        "Id": 580,
+        "Name": "The Sunwell",
+        "Directory": "SunwellPlateau",
+        "Continent": false
+      },
+      {
+        "Id": 585,
+        "Name": "Magisters' Terrace",
+        "Directory": "Sunwell5ManFix",
+        "Continent": false
+      },
+      {
+        "Id": 595,
+        "Name": "The Culling of Stratholme",
+        "Directory": "StratholmeCOT",
+        "Continent": false
+      },
+      {
+        "Id": 599,
+        "Name": "Halls of Stone",
+        "Directory": "Ulduar70",
+        "Continent": false
+      },
+      {
+        "Id": 600,
+        "Name": "Drak'Tharon Keep",
+        "Directory": "DrakTheronKeep",
+        "Continent": false
+      },
+      {
+        "Id": 601,
+        "Name": "Azjol-Nerub",
+        "Directory": "Azjol_Uppercity",
+        "Continent": false
+      },
+      {
+        "Id": 602,
+        "Name": "Halls of Lightning",
+        "Directory": "Ulduar80",
+        "Continent": false
+      },
+      {
+        "Id": 603,
+        "Name": "Ulduar",
+        "Directory": "UlduarRaid",
+        "Continent": false
+      },
+      {
+        "Id": 604,
+        "Name": "Gundrak",
+        "Directory": "GunDrak",
+        "Continent": false
+      },
+      {
+        "Id": 607,
+        "Name": "Strand of the Ancients",
+        "Directory": "NorthrendBG",
+        "Continent": false
+      },
+      {
+        "Id": 608,
+        "Name": "Violet Hold",
+        "Directory": "DalaranPrison",
+        "Continent": false
+      },
+      {
+        "Id": 609,
+        "Name": "Ebon Hold",
+        "Directory": "DeathKnightStart",
+        "Continent": true
+      },
+      {
+        "Id": 615,
+        "Name": "The Obsidian Sanctum",
+        "Directory": "ChamberOfAspectsBlack",
+        "Continent": false
+      },
+      {
+        "Id": 616,
+        "Name": "The Eye of Eternity",
+        "Directory": "NexusRaid",
+        "Continent": false
+      },
+      {
+        "Id": 617,
+        "Name": "Dalaran Sewers",
+        "Directory": "DalaranArena",
+        "Continent": false
+      },
+      {
+        "Id": 619,
+        "Name": "Ahn'kahet: The Old Kingdom",
+        "Directory": "Azjol_LowerCity",
+        "Continent": false
+      },
+      {
+        "Id": 624,
+        "Name": "Vault of Archavon",
+        "Directory": "WintergraspRaid",
+        "Continent": false
+      },
+      {
+        "Id": 627,
+        "Name": "Unused (DELETE ME)",
+        "Directory": "unused",
+        "Continent": false
+      },
+      {
+        "Id": 628,
+        "Name": "Isle of Conquest",
+        "Directory": "IsleofConquest",
+        "Continent": false
+      },
+      {
+        "Id": 631,
+        "Name": "Icecrown Citadel",
+        "Directory": "IcecrownCitadel",
+        "Continent": false
+      },
+      {
+        "Id": 632,
+        "Name": "The Forge of Souls",
+        "Directory": "IcecrownCitadel5Man",
+        "Continent": false
+      },
+      {
+        "Id": 637,
+        "Name": "Abyssal Maw Exterior",
+        "Directory": "AbyssalMaw",
+        "Continent": false
+      },
+      {
+        "Id": 638,
+        "Name": "Gilneas",
+        "Directory": "Gilneas",
+        "Continent": true
+      },
+      {
+        "Id": 643,
+        "Name": "Throne of the Tides",
+        "Directory": "AbyssalMaw_Interior",
+        "Continent": false
+      },
+      {
+        "Id": 644,
+        "Name": "Halls of Origination",
+        "Directory": "Uldum",
+        "Continent": false
+      },
+      {
+        "Id": 645,
+        "Name": "Blackrock Caverns",
+        "Directory": "BlackRockSpire_4_0",
+        "Continent": false
+      },
+      {
+        "Id": 646,
+        "Name": "Deepholm",
+        "Directory": "Deephome",
+        "Continent": true
+      },
+      {
+        "Id": 648,
+        "Name": "LostIsles",
+        "Directory": "LostIsles",
+        "Continent": true
+      },
+      {
+        "Id": 649,
+        "Name": "Trial of the Crusader",
+        "Directory": "ArgentTournamentRaid",
+        "Continent": false
+      },
+      {
+        "Id": 650,
+        "Name": "Trial of the Champion",
+        "Directory": "ArgentTournamentDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 654,
+        "Name": "Gilneas2",
+        "Directory": "Gilneas2",
+        "Continent": true
+      },
+      {
+        "Id": 655,
+        "Name": "GilneasPhase1",
+        "Directory": "GilneasPhase1",
+        "Continent": true
+      },
+      {
+        "Id": 656,
+        "Name": "GilneasPhase2",
+        "Directory": "GilneasPhase2",
+        "Continent": true
+      },
+      {
+        "Id": 657,
+        "Name": "The Vortex Pinnacle",
+        "Directory": "SkywallDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 658,
+        "Name": "Pit of Saron",
+        "Directory": "QuarryofTears",
+        "Continent": false
+      },
+      {
+        "Id": 659,
+        "Name": "Lost Isles Volcano Eruption",
+        "Directory": "LostIslesPhase1",
+        "Continent": true
+      },
+      {
+        "Id": 661,
+        "Name": "Lost Isles Town in a Box",
+        "Directory": "LostIslesPhase2",
+        "Continent": true
+      },
+      {
+        "Id": 668,
+        "Name": "Halls of Reflection",
+        "Directory": "HallsOfReflection",
+        "Continent": false
+      },
+      {
+        "Id": 669,
+        "Name": "Blackwing Descent",
+        "Directory": "BlackwingDescent",
+        "Continent": false
+      },
+      {
+        "Id": 670,
+        "Name": "Grim Batol",
+        "Directory": "GrimBatolDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 671,
+        "Name": "The Bastion of Twilight",
+        "Directory": "GrimBatolRaid",
+        "Continent": false
+      },
+      {
+        "Id": 719,
+        "Name": "Mount Hyjal Phase 1",
+        "Directory": "MountHyjalPhase1",
+        "Continent": true
+      },
+      {
+        "Id": 720,
+        "Name": "Firelands",
+        "Directory": "Firelands1",
+        "Continent": false
+      },
+      {
+        "Id": 721,
+        "Name": "Firelands Terrain 2",
+        "Directory": "Firelands2",
+        "Continent": false
+      },
+      {
+        "Id": 723,
+        "Name": "Stormwind",
+        "Directory": "Stormwind",
+        "Continent": true
+      },
+      {
+        "Id": 724,
+        "Name": "The Ruby Sanctum",
+        "Directory": "ChamberofAspectsRed",
+        "Continent": false
+      },
+      {
+        "Id": 725,
+        "Name": "The Stonecore",
+        "Directory": "DeepholmeDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 726,
+        "Name": "Twin Peaks",
+        "Directory": "CataclysmCTF",
+        "Continent": false
+      },
+      {
+        "Id": 727,
+        "Name": "Silvershard Mines",
+        "Directory": "STV_Mine_BG",
+        "Continent": false
+      },
+      {
+        "Id": 730,
+        "Name": "Maelstrom Zone",
+        "Directory": "MaelstromZone",
+        "Continent": true
+      },
+      {
+        "Id": 731,
+        "Name": "Stonetalon Bomb",
+        "Directory": "DesolaceBomb",
+        "Continent": true
+      },
+      {
+        "Id": 732,
+        "Name": "Tol Barad",
+        "Directory": "TolBarad",
+        "Continent": true
+      },
+      {
+        "Id": 734,
+        "Name": "Ahn'Qiraj Terrace",
+        "Directory": "AhnQirajTerrace",
+        "Continent": false
+      },
+      {
+        "Id": 736,
+        "Name": "Twilight Highlands Dragonmaw Phase",
+        "Directory": "TwilightHighlandsDragonmawPhase",
+        "Continent": true
+      },
+      {
+        "Id": 746,
+        "Name": "Uldum Phase Oasis",
+        "Directory": "UldumPhaseOasis",
+        "Continent": true
+      },
+      {
+        "Id": 751,
+        "Name": "Redridge - Orc Bomb",
+        "Directory": "RedgridgeOrcBomb",
+        "Continent": true
+      },
+      {
+        "Id": 752,
+        "Name": "Redridge - Bridge Phase One",
+        "Directory": "RedridgeBridgePhaseOne",
+        "Continent": true
+      },
+      {
+        "Id": 753,
+        "Name": "Redridge - Bridge Phase Two",
+        "Directory": "RedridgeBridgePhaseTwo",
+        "Continent": true
+      },
+      {
+        "Id": 754,
+        "Name": "Throne of the Four Winds",
+        "Directory": "SkywallRaid",
+        "Continent": false
+      },
+      {
+        "Id": 755,
+        "Name": "Lost City of the Tol'vir",
+        "Directory": "UldumDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 757,
+        "Name": "Baradin Hold",
+        "Directory": "BaradinHold",
+        "Continent": false
+      },
+      {
+        "Id": 759,
+        "Name": "Uldum Phased Entrance",
+        "Directory": "UldumPhasedEntrance",
+        "Continent": true
+      },
+      {
+        "Id": 760,
+        "Name": "Twilight Highlands Phased Entrance",
+        "Directory": "TwilightHighlandsPhasedEntrance",
+        "Continent": true
+      },
+      {
+        "Id": 761,
+        "Name": "The Battle for Gilneas",
+        "Directory": "Gilneas_BG_2",
+        "Continent": false
+      },
+      {
+        "Id": 764,
+        "Name": "Uldum - Phase Wrecked Camp",
+        "Directory": "UldumPhaseWreckedCamp",
+        "Continent": true
+      },
+      {
+        "Id": 859,
+        "Name": "Zul'Gurub",
+        "Directory": "Zul_Gurub5Man",
+        "Continent": false
+      },
+      {
+        "Id": 860,
+        "Name": "The Wandering Isle",
+        "Directory": "NewRaceStartZone",
+        "Continent": true
+      },
+      {
+        "Id": 861,
+        "Name": "Molten Front",
+        "Directory": "FirelandsDailies",
+        "Continent": true
+      },
+      {
+        "Id": 870,
+        "Name": "Pandaria",
+        "Directory": "HawaiiMainLand",
+        "Continent": true
+      },
+      {
+        "Id": 930,
+        "Name": "A Dark Place",
+        "Directory": "ScenarioAlcazIsland",
+        "Continent": false
+      },
+      {
+        "Id": 938,
+        "Name": "End Time",
+        "Directory": "COTDragonblight",
+        "Continent": false
+      },
+      {
+        "Id": 939,
+        "Name": "Well of Eternity",
+        "Directory": "COTWarOfTheAncients",
+        "Continent": false
+      },
+      {
+        "Id": 940,
+        "Name": "Hour of Twilight",
+        "Directory": "TheHourOfTwilight",
+        "Continent": false
+      },
+      {
+        "Id": 951,
+        "Name": "Nexus Legendary",
+        "Directory": "NexusLegendary",
+        "Continent": false
+      },
+      {
+        "Id": 959,
+        "Name": "Shado-Pan Monastery",
+        "Directory": "ShadowpanHideout",
+        "Continent": false
+      },
+      {
+        "Id": 960,
+        "Name": "Temple of the Jade Serpent",
+        "Directory": "EastTemple",
+        "Continent": false
+      },
+      {
+        "Id": 961,
+        "Name": "Stormstout Brewery",
+        "Directory": "StormstoutBrewery",
+        "Continent": false
+      },
+      {
+        "Id": 962,
+        "Name": "Gate of the Setting Sun",
+        "Directory": "TheGreatWall",
+        "Continent": false
+      },
+      {
+        "Id": 967,
+        "Name": "Dragon Soul",
+        "Directory": "DeathwingBack",
+        "Continent": false
+      },
+      {
+        "Id": 968,
+        "Name": "Rated Eye of the Storm",
+        "Directory": "EyeoftheStorm2.0",
+        "Continent": false
+      },
+      {
+        "Id": 971,
+        "Name": "Jade Forest Alliance Hub Phase",
+        "Directory": "JadeForestAllianceHubPhase",
+        "Continent": true
+      },
+      {
+        "Id": 972,
+        "Name": "Jade Forest Battlefield Phase",
+        "Directory": "JadeForestBattlefieldPhase",
+        "Continent": true
+      },
+      {
+        "Id": 974,
+        "Name": "Darkmoon Faire",
+        "Directory": "DarkmoonFaire",
+        "Continent": true
+      },
+      {
+        "Id": 975,
+        "Name": "Turtle Ship Phase 01",
+        "Directory": "TurtleShipPhase01",
+        "Continent": true
+      },
+      {
+        "Id": 976,
+        "Name": "Turtle Ship Phase 02",
+        "Directory": "TurtleShipPhase02",
+        "Continent": true
+      },
+      {
+        "Id": 977,
+        "Name": "Maelstrom Deathwing Fight",
+        "Directory": "MaelstromDeathwingFight",
+        "Continent": false
+      },
+      {
+        "Id": 980,
+        "Name": "Tol'Viron Arena",
+        "Directory": "TolVirArena",
+        "Continent": false
+      },
+      {
+        "Id": 994,
+        "Name": "Mogu'shan Palace",
+        "Directory": "MoguDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 995,
+        "Name": "The Depths [UNUSED]",
+        "Directory": "MoguInteriorRaid",
+        "Continent": false
+      },
+      {
+        "Id": 996,
+        "Name": "Terrace of Endless Spring",
+        "Directory": "MoguExteriorRaid",
+        "Continent": false
+      },
+      {
+        "Id": 998,
+        "Name": "Temple of Kotmogu",
+        "Directory": "ValleyOfPower",
+        "Continent": false
+      },
+      {
+        "Id": 999,
+        "Name": "Theramore's Fall (H)",
+        "Directory": "BFTAllianceScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1000,
+        "Name": "Theramore's Fall (A)",
+        "Directory": "BFTHordeScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1001,
+        "Name": "Scarlet Halls",
+        "Directory": "ScarletSanctuaryArmoryAndLibrary",
+        "Continent": false
+      },
+      {
+        "Id": 1004,
+        "Name": "Scarlet Monastery",
+        "Directory": "ScarletMonasteryCathedralGY",
+        "Continent": false
+      },
+      {
+        "Id": 1005,
+        "Name": "A Brewing Storm",
+        "Directory": "BrewmasterScenario01",
+        "Continent": false
+      },
+      {
+        "Id": 1007,
+        "Name": "Scholomance",
+        "Directory": "NewScholomance",
+        "Continent": false
+      },
+      {
+        "Id": 1008,
+        "Name": "Mogu'shan Vaults",
+        "Directory": "MogushanPalace",
+        "Continent": false
+      },
+      {
+        "Id": 1009,
+        "Name": "Heart of Fear",
+        "Directory": "MantidRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1011,
+        "Name": "Siege of Niuzao Temple",
+        "Directory": "MantidDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1014,
+        "Name": "Peak of Serenity",
+        "Directory": "MonkAreaScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1019,
+        "Name": "Ruins of Theramore",
+        "Directory": "RuinsOfTheramore",
+        "Continent": true
+      },
+      {
+        "Id": 1024,
+        "Name": "Greenstone Village",
+        "Directory": "PandaFishingVillageScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1028,
+        "Name": "(UNUSED) Scenario: Mogu Ruins",
+        "Directory": "MoguRuinsScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1029,
+        "Name": "(UNUSED) Scenario: Mogu Crypt",
+        "Directory": "AncientMoguCryptScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1030,
+        "Name": "Crypt of Forgotten Kings",
+        "Directory": "AncientMoguCyptDestroyedScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1031,
+        "Name": "Arena of Annihilation",
+        "Directory": "ProvingGroundsScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1032,
+        "Name": "Pet Battle - Jade Forest",
+        "Directory": "PetBattleJadeForest",
+        "Continent": false
+      },
+      {
+        "Id": 1035,
+        "Name": "Temple of Kotmogu",
+        "Directory": "ValleyOfPowerScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1043,
+        "Name": "Brawl'gar Arena",
+        "Directory": "RingOfValorScenario",
+        "Continent": true
+      },
+      {
+        "Id": 1048,
+        "Name": "Unga Ingoo",
+        "Directory": "BrewmasterScenario03",
+        "Continent": false
+      },
+      {
+        "Id": 1049,
+        "Name": "(UNUSED) Scenario: Black Ox Temple",
+        "Directory": "BlackOxTempleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1050,
+        "Name": "Assault on Zan'vess",
+        "Directory": "ScenarioKlaxxiIsland",
+        "Continent": false
+      },
+      {
+        "Id": 1051,
+        "Name": "Brewmoon Festival",
+        "Directory": "ScenarioBrewmaster04",
+        "Continent": false
+      },
+      {
+        "Id": 1061,
+        "Name": "Horde Beach Daily Area",
+        "Directory": "HordeBeachDailyArea",
+        "Continent": true
+      },
+      {
+        "Id": 1062,
+        "Name": "Alliance Beach Daily Area",
+        "Directory": "AllianceBeachDailyArea",
+        "Continent": true
+      },
+      {
+        "Id": 1064,
+        "Name": "Mogu Island Daily Area",
+        "Directory": "MoguIslandDailyArea",
+        "Continent": true
+      },
+      {
+        "Id": 1066,
+        "Name": "Stormwind Gunship Pandaria Start Area",
+        "Directory": "StormwindGunshipPandariaStartArea",
+        "Continent": true
+      },
+      {
+        "Id": 1074,
+        "Name": "Orgrimmar Gunship Pandaria Start",
+        "Directory": "OrgrimmarGunshipPandariaStart",
+        "Continent": true
+      },
+      {
+        "Id": 1075,
+        "Name": "Theramore's Fall Phase",
+        "Directory": "TheramoreScenarioPhase",
+        "Continent": true
+      },
+      {
+        "Id": 1076,
+        "Name": "Jade Forest Horde Starting Area",
+        "Directory": "JadeForestHordeStartingArea",
+        "Continent": true
+      },
+      {
+        "Id": 1095,
+        "Name": "Dagger in the Dark",
+        "Directory": "HordeAmbushScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1098,
+        "Name": "Throne of Thunder",
+        "Directory": "ThunderIslandRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1099,
+        "Name": "Naval Battle Scenario",
+        "Directory": "NavalBattleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1101,
+        "Name": "Defense Of The Ale House BG",
+        "Directory": "DefenseOfTheAleHouseBG",
+        "Continent": true
+      },
+      {
+        "Id": 1102,
+        "Name": "Domination Point",
+        "Directory": "HordeBaseBeachScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1103,
+        "Name": "Lion's Landing",
+        "Directory": "AllianceBaseBeachScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1104,
+        "Name": "A Little Patience",
+        "Directory": "ALittlePatienceScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1105,
+        "Name": "Deepwind Gorge (Legacy)",
+        "Directory": "GoldRushBG",
+        "Continent": false
+      },
+      {
+        "Id": 1106,
+        "Name": "Jaina Dalaran Scenario",
+        "Directory": "JainaDalaranScenario",
+        "Continent": true
+      },
+      {
+        "Id": 1107,
+        "Name": "Dreadscar Rift",
+        "Directory": "WarlockArea",
+        "Continent": true
+      },
+      {
+        "Id": 1112,
+        "Name": "Pursuing the Black Harvest",
+        "Directory": "BlackTempleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1116,
+        "Name": "Draenor",
+        "Directory": "Draenor",
+        "Continent": true
+      },
+      {
+        "Id": 1120,
+        "Name": "Thunder King Horde Hub",
+        "Directory": "ThunderKingHordeHub",
+        "Continent": true
+      },
+      {
+        "Id": 1121,
+        "Name": "Thunder Island Alliance Hub",
+        "Directory": "ThunderIslandAllianceHub",
+        "Continent": true
+      },
+      {
+        "Id": 1122,
+        "Name": "City Siege - Mogu Island Progression Scenario",
+        "Directory": "CitySiegeMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1123,
+        "Name": "Lightning Forge - Mogu Island Progression Scenario",
+        "Directory": "LightningForgeMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1124,
+        "Name": "Shipyard - Mogu Island Progression Scenario",
+        "Directory": "ShipyardMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1125,
+        "Name": "Alliance Hub - Mogu Island Progression Scenario",
+        "Directory": "AllianceHubMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1126,
+        "Name": "Mogu Island Progression Events",
+        "Directory": "HordeHubMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1127,
+        "Name": "Final Gate - Mogu Island Progression Scenario",
+        "Directory": "FinalGateMoguIslandProgressionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1128,
+        "Name": "Mogu Island Events - Horde Base",
+        "Directory": "MoguIslandEventsHordeBase",
+        "Continent": true
+      },
+      {
+        "Id": 1129,
+        "Name": "Mogu Island Events - Alliance Base",
+        "Directory": "MoguIslandEventsAllianceBase",
+        "Continent": true
+      },
+      {
+        "Id": 1130,
+        "Name": "Blood in the Snow",
+        "Directory": "ShimmerRidgeScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1131,
+        "Name": "The Secrets of Ragefire",
+        "Directory": "DarkHordeScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1134,
+        "Name": "The Tiger's Peak",
+        "Directory": "ShadoPanArena",
+        "Continent": false
+      },
+      {
+        "Id": 1135,
+        "Name": "Mogu Island Loot Room",
+        "Directory": "MoguIslandLootRoom",
+        "Continent": false
+      },
+      {
+        "Id": 1136,
+        "Name": "Siege of Orgrimmar",
+        "Directory": "OrgrimmarRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1144,
+        "Name": "Heart of the Old God Scenario",
+        "Directory": "HeartOfTheOldGodScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1148,
+        "Name": "Proving Grounds",
+        "Directory": "ProvingGrounds",
+        "Continent": false
+      },
+      {
+        "Id": 1152,
+        "Name": "FW Horde Garrison Level 1",
+        "Directory": "FWHordeGarrisonLevel1",
+        "Continent": false
+      },
+      {
+        "Id": 1153,
+        "Name": "FW Horde Garrison Level 3",
+        "Directory": "FWHordeGarrisonLevel2",
+        "Continent": false
+      },
+      {
+        "Id": 1154,
+        "Name": "FW Horde Garrison Level 4",
+        "Directory": "FWHordeGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1155,
+        "Name": "Stromgarde Keep",
+        "Directory": "Stormgarde Keep",
+        "Continent": false
+      },
+      {
+        "Id": 1157,
+        "Name": "Halfhill Scenario",
+        "Directory": "HalfhillScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1158,
+        "Name": "SMV Alliance Garrison Level 1",
+        "Directory": "SMVAllianceGarrisonLevel1",
+        "Continent": false
+      },
+      {
+        "Id": 1159,
+        "Name": "SMV Alliance Garrison Level 3",
+        "Directory": "SMVAllianceGarrisonLevel2",
+        "Continent": false
+      },
+      {
+        "Id": 1160,
+        "Name": "SMV Alliance Garrison Level 4",
+        "Directory": "SMVAllianceGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1161,
+        "Name": "Celestial Tournament",
+        "Directory": "CelestialChallenge",
+        "Continent": false
+      },
+      {
+        "Id": 1168,
+        "Name": "The Purge Of Grommar - Scenario",
+        "Directory": "ThePurgeOfGrommarScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1170,
+        "Name": "Shado-Pan Showdown",
+        "Directory": "SmallBattlegroundC",
+        "Continent": false
+      },
+      {
+        "Id": 1175,
+        "Name": "Bloodmaul Slag Mines",
+        "Directory": "OgreCompound",
+        "Continent": false
+      },
+      {
+        "Id": 1176,
+        "Name": "Shadowmoon Burial Grounds",
+        "Directory": "MoonCultistHideout",
+        "Continent": false
+      },
+      {
+        "Id": 1179,
+        "Name": "Warcraft Heroes",
+        "Directory": "WarcraftHeroes",
+        "Continent": true
+      },
+      {
+        "Id": 1181,
+        "Name": "PattyMack Test Garrison Bldg Map",
+        "Directory": "PattyMackTestGarrisonBldgMap",
+        "Continent": true
+      },
+      {
+        "Id": 1182,
+        "Name": "Auchindoun",
+        "Directory": "DraenorAuchindoun",
+        "Continent": false
+      },
+      {
+        "Id": 1187,
+        "Name": "GOR Alliance Garrison Level 1",
+        "Directory": "GORAllianceGarrisonLevel1",
+        "Continent": false
+      },
+      {
+        "Id": 1188,
+        "Name": "GOR Alliance Garrison Level 2",
+        "Directory": "GORAllianceGarrisonLevel2",
+        "Continent": false
+      },
+      {
+        "Id": 1189,
+        "Name": "GOR Alliance Garrison Level 3",
+        "Directory": "GORAllianceGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1190,
+        "Name": "Blasted Lands Phase",
+        "Directory": "BlastedLands",
+        "Continent": true
+      },
+      {
+        "Id": 1191,
+        "Name": "Ashran",
+        "Directory": "Ashran",
+        "Continent": false
+      },
+      {
+        "Id": 1195,
+        "Name": "Iron Docks",
+        "Directory": "WarWharfSmackdown",
+        "Continent": false
+      },
+      {
+        "Id": 1200,
+        "Name": "Bonetown Scenario",
+        "Directory": "BonetownScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1203,
+        "Name": "Frostfire Finale Scenario",
+        "Directory": "FrostfireFinaleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1205,
+        "Name": "Blackrock Foundry",
+        "Directory": "BlackrockFoundryRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1207,
+        "Name": "The Battle for Shattrath",
+        "Directory": "TaladorIronHordeFinaleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1208,
+        "Name": "Grimrail Depot",
+        "Directory": "BlackrockFoundryTrainDepot",
+        "Continent": false
+      },
+      {
+        "Id": 1209,
+        "Name": "Skyreach",
+        "Directory": "ArakkoaDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1212,
+        "Name": "Garrison - Alliance - Blacksmith 3",
+        "Directory": "6HU_GARRISON_Blacksmithing_hub",
+        "Continent": true
+      },
+      {
+        "Id": 1213,
+        "Name": "Garrison - Alliance - Alchemy 1",
+        "Directory": "alliance_garrison_alchemy",
+        "Continent": true
+      },
+      {
+        "Id": 1214,
+        "Name": "Garrison - Alliance - Enchanting 3",
+        "Directory": "alliance_garrison_enchanting",
+        "Continent": true
+      },
+      {
+        "Id": 1215,
+        "Name": "Garrison - Alliance - Engineering 3",
+        "Directory": "garrison_alliance_engineering",
+        "Continent": true
+      },
+      {
+        "Id": 1216,
+        "Name": "Garrison - Alliance - Farm1",
+        "Directory": "garrison_alliance_farmhouse",
+        "Continent": true
+      },
+      {
+        "Id": 1217,
+        "Name": "Garrison - Alliance - Inscription 1",
+        "Directory": "garrison_alliance_inscription",
+        "Continent": true
+      },
+      {
+        "Id": 1218,
+        "Name": "Garrison - Alliance - Jewelcrafting 1",
+        "Directory": "garrison_alliance_jewelcrafting",
+        "Continent": true
+      },
+      {
+        "Id": 1219,
+        "Name": "Garrison - Alliance - Leatherworking 1",
+        "Directory": "garrison_alliance_leatherworking",
+        "Continent": true
+      },
+      {
+        "Id": 1220,
+        "Name": "Broken Isles",
+        "Directory": "Troll Raid",
+        "Continent": true
+      },
+      {
+        "Id": 1221,
+        "Name": "Garrison - Alliance Mine 1",
+        "Directory": "garrison_alliance_mine_1",
+        "Continent": true
+      },
+      {
+        "Id": 1222,
+        "Name": "Garrison - Alliance Mine 2",
+        "Directory": "garrison_alliance_mine_2",
+        "Continent": true
+      },
+      {
+        "Id": 1223,
+        "Name": "Garrison - Alliance Mine 3",
+        "Directory": "garrison_alliance_mine_3",
+        "Continent": true
+      },
+      {
+        "Id": 1224,
+        "Name": "Garrison - Alliance Stable 1",
+        "Directory": "garrison_alliance_stable_1",
+        "Continent": true
+      },
+      {
+        "Id": 1225,
+        "Name": "Garrison - Alliance Stable 2",
+        "Directory": "garrison_alliance_stable_2",
+        "Continent": true
+      },
+      {
+        "Id": 1226,
+        "Name": "Garrison - Alliance Stable 3",
+        "Directory": "garrison_alliance_stable_3",
+        "Continent": true
+      },
+      {
+        "Id": 1227,
+        "Name": "Garrison - Alliance - Tailoring 3",
+        "Directory": "garrison_alliance_tailoring",
+        "Continent": true
+      },
+      {
+        "Id": 1228,
+        "Name": "Highmaul",
+        "Directory": "HighmaulOgreRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1229,
+        "Name": "Garrison - Alliance - Inn 1",
+        "Directory": "garrison_alliance_inn_1",
+        "Continent": true
+      },
+      {
+        "Id": 1230,
+        "Name": "Garrison - Alliance - Barn 1",
+        "Directory": "garrison_alliance_barn",
+        "Continent": true
+      },
+      {
+        "Id": 1232,
+        "Name": "GOR Horde Garrison Level 0",
+        "Directory": "GorHordeGarrisonLevel0",
+        "Continent": false
+      },
+      {
+        "Id": 1233,
+        "Name": "GOR Horde Garrison Level 3",
+        "Directory": "GORHordeGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1234,
+        "Name": "TAL Alliance Garrison Level 0",
+        "Directory": "TALAllianceGarrisonLevel0",
+        "Continent": false
+      },
+      {
+        "Id": 1235,
+        "Name": "TAL Alliance Garrison Level 3",
+        "Directory": "TALAllianceGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1236,
+        "Name": "TAL Horde Garrison Level 0",
+        "Directory": "TALHordeGarrisonLevel0",
+        "Continent": false
+      },
+      {
+        "Id": 1237,
+        "Name": "TAL Horde Garrison Level 3",
+        "Directory": "TALHordeGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1238,
+        "Name": "SOA Alliance Garrison Level 0",
+        "Directory": "SOAAllianceGarrison0",
+        "Continent": false
+      },
+      {
+        "Id": 1239,
+        "Name": "SOA Alliance Garrison Level 3",
+        "Directory": "SOAAllianceGarrison3",
+        "Continent": false
+      },
+      {
+        "Id": 1240,
+        "Name": "SOA Horde Garrison Level 0",
+        "Directory": "SOAHordeGarrison0",
+        "Continent": false
+      },
+      {
+        "Id": 1241,
+        "Name": "SOA Horde Garrison Level 3",
+        "Directory": "SOAHordeGarrison3",
+        "Continent": false
+      },
+      {
+        "Id": 1242,
+        "Name": "NAG Alliance Garrison Level 0",
+        "Directory": "NAGAllianceGarrisonLevel0",
+        "Continent": false
+      },
+      {
+        "Id": 1243,
+        "Name": "NAG Alliance Garrison Level 3",
+        "Directory": "NAGAllianceGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1244,
+        "Name": "NAG Horde Garrison Level 0",
+        "Directory": "NAGHordeGarrisonLevel0",
+        "Continent": false
+      },
+      {
+        "Id": 1245,
+        "Name": "NAG Horde Garrison Level 3",
+        "Directory": "NAGHordeGarrisonLevel3",
+        "Continent": false
+      },
+      {
+        "Id": 1247,
+        "Name": "Garrison - Alliance - Armory 1",
+        "Directory": "garrison_alliance_armory1",
+        "Continent": true
+      },
+      {
+        "Id": 1248,
+        "Name": "Garrison - Alliance - Barracks 1",
+        "Directory": "garrison_alliance_barracks1",
+        "Continent": true
+      },
+      {
+        "Id": 1249,
+        "Name": "Garrison - Alliance - Engineering 1",
+        "Directory": "garrison_alliance_engineering1",
+        "Continent": true
+      },
+      {
+        "Id": 1250,
+        "Name": "Alliance - Garrison - Herb Garden 1 (UNUSED)",
+        "Directory": "alliance_garrison_herb_garden1",
+        "Continent": true
+      },
+      {
+        "Id": 1251,
+        "Name": "Alliance - Garrison - Inn 1 DONT USE",
+        "Directory": "alliance_garrison_inn1",
+        "Continent": true
+      },
+      {
+        "Id": 1252,
+        "Name": "Garrison - Alliance - Lumbermill 1",
+        "Directory": "garrison_alliance_lumbermill1",
+        "Continent": true
+      },
+      {
+        "Id": 1253,
+        "Name": "Garrison - Alliance - Mage Tower 1",
+        "Directory": "alliance_garrison_magetower1",
+        "Continent": true
+      },
+      {
+        "Id": 1254,
+        "Name": "Garrison - Alliance - Sparring Arena 1",
+        "Directory": "garrison_alliance_pet_stable1",
+        "Continent": true
+      },
+      {
+        "Id": 1255,
+        "Name": "Garrison - Alliance - Salvage Yard 1",
+        "Directory": "garrison_alliance_salvageyard1",
+        "Continent": true
+      },
+      {
+        "Id": 1256,
+        "Name": "Garrison - Alliance - StoreHouse 1",
+        "Directory": "garrison_alliance_storehouse1",
+        "Continent": true
+      },
+      {
+        "Id": 1257,
+        "Name": "Garrison - Alliance - Trading Post 1",
+        "Directory": "garrison_alliance_trading_post1",
+        "Continent": true
+      },
+      {
+        "Id": 1258,
+        "Name": "Garrison - Alliance - Tailoring 1",
+        "Directory": "garrison_alliance_tailoring1",
+        "Continent": true
+      },
+      {
+        "Id": 1259,
+        "Name": "Garrison - Alliance - Enchanting 1",
+        "Directory": "garrison_alliance_enchanting",
+        "Continent": true
+      },
+      {
+        "Id": 1260,
+        "Name": "Garrison - Alliance - Blacksmith 1",
+        "Directory": "garrison_alliance_blacksmith1",
+        "Continent": true
+      },
+      {
+        "Id": 1261,
+        "Name": "Garrison - Alliance - Plot Small",
+        "Directory": "garrison_alliance_plot_small",
+        "Continent": true
+      },
+      {
+        "Id": 1262,
+        "Name": "Garrison - Allilance - Plot Medium",
+        "Directory": "garrison_alliance_plot_medium",
+        "Continent": true
+      },
+      {
+        "Id": 1263,
+        "Name": "Garrison - Alliance - Plot Large",
+        "Directory": "garrison_alliance_plot_large",
+        "Continent": true
+      },
+      {
+        "Id": 1265,
+        "Name": "Tanaan Jungle Intro",
+        "Directory": "TanaanJungleIntro",
+        "Continent": true
+      },
+      {
+        "Id": 1266,
+        "Name": "Circle of Blood Scenario",
+        "Directory": "CircleofBloodScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1268,
+        "Name": "Teron'gor's Confrontation",
+        "Directory": "TerongorsConfrontation",
+        "Continent": false
+      },
+      {
+        "Id": 1273,
+        "Name": "Nagrand - Garrison Camp - Stable2",
+        "Directory": "nagrand_garrison_camp_stable_2",
+        "Continent": true
+      },
+      {
+        "Id": 1277,
+        "Name": "Defense of Karabor",
+        "Directory": "DefenseOfKaraborScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1278,
+        "Name": "Garrison - Horde - Barracks 1",
+        "Directory": "garrison_horde_barracks1",
+        "Continent": true
+      },
+      {
+        "Id": 1279,
+        "Name": "The Everbloom",
+        "Directory": "ShaperDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1280,
+        "Name": "Southshore vs. Tarren Mill",
+        "Directory": "TrollRaid2",
+        "Continent": false
+      },
+      {
+        "Id": 1281,
+        "Name": "Garrison - Horde - Alchemy 1",
+        "Directory": "garrison_horde_alchemy1",
+        "Continent": true
+      },
+      {
+        "Id": 1282,
+        "Name": "Garrison - Horde - Armory 1",
+        "Directory": "garrison_horde_armory1",
+        "Continent": true
+      },
+      {
+        "Id": 1283,
+        "Name": "Garrison - Horde - Barn 1",
+        "Directory": "garrison_horde_barn1",
+        "Continent": true
+      },
+      {
+        "Id": 1284,
+        "Name": "Garrison - Horde - Blacksmith 1",
+        "Directory": "garrison_horde_blacksmith1",
+        "Continent": true
+      },
+      {
+        "Id": 1285,
+        "Name": "Garrison - Horde - Enchanting 1",
+        "Directory": "garrison_horde_enchanting1",
+        "Continent": true
+      },
+      {
+        "Id": 1286,
+        "Name": "Garrison - Horde - Engineering 1",
+        "Directory": "garrison_horde_engineering1",
+        "Continent": true
+      },
+      {
+        "Id": 1287,
+        "Name": "Garrison - Horde - Inn 1",
+        "Directory": "garrison_horde_inn1",
+        "Continent": true
+      },
+      {
+        "Id": 1288,
+        "Name": "Garrison - Horde - Inscription 1",
+        "Directory": "garrison_horde_inscription1",
+        "Continent": true
+      },
+      {
+        "Id": 1289,
+        "Name": "Garrison - Horde - Jewelcrafting 1",
+        "Directory": "garrison_horde_jewelcrafting1",
+        "Continent": true
+      },
+      {
+        "Id": 1290,
+        "Name": "Garrison - Horde - Leatherworking 1",
+        "Directory": "garrison_horde_leatherworking1",
+        "Continent": true
+      },
+      {
+        "Id": 1291,
+        "Name": "Garrison - Horde - Lumbermill 1",
+        "Directory": "garrison_horde_lumbermill1",
+        "Continent": true
+      },
+      {
+        "Id": 1292,
+        "Name": "Garrison - Horde - Mage Tower 1",
+        "Directory": "garrison_horde_magetower1",
+        "Continent": true
+      },
+      {
+        "Id": 1293,
+        "Name": "Garrison - Horde - Mine 1",
+        "Directory": "garrison_horde_mine1",
+        "Continent": true
+      },
+      {
+        "Id": 1294,
+        "Name": "Garrison - Horde - Pet Stable 1",
+        "Directory": "garrison_alliance_petstabe",
+        "Continent": true
+      },
+      {
+        "Id": 1295,
+        "Name": "Garrison - Horde - Salvage Yard 1",
+        "Directory": "garrison_horde_salvageyard1",
+        "Continent": true
+      },
+      {
+        "Id": 1296,
+        "Name": "Garrison - Horde - Sparring Arena 1",
+        "Directory": "garrison_horde_sparringarena1",
+        "Continent": true
+      },
+      {
+        "Id": 1297,
+        "Name": "Garrison - Horde - Stable 1",
+        "Directory": "garrison_horde_stable1",
+        "Continent": true
+      },
+      {
+        "Id": 1298,
+        "Name": "Garrison - Horde Storehouse 1",
+        "Directory": "garrison_horde_storehouse1",
+        "Continent": true
+      },
+      {
+        "Id": 1299,
+        "Name": "Garrison - Horde - Tailoring 1",
+        "Directory": "garrison_horde_tailoring1",
+        "Continent": true
+      },
+      {
+        "Id": 1300,
+        "Name": "Garrison - Horde - Trading Post 1",
+        "Directory": "garrison_horde_tradingpost1",
+        "Continent": true
+      },
+      {
+        "Id": 1301,
+        "Name": "Garrison - Horde - Workshop 1",
+        "Directory": "garrison_horde_workshop1",
+        "Continent": true
+      },
+      {
+        "Id": 1302,
+        "Name": "Garrison - Alliance - Workshop 1",
+        "Directory": "garrison_alliance_workshop1",
+        "Continent": true
+      },
+      {
+        "Id": 1303,
+        "Name": "Garrison - Horde - Farm1",
+        "Directory": "garrison_horde_farm1",
+        "Continent": true
+      },
+      {
+        "Id": 1304,
+        "Name": "Garrison - Horde - Plot Large",
+        "Directory": "garrison_horde_plot_large",
+        "Continent": true
+      },
+      {
+        "Id": 1305,
+        "Name": "Garrison - Horde - Plot Medium",
+        "Directory": "garrison_horde_plot_medium",
+        "Continent": true
+      },
+      {
+        "Id": 1306,
+        "Name": "Garrison - Horde - Plot Small",
+        "Directory": "garrison_horde_plot_small",
+        "Continent": true
+      },
+      {
+        "Id": 1307,
+        "Name": "Tanaan Jungle Intro - Forge Phase",
+        "Directory": "TanaanJungleIntroForgePhase",
+        "Continent": true
+      },
+      {
+        "Id": 1308,
+        "Name": "Garrison - Horde - Fishing 1",
+        "Directory": "garrison_horde_fishing1",
+        "Continent": true
+      },
+      {
+        "Id": 1309,
+        "Name": "Garrison - Alliance - Fishing 1",
+        "Directory": "garrison_alliance_fishing1",
+        "Continent": true
+      },
+      {
+        "Id": 1311,
+        "Name": "Outdoor Garrison - Arena - Horde (NEEDS WMO)",
+        "Directory": "outdoorGarrisonArenaHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1312,
+        "Name": "Outdoor Garrison - Arena - Alliance (NEEDS WMO)",
+        "Directory": "outdoorGarrisonArenaAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1313,
+        "Name": "Outdoor Garrison - Lumber Mill - Alliance",
+        "Directory": "outdoorGarrisonLumberMillAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1314,
+        "Name": "Outdoor Garrison - Lumber Mill - Horde",
+        "Directory": "outdoorGarrisonLumberMillHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1315,
+        "Name": "Outdoor Garrison - Armory - Horde",
+        "Directory": "outdoorGarrisonArmoryHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1316,
+        "Name": "Outdoor Garrison - Armory - Alliance",
+        "Directory": "outdoorGarrisonArmoryAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1317,
+        "Name": "Outdoor Garrison - Mage Tower - Horde",
+        "Directory": "outdoorGarrisonMageTowerHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1318,
+        "Name": "Outdoor Garrison - Mage Tower - Alliance",
+        "Directory": "outdoorGarrisonMageTowerAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1319,
+        "Name": "Outdoor Garrison - Stables - Horde",
+        "Directory": "outdoorGarrisonStablesHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1320,
+        "Name": "Outdoor Garrison - Stables - Alliance",
+        "Directory": "outdoorGarrisonStablesAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1321,
+        "Name": "Outdoor Garrison - Workshop - Horde",
+        "Directory": "outdoorGarrisonWorkshopHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1322,
+        "Name": "Outdoor Garrison - Workshop - Alliance",
+        "Directory": "outdoorGarrisonWorkshopAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1323,
+        "Name": "Outdoor Garrison - Inn - Horde",
+        "Directory": "outdoorGarrisonInnHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1324,
+        "Name": "Outdoor Garrison - Inn - Alliance",
+        "Directory": "outdoorGarrisonInnAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1325,
+        "Name": "Outdoor Garrison - Tradiing Post 1 - Horde",
+        "Directory": "outdoorGarrisonTradingPostHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1326,
+        "Name": "Outdoor Garrison - Tradiing Post - Alliance",
+        "Directory": "outdoorGarrisonTradingPostAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1327,
+        "Name": "Outdoor Garrison - Construction Plot, Medium - Horde",
+        "Directory": "outdoorGarrisonConstructionPlotHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1328,
+        "Name": "Outdoor Garrison - Construction Plot, Medium - Alliance",
+        "Directory": "outdoorGarrisonConstructionPlotAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1329,
+        "Name": "Grommashar Scenario",
+        "Directory": "GrommasharScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1330,
+        "Name": "FW Horde Garrison Level 2",
+        "Directory": "FWHordeGarrisonLeve2new",
+        "Continent": false
+      },
+      {
+        "Id": 1331,
+        "Name": "SMV Alliance Garrison Level 2",
+        "Directory": "SMVAllianceGarrisonLevel2new",
+        "Continent": false
+      },
+      {
+        "Id": 1332,
+        "Name": "Garrison - Horde - Barracks 2",
+        "Directory": "garrison_horde_barracks2",
+        "Continent": true
+      },
+      {
+        "Id": 1333,
+        "Name": "Garrison - Horde - Armory 2",
+        "Directory": "garrison_horde_armory2",
+        "Continent": true
+      },
+      {
+        "Id": 1334,
+        "Name": "Garrison - Horde - Barn 2",
+        "Directory": "garrison_horde_barn2",
+        "Continent": true
+      },
+      {
+        "Id": 1335,
+        "Name": "Garrison - Horde - Inn 2",
+        "Directory": "garrison_horde_inn2",
+        "Continent": true
+      },
+      {
+        "Id": 1336,
+        "Name": "Garrison - Horde - Lumbermill 2",
+        "Directory": "garrison_horde_lumbermill2",
+        "Continent": true
+      },
+      {
+        "Id": 1337,
+        "Name": "Garrison - Horde - Mage Tower 2",
+        "Directory": "garrison_horde_magetower2",
+        "Continent": true
+      },
+      {
+        "Id": 1338,
+        "Name": "Garrison - Horde - Pet Stable 2",
+        "Directory": "garrison_horde_petstable2",
+        "Continent": true
+      },
+      {
+        "Id": 1339,
+        "Name": "Garrison - Horde - Stable 2",
+        "Directory": "garrison_horde_stable2",
+        "Continent": true
+      },
+      {
+        "Id": 1340,
+        "Name": "Garrison - Horde - Trading Post 2",
+        "Directory": "garrison_horde_tradingpost2",
+        "Continent": true
+      },
+      {
+        "Id": 1341,
+        "Name": "Garrison - Horde - Workshop 2",
+        "Directory": "garrison_horde_workshop2",
+        "Continent": true
+      },
+      {
+        "Id": 1342,
+        "Name": "Garrison - Horde - Barracks 3",
+        "Directory": "garrison_horde_barracks3",
+        "Continent": true
+      },
+      {
+        "Id": 1343,
+        "Name": "Garrison - Horde - Armory 3",
+        "Directory": "garrison_horde_armory3",
+        "Continent": true
+      },
+      {
+        "Id": 1344,
+        "Name": "Garrison - Horde - Barn 3",
+        "Directory": "garrison_horde_barn3",
+        "Continent": true
+      },
+      {
+        "Id": 1345,
+        "Name": "Garrison - Horde - Inn 3",
+        "Directory": "garrison_horde_inn3",
+        "Continent": true
+      },
+      {
+        "Id": 1346,
+        "Name": "Garrison - Horde - Mage Tower 3",
+        "Directory": "garrison_horde_magetower3",
+        "Continent": true
+      },
+      {
+        "Id": 1347,
+        "Name": "Garrison - Horde - Pet Stable 3",
+        "Directory": "garrison_horde_petstable3",
+        "Continent": true
+      },
+      {
+        "Id": 1348,
+        "Name": "Garrison - Horde - Stable 3",
+        "Directory": "garrison_horde_stable3",
+        "Continent": true
+      },
+      {
+        "Id": 1349,
+        "Name": "Garrison - Horde - Trading Post 3",
+        "Directory": "garrison_horde_tradingpost3",
+        "Continent": true
+      },
+      {
+        "Id": 1350,
+        "Name": "Garrison - Horde - Workshop 3",
+        "Directory": "garrison_horde_workshop3",
+        "Continent": true
+      },
+      {
+        "Id": 1351,
+        "Name": "Garrison - Alliance - Large - Construction",
+        "Directory": "Garrison_Alliance_Large_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1352,
+        "Name": "Garrison - Alliance - Medium - Construction",
+        "Directory": "Garrison_Alliance_Medium_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1353,
+        "Name": "Garrison - Horde - Large - Construction",
+        "Directory": "Garrison_Horde_Large_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1354,
+        "Name": "Garrison - Horde - Medium - Construction",
+        "Directory": "Garrison_Horde_Medium_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1358,
+        "Name": "Upper Blackrock Spire",
+        "Directory": "UpperBlackRockSpire",
+        "Continent": false
+      },
+      {
+        "Id": 1361,
+        "Name": "Garrison - Alliance - Mage Tower 2",
+        "Directory": "garrisonAllianceMageTower2",
+        "Continent": true
+      },
+      {
+        "Id": 1362,
+        "Name": "Garrison - Alliance - Mage Tower 3",
+        "Directory": "garrisonAllianceMageTower3",
+        "Continent": true
+      },
+      {
+        "Id": 1363,
+        "Name": "Garrison - Horde - Mine 2",
+        "Directory": "garrison_horde_mine2",
+        "Continent": true
+      },
+      {
+        "Id": 1364,
+        "Name": "Garrison - Horde - Mine 3",
+        "Directory": "garrison_horde_mine3",
+        "Continent": true
+      },
+      {
+        "Id": 1367,
+        "Name": "Garrison - Alliance - Workshop 2",
+        "Directory": "garrison_alliance_workshop2",
+        "Continent": true
+      },
+      {
+        "Id": 1368,
+        "Name": "Garrison - Alliance - Workshop 3",
+        "Directory": "garrison_alliance_workshop3",
+        "Continent": true
+      },
+      {
+        "Id": 1369,
+        "Name": "Garrison - Alliance - Lumbermill 2",
+        "Directory": "garrison_alliance_lumbermill2",
+        "Continent": true
+      },
+      {
+        "Id": 1370,
+        "Name": "Garrison - Alliance - Lumbermill 3",
+        "Directory": "garrison_alliance_lumbermill3",
+        "Continent": true
+      },
+      {
+        "Id": 1371,
+        "Name": "Garrison - Horde - Small - Construction",
+        "Directory": "Garrison_Horde_Small_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1372,
+        "Name": "Garrison - Alliance - Small - Construction",
+        "Directory": "Garrison_Alliance_Small_Construction",
+        "Continent": true
+      },
+      {
+        "Id": 1374,
+        "Name": "Auchindoun Quest",
+        "Directory": "AuchindounQuest",
+        "Continent": false
+      },
+      {
+        "Id": 1375,
+        "Name": "Garrison - Alliance - Alchemy 2",
+        "Directory": "alliance_garrison_alchemy_rank2",
+        "Continent": true
+      },
+      {
+        "Id": 1376,
+        "Name": "Garrison - Alliance - Alchemy 3",
+        "Directory": "alliance_garrison_alchemy_rank3",
+        "Continent": true
+      },
+      {
+        "Id": 1377,
+        "Name": "Garrison - Alliance - Blacksmith 2",
+        "Directory": "garrison_alliance_blacksmith2",
+        "Continent": true
+      },
+      {
+        "Id": 1378,
+        "Name": "Garrison - Alliance - Enchanting 2",
+        "Directory": "garrison_alliance_enchanting2",
+        "Continent": true
+      },
+      {
+        "Id": 1379,
+        "Name": "Garrison - Alliance - Engineering 2",
+        "Directory": "garrison_alliance_engineering2",
+        "Continent": true
+      },
+      {
+        "Id": 1380,
+        "Name": "Garrison - Alliance - Inscription 2",
+        "Directory": "garrison_alliance_inscription2",
+        "Continent": true
+      },
+      {
+        "Id": 1381,
+        "Name": "Garrison - Alliance - Inscription 3",
+        "Directory": "garrison_alliance_inscription3",
+        "Continent": true
+      },
+      {
+        "Id": 1382,
+        "Name": "Garrison - Alliance - Jewelcrafting 2",
+        "Directory": "garrison_alliance_jewelcrafting2",
+        "Continent": true
+      },
+      {
+        "Id": 1383,
+        "Name": "Garrison - Alliance - Jewelcrafting 3",
+        "Directory": "garrison_alliance_jewelcrafting3",
+        "Continent": true
+      },
+      {
+        "Id": 1384,
+        "Name": "Garrison - Alliance - Leatherworking 2",
+        "Directory": "garrison_alliance_leatherworking2",
+        "Continent": true
+      },
+      {
+        "Id": 1385,
+        "Name": "Garrison - Alliance - Leatherworking 3",
+        "Directory": "garrison_alliance_leatherworking3",
+        "Continent": true
+      },
+      {
+        "Id": 1386,
+        "Name": "Garrison - Alliance - Tailoring 2",
+        "Directory": "garrison_alliance_tailoring2",
+        "Continent": true
+      },
+      {
+        "Id": 1387,
+        "Name": "Garrison - Alliance - StoreHouse 2",
+        "Directory": "garrison_alliance_storehouse2",
+        "Continent": true
+      },
+      {
+        "Id": 1388,
+        "Name": "Garrison - Alliance - StoreHouse 3",
+        "Directory": "garrison_alliance_storehouse3",
+        "Continent": true
+      },
+      {
+        "Id": 1389,
+        "Name": "Garrison - Horde Storehouse 2",
+        "Directory": "garrison_horde_storehouse2",
+        "Continent": true
+      },
+      {
+        "Id": 1390,
+        "Name": "Garrison - Horde Storehouse 3",
+        "Directory": "garrison_horde_storehouse3",
+        "Continent": true
+      },
+      {
+        "Id": 1391,
+        "Name": "Garrison - Alliance - Salvage Yard 2",
+        "Directory": "garrison_alliance_salvageyard2",
+        "Continent": true
+      },
+      {
+        "Id": 1392,
+        "Name": "Garrison - Alliance - Salvage Yard 3",
+        "Directory": "garrison_alliance_salvageyard3",
+        "Continent": true
+      },
+      {
+        "Id": 1393,
+        "Name": "Garrison - Horde - Lumbermill 3",
+        "Directory": "garrison_horde_lumbermill3",
+        "Continent": true
+      },
+      {
+        "Id": 1394,
+        "Name": "Garrison - Alliance - Sparring Arena 2",
+        "Directory": "garrison_alliance_pet_stable2",
+        "Continent": true
+      },
+      {
+        "Id": 1395,
+        "Name": "Garrison - Alliance - Sparring Arena 3",
+        "Directory": "garrison_alliance_pet_stable3",
+        "Continent": true
+      },
+      {
+        "Id": 1396,
+        "Name": "Garrison - Alliance - Trading Post 2",
+        "Directory": "garrison_alliance_trading_post2",
+        "Continent": true
+      },
+      {
+        "Id": 1397,
+        "Name": "Garrison - Alliance - Trading Post 3",
+        "Directory": "garrison_alliance_trading_post3",
+        "Continent": true
+      },
+      {
+        "Id": 1398,
+        "Name": "Garrison - Alliance - Barn 2",
+        "Directory": "garrison_alliance_barn2",
+        "Continent": true
+      },
+      {
+        "Id": 1399,
+        "Name": "Garrison - Alliance - Barn 3",
+        "Directory": "garrison_alliance_barn3",
+        "Continent": true
+      },
+      {
+        "Id": 1400,
+        "Name": "Garrison - Alliance - Inn 2",
+        "Directory": "garrison_alliance_inn_2",
+        "Continent": true
+      },
+      {
+        "Id": 1401,
+        "Name": "Garrison - Alliance - Inn 3",
+        "Directory": "garrison_alliance_inn_3",
+        "Continent": true
+      },
+      {
+        "Id": 1402,
+        "Name": "Gorgrond Finale",
+        "Directory": "GorgrondFinaleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1403,
+        "Name": "Garrison - Alliance - Barracks 2",
+        "Directory": "garrison_alliance_barracks2",
+        "Continent": true
+      },
+      {
+        "Id": 1404,
+        "Name": "Garrison - Alliance - Barracks 3",
+        "Directory": "garrison_alliance_barracks3",
+        "Continent": true
+      },
+      {
+        "Id": 1405,
+        "Name": "Garrison - Alliance - Armory 2",
+        "Directory": "garrison_alliance_armory2",
+        "Continent": true
+      },
+      {
+        "Id": 1406,
+        "Name": "Garrison - Alliance - Armory 3",
+        "Directory": "garrison_alliance_armory3",
+        "Continent": true
+      },
+      {
+        "Id": 1409,
+        "Name": "Garrison - Horde - Sparring Arena 2",
+        "Directory": "garrison_horde_sparringarena2",
+        "Continent": true
+      },
+      {
+        "Id": 1410,
+        "Name": "Garrison - Horde - Sparring Arena 3",
+        "Directory": "garrison_horde_sparringarena3",
+        "Continent": true
+      },
+      {
+        "Id": 1411,
+        "Name": "Garrison - Horde - Alchemy 2",
+        "Directory": "garrison_horde_alchemy2",
+        "Continent": true
+      },
+      {
+        "Id": 1412,
+        "Name": "Garrison - Horde - Alchemy 3",
+        "Directory": "garrison_horde_alchemy3",
+        "Continent": true
+      },
+      {
+        "Id": 1413,
+        "Name": "Garrison - Horde - Blacksmith 2",
+        "Directory": "garrison_horde_blacksmith2",
+        "Continent": true
+      },
+      {
+        "Id": 1414,
+        "Name": "Garrison - Horde - Blacksmith 3",
+        "Directory": "garrison_horde_blacksmith3",
+        "Continent": true
+      },
+      {
+        "Id": 1415,
+        "Name": "Garrison - Horde - Enchanting 2",
+        "Directory": "garrison_horde_enchanting2",
+        "Continent": true
+      },
+      {
+        "Id": 1416,
+        "Name": "Garrison - Horde - Enchanting 3",
+        "Directory": "garrison_horde_enchanting3",
+        "Continent": true
+      },
+      {
+        "Id": 1417,
+        "Name": "Garrison - Horde - Inscription 2",
+        "Directory": "garrison_horde_inscription2",
+        "Continent": true
+      },
+      {
+        "Id": 1418,
+        "Name": "Garrison - Horde - Inscription 3",
+        "Directory": "garrison_horde_inscription3",
+        "Continent": true
+      },
+      {
+        "Id": 1419,
+        "Name": "Garrison - Horde - Leatherworking 2",
+        "Directory": "garrison_horde_leatherworking2",
+        "Continent": true
+      },
+      {
+        "Id": 1420,
+        "Name": "Garrison - Horde - Leatherworking 3",
+        "Directory": "garrison_horde_leatherworking3",
+        "Continent": true
+      },
+      {
+        "Id": 1421,
+        "Name": "Garrison - Horde - Jewelcrafting 2",
+        "Directory": "garrison_horde_jewelcrafting2",
+        "Continent": true
+      },
+      {
+        "Id": 1422,
+        "Name": "Garrison - Horde - Jewelcrafting 3",
+        "Directory": "garrison_horde_jewelcrafting3",
+        "Continent": true
+      },
+      {
+        "Id": 1423,
+        "Name": "Garrison - Horde - Tailoring 2",
+        "Directory": "garrison_horde_tailoring2",
+        "Continent": true
+      },
+      {
+        "Id": 1424,
+        "Name": "Garrison - Horde - Tailoring 3",
+        "Directory": "garrison_horde_tailoring3",
+        "Continent": true
+      },
+      {
+        "Id": 1425,
+        "Name": "Garrison - Horde - Salvage Yard 2",
+        "Directory": "garrison_horde_salvageyard2",
+        "Continent": true
+      },
+      {
+        "Id": 1426,
+        "Name": "Garrison - Horde - Salvage Yard 3",
+        "Directory": "garrison_horde_salvageyard3",
+        "Continent": true
+      },
+      {
+        "Id": 1427,
+        "Name": "PattyMack Test Garrison Bld Map2",
+        "Directory": "PattyMackTestGarrisonBldgMap2",
+        "Continent": true
+      },
+      {
+        "Id": 1429,
+        "Name": "Garrison - Horde - Engineering 2",
+        "Directory": "garrison_horde_engineering2",
+        "Continent": true
+      },
+      {
+        "Id": 1430,
+        "Name": "Garrison - Horde - Engineering 3",
+        "Directory": "garrison_horde_engineering3",
+        "Continent": true
+      },
+      {
+        "Id": 1431,
+        "Name": "The Coliseum",
+        "Directory": "SparringArenaLevel3Stadium",
+        "Continent": false
+      },
+      {
+        "Id": 1432,
+        "Name": "Garrison - Horde - Fishing 2",
+        "Directory": "garrison_horde_fishing2",
+        "Continent": true
+      },
+      {
+        "Id": 1433,
+        "Name": "Garrison - Horde - Fishing 3",
+        "Directory": "garrison_horde_fishing3",
+        "Continent": true
+      },
+      {
+        "Id": 1434,
+        "Name": "Garrison - Alliance - Fishing 2",
+        "Directory": "garrison_alliance_fishing2",
+        "Continent": true
+      },
+      {
+        "Id": 1435,
+        "Name": "Garrison - Alliance - Fishing 3",
+        "Directory": "garrison_alliance_fishing3",
+        "Continent": true
+      },
+      {
+        "Id": 1437,
+        "Name": "Garrison - Alliance - Pet Stable 1",
+        "Directory": "garrison_alliance_petstable1",
+        "Continent": true
+      },
+      {
+        "Id": 1438,
+        "Name": "Garrison - Alliance - Pet Stable 2",
+        "Directory": "garrison_alliance_petstable2",
+        "Continent": true
+      },
+      {
+        "Id": 1439,
+        "Name": "Garrison - Alliance - Pet Stable 3",
+        "Directory": "garrison_alliance_petstable3",
+        "Continent": true
+      },
+      {
+        "Id": 1440,
+        "Name": "Garrison - Alliance - Infirmary 1",
+        "Directory": "garrison_alliance_infirmary1",
+        "Continent": true
+      },
+      {
+        "Id": 1441,
+        "Name": "Garrison - Alliance - Infirmary 2",
+        "Directory": "garrison_alliance_infirmary2",
+        "Continent": true
+      },
+      {
+        "Id": 1442,
+        "Name": "Garrison - Alliance - Infirmary 3",
+        "Directory": "garrison_alliance_infirmary3",
+        "Continent": true
+      },
+      {
+        "Id": 1446,
+        "Name": "Outdoor Garrison - Construction Plot, Large - Alliance",
+        "Directory": "outdoorGarrisonConstructionPlotAllianceLarge",
+        "Continent": true
+      },
+      {
+        "Id": 1447,
+        "Name": "Outdoor Garrison - Construction Plot, Large - Horde",
+        "Directory": "outdoorGarrisonConstructionPlotHordeLarge",
+        "Continent": true
+      },
+      {
+        "Id": 1448,
+        "Name": "Hellfire Citadel",
+        "Directory": "HellfireRaid62",
+        "Continent": false
+      },
+      {
+        "Id": 1451,
+        "Name": "Tanaan Legion Test",
+        "Directory": "TanaanLegionTest",
+        "Continent": false
+      },
+      {
+        "Id": 1453,
+        "Name": "Scourge of Northshire",
+        "Directory": "ScourgeofNorthshire",
+        "Continent": false
+      },
+      {
+        "Id": 1454,
+        "Name": "The Broken Shore (old - delete)",
+        "Directory": "ArtifactAshbringerOrigin",
+        "Continent": false
+      },
+      {
+        "Id": 1455,
+        "Name": "Edge of Reality",
+        "Directory": "EdgeofRealityMount",
+        "Continent": false
+      },
+      {
+        "Id": 1456,
+        "Name": "Eye of Azshara",
+        "Directory": "NagaDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1458,
+        "Name": "Neltharion's Lair",
+        "Directory": "7_DungeonExteriorNeltharionsLair",
+        "Continent": false
+      },
+      {
+        "Id": 1460,
+        "Name": "Broken Shore Scenario",
+        "Directory": "BrokenShoreScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1461,
+        "Name": "Azsuna Scenario",
+        "Directory": "AzsunaScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1462,
+        "Name": "Illidans Rock",
+        "Directory": "IllidansRock",
+        "Continent": true
+      },
+      {
+        "Id": 1463,
+        "Name": "Helhiem Exterior Area",
+        "Directory": "HelhiemExteriorArea",
+        "Continent": true
+      },
+      {
+        "Id": 1464,
+        "Name": "Tanaan Jungle",
+        "Directory": "TanaanJungle",
+        "Continent": true
+      },
+      {
+        "Id": 1465,
+        "Name": "Tanaan Jungle - No Hubs Phase",
+        "Directory": "TanaanJungleNoHubsPhase",
+        "Continent": true
+      },
+      {
+        "Id": 1466,
+        "Name": "Darkheart Thicket",
+        "Directory": "Emerald_Nightmare_ValSharah_exterior",
+        "Continent": false
+      },
+      {
+        "Id": 1468,
+        "Name": "Warden Prison DH Quests",
+        "Directory": "WardenPrison",
+        "Continent": true
+      },
+      {
+        "Id": 1469,
+        "Name": "The Heart of Azeroth",
+        "Directory": "MaelstromShaman",
+        "Continent": true
+      },
+      {
+        "Id": 1471,
+        "Name": "Dungeon Test Map 1466",
+        "Directory": "1466",
+        "Continent": true
+      },
+      {
+        "Id": 1473,
+        "Name": "Garrison - Alliance - Shipyard",
+        "Directory": "GarrisonAllianceShipyard",
+        "Continent": true
+      },
+      {
+        "Id": 1474,
+        "Name": "Garrison - Horde - Shipyard",
+        "Directory": "GarrisonHordeShipyard",
+        "Continent": true
+      },
+      {
+        "Id": 1475,
+        "Name": "The Maw of Nashal",
+        "Directory": "TheMawofNashal",
+        "Continent": false
+      },
+      {
+        "Id": 1477,
+        "Name": "Halls of Valor",
+        "Directory": "Valhallas",
+        "Continent": false
+      },
+      {
+        "Id": 1478,
+        "Name": "The Temple of Elune",
+        "Directory": "ValSharahTempleofEluneScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1479,
+        "Name": "Skyhold",
+        "Directory": "WarriorArtifactArea",
+        "Continent": true
+      },
+      {
+        "Id": 1480,
+        "Name": "Icecrown Citadel",
+        "Directory": "DeathKnightArtifactArea",
+        "Continent": false
+      },
+      {
+        "Id": 1481,
+        "Name": "Mardum",
+        "Directory": "legionnexus",
+        "Continent": true
+      },
+      {
+        "Id": 1482,
+        "Name": "Garrison Shipyard - Submarine - Alliance",
+        "Directory": "GarrisonShipyardAllianceSubmarine",
+        "Continent": true
+      },
+      {
+        "Id": 1483,
+        "Name": "Garrison Shipyard - Destroyer - Alliance",
+        "Directory": "GarrisonShipyardAllianceDestroyer",
+        "Continent": true
+      },
+      {
+        "Id": 1484,
+        "Name": "Garrison Shipyard - Transport",
+        "Directory": "GarrisonShipyardTransport",
+        "Continent": true
+      },
+      {
+        "Id": 1485,
+        "Name": "Garrison Shipyard - Battleship - Alliance",
+        "Directory": "GarrisonShipyardDreadnaught",
+        "Continent": true
+      },
+      {
+        "Id": 1486,
+        "Name": "Garrison Shipyard - Carrier - Horde",
+        "Directory": "GarrisonShipyardCarrier",
+        "Continent": true
+      },
+      {
+        "Id": 1487,
+        "Name": "Garrison Shipyard - Submarine - Horde",
+        "Directory": "GarrisonShipyardHordeSubmarine",
+        "Continent": true
+      },
+      {
+        "Id": 1488,
+        "Name": "Garrison Shipyard - Destroyer - Horde",
+        "Directory": "GarrisonShipyardHordeDestroyer",
+        "Continent": true
+      },
+      {
+        "Id": 1489,
+        "Name": "Niskara",
+        "Directory": "Artifact-PortalWorldAcqusition",
+        "Continent": false
+      },
+      {
+        "Id": 1492,
+        "Name": "Maw of Souls",
+        "Directory": "Helheim",
+        "Continent": false
+      },
+      {
+        "Id": 1493,
+        "Name": "Vault of the Wardens",
+        "Directory": "WardenPrisonDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1494,
+        "Name": "The Violet Hold",
+        "Directory": "AcquisitionVioletHold",
+        "Continent": false
+      },
+      {
+        "Id": 1495,
+        "Name": "Shield's Rest",
+        "Directory": "AcquisitionWarriorProt",
+        "Continent": false
+      },
+      {
+        "Id": 1496,
+        "Name": "Garrison Shipyard - Carrier - Alliance",
+        "Directory": "GarrisonShipyardCarrierAlliance",
+        "Continent": true
+      },
+      {
+        "Id": 1497,
+        "Name": "Garrison Shipyard - Battleship - Horde",
+        "Directory": "GarrisonShipyardGalleonHorde",
+        "Continent": true
+      },
+      {
+        "Id": 1498,
+        "Name": "Felsoul Hold",
+        "Directory": "AcquisitionHavoc",
+        "Continent": false
+      },
+      {
+        "Id": 1500,
+        "Name": "Broken Shore",
+        "Directory": "ArtifactPaladinRetAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1501,
+        "Name": "Black Rook Hold",
+        "Directory": "BlackRookHoldDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1502,
+        "Name": "Dalaran Underbelly",
+        "Directory": "DalaranUnderbelly",
+        "Continent": true
+      },
+      {
+        "Id": 1503,
+        "Name": "Deepholm",
+        "Directory": "ArtifactShamanElementalAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1504,
+        "Name": "Black Rook Hold Arena",
+        "Directory": "BlackrookHoldArena",
+        "Continent": false
+      },
+      {
+        "Id": 1505,
+        "Name": "Nagrand Arena",
+        "Directory": "NagrandArena2",
+        "Continent": false
+      },
+      {
+        "Id": 1509,
+        "Name": "Bloodtotem Cavern - Fel Phase",
+        "Directory": "BloodtotemCavernFelPhase",
+        "Continent": true
+      },
+      {
+        "Id": 1510,
+        "Name": "Bloodtotem Cavern - Tauren Phase",
+        "Directory": "BloodtotemCavernTaurenPhase",
+        "Continent": true
+      },
+      {
+        "Id": 1511,
+        "Name": "Tideskorn Harbor",
+        "Directory": "Artifact-WarriorFuryAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1512,
+        "Name": "Netherlight Temple",
+        "Directory": "Artifact-PriestHunterOrderHall",
+        "Continent": true
+      },
+      {
+        "Id": 1513,
+        "Name": "Hall of the Guardian",
+        "Directory": "Artifact-MageOrderHall",
+        "Continent": true
+      },
+      {
+        "Id": 1514,
+        "Name": "The Wandering Isle",
+        "Directory": "Artifact-MonkOrderHall",
+        "Continent": true
+      },
+      {
+        "Id": 1515,
+        "Name": "Huln's War",
+        "Directory": "HulnHighmountain",
+        "Continent": true
+      },
+      {
+        "Id": 1516,
+        "Name": "The Arcway",
+        "Directory": "SuramarCatacombsDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1517,
+        "Name": "Stormheim Prescenario Windrunner",
+        "Directory": "StormheimPrescenarioWindrunner",
+        "Continent": true
+      },
+      {
+        "Id": 1518,
+        "Name": "Stormheim Prescenario Skyfire",
+        "Directory": "StormheimPrescenarioSkyfire",
+        "Continent": true
+      },
+      {
+        "Id": 1519,
+        "Name": "The Fel Hammer",
+        "Directory": "ArtifactsDemonHunterOrderHall",
+        "Continent": true
+      },
+      {
+        "Id": 1520,
+        "Name": "The Emerald Nightmare",
+        "Directory": "NightmareRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1522,
+        "Name": "Dreadscar Rift",
+        "Directory": "ArtifactWarlockOrderHallScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1523,
+        "Name": "Defense of the Fel Hammer Scenario",
+        "Directory": "MardumScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1526,
+        "Name": "Temple of the White Tiger",
+        "Directory": "Artifact-WhiteTigerTempleAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1527,
+        "Name": "High Mountain Scenario",
+        "Directory": "HighMountain",
+        "Continent": true
+      },
+      {
+        "Id": 1528,
+        "Name": "Skywall",
+        "Directory": "Artifact-SkywallAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1529,
+        "Name": "Karazhan",
+        "Directory": "KarazhanScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1530,
+        "Name": "The Nighthold",
+        "Directory": "SuramarRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1532,
+        "Name": "High Mountain Mesa Scenario",
+        "Directory": "HighMountainMesa",
+        "Continent": true
+      },
+      {
+        "Id": 1533,
+        "Name": "Karazhan Catacombs",
+        "Directory": "Artifact-KarazhanAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1535,
+        "Name": "Moonglade",
+        "Directory": "DefenseofMoongladeScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1536,
+        "Name": "Ursocs Lair",
+        "Directory": "UrsocsLairScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1539,
+        "Name": "Tirisfal Glades",
+        "Directory": "Artifact-AcquisitionArmsHolyShadow",
+        "Continent": false
+      },
+      {
+        "Id": 1540,
+        "Name": "Emerald Dreamway",
+        "Directory": "Artifact-Dreamway",
+        "Continent": true
+      },
+      {
+        "Id": 1541,
+        "Name": "Terrace of Endless Spring",
+        "Directory": "Artifact-TerraceofEndlessSpringAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1544,
+        "Name": "Assault on Violet Hold",
+        "Directory": "LegionVioletHoldDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1545,
+        "Name": "Azsuna",
+        "Directory": "Artifact-Acquisition-CombatResto",
+        "Continent": false
+      },
+      {
+        "Id": 1552,
+        "Name": "Ashamane's Fall",
+        "Directory": "ValsharahArena",
+        "Continent": false
+      },
+      {
+        "Id": 1553,
+        "Name": "Gloaming Reef",
+        "Directory": "Artifact-Acquisition-Underlight",
+        "Continent": false
+      },
+      {
+        "Id": 1554,
+        "Name": "7.0 Boost Experience - Alliance",
+        "Directory": "BoostExperience2",
+        "Continent": false
+      },
+      {
+        "Id": 1557,
+        "Name": "7.0 Boost Experience - Horde",
+        "Directory": "BoostExperience2Horde",
+        "Continent": false
+      },
+      {
+        "Id": 1571,
+        "Name": "Court of Stars",
+        "Directory": "SuramarCityDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1572,
+        "Name": "The Maelstrom",
+        "Directory": "MaelstromShamanHubIntroScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1579,
+        "Name": "Ulduar",
+        "Directory": "UdluarScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1580,
+        "Name": "The Maelstrom",
+        "Directory": "MaelstromTitanScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1583,
+        "Name": "Nexus Vault",
+        "Directory": "Artifact-DalaranVaultAcquisition",
+        "Continent": false
+      },
+      {
+        "Id": 1586,
+        "Name": "Assault on Stormwind",
+        "Directory": "AssualtOnStormwind",
+        "Continent": true
+      },
+      {
+        "Id": 1592,
+        "Name": "Sporefall",
+        "Directory": "DevMapE",
+        "Continent": false
+      },
+      {
+        "Id": 1594,
+        "Name": "The MOTHERLODE!!",
+        "Directory": "DevMapG",
+        "Continent": false
+      },
+      {
+        "Id": 1599,
+        "Name": "Nordrassil",
+        "Directory": "ArtifactRestoAcqusition",
+        "Continent": false
+      },
+      {
+        "Id": 1600,
+        "Name": "Throne of the Tides (Artifact Scenario)",
+        "Directory": "ArtifactThroneoftheTides",
+        "Continent": false
+      },
+      {
+        "Id": 1602,
+        "Name": "Artifact - The Vortex Pinnacle - Shaman Order Hall",
+        "Directory": "SkywallDungeon_OrderHall",
+        "Continent": true
+      },
+      {
+        "Id": 1604,
+        "Name": "Artifact - Order Campaign - Portal World Niskara",
+        "Directory": "Artifact-PortalWorldNaskora",
+        "Continent": true
+      },
+      {
+        "Id": 1605,
+        "Name": "Firelands_Artifact",
+        "Directory": "FirelandsArtifact",
+        "Continent": true
+      },
+      {
+        "Id": 1607,
+        "Name": "Artifact - Acquisition - Subtlety",
+        "Directory": "ArtifactAcquisitionSubtlety",
+        "Continent": false
+      },
+      {
+        "Id": 1608,
+        "Name": "Hyjal War of the Ancients Quest",
+        "Directory": "Hyjal Instance",
+        "Continent": true
+      },
+      {
+        "Id": 1609,
+        "Name": "Temple of Storms",
+        "Directory": "AcquisitionTempleofstorms",
+        "Continent": false
+      },
+      {
+        "Id": 1610,
+        "Name": "Artifact - Serenity Legion Scenario",
+        "Directory": "Artifact-SerenityLegionScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1611,
+        "Name": "Death Knight Campaign - Light's Hope Chapel",
+        "Directory": "DeathKnightCampaign-LightsHopeChapel",
+        "Continent": false
+      },
+      {
+        "Id": 1612,
+        "Name": "The Ruins of Falanaar",
+        "Directory": "TheRuinsofFalanaar",
+        "Continent": false
+      },
+      {
+        "Id": 1616,
+        "Name": "Faronaar",
+        "Directory": "Faronaar",
+        "Continent": false
+      },
+      {
+        "Id": 1617,
+        "Name": "Death Knight Campaign - Undercity",
+        "Directory": "DeathKnightCampaign-Undercity",
+        "Continent": false
+      },
+      {
+        "Id": 1618,
+        "Name": "Death Knight Campaign - Scarlet Monastery",
+        "Directory": "DeathKnightCampaign-ScarletMonastery",
+        "Continent": true
+      },
+      {
+        "Id": 1620,
+        "Name": "Artifact - Stormwind",
+        "Directory": "ArtifactStormwind",
+        "Continent": false
+      },
+      {
+        "Id": 1621,
+        "Name": "Black Temple - Legion",
+        "Directory": "BlackTemple-Legion",
+        "Continent": false
+      },
+      {
+        "Id": 1622,
+        "Name": "Telogrus Rift Scenario",
+        "Directory": "IllidanTemp",
+        "Continent": false
+      },
+      {
+        "Id": 1623,
+        "Name": "Mage Campaign - The Oculus",
+        "Directory": "MageCampaign-TheOculus",
+        "Continent": false
+      },
+      {
+        "Id": 1624,
+        "Name": "Battle of Exodar",
+        "Directory": "BattleofExodar",
+        "Continent": false
+      },
+      {
+        "Id": 1625,
+        "Name": "Trial of the Serpent",
+        "Directory": "TrialoftheSerpent",
+        "Continent": false
+      },
+      {
+        "Id": 1626,
+        "Name": "The Collapse - Suramar Scenario",
+        "Directory": "TheCollapseSuramarScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1629,
+        "Name": "Netherlight Temple",
+        "Directory": "NetherlightTemplePrison",
+        "Continent": false
+      },
+      {
+        "Id": 1630,
+        "Name": "Tol Barad",
+        "Directory": "TolBarad1",
+        "Continent": false
+      },
+      {
+        "Id": 1632,
+        "Name": "The Arcway - Suramar Scenario",
+        "Directory": "TheArcwaySuramarScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1642,
+        "Name": "Zandalar",
+        "Directory": "Zandalar",
+        "Continent": true
+      },
+      {
+        "Id": 1643,
+        "Name": "Kul Tiras",
+        "Directory": "KulTiras",
+        "Continent": true
+      },
+      {
+        "Id": 1644,
+        "Name": "Plunder Isle",
+        "Directory": "PlunderIsle",
+        "Continent": true
+      },
+      {
+        "Id": 1646,
+        "Name": "Black Rook Hold [Scenario]",
+        "Directory": "BlackRookSenario",
+        "Continent": false
+      },
+      {
+        "Id": 1648,
+        "Name": "Trial of Valor",
+        "Directory": "Helhiem2",
+        "Continent": false
+      },
+      {
+        "Id": 1651,
+        "Name": "Return to Karazhan",
+        "Directory": "Karazahn1",
+        "Continent": false
+      },
+      {
+        "Id": 1653,
+        "Name": "Great Dark Beyond",
+        "Directory": "LightsHeart",
+        "Continent": false
+      },
+      {
+        "Id": 1657,
+        "Name": "zzOldBlade's Edge Arena",
+        "Directory": "BladesEdgeArena2",
+        "Continent": true
+      },
+      {
+        "Id": 1662,
+        "Name": "Suramar",
+        "Directory": "SuramarEndScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1666,
+        "Name": "The Assault on Broken Shore",
+        "Directory": "BrokenShoreIntro",
+        "Continent": false
+      },
+      {
+        "Id": 1667,
+        "Name": "Legion Ship - Vertical",
+        "Directory": "LegionShipVertical",
+        "Continent": false
+      },
+      {
+        "Id": 1668,
+        "Name": "Legion Ship - Horizontal",
+        "Directory": "LegionShipHorizontal",
+        "Continent": false
+      },
+      {
+        "Id": 1669,
+        "Name": "Argus",
+        "Directory": "Argus 1",
+        "Continent": true
+      },
+      {
+        "Id": 1670,
+        "Name": "Broken Shore (Delete)",
+        "Directory": "BrokenshorePristine",
+        "Continent": true
+      },
+      {
+        "Id": 1671,
+        "Name": "Broken Shore - Prepatch 7.2 (Backup)",
+        "Directory": "BrokenShorePrepatch",
+        "Continent": true
+      },
+      {
+        "Id": 1672,
+        "Name": "Blade's Edge Arena",
+        "Directory": "bladesedgearena2b",
+        "Continent": false
+      },
+      {
+        "Id": 1673,
+        "Name": "The Eye of Eternity - Scenario",
+        "Directory": "EyeofEternityScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1675,
+        "Name": "Winter AB_old",
+        "Directory": "WinterAB",
+        "Continent": true
+      },
+      {
+        "Id": 1676,
+        "Name": "Tomb of Sargeras",
+        "Directory": "TombofSargerasRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1677,
+        "Name": "Cathedral of Eternal Night",
+        "Directory": "TombofSargerasDeungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1678,
+        "Name": "AB Phase 1",
+        "Directory": "ABPhase1",
+        "Continent": true
+      },
+      {
+        "Id": 1679,
+        "Name": "AB Phase 2",
+        "Directory": "ABPhase2",
+        "Continent": true
+      },
+      {
+        "Id": 1681,
+        "Name": "Arathi Basin Winter",
+        "Directory": "ABWinter",
+        "Continent": false
+      },
+      {
+        "Id": 1682,
+        "Name": "The Fel Hammer Terrain Phase",
+        "Directory": "ArtifactsDemonHunterOrderHallPhase",
+        "Continent": true
+      },
+      {
+        "Id": 1683,
+        "Name": "Artifact - Gnomeregan",
+        "Directory": "ArtifactGnomeregan",
+        "Continent": false
+      },
+      {
+        "Id": 1684,
+        "Name": "Dread Scar Rift - Warlock Scenario Platform",
+        "Directory": "dreadscarriftwarlockplatform",
+        "Continent": false
+      },
+      {
+        "Id": 1687,
+        "Name": "Wailing Caverns",
+        "Directory": "WailingCavernsPetBattle",
+        "Continent": false
+      },
+      {
+        "Id": 1688,
+        "Name": "Deadmines",
+        "Directory": "DeadminesPetBattle",
+        "Continent": false
+      },
+      {
+        "Id": 1689,
+        "Name": "The Eye of Eternity - Mage Class Mount",
+        "Directory": "EyeofEternityMageClassMount",
+        "Continent": false
+      },
+      {
+        "Id": 1691,
+        "Name": "Cooking: Impossible",
+        "Directory": "CookingImpossible",
+        "Continent": false
+      },
+      {
+        "Id": 1692,
+        "Name": "Pit of Saron - Death Knight Campaign",
+        "Directory": "PitofSaronDeathKnight",
+        "Continent": true
+      },
+      {
+        "Id": 1693,
+        "Name": "Stormstout Brewery - Monk Scenario",
+        "Directory": "MardumScenarioClientScene",
+        "Continent": false
+      },
+      {
+        "Id": 1694,
+        "Name": "Gnomeregan",
+        "Directory": "GnomereganPetBattle",
+        "Continent": false
+      },
+      {
+        "Id": 1695,
+        "Name": "Battleship: Ruin",
+        "Directory": "BrokenShoreBattleshipFinale",
+        "Continent": false
+      },
+      {
+        "Id": 1698,
+        "Name": "Artifact - Acquisition - Tank",
+        "Directory": "ArtifactAcquisitionTank",
+        "Continent": false
+      },
+      {
+        "Id": 1702,
+        "Name": "Artifact - Highmountain - Dual Boss",
+        "Directory": "ArtifactHighmountainDualBoss",
+        "Continent": false
+      },
+      {
+        "Id": 1703,
+        "Name": "Halls of Valor - Scenario",
+        "Directory": "HallsofValorScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1704,
+        "Name": "Legion Ship - Horizontal - Valsharah",
+        "Directory": "LegionShipHorizontalValsharah",
+        "Continent": false
+      },
+      {
+        "Id": 1705,
+        "Name": "Legion Ship - Horizontal - Azsuna",
+        "Directory": "LegionShipHorizontalAzsuna",
+        "Continent": false
+      },
+      {
+        "Id": 1706,
+        "Name": "Legion Ship - Vertical - HighMountain",
+        "Directory": "LegionShipHorizontalHighMountain",
+        "Continent": false
+      },
+      {
+        "Id": 1707,
+        "Name": "Legion Ship - Vertical - Stormheim",
+        "Directory": "LegionShipHorizontalStormheim",
+        "Continent": false
+      },
+      {
+        "Id": 1708,
+        "Name": "Stratholme - Paladin Class Mount",
+        "Directory": "StratholmePaladinClassMount",
+        "Continent": false
+      },
+      {
+        "Id": 1710,
+        "Name": "Black Rook Hold - Artifact Challenge",
+        "Directory": "BlackRookHoldArtifactChallenge",
+        "Continent": false
+      },
+      {
+        "Id": 1712,
+        "Name": "Antorus, the Burning Throne",
+        "Directory": "ArgusRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1714,
+        "Name": "Halls Of Valor - Warrior Class Mount",
+        "Directory": "HallsOfValorWarriorClassMount",
+        "Continent": false
+      },
+      {
+        "Id": 1718,
+        "Name": "Nazjatar",
+        "Directory": "Nazjatar",
+        "Continent": true
+      },
+      {
+        "Id": 1719,
+        "Name": "Dread Scar Rift - Warlock Mount Scenario",
+        "Directory": "warlockmountscenario",
+        "Continent": false
+      },
+      {
+        "Id": 1723,
+        "Name": "Coldridge Valley",
+        "Directory": "ColdridgeValley",
+        "Continent": false
+      },
+      {
+        "Id": 1728,
+        "Name": "Halls of Valor",
+        "Directory": "HallsofValorHunterScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1729,
+        "Name": "The Eye of Eternity - Mage Class Mount (Shorter Version)",
+        "Directory": "EyeofEternityMageClassMountShort",
+        "Continent": false
+      },
+      {
+        "Id": 1730,
+        "Name": "Shrine of Aviana Defense - Scenario",
+        "Directory": "ShrineofAvianaDefenseScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1731,
+        "Name": "Druid Mount Finale - Scenario",
+        "Directory": "DruidMountFinaleScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1732,
+        "Name": "Felwing Ledge - Demon Hunter Class Mount",
+        "Directory": "FelwingLedgeDemonHunterClassMount",
+        "Continent": false
+      },
+      {
+        "Id": 1733,
+        "Name": "Azeroth's Warning Scenario",
+        "Directory": "AzerothsWarningScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1734,
+        "Name": "Throne of the Four Winds - Shaman Class Mount",
+        "Directory": "ThroneoftheFourWindsShamanClassMounts",
+        "Continent": false
+      },
+      {
+        "Id": 1735,
+        "Name": "Frozen Wastes",
+        "Directory": "DKMountScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1736,
+        "Name": "The Ruby Sanctum",
+        "Directory": "RubySanctumDKMountScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1737,
+        "Name": "Pocket Dimension Akazamzaraks Hat Scenario",
+        "Directory": "AkazamarakHatScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1738,
+        "Name": "The Lost Glacier",
+        "Directory": "LostGlacierDKMountScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1744,
+        "Name": "Trial of Style",
+        "Directory": "MogWeek",
+        "Continent": false
+      },
+      {
+        "Id": 1746,
+        "Name": "Tempest Keep: The Arcatraz",
+        "Directory": "ArcatrazScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1750,
+        "Name": "Azuremyst Isle",
+        "Directory": "Azuremyst Isle (7.3 Intro)",
+        "Continent": true
+      },
+      {
+        "Id": 1753,
+        "Name": "Seat of the Triumvirate",
+        "Directory": "ArgusDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1754,
+        "Name": "Freehold",
+        "Directory": "PirateTownDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1756,
+        "Name": "The Deaths of Chromie",
+        "Directory": "ChromieScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1760,
+        "Name": "Lordaeron",
+        "Directory": "LordaeronScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1762,
+        "Name": "Kings' Rest",
+        "Directory": "CityofGoldInteriorDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1763,
+        "Name": "Atal'Dazar",
+        "Directory": "CityofGoldExteriorDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1764,
+        "Name": "Endless Halls",
+        "Directory": "EndlessHallsScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1771,
+        "Name": "Tol Dagor",
+        "Directory": "KulTirasPrison",
+        "Continent": false
+      },
+      {
+        "Id": 1773,
+        "Name": "Shadow of Azeroth",
+        "Directory": "VoildElf",
+        "Continent": true
+      },
+      {
+        "Id": 1774,
+        "Name": "Forge of Aeons",
+        "Directory": "LightforgedDraenei",
+        "Continent": false
+      },
+      {
+        "Id": 1779,
+        "Name": "Invasion Points",
+        "Directory": "Argus_Rifts",
+        "Continent": true
+      },
+      {
+        "Id": 1795,
+        "Name": "Vale of Eternal Blossoms",
+        "Directory": "ShwayderLand",
+        "Continent": true
+      },
+      {
+        "Id": 1803,
+        "Name": "Seething Shore",
+        "Directory": "AzeriteBG1",
+        "Continent": false
+      },
+      {
+        "Id": 1812,
+        "Name": "Suramar",
+        "Directory": "SuramarNightborneUnlock",
+        "Continent": false
+      },
+      {
+        "Id": 1813,
+        "Name": "Un'gol Ruins (Islands 1)",
+        "Directory": "Islands801",
+        "Continent": false
+      },
+      {
+        "Id": 1814,
+        "Name": "Havenswood (Islands 2)",
+        "Directory": "Islands802",
+        "Continent": false
+      },
+      {
+        "Id": 1815,
+        "Name": "Silithus Phase",
+        "Directory": "Silithus",
+        "Continent": true
+      },
+      {
+        "Id": 1817,
+        "Name": "Silithus: The Wound",
+        "Directory": "SilithusPhase01",
+        "Continent": true
+      },
+      {
+        "Id": 1818,
+        "Name": "Silvermoon City",
+        "Directory": "SilvermoonCity",
+        "Continent": false
+      },
+      {
+        "Id": 1822,
+        "Name": "Siege of Boralus",
+        "Directory": "BoralusDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1825,
+        "Name": "Hook Point",
+        "Directory": "KulTirasArena",
+        "Continent": false
+      },
+      {
+        "Id": 1839,
+        "Name": "Karazan Chess",
+        "Directory": "KarazanChess",
+        "Continent": true
+      },
+      {
+        "Id": 1840,
+        "Name": "The Sunwell",
+        "Directory": "SunwellUnlockScenario",
+        "Continent": false
+      },
+      {
+        "Id": 1841,
+        "Name": "The Underrot",
+        "Directory": "UnderrotDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1860,
+        "Name": "The Vindicaar",
+        "Directory": "LightforgedDraeneiVindicaar",
+        "Continent": true
+      },
+      {
+        "Id": 1861,
+        "Name": "Uldir",
+        "Directory": "NazmirRaid",
+        "Continent": false
+      },
+      {
+        "Id": 1862,
+        "Name": "Waycrest Manor",
+        "Directory": "DrustvarDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1864,
+        "Name": "Shrine of the Storm",
+        "Directory": "SeaPriestDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1865,
+        "Name": "Telogrus Rift",
+        "Directory": "VoidElfHub",
+        "Continent": true
+      },
+      {
+        "Id": 1876,
+        "Name": "Warfronts Arathi - Horde",
+        "Directory": "WarfrontsArathi",
+        "Continent": false
+      },
+      {
+        "Id": 1877,
+        "Name": "Temple of Sethraliss",
+        "Directory": "SnakeDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 1879,
+        "Name": "Jorundall (Islands 7)",
+        "Directory": "rymoore",
+        "Continent": false
+      },
+      {
+        "Id": 1882,
+        "Name": "Verdant Wilds (Islands 8)",
+        "Directory": "Islands10",
+        "Continent": false
+      },
+      {
+        "Id": 1883,
+        "Name": "Whispering Reef (Islands 10)",
+        "Directory": "Islands01",
+        "Continent": false
+      },
+      {
+        "Id": 1884,
+        "Name": "Siege of Orgrimmar - Mag'har Orc Unlock Scenario",
+        "Directory": "SiegeOfOrgrimmarZone",
+        "Continent": false
+      },
+      {
+        "Id": 1892,
+        "Name": "The Rotting Mire (Islands 9)",
+        "Directory": "Islands11",
+        "Continent": false
+      },
+      {
+        "Id": 1893,
+        "Name": "The Dread Chain (Islands 4)",
+        "Directory": "NecromancyIsland",
+        "Continent": false
+      },
+      {
+        "Id": 1897,
+        "Name": "Molten Cay (Islands 6)",
+        "Directory": "Islands24",
+        "Continent": false
+      },
+      {
+        "Id": 1898,
+        "Name": "Skittering Hollow (Islands 5)",
+        "Directory": "Islands22",
+        "Continent": false
+      },
+      {
+        "Id": 1904,
+        "Name": "Stormwind Escape from Stockades",
+        "Directory": "escapefromstockades",
+        "Continent": false
+      },
+      {
+        "Id": 1906,
+        "Name": "Zandalar Continent Finale",
+        "Directory": "zandalarcontinentfinale",
+        "Continent": false
+      },
+      {
+        "Id": 1907,
+        "Name": "Snowblossom Village (Islands 3)",
+        "Directory": "Islands_Panderan_Farm",
+        "Continent": false
+      },
+      {
+        "Id": 1911,
+        "Name": "Mugambala",
+        "Directory": "ZandalariArena",
+        "Continent": false
+      },
+      {
+        "Id": 1917,
+        "Name": "Gorgrond - Mag'har Scenario",
+        "Directory": "GorgrondOrcs",
+        "Continent": false
+      },
+      {
+        "Id": 1918,
+        "Name": "Kalimdor Darkshore Phase",
+        "Directory": "Kalimdor 2",
+        "Continent": true
+      },
+      {
+        "Id": 1929,
+        "Name": "Chamber of Heart",
+        "Directory": "HallOfCommunion(Destroyed)",
+        "Continent": true
+      },
+      {
+        "Id": 1930,
+        "Name": "Zandalar Alliance Intro Scenario",
+        "Directory": "ZandalarAllianceIntroScenerio",
+        "Continent": true
+      },
+      {
+        "Id": 1931,
+        "Name": "Lordaeron Blight",
+        "Directory": "LordaeronBlight",
+        "Continent": true
+      },
+      {
+        "Id": 1932,
+        "Name": "Blackrock Depths - Dark Iron Scenario",
+        "Directory": "BlackrockDepthsDarkIron2",
+        "Continent": false
+      },
+      {
+        "Id": 1942,
+        "Name": "Molten Core",
+        "Directory": "MoltenCoreDarkIron",
+        "Continent": true
+      },
+      {
+        "Id": 1943,
+        "Name": "Warfronts Arathi - Alliance",
+        "Directory": "WarfrontsArathi - Alliance",
+        "Continent": false
+      },
+      {
+        "Id": 1944,
+        "Name": "Thros, The Blighted Lands",
+        "Directory": "ScenarioThrosDeathRealm",
+        "Continent": false
+      },
+      {
+        "Id": 1945,
+        "Name": "Arathi Highlands 2",
+        "Directory": "ArathiHighlands2",
+        "Continent": true
+      },
+      {
+        "Id": 1949,
+        "Name": "8.0 Boost Experience - Alliance",
+        "Directory": "8BoostExperienceAlliance",
+        "Continent": false
+      },
+      {
+        "Id": 1950,
+        "Name": "8.0 Boost Experience - Horde",
+        "Directory": "8BoostExperienceHorde",
+        "Continent": false
+      },
+      {
+        "Id": 1954,
+        "Name": "The Great Sea Alliance",
+        "Directory": "GreatSea",
+        "Continent": true
+      },
+      {
+        "Id": 1955,
+        "Name": "Uncharted Island",
+        "Directory": "ScenarioIslandsTutorial",
+        "Continent": false
+      },
+      {
+        "Id": 2066,
+        "Name": "The Great Sea Horde",
+        "Directory": "GreatSeaHorde",
+        "Continent": true
+      },
+      {
+        "Id": 2070,
+        "Name": "Battle of Dazar'alor",
+        "Directory": "Zandalarraid",
+        "Continent": false
+      },
+      {
+        "Id": 2076,
+        "Name": "Firelands - Dark Iron Dwarf",
+        "Directory": "FirelandsDarkIron",
+        "Continent": false
+      },
+      {
+        "Id": 2081,
+        "Name": "Blackrock Depths - Dark Iron Dwarf Hub",
+        "Directory": "BlackrockDepthsDarkIronHub",
+        "Continent": true
+      },
+      {
+        "Id": 2096,
+        "Name": "Crucible of Storms",
+        "Directory": "SeaPriestRaid",
+        "Continent": false
+      },
+      {
+        "Id": 2097,
+        "Name": "Operation: Mechagon",
+        "Directory": "MechagonDungeon",
+        "Continent": false
+      },
+      {
+        "Id": 2105,
+        "Name": "Warfronts Darkshore - Alliance",
+        "Directory": "WarfrontsDarkshoreAlliance",
+        "Continent": false
+      },
+      {
+        "Id": 2106,
+        "Name": "Warsong Gulch",
+        "Directory": "WarsongGulch2",
+        "Continent": false
+      },
+      {
+        "Id": 2107,
+        "Name": "Arathi Basin",
+        "Directory": "ArathiBasin2",
+        "Continent": false
+      },
+      {
+        "Id": 2111,
+        "Name": "Warfronts Darkshore - Horde",
+        "Directory": "WarfrontsDarkshoreHorde",
+        "Continent": false
+      },
+      {
+        "Id": 2114,
+        "Name": "Maw Prototype",
+        "Directory": "Scourge Procedural Dungeon",
+        "Continent": true
+      },
+      {
+        "Id": 2115,
+        "Name": "8.1 Darkshore Scenario",
+        "Directory": "DarkshoreTyrandeScenario",
+        "Continent": false
+      },
+      {
+        "Id": 2118,
+        "Name": "Battle for Wintergrasp",
+        "Directory": "WintergraspEpic",
+        "Continent": false
+      },
+      {
+        "Id": 2123,
+        "Name": "Shrine of the Storm Quests",
+        "Directory": "SeaPriestDungeonQuests",
+        "Continent": true
+      },
+      {
+        "Id": 2124,
+        "Name": "Crestfall (Islands 11)",
+        "Directory": "Crestfall",
+        "Continent": false
+      },
+      {
+        "Id": 2125,
+        "Name": "Zandalari Treasury",
+        "Directory": "ZandalariTreasury",
+        "Continent": false
+      },
+      {
+        "Id": 2127,
+        "Name": "Siren Isle",
+        "Directory": "AbandonedMines",
+        "Continent": true
+      },
+      {
+        "Id": 2128,
+        "Name": "Dagger Realm",
+        "Directory": "DaggerRealm",
+        "Continent": true
+      },
+      {
+        "Id": 2129,
+        "Name": "8.1 Darkshore Horde Quests",
+        "Directory": "DarkshoreHordeQuests",
+        "Continent": true
+      },
+      {
+        "Id": 2131,
+        "Name": "8.1 Darkshore Outdoor Final Phase",
+        "Directory": "DarkshoreOutdoorPhase",
+        "Continent": true
+      },
+      {
+        "Id": 2134,
+        "Name": "Tol Dagor Scenario",
+        "Directory": "TolDagorScenario",
+        "Continent": false
+      },
+      {
+        "Id": 2147,
+        "Name": "Icecrown Citadel (8.1)",
+        "Directory": "2147",
+        "Continent": true
+      },
+      {
+        "Id": 2155,
+        "Name": "Halls of Stone Scenario",
+        "Directory": "2155",
+        "Continent": false
+      },
+      {
+        "Id": 2160,
+        "Name": "Maw Prototype - Dragonblight",
+        "Directory": "2160",
+        "Continent": true
+      },
+      {
+        "Id": 2161,
+        "Name": "Maw Prototype - Torment Chambers",
+        "Directory": "2161",
+        "Continent": false
+      },
+      {
+        "Id": 2162,
+        "Name": "Torghast, Tower of the Damned",
+        "Directory": "2162",
+        "Continent": false
+      },
+      {
+        "Id": 2163,
+        "Name": "Gnomeregan Scenario",
+        "Directory": "2163",
+        "Continent": false
+      },
+      {
+        "Id": 2164,
+        "Name": "The Eternal Palace",
+        "Directory": "2164",
+        "Continent": false
+      },
+      {
+        "Id": 2167,
+        "Name": "The Robodrome",
+        "Directory": "2167",
+        "Continent": false
+      },
+      {
+        "Id": 2169,
+        "Name": "Uldir Scenario",
+        "Directory": "2169",
+        "Continent": false
+      },
+      {
+        "Id": 2170,
+        "Name": "Tauren Heritage Scenario",
+        "Directory": "2170",
+        "Continent": false
+      },
+      {
+        "Id": 2174,
+        "Name": "Scarlet Halls, Dark Ranger",
+        "Directory": "2174",
+        "Continent": false
+      },
+      {
+        "Id": 2175,
+        "Name": "9.0 NPE (New Player Experience) - Exile's Reach",
+        "Directory": "2175",
+        "Continent": true
+      },
+      {
+        "Id": 2177,
+        "Name": "Arathi Basin Comp Stomp",
+        "Directory": "2177",
+        "Continent": false
+      },
+      {
+        "Id": 2178,
+        "Name": "The Prison of Ink",
+        "Directory": "2178",
+        "Continent": false
+      },
+      {
+        "Id": 2179,
+        "Name": "Stratholme Pet Dungeon",
+        "Directory": "2179",
+        "Continent": false
+      },
+      {
+        "Id": 2180,
+        "Name": "The Dreamgrove (Hearthstone Tavern)",
+        "Directory": "2180",
+        "Continent": false
+      },
+      {
+        "Id": 2186,
+        "Name": "The Obsidian Sanctum - 8.2 Magni - Heart of Azeroth",
+        "Directory": "2186",
+        "Continent": true
+      },
+      {
+        "Id": 2187,
+        "Name": "Halls of Origination",
+        "Directory": "2187",
+        "Continent": false
+      },
+      {
+        "Id": 2193,
+        "Name": "Galakrond's Fall",
+        "Directory": "2193",
+        "Continent": false
+      },
+      {
+        "Id": 2195,
+        "Name": "Arcantina",
+        "Directory": "2195",
+        "Continent": true
+      },
+      {
+        "Id": 2197,
+        "Name": "Korrak's Revenge",
+        "Directory": "2197",
+        "Continent": false
+      },
+      {
+        "Id": 2207,
+        "Name": "Neltharion's Lair - HoA Scenario",
+        "Directory": "2207",
+        "Continent": false
+      },
+      {
+        "Id": 2208,
+        "Name": "Eastern Kingdoms - Vermillion Redoubt - HoA Scenario",
+        "Directory": "2208",
+        "Continent": false
+      },
+      {
+        "Id": 2209,
+        "Name": "Emerald Dream - HoA Scenario",
+        "Directory": "2209",
+        "Continent": false
+      },
+      {
+        "Id": 2210,
+        "Name": "Siege of Orgrimmar - Coup Scenario",
+        "Directory": "2210",
+        "Continent": false
+      },
+      {
+        "Id": 2211,
+        "Name": "Gilneas - Worgen Heritage Scenario",
+        "Directory": "2211",
+        "Continent": false
+      },
+      {
+        "Id": 2212,
+        "Name": "Horrific Vision of Orgrimmar",
+        "Directory": "2212",
+        "Continent": false
+      },
+      {
+        "Id": 2213,
+        "Name": "Horrific Vision of Stormwind",
+        "Directory": "2213",
+        "Continent": false
+      },
+      {
+        "Id": 2214,
+        "Name": "The Maelstrom - Heart of Azeroth",
+        "Directory": "2214",
+        "Continent": false
+      },
+      {
+        "Id": 2215,
+        "Name": "Chamber of Heart - Repaired",
+        "Directory": "2215",
+        "Continent": true
+      },
+      {
+        "Id": 2217,
+        "Name": "Ny'alotha, the Waking City",
+        "Directory": "2217",
+        "Continent": false
+      },
+      {
+        "Id": 2222,
+        "Name": "The Shadowlands",
+        "Directory": "2222",
+        "Continent": true
+      },
+      {
+        "Id": 2223,
+        "Name": "The Eye of Eternity - HoA Scenario",
+        "Directory": "2223",
+        "Continent": false
+      },
+      {
+        "Id": 2232,
+        "Name": "Karazhan Catacombs - HoA Scenario",
+        "Directory": "2232",
+        "Continent": false
+      },
+      {
+        "Id": 2233,
+        "Name": "Temple of the Jade Serpent - HoA Scenario",
+        "Directory": "2233",
+        "Continent": false
+      },
+      {
+        "Id": 2235,
+        "Name": "Caverns of Time - Anniversary",
+        "Directory": "2235",
+        "Continent": false
+      },
+      {
+        "Id": 2236,
+        "Name": "Darkmaul Citadel",
+        "Directory": "2236",
+        "Continent": false
+      },
+      {
+        "Id": 2237,
+        "Name": "8.2.5 Orgrimmar",
+        "Directory": "2237",
+        "Continent": true
+      },
+      {
+        "Id": 2241,
+        "Name": "Uldum",
+        "Directory": "2241",
+        "Continent": true
+      },
+      {
+        "Id": 2245,
+        "Name": "Deepwind Gorge",
+        "Directory": "2245",
+        "Continent": false
+      },
+      {
+        "Id": 2246,
+        "Name": "Solesa Naksu [DNT]",
+        "Directory": "2246",
+        "Continent": true
+      },
+      {
+        "Id": 2247,
+        "Name": "Mogu'shan Scenario",
+        "Directory": "2247",
+        "Continent": false
+      },
+      {
+        "Id": 2257,
+        "Name": "Chamber of Heart - Scenario",
+        "Directory": "2257",
+        "Continent": false
+      },
+      {
+        "Id": 2258,
+        "Name": "Crapopolis - Scenario",
+        "Directory": "2258",
+        "Continent": false
+      },
+      {
+        "Id": 2263,
+        "Name": "Crapopolis",
+        "Directory": "2263",
+        "Continent": true
+      },
+      {
+        "Id": 2264,
+        "Name": "Visions of N'Zoth - Orgrimmar - Engineering Test",
+        "Directory": "2264",
+        "Continent": false
+      },
+      {
+        "Id": 2266,
+        "Name": "Blackwing Descent Scenario",
+        "Directory": "2266",
+        "Continent": false
+      },
+      {
+        "Id": 2268,
+        "Name": "Mechagon City",
+        "Directory": "2268",
+        "Continent": true
+      },
+      {
+        "Id": 2274,
+        "Name": "Vision of the Twisting Sands",
+        "Directory": "2274",
+        "Continent": true
+      },
+      {
+        "Id": 2275,
+        "Name": "Vale of Eternal Twilight",
+        "Directory": "2275",
+        "Continent": true
+      },
+      {
+        "Id": 2278,
+        "Name": "Revendreth Scenario",
+        "Directory": "2278",
+        "Continent": false
+      },
+      {
+        "Id": 2282,
+        "Name": "Blackrock Depths - Pet Dungeon",
+        "Directory": "2282",
+        "Continent": false
+      },
+      {
+        "Id": 2284,
+        "Name": "Sanguine Depths",
+        "Directory": "2284",
+        "Continent": false
+      },
+      {
+        "Id": 2285,
+        "Name": "Spires of Ascension",
+        "Directory": "2285",
+        "Continent": false
+      },
+      {
+        "Id": 2286,
+        "Name": "The Necrotic Wake",
+        "Directory": "2286",
+        "Continent": false
+      },
+      {
+        "Id": 2287,
+        "Name": "Halls of Atonement",
+        "Directory": "2287",
+        "Continent": false
+      },
+      {
+        "Id": 2289,
+        "Name": "Plaguefall",
+        "Directory": "2289",
+        "Continent": false
+      },
+      {
+        "Id": 2290,
+        "Name": "Mists of Tirna Scithe",
+        "Directory": "2290",
+        "Continent": false
+      },
+      {
+        "Id": 2291,
+        "Name": "De Other Side",
+        "Directory": "2291",
+        "Continent": false
+      },
+      {
+        "Id": 2293,
+        "Name": "Theater of Pain",
+        "Directory": "2293",
+        "Continent": false
+      },
+      {
+        "Id": 2296,
+        "Name": "Castle Nathria",
+        "Directory": "2296",
+        "Continent": false
+      },
+      {
+        "Id": 2297,
+        "Name": "Icecrown Citadel (8.3)",
+        "Directory": "2297",
+        "Continent": true
+      },
+      {
+        "Id": 2299,
+        "Name": "Vision of Ysera Scenario",
+        "Directory": "2299",
+        "Continent": false
+      },
+      {
+        "Id": 2300,
+        "Name": "Redridge - 9xp Bastion",
+        "Directory": "2300",
+        "Continent": false
+      },
+      {
+        "Id": 2303,
+        "Name": "Ardenweald Zone Scenario",
+        "Directory": "2303",
+        "Continent": false
+      },
+      {
+        "Id": 2304,
+        "Name": "Ardenweald Tyrande Finale Scenario",
+        "Directory": "2304",
+        "Continent": false
+      },
+      {
+        "Id": 2305,
+        "Name": "Bastion Scenario",
+        "Directory": "2305",
+        "Continent": false
+      },
+      {
+        "Id": 2308,
+        "Name": "Bastion Night Warrior Finale - Ardenweald Covenant Scenario",
+        "Directory": "2308",
+        "Continent": false
+      },
+      {
+        "Id": 2354,
+        "Name": "Ardenweald Covenant Chapter 2 Scenario",
+        "Directory": "2354",
+        "Continent": false
+      },
+      {
+        "Id": 2356,
+        "Name": "Castle Nathria Scenario",
+        "Directory": "2356",
+        "Continent": false
+      },
+      {
+        "Id": 2360,
+        "Name": "Sinfall Scenario",
+        "Directory": "2360",
+        "Continent": false
+      },
+      {
+        "Id": 2362,
+        "Name": "Maldraxxus Covenant Finale Scenario",
+        "Directory": "2362",
+        "Continent": false
+      },
+      {
+        "Id": 2363,
+        "Name": "9.0 - Ardenweald - Garden - Queen's Conservatory",
+        "Directory": "2363",
+        "Continent": false
+      },
+      {
+        "Id": 2364,
+        "Name": "The Maw",
+        "Directory": "2364",
+        "Continent": true
+      },
+      {
+        "Id": 2368,
+        "Name": "Maldraxxus Broker Islands",
+        "Directory": "2368",
+        "Continent": true
+      },
+      {
+        "Id": 2370,
+        "Name": "Maldraxxus Arena",
+        "Directory": "2370",
+        "Continent": true
+      },
+      {
+        "Id": 2371,
+        "Name": "9.0 Ardenweald Covenant Finale Drust Scenario",
+        "Directory": "2371",
+        "Continent": false
+      },
+      {
+        "Id": 2373,
+        "Name": "Empyrean Domain",
+        "Directory": "2373",
+        "Continent": false
+      },
+      {
+        "Id": 2374,
+        "Name": "Zereth Mortis",
+        "Directory": "2374",
+        "Continent": true
+      },
+      {
+        "Id": 2375,
+        "Name": "9.0 Bastion Arena - Path of Ascension",
+        "Directory": "2375",
+        "Continent": false
+      },
+      {
+        "Id": 2439,
+        "Name": "De Other Side (Ardenweald Campaign)",
+        "Directory": "2439",
+        "Continent": true
+      },
+      {
+        "Id": 2441,
+        "Name": "Tazavesh, the Veiled Market",
+        "Directory": "2441",
+        "Continent": false
+      },
+      {
+        "Id": 2444,
+        "Name": "Dragon Isles",
+        "Directory": "2444",
+        "Continent": true
+      },
+      {
+        "Id": 2450,
+        "Name": "Sanctum of Domination",
+        "Directory": "2450",
+        "Continent": false
+      },
+      {
+        "Id": 2451,
+        "Name": "Uldaman: Legacy of Tyr",
+        "Directory": "2451",
+        "Continent": false
+      },
+      {
+        "Id": 2453,
+        "Name": "Torghast",
+        "Directory": "2453",
+        "Continent": true
+      },
+      {
+        "Id": 2454,
+        "Name": "Zaralek Cavern",
+        "Directory": "2454",
+        "Continent": true
+      },
+      {
+        "Id": 2456,
+        "Name": "The Maw",
+        "Directory": "2456",
+        "Continent": true
+      },
+      {
+        "Id": 2464,
+        "Name": "9.1 Battle of Ardenweald",
+        "Directory": "2464",
+        "Continent": false
+      },
+      {
+        "Id": 2465,
+        "Name": "9.1 Andorhal - Kyrian Chapter Scenario",
+        "Directory": "2465",
+        "Continent": false
+      },
+      {
+        "Id": 2471,
+        "Name": "Torghast",
+        "Directory": "2471",
+        "Continent": false
+      },
+      {
+        "Id": 2472,
+        "Name": "Skyhold",
+        "Directory": "2472",
+        "Continent": true
+      },
+      {
+        "Id": 2481,
+        "Name": "Sepulcher of the First Ones",
+        "Directory": "2481",
+        "Continent": false
+      },
+      {
+        "Id": 2482,
+        "Name": "Font of Fealty",
+        "Directory": "2482",
+        "Continent": true
+      },
+      {
+        "Id": 2504,
+        "Name": "Path of the Primus",
+        "Directory": "2504",
+        "Continent": false
+      },
+      {
+        "Id": 2509,
+        "Name": "Maldraxxus Coliseum",
+        "Directory": "2509",
+        "Continent": false
+      },
+      {
+        "Id": 2512,
+        "Name": "Grand Time Adventure",
+        "Directory": "2512",
+        "Continent": true
+      },
+      {
+        "Id": 2515,
+        "Name": "The Azure Vault",
+        "Directory": "2515",
+        "Continent": false
+      },
+      {
+        "Id": 2516,
+        "Name": "The Nokhud Offensive",
+        "Directory": "2516",
+        "Continent": false
+      },
+      {
+        "Id": 2519,
+        "Name": "Neltharus",
+        "Directory": "2519",
+        "Continent": false
+      },
+      {
+        "Id": 2520,
+        "Name": "Brackenhide Hollow",
+        "Directory": "2520",
+        "Continent": false
+      },
+      {
+        "Id": 2521,
+        "Name": "Ruby Life Pools",
+        "Directory": "2521",
+        "Continent": false
+      },
+      {
+        "Id": 2522,
+        "Name": "Vault of the Incarnates",
+        "Directory": "2522",
+        "Continent": false
+      },
+      {
+        "Id": 2526,
+        "Name": "Algeth'ar Academy",
+        "Directory": "2526",
+        "Continent": false
+      },
+      {
+        "Id": 2527,
+        "Name": "Halls of Infusion",
+        "Directory": "2527",
+        "Continent": false
+      },
+      {
+        "Id": 2532,
+        "Name": "Ruins of Lordaeron",
+        "Directory": "2532",
+        "Continent": true
+      },
+      {
+        "Id": 2534,
+        "Name": "10.0 Dragon Isles -  Black Dragon Citadel - Narrative Version",
+        "Directory": "2534",
+        "Continent": true
+      },
+      {
+        "Id": 2547,
+        "Name": "Enigma Crucible",
+        "Directory": "2547",
+        "Continent": false
+      },
+      {
+        "Id": 2548,
+        "Name": "Emerald Dream",
+        "Directory": "2548",
+        "Continent": true
+      },
+      {
+        "Id": 2549,
+        "Name": "Amirdrassil, the Dream's Hope",
+        "Directory": "2549",
+        "Continent": false
+      },
+      {
+        "Id": 2552,
+        "Name": "Khaz Algar (Surface)",
+        "Directory": "2552",
+        "Continent": true
+      },
+      {
+        "Id": 2556,
+        "Name": "Emerald Dreamway",
+        "Directory": "2556",
+        "Continent": false
+      },
+      {
+        "Id": 2563,
+        "Name": "Nokhudon Proving Grounds",
+        "Directory": "2563",
+        "Continent": false
+      },
+      {
+        "Id": 2569,
+        "Name": "Aberrus, the Shadowed Crucible",
+        "Directory": "2569",
+        "Continent": false
+      },
+      {
+        "Id": 2570,
+        "Name": "10.0 The Forbidden Reach (Child of 2444)",
+        "Directory": "2570",
+        "Continent": true
+      },
+      {
+        "Id": 2579,
+        "Name": "Dawn of the Infinite",
+        "Directory": "2579",
+        "Continent": false
+      },
+      {
+        "Id": 2582,
+        "Name": "Alterac Valley",
+        "Directory": "2582",
+        "Continent": false
+      },
+      {
+        "Id": 2583,
+        "Name": "Tyr's Fall Scenario",
+        "Directory": "2583",
+        "Continent": false
+      },
+      {
+        "Id": 2586,
+        "Name": "10.1.5 Time Rifts - Murloc (Azmerloth)",
+        "Directory": "2586",
+        "Continent": false
+      },
+      {
+        "Id": 2587,
+        "Name": "10.1.5 Time Rifts - Robot (A.Z.E.R.O.T.H.)",
+        "Directory": "2587",
+        "Continent": false
+      },
+      {
+        "Id": 2590,
+        "Name": "The Azure Vault",
+        "Directory": "2590",
+        "Continent": false
+      },
+      {
+        "Id": 2593,
+        "Name": "10.1.5 Time Rifts - Black Empire (Azq'roth)",
+        "Directory": "2593",
+        "Continent": false
+      },
+      {
+        "Id": 2594,
+        "Name": "10.1.5 Time Rifts - Argus Raid UNUSED",
+        "Directory": "2594",
+        "Continent": false
+      },
+      {
+        "Id": 2595,
+        "Name": "10.1.5 Time Rifts - Demon (Azewrath)",
+        "Directory": "2595",
+        "Continent": false
+      },
+      {
+        "Id": 2597,
+        "Name": "10.1 Zaralek Caverns - Chapter 1 Scenario",
+        "Directory": "2597",
+        "Continent": false
+      },
+      {
+        "Id": 2600,
+        "Name": "10.1 Zaralek Caverns - Chapter 6 Scenario",
+        "Directory": "2600",
+        "Continent": false
+      },
+      {
+        "Id": 2601,
+        "Name": "Khaz Algar",
+        "Directory": "2601",
+        "Continent": true
+      },
+      {
+        "Id": 2614,
+        "Name": "[DNT] DELETE",
+        "Directory": "2614",
+        "Continent": false
+      },
+      {
+        "Id": 2625,
+        "Name": "Deathwing's Final Moment",
+        "Directory": "2625",
+        "Continent": false
+      },
+      {
+        "Id": 2634,
+        "Name": "10.1.5 Time Rifts - HvA (The Warlands)",
+        "Directory": "2634",
+        "Continent": false
+      },
+      {
+        "Id": 2635,
+        "Name": "10.1.5 Time Rifts - Titan (Ulderoth)",
+        "Directory": "2635",
+        "Continent": false
+      },
+      {
+        "Id": 2637,
+        "Name": "Dragon Isles",
+        "Directory": "2637",
+        "Continent": true
+      },
+      {
+        "Id": 2639,
+        "Name": "10.1.5 Time Rifts - Scourge (Azmourne)",
+        "Directory": "2639",
+        "Continent": false
+      },
+      {
+        "Id": 2644,
+        "Name": "10.2.0 - Halls of Valor - Misfit Dragons",
+        "Directory": "2644",
+        "Continent": false
+      },
+      {
+        "Id": 2645,
+        "Name": "10.1.5 Scarlet Monastery - Headless Horseman Revamp",
+        "Directory": "2645",
+        "Continent": false
+      },
+      {
+        "Id": 2648,
+        "Name": "The Rookery",
+        "Directory": "2648",
+        "Continent": false
+      },
+      {
+        "Id": 2649,
+        "Name": "Priory of the Sacred Flame",
+        "Directory": "2649",
+        "Continent": false
+      },
+      {
+        "Id": 2651,
+        "Name": "Darkflame Cleft",
+        "Directory": "2651",
+        "Continent": false
+      },
+      {
+        "Id": 2652,
+        "Name": "The Stonevault",
+        "Directory": "2652",
+        "Continent": false
+      },
+      {
+        "Id": 2653,
+        "Name": "10.2 Scenario",
+        "Directory": "2653",
+        "Continent": false
+      },
+      {
+        "Id": 2654,
+        "Name": "10.2. Nighthold",
+        "Directory": "2654",
+        "Continent": false
+      },
+      {
+        "Id": 2656,
+        "Name": "Deephaul Ravine",
+        "Directory": "2656",
+        "Continent": false
+      },
+      {
+        "Id": 2657,
+        "Name": "Nerub-ar Palace",
+        "Directory": "2657",
+        "Continent": false
+      },
+      {
+        "Id": 2660,
+        "Name": "Ara-Kara, City of Echoes",
+        "Directory": "2660",
+        "Continent": false
+      },
+      {
+        "Id": 2661,
+        "Name": "Cinderbrew Meadery",
+        "Directory": "2661",
+        "Continent": false
+      },
+      {
+        "Id": 2662,
+        "Name": "The Dawnbreaker",
+        "Directory": "2662",
+        "Continent": false
+      },
+      {
+        "Id": 2664,
+        "Name": "Fungal Folly",
+        "Directory": "2664",
+        "Continent": false
+      },
+      {
+        "Id": 2666,
+        "Name": "Amirdrassil",
+        "Directory": "2666",
+        "Continent": true
+      },
+      {
+        "Id": 2668,
+        "Name": "10.1.7 Tyr Scenario - Black Empire",
+        "Directory": "2668",
+        "Continent": true
+      },
+      {
+        "Id": 2669,
+        "Name": "City of Threads",
+        "Directory": "2669",
+        "Continent": false
+      },
+      {
+        "Id": 2678,
+        "Name": "The Timeways (Dawn of the Infinite Outdoor)",
+        "Directory": "2678",
+        "Continent": true
+      },
+      {
+        "Id": 2679,
+        "Name": "Mycomancer Cavern",
+        "Directory": "2679",
+        "Continent": false
+      },
+      {
+        "Id": 2680,
+        "Name": "Earthcrawl Mines",
+        "Directory": "2680",
+        "Continent": false
+      },
+      {
+        "Id": 2681,
+        "Name": "Kriegval's Rest",
+        "Directory": "2681",
+        "Continent": false
+      },
+      {
+        "Id": 2682,
+        "Name": "Zekvir's Lair",
+        "Directory": "2682",
+        "Continent": false
+      },
+      {
+        "Id": 2683,
+        "Name": "The Waterworks",
+        "Directory": "2683",
+        "Continent": false
+      },
+      {
+        "Id": 2684,
+        "Name": "The Dread Pit",
+        "Directory": "2684",
+        "Continent": false
+      },
+      {
+        "Id": 2685,
+        "Name": "Skittering Breach",
+        "Directory": "2685",
+        "Continent": false
+      },
+      {
+        "Id": 2686,
+        "Name": "Nightfall Sanctum",
+        "Directory": "2686",
+        "Continent": false
+      },
+      {
+        "Id": 2687,
+        "Name": "The Sinkhole",
+        "Directory": "2687",
+        "Continent": false
+      },
+      {
+        "Id": 2688,
+        "Name": "The Spiral Weave",
+        "Directory": "2688",
+        "Continent": false
+      },
+      {
+        "Id": 2689,
+        "Name": "Tak-Rethan Abyss",
+        "Directory": "2689",
+        "Continent": false
+      },
+      {
+        "Id": 2690,
+        "Name": "The Underkeep",
+        "Directory": "2690",
+        "Continent": false
+      },
+      {
+        "Id": 2692,
+        "Name": "Hall of Awakening",
+        "Directory": "2692",
+        "Continent": false
+      },
+      {
+        "Id": 2694,
+        "Name": "Harandar",
+        "Directory": "2694",
+        "Continent": true
+      },
+      {
+        "Id": 2695,
+        "Name": "Void Zone: Arathi Highlands",
+        "Directory": "2695",
+        "Continent": false
+      },
+      {
+        "Id": 2698,
+        "Name": "11.0 - Chamber of Heart",
+        "Directory": "2698",
+        "Continent": true
+      },
+      {
+        "Id": 2699,
+        "Name": "New Candle, New Hope",
+        "Directory": "2699",
+        "Continent": false
+      },
+      {
+        "Id": 2703,
+        "Name": "11.0 Warband Screen",
+        "Directory": "2703",
+        "Continent": true
+      },
+      {
+        "Id": 2704,
+        "Name": "11.0 Warband Testing 2",
+        "Directory": "2704",
+        "Continent": true
+      },
+      {
+        "Id": 2706,
+        "Name": "Undermine",
+        "Directory": "2706",
+        "Continent": true
+      },
+      {
+        "Id": 2710,
+        "Name": "Awakening The Machine",
+        "Directory": "2710",
+        "Continent": false
+      },
+      {
+        "Id": 2713,
+        "Name": "11.0 - Campaign Finale Scenario",
+        "Directory": "2713",
+        "Continent": false
+      },
+      {
+        "Id": 2716,
+        "Name": "11.0 - Priory Scenario",
+        "Directory": "2716",
+        "Continent": false
+      },
+      {
+        "Id": 2731,
+        "Name": "11.0 Dalaran Scenario",
+        "Directory": "2731",
+        "Continent": true
+      },
+      {
+        "Id": 2735,
+        "Name": "Founder's Point",
+        "Directory": "2735",
+        "Continent": false
+      },
+      {
+        "Id": 2736,
+        "Name": "Razorwind Shores",
+        "Directory": "2736",
+        "Continent": false
+      },
+      {
+        "Id": 2738,
+        "Name": "K'aresh",
+        "Directory": "2738",
+        "Continent": true
+      },
+      {
+        "Id": 2739,
+        "Name": "Hall of Awakening",
+        "Directory": "2739",
+        "Continent": true
+      },
+      {
+        "Id": 2759,
+        "Name": "Cage of Carnage",
+        "Directory": "2759",
+        "Continent": false
+      },
+      {
+        "Id": 2767,
+        "Name": "The Sinkhole",
+        "Directory": "2767",
+        "Continent": false
+      },
+      {
+        "Id": 2768,
+        "Name": "Tak-Rethan Abyss",
+        "Directory": "2768",
+        "Continent": false
+      },
+      {
+        "Id": 2769,
+        "Name": "Liberation of Undermine",
+        "Directory": "2769",
+        "Continent": false
+      },
+      {
+        "Id": 2771,
+        "Name": "Voidstorm",
+        "Directory": "2771",
+        "Continent": true
+      },
+      {
+        "Id": 2773,
+        "Name": "Operation: Floodgate",
+        "Directory": "2773",
+        "Continent": false
+      },
+      {
+        "Id": 2776,
+        "Name": "Kalimdor",
+        "Directory": "2776",
+        "Continent": false
+      },
+      {
+        "Id": 2782,
+        "Name": "11.0 - Vault of Memory",
+        "Directory": "2782",
+        "Continent": true
+      },
+      {
+        "Id": 2783,
+        "Name": "Home Interior",
+        "Directory": "2783",
+        "Continent": false
+      },
+      {
+        "Id": 2785,
+        "Name": "Dragon Isles",
+        "Directory": "2785",
+        "Continent": true
+      },
+      {
+        "Id": 2786,
+        "Name": "Pocket Dimension",
+        "Directory": "2786",
+        "Continent": true
+      },
+      {
+        "Id": 2792,
+        "Name": "Blackrock Depths",
+        "Directory": "2792",
+        "Continent": false
+      },
+      {
+        "Id": 2794,
+        "Name": "11.2.7 - The Wandering Isle",
+        "Directory": "2794",
+        "Continent": true
+      },
+      {
+        "Id": 2796,
+        "Name": "Arathi Highlands 3",
+        "Directory": "2796",
+        "Continent": true
+      },
+      {
+        "Id": 2799,
+        "Name": "Slayer's Rise",
+        "Directory": "2799",
+        "Continent": false
+      },
+      {
+        "Id": 2801,
+        "Name": "Ny'alotha, the Waking City",
+        "Directory": "2801",
+        "Continent": true
+      },
+      {
+        "Id": 2803,
+        "Name": "Archival Assault",
+        "Directory": "2803",
+        "Continent": false
+      },
+      {
+        "Id": 2805,
+        "Name": "Windrunner Spire",
+        "Directory": "2805",
+        "Continent": false
+      },
+      {
+        "Id": 2810,
+        "Name": "Manaforge Omega",
+        "Directory": "2810",
+        "Continent": false
+      },
+      {
+        "Id": 2811,
+        "Name": "Magisters' Terrace",
+        "Directory": "2811",
+        "Continent": false
+      },
+      {
+        "Id": 2813,
+        "Name": "Murder Row",
+        "Directory": "2813",
+        "Continent": false
+      },
+      {
+        "Id": 2815,
+        "Name": "Excavation Site 9",
+        "Directory": "2815",
+        "Continent": false
+      },
+      {
+        "Id": 2818,
+        "Name": "Lordaeron Garrison",
+        "Directory": "2818",
+        "Continent": true
+      },
+      {
+        "Id": 2819,
+        "Name": "11.1.7 Icecrown Citadel",
+        "Directory": "2819",
+        "Continent": false
+      },
+      {
+        "Id": 2820,
+        "Name": "Eastern Kingdoms - Copy",
+        "Directory": "2820",
+        "Continent": true
+      },
+      {
+        "Id": 2825,
+        "Name": "Den of Nalorakk",
+        "Directory": "2825",
+        "Continent": false
+      },
+      {
+        "Id": 2826,
+        "Name": "Sidestreet Sluice",
+        "Directory": "2826",
+        "Continent": false
+      },
+      {
+        "Id": 2827,
+        "Name": "Horrific Vision of Stormwind",
+        "Directory": "2827",
+        "Continent": false
+      },
+      {
+        "Id": 2828,
+        "Name": "Horrific Vision of Orgrimmar",
+        "Directory": "2828",
+        "Continent": false
+      },
+      {
+        "Id": 2830,
+        "Name": "Eco-Dome Al'dani",
+        "Directory": "2830",
+        "Continent": false
+      },
+      {
+        "Id": 2831,
+        "Name": "Demolition Dome",
+        "Directory": "2831",
+        "Continent": false
+      },
+      {
+        "Id": 2834,
+        "Name": "11.1 Warband - General",
+        "Directory": "2834",
+        "Continent": true
+      },
+      {
+        "Id": 2836,
+        "Name": "Earthcrawl Mines",
+        "Directory": "2836",
+        "Continent": false
+      },
+      {
+        "Id": 2837,
+        "Name": "11.1 Warband - Delve Select Screen - Nightfall Sanctum",
+        "Directory": "2837",
+        "Continent": true
+      },
+      {
+        "Id": 2847,
+        "Name": "11.1 Warband - Freywold",
+        "Directory": "2847",
+        "Continent": true
+      },
+      {
+        "Id": 2849,
+        "Name": "Dastardly Dome",
+        "Directory": "2849",
+        "Continent": false
+      },
+      {
+        "Id": 2851,
+        "Name": "11.1 Warband - The Gallagio",
+        "Directory": "2851",
+        "Continent": true
+      },
+      {
+        "Id": 2857,
+        "Name": "Scarlet Halls",
+        "Directory": "2857",
+        "Continent": true
+      },
+      {
+        "Id": 2858,
+        "Name": "12.0 Quel'Danas Scenario",
+        "Directory": "2858",
+        "Continent": true
+      },
+      {
+        "Id": 2859,
+        "Name": "The Blinding Vale",
+        "Directory": "2859",
+        "Continent": false
+      },
+      {
+        "Id": 2874,
+        "Name": "Maisara Caverns",
+        "Directory": "2874",
+        "Continent": false
+      },
+      {
+        "Id": 2907,
+        "Name": "12.0 - Silvermoon City - Campaign Finale Scenario",
+        "Directory": "2907",
+        "Continent": false
+      },
+      {
+        "Id": 2912,
+        "Name": "The Voidspire",
+        "Directory": "2912",
+        "Continent": false
+      },
+      {
+        "Id": 2913,
+        "Name": "March on Quel'Danas",
+        "Directory": "2913",
+        "Continent": false
+      },
+      {
+        "Id": 2915,
+        "Name": "Nexus-Point Xenas",
+        "Directory": "2915",
+        "Continent": false
+      },
+      {
+        "Id": 2916,
+        "Name": "Vaults of Atal'Utek",
+        "Directory": "2916",
+        "Continent": true
+      },
+      {
+        "Id": 2923,
+        "Name": "Voidscar Arena",
+        "Directory": "2923",
+        "Continent": false
+      },
+      {
+        "Id": 2927,
+        "Name": "Arathi Highlands RPE",
+        "Directory": "2927",
+        "Continent": true
+      },
+      {
+        "Id": 2928,
+        "Name": "Shadowguard Point OLD",
+        "Directory": "2928",
+        "Continent": false
+      },
+      {
+        "Id": 2933,
+        "Name": "Collegiate Calamity",
+        "Directory": "2933",
+        "Continent": false
+      },
+      {
+        "Id": 2939,
+        "Name": "The Dreamrift",
+        "Directory": "2939",
+        "Continent": false
+      },
+      {
+        "Id": 2950,
+        "Name": "Vault of the Incarnates",
+        "Directory": "2950",
+        "Continent": false
+      },
+      {
+        "Id": 2951,
+        "Name": "Voidrazor Sanctuary",
+        "Directory": "2951",
+        "Continent": false
+      },
+      {
+        "Id": 2952,
+        "Name": "The Shadow Enclave",
+        "Directory": "2952",
+        "Continent": false
+      },
+      {
+        "Id": 2953,
+        "Name": "Parhelion Plaza",
+        "Directory": "2953",
+        "Continent": false
+      },
+      {
+        "Id": 2954,
+        "Name": "11.2 Warband - K'aresh",
+        "Directory": "2954",
+        "Continent": true
+      },
+      {
+        "Id": 2961,
+        "Name": "Twilight Crypts",
+        "Directory": "2961",
+        "Continent": false
+      },
+      {
+        "Id": 2962,
+        "Name": "Atal'Aman",
+        "Directory": "2962",
+        "Continent": false
+      },
+      {
+        "Id": 2963,
+        "Name": "The Grudge Pit",
+        "Directory": "2963",
+        "Continent": false
+      },
+      {
+        "Id": 2964,
+        "Name": "The Gulf of Memory",
+        "Directory": "2964",
+        "Continent": false
+      },
+      {
+        "Id": 2965,
+        "Name": "Sunkiller Sanctum",
+        "Directory": "2965",
+        "Continent": false
+      },
+      {
+        "Id": 2966,
+        "Name": "Torment's Rise",
+        "Directory": "2966",
+        "Continent": false
+      },
+      {
+        "Id": 2972,
+        "Name": "DEPRECATED Amirdrassil, the Dream's Hope (10.2 Raid - Dream) - Story Mode",
+        "Directory": "2972",
+        "Continent": false
+      },
+      {
+        "Id": 2979,
+        "Name": "Shadowguard Point",
+        "Directory": "2979",
+        "Continent": false
+      },
+      {
+        "Id": 2987,
+        "Name": "The Tidebound Grotto",
+        "Directory": "2987",
+        "Continent": false
+      },
+      {
+        "Id": 2993,
+        "Name": "Altar of Fangs",
+        "Directory": "2993",
+        "Continent": false
+      },
+      {
+        "Id": 3003,
+        "Name": "The Darkway",
+        "Directory": "3003",
+        "Continent": false
+      },
+      {
+        "Id": 3004,
+        "Name": "The Venomous Abyss",
+        "Directory": "3004",
+        "Continent": false
+      },
+      {
+        "Id": 3007,
+        "Name": "The Escape from Durnholde - Lorewalking",
+        "Directory": "3007",
+        "Continent": true
+      },
+      {
+        "Id": 3009,
+        "Name": "12.0.5 - Prop Hunt - Silvermoon",
+        "Directory": "3009",
+        "Continent": false
+      },
+      {
+        "Id": 3014,
+        "Name": "Broken Throne",
+        "Directory": "3014",
+        "Continent": false
+      },
+      {
+        "Id": 3022,
+        "Name": "Silvermoon's Falconwing Square",
+        "Directory": "3022",
+        "Continent": false
+      },
+      {
+        "Id": 3026,
+        "Name": "12.0 Warband - Founder's Point",
+        "Directory": "3026",
+        "Continent": true
+      },
+      {
+        "Id": 3027,
+        "Name": "12.0 Warband - Razorwind Shores",
+        "Directory": "3027",
+        "Continent": true
+      },
+      {
+        "Id": 3038,
+        "Name": "Gnarldor Isle",
+        "Directory": "3038",
+        "Continent": false
+      },
+      {
+        "Id": 3040,
+        "Name": "Null Space",
+        "Directory": "3040",
+        "Continent": true
+      },
+      {
+        "Id": 3043,
+        "Name": "The Labyrinth of Kindo'jan",
+        "Directory": "3043",
+        "Continent": false
+      },
+      {
+        "Id": 3047,
+        "Name": "Val",
+        "Directory": "3047",
+        "Continent": true
+      },
+      {
+        "Id": 3053,
+        "Name": "12.1 Warband - Silvermoon",
+        "Directory": "3053",
+        "Continent": true
+      },
+      {
+        "Id": 3071,
+        "Name": "Silvermoon City",
+        "Directory": "3071",
+        "Continent": false
+      },
+      {
+        "Id": 3074,
+        "Name": "Daggerspine Point",
+        "Directory": "3074",
+        "Continent": false
+      },
+      {
+        "Id": 3075,
+        "Name": "Naigtal",
+        "Directory": "3075",
+        "Continent": true
+      },
+      {
+        "Id": 3077,
+        "Name": "The Ring of Glory",
+        "Directory": "3077",
+        "Continent": false
+      },
+      {
+        "Id": 3079,
+        "Name": "Venomfall Deeps",
+        "Directory": "3079",
+        "Continent": false
+      },
+      {
+        "Id": 3081,
+        "Name": "Cursed Keepsake",
+        "Directory": "3081",
+        "Continent": false
+      },
+      {
+        "Id": 3095,
+        "Name": "The Unbinding of Kith'ix",
+        "Directory": "3095",
+        "Continent": false
+      },
+      {
+        "Id": 3099,
+        "Name": "12.1 Warband - Silvermoon - Void",
+        "Directory": "3099",
+        "Continent": true
+      },
+      {
+        "Id": 3105,
+        "Name": "Dummy Dome",
+        "Directory": "3105",
+        "Continent": false
+      }
+    ]
+  },
+  "terrain": [
+    {
+      "label": "initial",
+      "map": 0,
+      "camera": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 34,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 31,
+      "zone": "",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop1",
+      "map": 0,
+      "camera": {
+        "x": -800,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 30,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 29,
+          "y": 48
+        },
+        {
+          "x": 29,
+          "y": 49
+        },
+        {
+          "x": 29,
+          "y": 50
+        },
+        {
+          "x": 30,
+          "y": 48
+        },
+        {
+          "x": 30,
+          "y": 49
+        },
+        {
+          "x": 30,
+          "y": 50
+        },
+        {
+          "x": 31,
+          "y": 48
+        },
+        {
+          "x": 31,
+          "y": 49
+        },
+        {
+          "x": 31,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 29,
+          "y": 48
+        },
+        {
+          "x": 29,
+          "y": 49
+        },
+        {
+          "x": 29,
+          "y": 50
+        },
+        {
+          "x": 30,
+          "y": 48
+        },
+        {
+          "x": 30,
+          "y": 49
+        },
+        {
+          "x": 30,
+          "y": 50
+        },
+        {
+          "x": 31,
+          "y": 48
+        },
+        {
+          "x": 31,
+          "y": 49
+        },
+        {
+          "x": 31,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 50,
+      "zone": "",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop2",
+      "map": 0,
+      "camera": {
+        "x": -800,
+        "y": 250,
+        "z": 7199.999
+      },
+      "tile": {
+        "x": 30,
+        "y": 45
+      },
+      "wanted": [
+        {
+          "x": 29,
+          "y": 44
+        },
+        {
+          "x": 29,
+          "y": 45
+        },
+        {
+          "x": 29,
+          "y": 46
+        },
+        {
+          "x": 30,
+          "y": 44
+        },
+        {
+          "x": 30,
+          "y": 45
+        },
+        {
+          "x": 30,
+          "y": 46
+        },
+        {
+          "x": 31,
+          "y": 44
+        },
+        {
+          "x": 31,
+          "y": 45
+        },
+        {
+          "x": 31,
+          "y": 46
+        }
+      ],
+      "loaded": [
+        {
+          "x": 29,
+          "y": 44
+        },
+        {
+          "x": 29,
+          "y": 45
+        },
+        {
+          "x": 29,
+          "y": 46
+        },
+        {
+          "x": 30,
+          "y": 44
+        },
+        {
+          "x": 30,
+          "y": 45
+        },
+        {
+          "x": 30,
+          "y": 46
+        },
+        {
+          "x": 31,
+          "y": 44
+        },
+        {
+          "x": 31,
+          "y": 45
+        },
+        {
+          "x": 31,
+          "y": 46
+        }
+      ],
+      "failed": [],
+      "textures": 23,
+      "zone": "",
+      "continent": "Eastern Kingdoms"
+    },
+    {
+      "label": "hop3",
+      "map": 0,
+      "camera": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "tile": {
+        "x": 34,
+        "y": 49
+      },
+      "wanted": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "loaded": [
+        {
+          "x": 33,
+          "y": 48
+        },
+        {
+          "x": 33,
+          "y": 49
+        },
+        {
+          "x": 33,
+          "y": 50
+        },
+        {
+          "x": 34,
+          "y": 48
+        },
+        {
+          "x": 34,
+          "y": 49
+        },
+        {
+          "x": 34,
+          "y": 50
+        },
+        {
+          "x": 35,
+          "y": 48
+        },
+        {
+          "x": 35,
+          "y": 49
+        },
+        {
+          "x": 35,
+          "y": 50
+        }
+      ],
+      "failed": [],
+      "textures": 31,
+      "zone": "",
+      "continent": "Eastern Kingdoms"
+    }
+  ],
+  "lighting": [
+    {
+      "hour": 0,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=274",
+      "fog": {
+        "start": 0,
+        "end": 2500,
+        "density": 5,
+        "mode": 2
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 0,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.141,
+            0.275,
+            0.392
+          ],
+          "rotationDegrees": [
+            -37.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.212,
+            0.345,
+            0.424
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 0,
+          "endYards": 2500,
+          "viewDistance": 2500
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0,
+            0
+          ],
+          "skyHorizon": [
+            0.055,
+            0.184,
+            0.286
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 6,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=274",
+      "fog": {
+        "start": 0,
+        "end": 2500,
+        "density": 4,
+        "mode": 2
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 6,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.655,
+            0.263,
+            0
+          ],
+          "rotationDegrees": [
+            -20.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.506,
+            0.573,
+            0.635
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 0,
+          "endYards": 2500,
+          "viewDistance": 2500
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0.224,
+            0.314,
+            0.365
+          ],
+          "skyHorizon": [
+            1,
+            0.792,
+            0.188
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 12,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=274",
+      "fog": {
+        "start": 625,
+        "end": 2500,
+        "density": 4.5,
+        "mode": 2
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 12,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.416,
+            0.337,
+            0.259
+          ],
+          "rotationDegrees": [
+            -37.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.498,
+            0.584,
+            0.667
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 625,
+          "endYards": 2500,
+          "viewDistance": 2500
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0.122,
+            0.286
+          ],
+          "skyHorizon": [
+            0.706,
+            0.706,
+            0.706
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 18,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=274",
+      "fog": {
+        "start": 625,
+        "end": 2500,
+        "density": 4.5,
+        "mode": 2
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 18,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.487,
+            0.245,
+            0.062
+          ],
+          "rotationDegrees": [
+            -20.000004,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.592,
+            0.565,
+            0.639
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 625,
+          "endYards": 2500,
+          "viewDistance": 2500
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0.184,
+            0.208,
+            0.243
+          ],
+          "skyHorizon": [
+            0.78,
+            0.51,
+            0.169
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    },
+    {
+      "hour": 23.999,
+      "active": "background=1/params 12 foreground=/params  weight=0.00 regions=274",
+      "fog": {
+        "start": 0,
+        "end": 2500,
+        "density": 5,
+        "mode": 2
+      },
+      "heightFog": {
+        "plane": 0,
+        "scaler": 0,
+        "density": 0,
+        "enabled": 0
+      },
+      "state": {
+        "timeOfDayHours": 24,
+        "interior": false,
+        "hasLightTable": true,
+        "mapId": 0,
+        "flat": false,
+        "sun": {
+          "energy": 1,
+          "color": [
+            0.141,
+            0.275,
+            0.392
+          ],
+          "rotationDegrees": [
+            -36.997177,
+            -134.99998,
+            0
+          ],
+          "shadows": true
+        },
+        "ambient": {
+          "source": "Color",
+          "color": [
+            0.212,
+            0.345,
+            0.424
+          ],
+          "energy": 1
+        },
+        "fog": {
+          "enabled": true,
+          "startYards": 0,
+          "endYards": 2500,
+          "viewDistance": 2500
+        },
+        "background": {
+          "mode": "Sky",
+          "color": [
+            0.569,
+            0.71,
+            0.788
+          ],
+          "skyTop": [
+            0,
+            0,
+            0
+          ],
+          "skyHorizon": [
+            0.055,
+            0.184,
+            0.286
+          ]
+        },
+        "tonemap": "Linear",
+        "skybox": null,
+        "skyboxReady": false
+      }
+    }
+  ],
+  "ground": [
+    {
+      "Name": "center",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "north",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9253.333
+      },
+      "height": 74.84970092773438,
+      "Message": "terrain"
+    },
+    {
+      "Name": "south",
+      "point": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9413.333
+      },
+      "height": 70.1676025390625,
+      "Message": "building floor or terrain"
+    },
+    {
+      "Name": "east",
+      "point": {
+        "x": 1413.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 66.15950012207031,
+      "Message": "terrain"
+    },
+    {
+      "Name": "west",
+      "point": {
+        "x": 1253.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "height": 65.54450225830078,
+      "Message": "terrain"
+    },
+    {
+      "Name": "above",
+      "point": {
+        "x": 1333.3333,
+        "y": 290,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "below",
+      "point": {
+        "x": 1333.3333,
+        "y": 210,
+        "z": 9333.333
+      },
+      "height": 63.95130157470703,
+      "Message": "terrain"
+    },
+    {
+      "Name": "corner",
+      "point": {
+        "x": 1393.3333,
+        "y": 250,
+        "z": 9393.333
+      },
+      "height": 55.81639862060547,
+      "Message": "terrain"
+    }
+  ],
+  "picks": [
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.5227,
+        "z": -0.8525
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 115.8439,
+        "z": 9113.382
+      }
+    },
+    {
+      "screen": {
+        "x": 0.25,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": -0.3304,
+        "y": -0.4933,
+        "z": -0.8046
+      },
+      "terrain": {
+        "x": 1209.0887,
+        "y": 65.0927,
+        "z": 9030.79
+      }
+    },
+    {
+      "screen": {
+        "x": 0.75,
+        "y": 0.5
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0.3304,
+        "y": -0.4933,
+        "z": -0.8046
+      },
+      "terrain": {
+        "x": 1410.6556,
+        "y": 136.3319,
+        "z": 9145.048
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.25
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.2116,
+        "z": -0.9774
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 140.564,
+        "z": 8825.11
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.775,
+        "z": -0.6319
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 101.5458,
+        "z": 9212.004
+      }
+    },
+    {
+      "screen": {
+        "x": 0.35,
+        "y": 0.65
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": -0.2014,
+        "y": -0.6727,
+        "z": -0.712
+      },
+      "terrain": {
+        "x": 1281.3812,
+        "y": 76.6344,
+        "z": 9149.644
+      }
+    },
+    {
+      "screen": {
+        "x": 0.65,
+        "y": 0.35
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0.2014,
+        "y": -0.3294,
+        "z": -0.9225
+      },
+      "terrain": {
+        "x": 1392.1317,
+        "y": 154.3028,
+        "z": 9063.97
+      }
+    },
+    {
+      "screen": {
+        "x": 0.5,
+        "y": 0.1
+      },
+      "origin": {
+        "x": 1333.3333,
+        "y": 250,
+        "z": 9333.333
+      },
+      "direction": {
+        "x": 0,
+        "y": -0.0394,
+        "z": -0.9992
+      },
+      "terrain": {
+        "x": 1333.3333,
+        "y": 227.0887,
+        "z": 8693.829
+      }
+    }
+  ],
+  "exports": [
+    {
+      "source": "dump_a",
+      "changes": 2,
+      "apply": "-- ACWorldEdit apply script · generated <stamp>\n-- Source database: dump_a\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Guards match the recorded source values: a row changed since the draft was made is left untouched.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- graveyard 4 \"Dump\": position/name\nUPDATE `game_graveyard` SET `x` = 9, `y` = 2, `z` = 3, `Comment` = 'Dump moved' WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\n\n-- waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)\nUPDATE `waypoint_data` SET `position_x` = 4, `position_y` = 5, `position_z` = 6 WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n",
+      "revert": "-- ACWorldEdit revert script · generated <stamp>\n-- Source database: dump_a\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Reverts only rows that still hold the draft values; run it on the same database the apply script ran on.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)\nUPDATE `waypoint_data` SET `position_x` = 1, `position_y` = 2, `position_z` = 3 WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (4)) < 0.0001 AND ABS(`position_y` - (5)) < 0.0001 AND ABS(`position_z` - (6)) < 0.0001;\n\n-- graveyard 4 \"Dump\": position/name\nUPDATE `game_graveyard` SET `x` = 1, `y` = 2, `z` = 3, `Comment` = 'Dump' WHERE `ID` = 4 AND ABS(`x` - (9)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump moved';\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 4 \"Dump\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (1)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Dump';\nSELECT 'waypoint path 7 point 1: (1, 2, 3) -> (4, 5, 6)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 7 AND `point` = 1 AND ABS(`position_x` - (1)) < 0.0001 AND ABS(`position_y` - (2)) < 0.0001 AND ABS(`position_z` - (3)) < 0.0001;\n"
+    },
+    {
+      "source": "dump_b",
+      "changes": 2,
+      "apply": "-- ACWorldEdit apply script · generated <stamp>\n-- Source database: dump_b\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Guards match the recorded source values: a row changed since the draft was made is left untouched.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- graveyard 7 \"Other\": position/name\nUPDATE `game_graveyard` SET `x` = 6, `y` = 2, `z` = 3, `Comment` = 'Other moved' WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\n\n-- waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)\nUPDATE `waypoint_data` SET `position_x` = -2, `position_y` = 0, `position_z` = 2 WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n",
+      "revert": "-- ACWorldEdit revert script · generated <stamp>\n-- Source database: dump_b\n-- 2 change(s). Review before running; ACWorldEdit never applies this itself.\n-- Reverts only rows that still hold the draft values; run it on the same database the apply script ran on.\n-- Back up the affected tables first. Check the preflight result: every row must read ok.\n\nSET NAMES utf8mb4;\n\n-- Preflight (read-only)\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n\nSTART TRANSACTION;\n\n-- waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)\nUPDATE `waypoint_data` SET `position_x` = -1, `position_y` = 0, `position_z` = 1 WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-2)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (2)) < 0.0001;\n\n-- graveyard 7 \"Other\": position/name\nUPDATE `game_graveyard` SET `x` = 4, `y` = 2, `z` = 3, `Comment` = 'Other' WHERE `ID` = 4 AND ABS(`x` - (6)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other moved';\n\nCOMMIT;\n\n-- Post-check (read-only): every row must read ok\nSELECT 'graveyard 7 \"Other\": position/name' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `game_graveyard` WHERE `ID` = 4 AND ABS(`x` - (4)) < 0.0001 AND ABS(`y` - (2)) < 0.0001 AND ABS(`z` - (3)) < 0.0001 AND BINARY COALESCE(`Comment`, '') = BINARY 'Other';\nSELECT 'waypoint path 9 point 2: (-1, 0, 1) -> (-2, 0, 2)' AS `change`, IF(COUNT(*) = 1, 'ok', 'STALE') AS `state` FROM `waypoint_data` WHERE `id` = 9 AND `point` = 2 AND ABS(`position_x` - (-1)) < 0.0001 AND ABS(`position_y` - (0)) < 0.0001 AND ABS(`position_z` - (1)) < 0.0001;\n"
+    }
+  ],
+  "ui": null
+}
