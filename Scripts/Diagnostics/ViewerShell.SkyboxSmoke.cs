@@ -188,7 +188,7 @@ public partial class ViewerShell
         {
             Teleport(key);
             camera.Position = new Vector3(target.Position.X, camera.Position.Y, target.Position.Z);
-            UpdateWanted();
+            streamer.UpdateWanted();
         }
     }
 

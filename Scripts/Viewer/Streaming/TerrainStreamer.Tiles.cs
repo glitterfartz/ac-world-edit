@@ -1,100 +1,11 @@
 using Godot;
 using ACWorldEdit.Assets;
-using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
-/// <summary>
-/// Terrain streaming: the wanted set around the camera, the worker tile read, the soft-budget
-/// upload and the nearest-missing-tile schedule. One worker at a time; results for another
-/// generation are discarded.
-/// </summary>
-public partial class ViewerShell
+/// <summary>Terrain worker decode, budgeted upload, publication and scheduling.</summary>
+public sealed partial class TerrainStreamer
 {
-    void UpdateWanted()
-    {
-        if (world == null)
-        {
-            return;
-        }
-
-        var center = CameraTile();
-        UpdateWantedTiles(center);
-        UpdateSpawnRegion(center);
-    }
-
-    /// <summary>Fill the wanted set and release anything outside the hysteresis ring.</summary>
-    void UpdateWantedTiles(TileKey center)
-    {
-        wanted.Clear();
-        wanted.UnionWith(TileWindow.Wanted(world!.Tiles, center, radius));
-
-        // Release with one extra ring of hysteresis beyond the load radius: turning or wobbling
-        // right at the boundary must not repeatedly tear down and reload the same tile, which is
-        // what made streamed terrain/scenery appear to flicker in and out while flying.
-        foreach (var key in loaded.Keys.Where(k => !TileWindow.KeepLoaded(k, center, radius)).ToArray())
-        {
-            renderer.Release(loaded[key]);
-            loaded.Remove(key);
-            chunkAreas.Remove(key);
-            terrainHeights.Remove(key);
-            objects.RemoveTile(key);
-        }
-
-        if (building != null && !TileWindow.KeepLoaded(building.Tile.Key, center, radius))
-        {
-            if (buildingNode != null)
-            {
-                renderer.Release(buildingNode);
-            }
-
-            building = null;
-            buildingNode = null;
-        }
-    }
-
-    /// <summary>The sticky database query window, then one region fan-out to every overlay.</summary>
-    void UpdateSpawnRegion(TileKey center)
-    {
-        ACWorldEdit.Foundation.CreatureRegion? spawnRegion = null;
-        if (currentMapId.HasValue && wanted.Count > 0)
-        {
-            // Sticky with generous padding: recomputing this tightly around `center` every time the
-            // camera crosses a tile boundary forced CreatureOverlay/GameObjectOverlay to fully clear
-            // and re-query (visibly "Loading nearby creatures…") every ~533 yards of ordinary flight,
-            // even though the SQL query already re-centers its own nearest-radius filter far more
-            // cheaply via the quantized camera point. Keep the same padded region until the camera
-            // actually nears its edge, or the radius setting itself changes.
-            const int pad = 3;
-            if (spawnRegionCenter == null || radius != spawnRegionLoadRadius ||
-                Math.Abs(center.X - spawnRegionCenter.Value.X) > pad || Math.Abs(center.Y - spawnRegionCenter.Value.Y) > pad)
-            {
-                spawnRegionCenter = center;
-                spawnRegionLoadRadius = radius;
-            }
-
-            var regionCenter = spawnRegionCenter.Value;
-            int r = radius + pad;
-            spawnRegion = new(currentMapId.Value, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
-        }
-        else if (currentMapId.HasValue && world!.Tiles.Count == 0)
-        {
-            spawnRegionCenter = null;
-            spawnRegion = new(currentMapId.Value, Math.Clamp(center.X - radius, 0, 63), Math.Clamp(center.X + radius, 0, 63), Math.Clamp(center.Y - radius, 0, 63), Math.Clamp(center.Y + radius, 0, 63));
-        }
-        else
-        {
-            spawnRegionCenter = null;
-        }
-
-        // Without a matching database no layer may query, whatever its toggle says.
-        var queryRegion = databaseEnabled ? spawnRegion : null;
-        foreach (var overlay in overlays)
-        {
-            overlay.SetRegion(queryRegion);
-        }
-    }
-
     /// <summary>
     /// Worker-only tile/texture decode with cancellation checks. Carry decode errors to the main
     /// thread for explicit warnings.
@@ -189,7 +100,7 @@ public partial class ViewerShell
     /// Lift the camera above the nearest terrain sample after loading/teleport. Navigation
     /// assistance is not collision or movement snapping.
     /// </summary>
-    void RaiseAboveTerrain(Node3D tile)
+    public void RaiseAboveTerrain(Node3D tile)
     {
         // Pick nearest mesh vertex to prevent spawning inside mountains.
         float best = float.MaxValue, height = camera.Position.Y;
@@ -220,8 +131,9 @@ public partial class ViewerShell
     /// budget and schedule the nearest missing tile. Explicit map/store arguments preserve a stable
     /// non-null worker source.
     /// </summary>
-    void UpdateTerrainStreaming(WorldMap activeWorld, IClientFiles activeAssets)
+    public void UpdateTerrainStreaming(WorldMap activeWorld, IClientFiles activeAssets)
     {
+        CurrentWorld = activeWorld;
         UpdateWanted();
         ConsumePendingRead();
         UploadBuilding(activeWorld);
@@ -248,10 +160,10 @@ public partial class ViewerShell
                 building = result;
                 buildIndex = 0;
                 buildingNode = renderer.BeginTile(result.Tile.Key);
-                AddChild(buildingNode);
+                owner.AddChild(buildingNode);
                 if (result.Errors.Count > 0)
                 {
-                    message = $"{result.Errors.Count} missing/unsupported textures. See log.";
+                    setMessage($"{result.Errors.Count} missing/unsupported textures. See log.");
                     foreach (string e in result.Errors)
                     {
                         GD.PushWarning(e);
@@ -279,8 +191,8 @@ public partial class ViewerShell
             }
 
             pendingKey = null;
-            message = "Tile error: " + e.Message;
-            GD.PushError(message);
+            setMessage("Tile error: " + e.Message);
+            GD.PushError("Tile error: " + e.Message);
         }
 
         if (pendingKey.HasValue)
@@ -343,8 +255,8 @@ public partial class ViewerShell
 
             building = null;
             buildingNode = null;
-            message = "Render error: " + e.Message;
-            GD.PushError(message);
+            setMessage("Render error: " + e.Message);
+            GD.PushError("Render error: " + e.Message);
         }
     }
 
@@ -352,7 +264,7 @@ public partial class ViewerShell
     void PublishBuilding(PreparedTile tile, Node3D node)
     {
         loaded[tile.Tile.Key] = node;
-        PerfTilePublished(tile.Tile.Key);
+        tilePublished(tile.Tile.Key);
         var ids = new uint[256];
         foreach (var c in tile.Tile.Chunks)
         {
@@ -362,7 +274,7 @@ public partial class ViewerShell
         chunkAreas[tile.Tile.Key] = ids;
         terrainHeights[tile.Tile.Key] = new TerrainHeights(tile.Tile);
         objects.SetTile(tile.Tile.Key, tile.Tile.Objects);
-        if (CameraTile() == tile.Tile.Key && !cameraFocused)
+        if (CameraTile() == tile.Tile.Key && !cameraFocused())
         {
             RaiseAboveTerrain(node);
         }
@@ -380,8 +292,9 @@ public partial class ViewerShell
             var token = cancellation.Token;
             // Failed tiles are tracked separately; obsolete requests can be retried when revisited.
             pendingKey = key;
-            PerfTileScheduled(key);
+            tileScheduled(key);
             pending = Task.Run(() => Prepare(assets, map, key, version, token));
         }
     }
+
 }

@@ -74,7 +74,7 @@ public partial class ViewerShell
         distance = form.Spin(0, 3, 1, value =>
         {
             radius = (int)value;
-            UpdateWanted();
+            streamer.UpdateWanted();
         });
         radiusRow.AddChild(distance);
     }

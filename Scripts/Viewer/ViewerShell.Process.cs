@@ -23,7 +23,7 @@ public partial class ViewerShell
 
         if (!busy && world != null && store != null)
         {
-            UpdateTerrainStreaming(world, store);
+            streamer.UpdateTerrainStreaming(world, store);
         }
 
         PerfMark(1);

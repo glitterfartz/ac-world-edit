@@ -22,24 +22,18 @@ public partial class ViewerShell : Node3D
     SkyLighting sky = null!;
     ClientLighting? lighting;
     AreaLookup? areas;
-    // Three distinct ownership states: wanted keys, one worker/building result, and
-    // fully uploaded tile roots. Generation guards prevent map/reload races.
-    readonly Dictionary<TileKey, Node3D> loaded = [];
-    // Per-tile MCNK AreaId grid (chunkY*16+chunkX), kept only for the current zone/continent label;
-    // CPU terrain data is otherwise discarded once a tile finishes uploading.
-    readonly Dictionary<TileKey, uint[]> chunkAreas = [];
-    // CPU height copies for ground snapping; same lifetime as the loaded tile node.
-    readonly Dictionary<TileKey, TerrainHeights> terrainHeights = [];
+    // Terrain ownership (wanted/loaded/failed/building) lives in the streamer; these forward for the
+    // existing diagnostics and HUD readers without copying state.
+    TerrainStreamer streamer = null!;
+    Dictionary<TileKey, Node3D> loaded => streamer.Loaded;
+    Dictionary<TileKey, uint[]> chunkAreas => streamer.ChunkAreas;
+    Dictionary<TileKey, TerrainHeights> terrainHeights => streamer.TerrainHeights;
+    HashSet<TileKey> failed => streamer.Failed;
+    HashSet<TileKey> wanted => streamer.Wanted;
+    Task<TerrainStreamer.PreparedTile>? pending => streamer.Pending;
+    TerrainStreamer.PreparedTile? building => streamer.Building;
+    int generation => streamer.Generation;
     PlacementTool placement = null!;
-    readonly HashSet<TileKey> failed = [];
-    readonly HashSet<string> reportedNotices = [];
-    readonly HashSet<TileKey> wanted = [];
-    Task<PreparedTile>? pending;
-    TileKey? pendingKey;
-    CancellationTokenSource cancellation = new();
-    PreparedTile? building;
-    Node3D? buildingNode;
-    int buildIndex, generation;
     bool capture;
     // One session state drives both the busy guards and the Open world button.
     SessionState session = SessionState.Unavailable;
@@ -54,11 +48,7 @@ public partial class ViewerShell : Node3D
         }
     }
     float yaw, pitch = -0.4f, speed = 70;
-    int radius = 1;
-    // The SQL query region is intentionally stickier than the terrain load/release window (see
-    // UpdateWanted); these remember its last recompute center/radius.
-    TileKey? spawnRegionCenter;
-    int spawnRegionLoadRadius = -1;
+    int radius { get => streamer.Radius; set => streamer.Radius = value; }
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
     // Active client profile and one remembered folder per profile (chosen in File → Load client…); empty until chosen.
@@ -114,11 +104,6 @@ public partial class ViewerShell : Node3D
     SceneSidebar sidebar = null!;
     NavigationOverlay navigation = null!;
     ushort? currentMapId;
-    /// <summary>
-    /// Generation-tagged worker result containing CPU data/pixels, never Godot resources. Obsolete
-    /// generations cannot be published.
-    /// </summary>
-    sealed record PreparedTile(int Generation, TerrainTile Tile, Dictionary<string, BlpTexture> Textures, List<string> Errors, List<string> Notices, TerrainRenderer.PreparedTerrain Terrain);
     /// <summary>
     /// Create systems/UI on the Godot thread, configure opt-in checks and asynchronously open
     /// archives.
@@ -179,6 +164,8 @@ public partial class ViewerShell : Node3D
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         overlays = [creatures, gameObjects, graveyards, waypoints, areaTriggers];
+        streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
+            () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
         AddChild(placement);
         creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
@@ -212,11 +199,11 @@ public partial class ViewerShell : Node3D
         yaw = 0;
         pitch = -0.55f;
         camera.Rotation = new Vector3(pitch, yaw, 0);
-        UpdateWanted();
+        streamer.UpdateWanted();
         // A loaded tile can supply elevation immediately; otherwise adjust when it finishes.
         if (loaded.TryGetValue(key, out var node))
         {
-            RaiseAboveTerrain(node);
+            streamer.RaiseAboveTerrain(node);
         }
     }
 
@@ -283,7 +270,7 @@ public partial class ViewerShell : Node3D
         camera.LookAt(position + Vector3.Up);
         yaw = camera.Rotation.Y;
         pitch = camera.Rotation.X;
-        UpdateWanted();
+        streamer.UpdateWanted();
     }
 
 

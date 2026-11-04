@@ -400,7 +400,7 @@ public partial class ViewerShell
                 target = ModelLibrary.Placement(obj) * new Vector3(center.X, center.Y, center.Z);
                 camera.Position = target + new Vector3(6, 3, 6);
                 camera.LookAt(target);
-                UpdateWanted();
+                streamer.UpdateWanted();
                 waterStage = 1;
                 GD.Print($"WATER_INTERIOR_NATIVE map={currentMapId} surfaces={surfaces.Length} type={native.LiquidType} center={target}");
                 return;
@@ -412,7 +412,7 @@ public partial class ViewerShell
             target = new((key.X - 32) * TerrainTile.Size + lakeCenter.X, lakeCenter.Y, (key.Y - 32) * TerrainTile.Size + lakeCenter.Z);
             camera.Position = target + new Vector3(0, 30, 25);
             camera.LookAt(target);
-            UpdateWanted();
+            streamer.UpdateWanted();
             waterStage = 1;
             GD.Print($"WATER_SMOKE_NATIVE tile={key} type={liquid.LiquidType} height={lakeCenter.Y} cells={liquid.Indices.Length / 6} alpha={liquid.Colors!.Min(c => c.W)}/{liquid.Colors!.Average(c => c.W)}/{liquid.Colors!.Max(c => c.W)} center={lakeCenter}");
             return;

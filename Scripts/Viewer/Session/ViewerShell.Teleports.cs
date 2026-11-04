@@ -144,7 +144,7 @@ public partial class ViewerShell
         // Keep the current heading and stop later terrain uploads lifting the requested Z.
         cameraFocused = true;
         camera.Position = ViewSpace.ToView(x, y, z);
-        UpdateWanted();
+        streamer.UpdateWanted();
         message = FormattableString.Invariant($"Teleported to {x}, {y}, {z}.");
     }
 

@@ -67,19 +67,7 @@ public partial class ViewerShell
     {
         var old = store;
         store = null;
-        if (pending != null)
-        {
-            try
-            {
-                await pending;
-            }
-            catch
-            {
-            }
-
-            pending = null;
-        }
-
+        await streamer.WaitForPendingAsync();
         sky.SetStarsModel(null);
         await models.SetStore(null);
         old?.Dispose();
@@ -234,7 +222,7 @@ public partial class ViewerShell
         camera.Rotation = new(-0.12f, 0, 0);
         yaw = 0;
         pitch = -0.12f;
-        UpdateWanted();
+        streamer.UpdateWanted();
         return requested;
     }
 
@@ -245,30 +233,7 @@ public partial class ViewerShell
     void ResetTerrain()
     {
         navigation?.SetMap(null);
-        generation++;
-        cancellation.Cancel();
-        cancellation.Dispose();
-        cancellation = new();
-        foreach (var n in loaded.Values)
-        {
-            renderer.Release(n);
-        }
-
-        loaded.Clear();
-        chunkAreas.Clear();
-        terrainHeights.Clear();
-        spawnRegionCenter = null;
-        if (buildingNode != null)
-        {
-            renderer.Release(buildingNode);
-        }
-
-        buildingNode = null;
-        building = null;
-        buildIndex = 0;
-        failed.Clear();
-        reportedNotices.Clear();
-        wanted.Clear();
+        streamer.Reset();
         world = null;
         currentMapId = null;
         foreach (var overlay in overlays)
@@ -286,19 +251,18 @@ public partial class ViewerShell
     /// </summary>
     public override void _ExitTree()
     {
-        cancellation.Cancel();
+        streamer.Shutdown();
         var assets = store;
         var modelTask = models?.Stop() ?? Task.CompletedTask;
-        if (pending != null || !modelTask.IsCompleted)
+        if (streamer.Pending != null || !modelTask.IsCompleted)
         {
-            _ = Task.WhenAll(pending ?? Task.CompletedTask, modelTask).ContinueWith(_ => assets?.Dispose());
+            _ = Task.WhenAll(streamer.Pending ?? Task.CompletedTask, modelTask).ContinueWith(_ => assets?.Dispose());
         }
         else
         {
             assets?.Dispose();
         }
 
-        cancellation.Dispose();
         drafts?.Dispose();
     }
 }

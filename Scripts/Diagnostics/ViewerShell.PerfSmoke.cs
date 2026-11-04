@@ -88,7 +88,7 @@ public partial class ViewerShell
             RenderingServer.ViewportSetMeasureRenderTime(GetViewport().GetViewportRid(), true);
             var start = PerfPath[0];
             PerfPlaceCamera(ViewSpace.ToView(start.X, start.Y, start.Z), ViewSpace.ToView(PerfPath[1].X, PerfPath[1].Y, PerfPath[1].Z));
-            UpdateWanted();
+            streamer.UpdateWanted();
             PerfBegin(1);
             return;
         }

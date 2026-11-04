@@ -84,7 +84,7 @@ public partial class ViewerShell
                 camera.LookAt(center);
                 yaw = camera.Rotation.Y;
                 pitch = camera.Rotation.X;
-                UpdateWanted();
+                streamer.UpdateWanted();
                 GD.Print($"AREATRIGGER_SMOKE_TARGET {goal.Key} {trigger.Shape} triggers={areaTriggers.Triggers.Count} {areaTriggers.QueryStatus}");
                 areaTriggerStage = 2;
                 areaTriggerWait = 30;

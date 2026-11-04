@@ -379,12 +379,7 @@ public partial class ViewerShell
             // Reproduce the order seen in normal use: the creature is focused first and the
             // camera's tile finishes afterwards. Unload that tile so it streams back in now.
             var tile = CameraTile();
-            if (loaded.Remove(tile, out var node))
-            {
-                renderer.Release(node);
-                chunkAreas.Remove(tile);
-                terrainHeights.Remove(tile);
-            }
+            streamer.UnloadTile(tile);
 
             return true;
         }),

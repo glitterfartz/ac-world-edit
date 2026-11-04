@@ -73,7 +73,7 @@ public partial class ViewerShell
                 PerfPlaceCamera(eye, ViewSpace.ToView(pose.Target.X, pose.Target.Y, pose.Target.Z));
                 pitch = pose.Pitch;
                 camera.Rotation = new(pitch, yaw, 0);
-                UpdateWanted();
+                streamer.UpdateWanted();
                 await WaitSettled();
                 await PerfBreakdownPose(pose.Name, viewport);
             }
