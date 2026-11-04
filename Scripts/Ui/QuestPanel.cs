@@ -61,6 +61,9 @@ public abstract partial class QuestPanel : ContentPanel
 
     public bool IsLoading { get; private set; }
 
+    /// <summary>The database dialect this panel edits.</summary>
+    public abstract WorldDialect Dialect { get; }
+
     protected abstract TableSchema Template { get; }
     protected abstract TableSchema Addon { get; }
     protected abstract TableSchema Request { get; }

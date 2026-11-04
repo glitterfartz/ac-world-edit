@@ -151,7 +151,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            var v = creatureProps.View!;
+            var v = creatureProps.Context.AcView!;
             Require(v.Menus.Count > 0 && v.Menus[v.GossipMenuId].Options.Length > 0, "no gossip options");
             smokeRootMenu = v.GossipMenuId;
             GD.Print($"INTERACTION_SMOKE_VIEW '{v.Name}' menus={v.Menus.Count} options={v.Menus.Values.Sum(m => m.Options.Length)} vendor={v.Vendor.Length} starts={v.Starts.Length} ends={v.Ends.Length}");
@@ -192,7 +192,7 @@ public partial class ViewerShell
         ("quest-detail", () =>
         {
             creatureProps.SmokeShow("Quests");
-            var quest = creatureProps.View!.Starts.Concat(creatureProps.View.Ends).First(q => q.Info != null);
+            var quest = creatureProps.Context.AcView!.Starts.Concat(creatureProps.Context.AcView.Ends).First(q => q.Info != null);
             // Full button text: a title prefix can match another quest listed earlier on the page.
             Require(creatureProps.SmokePress($"{quest.Info!.Title} ({quest.Info.Level})"), "quest button missing");
             Require(creatureProps.SmokeOnQuestDetail, "quest detail did not open");
@@ -265,24 +265,24 @@ public partial class ViewerShell
         ("edit-add-submenu", () =>
         {
             creatureProps.SmokeShow("Gossip");
-            int before = creatureProps.View!.Menus[smokeRootMenu].Options.Length;
-            if (creatureProps.View.Menus[smokeRootMenu].SharedBy > 1)
+            int before = creatureProps.Context.AcView!.Menus[smokeRootMenu].Options.Length;
+            if (creatureProps.Context.AcView.Menus[smokeRootMenu].SharedBy > 1)
             {
-                Require(creatureProps.SmokePress("Make a copy for this NPC") && creatureProps.View.GossipMenuId != smokeRootMenu, "fork did not repoint the NPC");
-                GD.Print($"INTERACTION_SMOKE_FORK {smokeRootMenu} -> {creatureProps.View.GossipMenuId}");
-                smokeRootMenu = creatureProps.View.GossipMenuId;
+                Require(creatureProps.SmokePress("Make a copy for this NPC") && creatureProps.Context.AcView.GossipMenuId != smokeRootMenu, "fork did not repoint the NPC");
+                GD.Print($"INTERACTION_SMOKE_FORK {smokeRootMenu} -> {creatureProps.Context.AcView.GossipMenuId}");
+                smokeRootMenu = creatureProps.Context.AcView.GossipMenuId;
             }
 
             Require(creatureProps.SmokePress("+ Add option → new submenu"), "add submenu button missing");
-            var menu = creatureProps.View!.Menus[smokeRootMenu];
-            Require(menu.Options.Length == before + 1 && menu.Options[^1].ActionMenu != 0 && creatureProps.View.Menus.ContainsKey(menu.Options[^1].ActionMenu), "new option with submenu missing");
+            var menu = creatureProps.Context.AcView!.Menus[smokeRootMenu];
+            Require(menu.Options.Length == before + 1 && menu.Options[^1].ActionMenu != 0 && creatureProps.Context.AcView.Menus.ContainsKey(menu.Options[^1].ActionMenu), "new option with submenu missing");
             Screenshot("edit-gossip");
             return true;
         }),
         ("edit-greeting", () =>
         {
             Require(creatureProps.SmokeSetGreeting("Smoke greeting, $N."), "greeting editor missing");
-            var text = creatureProps.View!.Menus[smokeRootMenu].Texts[0];
+            var text = creatureProps.Context.AcView!.Menus[smokeRootMenu].Texts[0];
             Require(text.Male == "Smoke greeting, $N." && !text.FromBroadcast && text.Edited, "greeting edit not applied");
             return true;
         }),
@@ -300,29 +300,29 @@ public partial class ViewerShell
             }
 
             Require(creatureProps.SmokePress("+ Linen Cloth (2589)"), "Linen Cloth result missing");
-            Require(creatureProps.View!.Vendor.Any(i => i.Item == 2589 && i.Edited), "vendor item not added");
+            Require(creatureProps.Context.AcView!.Vendor.Any(i => i.Item == 2589 && i.Edited), "vendor item not added");
             Screenshot("edit-vendor");
             return true;
         }),
         ("edit-vendor-remove", () =>
         {
-            Require(creatureProps.SmokeRemoveVendorItem(2589) && creatureProps.View!.Vendor.All(i => i.Item != 2589), "vendor item not removed");
+            Require(creatureProps.SmokeRemoveVendorItem(2589) && creatureProps.Context.AcView!.Vendor.All(i => i.Item != 2589), "vendor item not removed");
             return true;
         }),
         ("edit-flag-warning-fix", () =>
         {
             creatureProps.SmokeShow("Template");
             Require(creatureProps.SmokeToggleFlag("Quest giver", false), "quest giver checkbox missing");
-            Require(creatureProps.View!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
-            Require(creatureProps.SmokePress("Fix") && (creatureProps.View.NpcFlag & AcNpcFlags.QuestGiver) != 0, "fix did not restore the flag");
+            Require(creatureProps.Context.AcView!.Issues.Any(i => !i.Error && i.Message.StartsWith("Quests are linked", StringComparison.Ordinal)), "missing questgiver warning");
+            Require(creatureProps.SmokePress("Fix") && (creatureProps.Context.AcView.NpcFlag & AcNpcFlags.QuestGiver) != 0, "fix did not restore the flag");
             return true;
         }),
         ("edit-undo-redo-reopen", () =>
         {
-            Require(creatureProps.SmokePress("Undo") && (creatureProps.View!.NpcFlag & AcNpcFlags.QuestGiver) == 0, "undo did not revert the fix");
-            Require(creatureProps.SmokePress("Redo") && (creatureProps.View!.NpcFlag & AcNpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
+            Require(creatureProps.SmokePress("Undo") && (creatureProps.Context.AcView!.NpcFlag & AcNpcFlags.QuestGiver) == 0, "undo did not revert the fix");
+            Require(creatureProps.SmokePress("Redo") && (creatureProps.Context.AcView!.NpcFlag & AcNpcFlags.QuestGiver) != 0, "redo did not reapply the fix");
             creatureProps.SmokeReopenDraft();
-            var menu = creatureProps.View!.Menus[smokeRootMenu];
+            var menu = creatureProps.Context.AcView!.Menus[smokeRootMenu];
             Require(menu.Options[^1].ActionMenu != 0 && menu.Texts[0].Male == "Smoke greeting, $N.", "edits lost after reopening the draft");
             Screenshot("edit-info");
             return true;

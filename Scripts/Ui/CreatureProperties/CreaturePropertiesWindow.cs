@@ -25,7 +25,6 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
     CreatureSpawn? lastSelection;
 
     public uint? Entry => Context?.Target?.TemplateId;
-    public AcCreatureView? View => Context?.AcView;
 
     /// <summary>The shown section, for tests.</summary>
     public CreatureSection? SmokeActive => Active as CreatureSection;

@@ -53,15 +53,14 @@ public sealed class CreatureContext : IEntityContext
     {
         get
         {
-            bool trinity = Dialect == WorldDialect.TrinityCore;
-            if (quest != null && (quest is TcQuestPanel) == trinity)
+            if (quest != null && quest.Dialect == Dialect)
             {
                 return quest;
             }
 
             quest?.GetParent()?.RemoveChild(quest);
             quest?.QueueFree();
-            QuestPanel panel = trinity ? new TcQuestPanel() : new AcQuestPanel();
+            QuestPanel panel = QuestDialects.For(Dialect);
             panel.Connection = () => Connection();
             panel.Store = () => Store();
             panel.Drafts = Drafts;

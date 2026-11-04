@@ -10,6 +10,8 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class AcQuestPanel : QuestPanel
 {
+    public override WorldDialect Dialect => WorldDialect.AzerothCore;
+
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
     static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (AcQuestModel.AllianceRaces, "Alliance only"), (AcQuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
 

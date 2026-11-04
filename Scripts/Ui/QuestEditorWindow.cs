@@ -96,7 +96,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
     void MatchDialect()
     {
         var dialect = Connection().Dialect;
-        if (dialect == WorldDialect.TrinityCore == Panel is TcQuestPanel)
+        if (Panel.Dialect == dialect)
         {
             return;
         }
@@ -105,7 +105,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         Panel.QueueFree();
         results.Clear();
         ResultCount = 0;
-        Attach(dialect == WorldDialect.TrinityCore ? new TcQuestPanel() : new AcQuestPanel());
+        Attach(QuestDialects.For(dialect));
     }
 
     void Sync()

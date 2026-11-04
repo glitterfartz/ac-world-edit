@@ -14,6 +14,8 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class TcQuestPanel : QuestPanel
 {
+    public override WorldDialect Dialect => WorldDialect.TrinityCore;
+
     static readonly (uint Value, string Name)[] Tiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
     static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (1, "Alliance only"), (2, "Horde only"), (3, "Specific races (mask)…")];
 
