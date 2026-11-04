@@ -74,6 +74,12 @@ public partial class ViewerShell
     /// TrinityCore, server-spawned AreaTriggers.
     /// </summary>
     bool BehaviorEditors => databaseEnabled;
+
+    /// <summary>
+    /// The draft editor that owns the current selection; creatures when nothing editable is
+    /// selected. Menus, toolbar and viewport drags route through it.
+    /// </summary>
+    IPlacementEditor ActiveEditor => waypoints != null && waypoints.HasSelection ? waypoints : graveyards != null && graveyards.HasSelection ? graveyards : gameObjects != null && gameObjects.HasSelection ? gameObjects : creatures;
     /// <summary>
     /// The shared local content draft for creature, quest and behavior editing.
     /// </summary>

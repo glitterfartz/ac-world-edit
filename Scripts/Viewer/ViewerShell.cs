@@ -34,7 +34,8 @@ public partial class ViewerShell : Node3D
     TerrainStreamer.PreparedTile? building => streamer.Building;
     int generation => streamer.Generation;
     PlacementTool placement = null!;
-    bool capture;
+    ViewerInput input = null!;
+    bool capture { get => input.Capture; set => input.Capture = value; }
     // One session state drives both the busy guards and the Open world button.
     SessionState session = SessionState.Unavailable;
     bool busy => session == SessionState.Loading;
@@ -47,7 +48,9 @@ public partial class ViewerShell : Node3D
             open.Disabled = value != SessionState.Ready;
         }
     }
-    float yaw, pitch = -0.4f, speed = 70;
+    float yaw { get => input.Yaw; set => input.Yaw = value; }
+    float pitch { get => input.Pitch; set => input.Pitch = value; }
+    float speed { get => input.Speed; set => input.Speed = value; }
     int radius { get => streamer.Radius; set => streamer.Radius = value; }
     OptionButton maps = null!;
     SpinBox tileX = null!, tileY = null!, distance = null!;
@@ -164,6 +167,7 @@ public partial class ViewerShell : Node3D
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
         overlays = [creatures, gameObjects, graveyards, waypoints, areaTriggers];
+        input = new ViewerInput(this);
         streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
             () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
@@ -257,7 +261,7 @@ public partial class ViewerShell : Node3D
     /// above that target on purpose, so a tile finishing underneath must not lift it away. Cleared
     /// by keyboard movement and teleports, which keep the lift-above-terrain assistance.
     /// </summary>
-    bool cameraFocused;
+    bool cameraFocused { get => input.CameraFocused; set => input.CameraFocused = value; }
 
     /// <summary>
     /// Move near a server pose and synchronize mouse-look angles before refreshing the region.
@@ -277,4 +281,8 @@ public partial class ViewerShell : Node3D
 
 
 
+
+    public override void _UnhandledInput(InputEvent e) => input?.HandleUnhandled(e);
+    public override void _Input(InputEvent e) => input?.HandleInput(e);
+    public override void _Notification(int what) => input?.HandleNotification(what);
 }

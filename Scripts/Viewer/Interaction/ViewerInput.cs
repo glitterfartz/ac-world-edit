@@ -3,33 +3,60 @@ using Godot;
 namespace ACWorldEdit;
 
 /// <summary>
+/// What the input router needs from the shell. Kept as an interface so the router has no dependency
+/// on the shell's state and the order rules can be exercised with fakes.
+/// </summary>
+public interface IViewerInputHost
+{
+    Camera3D Camera { get; }
+    NavigationOverlay Navigation { get; }
+    PlacementTool Placement { get; }
+    CreatureOverlay Creatures { get; }
+    GameObjectOverlay GameObjects { get; }
+    GraveyardOverlay Graveyards { get; }
+    WaypointOverlay Waypoints { get; }
+    AreaTriggerOverlay AreaTriggers { get; }
+    CreaturePropertiesWindow CreatureProperties { get; }
+    bool DatabaseEnabled { get; }
+    IPlacementEditor ActiveEditor { get; }
+    bool HandleSelectionGesture(InputEvent input);
+    void CaptureDiagnostics();
+    void Report(string text);
+    void CameraMoved();
+}
+
+/// <summary>
 /// Viewport input: navigation picks, selection, placement, right-mouse flight, drag ownership and
 /// flight keys. The order is load-bearing: navigation, selection and placement first; F12 before
-/// the flight-key swallow; Esc still reaches this handler while flying.
+/// the flight-key swallow; Esc still reaches the unhandled handler while flying. The router owns the
+/// camera angles, speed, capture flag and focus flag; the shell forwards them.
 /// </summary>
-public partial class ViewerShell
+public sealed class ViewerInput
 {
+    readonly IViewerInputHost host;
     (Vector2 Position, ulong Ticks, float Yaw, float Pitch)? rightPress;
     float rightMotion;
 
-    /// <summary>
-    /// The draft editor that owns the current selection; creatures when nothing editable is
-    /// selected. Menus, toolbar and viewport drags route through it.
-    /// </summary>
-    IPlacementEditor ActiveEditor => waypoints != null && waypoints.HasSelection ? waypoints : graveyards != null && graveyards.HasSelection ? graveyards : gameObjects != null && gameObjects.HasSelection ? gameObjects : creatures;
+    public ViewerInput(IViewerInputHost host) => this.host = host;
+
+    public float Yaw { get; set; }
+    public float Pitch { get; set; } = -0.4f;
+    public float Speed { get; set; } = 70;
+    public bool Capture { get; set; }
+    public bool CameraFocused { get; set; }
 
     /// <summary>
     /// Handle navigation/clicks after UI consumption. Gizmo handles take priority over creature
     /// selection.
     /// </summary>
-    public override void _UnhandledInput(InputEvent input)
+    public void HandleUnhandled(InputEvent input)
     {
         if (HandleNavigationClick(input))
         {
             return;
         }
 
-        if (placement.Current == null && HandleSelectionGesture(input))
+        if (host.Placement.Current == null && host.HandleSelectionGesture(input))
         {
             return;
         }
@@ -44,17 +71,17 @@ public partial class ViewerShell
             HandleMouseButton(mouse);
         }
 
-        if (input is InputEventMouseMotion motion && capture)
+        if (input is InputEventMouseMotion motion && Capture)
         {
             rightMotion += motion.Relative.Length();
-            yaw -= motion.Relative.X * 0.0025f;
-            pitch = Mathf.Clamp(pitch - motion.Relative.Y * 0.0025f, -1.55f, 1.55f);
-            camera.Rotation = new Vector3(pitch, yaw, 0);
+            Yaw -= motion.Relative.X * 0.0025f;
+            Pitch = Mathf.Clamp(Pitch - motion.Relative.Y * 0.0025f, -1.55f, 1.55f);
+            host.Camera.Rotation = new Vector3(Pitch, Yaw, 0);
         }
 
         if (input is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
         {
-            capture = false;
+            Capture = false;
             Input.MouseMode = Input.MouseModeEnum.Visible;
         }
     }
@@ -62,9 +89,9 @@ public partial class ViewerShell
     /// <summary>A navigation-overlay pick consumes the click before anything else sees it.</summary>
     bool HandleNavigationClick(InputEvent input)
     {
-        if (!capture && navigation.Inspect && navigation.LayerEnabled && input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } navClick)
+        if (!Capture && host.Navigation.Inspect && host.Navigation.LayerEnabled && input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } navClick)
         {
-            navigation.Pick(camera, navClick.Position);
+            host.Navigation.Pick(host.Camera, navClick.Position);
             GetViewport().SetInputAsHandled();
             return true;
         }
@@ -75,25 +102,25 @@ public partial class ViewerShell
     /// <summary>Placement hover, click and disarm; a click or disarm consumes the event.</summary>
     bool HandlePlacement(InputEvent input)
     {
-        if (placement.Current == null || capture)
+        if (host.Placement.Current == null || Capture)
         {
             return false;
         }
 
         if (input is InputEventMouseMotion hover)
         {
-            placement.Hover(camera, hover.Position);
+            host.Placement.Hover(host.Camera, hover.Position);
         }
         else if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
         {
-            _ = placement.ClickAsync(camera, click.Position, click.ShiftPressed, statusLog.Post);
+            _ = host.Placement.ClickAsync(host.Camera, click.Position, click.ShiftPressed, host.Report);
             GetViewport().SetInputAsHandled();
             return true;
         }
         else if (input is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            placement.Disarm();
-            statusLog.Post("Stopped placing.");
+            host.Placement.Disarm();
+            host.Report("Stopped placing.");
             return true;
         }
 
@@ -103,9 +130,9 @@ public partial class ViewerShell
     /// <summary>Left drag/pick, right-mouse flight capture and the speed wheel.</summary>
     void HandleMouseButton(InputEventMouseButton mouse)
     {
-        if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !capture)
+        if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !Capture)
         {
-            if (!ActiveEditor.BeginDrag(camera, mouse.Position))
+            if (!host.ActiveEditor.BeginDrag(host.Camera, mouse.Position))
             {
                 PickAt(mouse.Position);
             }
@@ -120,12 +147,12 @@ public partial class ViewerShell
 
         if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelUp)
         {
-            speed = Math.Min(1500, speed * 1.25f);
+            Speed = Math.Min(1500, Speed * 1.25f);
         }
 
         if (mouse.Pressed && mouse.ButtonIndex == MouseButton.WheelDown)
         {
-            speed = Math.Max(5, speed / 1.25f);
+            Speed = Math.Max(5, Speed / 1.25f);
         }
     }
 
@@ -135,11 +162,11 @@ public partial class ViewerShell
     /// </summary>
     void PickAt(Vector2 position)
     {
-        var creatureHit = creatures.FindHit(camera, position);
-        var objectHit = gameObjects.FindHit(camera, position);
-        var graveyardHit = graveyards.FindHit(camera, position);
-        var triggerHit = areaTriggers.FindHit(camera, position);
-        var waypointHit = waypoints.FindHit(camera, position);
+        var creatureHit = host.Creatures.FindHit(host.Camera, position);
+        var objectHit = host.GameObjects.FindHit(host.Camera, position);
+        var graveyardHit = host.Graveyards.FindHit(host.Camera, position);
+        var triggerHit = host.AreaTriggers.FindHit(host.Camera, position);
+        var waypointHit = host.Waypoints.FindHit(host.Camera, position);
         float creatureDistance = creatureHit?.Distance ?? float.MaxValue;
         float objectDistance = objectHit?.Distance ?? float.MaxValue;
         float graveyardDistance = graveyardHit?.Distance ?? float.MaxValue;
@@ -147,23 +174,23 @@ public partial class ViewerShell
         float waypointDistance = waypointHit?.Distance ?? float.MaxValue;
         if (waypointHit.HasValue && waypointDistance <= creatureDistance && waypointDistance <= objectDistance && waypointDistance <= graveyardDistance && waypointDistance <= triggerDistance)
         {
-            waypoints.Select(waypointHit.Value.Path, waypointHit.Value.Point);
+            host.Waypoints.Select(waypointHit.Value.Path, waypointHit.Value.Point);
         }
         else if (triggerHit.HasValue && triggerDistance < creatureDistance && triggerDistance < objectDistance && triggerDistance < graveyardDistance)
         {
-            areaTriggers.Select(triggerHit.Value.Key);
+            host.AreaTriggers.Select(triggerHit.Value.Key);
         }
         else if (graveyardHit.HasValue && graveyardDistance <= creatureDistance && graveyardDistance <= objectDistance)
         {
-            graveyards.Select(graveyardHit.Value.Id);
+            host.Graveyards.Select(graveyardHit.Value.Id);
         }
         else if (creatureHit.HasValue && creatureDistance <= objectDistance)
         {
-            creatures.Select(creatureHit.Value.Guid);
+            host.Creatures.Select(creatureHit.Value.Guid);
         }
         else if (objectHit.HasValue)
         {
-            gameObjects.Select(objectHit.Value.Guid);
+            host.GameObjects.Select(objectHit.Value.Guid);
         }
     }
 
@@ -175,41 +202,39 @@ public partial class ViewerShell
     {
         if (mouse.Pressed)
         {
-            rightPress = (mouse.Position, Time.GetTicksMsec(), yaw, pitch);
+            rightPress = (mouse.Position, Time.GetTicksMsec(), Yaw, Pitch);
             rightMotion = 0;
         }
         else if (rightPress is { } press && rightMotion < 6 && Time.GetTicksMsec() - press.Ticks < 350)
         {
-            yaw = press.Yaw;
-            pitch = press.Pitch;
-            camera.Rotation = new Vector3(pitch, yaw, 0);
-            if (creatures.FindHit(camera, press.Position) is { } hit)
+            Yaw = press.Yaw;
+            Pitch = press.Pitch;
+            host.Camera.Rotation = new Vector3(Pitch, Yaw, 0);
+            if (host.Creatures.FindHit(host.Camera, press.Position) is { } hit)
             {
-                creatures.Select(hit.Guid);
-                if (databaseEnabled && creatures.SelectedSpawn is { } spawn)
+                host.Creatures.Select(hit.Guid);
+                if (host.DatabaseEnabled && host.Creatures.SelectedSpawn is { } spawn)
                 {
-                    creatureProps.Open(spawn, "gossip");
+                    host.CreatureProperties.Open(spawn, "gossip");
                 }
             }
         }
 
-        capture = mouse.Pressed;
-        Input.MouseMode = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
+        Capture = mouse.Pressed;
+        Input.MouseMode = Capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
     }
 
-    /// <summary>
-    /// Release camera capture and cancel an active draft drag when window focus is lost.
-    /// </summary>
-    public override void _Notification(int what)
+    /// <summary>Release camera capture and cancel an active draft drag when window focus is lost.</summary>
+    public void HandleNotification(int what)
     {
-        if (what == NotificationWMWindowFocusOut)
+        if (what == Godot.Node.NotificationWMWindowFocusOut)
         {
-            capture = false;
+            Capture = false;
             Input.MouseMode = Input.MouseModeEnum.Visible;
-            creatures?.EndDrag(false);
-            gameObjects?.EndDrag(false);
-            graveyards?.EndDrag(false);
-            waypoints?.EndDrag(false);
+            host.Creatures?.EndDrag(false);
+            host.GameObjects?.EndDrag(false);
+            host.Graveyards?.EndDrag(false);
+            host.Waypoints?.EndDrag(false);
         }
     }
 
@@ -217,34 +242,34 @@ public partial class ViewerShell
     /// Keep flight keys away from shortcuts, and own an active drag through release/Escape even
     /// across UI. Completion saves locally; cancellation restores the starting pose.
     /// </summary>
-    public override void _Input(InputEvent input)
+    public void HandleInput(InputEvent input)
     {
         // F12 works while flying too, so it sits before the flight-key swallow.
         if (input is InputEventKey { Keycode: Key.F12, Pressed: true, Echo: false })
         {
-            CaptureDiagnostics();
+            host.CaptureDiagnostics();
             GetViewport().SetInputAsHandled();
             return;
         }
 
         // While right-mouse flight is active, W/A/S/D/Q/E drive the camera by polling. Consume key
         // events here (before shortcut input) so they cannot also switch tools or run menu
-        // commands. Esc still reaches _UnhandledInput to release the mouse.
-        if (capture && input is InputEventKey { Keycode: not Key.Escape })
+        // commands. Esc still reaches the unhandled handler to release the mouse.
+        if (Capture && input is InputEventKey { Keycode: not Key.Escape })
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
-        if (creatures == null || gameObjects == null || graveyards == null || waypoints == null || !ActiveEditor.IsDragging)
+        var editor = host.ActiveEditor;
+        if (editor == null || !editor.IsDragging)
         {
             return;
         }
 
-        var editor = ActiveEditor;
         if (input is InputEventMouseMotion motion)
         {
-            editor.Drag(camera, motion.Position);
+            editor.Drag(host.Camera, motion.Position);
         }
         else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
         {
@@ -262,27 +287,27 @@ public partial class ViewerShell
     /// Translate captured keyboard input along camera/world axes. Normalize combined movement so
     /// diagonal flight has the same base speed.
     /// </summary>
-    void MoveCamera(double delta)
+    public void Move(double delta)
     {
         Vector3 move = Vector3.Zero;
         if (Input.IsPhysicalKeyPressed(Key.W))
         {
-            move -= camera.Basis.Z;
+            move -= host.Camera.Basis.Z;
         }
 
         if (Input.IsPhysicalKeyPressed(Key.S))
         {
-            move += camera.Basis.Z;
+            move += host.Camera.Basis.Z;
         }
 
         if (Input.IsPhysicalKeyPressed(Key.A))
         {
-            move -= camera.Basis.X;
+            move -= host.Camera.Basis.X;
         }
 
         if (Input.IsPhysicalKeyPressed(Key.D))
         {
-            move += camera.Basis.X;
+            move += host.Camera.Basis.X;
         }
 
         if (Input.IsPhysicalKeyPressed(Key.Q))
@@ -297,9 +322,11 @@ public partial class ViewerShell
 
         if (move != Vector3.Zero)
         {
-            cameraFocused = false;
+            host.CameraMoved();
         }
 
-        camera.Position += move.Normalized() * speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
+        host.Camera.Position += move.Normalized() * Speed * (Input.IsPhysicalKeyPressed(Key.Shift) ? 4 : 1) * (float)delta;
     }
+
+    Viewport GetViewport() => host.Camera.GetViewport();
 }

@@ -44,8 +44,8 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 |---|---|
 | `Viewer/ViewerShell.cs` | Core coordinator: `_Ready`, scene systems, teleport, camera conversion, `SetSession` |
 | `Viewer/Session/ViewerShell.Session.cs` | `LoadClient` (store teardown, worker open, map list), `OpenMap`, `ResetTerrain`, `_ExitTree` |
-| `Viewer/Streaming/ViewerShell.Streaming.cs` | `UpdateWanted`, `UpdateTerrainStreaming`, `Prepare`, `RaiseAboveTerrain` |
-| `Viewer/Interaction/ViewerShell.Input.cs` | Viewport input, flight, drag ownership and focus handling |
+| `Viewer/Streaming/TerrainStreamer.cs` | Owns the wanted/loaded/failed sets, the sticky query window, reset and publication hooks; `.Tiles.cs` holds the worker decode, budgeted upload and nearest-missing schedule |
+| `Viewer/Interaction/ViewerInput.cs` | Standalone input router: navigation/selection/placement order, drag ownership, flight look/move and focus loss; `IViewerInputHost` is the shell seam and `ViewerShell.InputHost.cs` implements it |
 | `Viewer/ViewerShell.Process.cs` | The per-frame pump: streaming, HUD, overlays, diagnostics |
 | `Viewer/Hud/ViewerShell.Layout.cs` | `BuildUi`: the canvas, the shared theme, the strip/body split, and the one place the region builders are called |
 | `Viewer/Hud/LeftPanel.cs` | The left navigation panel: world settings, teleports, day-night scrubber, status line, zone labels and minimap, then the Scene explorer |

@@ -18,7 +18,7 @@ public partial class ViewerShell
         PerfMark(0);
         if (capture && !busy)
         {
-            MoveCamera(delta);
+            input.Move(delta);
         }
 
         if (!busy && world != null && store != null)
