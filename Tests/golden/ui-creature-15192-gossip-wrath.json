@@ -1,0 +1,5956 @@
+{
+  "target": "creature:15192,gossip",
+  "nodes": [
+    {
+      "path": "CreatureProperties",
+      "type": "CreaturePropertiesWindow",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": true,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": true,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Esc)"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/SectionPicker",
+      "type": "ItemList",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TextEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Save text",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Conqueror.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Conqueror.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Conqueror.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Conqueror.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Invoker.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Invoker.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Invoker.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Invoker.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Protector.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Protector.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Protector.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Protector.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Conqueror.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Invoker.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I've lost my Signet for Path of the Protector.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Remove this gossip option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Icon shown beside this option."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "I am ready, Anachronos. Please grant me the Scepter of the Shifting Sands.",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "None|Gossip|Quest giver|Vendor|Taxi|Trainer|Spirit healer|Spirit guide|Innkeeper|Banker|Petitioner|Tabard designer|Battlefield|Auctioneer|Stable|Armorer|Unlearn talents|Unlearn pet talents|Learn dual spec|Outdoor PvP|Dual spec info",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "What the client does when the option is selected."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "1",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Shown only when this and the creature's npcflag overlap."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Menu opened by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Map marker shown by this option. 0 means none."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Text of the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Cost in copper shown in the confirmation dialog."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "BroadcastText overriding the literal confirmation text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Ask the player to enter a code."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Move up"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Move down"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Add option",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Add option → new submenu",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AppearanceSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "BehaviorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "QuestsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "◂ Back to quests",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Open in Quest window",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "SpeechSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    }
+  ]
+}

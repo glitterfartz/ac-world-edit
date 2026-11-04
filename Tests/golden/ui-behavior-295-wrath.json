@@ -1,0 +1,335 @@
+{
+  "target": "behavior:295",
+  "nodes": [
+    {
+      "path": "BehaviorPanel",
+      "type": "BehaviorPanel",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "All Innkeeper Farley spawns · 2",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Rule 0 · Innkeeper Farley - On Gossip Option 0 Selected - Close Gossip"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/Edit0",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Edit",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▲",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Check this rule earlier"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "▼",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Check this rule later"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Copy",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Duplicate this rule and its \"Then\" steps"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/Then0",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Then",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Add an action that runs right after this one"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/Delete0",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Delete",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Rule 1 · Innkeeper Farley - On Gossip Option 0 Selected - Invoker Cast 'Trick or Treat'"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>/Edit1",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Edit",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>/Then1",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Then",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Add an action that runs right after this one"
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>/Delete1",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Delete",
+      "visible": true,
+      "disabled": false,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/@<auto>/AddRule",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Add rule",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Build a new rule from any event, action and target the server supports."
+    },
+    {
+      "path": "BehaviorPanel/@<auto>/@<auto>/@<auto>/AddFromTemplate",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ From template…",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Start a new rule from a ready-made example, then adjust it before adding."
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "BehaviorPanel/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    }
+  ]
+}

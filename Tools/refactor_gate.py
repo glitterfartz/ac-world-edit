@@ -4,6 +4,7 @@ Usage:
     python Tools/refactor_gate.py              # T0 + T1 + golden checks (the refactor gate)
     python Tools/refactor_gate.py --fast       # T0 + T1, no client data needed
     python Tools/refactor_gate.py --structural # T0 only, under one second
+    python Tools/refactor_gate.py --ui-goldens # rendered editor dumps, needs a database
     python Tools/refactor_gate.py --update-goldens   # human only: rewrite goldens + manifest
 
 T0 is instant and encodes the architecture rules. T1 is build + both test projects. The full gate
@@ -254,10 +255,23 @@ def goldens_check() -> int:
     return 0
 
 
+def ui_goldens_check() -> int:
+    python = [sys.executable]
+    steps = [
+        ["Tools/ui_golden.py", "--target", "behavior:295", "--profile", "wrath"],
+        ["Tools/ui_golden.py", "--target", "creature:15192,gossip", "--profile", "wrath"],
+    ]
+    for step in steps:
+        if run(python + step) != 0:
+            return 1
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fast", action="store_true", help="structural + build + tests only")
     parser.add_argument("--structural", action="store_true", help="T0 only")
+    parser.add_argument("--ui-goldens", action="store_true", help="rendered editor dumps (needs a database)")
     parser.add_argument("--update-goldens", action="store_true", help="rewrite goldens, manifest and ratchets (human only)")
     args = parser.parse_args()
 
@@ -285,6 +299,8 @@ def main() -> int:
         return 1
     if args.structural:
         return 0
+    if args.ui_goldens:
+        return ui_goldens_check()
     if fast() != 0:
         return 1
     if args.fast:

@@ -15,6 +15,8 @@ namespace ACWorldEdit;
 public partial class ViewerShell
 {
     bool stateDump, uiDump;
+    string? targetDump;
+    bool targetOpened;
     int dumpStage, dumpSettle, dumpHop, dumpHourIndex;
     double dumpClock;
     double? dumpPendingHour;
@@ -46,7 +48,8 @@ public partial class ViewerShell
     {
         stateDump = flags.Contains("--state-dump");
         uiDump = flags.Contains("--ui-dump");
-        if (stateDump || uiDump)
+        targetDump = flags.FirstOrDefault(f => f.StartsWith("--dump-target=", StringComparison.Ordinal))?["--dump-target=".Length..];
+        if (stateDump || uiDump || targetDump != null)
         {
             anySmoke = true;
         }
@@ -86,7 +89,7 @@ public partial class ViewerShell
 
     void ExecuteDumpTick(double delta)
     {
-        if (!stateDump && !uiDump)
+        if (!stateDump && !uiDump && targetDump == null)
         {
             return;
         }
@@ -95,6 +98,12 @@ public partial class ViewerShell
         if (dumpClock > 240)
         {
             SmokeFail("STATE_DUMP_TIMEOUT " + message);
+            return;
+        }
+
+        if (targetDump != null)
+        {
+            ExecuteTargetDump();
             return;
         }
 
@@ -243,6 +252,122 @@ public partial class ViewerShell
     {
         WriteIndented = true
     };
+
+    /// <summary>
+    /// Open one editor on a fixed target and dump its rendered control tree. The target is
+    /// <c>behavior:entry[,guid]</c>, <c>creature:entry[,section]</c> or <c>quest:id[,tab]</c>. It needs a
+    /// database, so it is an opt-in gate step, not part of <c>--fast</c>.
+    /// </summary>
+    void ExecuteTargetDump()
+    {
+        if (!DumpSettled)
+        {
+            dumpSettle = 0;
+            return;
+        }
+
+        if (++dumpSettle < 3)
+        {
+            return;
+        }
+
+        if (!targetOpened)
+        {
+            if (!OpenDumpTarget(targetDump!))
+            {
+                SmokeFail("TARGET_DUMP_NO_DATABASE " + targetDump);
+                return;
+            }
+
+            targetOpened = true;
+            dumpSettle = 0;
+            return;
+        }
+
+        if (!DumpTargetReady(out Node? node))
+        {
+            dumpSettle = 0;
+            return;
+        }
+
+        EmitTargetDump(node!);
+    }
+
+    bool OpenDumpTarget(string spec)
+    {
+        if (!databaseEnabled)
+        {
+            return false;
+        }
+
+        var head = spec.Split(':', 2);
+        string rest = head.Length > 1 ? head[1] : "";
+        switch (head[0])
+        {
+            case "behavior":
+            {
+                uint entry = uint.Parse(rest.Split(',')[0], CultureInfo.InvariantCulture);
+                creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior");
+                return true;
+            }
+            case "creature":
+            {
+                var parts = rest.Split(',');
+                creatureProps.OpenEntry(uint.Parse(parts[0], CultureInfo.InvariantCulture), $"Creature {parts[0]}", parts.Length > 1 ? parts[1] : null);
+                return true;
+            }
+            case "quest":
+            {
+                var parts = rest.Split(',');
+                questEditor.Open(uint.Parse(parts[0], CultureInfo.InvariantCulture));
+                if (parts.Length > 1 && Enum.TryParse<QuestPanel.Tab>(parts[1], true, out var tab))
+                {
+                    questEditor.Panel.ShowTab(tab);
+                }
+
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    bool DumpTargetReady(out Node? node)
+    {
+        string spec = targetDump!;
+        if (spec.StartsWith("behavior:", StringComparison.Ordinal))
+        {
+            var panel = creatureProps.Context.Behavior;
+            node = panel;
+            return panel.Entry != 0 && !panel.IsLoading && creatureProps.Context.Snapshot != null;
+        }
+
+        if (spec.StartsWith("creature:", StringComparison.Ordinal))
+        {
+            node = creatureProps;
+            return creatureProps.Context.Snapshot != null;
+        }
+
+        node = questEditor.Panel;
+        return questEditor.Panel.QuestId.HasValue && !questEditor.Panel.IsLoading && questEditor.Panel.HasQuest;
+    }
+
+    void EmitTargetDump(Node node)
+    {
+        var document = new
+        {
+            target = targetDump,
+            nodes = Walk(node, "").ToArray()
+        };
+        string json = JsonSerializer.Serialize(document, JsonOptions);
+        System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
+        string name = targetDump!.Replace(':', '-').Replace(',', '-');
+        System.IO.File.WriteAllText(ProjectSettings.GlobalizePath($"res://artifacts/ui-{name}-{profile.Kind}.json"), json + "\n");
+        GD.Print("TARGET_DUMP_BEGIN");
+        GD.Print(json);
+        GD.Print("TARGET_DUMP_END");
+        GetTree().Quit();
+    }
 
     static double JsonRound(double value) => Math.Round(value, 4);
     static float JsonRound(float value) => MathF.Round(value, 4);
