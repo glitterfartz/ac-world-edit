@@ -4,10 +4,6 @@
     "Scripts/Viewer/Lighting/SkyLighting.cs::SkyLighting",
     "Scripts/Viewer/Lighting/SkyLighting.cs::Update",
     "Scripts/Viewer/Session/ClientServices.cs::ClientServices",
-    "Scripts/Viewer/Session/ViewerShell.Listfile.cs::UpdateListfile",
-    "Scripts/Viewer/ViewerShell.cs::LoadClient",
-    "Scripts/Viewer/ViewerShell.cs::OpenMap",
-    "Scripts/Viewer/ViewerShell.cs::_Ready",
-    "Scripts/Viewer/ViewerShell.cs::_UnhandledInput"
+    "Scripts/Viewer/Session/ViewerShell.Listfile.cs::UpdateListfile"
   ]
 }
