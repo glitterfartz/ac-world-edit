@@ -5,9 +5,7 @@ using ACWorldEdit.Data;
 namespace ACWorldEdit;
 
 /// <summary>
-/// UI composition for the viewer: the canvas and theme, then one builder per region. Streaming,
-/// archive ownership and camera movement remain in the main partial; controls never write source data.
-/// The build order is the draw order, so the calls stay in this order.
+/// UI composition: the canvas and theme, then one builder per region, in draw order.
 /// </summary>
 public partial class ViewerShell
 {

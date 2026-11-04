@@ -148,6 +148,19 @@ public partial class ViewerShell
         message = FormattableString.Invariant($"Teleported to {x}, {y}, {z}.");
     }
 
+    /// <summary>
+    /// Point the map and tile fields at a server pose without opening. The map handler overwrites
+    /// both tiles, so it runs first.
+    /// </summary>
+    void OpenMapAtServerPose(uint mapId, double x, double y, double z)
+    {
+        maps.Select(mapList.FindIndex(m => m.Id == mapId));
+        var view = WorldCoordinates.ToView(new(x, y, z));
+        var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
+        tileX.Value = key.X;
+        tileY.Value = key.Y;
+    }
+
     async Task TeleportTo(int index)
     {
         teleports.Select(0);
@@ -173,11 +186,7 @@ public partial class ViewerShell
         if (target.Map != currentMapId)
         {
             // OpenMap falls back to the nearest available tile when this one is missing.
-            var view = WorldCoordinates.ToView(new(target.X, target.Y, target.Z));
-            maps.Select(mapIndex);
-            var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
-            tileX.Value = key.X;
-            tileY.Value = key.Y;
+            OpenMapAtServerPose(target.Map, target.X, target.Y, target.Z);
             await OpenMap();
             if (currentMapId != target.Map)
             {

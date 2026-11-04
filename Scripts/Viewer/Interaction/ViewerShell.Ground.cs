@@ -9,6 +9,18 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class ViewerShell
 {
+    /// <summary>The loaded terrain height and whether the tile is loaded; the two read differently.</summary>
+    (float? Height, bool Loaded) ProbeTerrain(float x, float z)
+    {
+        var key = TileGrid.FromView(x, z);
+        if (!terrainHeights.TryGetValue(key, out var tile))
+        {
+            return (null, false);
+        }
+
+        return (tile.Probe(TileGrid.LocalX(x, key), TileGrid.LocalZ(z, key)), true);
+    }
+
     /// <summary>
     /// Combine loaded terrain and ready WMO floors under a viewer-space point, then choose the
     /// highest surface at or below point.Y + GroundProbe.StepUp. Hidden building layers or WMOs
@@ -25,9 +37,8 @@ public partial class ViewerShell
         }
 
         List<float> heights = [];
-        var key = TileGrid.FromView(point.X, point.Z);
-        bool terrainLoaded = terrainHeights.TryGetValue(key, out var tile);
-        if (tile != null && tile.Probe(TileGrid.LocalX(point.X, key), TileGrid.LocalZ(point.Z, key)) is float terrain)
+        var (terrainHeight, terrainLoaded) = ProbeTerrain(point.X, point.Z);
+        if (terrainHeight is float terrain)
         {
             heights.Add(terrain);
         }
@@ -45,7 +56,7 @@ public partial class ViewerShell
         }
 
         // A WMO-only map has no terrain tiles, so only report an unloaded tile where one exists.
-        string reason = !terrainLoaded && world != null && world.Tiles.Contains(key)
+        string reason = !terrainLoaded && world != null && world.Tiles.Contains(TileGrid.FromView(point.X, point.Z))
             ? "terrain tile is not loaded yet."
             : $"no ground within {GroundProbe.StepUp:0} yd above or anywhere below.";
         return new(null, reason, Elapsed());

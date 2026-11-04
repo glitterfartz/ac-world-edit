@@ -109,6 +109,8 @@ public partial class ViewerShell : Node3D
     GraveyardOverlay graveyards = null!;
     WaypointOverlay waypoints = null!;
     AreaTriggerOverlay areaTriggers = null!;
+    /// <summary>The database-backed layers, in draw order, so a region step fans out from one list.</summary>
+    RegionOverlay[] overlays = [];
     SceneSidebar sidebar = null!;
     NavigationOverlay navigation = null!;
     ushort? currentMapId;
@@ -126,7 +128,10 @@ public partial class ViewerShell : Node3D
         ContentDraftFiles.UseProfile(UserSettings.LoadProfile());
         renderer = new TerrainRenderer();
         models = new ModelLibrary();
-        objects = new WorldObjectScene(this, models);
+        // Placements hang under their own node so the world scene is not the shell's direct child.
+        var objectRoot = new Node3D { Name = "Objects" };
+        AddChild(objectRoot);
+        objects = new WorldObjectScene(objectRoot, models);
         camera = new Camera3D
         {
             Name = "Camera",
@@ -159,6 +164,7 @@ public partial class ViewerShell : Node3D
         areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection(), Lookup = () => clientLookup };
         AddChild(areaTriggers);
         areaTriggers.FocusRequested += FocusPose;
+        overlays = [creatures, gameObjects, graveyards, waypoints, areaTriggers];
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
         AddChild(placement);
         creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
@@ -289,11 +295,7 @@ public partial class ViewerShell : Node3D
                 start = await PickStartLocation();
                 if (start != null)
                 {
-                    maps.Select(mapList.FindIndex(m => m.Id == start.Map));
-                    var view = WorldCoordinates.ToView(new(start.X, start.Y, start.Z));
-                    var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
-                    tileX.Value = key.X;
-                    tileY.Value = key.Y;
+                    OpenMapAtServerPose(start.Map, start.X, start.Y, start.Z);
                 }
             }
 
@@ -411,11 +413,11 @@ public partial class ViewerShell : Node3D
         wanted.Clear();
         world = null;
         currentMapId = null;
-        creatures.SetRegion(null);
-        gameObjects.SetRegion(null);
-        graveyards.SetRegion(null);
-        waypoints.SetRegion(null);
-        areaTriggers.SetRegion(null);
+        foreach (var overlay in overlays)
+        {
+            overlay.SetRegion(null);
+        }
+
         creatureProps?.Reset();
         objects.Clear();
     }
@@ -592,11 +594,10 @@ public partial class ViewerShell : Node3D
 
         // Without a matching database no layer may query, whatever its toggle says.
         var queryRegion = databaseEnabled ? spawnRegion : null;
-        creatures.SetRegion(queryRegion);
-        gameObjects.SetRegion(queryRegion);
-        graveyards.SetRegion(queryRegion);
-        waypoints.SetRegion(queryRegion);
-        areaTriggers.SetRegion(queryRegion);
+        foreach (var overlay in overlays)
+        {
+            overlay.SetRegion(queryRegion);
+        }
     }
 
     /// <summary>
