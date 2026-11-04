@@ -315,7 +315,7 @@ public partial class ViewerShell
             new("dump-wp-b", PendingKind.Waypoint, "dump_b", "Path 9 point 2", null, null,
                 new WaypointEdit("dump_b", 9, 2, new(-1, 0, 1), new(-2, 0, 2)))
         ];
-        return BuildSqlExports(changes, SourceDialects.SchemaFor)
+        return SqlExportBatch.Build(changes, SourceDialects.SchemaFor)
             .Select(e => (object)new
             {
                 source = e.Source,

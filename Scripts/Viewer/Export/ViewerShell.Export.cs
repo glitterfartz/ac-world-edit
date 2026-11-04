@@ -13,42 +13,6 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class ViewerShell
 {
-    /// <summary>
-    /// One script pair per database source for these changes, ordered by source, each written in
-    /// that source's dialect.
-    /// </summary>
-    internal static List<(string Source, SqlScripts Scripts)> BuildSqlExports(IEnumerable<PendingChange> changes, Func<string, IWorldSchema> schemaFor) => changes
-        .GroupBy(c => c.Source)
-        .OrderBy(g => g.Key, StringComparer.Ordinal)
-        .Select(g => (g.Key, SqlExport.Build(
-            g.Key,
-            g.Where(c => c.Graveyard != null).Select(c => c.Graveyard!),
-            g.Where(c => c.Row != null).Select(c => c.Row!),
-            null,
-            g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!),
-            schemaFor(g.Key))))
-        .ToList();
-
-    /// <summary>
-    /// Write each pair as UTF-8 (no BOM) files in a new timestamped folder and return its path.
-    /// </summary>
-    internal static string WriteSqlExports(IEnumerable<(string Source, SqlScripts Scripts)> exports)
-    {
-        string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
-        string folder = Path.GetDirectoryName(ContentDraftFiles.LocalPath($"exports/{stamp}/x"))!;
-        Directory.CreateDirectory(folder);
-        var utf8 = new UTF8Encoding(false);
-        foreach (var (source, scripts) in exports)
-        {
-            string name = source.Length > 8 ? source[..8] : source;
-            File.WriteAllText(Path.Combine(folder, $"{name}-apply.sql"), scripts.Apply, utf8);
-            File.WriteAllText(Path.Combine(folder, $"{name}-revert.sql"), scripts.Revert, utf8);
-        }
-
-        return folder;
-    }
-
-
     PendingChanges pendingStore = null!;
     static SourceDialects SourceDialects => ContentDraftFiles.Sources;
     PendingChangesWindow pendingWindow = null!;
@@ -274,7 +238,7 @@ public partial class ViewerShell
     void PreviewPendingSql()
     {
         var changes = CollectPending();
-        sqlPreview.Open(BuildSqlExports(changes, SourceDialects.SchemaFor));
+        sqlPreview.Open(SqlExportBatch.Build(changes, SourceDialects.SchemaFor));
     }
 
     /// <summary>
@@ -291,7 +255,7 @@ public partial class ViewerShell
 
         try
         {
-            string folder = WriteSqlExports(BuildSqlExports(changes, SourceDialects.SchemaFor));
+            string folder = SqlExportBatch.Write(SqlExportBatch.Build(changes, SourceDialects.SchemaFor), ContentDraftFiles.LocalPath("exports"));
             pendingStore.MarkExported(changes);
             RefreshPending();
             pendingWindow.SetStatus("Exported.");
