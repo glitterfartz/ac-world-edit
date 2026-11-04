@@ -694,7 +694,7 @@ public sealed partial class SkyLighting : Node3D
 
     /// <summary>
     /// Eye distance the skybox shader projects sky vertices to. Must stay inside the camera far
-    /// plane (TerrainViewer uses 8000) and beyond all streamed world geometry (about 2 km at the
+    /// plane (ViewerShell uses 8000) and beyond all streamed world geometry (about 2 km at the
     /// largest tile radius).
     /// </summary>
     public const float ShellDistance = 7500;

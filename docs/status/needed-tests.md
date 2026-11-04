@@ -10,7 +10,7 @@ for; what is left is below.
 
 - [ ] Viewer notices: dropped layers and FileDataID-0 layers are reported once per map, not once per
   tile, and not through the "N missing/unsupported textures" message (`reportedNotices` in
-  `TerrainViewer`). Godot-side, so a smoke or a manual check.
+  `ViewerShell`). Godot-side, so a smoke or a manual check.
 - [ ] Path-named placements: a map whose WDT/ADT names models by path (old style) still opens, and the
   "Path is not in the listfile" failure is reported once instead of per placement. Needs the community
   listfile absent to reproduce.

@@ -5,14 +5,14 @@
     "Scripts/Viewer/SkyLighting.cs::ApplySky",
     "Scripts/Viewer/SkyLighting.cs::SkyLighting",
     "Scripts/Viewer/SkyLighting.cs::Update",
-    "Scripts/Viewer/TerrainViewer.Listfile.cs::UpdateListfile",
-    "Scripts/Viewer/TerrainViewer.Ui.cs::BuildUi",
-    "Scripts/Viewer/TerrainViewer.cs::LoadClient",
-    "Scripts/Viewer/TerrainViewer.cs::OpenMap",
-    "Scripts/Viewer/TerrainViewer.cs::Prepare",
-    "Scripts/Viewer/TerrainViewer.cs::UpdateTerrainStreaming",
-    "Scripts/Viewer/TerrainViewer.cs::UpdateWanted",
-    "Scripts/Viewer/TerrainViewer.cs::_Ready",
-    "Scripts/Viewer/TerrainViewer.cs::_UnhandledInput"
+    "Scripts/Viewer/ViewerShell.Listfile.cs::UpdateListfile",
+    "Scripts/Viewer/ViewerShell.Ui.cs::BuildUi",
+    "Scripts/Viewer/ViewerShell.cs::LoadClient",
+    "Scripts/Viewer/ViewerShell.cs::OpenMap",
+    "Scripts/Viewer/ViewerShell.cs::Prepare",
+    "Scripts/Viewer/ViewerShell.cs::UpdateTerrainStreaming",
+    "Scripts/Viewer/ViewerShell.cs::UpdateWanted",
+    "Scripts/Viewer/ViewerShell.cs::_Ready",
+    "Scripts/Viewer/ViewerShell.cs::_UnhandledInput"
   ]
 }

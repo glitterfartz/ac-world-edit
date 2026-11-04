@@ -59,7 +59,7 @@ flowchart TB
 
     subgraph Godot_app["Godot app (Scripts/)"]
         direction TB
-        viewer["Viewer<br/>TerrainViewer partials, ClientServices, Sky, Minimap"]
+        viewer["Viewer<br/>ViewerShell partials, ClientServices, Sky, Minimap"]
         render["Rendering<br/>TerrainRenderer, ModelLibrary, WorldObjectScene,<br/>LiquidRendering, thumbnails"]
         overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger,<br/>Waypoint, Navigation, Gizmo, PlacementTool"]
         ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers"]
@@ -157,7 +157,7 @@ Rules that follow from the layering:
 Godot objects are touched only on the main thread. Expensive work runs on worker threads that produce
 plain CPU data:
 
-- **Terrain:** one tile decode task at a time (`TerrainViewer.pending`). The worker runs
+- **Terrain:** one tile decode task at a time (`ViewerShell.pending`). The worker runs
   `WorldMap.ReadTile`, texture decode and liquid decode, and creates no Godot resources. The main
   thread builds the tile within the upload budget (8 chunks, about 1.5 ms per frame).
 - **Models:** three decode workers (`ModelLibrary.DecodeWorkers`). Each decodes a batch of up to four
@@ -174,7 +174,7 @@ Results from an earlier map or client are discarded using a `generation` counter
 ## Data flow in brief
 
 A client folder is opened by `ClientServices`, which wires an `IClientFiles` source (MPQ or CASC), the
-map list, lighting and area lookups. `TerrainViewer` reads the WDT, then streams ADT tiles around the
+map list, lighting and area lookups. `ViewerShell` reads the WDT, then streams ADT tiles around the
 camera. Each tile is parsed into engine-free terrain data on a worker, then turned into meshes and
 materials on the main thread. Placements (doodads, WMOs, creatures, GameObjects, graveyards, triggers)
 come from the tile data and from read-only database queries.
@@ -191,7 +191,7 @@ marks them, and the drafts stay as they are.
 |---|---|
 | `Scripts/Assets/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs and generated MMaps (`Navigation/`) |
 | `Scripts/Data/` | Read-only MySQL sessions, `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), and the `Db*` read helpers |
-| `Scripts/Viewer/` | `TerrainViewer` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
+| `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
 | `Scripts/Overlays/` | Creature, GameObject, graveyard, AreaTrigger, waypoint and navigation overlays, gizmo, region query, placement tool |
 | `Scripts/Ui/` | Properties window shell, creature and quest editors, content browser, spawn inspector, visibility preview, sidebar, menus, pickers, settings |

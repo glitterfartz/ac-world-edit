@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b1hpi5tuk2hse"]
 
-[ext_resource type="Script" uid="uid://b4g2h6ig6k00y" path="res://Scripts/Viewer/TerrainViewer.cs" id="1"]
+[ext_resource type="Script" uid="uid://b4g2h6ig6k00y" path="res://Scripts/Viewer/ViewerShell.cs" id="1"]
 
-[node name="TerrainViewer" type="Node3D" unique_id=1986337503]
+[node name="ViewerShell" type="Node3D" unique_id=1986337503]
 script = ExtResource("1")

@@ -159,7 +159,7 @@ Escaping and guards:
 
 ## Export flow in the viewer
 
-`Scripts/Viewer/TerrainViewer.Export.cs` ties it together:
+`Scripts/Viewer/ViewerShell.Export.cs` ties it together:
 
 - `CollectPending` feeds creature `NetMoves`, graveyard `NetEdits` and content `NetEdits` into `PendingChanges.Collect`.
 - `BuildSqlExports` groups changes by source and calls `SqlExport.Build` once per group.
