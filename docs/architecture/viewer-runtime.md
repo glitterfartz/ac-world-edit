@@ -43,7 +43,8 @@ Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pendin
 | File | Concern |
 |---|---|
 | `Viewer/ViewerShell.cs` | Core coordinator: `_Ready`, scene systems, teleport, camera conversion, `SetSession` |
-| `Viewer/Session/ViewerShell.Session.cs` | `LoadClient` (store teardown, worker open, map list), `OpenMap`, `ResetTerrain`, `_ExitTree` |
+| `Viewer/Session/ViewerSession.cs` | Standalone client/map controller: `LoadClient`, `OpenMap`, `ResetTerrain`, `ExitTree`, with `IViewerSessionHost.OpenClient` as the client-open seam; `ViewerShell.SessionHost.cs` implements the host and keeps the state |
+| `Viewer/Session/ViewerShell.Session.cs` | Three-line delegation to `ViewerSession` |
 | `Viewer/Streaming/TerrainStreamer.cs` | Owns the wanted/loaded/failed sets, the sticky query window, reset and publication hooks; `.Tiles.cs` holds the worker decode, budgeted upload and nearest-missing schedule |
 | `Viewer/Interaction/ViewerInput.cs` | Standalone input router: navigation/selection/placement order, drag ownership, flight look/move and focus loss; `IViewerInputHost` is the shell seam and `ViewerShell.InputHost.cs` implements it |
 | `Viewer/ViewerShell.Process.cs` | The per-frame pump: streaming, HUD, overlays, diagnostics |

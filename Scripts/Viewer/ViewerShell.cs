@@ -170,6 +170,7 @@ public partial class ViewerShell : Node3D
         input = new ViewerInput(this);
         streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
             () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
+        viewerSession = new ViewerSession(this);
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
         AddChild(placement);
         creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
