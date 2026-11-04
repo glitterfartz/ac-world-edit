@@ -742,7 +742,7 @@ public partial class ViewerShell
             var max = building.BoundsMaximum!.Value;
             var top = new Vector3((min.X + max.X) / 2, Math.Max(min.Y, max.Y) + 50, (min.Z + max.Z) / 2);
             var hit = GroundAt(top);
-            var key = new TileKey((int)Math.Floor(top.X / TerrainTile.Size + 32), (int)Math.Floor(top.Z / TerrainTile.Size + 32));
+            var key = TileGrid.FromView(top.X, top.Z);
             float? terrain = terrainHeights.TryGetValue(key, out var tile) ? tile.Probe(top.X - (key.X - 32) * TerrainTile.Size, top.Z - (key.Y - 32) * TerrainTile.Size) : null;
             var (floors, _) = objects.FloorHeights(top);
             GD.Print(FormattableString.Invariant($"WMO_GROUND_SMOKE path={building.Path} wmoHits={floors.Count} chosen={hit.Height:F3} terrain={terrain:F3} ms={hit.Milliseconds:F3} via={hit.Message}"));

@@ -10,8 +10,8 @@ public partial class ViewerShell
     /// <summary>The terrain height under a viewer-space point, from the loaded tiles' height maps.</summary>
     float? TerrainHeightAt(float x, float z)
     {
-        var key = new TileKey((int)Math.Floor(x / TerrainTile.Size + 32), (int)Math.Floor(z / TerrainTile.Size + 32));
-        return terrainHeights.TryGetValue(key, out var tile) && tile.Probe(x - (key.X - 32) * TerrainTile.Size, z - (key.Y - 32) * TerrainTile.Size) is float height ? height : null;
+        var key = TileGrid.FromView(x, z);
+        return terrainHeights.TryGetValue(key, out var tile) && tile.Probe(TileGrid.LocalX(x, key), TileGrid.LocalZ(z, key)) is float height ? height : null;
     }
 
     Task<ulong?> PlaceTemplateAsync(PlacementTool.Template template, WorldPose pose) =>

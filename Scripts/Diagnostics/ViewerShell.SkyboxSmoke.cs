@@ -174,7 +174,7 @@ public partial class ViewerShell
         _ = OpenMap();
     }
 
-    static TileKey TileOf(Vector3 view) => new((int)Math.Floor(view.X / TerrainTile.Size + 32), (int)Math.Floor(view.Z / TerrainTile.Size + 32));
+    static TileKey TileOf(Vector3 view) => TileGrid.FromView(view.X, view.Z);
 
     /// <summary>
     /// Stand at the region center (default regions have no meaningful center, so the opened tile is

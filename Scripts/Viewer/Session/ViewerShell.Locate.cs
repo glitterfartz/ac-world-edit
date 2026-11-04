@@ -70,8 +70,9 @@ public partial class ViewerShell
             // Open the map at the spawn's tile; OpenMap falls back to the nearest available tile.
             var view = WorldCoordinates.ToView(new(target.X, target.Y, target.Z));
             maps.Select(mapList.FindIndex(m => m.Id == target.Map));
-            tileX.Value = Math.Clamp((int)Math.Floor(view.X / TerrainTile.Size + 32), 0, 63);
-            tileY.Value = Math.Clamp((int)Math.Floor(view.Z / TerrainTile.Size + 32), 0, 63);
+            var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
+            tileX.Value = key.X;
+            tileY.Value = key.Y;
             await OpenMap();
             if (current != locateGeneration || currentMapId != target.Map)
             {

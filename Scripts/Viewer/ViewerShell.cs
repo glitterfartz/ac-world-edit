@@ -277,8 +277,9 @@ public partial class ViewerShell : Node3D
                 {
                     maps.Select(mapList.FindIndex(m => m.Id == start.Map));
                     var view = WorldCoordinates.ToView(new(start.X, start.Y, start.Z));
-                    tileX.Value = Math.Clamp((int)Math.Floor(view.X / TerrainTile.Size + 32), 0, 63);
-                    tileY.Value = Math.Clamp((int)Math.Floor(view.Z / TerrainTile.Size + 32), 0, 63);
+                    var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
+                    tileX.Value = key.X;
+                    tileY.Value = key.Y;
                 }
             }
 
@@ -435,7 +436,7 @@ public partial class ViewerShell : Node3D
     /// Convert camera horizontal coordinates to floor-based tile indices. Interiors may have camera
     /// indices outside the terrain grid.
     /// </summary>
-    TileKey CameraTile() => new((int)Math.Floor(camera.Position.X / TerrainTile.Size + 32), (int)Math.Floor(camera.Position.Z / TerrainTile.Size + 32));
+    TileKey CameraTile() => TileGrid.FromView(camera.Position.X, camera.Position.Z);
 
 
     /// <summary>

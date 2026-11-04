@@ -25,9 +25,9 @@ public partial class ViewerShell
         }
 
         List<float> heights = [];
-        var key = new TileKey((int)Math.Floor(point.X / TerrainTile.Size + 32), (int)Math.Floor(point.Z / TerrainTile.Size + 32));
+        var key = TileGrid.FromView(point.X, point.Z);
         bool terrainLoaded = terrainHeights.TryGetValue(key, out var tile);
-        if (tile != null && tile.Probe(point.X - (key.X - 32) * TerrainTile.Size, point.Z - (key.Y - 32) * TerrainTile.Size) is float terrain)
+        if (tile != null && tile.Probe(TileGrid.LocalX(point.X, key), TileGrid.LocalZ(point.Z, key)) is float terrain)
         {
             heights.Add(terrain);
         }

@@ -176,8 +176,9 @@ public partial class ViewerShell
             // OpenMap falls back to the nearest available tile when this one is missing.
             var view = WorldCoordinates.ToView(new(target.X, target.Y, target.Z));
             maps.Select(mapIndex);
-            tileX.Value = Math.Clamp((int)Math.Floor(view.X / TerrainTile.Size + 32), 0, 63);
-            tileY.Value = Math.Clamp((int)Math.Floor(view.Z / TerrainTile.Size + 32), 0, 63);
+            var key = TileGrid.Clamp(TileGrid.FromView(view.X, view.Z));
+            tileX.Value = key.X;
+            tileY.Value = key.Y;
             await OpenMap();
             if (currentMapId != target.Map)
             {

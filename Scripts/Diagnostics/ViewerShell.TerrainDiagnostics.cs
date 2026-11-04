@@ -76,7 +76,7 @@ public partial class ViewerShell
 
         try
         {
-            var key = new TileKey((int)Math.Floor(point.X / TerrainTile.Size + 32), (int)Math.Floor(point.Z / TerrainTile.Size + 32));
+            var key = TileGrid.FromView(point.X, point.Z);
             if (!world.Tiles.Contains(key))
             {
                 return new { tile = new { x = key.X, y = key.Y }, error = "tile is not part of the map" };
