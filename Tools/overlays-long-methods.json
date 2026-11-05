@@ -1,6 +1,3 @@
 {
-  "allowed": [
-    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::BuildPanel",
-    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection"
-  ]
+  "allowed": []
 }

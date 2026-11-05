@@ -1,5 +1,7 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Assets;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -46,6 +48,15 @@ public partial class GraveyardOverlay
         history.AddChild(undo);
         history.AddChild(redo);
 
+        BuildLinkCard(page);
+        BuildNotesCard(page);
+        ShowSelection();
+        return scroll;
+    }
+
+    /// <summary>The zone search, its result list and the faction of a new link.</summary>
+    void BuildLinkCard(VBoxContainer page)
+    {
         var linkCard = InspectorUi.Card(page, "Zone links (graveyard_zone)");
         linkCard.AddChild(InspectorUi.Text("Ghosts who die in a linked area (checked first) or zone are sent here, by faction.", 11, true));
         links = new VBoxContainer();
@@ -78,12 +89,13 @@ public partial class GraveyardOverlay
             }
         });
         addRow.AddChild(addLink);
+    }
 
+    void BuildNotesCard(VBoxContainer page)
+    {
         var notes = InspectorUi.Card(page, "Details");
         details = InspectorUi.Text("Selection details appear here.", 12, true);
         notes.AddChild(details);
-        ShowSelection();
-        return scroll;
     }
 
     static OptionButton FactionPicker(ushort faction) =>
@@ -145,24 +157,37 @@ public partial class GraveyardOverlay
             child.QueueFree();
         }
 
-        bool editable = CanEdit;
         if (!selected.HasValue || !lookup.TryGetValue(selected.Value, out var site))
         {
-            title.Text = "Select a graveyard";
-            identity.Text = "Click an icon or choose one above";
-            details.Text = "Selection details appear here.";
-            comment.Text = "";
-            foreach (var field in position)
-            {
-                field.Text = "";
-                field.Editable = false;
-            }
-
-            comment.Editable = false;
+            ShowEmptyCard();
             return;
         }
 
-        var record = RecordOf(site);
+        ShowRecordCard(site, RecordOf(site));
+        if (zoneResults.ItemCount == 0)
+        {
+            PopulateZones();
+        }
+    }
+
+    void ShowEmptyCard()
+    {
+        title.Text = "Select a graveyard";
+        identity.Text = "Click an icon or choose one above";
+        details.Text = "Selection details appear here.";
+        comment.Text = "";
+        foreach (var field in position)
+        {
+            field.Text = "";
+            field.Editable = false;
+        }
+
+        comment.Editable = false;
+    }
+
+    void ShowRecordCard(GraveyardSite site, GraveyardRecord record)
+    {
+        bool editable = CanEdit;
         title.Text = record.Comment.Length > 0 ? record.Comment : "Graveyard";
         identity.Text = $"ID {record.Id}   /   Map {record.Map}";
         double[] values = [record.X, record.Y, record.Z];
@@ -183,36 +208,7 @@ public partial class GraveyardOverlay
         List<string> warnings = [];
         foreach (var link in record.Links)
         {
-            uint zone = link.GhostZone;
-            string name = ZoneName(zone) is { Length: > 0 } known ? known : $"Area {zone}";
-            if (areas?.MapOf(zone) is uint zoneMap && zoneMap != record.Map)
-            {
-                warnings.Add($"Zone {zone} ({name}) is on map {zoneMap}: ghosts from that map (e.g. an instance) are sent here.");
-            }
-
-            var rowBox = new VBoxContainer();
-            links.AddChild(rowBox);
-            rowBox.AddChild(InspectorUi.Text($"{name}   ·   {zone}", 13));
-            var controls = new HBoxContainer();
-            rowBox.AddChild(controls);
-            bool locked = site.IsLocked(zone);
-            var faction = FactionPicker(link.Faction);
-            faction.Disabled = !editable || locked;
-            faction.TooltipText = locked ? "Battleground or world-state conditions decide this link's team; edit them in the conditions table." : "";
-            faction.ItemSelected += index => SetLinkFaction(zone, Factions[index].Value);
-            controls.AddChild(faction);
-            var linkComment = new LineEdit
-            {
-                Text = link.Comment,
-                PlaceholderText = "Comment",
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                Editable = editable
-            };
-            linkComment.TextSubmitted += text => SetLinkComment(zone, text);
-            controls.AddChild(linkComment);
-            var remove = InspectorUi.Button("Remove", () => RemoveLink(zone));
-            remove.Disabled = !editable || locked;
-            controls.AddChild(remove);
+            AddLinkRow(record, link, editable, areas, warnings);
         }
 
         string healers = site.Healers.Length == 0
@@ -226,11 +222,40 @@ public partial class GraveyardOverlay
         string conflict = draft?.Conflict(sourceKey, site.Record) == true ? "Source graveyard changed since this draft; draft requires review.\n" : "";
         details.Text = $"{conflict}\n{healers}{(warnings.Count > 0 ? "\n" + string.Join("\n", warnings) : "")}";
         InspectorUi.SelectRow(list, record.Id);
+    }
 
-        if (zoneResults.ItemCount == 0)
+    void AddLinkRow(GraveyardRecord record, GraveyardLink link, bool editable, AreaLookup? areas, List<string> warnings)
+    {
+        uint zone = link.GhostZone;
+        string name = ZoneName(zone) is { Length: > 0 } known ? known : $"Area {zone}";
+        if (areas?.MapOf(zone) is uint zoneMap && zoneMap != record.Map)
         {
-            PopulateZones();
+            warnings.Add($"Zone {zone} ({name}) is on map {zoneMap}: ghosts from that map (e.g. an instance) are sent here.");
         }
+
+        var rowBox = new VBoxContainer();
+        links.AddChild(rowBox);
+        rowBox.AddChild(InspectorUi.Text($"{name}   ·   {zone}", 13));
+        var controls = new HBoxContainer();
+        rowBox.AddChild(controls);
+        bool locked = lookup.TryGetValue(record.Id, out var site) && site.IsLocked(zone);
+        var faction = FactionPicker(link.Faction);
+        faction.Disabled = !editable || locked;
+        faction.TooltipText = locked ? "Battleground or world-state conditions decide this link's team; edit them in the conditions table." : "";
+        faction.ItemSelected += index => SetLinkFaction(zone, Factions[index].Value);
+        controls.AddChild(faction);
+        var linkComment = new LineEdit
+        {
+            Text = link.Comment,
+            PlaceholderText = "Comment",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Editable = editable
+        };
+        linkComment.TextSubmitted += text => SetLinkComment(zone, text);
+        controls.AddChild(linkComment);
+        var remove = InspectorUi.Button("Remove", () => RemoveLink(zone));
+        remove.Disabled = !editable || locked;
+        controls.AddChild(remove);
     }
 
     void UpdateInspectorActions()
