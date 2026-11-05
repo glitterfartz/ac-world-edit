@@ -9,12 +9,13 @@ namespace ACWorldEdit;
 /// row edits on the shared content draft and ModelLibrary shared resources; unloading markers never
 /// changes rows.
 /// </summary>
-public partial class CreatureOverlay : RegionOverlay
+public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
 {
     public CreatureOverlay() : base(true, "Waiting for an outdoor map.")
     {
         markers = new CreatureMarkers(this);
         modelView = new CreatureModelView(this);
+        poseEditor = new CreaturePoseEditor(this);
     }
 
     public ModelLibrary? Models { get; set; }
@@ -36,11 +37,12 @@ public partial class CreatureOverlay : RegionOverlay
         LastMessage = message;
         Report?.Invoke(message);
     }
-    TransformGizmo gizmo = null!;
+    readonly CreaturePoseEditor poseEditor;
+    TransformGizmo gizmo => poseEditor.Gizmo;
     OptionButton animation = null!;
     ushort previewAnimation;
     ulong? animationListGuid;
-    public bool IsDragging => gizmo.Dragging;
+    public bool IsDragging => poseEditor.Dragging;
     public int ModelCreatureCount => modelView.ReadyCount;
     public int AdmittedCreatureCount => modelView.AdmittedCount;
 
@@ -98,10 +100,8 @@ public partial class CreatureOverlay : RegionOverlay
     /// </summary>
     public override void _Ready()
     {
-        gizmo = new TransformGizmo();
-        AddChild(gizmo);
+        poseEditor.Attach();
         AddChild(group);
-        gizmo.Changed += MoveSelection;
     }
 
     /// <summary>
@@ -524,104 +524,16 @@ public partial class CreatureOverlay : RegionOverlay
     /// Finish/cancel through the gizmo callback, committing at most one history command.
     /// </summary>
     public void EndDrag(bool commit) => gizmo.Finish(commit);
-    /// <summary>
-    /// Apply gizmo previews to the marker/models and commit completed gestures. Untouched pose
-    /// components keep their exact double source values: a move never rewrites heading, and a
-    /// rotation never rewrites coordinates through float round-off.
-    /// </summary>
-    void MoveSelection(GizmoEdit edit)
-    {
-        if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
-        {
-            return;
-        }
-
-        if (!edit.Commit)
-        {
-            marker.Node.Position = edit.Position;
-            marker.Node.Rotation = new(0, edit.Yaw, 0);
-            modelView.Place(marker.Spawn.Guid, marker);
-            return;
-        }
-
-        var before = PoseOf(marker.Spawn);
-        var after = before;
-        string success = "Saved.";
-        if (edit.Moved)
-        {
-            var position = edit.Position;
-            if (SnapOnDrop)
-            {
-                var ground = GroundAt?.Invoke(position) ?? new GroundHit(null, "Ground probe unavailable.");
-                if (ground.Height is float height)
-                {
-                    position.Y = height;
-                    success = "Saved; snapped to ground.";
-                }
-                else
-                {
-                    success = "Saved; not snapped: " + ground.Message;
-                }
-            }
-
-            var startView = ViewPosition(before);
-            var server = ViewSpace.ToServer(position);
-            // View X = -server Y, view Y = server Z, view Z = -server X.
-            after = before with
-            {
-                X = position.Z == startView.Z ? before.X : server.X,
-                Y = position.X == startView.X ? before.Y : server.Y,
-                Z = position.Y == startView.Y ? before.Z : server.Z
-            };
-        }
-        else if (edit.Yaw != (float)before.Heading)
-        {
-            after = before with { Heading = WorldCoordinates.NormalizeHeading(edit.Yaw) };
-        }
-
-        Commit(marker.Spawn, after, success);
-    }
+    void MoveSelection(GizmoEdit edit) => poseEditor.MoveSelection(edit);
 
     /// <summary>
     /// Record one draft command for a creature and reconcile its marker/models from effective
     /// history. Failed saves or stale baselines keep the persisted pose.
     /// </summary>
-    void Commit(CreatureSpawn spawn, WorldPose after, string success)
-    {
-        if (poses == null)
-        {
-            return;
-        }
+    void Commit(CreatureSpawn spawn, WorldPose after, string success) => poseEditor.Commit(spawn, after, success);
 
-        // A click without a drag (or an unchanged typed pose) records nothing; just re-sync.
-        if (after == PoseOf(spawn))
-        {
-            ApplyPose(spawn.Guid);
-            return;
-        }
-
-        if (group.Members.Count > 0 && MoveGroup(success, PoseOf(spawn), after))
-        {
-            return;
-        }
-
-        var (ok, message) = poses.Move(this, sourceKey, spawn.Guid, after);
-        Say(ok ? success : message);
-        ApplyPose(spawn.Guid);
-        Select(spawn.Guid);
-    }
-
-    /// <summary>
-    /// Move a marker and its native model placements to the effective draft pose.
-    /// </summary>
-    void ApplyPose(ulong guid)
-    {
-        var marker = markers[guid];
-        var pose = PoseOf(marker.Spawn);
-        marker.Node.Position = ViewPosition(pose);
-        marker.Node.Rotation = new(0, (float)pose.Heading, 0);
-        modelView.Place(guid, marker);
-    }
+    /// <summary>Move a marker and its native model placements to the effective draft pose.</summary>
+    void ApplyPose(ulong guid) => poseEditor.ApplyPose(guid);
 
     static Vector3 ViewPosition(WorldPose pose) => ViewSpace.ToView(pose.X, pose.Y, pose.Z);
 
@@ -629,47 +541,9 @@ public partial class CreatureOverlay : RegionOverlay
     /// Cancel the active preview, persist undo/redo and reconcile marker/native poses from
     /// effective history.
     /// </summary>
-    void History(bool redo)
-    {
-        gizmo.Finish(false);
-        if (poses == null)
-        {
-            return;
-        }
+    void History(bool redo) => poseEditor.History(redo);
 
-        string message = redo ? poses.Redo(this) : poses.Undo(this);
-        if (message.Length > 0)
-        {
-            Say(message);
-        }
-
-        Resync();
-    }
-
-    void Resync()
-    {
-        // The draft may have placed or deleted spawns: redraw the set before posing what is left.
-        if (sourceKey.Length > 0)
-        {
-            ReconcileSpawns(WithDraft());
-            if (selectedGuid.HasValue && !records.Any(s => s.Guid == selectedGuid.Value))
-            {
-                Deselect();
-            }
-
-            PopulateList();
-        }
-
-        foreach (var guid in markers.Keys.ToArray())
-        {
-            ApplyPose(guid);
-        }
-
-        if (selectedGuid.HasValue)
-        {
-            Select(selectedGuid.Value);
-        }
-    }
+    void Resync() => poseEditor.Resync();
 
     public (ulong Guid, float Distance)? FindHit(Camera3D camera, Vector2 screen)
     {
@@ -716,6 +590,35 @@ public partial class CreatureOverlay : RegionOverlay
         }
 
         return nearest.HasValue ? (nearest.Value, distance) : null;
+    }
+
+
+    Node ICreaturePoseHost.HostNode => this;
+    SpawnPoses? ICreaturePoseHost.Poses => poses;
+    string ICreaturePoseHost.SourceKey => sourceKey;
+    bool ICreaturePoseHost.HasGroup => group.Members.Count > 0;
+    IReadOnlyList<ulong> ICreaturePoseHost.MarkerKeys => markers.Keys.ToArray();
+    GroundHit? ICreaturePoseHost.LastGround { get => LastGround; set => LastGround = value; }
+    bool ICreaturePoseHost.TryMarker(ulong guid, out CreatureMarkers.Marker marker) => markers.TryGetValue(guid, out marker);
+    WorldPose ICreaturePoseHost.PoseOf(CreatureSpawn spawn) => PoseOf(spawn);
+    void ICreaturePoseHost.PreviewPose(ulong guid, Vector3 position, float yaw) => PreviewPose(guid, position, yaw);
+    void ICreaturePoseHost.Say(string message) => Say(message);
+    void ICreaturePoseHost.PopulateList() => PopulateList();
+    IReadOnlyList<CreatureSpawn> ICreaturePoseHost.WithDraft() => WithDraft();
+    void ICreaturePoseHost.ReconcileSpawns(IReadOnlyList<CreatureSpawn> spawns) => ReconcileSpawns(spawns);
+    bool ICreaturePoseHost.MoveGroup(string success, WorldPose before, WorldPose after) => MoveGroup(success, before, after);
+
+    /// <summary>Move a marker and its native model for a gizmo preview or a committed pose.</summary>
+    void PreviewPose(ulong guid, Vector3 position, float yaw)
+    {
+        if (!markers.TryGetValue(guid, out var marker))
+        {
+            return;
+        }
+
+        marker.Node.Position = position;
+        marker.Node.Rotation = new(0, yaw, 0);
+        modelView.Place(guid, marker);
     }
 
     /// <summary>
