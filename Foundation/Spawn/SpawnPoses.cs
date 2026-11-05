@@ -9,7 +9,7 @@ namespace ACWorldEdit.Foundation;
 /// database row. The overlays only know a spawn's pose, so the full database row is loaded when a
 /// spawn is selected (<see cref="Load"/>) and is the baseline an edit replaces.
 /// </summary>
-public sealed class SpawnPoses
+public sealed partial class SpawnPoses
 {
     /// <summary>A pose closer than this to the one in a draft's baseline is the same pose (float columns).</summary>
     const double Tolerance = 0.0001;
@@ -222,89 +222,6 @@ public sealed class SpawnPoses
     public Row? AddonOf(string source, ulong guid) => drafts.Draft?.Effective(source, Snapshot(source)).Get(AddonTable(source), Key(guid));
 
     /// <summary>
-    /// Change a spawn's appearance (its addon row) as one undoable command. A spawn's own addon row replaces
-    /// the template's completely, so the row should exist only while it differs from <paramref name="baseline"/>,
-    /// what the spawn shows without one (the template's addon, or nothing). The change starts from the spawn's
-    /// row, or from the baseline when it has none, and the result picks exactly one edit:
-    /// no row and nothing different records nothing; no row and something different inserts one;
-    /// a row that is now the same as the baseline is deleted; a row that is still different is updated.
-    /// </summary>
-    public AddonEdit EditAddon(object? sender, string source, ulong guid, string label, Row baseline, Func<Row, Row> change)
-    {
-        if (drafts.Draft == null)
-        {
-            return new(false, drafts.Error ?? "Editing is disabled.");
-        }
-
-        var table = AddonTable(source);
-        var existing = AddonOf(source, guid);
-        try
-        {
-            var after = change(existing ?? baseline);
-            bool same = SpawnEdits.SameAddon(table, after, baseline);
-            RowEdit? edit = existing == null
-                ? same ? null : InteractionEdits.Insert(table, after)
-                : same ? InteractionEdits.Delete(table, existing) : after == existing ? null : InteractionEdits.Update(table, existing, after);
-            if (edit == null)
-            {
-                return new(true, "");
-            }
-
-            var (ok, message) = Commit(sender, source, label, [edit]);
-            return new(ok, message, ok && edit.After == null);
-        }
-        catch (InvalidDataException error)
-        {
-            return new(false, "Not saved: " + error.Message);
-        }
-    }
-
-    /// <summary>
-    /// Make the spawn show its template's appearance again: set every appearance column to the template's and
-    /// let <see cref="EditAddon"/> decide whether the row is still needed. A row that holds something the
-    /// appearance fields do not (a waypoint path, an animation kit) stays, and the message says what it holds.
-    /// </summary>
-    public AddonEdit UseTemplateAppearance(object? sender, IWorldSchema schema, WorldDialect dialect, string source, ulong guid, Row? templateAddon)
-    {
-        if (AddonOf(source, guid) is not { } existing)
-        {
-            return new(true, "");
-        }
-
-        var baseline = SpawnEdits.AddonBaseline(schema, kind, templateAddon, guid);
-        var result = EditAddon(sender, source, guid, "Use the template's appearance", baseline, row => SpawnFields.CopyAppearance(dialect, kind, row, baseline));
-        if (!result.Ok || result.Removed || AddonOf(source, guid) is not { } kept)
-        {
-            return result;
-        }
-
-        var table = AddonTable(source);
-        var other = table.Columns.FirstOrDefault(c => !table.Key.Contains(c.Name) && !SpawnFields.AddonFor(dialect, kind).Any(f => f.Column == c.Name) && kept[c.Name] != baseline[c.Name]);
-        string what = other.Name is "PathId" or "path_id" ? $"waypoint path {kept[other.Name]}" : other.Name != null ? $"its own {other.Name}" : "other settings";
-        return result with { Message = $"Kept its own row: it holds {what}." };
-    }
-
-    /// <summary>
-    /// Give a spawn its own appearance, starting as a copy of its template's (a spawn with its own addon row
-    /// ignores the template's, so starting blank would hide the template's mount, auras and emote). Does
-    /// nothing when the spawn already has its own.
-    /// </summary>
-    public (bool Ok, string Message) OverrideAddon(object? sender, IWorldSchema schema, string source, ulong guid, Row? templateAddon)
-    {
-        if (AddonOf(source, guid) != null)
-        {
-            return (true, "");
-        }
-
-        var copy = templateAddon != null ? SpawnEdits.AddonFromTemplate(schema, templateAddon, guid) : SpawnEdits.NewAddon(schema, kind, guid);
-        return Commit(sender, source, "Give this spawn its own appearance", [InteractionEdits.Insert(AddonTable(source), copy)]);
-    }
-
-    /// <summary>Remove the spawn's own appearance, so it shows its template's again. Does nothing when it has none.</summary>
-    public (bool Ok, string Message) RemoveAddon(object? sender, string source, ulong guid) =>
-        AddonOf(source, guid) is { } row ? Commit(sender, source, "Use the template's appearance", [InteractionEdits.Delete(AddonTable(source), row)]) : (true, "");
-
-    /// <summary>
     /// Change some columns of a spawn row as one undoable command named <paramref name="label"/>. A
     /// change that leaves the row as it was records nothing.
     /// </summary>
@@ -396,103 +313,7 @@ public sealed class SpawnPoses
         }
     }
 
-    /// <summary>
-    /// Change several spawn rows as one undoable command (a group move). Every spawn's row must be loaded;
-    /// otherwise nothing is changed and the message says so.
-    /// </summary>
-    public (bool Ok, string Message) EditMany(object? sender, string source, IReadOnlyList<ulong> guids, string label, Func<Row, Row> change)
-    {
-        if (drafts.Draft == null)
-        {
-            return (false, drafts.Error ?? "Editing is disabled.");
-        }
-
-        var table = Table(source);
-        var snapshot = Snapshot(source);
-        var effective = drafts.Draft.Effective(source, snapshot);
-        var edits = new List<RowEdit>();
-        foreach (ulong guid in guids.Distinct())
-        {
-            if (effective.Get(table, Key(guid)) is not { } before)
-            {
-                return (false, "A selected spawn is still loading; try again.");
-            }
-
-            try
-            {
-                var after = change(before);
-                if (after != before)
-                {
-                    edits.Add(InteractionEdits.Update(table, before, after));
-                }
-            }
-            catch (InvalidDataException error)
-            {
-                return (false, "Not saved: " + error.Message);
-            }
-        }
-
-        return edits.Count == 0 ? (true, "") : Commit(sender, source, label, edits);
-    }
-
-    /// <summary>Delete several spawns, each with its addon row, as one undoable command.</summary>
-    public (bool Ok, string Message) DeleteMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<ulong> guids, string label = "Delete")
-    {
-        if (drafts.Draft == null)
-        {
-            return (false, drafts.Error ?? "Editing is disabled.");
-        }
-
-        var effective = drafts.Draft.Effective(source, Snapshot(source));
-        var edits = new List<RowEdit>();
-        foreach (ulong guid in guids.Distinct())
-        {
-            if (effective.Get(Table(source), Key(guid)) is not { } row)
-            {
-                return (false, "A selected spawn is still loading; try again.");
-            }
-
-            edits.AddRange(SpawnEdits.Delete(schema, kind, effective, row));
-        }
-
-        return Commit(sender, source, label, edits);
-    }
-
-    /// <summary>Copy several spawns, each to its own pose under the matching new GUID, as one undoable command.</summary>
-    public (bool Ok, string Message) DuplicateMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<(ulong Guid, ulong NewGuid, WorldPose Pose)> copies, string label = "Duplicate")
-    {
-        if (drafts.Draft == null)
-        {
-            return (false, drafts.Error ?? "Editing is disabled.");
-        }
-
-        var effective = drafts.Draft.Effective(source, Snapshot(source));
-        var edits = new List<RowEdit>();
-        try
-        {
-            foreach (var (guid, newGuid, pose) in copies)
-            {
-                if (effective.Get(Table(source), Key(guid)) is not { } row)
-                {
-                    return (false, "A selected spawn is still loading; try again.");
-                }
-
-                edits.AddRange(SpawnEdits.Duplicate(schema, kind, effective, row, newGuid, pose));
-            }
-        }
-        catch (InvalidDataException error)
-        {
-            return (false, "Not saved: " + error.Message);
-        }
-
-        return Commit(sender, source, label, edits);
-    }
-
-    /// <summary>The next <paramref name="count"/> free GUIDs, contiguous, past the database and the draft.</summary>
-    public ulong[] NextGuids(string source, ulong databaseMax, int count) => IdAllocator.Block(count, databaseMax, drafts.Draft?.MaxStaged(source, Table(source), "guid") ?? 0);
-
     public string Undo(object? sender) => drafts.History(sender, false);
 
     public string Redo(object? sender) => drafts.History(sender, true);
 }
-public sealed record AddonEdit(bool Ok, string Message, bool Removed = false);
