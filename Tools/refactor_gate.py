@@ -42,6 +42,7 @@ LAYERS = [
     Layer("Scripts/Viewer", goldens.ROOT / "Scripts" / "Viewer", TOOLS / "viewer-budget.json", TOOLS / "viewer-long-methods.json", "ViewerShell.cs"),
     Layer("Scripts/Ui", goldens.ROOT / "Scripts" / "Ui", TOOLS / "ui-budget.json", TOOLS / "ui-long-methods.json"),
     Layer("Foundation", goldens.ROOT / "Foundation", TOOLS / "foundation-budget.json", TOOLS / "foundation-long-methods.json"),
+    Layer("Scripts/Overlays", goldens.ROOT / "Scripts" / "Overlays", TOOLS / "overlays-budget.json", TOOLS / "overlays-long-methods.json"),
 ]
 VIEWER = LAYERS[0].root
 GODOT_FREE = ["Foundation", "Scripts/Assets", "Scripts/Data"]
