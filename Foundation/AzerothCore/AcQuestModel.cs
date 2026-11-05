@@ -53,6 +53,35 @@ public static class AcQuestModel
         }
 
         string key = id.ToString();
+        foreach (var issue in CheckIdentity(q))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckLevel(q, zoneExists))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckObjectives(q, names))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckRewards(q, names))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckChainAndAvailability(id, key, q, rows, names))
+        {
+            yield return issue;
+        }
+    }
+
+    /// <summary>The quest's name and method (its type).</summary>
+    static IEnumerable<InteractionIssue> CheckIdentity(Row q)
+    {
         if (q.T("LogTitle").Trim().Length == 0)
         {
             yield return new(false, "The quest has no title.");
@@ -62,7 +91,11 @@ public static class AcQuestModel
         {
             yield return new(true, "Quest method must be Normal, Auto-complete or Disabled.");
         }
+    }
 
+    /// <summary>The levels and the zone sort, which the client resolves at accept time.</summary>
+    static IEnumerable<InteractionIssue> CheckLevel(Row q, Func<uint, bool>? zoneExists)
+    {
         if (q.I("QuestLevel") > 0 && q.U("MinLevel") > q.I("QuestLevel"))
         {
             yield return new(false, $"Required level {q.U("MinLevel")} is above the quest level {q.I("QuestLevel")}.");
@@ -73,7 +106,11 @@ public static class AcQuestModel
         {
             yield return new(true, $"Zone {sort} does not exist.");
         }
+    }
 
+    /// <summary>The four creature/object objectives and their counts.</summary>
+    static IEnumerable<InteractionIssue> CheckObjectives(Row q, IContentNames names)
+    {
         for (int i = 1; i <= 4; i++)
         {
             int target = q.I($"RequiredNpcOrGo{i}");
@@ -97,7 +134,11 @@ public static class AcQuestModel
                 yield return new(false, $"Objective {i} has a count but no creature or object.");
             }
         }
+    }
 
+    /// <summary>Required, reward, choice and drop items, the starting item, reward spells and the follow-up quest.</summary>
+    static IEnumerable<InteractionIssue> CheckRewards(Row q, IContentNames names)
+    {
         foreach (var (prefix, countPrefix, slots, label, error) in new[] { ("RequiredItemId", "RequiredItemCount", 6, "Required item", true), ("RewardItem", "RewardAmount", 4, "Reward item", true), ("RewardChoiceItemID", "RewardChoiceItemQuantity", 6, "Choice reward", true), ("ItemDrop", "ItemDropQuantity", 4, "Quest drop", false) })
         {
             for (int i = 1; i <= slots; i++)
@@ -139,7 +180,11 @@ public static class AcQuestModel
         {
             yield return new(true, $"Follow-up quest {q.U("RewardNextQuest")} does not exist.");
         }
+    }
 
+    /// <summary>The addon chain, the race mask and whether anything starts and finishes the quest.</summary>
+    static IEnumerable<InteractionIssue> CheckChainAndAvailability(uint id, string key, Row q, RowSet rows, IContentNames names)
+    {
         if (rows.Get(AcTables.QuestAddon, key) is { } addon)
         {
             int prev = addon.I("PrevQuestID");

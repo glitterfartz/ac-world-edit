@@ -87,6 +87,35 @@ public static class TcQuestRules
         }
 
         string key = id.ToString();
+        foreach (var issue in CheckIdentity(q))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckZone(q, zoneExists))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckObjectives(id, rows, names, exists))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckRewards(q, names, exists))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckChainAndAvailability(id, key, q, rows, names))
+        {
+            yield return issue;
+        }
+    }
+
+    /// <summary>The quest's name and method (its type).</summary>
+    static IEnumerable<InteractionIssue> CheckIdentity(Row q)
+    {
         if (q.T("LogTitle").Trim().Length == 0)
         {
             yield return new(false, "The quest has no title.");
@@ -96,18 +125,21 @@ public static class TcQuestRules
         {
             yield return new(true, "Quest method must be Normal, Auto-complete, Disabled or World quest.");
         }
+    }
 
+    /// <summary>The zone sort, which the client resolves at accept time.</summary>
+    static IEnumerable<InteractionIssue> CheckZone(Row q, Func<uint, bool>? zoneExists)
+    {
         int sort = q.I("QuestSortID");
         if (sort > 0 && zoneExists?.Invoke((uint)sort) == false)
         {
             yield return new(true, $"Zone {sort} does not exist.");
         }
+    }
 
-        foreach (var issue in CheckObjectives(id, rows, names, exists))
-        {
-            yield return issue;
-        }
-
+    /// <summary>Reward and required items, currencies, the starting item, reward spells and the follow-up quest.</summary>
+    static IEnumerable<InteractionIssue> CheckRewards(Row q, IContentNames names, Func<ClientRecord, uint, bool>? exists)
+    {
         foreach (var (prefix, countPrefix, slots, label, error) in new[] { ("RewardItem", "RewardAmount", 4, "Reward item", true), ("RewardChoiceItemID", "RewardChoiceItemQuantity", 6, "Choice reward", true), ("ItemDrop", "ItemDropQuantity", 4, "Quest drop", false) })
         {
             for (int i = 1; i <= slots; i++)
@@ -169,7 +201,11 @@ public static class TcQuestRules
         {
             yield return new(true, $"Follow-up quest {q.U("RewardNextQuest")} does not exist.");
         }
+    }
 
+    /// <summary>The addon chain and whether anything starts and finishes the quest.</summary>
+    static IEnumerable<InteractionIssue> CheckChainAndAvailability(uint id, string key, Row q, RowSet rows, IContentNames names)
+    {
         if (rows.Get(TcTables.QuestAddon, key) is { } addon)
         {
             foreach (var (column, label) in new[] { ("PrevQuestID", "Previous quest"), ("BreadcrumbForQuestId", "Breadcrumb target") })
