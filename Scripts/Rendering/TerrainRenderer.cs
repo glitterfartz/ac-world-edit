@@ -34,6 +34,12 @@ public sealed class TerrainRenderer
     /// <summary>Terrain chunks uploaded across loaded and building tiles.</summary>
     public int CellCount { get; private set; }
     public int TextureCount => textures.Count;
+    /// <summary>
+    /// True for the 3.3.5a client: its terrain pixel shader has no specular term, and a layer's alpha is
+    /// not a highlight mask (Wrath layer textures are usually opaque, so treating it as one blows out
+    /// the ground). The shell sets this from the open client profile before any tile is built.
+    /// </summary>
+    public bool WrathLighting { get; set; }
 
     public TerrainRenderer()
     {
@@ -307,6 +313,7 @@ public sealed class TerrainRenderer
             group.Scales.Length > 2 ? group.Scales[2] : 1f, group.Scales.Length > 3 ? group.Scales[3] : 1f));
         material.SetShaderParameter("splat_map", splats[tile]);
         material.SetShaderParameter("big_alpha", bigAlpha);
+        material.SetShaderParameter("wrath_lighting", WrathLighting);
         material.SetShaderParameter("grid", grid);
         materials.Add(material);
         mesh.SurfaceSetMaterial(0, material);

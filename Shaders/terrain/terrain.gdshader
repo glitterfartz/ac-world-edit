@@ -25,6 +25,8 @@ uniform bool height_blend = false;
 // Per-layer texture scale (retail MTXP): a layer repeats 8 / scale times across a chunk.
 uniform vec4 layer_scales = vec4(1.0);
 uniform bool big_alpha = false;
+// The 3.3.5a terrain shader has no specular term; its layer alpha is not a highlight mask.
+uniform bool wrath_lighting = false;
 uniform bool grid = false;
 
 void fragment() {
@@ -55,7 +57,10 @@ void fragment() {
         layered = mix(mix(mix(c0, c1, a.r), c2, a.g), c3, a.b);
     }
     // The vertex tint (already doubled, as the client does) scales the layers; the baked shadow bits darken the lit result.
-    vec3 color = client_surface_light(layered.rgb * COLOR.rgb, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX);
+    vec3 lit = layered.rgb * COLOR.rgb;
+    vec3 color = wrath_lighting
+        ? client_wrath_surface_light(lit, 1.0 - splat.a, NORMAL, VIEW_MATRIX)
+        : client_surface_light(lit, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX);
     if (grid) {
         vec2 edge = min(UV, 1.0 - UV);
         float line = 1.0 - smoothstep(0.0, 0.006, min(edge.x, edge.y));

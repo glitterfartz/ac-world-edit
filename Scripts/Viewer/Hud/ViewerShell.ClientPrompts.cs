@@ -82,6 +82,7 @@ public partial class ViewerShell
     void ApplyClientProfile(string description)
     {
         clientLabel.Text = "WORLD VIEWER  /  " + description.Split(" · ")[0];
+        renderer.WrathLighting = profile.Kind == ClientKind.Wrath335;
         sidebar.SetDatabaseAvailable(databaseEnabled);
         sidebar.SetDialect(profile.Dialect);
         _ = LoadTeleports();

@@ -247,6 +247,15 @@ vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 v
     return color * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
 }
 
+// The 3.3.5a terrain pixel shader: the same ambient plus diffuse N.L scales the layers, and the baked
+// shadow takes 30 % off, but that terrain has no specular term at all. Its layer textures' alpha is not
+// a highlight mask (Wrath tiles are usually opaque DXT1, so alpha is 1 over the whole ground).
+vec3 client_wrath_surface_light(vec3 albedo, float shadow, vec3 normal, mat4 view_matrix) {
+    vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
+    vec3 lit = clamp(client_sun_ambient + client_sun_diffuse * max(dot(-sun, normal), 0.0), 0.0, 1.0);
+    return albedo * lit * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
+}
+
 // The light's fog with any placed volumes over it: the two coverages combine as independent layers.
 vec4 client_fog_output(vec3 view_position, mat4 inv_view) {
     vec4 base = client_fog_base(view_position, inv_view);

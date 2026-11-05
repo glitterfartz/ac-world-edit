@@ -481,9 +481,16 @@ server XYZ) where the shader is visible, and the outputs or constants to read wh
 - **What to read:** `v2.xy` (ripple UVs), `CB1` constants for scale/specular.
 
 ### Terrain — `terrain.gdshader`
+- **Retail:** ambient plus diffuse N.L over the layer colour, a Blinn-Phong highlight (exponent 20)
+  masked by the layer alpha, and the baked shadow taking 30 % off (ported from the retail terrain
+  pixel shader).
+- **3.3.5a:** the same ambient plus diffuse N.L and baked shadow, but no specular term at all; Wrath's
+  terrain pixel shader has none, and its layer textures are usually opaque, so their alpha must not be
+  used as a highlight mask (`wrath_lighting`).
 - **Guessed:** highlight strength is estimated. Permutations 36–39 (per-layer color LUTs by distance,
   hemisphere ambient) are unported; the data link is not in the ADT (no `MTCG` chunk).
-- **Capture location:** any retail map with varied terrain (for example Khaz Algar tile 33,29).
+- **Capture location:** any retail map with varied terrain (for example Khaz Algar tile 33,29); Wrath
+  at Agamand Mills, Azeroth tile 30,26 (`2760.3, 835.2, 133.2` at 09:00).
 - **What to read:** `CB1` constants, per-layer LUT bindings, hemisphere ambient values.
 
 ### Model and WMO materials — `model.gdshader`
