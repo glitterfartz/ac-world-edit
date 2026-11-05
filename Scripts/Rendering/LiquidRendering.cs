@@ -4,21 +4,21 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Main-thread bridge from parsed grids/atlases to Godot. The shader (Shaders/liquid.gdshader) is the
+/// Main-thread bridge from parsed grids/atlases to Godot. The shader (Shaders/liquid/liquid.gdshader) is the
 /// client's water and magma pixel/vertex shaders; native frames animate over the type's period and the
 /// depth gradient comes from the active light's water colors.
 /// </summary>
 public static class LiquidRendering
 {
-    public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid.gdshader");
-    static Shader ProceduralWaterShader { get; } = ClientShaderGlobals.Load("res://Shaders/procwater.gdshader");
-    static Shader MagmaShader { get; } = ClientShaderGlobals.Load("res://Shaders/procmagma.gdshader");
-    static Shader FogShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquidfog.gdshader");
-    static Shader MercuryShader { get; } = ClientShaderGlobals.Load("res://Shaders/mercury.gdshader");
-    static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/leyline.gdshader");
-    static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/fel.gdshader");
-    static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/swamp.gdshader");
-    static Shader AzeriteShader { get; } = ClientShaderGlobals.Load("res://Shaders/azerite.gdshader");
+    public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/liquid.gdshader");
+    static Shader ProceduralWaterShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/procwater.gdshader");
+    static Shader MagmaShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/procmagma.gdshader");
+    static Shader FogShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/liquidfog.gdshader");
+    static Shader MercuryShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/mercury.gdshader");
+    static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/leyline.gdshader");
+    static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/fel.gdshader");
+    static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/swamp.gdshader");
+    static Shader AzeriteShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/azerite.gdshader");
 
     /// <summary>
     /// Bind horizontal atlas/category and the type's style. Supported native frames are square, so
@@ -139,7 +139,7 @@ public static class LiquidRendering
             return;
         }
         // A type that names a ripple normal map (retail data) draws with the retail water model; one that does
-        // not (3.3.5a data) keeps the 3.3.5a model. See Shaders/liquid.gdshader.
+        // not (3.3.5a data) keeps the 3.3.5a model. See Shaders/liquid/liquid.gdshader.
         material.SetShaderParameter("water_model", style.Bump != null ? 1 : 0);
         if (style.Bump != null)
         {

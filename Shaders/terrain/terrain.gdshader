@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 // Up to four native layers share one chunk UV set. Everything is computed on the 8-bit (gamma-space) values, as the
 // client does, so no texture is converted from source color space; only the finished color is converted to the
 // linear space Godot expects. The layer textures' alpha is the specular mask.

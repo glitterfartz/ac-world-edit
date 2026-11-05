@@ -5,7 +5,7 @@ namespace ACWorldEdit;
 /// <summary>
 /// Shader-wide parameters that mirror the constants the client feeds every world shader (fog, the
 /// map sun and the time-of-day water colors). <c>SkyLighting</c> writes them each frame; the
-/// terrain, model and liquid shaders read them through <c>Shaders/client_lighting.gdshaderinc</c>.
+/// terrain, model and liquid shaders read them through <c>Shaders/shared/client_lighting.gdshaderinc</c>.
 /// Globals and preview defaults live in project.godot so the editor can compile shaders too. Runtime textures are initialized
 /// through <see cref="Load"/>.
 /// </summary>

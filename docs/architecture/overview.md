@@ -199,7 +199,7 @@ marks them, and the drafts stay as they are.
 | `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
 | `Foundation/` | Drafts and spawn authoring, entity pages and rules, SQL export, tooltips, coordinates |
-| `Shaders/` | `*.gdshader` (terrain, liquid, model, sky, clouds, glare, sunshafts, swamp, mercury, fel, leyline, liquidfog, procmagma, procwater, azerite) and the shared `*.gdshaderinc` includes |
+| `Shaders/` | Subfolders by pass: `terrain/`, `model/`, `sky/`, `liquid/` (water, magma and the specialized liquid materials) and `shared/` (the `client_lighting.gdshaderinc` include); each stage keeps its `.gdshader`/`.gdshaderinc` and `.uid` beside its siblings |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
 | `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py` |
 | `ThirdParty/` | `CascLib` and `StormLib` git submodules, built by `Tools/setup.py` |

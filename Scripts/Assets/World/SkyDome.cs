@@ -4,7 +4,7 @@ namespace ACWorldEdit.Assets;
 /// The client's sky tables (DayNight.cpp): the curves that drive the sunrise/sunset highlight on the
 /// sky dome and the sun's path across it, plus the dome's ring geometry. Angles are radians and
 /// directions use the client's world axes (x, y horizontal, z up); the viewer rotates them into its
-/// own basis. The dome itself is drawn by Shaders/sky.gdshader.
+/// own basis. The dome itself is drawn by Shaders/sky/sky.gdshader.
 /// </summary>
 public static class SkyDome
 {

@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 uniform sampler2D albedo_tex : filter_linear, repeat_disable;
 uniform sampler2D middle_tex : filter_linear_mipmap, repeat_enable;

@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // Retail fel_0: mix(deep, shallow, saturate(1-depth*CB1[12].z)), then fog.
 // LiquidType float 14 -> depth coefficient is inferred, not recovered CPU code.

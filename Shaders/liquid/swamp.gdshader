@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // Retail material 14. Combines procswamp's depth layer and water surface with
 // procswampabovefog's shore overlay in one pass. All material math is gamma-space.
@@ -30,7 +30,7 @@ uniform float normal_fps = 60.0;
 uniform float specular_strength = 0.1;
 uniform float shore_width = 0.3;
 
-#include "res://Shaders/liquid_reflection.gdshaderinc"
+#include "res://Shaders/liquid/liquid_reflection.gdshaderinc"
 
 varying vec3 world_position;
 

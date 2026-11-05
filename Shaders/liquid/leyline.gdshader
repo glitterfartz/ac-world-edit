@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // leyline_0: P = a0*a1; rgb = 2*P*c0*c1 + (1-P)*base;
 // alpha = (2*P+0.5)*vertexOpacity, followed by client fog.

@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 uniform sampler2D ripple_tex : filter_linear_mipmap, repeat_enable;
 uniform sampler2D scene_color : hint_screen_texture, filter_linear, repeat_disable;
@@ -10,7 +10,7 @@ uniform bool has_normals = false;
 uniform float normal_strength = 1.0;
 uniform float specular_power = 16.0;
 
-#include "res://Shaders/liquid_reflection.gdshaderinc"
+#include "res://Shaders/liquid/liquid_reflection.gdshaderinc"
 
 varying vec3 world_position;
 

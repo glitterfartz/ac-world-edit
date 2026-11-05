@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // Retail azerite (material 18). The shipped pixel shaders split the surface into a
 // three-stop depth ramp and warp every layer with an animated normal map:
@@ -51,7 +51,7 @@ uniform float specular_strength = 1.0;
 uniform float specular_power = 32.0;
 uniform float reflection_strength = 0.2;
 
-#include "res://Shaders/liquid_reflection.gdshaderinc"
+#include "res://Shaders/liquid/liquid_reflection.gdshaderinc"
 
 varying vec3 world_position;
 

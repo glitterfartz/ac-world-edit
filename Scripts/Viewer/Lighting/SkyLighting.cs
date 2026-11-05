@@ -66,7 +66,7 @@ public sealed partial class SkyLighting : Node3D
         BuildSun();
         skyMaterial = new ShaderMaterial
         {
-            Shader = GD.Load<Shader>("res://Shaders/sky.gdshader")
+            Shader = GD.Load<Shader>("res://Shaders/sky/sky.gdshader")
         };
         BuildEnvironment();
         skyboxAnchor = new Node3D
@@ -119,7 +119,7 @@ public sealed partial class SkyLighting : Node3D
     {
         cloudMaterial = new ShaderMaterial
         {
-            Shader = GD.Load<Shader>("res://Shaders/clouds.gdshader"),
+            Shader = GD.Load<Shader>("res://Shaders/sky/clouds.gdshader"),
             // After the star model (a skybox variant, priority below -1) and before the world's translucent surfaces.
             RenderPriority = -1
         };
@@ -139,7 +139,7 @@ public sealed partial class SkyLighting : Node3D
 
     void BuildGlares()
     {
-        var glareShader = GD.Load<Shader>("res://Shaders/glare.gdshader");
+        var glareShader = GD.Load<Shader>("res://Shaders/sky/glare.gdshader");
         for (int i = 0; i < glares.Length; i++)
         {
             // The client draws glare last, over everything, so it takes the highest render priority.
@@ -166,7 +166,7 @@ public sealed partial class SkyLighting : Node3D
     {
         shaftMaterial = new ShaderMaterial
         {
-            Shader = GD.Load<Shader>("res://Shaders/sunshafts.gdshader"),
+            Shader = GD.Load<Shader>("res://Shaders/sky/sunshafts.gdshader"),
             RenderPriority = (int)Material.RenderPriorityMax - 1
         };
         shaftQuad = new MeshInstance3D

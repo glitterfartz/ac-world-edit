@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, fog_disabled;
-#include "res://Shaders/sky_clouds.gdshaderinc"
+#include "res://Shaders/sky/sky_clouds.gdshaderinc"
 
 // The client's cloud layer (DayNight::DNClouds and the retail "dnclouds" pixel shader). The client fills a texture
 // with four octaves of animated noise, keeps what is above the light's density through a sharpness curve, bakes

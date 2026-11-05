@@ -20,7 +20,7 @@ public enum LayerCoord : byte
 
 /// <summary>
 /// The pixel combiner of a multi-texture batch. Values are the case numbers of the combiner switch
-/// in <c>Shaders/model.gdshader</c>; <see cref="None"/> is a plain single-texture batch. The M2 names
+/// in <c>Shaders/model/model.gdshader</c>; <see cref="None"/> is a plain single-texture batch. The M2 names
 /// are the client's <c>Combiners_*</c> pixel shaders (https://wowdev.wiki/M2/.skin), the Wmo names its
 /// MapObj pixel shaders (https://wowdev.wiki/WMO).
 /// </summary>

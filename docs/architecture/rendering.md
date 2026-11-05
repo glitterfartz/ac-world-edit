@@ -169,7 +169,7 @@ scale. The retail model bends the surface with two near and two far scrolling sa
 blended by camera distance; the animated frames are not used. The retail vertex shader is not shipped,
 so ripple UV scales, scroll rates and the specular exponent are estimates, and the sky reflection uses
 the fog colour. The two retail water shaders share the ripple normal through
-`Shaders/liquid_surface.gdshaderinc` (`liquid_ripple`).
+`Shaders/liquid/liquid_surface.gdshaderinc` (`liquid_ripple`).
 
 The underside: `water_retail` draws `mediumwaterbelow` when the eye is under the surface
 (`INV_VIEW_MATRIX[3].y < world_position.y`, per fragment). It turns the ripple normal toward the viewer,
@@ -187,7 +187,7 @@ unlit, opaque and vertex colour times frame. Terrain liquid materials are shared
 
 ## Material 14 swamp
 
-`LiquidRendering.Configure` selects `Shaders/swamp.gdshader`, and its screen/depth inputs are isolated
+`LiquidRendering.Configure` selects `Shaders/liquid/swamp.gdshader`, and its screen/depth inputs are isolated
 from ordinary water and magma. It combines the three-texture core of `procswamp_0/6`, the surface math
 of `procswamp_20` and the shore overlay of `procswampabovefog_6` in one pass. Native MH2O depth drives
 the shallow/middle/deep smoothsteps (equal adjacent thresholds stay finite). Two near and two coarse RG
@@ -381,15 +381,15 @@ for each implemented liquid shader.
 
 ## Shared pieces
 
-- **`Shaders/liquid_reflection.gdshaderinc`**: the shared 32-sample screen trace used by swamp, mercury
+- **`Shaders/liquid/liquid_reflection.gdshaderinc`**: the shared 32-sample screen trace used by swamp, mercury
   and procedural water: per-pixel jitter, fine near steps, the first depth crossing, binary refinement,
   a distance-scaled cross blur and retail's radial map window (1−x²)·(1−y²), faded to the region
   fog/sky colour between 12 and 40 yards so far scenery reads as water rather than a mirror. Offscreen
   objects cannot reflect, and the client's 0.75−z² ray-elevation factor is not applied because on a trace
   it suppresses steep reflections of tall nearby objects. Local interaction-ripple buffers and the
   client's spatial water simulation are absent.
-- **`Shaders/liquid_surface.gdshaderinc`**: the ripple normal shared by the two retail water models.
-- **`Shaders/client_lighting.gdshaderinc`**: client fog, height fog, placed fog volumes and the
+- **`Shaders/liquid/liquid_surface.gdshaderinc`**: the ripple normal shared by the two retail water models.
+- **`Shaders/shared/client_lighting.gdshaderinc`**: client fog, height fog, placed fog volumes and the
   surface/model lighting terms; the shader globals are declared in `project.godot`.
 - **Fallbacks**: a material whose required layers do not resolve keeps the generic base style rather
   than drawing a half material. Material tint, depth and texture identity participate in

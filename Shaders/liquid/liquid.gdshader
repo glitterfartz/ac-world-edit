@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // Liquids, in two water models and a magma/slime path, chosen per surface:
 //
@@ -50,7 +50,7 @@ uniform float uv_angle = 0.0;
 // and 1; Liquid::GetTexScrollMtx). Water leaves it at zero.
 uniform vec2 scroll_speed = vec2(0.0);
 
-#include "res://Shaders/liquid_surface.gdshaderinc"
+#include "res://Shaders/liquid/liquid_surface.gdshaderinc"
 
 const int GRADIENT_ROWS = 64;
 

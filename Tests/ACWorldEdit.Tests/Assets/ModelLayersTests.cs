@@ -68,13 +68,13 @@ public class ModelLayersTests
     {
         // The GLSL switch is keyed by the enum's values; a member the shader lacks would silently draw the base texture.
         string dir = AppContext.BaseDirectory;
-        while (dir != null && !File.Exists(Path.Combine(dir, "Shaders", "model.gdshader")))
+        while (dir != null && !File.Exists(Path.Combine(dir, "Shaders", "model", "model.gdshader")))
         {
             dir = Path.GetDirectoryName(dir)!;
         }
 
         Assert.NotNull(dir);
-        string shader = File.ReadAllText(Path.Combine(dir, "Shaders", "model.gdshader"));
+        string shader = File.ReadAllText(Path.Combine(dir, "Shaders", "model", "model.gdshader"));
         foreach (var combiner in Enum.GetValues<LayerCombiner>().Where(c => c != LayerCombiner.None))
         {
             Assert.Matches($@"case {(int)combiner}:", shader);

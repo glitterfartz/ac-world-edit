@@ -11,13 +11,13 @@ public class LiquidShaderTests
     static string Shader(string name)
     {
         string dir = AppContext.BaseDirectory;
-        while (dir != null && !File.Exists(Path.Combine(dir, "Shaders", name)))
+        while (dir != null && !File.Exists(Path.Combine(dir, "Shaders", "liquid", name)))
         {
             dir = Path.GetDirectoryName(dir)!;
         }
 
         Assert.NotNull(dir);
-        return File.ReadAllText(Path.Combine(dir, "Shaders", name));
+        return File.ReadAllText(Path.Combine(dir, "Shaders", "liquid", name));
     }
 
     [Theory]
@@ -25,7 +25,7 @@ public class LiquidShaderTests
     [InlineData("procwater.gdshader")]
     public void WaterShadersShareOneRippleNormal(string shader)
     {
-        Assert.Contains("#include \"res://Shaders/liquid_surface.gdshaderinc\"", Shader(shader));
+        Assert.Contains("#include \"res://Shaders/liquid/liquid_surface.gdshaderinc\"", Shader(shader));
     }
 
     [Fact]

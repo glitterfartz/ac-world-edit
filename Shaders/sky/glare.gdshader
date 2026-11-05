@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled, fog_disabled;
-#include "res://Shaders/sky_clouds.gdshaderinc"
+#include "res://Shaders/sky/sky_clouds.gdshaderinc"
 
 // The client's sun and moon glare (DayNight::DNGlare and the retail "glare" pixel shader): a large additive quad
 // drawn over the finished scene at the body's place in the sky, tinted by the sun color. The client dims it by

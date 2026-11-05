@@ -2,7 +2,7 @@ shader_type spatial;
 render_mode cull_disabled;
 // False for unlit and skybox variants.
 const bool LIT = true;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 
 // ModelLibrary chooses blend/cull/unlit variants from this shader. Keep the render-mode, LIT and roughness
 // statements explicit because that material setup replaces those statements.

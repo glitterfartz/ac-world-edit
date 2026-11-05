@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
-#include "res://Shaders/client_lighting.gdshaderinc"
+#include "res://Shaders/shared/client_lighting.gdshaderinc"
 global uniform vec4 client_water_ocean_shallow;
 global uniform vec4 client_water_ocean_deep;
 global uniform vec4 client_water_river_shallow;
@@ -18,8 +18,8 @@ uniform float normal_strength = .5;
 uniform float refraction_strength = .1;
 uniform float specular_power = 300.0;
 
-#include "res://Shaders/liquid_reflection.gdshaderinc"
-#include "res://Shaders/liquid_surface.gdshaderinc"
+#include "res://Shaders/liquid/liquid_reflection.gdshaderinc"
+#include "res://Shaders/liquid/liquid_surface.gdshaderinc"
 
 // The procedural water surface: "procwaterabove" above the waterline and "procwaterbelow" underneath.
 // Both read the type's native bump map, its depth colors and the stored depth byte; the client picks
