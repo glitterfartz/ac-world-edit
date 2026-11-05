@@ -64,8 +64,9 @@ public partial class CreatureOverlay
     public int SelectInBox(Camera3D camera, Rect2 box)
     {
         int added = 0;
-        foreach (var (guid, marker) in markers)
+        foreach (var marker in markers.Values)
         {
+            ulong guid = marker.Spawn.Guid;
             var point = marker.Node.GlobalPosition + Vector3.Up;
             if (!marker.Node.Visible || camera.IsPositionBehind(point) || !box.HasPoint(camera.UnprojectPosition(point)))
             {

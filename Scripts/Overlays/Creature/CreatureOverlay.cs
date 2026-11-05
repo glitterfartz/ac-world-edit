@@ -13,6 +13,7 @@ public partial class CreatureOverlay : RegionOverlay
 {
     public CreatureOverlay() : base(true, "Waiting for an outdoor map.")
     {
+        markers = new CreatureMarkers(this);
     }
 
     public ModelLibrary? Models { get; set; }
@@ -44,22 +45,7 @@ public partial class CreatureOverlay : RegionOverlay
     public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedCreatureCount => admitted.Count;
 
-    readonly Dictionary<ulong, (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)> markers = [];
-    readonly StandardMaterial3D normal = new()
-    {
-        AlbedoColor = new("5bd8c2")
-    };
-    readonly StandardMaterial3D selected = new()
-    {
-        AlbedoColor = new("ffcf69"),
-        EmissionEnabled = true,
-        Emission = new("805510")
-    };
-    readonly CapsuleMesh bodyMesh = new()
-    {
-        Radius = 0.55f,
-        Height = 2
-    };
+    readonly CreatureMarkers markers;
     ItemList list = null!;
     Label details = null!, status = null!;
     LineEdit filter = null!;
@@ -81,9 +67,9 @@ public partial class CreatureOverlay : RegionOverlay
     {
         // Cancel while the selected identity still exists so an unfinished move restores its pose.
         gizmo.Finish(false);
-        if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var old))
+        if (selectedGuid.HasValue && markers.ContainsKey(selectedGuid.Value))
         {
-            old.Body.MaterialOverride = normal;
+            markers.Highlight(selectedGuid, null);
         }
 
         selectedGuid = null;
@@ -231,7 +217,7 @@ public partial class CreatureOverlay : RegionOverlay
             animation.Disabled = true;
         }
 
-        markers.FreeAll(m => m.Node);
+        markers.Clear();
         admitted.Clear();
         records = [];
         pendingMarkers.Clear();
@@ -559,16 +545,13 @@ public partial class CreatureOverlay : RegionOverlay
         var incoming = spawns.ToDictionary(s => s.Guid);
         foreach (ulong guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
         {
-            markers.Free(guid, m => m.Node);
+            markers.Remove(guid);
             admitted.Remove(guid);
         }
 
         foreach (var spawn in spawns)
         {
-            if (markers.TryGetValue(spawn.Guid, out var existing))
-            {
-                markers[spawn.Guid] = (spawn, existing.Node, existing.Body, existing.Label);
-            }
+            markers.Update(spawn.Guid, spawn);
         }
 
         records = spawns;
@@ -585,32 +568,7 @@ public partial class CreatureOverlay : RegionOverlay
     void AddMarker(CreatureSpawn spawn)
     {
         var pose = PoseOf(spawn);
-        var node = new Node3D
-        {
-            Name = "Creature_" + spawn.Guid,
-            Position = ViewPosition(pose),
-            Rotation = new(0, (float)pose.Heading, 0)
-        };
-        var body = new MeshInstance3D
-        {
-            Mesh = bodyMesh,
-            MaterialOverride = normal,
-            Position = new(0, 1, 0)
-        };
-        node.Visible = false;
-        node.AddChild(body);
-        body.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
-        var label = new Label3D
-        {
-            Text = $"{spawn.Name}\n#{spawn.Guid}",
-            Position = new(0, FallbackLabelHeight, 0),
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            FontSize = 32,
-            PixelSize = 0.018f
-        };
-        node.AddChild(label);
-        AddChild(node);
-        markers.Add(spawn.Guid, (spawn, node, body, label));
+        markers.Add(spawn, ViewPosition(pose), (float)pose.Heading);
     }
 
     /// <summary>
@@ -649,9 +607,9 @@ public partial class CreatureOverlay : RegionOverlay
             group.Clear();
         }
 
-        if (selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var previous))
+        if (selectedGuid.HasValue && markers.ContainsKey(selectedGuid.Value))
         {
-            previous.Body.MaterialOverride = normal;
+            markers.Highlight(selectedGuid, guid);
         }
 
         if (selectedGuid != guid)
@@ -663,7 +621,6 @@ public partial class CreatureOverlay : RegionOverlay
         }
 
         selectedGuid = guid;
-        marker.Body.MaterialOverride = selected;
         SelectionChanged?.Invoke();
         LoadRow(guid);
         var spawn = marker.Spawn;

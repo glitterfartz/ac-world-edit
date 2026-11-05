@@ -68,7 +68,7 @@ public partial class CreatureOverlay : IPlacementEditor
     public void Undo() => History(false);
     public void Redo() => History(true);
 
-    (CreatureSpawn Spawn, Node3D Node, MeshInstance3D Body, Label3D Label)? EditableMarker() =>
+    CreatureMarkers.Marker? EditableMarker() =>
         poses?.Available == true && selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker : null;
 
     /// <summary>
