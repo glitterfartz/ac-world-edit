@@ -47,6 +47,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 - `--client-shot*` runs write PNGs into `artifacts/`. Read them back (the Read tool displays images) to inspect a rendering change; do not guess from logs alone. Prefer the same map, tile, hour and eye for before/after captures so they compare directly.
 - Aim the shot camera deliberately: `--client-shot-sky` takes `HOUR[,YAW[,LIFT[,PITCH]]]`, and a pitch near 0 or one that grew from repeated edits can end up pointing at the sky. For liquid or ground inspections use a downward pitch (e.g. `-8` for a level view, `-45` to `-89` for terrain), pass an eye above the surface only as far as needed, and check the saved PNG actually shows the surface before drawing conclusions from it. Never compare two shots taken with different pitch, yaw or eye.
 - A PostToolUse hook runs `dotnet format whitespace` on each edited `.cs` file.
+- Do not run `Tools/refactor_gate.py` (or its structural/golden checks) unless the user explicitly asks; build and the relevant test project are enough for a normal change. The only time it is permissible to run the gate without the user asking is when running the `refactor-module` skill.
 
 ## Rules
 

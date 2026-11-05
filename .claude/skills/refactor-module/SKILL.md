@@ -75,7 +75,7 @@ Get-ChildItem <folder> -Recurse -Filter *.cs |
   Sort-Object Lines -Descending
 ```
 
-Record file count, largest file, shell size, long methods, test counts and the folder total. If a
+Record file count, largest file, shell size, long methods and test counts. If a
 ratchet file exists (`Tools/viewer-budget.json`, `Tools/viewer-long-methods.json`), it is the
 contract; lower it in the same commit that earns the reduction.
 
@@ -174,7 +174,6 @@ Default targets, unless the area's docs say otherwise:
 | Any `.cs` file | ≤ 400 non-blank lines |
 | Composition root | ≤ 300 non-blank lines |
 | Any method | ≤ 60 lines |
-| Folder | ratchet, only lowered |
 
 A method's size is a smell, not a crime: a 65-line switch with no decisions is fine; a 50-line method
 with three nested flows is not. Split by extracting a named step, not by adding `#region`.
@@ -188,8 +187,8 @@ hit a number.
 Sometimes the deliverable is a hand-off document for another agent. Produce the same thinking in
 writing, in this order, and make it executable:
 
-1. **Measured baseline** — folder/file counts using the gate's own counter, shell size, largest
-   file, long methods, ratchet values, test counts, existing goldens.
+1. **Measured baseline** — file sizes and counts using the gate's own counter, shell size, long
+   methods, ratchet values, test counts, existing goldens.
 2. **The honest finding** — is the module actually over budget, or is the pain tangle/naming? Say
    which. Do not invent a size emergency.
 3. **What is missing from the net** — the states or paths no golden/smoke covers, and the capture to
@@ -199,8 +198,8 @@ writing, in this order, and make it executable:
 5. **Named units and seams** — concrete class/file names and what each owns, not "split into
    helpers". State which extractions you reject and why (e.g. a Godot-typed prepare step).
 6. **Invariants and do-not-touch** — ordering, budgets, hysteresis, precision, smoke contracts.
-7. **Expected end state and non-goals** — including line movement out of the folder, not just a
-   smaller number, and what this pass deliberately leaves undone.
+7. **Expected end state and non-goals** — the target shape and what this pass deliberately leaves
+   undone.
 
 A plan that only lists file moves is a file split. A plan that names responsibilities, proofs and
 seams is a refactor plan.

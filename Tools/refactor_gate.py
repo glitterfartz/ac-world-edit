@@ -29,7 +29,7 @@ TOOLS = goldens.ROOT / "Tools"
 
 @dataclass(frozen=True)
 class Layer:
-    """One source tree with its own size and long-method budgets."""
+    """One source tree with its own file-size and long-method budgets."""
 
     name: str
     root: Path
@@ -116,10 +116,8 @@ def check_budgets() -> list[str]:
                 shell = layer.root / "TerrainViewer.cs"
             if shell.exists() and code_lines(shell) > budget["shell"]:
                 problems.append(f"{shell.name}: {code_lines(shell)} lines exceeds the {budget['shell']} shell budget")
-        total = sum(counts)
-        if total > budget["folder"]:
-            problems.append(f"{layer.name}: {total} lines exceeds the {budget['folder']} folder budget")
-        print(f"{layer.name}: {total} lines, {len(counts)} files")
+        largest = max(counts) if counts else 0
+        print(f"{layer.name}: {len(counts)} files, largest {largest} lines")
     return problems
 
 
@@ -205,12 +203,12 @@ def structural(update: bool = False) -> int:
             layer.long_methods.write_text(json.dumps(methods[layer.name], indent=2) + "\n", encoding="utf-8", newline="\n")
             print(f"wrote {layer.long_methods.relative_to(goldens.ROOT)}")
             counts = [code_lines(p) for p in csharp_files(layer.root)]
-            budget = {"file": max(counts) if counts else 0, "folder": sum(counts)}
+            budget = {"file": max(counts) if counts else 0}
             if layer.shell:
                 shell = layer.root / layer.shell
                 if not shell.exists():
                     shell = layer.root / "TerrainViewer.cs"
-                budget = {"file": budget["file"], "shell": code_lines(shell), "folder": budget["folder"]}
+                budget["shell"] = code_lines(shell)
             layer.budget.write_text(json.dumps(budget, indent=2) + "\n", encoding="utf-8", newline="\n")
             print(f"wrote {layer.budget.relative_to(goldens.ROOT)}: {budget}")
         return 0

@@ -39,9 +39,9 @@ Six goldens: unchanged at every phase
 ```
 
 The original target was 3,200 non-blank lines. The class seams cost ~266 lines, so the target was
-retired by agreement and the measured 4,081 recorded as the budget. This is the clearest lesson of
-the run: **line targets are proxies; behaviour and named boundaries are the real goal.** When they
-conflict, measure both and ask, do not delete comments.
+retired by agreement. This is the clearest lesson of the run: **line targets are proxies; behaviour
+and named boundaries are the real goal.** When they conflict, measure both and ask, do not delete
+comments.
 
 ## What made it safe
 
@@ -61,4 +61,3 @@ conflict, measure both and ask, do not delete comments.
   the standalone class and its seam.
 - Treating the gate as a substitute for reading the moved code. It catches behavior drift, not a
   confusing abstraction.
-- Chasing a folder number after the shape is right.
