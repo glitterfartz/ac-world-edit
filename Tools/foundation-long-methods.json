@@ -4,7 +4,7 @@
     "Foundation/AzerothCore/AcCreatureView.cs::Build",
     "Foundation/AzerothCore/AcCreatureView.cs::Check",
     "Foundation/AzerothCore/AcQuestModel.cs::Check",
-    "Foundation/Smart/SmartBehavior.cs::Check",
+    "Foundation/Smart/SmartCatalog.cs::Check",
     "Foundation/Tooltips/ItemTooltipBuilder.cs::Build",
     "Foundation/Tooltips/RetailItemStats.cs::CurveValue",
     "Foundation/TrinityCore/TcCreaturePage.cs::Build",
