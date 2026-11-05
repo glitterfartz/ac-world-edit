@@ -1,10 +1,10 @@
 {
   "allowed": [
-    "Scripts/Overlays/CreatureOverlay.cs::Update",
-    "Scripts/Overlays/CreatureOverlay.cs::UpdateModels",
-    "Scripts/Overlays/GameObjectOverlay.cs::Reconcile",
-    "Scripts/Overlays/GraveyardOverlay.Ui.cs::BuildPanel",
-    "Scripts/Overlays/GraveyardOverlay.Ui.cs::ShowSelection",
-    "Scripts/Overlays/WaypointOverlay.cs::BuildPath"
+    "Scripts/Overlays/Creature/CreatureOverlay.cs::Update",
+    "Scripts/Overlays/Creature/CreatureOverlay.cs::UpdateModels",
+    "Scripts/Overlays/GameObject/GameObjectOverlay.cs::Reconcile",
+    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::BuildPanel",
+    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection",
+    "Scripts/Overlays/Waypoint/WaypointOverlay.cs::BuildPath"
   ]
 }
