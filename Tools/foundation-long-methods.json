@@ -1,0 +1,15 @@
+{
+  "allowed": [
+    "Foundation/AzerothCore/AcCreaturePage.cs::Build",
+    "Foundation/AzerothCore/AcCreatureView.cs::Build",
+    "Foundation/AzerothCore/AcCreatureView.cs::Check",
+    "Foundation/AzerothCore/AcQuestModel.cs::Check",
+    "Foundation/SmartBehavior.cs::Check",
+    "Foundation/SqlDialect.cs::Graveyard",
+    "Foundation/Tooltips/ItemTooltipBuilder.cs::Build",
+    "Foundation/Tooltips/RetailItemStats.cs::CurveValue",
+    "Foundation/TrinityCore/TcCreaturePage.cs::Build",
+    "Foundation/TrinityCore/TcQuestRules.cs::Check",
+    "Foundation/TrinityCore/TcStatCalculator.cs::Compute"
+  ]
+}
