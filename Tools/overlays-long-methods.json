@@ -1,6 +1,5 @@
 {
   "allowed": [
-    "Scripts/Overlays/GameObject/GameObjectOverlay.cs::Reconcile",
     "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::BuildPanel",
     "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection"
   ]

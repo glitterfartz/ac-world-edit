@@ -182,6 +182,15 @@ public partial class GameObjectOverlay : RegionOverlay
             .Select(c => c.Spawn)
             .ToArray();
         AdmittedObjectCount = admitted.Length;
+        var (groups, missing) = GroupModels(admitted);
+        ReconcileBatches(groups, missing);
+        ReconcileFallbacks(missing);
+        ReconcileLabels(camera, admitted);
+    }
+
+    /// <summary>Resolve each admitted display once and group its spawns by model path and state clip.</summary>
+    (Dictionary<ModelKey, List<ulong>> Groups, HashSet<ulong> Missing) GroupModels(GameObjectSpawn[] admitted)
+    {
         Dictionary<ModelKey, List<ulong>> groups = [];
         HashSet<ulong> missing = [];
         foreach (var spawn in admitted)
@@ -216,6 +225,12 @@ public partial class GameObjectOverlay : RegionOverlay
             guids.Add(spawn.Guid);
         }
 
+        return (groups, missing);
+    }
+
+    /// <summary>Diff the grouped membership against the current batches; unchanged batches keep their nodes.</summary>
+    void ReconcileBatches(Dictionary<ModelKey, List<ulong>> groups, HashSet<ulong> missing)
+    {
         foreach (var pair in batches.ToArray())
         {
             // Compare membership, not order: distance-sorted candidates reorder every tick while
@@ -244,7 +259,11 @@ public partial class GameObjectOverlay : RegionOverlay
                 }
             }
         }
+    }
 
+    /// <summary>A bounded capsule for every spawn with no ready native model.</summary>
+    void ReconcileFallbacks(HashSet<ulong> missing)
+    {
         foreach (var pair in fallbacks.ToArray())
         {
             if (!missing.Contains(pair.Key))
@@ -270,7 +289,11 @@ public partial class GameObjectOverlay : RegionOverlay
             AddChild(node);
             fallbacks[guid] = node;
         }
+    }
 
+    /// <summary>Names for a bounded number of nearby admitted objects.</summary>
+    void ReconcileLabels(Camera3D camera, GameObjectSpawn[] admitted)
+    {
         // Labels are optional and cost more draw calls than instanced meshes. Bound them separately.
         var named = Preview.ShowNames ? admitted.Where(s => s.Guid != selected && ViewPosition(Effective(s)).DistanceSquaredTo(camera.Position) < 80 * 80).Take(64).ToArray() : [];
         var namedGuids = named.Select(s => s.Guid).ToHashSet();
