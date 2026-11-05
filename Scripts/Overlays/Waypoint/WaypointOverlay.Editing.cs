@@ -385,7 +385,7 @@ public partial class WaypointOverlay : IPlacementEditor
             return;
         }
 
-        if (!CanPreview || !views.TryGetValue(emphasized!.Value, out var view) || !lookup.TryGetValue(emphasized.Value, out var path) || view.Positions.Length != path.Nodes.Length)
+        if (!CanPreview || !paths.TryView(emphasized!.Value, out var view) || view == null || !lookup.TryGetValue(emphasized.Value, out var path) || view.Positions.Length != path.Nodes.Length)
         {
             StopPreview();
             return;

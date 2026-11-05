@@ -15,23 +15,10 @@ public partial class WaypointOverlay : RegionOverlay
 {
     public WaypointOverlay() : base(true, "Waiting for a world…")
     {
+        paths = new WaypointPaths(this);
     }
 
-    /// <summary>
-    /// A path's scene nodes plus the effective view positions of its points, in point order.
-    /// </summary>
-    sealed class PathView(Node3D root)
-    {
-        public Node3D Root { get; } = root;
-        public MeshInstance3D? Line, Closing;
-        public MultiMeshInstance3D? Dots;
-        public Node3D? Labels;
-        public Vector3[] Positions = [];
-        public bool Emphasized;
-    }
-
-    static readonly Color StartColor = new("6bff76"), EndColor = new("ff9d4a"), DelayColor = new("ffe45c"), IdleColor = new("8a949e"), SelectedColor = new("ffcf69"), ClosingColor = new("c9a0ff");
-    const float DotRadius = 0.45f, EmphasizedDotRadius = 0.65f, PickPixels = 12;
+    const float PickPixels = 12;
 
     /// <summary>The creature selected in the creature layer; its path is emphasized.</summary>
     public Func<ulong?> FocusedCreature { get; set; } = () => null;
@@ -51,63 +38,19 @@ public partial class WaypointOverlay : RegionOverlay
 
     bool showAll;
     readonly Dictionary<uint, WaypointPath> lookup = [];
-    readonly Dictionary<uint, PathView> views = [];
+    readonly WaypointPaths paths;
     readonly RegionQuery<WaypointRegionResult> query = new();
     string sourceKey = "";
     (uint Path, uint Point)? selected;
     uint? focusedPath, emphasized;
     ulong? focusedGuid;
-    SphereMesh dotMesh = null!;
-    StandardMaterial3D lineMaterial = null!, dotMaterial = null!;
     MeshInstance3D handle = null!, walker = null!;
 
     public override void _Ready()
     {
-        dotMesh = new SphereMesh
-        {
-            Radius = 1,
-            Height = 2,
-            RadialSegments = 12,
-            Rings = 6
-        };
-        lineMaterial = new StandardMaterial3D
-        {
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            VertexColorUseAsAlbedo = true,
-            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-            NoDepthTest = true,
-            RenderPriority = 10
-        };
-        dotMaterial = new StandardMaterial3D
-        {
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            VertexColorUseAsAlbedo = true,
-            NoDepthTest = true,
-            RenderPriority = 11
-        };
-        handle = Marker(SelectedColor, 0.9f);
-        walker = Marker(new Color("5bd8ff"), 0.7f);
+        handle = paths.Marker(WaypointPaths.SelectedColor, 0.9f);
+        walker = paths.Marker(new Color("5bd8ff"), 0.7f);
         OpenDraft();
-    }
-
-    MeshInstance3D Marker(Color color, float radius)
-    {
-        var marker = new MeshInstance3D
-        {
-            Mesh = dotMesh,
-            Scale = Vector3.One * radius,
-            Visible = false,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-            MaterialOverride = new StandardMaterial3D
-            {
-                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-                AlbedoColor = color,
-                NoDepthTest = true,
-                RenderPriority = 12
-            }
-        };
-        AddChild(marker);
-        return marker;
     }
 
     protected override void OnRegionChanged(bool mapChanged)
@@ -123,7 +66,7 @@ public partial class WaypointOverlay : RegionOverlay
         if (hard)
         {
             Deselect();
-            views.FreeAll(v => v.Root);
+            paths.Clear();
             lookup.Clear();
             emphasized = focusedPath = null;
             focusedGuid = null;
@@ -156,7 +99,7 @@ public partial class WaypointOverlay : RegionOverlay
         }
 
         UpdateFocus();
-        foreach (var (id, view) in views)
+        foreach (var (id, view) in paths.Views)
         {
             view.Root.Visible = LayerEnabled && (showAll || id == emphasized);
         }
@@ -210,19 +153,19 @@ public partial class WaypointOverlay : RegionOverlay
     {
         sourceKey = result.SourceKey;
         var incoming = result.Paths.ToDictionary(p => p.Id);
-        foreach (uint id in views.Keys.Where(id => !incoming.ContainsKey(id)).ToArray())
+        foreach (uint id in paths.Views.Keys.Where(id => !incoming.ContainsKey(id)).ToArray())
         {
             if (selected?.Path == id)
             {
                 Deselect();
             }
 
-            views.Free(id, v => v.Root);
+            paths.Remove(id);
         }
 
         foreach (var path in result.Paths)
         {
-            bool unchanged = lookup.TryGetValue(path.Id, out var old) && old.Nodes.SequenceEqual(path.Nodes) && views.ContainsKey(path.Id);
+            bool unchanged = lookup.TryGetValue(path.Id, out var old) && old.Nodes.SequenceEqual(path.Nodes) && paths.Contains(path.Id);
             lookup[path.Id] = path;
             if (!unchanged)
             {
@@ -260,112 +203,8 @@ public partial class WaypointOverlay : RegionOverlay
     /// (Re)create a path's nodes from its effective positions. The optional override substitutes a
     /// point's view position while it is being dragged.
     /// </summary>
-    void BuildPath(WaypointPath path, (uint Point, Vector3 View)? preview = null)
-    {
-        if (!views.TryGetValue(path.Id, out var view))
-        {
-            var root = new Node3D
-            {
-                Name = "Waypoints_" + path.Id,
-                Visible = false
-            };
-            AddChild(root);
-            views[path.Id] = view = new PathView(root);
-        }
-
-        foreach (var child in view.Root.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        view.Line = view.Closing = null;
-        view.Dots = null;
-        view.Labels = null;
-        bool emphasis = path.Id == emphasized;
-        view.Emphasized = emphasis;
-        var states = path.Nodes.Select(n => StateOf(path, n)).ToArray();
-        view.Positions = path.Nodes.Select((n, i) => preview is { } p && p.Point == n.Point ? p.View : ViewPosition(states[i].Position)).ToArray();
-        int count = path.Nodes.Length;
-        if (count == 0)
-        {
-            return;
-        }
-
-        float alpha = emphasis ? 1 : 0.55f;
-        Color Gradient(int i) => path.Active ? StartColor.Lerp(EndColor, count > 1 ? i / (float)(count - 1) : 0) : IdleColor;
-        if (count > 1)
-        {
-            var colors = Enumerable.Range(0, count).Select(i => Gradient(i) with { A = alpha }).ToArray();
-            view.Line = LineMesh(view.Positions, colors, Mesh.PrimitiveType.LineStrip);
-            view.Root.AddChild(view.Line);
-            if (count > 2)
-            {
-                // The server repeats the path, so the creature walks from the last point back to the first.
-                var close = new[] { view.Positions[^1], view.Positions[0] };
-                var closeColor = (path.Active ? ClosingColor : IdleColor) with { A = alpha * 0.8f };
-                view.Closing = LineMesh(close, [closeColor, closeColor], Mesh.PrimitiveType.Lines);
-                view.Root.AddChild(view.Closing);
-            }
-        }
-
-        float radius = emphasis ? EmphasizedDotRadius : DotRadius;
-        var multi = new MultiMesh
-        {
-            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            UseColors = true,
-            Mesh = dotMesh,
-            InstanceCount = count
-        };
-        for (int i = 0; i < count; i++)
-        {
-            multi.SetInstanceTransform(i, new Transform3D(Basis.FromScale(Vector3.One * radius), view.Positions[i]));
-            var color = i == 0 ? StartColor : states[i].Props.Delay > 0 ? DelayColor : Gradient(i);
-            multi.SetInstanceColor(i, path.Active || i == 0 ? color : IdleColor);
-        }
-
-        view.Dots = new MultiMeshInstance3D
-        {
-            Multimesh = multi,
-            MaterialOverride = dotMaterial,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
-        };
-        view.Root.AddChild(view.Dots);
-        if (emphasis)
-        {
-            view.Labels = new Node3D();
-            view.Root.AddChild(view.Labels);
-            for (int i = 0; i < count; i++)
-            {
-                var node = path.Nodes[i];
-                view.Labels.AddChild(new Label3D
-                {
-                    Text = states[i].Props.Delay > 0 ? $"{node.Point} · wait {states[i].Props.Delay / 1000.0:0.#}s" : node.Point.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    Position = view.Positions[i] + Vector3.Up * 1.8f,
-                    Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-                    NoDepthTest = true,
-                    FontSize = 28,
-                    PixelSize = 0.014f,
-                    OutlineSize = 8
-                });
-            }
-        }
-    }
-
-    MeshInstance3D LineMesh(Vector3[] points, Color[] colors, Mesh.PrimitiveType type)
-    {
-        var arrays = new Godot.Collections.Array();
-        arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = points;
-        arrays[(int)Mesh.ArrayType.Color] = colors;
-        var mesh = new ArrayMesh();
-        mesh.AddSurfaceFromArrays(type, arrays);
-        return new MeshInstance3D
-        {
-            Mesh = mesh,
-            MaterialOverride = lineMaterial,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
-        };
-    }
+    void BuildPath(WaypointPath path, (uint Point, Vector3 View)? preview = null) =>
+        paths.Rebuild(path, node => StateOf(path, node), path.Id == emphasized, preview);
 
     /// <summary>
     /// Show the gold handle on the selected point (its node is where the gizmo attaches).
@@ -385,7 +224,7 @@ public partial class WaypointOverlay : RegionOverlay
 
     Vector3? SelectedView()
     {
-        if (!selected.HasValue || !views.TryGetValue(selected.Value.Path, out var view) || !lookup.TryGetValue(selected.Value.Path, out var path))
+        if (!selected.HasValue || !paths.TryView(selected.Value.Path, out var view) || view == null || !lookup.TryGetValue(selected.Value.Path, out var path))
         {
             return null;
         }
@@ -434,7 +273,7 @@ public partial class WaypointOverlay : RegionOverlay
             handle.Visible = false;
         }
 
-        if (previous.HasValue && lookup.TryGetValue(previous.Value.Path, out var path) && views.ContainsKey(path.Id))
+        if (previous.HasValue && lookup.TryGetValue(previous.Value.Path, out var path) && paths.Contains(path.Id))
         {
             BuildPath(path);
         }
@@ -460,7 +299,7 @@ public partial class WaypointOverlay : RegionOverlay
         var ray = PickRay.From(camera, screen);
         (uint, uint, float)? best = null;
         float bestPixels = PickPixels * PickPixels;
-        foreach (var (id, view) in views)
+        foreach (var (id, view) in paths.Views)
         {
             if (!view.Root.Visible || !lookup.TryGetValue(id, out var path))
             {

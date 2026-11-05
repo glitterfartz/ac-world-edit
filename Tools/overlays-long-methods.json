@@ -4,7 +4,6 @@
     "Scripts/Overlays/Creature/CreatureOverlay.cs::Update",
     "Scripts/Overlays/GameObject/GameObjectOverlay.cs::Reconcile",
     "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::BuildPanel",
-    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection",
-    "Scripts/Overlays/Waypoint/WaypointOverlay.cs::BuildPath"
+    "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection"
   ]
 }

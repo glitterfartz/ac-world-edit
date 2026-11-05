@@ -11,7 +11,7 @@ public partial class WaypointOverlay
 {
     public bool SmokeQueryIdle => query.IsIdle;
     public (uint Path, uint Point)? SmokeSelected => selected;
-    public int SmokeVisiblePaths => views.Values.Count(v => v.Root.Visible);
+    public int SmokeVisiblePaths => paths.Views.Values.Count(v => v.Root.Visible);
 
     /// <summary>
     /// The point of a followed path (three or more points) nearest the camera.
@@ -47,7 +47,7 @@ public partial class WaypointOverlay
     public void SmokeScrollToEnd() => panelScroll.ScrollVertical = int.MaxValue;
 
     public Vector3? SmokeDotPosition(uint path, uint point) =>
-        views.TryGetValue(path, out var view) && lookup.TryGetValue(path, out var data) && Array.FindIndex(data.Nodes, n => n.Point == point) is int i and >= 0 ? view.Positions[i] : null;
+        paths.TryView(path, out var view) && view != null && lookup.TryGetValue(path, out var data) && Array.FindIndex(data.Nodes, n => n.Point == point) is int i and >= 0 ? view.Positions[i] : null;
 
     /// <summary>
     /// Move the selected point, undo, redo and revert it, checking the draft and the generated SQL
