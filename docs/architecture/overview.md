@@ -148,7 +148,7 @@ Rules that follow from the layering:
 - **Per-client side data is attached to the source, not passed around.** `RetailLiquids` and
   `LiquidTextures` are looked up through `ConditionalWeakTable` keyed on the `IClientFiles` instance.
 - **Edits only reach Foundation drafts.** Overlays and editors never write to the database. SQL leaves
-  the app only through `Foundation/SqlExport.cs`.
+  the app only through `Foundation/Sql/SqlExport.cs`.
 - **Dialect-specific classes are prefixed.** `Ac`/`Tc` classes (and file names) live in the layer's
   `AzerothCore/` / `TrinityCore/` folders (`Scripts/Ui/AzerothCore`, `Scripts/Data/AzerothCore`), not
   in a copy of those folders under each feature. Shared interfaces, descriptors, context, renderers
