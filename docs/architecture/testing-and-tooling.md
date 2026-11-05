@@ -161,6 +161,7 @@ Environment variables for tests and tools:
 
 - `ACWORLD_DB_INFO` = `host;port;user;password;database` (AzerothCore Db tests); `ACWORLD_TC_DB_INFO` = the same plus optional `;hotfixes` (TrinityCore Db tests, `TcDbFact`).
 - `ACWORLD_DATA_DIR` (3.3.5 client), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE`: `ClientData`/`Corpus` tests.
+- `ACWORLD_CLIENT_PRODUCT` selects a `.build.info` product in a shared install (`wow` by default, `wowf` for WoW: Forever); the `_forever_` folder also selects `wowf` on its own. It applies to the viewer and to retail tests.
 - `ACWORLD_CASCLIB` (`CascLib.dll`; `Tools/setup.py` builds it into `native/win-x64/`), `ACWORLD_DBD_DIR` (defaults to the `Data/WoWDBDefs` submodule, which `Tools/setup.py` initialises).
 - `ACWORLD_RESET_SMOKE=1` lets `--reset-smoke` run (see `viewer-runtime.md`); it deletes the whole user data folder, so run it only with `APPDATA` pointing at a throwaway folder.
 - `ACWORLD_LISTFILE` overrides the community listfile path; `RetailListfileFact` tests skip without it.

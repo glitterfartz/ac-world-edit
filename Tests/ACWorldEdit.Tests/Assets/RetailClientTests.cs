@@ -67,6 +67,44 @@ public class RetailClientTests : IDisposable
     }
 
     [Fact]
+    public void DetectSelectsTheForeverProductFromItsFolder()
+    {
+        string? saved = Environment.GetEnvironmentVariable("ACWORLD_CLIENT_PRODUCT");
+        Environment.SetEnvironmentVariable("ACWORLD_CLIENT_PRODUCT", null);
+        try
+        {
+            Write(Header, "us|1|wow|12.1.5.70448|y", "us|1|wowf|1.60.1.70790|f");
+            Directory.CreateDirectory(Path.Combine(root, "_forever_"));
+            var install = RetailInstall.Detect(Path.Combine(root, "_forever_"));
+            Assert.Equal(RetailInstall.ProductForever, install.Product);
+            Assert.Equal("1.60.1.70790", install.Build);
+            Assert.Equal("FOREVER", install.DisplayName);
+            Assert.Equal(root + "*wowf", install.OpenPath);
+            Assert.False(install.ProvidesWorldDatabase);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ACWORLD_CLIENT_PRODUCT", saved);
+        }
+    }
+
+    [Fact]
+    public void DetectRejectsAnInstallWithoutTheSelectedProduct()
+    {
+        Write(Header, "us|1|wow|12.1.5.70448|y");
+        Assert.Throws<InvalidDataException>(() => RetailInstall.Detect(root, product: RetailInstall.ProductForever));
+    }
+
+    [Fact]
+    public void TheLiveProductOpensTheInstallRootWithoutAProductSuffix()
+    {
+        var install = new RetailInstall(root, "12.1.5.70448", "enUS");
+        Assert.Equal(root, install.OpenPath);
+        Assert.Equal("RETAIL", install.DisplayName);
+        Assert.True(install.ProvidesWorldDatabase);
+    }
+
+    [Fact]
     public void NativeCandidatesPreferTheOverrideThenTheBaseDirectory()
     {
         string overridePath = Path.Combine(root, "custom", "CascLib.dll");

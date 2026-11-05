@@ -76,9 +76,9 @@ public partial class ViewerShell
             if (kind != profile.Kind)
             {
                 profile = ClientProfile.For(kind);
-                databaseEnabled = profile.SupportsDatabase;
                 connection.Dialect = profile.Dialect;
                 dataDirectory = kind == ClientKind.Retail ? UserSettings.LoadRetailDirectory() : UserSettings.LoadDataDirectory();
+                databaseEnabled = profile.SupportsDatabase && !ACWorldEdit.Data.SettingsResolver.ClientOnlyProduct(retailDirectory);
                 clientLabel.Text = "WORLD VIEWER  /  " + profile.Title;
             }
         }

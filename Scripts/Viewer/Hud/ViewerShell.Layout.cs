@@ -50,7 +50,7 @@ public partial class ViewerShell
         profile = ClientProfile.For(UserSettings.LoadProfile());
         wrathDirectory = UserSettings.LoadDataDirectory();
         retailDirectory = UserSettings.LoadRetailDirectory();
-        databaseEnabled = profile.SupportsDatabase;
+        databaseEnabled = profile.SupportsDatabase && !ACWorldEdit.Data.SettingsResolver.ClientOnlyProduct(retailDirectory);
         connection.Dialect = profile.Dialect;
     }
 

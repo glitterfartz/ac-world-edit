@@ -60,7 +60,7 @@ public sealed partial record ClientServices
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables, warn), null, true, $"RETAIL {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables, warn), null, files.ProvidesWorldDatabase, $"{files.DisplayName} {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
         }
         catch
         {

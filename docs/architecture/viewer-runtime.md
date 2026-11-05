@@ -31,8 +31,8 @@ sequenceDiagram
 Client selection:
 
 - `UserSettings` (`Scripts/Ui/Settings/UserSettings.cs`) reads and writes `user://settings.cfg`.
-- Environment variables override settings through `SettingsResolver`: `ACWORLD_CLIENT_PROFILE`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_DB_INFO`, `ACWORLD_TC_DB_INFO`, `ACWORLD_LISTFILE`.
-- `ClientPickerDialog` (`Scripts/Ui/Settings/ConnectionForm.cs`) offers the Wrath and Retail profiles, remembers one folder per profile and validates it with `ClientFolder.Validate`.
+- Environment variables override settings through `SettingsResolver`: `ACWORLD_CLIENT_PROFILE`, `ACWORLD_DATA_DIR`, `ACWORLD_RETAIL_DIR`, `ACWORLD_CLIENT_PRODUCT`, `ACWORLD_DB_INFO`, `ACWORLD_TC_DB_INFO`, `ACWORLD_LISTFILE`.
+- `ClientPickerDialog` (`Scripts/Ui/Settings/ConnectionForm.cs`) offers the Wrath, Retail and WoW: Forever profiles, remembers one folder per profile and validates it with `ClientFolder.Validate`. The Forever profile needs the install's `_forever_` product folder and opens client-only with the database layers off.
 
 Shutdown (`_ExitTree`) cancels streaming, awaits the model worker and the pending tile task, then disposes the store and the drafts.
 

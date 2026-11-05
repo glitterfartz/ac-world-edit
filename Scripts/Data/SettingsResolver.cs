@@ -24,6 +24,14 @@ public static class SettingsResolver
         !string.IsNullOrWhiteSpace(environmentValue) ? environmentValue : saved();
 
     /// <summary>
+    /// True for the client-only WoW: Forever product. It has no private-server branch, so the viewer
+    /// opens it without a database; the folder may be the install root (with ACWORLD_CLIENT_PRODUCT)
+    /// or its _forever_ product folder.
+    /// </summary>
+    public static bool ClientOnlyProduct(string retailDirectory) =>
+        RetailInstall.ProductFor(retailDirectory) == RetailInstall.ProductForever;
+
+    /// <summary>
     /// The client profile to open: the environment override, else the saved choice. Anything other
     /// than "retail" selects the Wrath 3.3.5 profile, so a damaged value never blocks startup.
     /// </summary>

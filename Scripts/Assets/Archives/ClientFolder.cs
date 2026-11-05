@@ -33,7 +33,7 @@ public static class ClientFolder
 
             return File.Exists(Path.Combine(root, ".build.info"))
                 ? null
-                : "No .build.info here. Choose the World of Warcraft install folder (the one holding .build.info).";
+                : "No .build.info here. Choose the World of Warcraft install folder (the one holding .build.info) or a product folder inside it.";
         }
 
         // Either the Data folder or the client root above it is accepted; Resolve narrows to Data.

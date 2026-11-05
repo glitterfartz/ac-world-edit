@@ -23,7 +23,7 @@ public static class CelestialTextures
             image.GenerateMipmaps();
             return ImageTexture.CreateFromImage(image);
         }
-        catch (Exception e) when (e is InvalidDataException or FileNotFoundException)
+        catch (Exception e) when (e is InvalidDataException or FileNotFoundException or IOException)
         {
             return null;
         }

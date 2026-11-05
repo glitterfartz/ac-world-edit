@@ -177,6 +177,15 @@ Measured with `--perf-smoke` on retail Stormwind; numbers and designs in [perfor
 
 Assigning or creating a TrinityCore gossip menu also sets the gossip bit in `creature_template.npcflag` when it is missing. That is a template edit and affects every spawn of the entry; the exported SQL shows it as a separate `UPDATE`.
 
+### WoW: Forever
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Client data | done | The `wowf` product opens from the shared retail install (`_forever_` folder or `ACWORLD_CLIENT_PRODUCT=wowf`). FileDataIDs and DB2 layouts are shared, so the map list, terrain, lighting, liquids, M2/WMO models, creature displays and GameObjects load through the retail readers. `--client-smoke` opens build 1.60.1.70790 with 69 maps and streams an Azeroth tile; `ForeverCorpusTests` checks every known table, the WDT/tile and a creature model. |
+| World database | not started | There is no private-server branch for this client. `CascFiles.ProvidesWorldDatabase` is false, so the client opens with overlays, editors, teleports and the connection prompt off; the sidebar reports the database as unavailable. Adding a server branch means a schema and a dialect, not a client change. |
+| Shared install assets | done | A shared install keeps one copy of many textures in the live product's storage while the selected product's root still lists their FileDataIDs. `CascFiles` opens the live product beside a non-live product and reads the same FileDataID there (BLP payloads only), which is expected behavior rather than a missing-file fallback. DB2 files, WDT/ADT structure and M2/WMO geometry stay product-local; a standalone install has no live storage and reads its own copies. `LiveProductFiles` records the IDs served by the shared storage. |
+| Pinned definitions | open gap | `Data/WoWDBDefs` lists 1.60.1 up to 70450 while the install is 70790. DBCD resolves each table by its layout hash, so the tables load; bump the submodule when upstream lists the newer builds so the layouts stay validated. |
+
 ### Navigation
 
 | Item | Status | Notes |

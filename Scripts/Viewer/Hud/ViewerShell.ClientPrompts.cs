@@ -28,6 +28,7 @@ public partial class ViewerShell
 
             profile = ClientProfile.For(kind);
             dataDirectory = directory;
+            databaseEnabled = profile.SupportsDatabase && !ACWorldEdit.Data.SettingsResolver.ClientOnlyProduct(directory);
             UserSettings.SaveProfile(kind);
             connection.Dialect = profile.Dialect;
             if (kind == ClientKind.Retail)

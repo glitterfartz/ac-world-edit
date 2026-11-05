@@ -177,10 +177,11 @@ public sealed partial class ConnectionDialog : AcceptDialog
 
 
 /// <summary>
-/// Choose the client to open: a profile (Wrath 3.3.5 MPQs or Retail CASC) and its folder. Each
-/// profile remembers its own folder, shown when the profile is selected. Load stays disabled until
-/// the folder looks like the selected client (see ClientFolder), so a wrong pick is explained here
-/// rather than as an archive error. Choosing never opens or writes anything itself.
+/// Choose the client to open: a profile (Wrath 3.3.5 MPQs, Retail CASC, or the client-only WoW: Forever
+/// product of a retail install) and its folder. Each profile remembers its own folder, shown when the
+/// profile is selected. Load stays disabled until the folder looks like the selected client (see
+/// ClientFolder), so a wrong pick is explained here rather than as an archive error. Choosing never
+/// opens or writes anything itself.
 /// </summary>
 public sealed partial class ClientPickerDialog : ConfirmationDialog
 {
@@ -200,7 +201,9 @@ public sealed partial class ClientPickerDialog : ConfirmationDialog
         Exclusive = true;
         profile.AddItem("Wrath 3.3.5 (MPQ Data folder)", (int)ClientKind.Wrath335);
         profile.AddItem("Retail (World of Warcraft install folder)", (int)ClientKind.Retail);
-        profile.Select(initial == ClientKind.Retail ? 1 : 0);
+        profile.AddItem("WoW: Forever (1.60.x, client only)", 2);
+        bool forever = initial == ClientKind.Retail && RetailInstall.ProductFor(remembered(ClientKind.Retail)) == RetailInstall.ProductForever;
+        profile.Select(initial == ClientKind.Wrath335 ? 0 : forever ? 2 : 1);
 
         var box = new VBoxContainer { CustomMinimumSize = new Vector2(560, 0) };
         box.AddThemeConstantOverride("separation", 8);
@@ -219,23 +222,61 @@ public sealed partial class ClientPickerDialog : ConfirmationDialog
         profile.ItemSelected += _ => ShowRemembered();
         path.TextChanged += _ => Validate();
         browse.Pressed += Browse;
-        Confirmed += () => Chosen?.Invoke(Selected, path.Text.Trim());
+        Confirmed += () => Chosen?.Invoke(Selected, ChosenFolder());
         ShowRemembered();
     }
 
-    ClientKind Selected => profile.GetSelectedId() == (int)ClientKind.Retail ? ClientKind.Retail : ClientKind.Wrath335;
+    ClientKind Selected => profile.GetSelectedId() == (int)ClientKind.Wrath335 ? ClientKind.Wrath335 : ClientKind.Retail;
+    bool Forever => profile.GetSelectedId() == 2;
+
+    /// <summary>
+    /// The folder to load. Forever may be pointed at the install root or at its _forever_ folder;
+    /// Load always receives the product folder so the product is inferred from the path.
+    /// </summary>
+    string ChosenFolder() => Forever ? ForeverFolder(path.Text.Trim()) : path.Text.Trim();
 
     void ShowRemembered()
     {
-        path.Text = remembered(Selected);
+        string folder = remembered(Selected);
+        path.Text = Forever && folder.Length > 0 ? ForeverFolder(folder) : folder;
         Validate();
     }
 
     void Validate()
     {
-        string? error = ClientFolder.Validate(Selected, path.Text.Trim());
+        string folder = ChosenFolder();
+        string? error = Forever && folder.Length == 0
+            ? "Choose the install's _forever_ product folder (next to _retail_)."
+            : ClientFolder.Validate(Selected, folder);
+        if (error == null && Forever)
+        {
+            try
+            {
+                RetailInstall.Detect(folder);
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException)
+            {
+                error = e.Message;
+            }
+        }
+
         problem.Text = error ?? "";
         GetOkButton().Disabled = error != null;
+    }
+
+    /// <summary>The install's _forever_ product folder, derived from whichever retail folder was remembered.</summary>
+    static string ForeverFolder(string retailFolder)
+    {
+        string folder = retailFolder.TrimEnd('\\', '/');
+        if (Path.GetFileName(folder).Equals("_forever_", StringComparison.OrdinalIgnoreCase))
+        {
+            return folder;
+        }
+
+        string name = Path.GetFileName(folder);
+        string root = name.StartsWith('_') && name.EndsWith('_') ? Directory.GetParent(folder)?.FullName ?? folder : folder;
+        string forever = Path.Combine(root, "_forever_");
+        return Directory.Exists(forever) ? forever : "";
     }
 
     void Browse()
@@ -244,7 +285,7 @@ public sealed partial class ClientPickerDialog : ConfirmationDialog
         {
             FileMode = FileDialog.FileModeEnum.OpenDir,
             Access = FileDialog.AccessEnum.Filesystem,
-            Title = Selected == ClientKind.Retail ? "Choose the World of Warcraft install folder" : "Choose the client Data folder (MPQs)",
+            Title = Forever ? "Choose the WoW: Forever folder (_forever_)" : Selected == ClientKind.Retail ? "Choose the World of Warcraft install folder (_retail_)" : "Choose the client Data folder (MPQs)",
             UseNativeDialog = true
         };
         string current = path.Text.Trim();

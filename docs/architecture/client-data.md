@@ -110,6 +110,13 @@ Retail:
 6. Build the retail creature and GameObject display catalogs and the `RetailClientLookup` (`IClientLookup`) from `Db2Tables`.
 7. Areas are `null`. The world database is enabled (TrinityCore dialect).
 
+WoW: Forever (product `wowf`, version 1.60.x):
+
+- A Battle.net install can carry several active products that share one `Data` pool (`wow`, `wowf`, `wowt`, ...). `RetailInstall.ProductFor` selects `wowf` when the chosen folder is `_forever_` (or when `ACWORLD_CLIENT_PRODUCT=wowf` is set); `RetailInstall.OpenPath` hands CascLib the documented `install*wowf` form. The install root and `_retail_` keep selecting the live product.
+- The product reuses the retail FileDataIDs and DB2 layouts: the tables in `Db2Tables.FileIds` load with `Db2Tables.Table`, and terrain, M2/WMO models and creature displays resolve through the same readers. `Db2Tables.Table` resolves the layout from the file's hash, so a build newer than the pinned definitions (for example 1.60.1.70790) still loads when the layout has not changed.
+- There is no private-server branch for it, so `CascFiles.ProvidesWorldDatabase` is false and the client opens as a read-only world viewer: overlays, editors, teleports and the database prompt stay off. The status line starts with `FOREVER` and the sidebar reports the database as unavailable.
+- A shared install can list a FileDataID in the selected product's root while the payload lives in the live product's storage (the data pool is common and Battle.net installs each file once). For a non-live product, `CascFiles` opens the live product beside it and reads the same FileDataID there — this is normal shared-install resolution, not an error path. Textures (BLP payloads) resolve this way; DB2 files, WDT/ADT structure and M2/WMO geometry stay product-local. A standalone install has no live storage and reads its own copies. `CascFiles.LiveProductFiles` lists the FileDataIDs served by the shared storage for the session.
+
 If opening fails, the partly opened store is disposed.
 
 Both client profiles support server XYZ navigation on the currently open map without a database connection. The viewer converts server axes through `ViewSpace`; named `game_tele` destinations instead come from the world database and can open a different client map.

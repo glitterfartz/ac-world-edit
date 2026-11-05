@@ -14,8 +14,9 @@ public sealed class Db2Tables
 {
     /// <summary>
     /// FileDataIDs of the DB2 files, found by matching each file's WDC5 layout hash against the
-    /// definitions on build 12.1.5.70448. They are stable across builds, but a table that moves
-    /// fails to match its layout and is reported rather than misread.
+    /// definitions on build 12.1.5.70448. They are stable across builds and shared with the WoW:
+    /// Forever product (same install, same FileDataIDs), but a table that moves fails to match its
+    /// layout and is reported rather than misread.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, uint> FileIds = new Dictionary<string, uint>
     {
@@ -131,8 +132,9 @@ public sealed class Db2Tables
     }
 
     /// <summary>
-    /// Load one table. A missing definition for this build, an unknown table or an unreadable layout
-    /// becomes an InvalidDataException that names the table and build.
+    /// Load one table. DBCD resolves the layout from the file's own hash, so a build newer than the
+    /// pinned definitions still loads when the layout is unchanged; an unknown table, an unreadable
+    /// layout or a missing definition becomes an InvalidDataException that names the table and build.
     /// </summary>
     public IDBCDStorage Table(string name)
     {
