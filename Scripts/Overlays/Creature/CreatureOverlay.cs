@@ -14,13 +14,12 @@ public partial class CreatureOverlay : RegionOverlay
     public CreatureOverlay() : base(true, "Waiting for an outdoor map.")
     {
         markers = new CreatureMarkers(this);
+        modelView = new CreatureModelView(this);
     }
 
     public ModelLibrary? Models { get; set; }
 
-    readonly Dictionary<uint, CreatureAppearance?> appearances = [];
-    readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> modelBatches = [];
-    long modelUpdate;
+    readonly CreatureModelView modelView;
     // Source records are immutable baselines. Markers/native transforms show effective
     // draft poses; neither a streaming refresh nor a failed save replaces source rows.
     SpawnPoses? poses;
@@ -42,8 +41,8 @@ public partial class CreatureOverlay : RegionOverlay
     ushort previewAnimation;
     ulong? animationListGuid;
     public bool IsDragging => gizmo.Dragging;
-    public int ModelCreatureCount => modelBatches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
-    public int AdmittedCreatureCount => admitted.Count;
+    public int ModelCreatureCount => modelView.ReadyCount;
+    public int AdmittedCreatureCount => modelView.AdmittedCount;
 
     readonly CreatureMarkers markers;
     ItemList list = null!;
@@ -55,7 +54,6 @@ public partial class CreatureOverlay : RegionOverlay
     public PhaseCatalog PhaseCatalog { get; private set; } = PhaseCatalog.Empty;
 
     public event Action? SelectionChanged;
-    readonly HashSet<ulong> admitted = [];
     public void SetPreview(SpawnPreview preview)
     {
         preview.Validate();
@@ -208,9 +206,7 @@ public partial class CreatureOverlay : RegionOverlay
             gizmo.Visible = false;
         }
 
-        modelBatches.FreeAll(b => b.Node);
-        appearances.Clear();
-        modelUpdate = 0;
+        modelView.Clear();
         animationListGuid = null;
         if (animation != null)
         {
@@ -218,7 +214,6 @@ public partial class CreatureOverlay : RegionOverlay
         }
 
         markers.Clear();
-        admitted.Clear();
         records = [];
         pendingMarkers.Clear();
         if (!preserveSelection)
@@ -346,13 +341,8 @@ public partial class CreatureOverlay : RegionOverlay
             status.Text = LayerEnabled ? queryStatus : "Creature layer hidden";
         }
 
-        if (Models?.Catalog != null && System.Diagnostics.Stopwatch.GetElapsedTime(modelUpdate).TotalSeconds > 0.2)
-        {
-            UpdateModels(camera);
-            modelUpdate = System.Diagnostics.Stopwatch.GetTimestamp();
-        }
-
-        foreach (var batch in modelBatches.Values)
+        modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models);
+        foreach (var batch in modelView.Batches.Values)
         {
             if (batch.Node.ModelReady)
             {
@@ -361,7 +351,7 @@ public partial class CreatureOverlay : RegionOverlay
                     if (markers.TryGetValue(guid, out var marker))
                     {
                         marker.Body.Visible = false;
-                        marker.Label.Position = new(0, LabelHeight(guid, batch.Node.Bounds), 0);
+                        marker.Label.Position = new(0, modelView.LabelHeight(marker, batch.Node.Bounds), 0);
                     }
                 }
 
@@ -393,7 +383,7 @@ public partial class CreatureOverlay : RegionOverlay
         int visibleNames = 0;
         foreach (var marker in markers.Values)
         {
-            bool nearby = LayerEnabled && admitted.Contains(marker.Spawn.Guid);
+            bool nearby = LayerEnabled && modelView.IsAdmitted(marker.Spawn.Guid);
             if (marker.Node.Visible != nearby)
             {
                 marker.Node.Visible = nearby;
@@ -418,123 +408,6 @@ public partial class CreatureOverlay : RegionOverlay
     }
 
     /// <summary>
-    /// Cache appearances and group nearby creatures by variant/clip. Selection can preview a
-    /// separate animation without changing other creatures.
-    /// </summary>
-    void UpdateModels(Camera3D camera)
-    {
-        if (Models?.Catalog == null)
-        {
-            return;
-        }
-
-        var groups = new Dictionary<ModelKey, List<ulong>>();
-        admitted.Clear();
-        float viewDistanceSquared = Preview.ViewDistance * Preview.ViewDistance;
-        var candidates = markers.Values
-            .Select(m => (Marker: m, Distance: camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition)))
-            .Where(c => selectedGuid == c.Marker.Spawn.Guid || c.Distance <= viewDistanceSquared)
-            .OrderBy(c => selectedGuid == c.Marker.Spawn.Guid ? 0 : 1).ThenBy(c => c.Distance)
-            .Take(Preview.ModelLimit)
-            .Select(c => c.Marker);
-        foreach (var marker in candidates)
-        {
-            admitted.Add(marker.Spawn.Guid);
-            if (!LayerEnabled)
-            {
-                continue;
-            }
-
-            if (!appearances.TryGetValue(marker.Spawn.DisplayId, out var appearance))
-            {
-                try
-                {
-                    appearance = Models.Catalog.Resolve(marker.Spawn.DisplayId);
-                }
-                catch (Exception)
-                {
-                    appearance = null;
-                    GD.PushWarning($"No client appearance for creature display {marker.Spawn.DisplayId}; using labeled marker.");
-                }
-
-                appearances[marker.Spawn.DisplayId] = appearance;
-            }
-
-            if (appearance == null)
-            {
-                continue;
-            }
-
-            var key = ModelKey.ForCreature(appearance, selectedGuid == marker.Spawn.Guid ? previewAnimation : (ushort)0);
-            if (!groups.TryGetValue(key, out var list))
-            {
-                groups[key] = list = [];
-            }
-
-            list.Add(marker.Spawn.Guid);
-        }
-
-        foreach (var batch in modelBatches.ToArray())
-        {
-            // Compare membership, not order: distance-sorted candidates reorder every tick while
-            // flying even when the visible set is unchanged, and rebuilding the batch on pure
-            // reordering is what flickers the fallback marker back in for no reason.
-            if (groups.TryGetValue(batch.Key, out var guids) && guids.Count == batch.Value.Guids.Length && guids.ToHashSet().SetEquals(batch.Value.Guids))
-            {
-                continue;
-            }
-
-            foreach (ulong guid in batch.Value.Guids)
-            {
-                if (markers.TryGetValue(guid, out var marker))
-                {
-                    marker.Body.Visible = true;
-                    marker.Label.Position = new(0, FallbackLabelHeight, 0);
-                }
-            }
-
-            modelBatches.Free(batch.Key, b => b.Node);
-        }
-
-        foreach (var group in groups)
-        {
-            if (!modelBatches.ContainsKey(group.Key))
-            {
-                modelBatches[group.Key] = (Models.Attach(this, group.Key, group.Value.Select(ModelTransform).ToArray()), group.Value.ToArray());
-            }
-        }
-    }
-
-    /// <summary>
-    /// Label height above the capsule fallback marker (2 yd tall).
-    /// </summary>
-    const float FallbackLabelHeight = 3;
-
-    /// <summary>
-    /// Place the name label just above the scaled native model's reference-pose top so large
-    /// creatures (dragons, giants) do not swallow it. Bounds are model space (Y up) and the label is
-    /// a child of the unscaled marker node, so the model's display scale is applied here.
-    /// </summary>
-    float LabelHeight(ulong guid, Aabb bounds)
-    {
-        var marker = markers[guid];
-        float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
-        float top = bounds.End.Y * scale;
-        return float.IsFinite(top) && top > 0 ? top + 0.6f : FallbackLabelHeight;
-    }
-
-    /// <summary>
-    /// Compose creature heading, effective draft position and template/display scale. Static scenery
-    /// facing corrections do not belong here.
-    /// </summary>
-    Transform3D ModelTransform(ulong guid)
-    {
-        var marker = markers[guid];
-        float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
-        return new(marker.Node.Basis.Scaled(Vector3.One * scale), marker.Node.Position);
-    }
-
-    /// <summary>
     /// Diff a freshly queried snapshot against the markers already on screen instead of wiping and
     /// rebuilding: creatures no longer present are removed, creatures already shown keep their
     /// existing node/native model untouched (only their cached record is refreshed), and only
@@ -546,7 +419,7 @@ public partial class CreatureOverlay : RegionOverlay
         foreach (ulong guid in markers.Keys.Where(g => !incoming.ContainsKey(g)).ToArray())
         {
             markers.Remove(guid);
-            admitted.Remove(guid);
+            modelView.Forget(guid);
         }
 
         foreach (var spawn in spawns)
@@ -616,7 +489,7 @@ public partial class CreatureOverlay : RegionOverlay
         {
             previewAnimation = 0;
             animationListGuid = null;
-            modelUpdate = 0;
+            modelView.ResetTimer();
             animation.Disabled = true;
         }
 
@@ -667,7 +540,7 @@ public partial class CreatureOverlay : RegionOverlay
         {
             marker.Node.Position = edit.Position;
             marker.Node.Rotation = new(0, edit.Yaw, 0);
-            PlaceModels(marker.Spawn.Guid);
+            modelView.Place(marker.Spawn.Guid, marker);
             return;
         }
 
@@ -747,19 +620,7 @@ public partial class CreatureOverlay : RegionOverlay
         var pose = PoseOf(marker.Spawn);
         marker.Node.Position = ViewPosition(pose);
         marker.Node.Rotation = new(0, (float)pose.Heading, 0);
-        PlaceModels(guid);
-    }
-
-    void PlaceModels(ulong guid)
-    {
-        foreach (var batch in modelBatches.Values)
-        {
-            int index = Array.IndexOf(batch.Guids, guid);
-            if (index >= 0)
-            {
-                batch.Node.SetPlacement(index, ModelTransform(guid));
-            }
-        }
+        modelView.Place(guid, marker);
     }
 
     static Vector3 ViewPosition(WorldPose pose) => ViewSpace.ToView(pose.X, pose.Y, pose.Z);
@@ -820,7 +681,7 @@ public partial class CreatureOverlay : RegionOverlay
         var ray = PickRay.From(camera, screen);
         Vector3 origin = ray.Origin, direction = ray.Direction;
         var modelGuids = new HashSet<ulong>();
-        var model = ScenePicking.NearestInBatches(ray, modelBatches.Values, modelGuids);
+        var model = ScenePicking.NearestInBatches(ray, modelView.Batches.Values, modelGuids);
         ulong? nearest = model?.Guid;
         float distance = model?.Distance ?? float.MaxValue;
 

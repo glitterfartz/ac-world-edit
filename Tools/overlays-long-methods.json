@@ -1,7 +1,7 @@
 {
   "allowed": [
+    "Scripts/Overlays/Creature/CreatureModelView.cs::Update",
     "Scripts/Overlays/Creature/CreatureOverlay.cs::Update",
-    "Scripts/Overlays/Creature/CreatureOverlay.cs::UpdateModels",
     "Scripts/Overlays/GameObject/GameObjectOverlay.cs::Reconcile",
     "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::BuildPanel",
     "Scripts/Overlays/Graveyard/GraveyardOverlay.Ui.cs::ShowSelection",

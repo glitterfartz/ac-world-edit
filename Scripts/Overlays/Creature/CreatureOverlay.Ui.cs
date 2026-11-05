@@ -39,7 +39,7 @@ public partial class CreatureOverlay
         animation.ItemSelected += index =>
         {
             previewAnimation = (ushort)animation.GetItemId((int)index);
-            modelUpdate = 0;
+            modelView.ResetTimer();
         };
         (undo, redo) = InspectorUi.HistoryRow(card, () => History(false), () => History(true));
         var copies = new HBoxContainer();

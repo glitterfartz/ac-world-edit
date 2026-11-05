@@ -10,7 +10,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class CreatureOverlay
 {
-    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelBatches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
+    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelView.Batches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
 
     public ulong? SelectedListGuid
     {
@@ -29,7 +29,7 @@ public partial class CreatureOverlay
     /// </summary>
     public Vector3 PickPointOf(ulong guid)
     {
-        foreach (var (node, guids) in modelBatches.Values)
+        foreach (var (node, guids) in modelView.Batches.Values)
         {
             int index = Array.IndexOf(guids, guid);
             if (node.ModelReady && index >= 0)
@@ -118,7 +118,7 @@ public partial class CreatureOverlay
             return false;
         }
 
-        foreach (var batch in modelBatches.Values)
+        foreach (var batch in modelView.Batches.Values)
         {
             int i = Array.IndexOf(batch.Guids, guid);
             if (i >= 0 && batch.Node.Transforms![i].Origin.DistanceTo(moved) > 0.01f)
@@ -174,7 +174,7 @@ public partial class CreatureOverlay
     {
         int count = 0;
         float tallest = 0;
-        foreach (var batch in modelBatches.Values.Where(b => b.Node.ModelReady))
+        foreach (var batch in modelView.Batches.Values.Where(b => b.Node.ModelReady))
         {
             foreach (ulong guid in batch.Guids)
             {
@@ -183,7 +183,7 @@ public partial class CreatureOverlay
                     continue;
                 }
 
-                float scale = marker.Spawn.DisplayScale * (appearances.GetValueOrDefault(marker.Spawn.DisplayId)?.Scale ?? 1);
+                float scale = modelView.DisplayScale(marker.Spawn);
                 float top = batch.Node.Bounds.End.Y * scale;
                 if (marker.Label.Position.Y <= top)
                 {
