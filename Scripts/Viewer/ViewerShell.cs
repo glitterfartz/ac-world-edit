@@ -34,6 +34,7 @@ public partial class ViewerShell : Node3D
     TerrainStreamer.PreparedTile? building => streamer.Building;
     int generation => streamer.Generation;
     PlacementTool placement = null!;
+    ViewportDropSurface dropSurface = null!;
     ViewerInput input = null!;
     bool capture { get => input.Capture; set => input.Capture = value; }
     // One session state drives both the busy guards and the Open world button.
@@ -189,19 +190,14 @@ public partial class ViewerShell : Node3D
     /// <summary>The placement tool and the navigation overlay.</summary>
     void BuildTools()
     {
+        // The drop surface is parented by BuildUi, but the placement tool and its callbacks need it now.
+        dropSurface = new ViewportDropSurface();
         placement = new PlacementTool { Camera = camera, TerrainAt = TerrainHeightAt, GroundAt = GroundAt, Map = () => (ushort)currentMapId, Place = PlaceTemplateAsync };
         AddChild(placement);
-        creatures.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.Creature, entry, name));
-        gameObjects.PlaceRequested += (entry, name) => placement.Arm(new(SpawnKind.GameObject, entry, name));
-        placement.Changed += template =>
-        {
-            creatures.PlaceCard.SetPlacing(template?.Kind == SpawnKind.Creature ? template.Name : null);
-            gameObjects.PlaceCard.SetPlacing(template?.Kind == SpawnKind.GameObject ? template.Name : null);
-            if (template != null)
-            {
-                statusLog.Post($"Placing {template.Name}. Esc stops.");
-            }
-        };
+        placement.OpenWorld = dropSurface;
+        dropSurface.Hover = HoverTemplateDrag;
+        dropSurface.Dropped = DropTemplate;
+        dropSurface.Ended = EndTemplateDrag;
         navigation = new NavigationOverlay { Report = statusLog.Post, OcclusionDistance = NavigationOcclusion };
         AddChild(navigation);
     }

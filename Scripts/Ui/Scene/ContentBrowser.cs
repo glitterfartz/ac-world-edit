@@ -9,7 +9,8 @@ namespace ACWorldEdit;
 /// The content browser: a panel along the bottom with one tab per kind of template (creatures, game
 /// objects), a search box and the matching templates. Searches are bounded and read-only, and a newer
 /// search replaces an older one still running. A template is picked with a click and opened with a
-/// double-click or Enter; what opening does is up to the viewer (<see cref="Activated"/>). Each result shows
+/// double-click or Enter; what opening does is up to the viewer (<see cref="Activated"/>). A row can also be
+/// dragged into the world to place a spawn of it (<see cref="TemplateList"/>). Each result shows
 /// its model's thumbnail once <see cref="Thumbnails"/> has one, and a blank tile until then.
 /// </summary>
 public sealed partial class ContentBrowser : PanelContainer
@@ -113,8 +114,9 @@ public sealed partial class ContentBrowser : PanelContainer
         bar.AddChild(search);
         page.Count = ClientStyle.Text("", 12, ClientStyle.Faded);
         bar.AddChild(page.Count);
-        page.Results = new ItemList
+        page.Results = new TemplateList
         {
+            TemplateAt = row => row >= 0 && row < page.Found.Count ? new PlacementTool.Template(page.Kind, page.Found[row].Entry, page.Found[row].Name) : null,
             Name = "Results",
             SizeFlagsVertical = SizeFlags.ExpandFill,
             MaxColumns = 0,
@@ -196,7 +198,7 @@ public sealed partial class ContentBrowser : PanelContainer
             string label = string.IsNullOrEmpty(hit.Name) ? $"({hit.Entry})" : hit.Name;
             string kind = page.Kind == SpawnKind.Creature ? CreatureTypes.Name(hit.Type) : GameObjectTypes.Name(hit.Type);
             int row = page.Results.AddItem($"{label}\n{hit.Entry} · {kind}", Thumbnail(page, generation, hit.Entry) ?? Blank);
-            page.Results.SetItemTooltip(row, $"{label} ({hit.Entry}) · {kind}. Double-click to open.");
+            page.Results.SetItemTooltip(row, $"{label} ({hit.Entry}) · {kind}. Double-click to open, drag into the world to place.");
         }
 
         int count = page.Found.Count;

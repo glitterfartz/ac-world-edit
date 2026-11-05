@@ -21,7 +21,6 @@ public partial class GameObjectOverlay
                 Populate();
                 query.MarkSearchChanged();
             }, 255, listFontSize: 14, listName: "GameObjectList", flyDisabled: true);
-        BuildPlaceCard(page);
         var selection = InspectorUi.SelectionCard(page, "Select a GameObject", "Click a model or choose one above");
         var card = selection.Box;
         title = selection.Title;

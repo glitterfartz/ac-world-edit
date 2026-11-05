@@ -20,7 +20,6 @@ public partial class CreatureOverlay
                 PopulateList();
                 query.MarkSearchChanged();
             }, 255, listFontSize: 14, searchName: "CreatureSearch", flyDisabled: true, clipList: true);
-        BuildPlaceCard(page);
         var selection = InspectorUi.SelectionCard(page, "Select a creature", "Click a model or choose one above");
         var card = selection.Box;
         selectionName = selection.Title;

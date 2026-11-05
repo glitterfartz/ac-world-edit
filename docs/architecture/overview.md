@@ -182,7 +182,7 @@ materials on the main thread. Placements (doodads, WMOs, creatures, GameObjects,
 come from the tile data and from read-only database queries.
 
 The user edits in the viewport and in the entity windows: moves and places spawns with the gizmo or the
-Place card, edits a spawn's row fields or a creature template's pages, edits graveyards, waypoints and
+content browser (drag a template into the world), edits a spawn's row fields or a creature template's pages, edits graveyards, waypoints and
 content rows. Every edit becomes a row edit in a local draft with undo history. The pending-changes
 window turns the net changes into SQL apply and revert scripts; exporting moves the scripts to disk and
 marks them, and the drafts stay as they are.

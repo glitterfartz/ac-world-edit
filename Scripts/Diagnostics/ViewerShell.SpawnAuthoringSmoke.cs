@@ -381,25 +381,11 @@ public partial class ViewerShell
             Require(creatures.WanderRingShown == (creatures.SmokeRow()!["MovementType"] == "1" && creatures.SmokeRow()!.F("wander_distance") > 0), "the wander ring does not match the restored row");
             return true;
         }),
-        ("place-search-and-arm", () =>
+        ("place-drag-over-world-arms", () =>
         {
-            if (authoringSearch == null)
-            {
-                authoringSearch = creatures.PlaceCard.SmokeSearchAsync(authoringTemplate!.Name);
-                return false;
-            }
-
-            if (!authoringSearch.IsCompleted)
-            {
-                return false;
-            }
-
-            Require(creatures.PlaceCard.SmokeCount > 0, $"searching for '{authoringTemplate!.Name}' found nothing");
-            int index = Enumerable.Range(0, creatures.PlaceCard.SmokeCount).First(i => creatures.PlaceCard.SmokeItem(i).EndsWith($"·   {authoringTemplate.TemplateId}", StringComparison.Ordinal));
-            authoringPickIndex = index;
-            creatures.PlaceCard.SmokeChoose(index);
-            Require(placement.Current is { Kind: SpawnKind.Creature } armed && armed.Entry == authoringTemplate.TemplateId, "choosing a result did not arm the placement tool");
-            Require(creatures.PlaceCard.SmokeHint.StartsWith("Placing ", StringComparison.Ordinal), "the card does not say what is being placed: " + creatures.PlaceCard.SmokeHint);
+            authoringScreen = GetViewport().GetVisibleRect().Size * new Vector2(0.5f, 0.62f);
+            HoverTemplateDrag(new(SpawnKind.Creature, authoringTemplate!.TemplateId, authoringTemplate.Name), authoringScreen);
+            Require(placement.Current is { Kind: SpawnKind.Creature } armed && armed.Entry == authoringTemplate.TemplateId, "dragging a template over the world did not arm the placement tool");
             return true;
         }),
         ("place-pointer-shows-a-ghost-on-the-ground", () =>
@@ -460,7 +446,6 @@ public partial class ViewerShell
             double facing = SpawnPlacement.FacingHeading(record.Pose.X, record.Pose.Y, cam.X, cam.Y);
             Require(Math.Abs(WorldCoordinates.NormalizeHeading(record.Pose.Heading - facing)) < 0.05 || Math.Abs(WorldCoordinates.NormalizeHeading(record.Pose.Heading - facing) - 2 * Math.PI) < 0.05, "the spawn does not face the camera");
             Require(placement.Current == null, "a plain click should stop placing");
-            Require(creatures.PlaceCard.SmokeHint.StartsWith("Search ", StringComparison.Ordinal), "the card still says it is placing");
             Require(AuthoringScript(creatures.SmokeSourceKey).Contains("INSERT INTO `creature`", StringComparison.Ordinal), "the export lacks the INSERT");
             authoringCopy = guid;
             Screenshot("placed");
@@ -468,7 +453,7 @@ public partial class ViewerShell
         }),
         ("place-shift-click-keeps-placing", () =>
         {
-            creatures.PlaceCard.SmokeChoose(authoringPickIndex);
+            HoverTemplateDrag(new(SpawnKind.Creature, authoringTemplate!.TemplateId, authoringTemplate.Name), authoringScreen);
             Require(placement.Current != null, "re-arming failed");
             authoringCount = creatures.Records.Count;
             var other = authoringScreen + new Vector2(60, 20);
@@ -503,30 +488,14 @@ public partial class ViewerShell
             Require(drafts.Draft!.NetEdits().Count == 0, "undo left placed spawns behind");
             return true;
         }),
-        ("place-gameobject-search-and-arm", () =>
+        ("place-gameobject-drop", () =>
         {
-            if (authoringSearch == null || authoringSearchObject == false)
-            {
-                authoringSearchObject = true;
-                authoringSearch = gameObjects.PlaceCard.SmokeSearchAsync(authoringObject!.TemplateId.ToString());
-                return false;
-            }
-
-            if (!authoringSearch.IsCompleted)
-            {
-                return false;
-            }
-
-            Require(gameObjects.PlaceCard.SmokeCount > 0, $"searching for {authoringObject!.TemplateId} found nothing");
-            int index = Enumerable.Range(0, gameObjects.PlaceCard.SmokeCount).First(i => gameObjects.PlaceCard.SmokeItem(i).EndsWith($"·   {authoringObject.TemplateId}", StringComparison.Ordinal));
-            gameObjects.PlaceCard.SmokeChoose(index);
-            Require(placement.Current is { Kind: SpawnKind.GameObject } armed && armed.Entry == authoringObject.TemplateId, "choosing a result did not arm the placement tool");
-            Require(creatures.PlaceCard.SmokeHint.StartsWith("Search ", StringComparison.Ordinal) && gameObjects.PlaceCard.SmokeHint.StartsWith("Placing ", StringComparison.Ordinal), "only the GameObject card should say it is placing");
             authoringCount = gameObjects.Records.Count;
-            SmokeMove(authoringScreen);
+            HoverTemplateDrag(new(SpawnKind.GameObject, authoringObject!.TemplateId, authoringObject.Name), authoringScreen);
+            Require(placement.Current is { Kind: SpawnKind.GameObject } armed && armed.Entry == authoringObject.TemplateId, "dragging a template over the world did not arm the placement tool");
             return true;
         }),
-        ("place-gameobject-click", () =>
+        ("place-gameobject-ghost-then-drop", () =>
         {
             if (placement.Target == null)
             {
@@ -534,7 +503,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            SmokeClick(authoringScreen, shift: false);
+            DropTemplate(placement.Current!, authoringScreen);
             return true;
         }),
         ("place-gameobject-exists-and-undone", () =>
@@ -1244,9 +1213,6 @@ public partial class ViewerShell
     Vector2 authoringBoxMin, authoringBoxMax;
     ulong[] authoringCopies = [];
     WorldPose[] authoringBefore = [];
-    Task? authoringSearch;
-    bool authoringSearchObject;
-    int authoringPickIndex;
     Vector2 authoringScreen;
     Vector3 authoringTarget;
     string authoringRespawn = "";

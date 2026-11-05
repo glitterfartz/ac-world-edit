@@ -4,8 +4,9 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Placing a new spawn with the mouse: after a template is chosen in a Place card, a ghost follows the
-/// cursor over the ground and a click puts the spawn there, facing the camera. Shift-click keeps
+/// Placing a new spawn with the mouse: while a template from the content browser is dragged over the world, a
+/// ghost follows the cursor over the ground and dropping it puts the spawn there, facing the camera. A
+/// template that stays armed (a click places it) behaves the same way. Shift-click keeps
 /// placing more of the same; Esc stops. The ground under the cursor is the loaded terrain along the
 /// camera ray; the final position is then lifted onto a building floor within a few yards above it.
 /// </summary>
@@ -58,6 +59,9 @@ public partial class PlacementTool : Node3D
     ulong lastHover;
     Vector2? lastScreen;
 
+    /// <summary>The full-screen control behind the panels; hovering it counts as hovering the open world.</summary>
+    public Control? OpenWorld { get; set; }
+
     /// <summary>The camera the ghost is computed for; the viewer sets it.</summary>
     public Camera3D? Camera { get; set; }
 
@@ -78,7 +82,8 @@ public partial class PlacementTool : Node3D
             return;
         }
 
-        if (GetViewport().GuiGetHoveredControl() != null)
+        var hovered = GetViewport().GuiGetHoveredControl();
+        if (hovered != null && hovered != OpenWorld)
         {
             ghost.Visible = false;
             Target = null;

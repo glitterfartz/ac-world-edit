@@ -72,7 +72,7 @@ States: **done**, **mostly**, **partial**, **not started**. The detailed gaps ar
 
 ## Phase 10: Editor foundation (shared infrastructure)
 
-**Status:** mostly built. `EntityPage` and the Properties shell, spawn poses as row edits, nullable columns, `IdAllocator`, `ConditionCatalog` and the content browser are in. Open: a generic reference index (`FindReferencesAsync`), cascade-delete specs, moving the old per-editor `MAX(id)` reads onto `IdAllocator`, and drag-to-place from the browser. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
+**Status:** mostly built. `EntityPage` and the Properties shell, spawn poses as row edits, nullable columns, `IdAllocator`, `ConditionCatalog` and the content browser are in. Open: a generic reference index (`FindReferencesAsync`), cascade-delete specs, moving the old per-editor `MAX(id)` reads onto `IdAllocator`. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
 
 **Why:** Every later phase creates rows, deletes linked rows, edits NULL-able columns or needs conditions. Today each of those is solved ad hoc: `MAX(id)` per source in `TcInteractionSource.cs:90-92` and `AcContentSource.cs:39`, and the creature page renderer is creature-only. Building these once means each later phase is mostly a descriptor plus a source, not a new subsystem.
 
@@ -90,7 +90,7 @@ Implementation:
 - **Reference index.** `IDBSource.FindReferencesAsync(kind, id)` returns which tables point at an entity. Each `IWorldSchema` holds a per-dialect reference map (e.g. creature entry ← `creature.id`, `smart_scripts` target params, `quest_objectives` ObjectID, `creature_queststarter`, …). It feeds the "Used by" panel and delete-impact dialogs.
 - **Cascade delete specs.** Each entity kind declares its dependents, mirroring the server's own `DeleteFromDB`. TrinityCore's `Creature::DeleteFromDB` (`Creature.cpp:2042+`) removes `spawn_group`, `creature_addon`, `game_event_creature`, `game_event_model_equip` and `linked_respawn` rows. It does **not** remove pool, formation, SmartAI or `conditions` rows, so the dialog lists those and offers to remove them too.
 - **Condition engine (model only).** Add `ConditionCatalog` per dialect: source types from `ConditionMgr.h` (TC; AC's equivalent), condition types with parameter kinds, and sentences such as "Player has aura {spell}". Generate it with a script modelled on `Tools/generate_smart_catalog.py`. The visual builder is Phase 12.
-- **Content browser shell.** A dockable bottom panel (Unreal "Content Browser" style) with tabs per entity kind (creature templates, GO templates, later loot tables, pools, events). It offers search, filters and a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Phase 11 makes it drag-to-place.
+- **Content browser shell.** A dockable bottom panel (Unreal "Content Browser" style) with tabs per entity kind (creature templates, GO templates, later loot tables, pools, events). It offers search, filters and a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Rows drag into the world to place a spawn.
 
 Docs: `architecture/editing-and-export.md` (allocator, nullable, references), `architecture/viewer-runtime.md` (shell, browser), `open-work.md` rows. TrinityCore's condition source ids run 0-36 with 20 unused (the catalog skips it).
 

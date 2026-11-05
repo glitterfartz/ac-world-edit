@@ -36,6 +36,8 @@ public partial class ViewerShell
         ui.Theme = theme;
         frame.AddChild(BuildStrip(theme));
         frame.AddChild(ui);
+        // First child, so it sits behind every panel and only receives drops on the open world.
+        ui.AddChild(dropSurface);
         BuildLeftPanel(ui);
         BuildEditors(layer);
         BuildContentBrowser(ui);
