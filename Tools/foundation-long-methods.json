@@ -1,6 +1,5 @@
 {
   "allowed": [
-    "Foundation/Smart/SmartCatalog.cs::Check",
     "Foundation/Tooltips/ItemTooltipBuilder.cs::Build",
     "Foundation/Tooltips/RetailItemStats.cs::CurveValue",
     "Foundation/TrinityCore/TcSqlDialect.cs::Graveyard",

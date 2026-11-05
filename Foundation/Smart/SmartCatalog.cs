@@ -199,116 +199,183 @@ public sealed partial class SmartCatalog
         foreach (var rule in rules)
         {
             string where = $"Rule {rule.Id}";
-            if (Event(rule.Event) == null)
+            foreach (var issue in CheckTypes(rule, where))
             {
-                yield return new(true, $"{where}: event type {rule.Event} is unknown to this server.");
+                yield return issue;
             }
 
-            if (Action(rule.Action) == null)
+            foreach (var issue in CheckRanges(rule, where))
             {
-                yield return new(true, $"{where}: action type {rule.Action} is unknown to this server.");
+                yield return issue;
             }
 
-            if (Target(rule.Target) == null)
+            foreach (var issue in CheckLink(rule, where, ids, rules))
             {
-                yield return new(true, $"{where}: target type {rule.Target} is unknown to this server.");
+                yield return issue;
             }
 
-            if (rule.Chance > 100)
+            foreach (var issue in CheckAreaTrigger(rule, where, scope))
             {
-                yield return new(true, $"{where}: chance must be 0-100%.");
+                yield return issue;
             }
 
-            if (rule.Phases > AllPhases)
+            foreach (var issue in CheckOrphanLink(rule, where, linkedTo, scope))
             {
-                yield return new(true, $"{where}: only phases 1-12 exist.");
+                yield return issue;
             }
 
-            if ((rule.Flags & ~AllEventFlags) != 0)
+            foreach (var issue in CheckNamedParameters(rule, where, names))
             {
-                yield return new(true, $"{where}: unknown event flags 0x{rule.Flags & ~AllEventFlags:X}.");
+                yield return issue;
             }
-            else if ((rule.Flags & DeprecatedEventFlags) != 0)
+        }
+
+        foreach (var issue in CheckScope(scope, rules, names, creatureAi))
+        {
+            yield return issue;
+        }
+    }
+
+    /// <summary>The event, action and target types must be in this server's enums.</summary>
+    IEnumerable<InteractionIssue> CheckTypes(SmartRule rule, string where)
+    {
+        if (Event(rule.Event) == null)
+        {
+            yield return new(true, $"{where}: event type {rule.Event} is unknown to this server.");
+        }
+
+        if (Action(rule.Action) == null)
+        {
+            yield return new(true, $"{where}: action type {rule.Action} is unknown to this server.");
+        }
+
+        if (Target(rule.Target) == null)
+        {
+            yield return new(true, $"{where}: target type {rule.Target} is unknown to this server.");
+        }
+    }
+
+    /// <summary>Chance, phase mask and event flags (including flags the server now clears).</summary>
+    IEnumerable<InteractionIssue> CheckRanges(SmartRule rule, string where)
+    {
+        if (rule.Chance > 100)
+        {
+            yield return new(true, $"{where}: chance must be 0-100%.");
+        }
+
+        if (rule.Phases > AllPhases)
+        {
+            yield return new(true, $"{where}: only phases 1-12 exist.");
+        }
+
+        if ((rule.Flags & ~AllEventFlags) != 0)
+        {
+            yield return new(true, $"{where}: unknown event flags 0x{rule.Flags & ~AllEventFlags:X}.");
+        }
+        else if ((rule.Flags & DeprecatedEventFlags) != 0)
+        {
+            yield return new(false, $"{where}: the difficulty flags 0x{rule.Flags & DeprecatedEventFlags:X} are no longer read; the server clears them. Use the Difficulties list.");
+        }
+    }
+
+    /// <summary>A linked rule must exist, be a "Then" row and not link to itself.</summary>
+    static IEnumerable<InteractionIssue> CheckLink(SmartRule rule, string where, HashSet<uint> ids, IReadOnlyList<SmartRule> rules)
+    {
+        if (rule.Link == 0)
+        {
+            yield break;
+        }
+
+        if (rule.Link == rule.Id)
+        {
+            yield return new(true, $"{where} links to itself (infinite loop).");
+        }
+        else if (!ids.Contains(rule.Link))
+        {
+            yield return new(true, $"{where} links to rule {rule.Link}, which does not exist.");
+        }
+        else if (rules.First(r => r.Id == rule.Link).Event != LinkEvent)
+        {
+            yield return new(true, $"{where} links to rule {rule.Link}, which is not a \"Then (linked)\" rule.");
+        }
+    }
+
+    /// <summary>The loader's extra rules for a client or spawned AreaTrigger script.</summary>
+    IEnumerable<InteractionIssue> CheckAreaTrigger(SmartRule rule, string where, SmartScope scope)
+    {
+        if (!scope.IsAreaTrigger)
+        {
+            yield break;
+        }
+
+        if (!AllowedForAreaTrigger(scope, rule.Event))
+        {
+            string accepted = string.Join(", ", events.Where(e => !IsMarker(e) && AllowedForAreaTrigger(scope, (uint)e.Id)).Select(e => $"\"{e.Name}\""));
+            yield return new(true, $"{where}: this AreaTrigger script only accepts {accepted} events; the server skips this rule.");
+        }
+        else if (rule.Event == AreaTriggerEvent && Event(AreaTriggerEvent)?.Params.Length > 0 && rule.EventParam(1) != 0 && rule.EventParam(1) != (uint)scope.EntryOrGuid)
+        {
+            // AzerothCore's On trigger names the trigger it fires for; TrinityCore's has no parameter.
+            yield return new(false, $"{where} only fires for AreaTrigger {rule.EventParam(1)}, not this one ({scope.EntryOrGuid}); use 0 or {scope.EntryOrGuid}.");
+        }
+
+        // A client AreaTrigger's script has no owner object: Self selects nothing (SmartScript
+        // GetTargets with a null base object), Talk needs a creature target to speak, and
+        // Run action list starts the list on its SmartAI creature/GameObject target. A spawned
+        // trigger is an object (SmartAreaTriggerAI), so Self and its own action lists work.
+        if (rule.Target == SelfTarget && !scope.IsTriggerEntity)
+        {
+            yield return new(false, $"{where} targets Self, but an AreaTrigger has no object of its own; pick the invoker or a creature.");
+        }
+        else if (rule.Action == Talk && Target(rule.Target)?.Code is { } targetCode && !targetCode.Contains("CREATURE", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new(false, $"{where}: Talk from an AreaTrigger only speaks when the target is a creature.");
+        }
+        else if (!scope.IsTriggerEntity && rule.Action == RunActionList && Target(rule.Target)?.Code is { } listTarget && !listTarget.Contains("CREATURE", StringComparison.OrdinalIgnoreCase) && !listTarget.Contains("GAMEOBJECT", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new(false, $"{where}: an AreaTrigger runs action lists on a SmartAI creature or GameObject target, not the player.");
+        }
+    }
+
+    /// <summary>A "Then" rule nothing leads to never runs (action lists are entered at any step).</summary>
+    static IEnumerable<InteractionIssue> CheckOrphanLink(SmartRule rule, string where, HashSet<uint> linkedTo, SmartScope scope)
+    {
+        if (rule.Event == LinkEvent && !linkedTo.Contains(rule.Id) && !scope.IsActionList)
+        {
+            yield return new(false, $"{where} is a \"Then\" rule that no other rule leads to; it never runs.");
+        }
+    }
+
+    /// <summary>Named parameters (spell, creature, object, quest, item) must resolve.</summary>
+    IEnumerable<InteractionIssue> CheckNamedParameters(SmartRule rule, string where, IContentNames names)
+    {
+        foreach (var (type, param, label) in new[] { (Event(rule.Event), (Func<int, uint>)rule.EventParam, "event"), (Action(rule.Action), rule.ActionParam, "action"), (Target(rule.Target), i => i <= TargetParamCount ? rule.TargetParam(i) : 0, "target") })
+        {
+            if (type == null)
             {
-                yield return new(false, $"{where}: the difficulty flags 0x{rule.Flags & DeprecatedEventFlags:X} are no longer read; the server clears them. Use the Difficulties list.");
+                continue;
             }
 
-            if (rule.Link != 0)
+            for (int i = 1; i <= type.Params.Length; i++)
             {
-                if (rule.Link == rule.Id)
-                {
-                    yield return new(true, $"{where} links to itself (infinite loop).");
-                }
-                else if (!ids.Contains(rule.Link))
-                {
-                    yield return new(true, $"{where} links to rule {rule.Link}, which does not exist.");
-                }
-                else if (rules.First(r => r.Id == rule.Link).Event != LinkEvent)
-                {
-                    yield return new(true, $"{where} links to rule {rule.Link}, which is not a \"Then (linked)\" rule.");
-                }
-            }
-
-            if (scope.IsAreaTrigger)
-            {
-                if (!AllowedForAreaTrigger(scope, rule.Event))
-                {
-                    string accepted = string.Join(", ", events.Where(e => !IsMarker(e) && AllowedForAreaTrigger(scope, (uint)e.Id)).Select(e => $"\"{e.Name}\""));
-                    yield return new(true, $"{where}: this AreaTrigger script only accepts {accepted} events; the server skips this rule.");
-                }
-                else if (rule.Event == AreaTriggerEvent && Event(AreaTriggerEvent)?.Params.Length > 0 && rule.EventParam(1) != 0 && rule.EventParam(1) != (uint)scope.EntryOrGuid)
-                {
-                    // AzerothCore's On trigger names the trigger it fires for; TrinityCore's has no parameter.
-                    yield return new(false, $"{where} only fires for AreaTrigger {rule.EventParam(1)}, not this one ({scope.EntryOrGuid}); use 0 or {scope.EntryOrGuid}.");
-                }
-
-                // A client AreaTrigger's script has no owner object: Self selects nothing (SmartScript
-                // GetTargets with a null base object), Talk needs a creature target to speak, and
-                // Run action list starts the list on its SmartAI creature/GameObject target. A spawned
-                // trigger is an object (SmartAreaTriggerAI), so Self and its own action lists work.
-                if (rule.Target == SelfTarget && !scope.IsTriggerEntity)
-                {
-                    yield return new(false, $"{where} targets Self, but an AreaTrigger has no object of its own; pick the invoker or a creature.");
-                }
-                else if (rule.Action == Talk && Target(rule.Target)?.Code is { } targetCode && !targetCode.Contains("CREATURE", StringComparison.OrdinalIgnoreCase))
-                {
-                    yield return new(false, $"{where}: Talk from an AreaTrigger only speaks when the target is a creature.");
-                }
-                else if (!scope.IsTriggerEntity && rule.Action == RunActionList && Target(rule.Target)?.Code is { } listTarget && !listTarget.Contains("CREATURE", StringComparison.OrdinalIgnoreCase) && !listTarget.Contains("GAMEOBJECT", StringComparison.OrdinalIgnoreCase))
-                {
-                    yield return new(false, $"{where}: an AreaTrigger runs action lists on a SmartAI creature or GameObject target, not the player.");
-                }
-            }
-
-            if (rule.Event == LinkEvent && !linkedTo.Contains(rule.Id) && !scope.IsActionList)
-            {
-                yield return new(false, $"{where} is a \"Then\" rule that no other rule leads to; it never runs.");
-            }
-
-            foreach (var (type, param, label) in new[] { (Event(rule.Event), (Func<int, uint>)rule.EventParam, "event"), (Action(rule.Action), rule.ActionParam, "action"), (Target(rule.Target), i => i <= TargetParamCount ? rule.TargetParam(i) : 0, "target") })
-            {
-                if (type == null)
+                uint value = param(i);
+                if (value == 0)
                 {
                     continue;
                 }
 
-                for (int i = 1; i <= type.Params.Length; i++)
+                var kind = type.Params[i - 1].Kind;
+                if (ContentNamesExtensions.IsNamedReference(kind) && !names.TryName(kind, value, out _))
                 {
-                    uint value = param(i);
-                    if (value == 0)
-                    {
-                        continue;
-                    }
-
-                    var kind = type.Params[i - 1].Kind;
-                    if (ContentNamesExtensions.IsNamedReference(kind) && !names.TryName(kind, value, out _))
-                    {
-                        yield return new(true, $"{where}: {label} {type.Params[i - 1].Label.ToLowerInvariant()} {value} does not exist.");
-                    }
+                    yield return new(true, $"{where}: {label} {type.Params[i - 1].Label.ToLowerInvariant()} {value} does not exist.");
                 }
             }
         }
+    }
 
+    /// <summary>The script's spawn must exist, and the creature's AIName must be SmartAI for the rules to run.</summary>
+    IEnumerable<InteractionIssue> CheckScope(SmartScope scope, IReadOnlyList<SmartRule> rules, IContentNames names, Row? creatureAi)
+    {
         if (scope.IsSpawn && !names.CreatureSpawnExists((uint)-scope.EntryOrGuid))
         {
             yield return new(true, $"Spawn #{-scope.EntryOrGuid} does not exist; the server skips this script.");
