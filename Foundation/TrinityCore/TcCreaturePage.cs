@@ -40,82 +40,119 @@ public static class TcCreaturePage
 
     public static readonly EntityPage Page = Build();
 
+    static FieldSpec Text(string group, string column, string label, string tip, bool allowEmpty = false, Func<string, string>? display = null) =>
+        new(group, TcTables.CreatureTemplate, column, label, tip, FieldKind.Text, AllowEmpty: allowEmpty, Display: display);
+
+    static FieldSpec Whole(string group, string column, string label, string tip) => new(group, TcTables.CreatureTemplate, column, label, tip, FieldKind.Whole);
+
+    static FieldSpec Decimal(string group, string column, string label, string tip) => new(group, TcTables.CreatureTemplate, column, label, tip, FieldKind.Decimal, Display: Shown);
+
+    static FieldSpec Flags(string column, string label, string tip) => new("flags", TcTables.CreatureTemplate, column, label, tip, FieldKind.Flags, Flags: []);
+
+    static FieldSpec DWhole(string group, string column, string label, string tip, Func<string, string>? display = null) =>
+        new(group, TcTables.CreatureDifficulty, column, label, tip, FieldKind.Whole, RowBinding.Difficulty, Display: display);
+
+    static FieldSpec DDecimal(string group, string column, string label, string tip) =>
+        new(group, TcTables.CreatureDifficulty, column, label, tip, FieldKind.Decimal, RowBinding.Difficulty, Display: Shown);
+
+    static FieldSpec DFlags(string column, string label, string tip) => new("flags", TcTables.CreatureDifficulty, column, label, tip, FieldKind.Flags, RowBinding.Difficulty, Flags: []);
+
     static EntityPage Build()
     {
-        var t = TcTables.CreatureTemplate;
-        var d = TcTables.CreatureDifficulty;
-        FieldSpec Text(string group, string column, string label, string tip, bool allowEmpty = false, Func<string, string>? display = null) =>
-            new(group, t, column, label, tip, FieldKind.Text, AllowEmpty: allowEmpty, Display: display);
-        FieldSpec Whole(string group, string column, string label, string tip) => new(group, t, column, label, tip, FieldKind.Whole);
-        FieldSpec Decimal(string group, string column, string label, string tip) => new(group, t, column, label, tip, FieldKind.Decimal, Display: Shown);
-        FieldSpec Flags(string column, string label, string tip) => new("flags", t, column, label, tip, FieldKind.Flags, Flags: []);
-        FieldSpec DWhole(string group, string column, string label, string tip, Func<string, string>? display = null) =>
-            new(group, d, column, label, tip, FieldKind.Whole, RowBinding.Difficulty, Display: display);
-        FieldSpec DDecimal(string group, string column, string label, string tip) =>
-            new(group, d, column, label, tip, FieldKind.Decimal, RowBinding.Difficulty, Display: Shown);
-        FieldSpec DFlags(string column, string label, string tip) => new("flags", d, column, label, tip, FieldKind.Flags, RowBinding.Difficulty, Flags: []);
-
-        var fields = new List<FieldSpec>
-        {
-            Text("identity", "name", "Name", "The name players see above the creature."),
-            Text("identity", "subname", "Subname", "The text under the name. Leave blank for none.", true, s => s.Length > 0 ? s : "None"),
-            Text("identity", "IconName", "Cursor icon", "Name of the cursor icon shown when hovering over the creature.", true, s => s.Length > 0 ? s : "Default"),
-            new("identity", t, "Classification", "Classification", "Normal, Elite, Rare Elite and so on. Mostly visual.", FieldKind.Choice, Options: Classifications),
-            Whole("identity", "faction", "Faction", "Faction template ID. Decides who the creature is friendly or hostile to."),
-            Whole("identity", "unit_class", "Class", "Unit class (1 warrior, 2 paladin, 4 rogue, 8 mage)."),
-            Whole("identity", "type", "Creature type", "The creature's kind (creature_template.type)."),
-            Whole("identity", "family", "Family", "Hunter pet family."),
-            Whole("identity", "trainer_class", "Trainer class", "The class this creature trains, for class trainers."),
-
-            new("interaction", t, "npcflag", "NPC flags", "What players can do by right-clicking. The low 32 bits are NPCFlags, the high 32 bits NPCFlags2.", FieldKind.Flags, Flags: NpcServices),
-
-            Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default."),
-            Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks."),
-            Decimal("combat", "BaseVariance", "Melee damage spread", "Multiplies the attack power part of a melee hit (attack power / 3.5). 1 is the normal spread; 0 removes it."),
-            Decimal("combat", "RangeVariance", "Ranged damage spread", "Multiplies the attack power part of a ranged hit, like the melee damage spread."),
-            DWhole("combat", "ContentTuningID", "Content tuning", "ContentTuning ID that scales level and health."),
-            DWhole("combat", "LevelScalingDeltaMin", "Level delta min", "Lowest level added to the content tuning's top level (can be negative)."),
-            DWhole("combat", "LevelScalingDeltaMax", "Level delta max", "Highest level added to the content tuning's top level. The creature's level is rolled between the two."),
-            DWhole("combat", "HealthScalingExpansion", "Health scaling expansion", "Expansion whose health scaling applies. -1 means the current expansion."),
-            DDecimal("combat", "HealthModifier", "Health modifier", "Multiplies the scaled health."),
-            DDecimal("combat", "ManaModifier", "Mana modifier", "Multiplies the scaled mana."),
-            DDecimal("combat", "ArmorModifier", "Armor modifier", "Multiplies the scaled armor."),
-            DDecimal("combat", "DamageModifier", "Damage modifier", "Multiplies the scaled damage."),
-            DWhole("combat", "CreatureDifficultyID", "Creature difficulty", "CreatureDifficulty.db2 ID."),
-
-            Decimal("movement", "speed_walk", "Walk speed", "Speed when walking."),
-            Decimal("movement", "speed_run", "Run speed", "Speed when running."),
-            Decimal("movement", "scale", "Scale", "Size multiplier."),
-            Whole("movement", "MovementType", "Movement type", "0 stands still, 1 wanders randomly, 2 follows waypoints."),
-
-            DWhole("loot", "LootID", "Loot", "ID of the loot table rolled when the creature dies."),
-            DWhole("loot", "PickPocketLootID", "Pickpocket loot", "ID of the loot table a rogue can steal with Pickpocket."),
-            DWhole("loot", "SkinLootID", "Skinning loot", "ID of the loot table gathered by skinning."),
-            DWhole("loot", "GoldMin", "Gold min (copper)", "Lowest amount of money it can drop, in copper.", Gold),
-            DWhole("loot", "GoldMax", "Gold max (copper)", "Highest amount of money it can drop, in copper.", Gold),
-
-            Whole("links", "VehicleId", "Vehicle", "ID of the vehicle seat layout."),
-            Whole("links", "RequiredExpansion", "Required expansion", "Expansion a player needs to interact."),
-            Text("links", "AIName", "AI", "Core AI (for example SmartAI). Blank for none.", true, s => s.Length > 0 ? s : "None"),
-            Text("links", "ScriptName", "C++ script", "Name of a compiled server script that drives the creature.", true, s => s.Length > 0 ? s : "None"),
-
-            Flags("unit_flags", "Unit flags", "Basic state and combat switches."),
-            Flags("unit_flags2", "Unit flags 2", "Additional state switches."),
-            Flags("unit_flags3", "Unit flags 3", "Further state switches."),
-            Flags("flags_extra", "Extra flags", "Special rules the server applies to it."),
-            DFlags("TypeFlags", "Type flags", "Tags on the kind of creature."),
-            DFlags("TypeFlags2", "Type flags 2", "More creature type tags."),
-            DFlags("TypeFlags3", "Type flags 3", "More creature type tags.")
-        };
-
+        var fields = new List<FieldSpec>();
+        fields.AddRange(IdentityFields());
+        fields.AddRange(InteractionFields());
+        fields.AddRange(CombatFields());
+        fields.AddRange(MovementFields());
+        fields.AddRange(LootFields());
+        fields.AddRange(LinksFields());
+        fields.AddRange(FlagFields());
         for (int i = 1; i <= 8; i++)
         {
             fields.Add(DFlags($"StaticFlags{i}", $"Static flags {i}", "Static creature flags."));
         }
 
         return new(EntityPage.CreatureGroups(flagsHint: "The raw value keeps every bit; named bits come once they are checked against TrinityCore."), fields.ToArray(),
-            new DifficultySpec(d, "Entry", "DifficultyID", DifficultyName, NewDifficulty, [0, 1, 2, 14, 15, 16, 23], byte.MaxValue));
+            new DifficultySpec(TcTables.CreatureDifficulty, "Entry", "DifficultyID", DifficultyName, NewDifficulty, [0, 1, 2, 14, 15, 16, 23], byte.MaxValue));
     }
+
+    /// <summary>Name, subname, cursor icon, classification, faction, class, type, family and trainer class.</summary>
+    static FieldSpec[] IdentityFields() =>
+    [
+        Text("identity", "name", "Name", "The name players see above the creature."),
+        Text("identity", "subname", "Subname", "The text under the name. Leave blank for none.", true, s => s.Length > 0 ? s : "None"),
+        Text("identity", "IconName", "Cursor icon", "Name of the cursor icon shown when hovering over the creature.", true, s => s.Length > 0 ? s : "Default"),
+        new("identity", TcTables.CreatureTemplate, "Classification", "Classification", "Normal, Elite, Rare Elite and so on. Mostly visual.", FieldKind.Choice, Options: Classifications),
+        Whole("identity", "faction", "Faction", "Faction template ID. Decides who the creature is friendly or hostile to."),
+        Whole("identity", "unit_class", "Class", "Unit class (1 warrior, 2 paladin, 4 rogue, 8 mage)."),
+        Whole("identity", "type", "Creature type", "The creature's kind (creature_template.type)."),
+        Whole("identity", "family", "Family", "Hunter pet family."),
+        Whole("identity", "trainer_class", "Trainer class", "The class this creature trains, for class trainers.")
+    ];
+
+    /// <summary>The 64-bit npcflag: low half NPCFlags, high half NPCFlags2.</summary>
+    static FieldSpec[] InteractionFields() =>
+    [
+        new("interaction", TcTables.CreatureTemplate, "npcflag", "NPC flags", "What players can do by right-clicking. The low 32 bits are NPCFlags, the high 32 bits NPCFlags2.", FieldKind.Flags, Flags: NpcServices)
+    ];
+
+    /// <summary>Attack timers and spreads, then the per-difficulty scaling and modifiers.</summary>
+    static FieldSpec[] CombatFields() =>
+    [
+        Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default."),
+        Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks."),
+        Decimal("combat", "BaseVariance", "Melee damage spread", "Multiplies the attack power part of a melee hit (attack power / 3.5). 1 is the normal spread; 0 removes it."),
+        Decimal("combat", "RangeVariance", "Ranged damage spread", "Multiplies the attack power part of a ranged hit, like the melee damage spread."),
+        DWhole("combat", "ContentTuningID", "Content tuning", "ContentTuning ID that scales level and health."),
+        DWhole("combat", "LevelScalingDeltaMin", "Level delta min", "Lowest level added to the content tuning's top level (can be negative)."),
+        DWhole("combat", "LevelScalingDeltaMax", "Level delta max", "Highest level added to the content tuning's top level. The creature's level is rolled between the two."),
+        DWhole("combat", "HealthScalingExpansion", "Health scaling expansion", "Expansion whose health scaling applies. -1 means the current expansion."),
+        DDecimal("combat", "HealthModifier", "Health modifier", "Multiplies the scaled health."),
+        DDecimal("combat", "ManaModifier", "Mana modifier", "Multiplies the scaled mana."),
+        DDecimal("combat", "ArmorModifier", "Armor modifier", "Multiplies the scaled armor."),
+        DDecimal("combat", "DamageModifier", "Damage modifier", "Multiplies the scaled damage."),
+        DWhole("combat", "CreatureDifficultyID", "Creature difficulty", "CreatureDifficulty.db2 ID.")
+    ];
+
+    /// <summary>Speeds, scale and the movement type.</summary>
+    static FieldSpec[] MovementFields() =>
+    [
+        Decimal("movement", "speed_walk", "Walk speed", "Speed when walking."),
+        Decimal("movement", "speed_run", "Run speed", "Speed when running."),
+        Decimal("movement", "scale", "Scale", "Size multiplier."),
+        Whole("movement", "MovementType", "Movement type", "0 stands still, 1 wanders randomly, 2 follows waypoints.")
+    ];
+
+    /// <summary>The per-difficulty loot table IDs and the money range.</summary>
+    static FieldSpec[] LootFields() =>
+    [
+        DWhole("loot", "LootID", "Loot", "ID of the loot table rolled when the creature dies."),
+        DWhole("loot", "PickPocketLootID", "Pickpocket loot", "ID of the loot table a rogue can steal with Pickpocket."),
+        DWhole("loot", "SkinLootID", "Skinning loot", "ID of the loot table gathered by skinning."),
+        DWhole("loot", "GoldMin", "Gold min (copper)", "Lowest amount of money it can drop, in copper.", Gold),
+        DWhole("loot", "GoldMax", "Gold max (copper)", "Highest amount of money it can drop, in copper.", Gold)
+    ];
+
+    /// <summary>The vehicle, required expansion, AI name and C++ script.</summary>
+    static FieldSpec[] LinksFields() =>
+    [
+        Whole("links", "VehicleId", "Vehicle", "ID of the vehicle seat layout."),
+        Whole("links", "RequiredExpansion", "Required expansion", "Expansion a player needs to interact."),
+        Text("links", "AIName", "AI", "Core AI (for example SmartAI). Blank for none.", true, s => s.Length > 0 ? s : "None"),
+        Text("links", "ScriptName", "C++ script", "Name of a compiled server script that drives the creature.", true, s => s.Length > 0 ? s : "None")
+    ];
+
+    /// <summary>The unit, extra and per-difficulty type flags; StaticFlags 1-8 are added after these.</summary>
+    static FieldSpec[] FlagFields() =>
+    [
+        Flags("unit_flags", "Unit flags", "Basic state and combat switches."),
+        Flags("unit_flags2", "Unit flags 2", "Additional state switches."),
+        Flags("unit_flags3", "Unit flags 3", "Further state switches."),
+        Flags("flags_extra", "Extra flags", "Special rules the server applies to it."),
+        DFlags("TypeFlags", "Type flags", "Tags on the kind of creature."),
+        DFlags("TypeFlags2", "Type flags 2", "More creature type tags."),
+        DFlags("TypeFlags3", "Type flags 3", "More creature type tags.")
+    ];
 
     /// <summary>A creature_template_difficulty row with the trinitycore.info defaults: modifiers 1, everything else 0.</summary>
     static Row NewDifficulty(uint entry, int id)

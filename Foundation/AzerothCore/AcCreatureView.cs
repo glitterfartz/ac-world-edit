@@ -44,6 +44,21 @@ public sealed record AcCreatureView(
             scriptName = details.T("ScriptName");
         }
 
+        var menus = BuildMenus(template, rows, lookup, Edited);
+        var starts = Quests(AcTables.QuestStarter);
+        var ends = Quests(AcTables.QuestEnder);
+        var vendor = BuildVendor(entry, rows, lookup, Edited);
+        var trainer = BuildTrainer(entry, rows, lookup, Edited);
+        var clicks = BuildClicks(entry, rows, lookup, Edited);
+        var view = new AcCreatureView(entry, guid, name, template, scriptName, aiName, spawnCount, menus, starts, ends, vendor, trainer, clicks, scripts, conditions, []);
+        return view with { Issues = AcInteractionRules.Check(view, rows, lookup).ToArray() };
+
+        QuestLinkView[] Quests(TableSchema table) => rows.All(table).Where(r => r.U("id") == entry).OrderBy(r => r.U("quest")).Select(r => new QuestLinkView(r.U("quest"), lookup.Quest(r.U("quest")), Edited(table, r))).ToArray();
+    }
+
+    /// <summary>The gossip menus reachable from the template's menu, each with its texts and options.</summary>
+    static Dictionary<uint, MenuView> BuildMenus(Row template, RowSet rows, IInteractionLookup lookup, Func<TableSchema, Row, bool> edited)
+    {
         uint flags = template.U("npcflag");
         var menus = new Dictionary<uint, MenuView>();
         var queue = new Queue<uint>();
@@ -72,7 +87,7 @@ public sealed record AcCreatureView(
                 uint broadcast = (uint)Math.Max(0, text.I("BroadcastTextID0"));
                 // The server sends broadcast_text instead of npc_text whenever the ID resolves.
                 var fromBroadcast = broadcast != 0 ? lookup.BroadcastText(broadcast) : null;
-                return new TextView(id, fromBroadcast?.Male ?? text.T("text0_0"), fromBroadcast?.Female ?? text.T("text0_1"), fromBroadcast != null, broadcast, text.F("Probability0"), Edited(AcTables.NpcText, text) || Edited(AcTables.GossipMenu, r));
+                return new TextView(id, fromBroadcast?.Male ?? text.T("text0_0"), fromBroadcast?.Female ?? text.T("text0_1"), fromBroadcast != null, broadcast, text.F("Probability0"), edited(AcTables.NpcText, text) || edited(AcTables.GossipMenu, r));
             }).ToArray();
             var options = rows.All(AcTables.GossipOption).Where(r => r.U("MenuID") == menu).OrderBy(r => r.U("OptionID")).Select(r =>
             {
@@ -84,13 +99,17 @@ public sealed record AcCreatureView(
                     queue.Enqueue(action);
                 }
 
-                return new OptionView(r, r.U("OptionID"), r.U("OptionIcon"), fromBroadcast?.Male ?? r.T("OptionText"), fromBroadcast != null, r.U("OptionType"), r.U("OptionNpcFlag"), action, r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.U("BoxMoney"), r.U("BoxBroadcastTextID") is var boxBroadcast and not 0 && lookup.BroadcastText(boxBroadcast) is { } boxSaid ? boxSaid.Male : r.T("BoxText"), (r.U("OptionNpcFlag") & flags) == 0, Edited(AcTables.GossipOption, r));
+                return new OptionView(r, r.U("OptionID"), r.U("OptionIcon"), fromBroadcast?.Male ?? r.T("OptionText"), fromBroadcast != null, r.U("OptionType"), r.U("OptionNpcFlag"), action, r.U("ActionPoiID"), r.U("BoxCoded") != 0, r.U("BoxMoney"), r.U("BoxBroadcastTextID") is var boxBroadcast and not 0 && lookup.BroadcastText(boxBroadcast) is { } boxSaid ? boxSaid.Male : r.T("BoxText"), (r.U("OptionNpcFlag") & flags) == 0, edited(AcTables.GossipOption, r));
             }).ToArray();
             menus[menu] = new MenuView(menu, texts, options, lookup.MenuUsers(menu), texts.Any(t => t.Edited) || options.Any(o => o.Edited));
         }
 
-        QuestLinkView[] Quests(TableSchema table) => rows.All(table).Where(r => r.U("id") == entry).OrderBy(r => r.U("quest")).Select(r => new QuestLinkView(r.U("quest"), lookup.Quest(r.U("quest")), Edited(table, r))).ToArray();
+        return menus;
+    }
 
+    /// <summary>The vendor rows of the creature, expanding a negative item into the referenced list.</summary>
+    static VendorView[] BuildVendor(uint entry, RowSet rows, IInteractionLookup lookup, Func<TableSchema, Row, bool> edited)
+    {
         List<VendorView> vendor = [];
         foreach (var row in rows.All(AcTables.Vendor).Where(r => r.U("entry") == entry).OrderBy(r => r.I("slot")).ThenBy(r => r.I("item")))
         {
@@ -106,23 +125,30 @@ public sealed record AcCreatureView(
                 continue;
             }
 
-            vendor.Add(new VendorView(row, (uint)item, row.U("ExtendedCost"), row.I("slot"), row.U("maxcount"), row.U("incrtime"), lookup.Item((uint)item), 0, Edited(AcTables.Vendor, row)));
+            vendor.Add(new VendorView(row, (uint)item, row.U("ExtendedCost"), row.I("slot"), row.U("maxcount"), row.U("incrtime"), lookup.Item((uint)item), 0, edited(AcTables.Vendor, row)));
         }
 
-        TrainerView? trainer = null;
-        if (rows.Get(AcTables.DefaultTrainer, entry.ToString()) is { } link)
-        {
-            uint id = link.U("TrainerId");
-            var info = rows.Get(AcTables.Trainer, id.ToString());
-            var spells = rows.All(AcTables.TrainerSpell).Where(r => r.U("TrainerId") == id).OrderBy(r => r.U("ReqLevel")).ThenBy(r => r.U("SpellId"))
-                .Select(r => new TrainerSpellView(r, r.U("SpellId"), lookup.SpellName(r.U("SpellId")) ?? $"Spell {r.U("SpellId")}", r.U("MoneyCost"), r.U("ReqSkillLine"), r.U("ReqSkillRank"), r.U("ReqLevel"), Edited(AcTables.TrainerSpell, r))).ToArray();
-            trainer = new TrainerView(id, info?.U("Type") ?? 0, info?.U("Requirement") ?? 0, info?.T("Greeting") ?? "", spells, lookup.TrainerUsers(id), info != null || lookup.TrainerExists(id));
-        }
-
-        var clicks = rows.All(AcTables.SpellClick).Where(r => r.U("npc_entry") == entry).Select(r => new SpellClickView(r, r.U("spell_id"), lookup.SpellName(r.U("spell_id")) ?? $"Spell {r.U("spell_id")}", r.U("cast_flags"), r.U("user_type"), Edited(AcTables.SpellClick, r))).ToArray();
-        var view = new AcCreatureView(entry, guid, name, template, scriptName, aiName, spawnCount, menus, Quests(AcTables.QuestStarter), Quests(AcTables.QuestEnder), vendor.ToArray(), trainer, clicks, scripts, conditions, []);
-        return view with { Issues = AcInteractionRules.Check(view, rows, lookup).ToArray() };
+        return vendor.ToArray();
     }
+
+    /// <summary>The default trainer and its spells, or null when the creature has none.</summary>
+    static TrainerView? BuildTrainer(uint entry, RowSet rows, IInteractionLookup lookup, Func<TableSchema, Row, bool> edited)
+    {
+        if (rows.Get(AcTables.DefaultTrainer, entry.ToString()) is not { } link)
+        {
+            return null;
+        }
+
+        uint id = link.U("TrainerId");
+        var info = rows.Get(AcTables.Trainer, id.ToString());
+        var spells = rows.All(AcTables.TrainerSpell).Where(r => r.U("TrainerId") == id).OrderBy(r => r.U("ReqLevel")).ThenBy(r => r.U("SpellId"))
+            .Select(r => new TrainerSpellView(r, r.U("SpellId"), lookup.SpellName(r.U("SpellId")) ?? $"Spell {r.U("SpellId")}", r.U("MoneyCost"), r.U("ReqSkillLine"), r.U("ReqSkillRank"), r.U("ReqLevel"), edited(AcTables.TrainerSpell, r))).ToArray();
+        return new TrainerView(id, info?.U("Type") ?? 0, info?.U("Requirement") ?? 0, info?.T("Greeting") ?? "", spells, lookup.TrainerUsers(id), info != null || lookup.TrainerExists(id));
+    }
+
+    /// <summary>The creature's spell-click rows.</summary>
+    static SpellClickView[] BuildClicks(uint entry, RowSet rows, IInteractionLookup lookup, Func<TableSchema, Row, bool> edited) =>
+        rows.All(AcTables.SpellClick).Where(r => r.U("npc_entry") == entry).Select(r => new SpellClickView(r, r.U("spell_id"), lookup.SpellName(r.U("spell_id")) ?? $"Spell {r.U("spell_id")}", r.U("cast_flags"), r.U("user_type"), edited(AcTables.SpellClick, r))).ToArray();
 }
 
 /// <summary>
@@ -133,12 +159,45 @@ public static class AcInteractionRules
 {
     public static IEnumerable<InteractionIssue> Check(AcCreatureView view, RowSet rows, IInteractionLookup lookup)
     {
-        uint entry = view.Entry, flags = view.NpcFlag;
-        foreach (var issue in AcStatsPage.Check(rows, entry))
+        foreach (var issue in AcStatsPage.Check(rows, view.Entry))
         {
             yield return issue;
         }
 
+        foreach (var issue in CheckMenus(view, rows, lookup))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckQuests(view))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckVendor(view, rows, lookup))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckTrainer(view, lookup))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckClicks(view, lookup))
+        {
+            yield return issue;
+        }
+
+        foreach (var issue in CheckNpcFlags(view))
+        {
+            yield return issue;
+        }
+    }
+
+    /// <summary>Missing texts, unknown option types/icons and submenus or points of interest that do not exist.</summary>
+    static IEnumerable<InteractionIssue> CheckMenus(AcCreatureView view, RowSet rows, IInteractionLookup lookup)
+    {
         bool MenuExists(uint id) => rows.All(AcTables.GossipMenu).Any(r => r.U("MenuID") == id) || lookup.MenuExists(id);
         foreach (var menu in view.Menus.Values)
         {
@@ -171,12 +230,21 @@ public static class AcInteractionRules
                 }
             }
         }
+    }
 
+    /// <summary>Quest links whose quest_template row is missing.</summary>
+    static IEnumerable<InteractionIssue> CheckQuests(AcCreatureView view)
+    {
         foreach (var link in view.Starts.Concat(view.Ends).Where(q => q.Info == null))
         {
             yield return new(true, $"Quest {link.Quest} does not exist in quest_template.");
         }
+    }
 
+    /// <summary>Vendor items, their extended costs and stock rules, and references with no items.</summary>
+    static IEnumerable<InteractionIssue> CheckVendor(AcCreatureView view, RowSet rows, IInteractionLookup lookup)
+    {
+        uint entry = view.Entry;
         foreach (var item in view.Vendor.Where(v => v.Row != null))
         {
             if (item.Info == null)
@@ -204,26 +272,40 @@ public static class AcInteractionRules
         {
             yield return new(true, $"Vendor reference {-reference.I("item")} has no items.");
         }
+    }
 
-        if (view.Trainer is { } trainer)
+    /// <summary>The trainer row and the spells it teaches.</summary>
+    static IEnumerable<InteractionIssue> CheckTrainer(AcCreatureView view, IInteractionLookup lookup)
+    {
+        if (view.Trainer is not { } trainer)
         {
-            if (!trainer.Exists)
-            {
-                yield return new(true, $"Trainer {trainer.Id} does not exist.");
-            }
-
-            foreach (var spell in trainer.Spells.Where(s => lookup.SpellName(s.SpellId) == null))
-            {
-                yield return new(true, $"Trainer spell {spell.SpellId} is not in Spell.dbc.");
-            }
+            yield break;
         }
 
+        if (!trainer.Exists)
+        {
+            yield return new(true, $"Trainer {trainer.Id} does not exist.");
+        }
+
+        foreach (var spell in trainer.Spells.Where(s => lookup.SpellName(s.SpellId) == null))
+        {
+            yield return new(true, $"Trainer spell {spell.SpellId} is not in Spell.dbc.");
+        }
+    }
+
+    /// <summary>Spell-click spells the client cannot resolve.</summary>
+    static IEnumerable<InteractionIssue> CheckClicks(AcCreatureView view, IInteractionLookup lookup)
+    {
         foreach (var click in view.SpellClicks.Where(c => lookup.SpellName(c.SpellId) == null))
         {
             yield return new(true, $"Spell click {click.SpellId} is not in Spell.dbc.");
         }
+    }
 
-        // Server-logged inconsistencies: the data loads, but the client never offers it.
+    /// <summary>Server-logged npcflag inconsistencies: the data loads, but the client never offers it.</summary>
+    static IEnumerable<InteractionIssue> CheckNpcFlags(AcCreatureView view)
+    {
+        uint entry = view.Entry, flags = view.NpcFlag;
         InteractionIssue Missing(uint bit, string what) => new(false, $"{what}, but npcflag lacks {AcNpcFlags.Names(bit).First()}.", [new RowEdit(AcTables.CreatureTemplate.Name, entry.ToString(), view.Template, view.Template.With("npcflag", flags | bit))]);
         if ((view.Starts.Length > 0 || view.Ends.Length > 0) && (flags & AcNpcFlags.QuestGiver) == 0)
         {

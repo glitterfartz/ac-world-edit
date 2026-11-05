@@ -122,74 +122,101 @@ public static class AcCreaturePage
 
     public static readonly EntityPage Page = Build();
 
-    static EntityPage Build()
-    {
-        var d = AcTables.CreatureDetails;
-        var t = AcTables.CreatureTemplate;
-        FieldSpec Text(string group, TableSchema table, string column, string label, string tip, bool allowEmpty = false, Func<string, string>? display = null) =>
-            new(group, table, column, label, tip, FieldKind.Text, AllowEmpty: allowEmpty, Display: display);
-        FieldSpec Whole(string group, string column, string label, string tip, ulong max = 0, Func<string, string>? display = null) =>
-            new(group, d, column, label, tip, FieldKind.Whole, Max: max, Display: display);
-        FieldSpec Decimal(string group, string column, string label, string tip, Func<string, string>? display = null) =>
-            new(group, d, column, label, tip, FieldKind.Decimal, Display: display ?? Shown);
-        FieldSpec Choice(string group, string column, string label, string tip, (int, string)[] options) =>
-            new(group, d, column, label, tip, FieldKind.Choice, Options: options);
-        FieldSpec Check(string group, string column, string label, string tip) => new(group, d, column, label, tip, FieldKind.Check);
-        FieldSpec Flags(string column, string label, string tip, FlagBit[] bits) => new("flags", d, column, label, tip, FieldKind.Flags, Flags: bits);
+    static EntityPage Build() => new(
+        EntityPage.CreatureGroups("Speeds are multiples of the normal rate: 1 is a player's walking pace, 1.14286 is the usual run.", "Tick the behaviours that apply. The raw value keeps any bits the list does not name."),
+        [.. IdentityFields(), .. InteractionFields(), .. CombatFields(), .. MovementFields(), .. LootFields(), .. LinksFields(), .. FlagFields()]);
 
-        FieldSpec[] fields =
-        [
-            Text("identity", d, "name", "Name", "The name players see above the creature."),
-            Text("identity", t, "subname", "Title", "The text in angle brackets under the name, such as <Weapon Merchant>. Leave blank for none.", true, s => s.Length > 0 ? $"<{s}>" : "None"),
-            Choice("identity", "type", "Creature type", "The creature's kind. Some spells, abilities and quest objectives only work on certain types, such as Banish on demons.", Types),
-            Choice("identity", "family", "Pet family", "Which hunter pet family the creature belongs to. Only matters for tameable beasts.", Families),
-            Choice("identity", "rank", "Classification", "Normal, Elite, Rare Elite, Boss or Rare. Decides the dragon frame around its portrait and some combat rules.", Ranks),
-            Whole("identity", "faction", "Faction", "Faction template ID (from FactionTemplate.dbc). Decides who the creature is friendly or hostile to; 35 is friendly to everyone, 14 is hostile to everyone.", 65535),
-            Check("identity", "RacialLeader", "Racial leader", "Marks the creature as the leader of its race, which affects some player titles and reputation rewards."),
-            Text("identity", d, "IconName", "Mouse cursor icon", "Name of the cursor icon shown when hovering over the creature, such as Speak, Taxi, Buy or Directions. Blank uses the default.", true, s => s.Length > 0 ? s : "Default"),
+    static FieldSpec Text(string group, TableSchema table, string column, string label, string tip, bool allowEmpty = false, Func<string, string>? display = null) =>
+        new(group, table, column, label, tip, FieldKind.Text, AllowEmpty: allowEmpty, Display: display);
 
-            new("interaction", t, "npcflag", "NPC services", "What players can do by right-clicking: talk, buy, train, take quests and so on. Each ticked service must be backed by the matching records on the other pages.", FieldKind.Flags, Flags: NpcServices, Raw: false),
+    static FieldSpec Whole(string group, string column, string label, string tip, ulong max = 0, Func<string, string>? display = null) =>
+        new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Whole, Max: max, Display: display);
 
-            Choice("combat", "dmgschool", "Damage type", "The school of magic the creature's melee attacks deal. Physical damage is reduced by armor, other schools by resistance.", DamageSchools),
-            Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default.", display: s => $"{s} ms"),
-            Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks.", display: s => $"{s} ms"),
-            Decimal("combat", "BaseVariance", "Melee damage spread", "How much melee hits vary. 1 uses the normal damage spread; 0 makes every hit the same size."),
-            Decimal("combat", "RangeVariance", "Ranged damage spread", "How much ranged hits vary, like the melee damage spread."),
-            Decimal("combat", "detection_range", "Aggro range", "Distance in yards at which the creature notices players and attacks. Higher level differences shrink or grow it.", s => Shown(s) + " yd"),
-            Check("combat", "RegenHealth", "Regenerates health", "Whether it heals itself when out of combat. Turn off for creatures that must stay wounded."),
-            Decimal("combat", "ExperienceModifier", "Experience multiplier", "Multiplies the experience a player earns for killing it. 1 is normal, 0 gives none."),
-            Whole("combat", "CreatureImmunitiesId", "Immunities set", "ID of a set of immunities to spells, mechanics and schools. Zero means none. Negative values are not used."),
+    static FieldSpec Decimal(string group, string column, string label, string tip, Func<string, string>? display = null) =>
+        new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Decimal, Display: display ?? Shown);
 
-            Choice("movement", "MovementType", "Movement behaviour", "What it does when it is not fighting.", MovementTypes),
-            Decimal("movement", "speed_walk", "Walk speed", "Speed when walking."),
-            Decimal("movement", "speed_run", "Run speed", "Speed when running, such as while chasing a target."),
-            Decimal("movement", "speed_swim", "Swim speed", "Speed while swimming."),
-            Decimal("movement", "speed_flight", "Flight speed", "Speed while flying."),
-            Decimal("movement", "HoverHeight", "Hover height", "How far above the ground the creature hovers, in yards. 1 is the normal standing height."),
-            Whole("movement", "movementId", "Movement style ID", "Selects a movement style from the server's creature movement table, such as always walking. Zero uses the default."),
+    static FieldSpec Choice(string group, string column, string label, string tip, (int, string)[] options) =>
+        new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Choice, Options: options);
 
-            Whole("loot", "lootid", "Loot table", "ID of the loot table rolled when the creature dies. Zero drops nothing. It matches the 'entry' of its loot rows."),
-            Whole("loot", "pickpocketloot", "Pickpocket table", "ID of the loot table a rogue can steal with Pickpocket. Zero means it cannot be pickpocketed."),
-            Whole("loot", "skinloot", "Skinning table", "ID of the loot table gathered by skinning, mining or herbalism. Zero means it cannot be skinned."),
-            Whole("loot", "mingold", "Minimum money", "Lowest amount of money it can drop, in copper (100 copper = 1 silver, 100 silver = 1 gold).", display: Money),
-            Whole("loot", "maxgold", "Maximum money", "Highest amount of money it can drop, in copper.", display: Money),
+    static FieldSpec Check(string group, string column, string label, string tip) => new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Check);
 
-            Whole("links", "KillCredit1", "Kill credit 1", "A second creature entry that also counts as killed when this one dies, for quests that name another creature. Zero for none."),
-            Whole("links", "KillCredit2", "Kill credit 2", "A third creature entry that also counts as killed. Zero for none."),
-            Whole("links", "difficulty_entry_1", "Heroic version", "Entry used for this creature in heroic 10-player or 25-player normal dungeons and raids. Zero for none."),
-            Whole("links", "difficulty_entry_2", "25-player heroic version", "Entry used in 25-player heroic raids. Zero for none."),
-            Whole("links", "difficulty_entry_3", "Third difficulty version", "Entry used for a further difficulty setting. Zero for none."),
-            Whole("links", "VehicleId", "Vehicle ID", "ID of the vehicle seat layout if players can ride it. Zero if it is not a vehicle."),
-            Whole("links", "PetSpellDataId", "Pet spell set", "ID of the set of spells it offers on a hunter's or warlock's pet bar. Zero for none."),
-            Text("links", d, "ScriptName", "C++ script", "Name of a compiled server script that drives the creature. It can replace gossip, quests and SmartAI entirely, so leave blank unless the script exists.", true, s => s.Length > 0 ? s : "None"),
+    static FieldSpec Flags(string column, string label, string tip, FlagBit[] bits) => new("flags", AcTables.CreatureDetails, column, label, tip, FieldKind.Flags, Flags: bits);
 
-            Flags("unit_flags", "State flags", "Basic state and combat switches, such as being unattackable or unselectable.", UnitFlags),
-            Flags("unit_flags2", "More state flags", "Additional state switches, such as hiding the model or ignoring reputation.", UnitFlags2),
-            Flags("type_flags", "Creature type flags", "Tags on the kind of creature: tameable, boss portrait, gatherable corpse and so on.", TypeFlags),
-            Flags("flags_extra", "Server rules", "Special rules the server applies to it, such as no parry, civilian or guard.", ExtraFlags),
-            Flags("dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
-        ];
+    /// <summary>Name, title, type, family, classification, faction, leader flag and cursor icon.</summary>
+    static FieldSpec[] IdentityFields() =>
+    [
+        Text("identity", AcTables.CreatureDetails, "name", "Name", "The name players see above the creature."),
+        Text("identity", AcTables.CreatureTemplate, "subname", "Title", "The text in angle brackets under the name, such as <Weapon Merchant>. Leave blank for none.", true, s => s.Length > 0 ? $"<{s}>" : "None"),
+        Choice("identity", "type", "Creature type", "The creature's kind. Some spells, abilities and quest objectives only work on certain types, such as Banish on demons.", Types),
+        Choice("identity", "family", "Pet family", "Which hunter pet family the creature belongs to. Only matters for tameable beasts.", Families),
+        Choice("identity", "rank", "Classification", "Normal, Elite, Rare Elite, Boss or Rare. Decides the dragon frame around its portrait and some combat rules.", Ranks),
+        Whole("identity", "faction", "Faction", "Faction template ID (from FactionTemplate.dbc). Decides who the creature is friendly or hostile to; 35 is friendly to everyone, 14 is hostile to everyone.", 65535),
+        Check("identity", "RacialLeader", "Racial leader", "Marks the creature as the leader of its race, which affects some player titles and reputation rewards."),
+        Text("identity", AcTables.CreatureDetails, "IconName", "Mouse cursor icon", "Name of the cursor icon shown when hovering over the creature, such as Speak, Taxi, Buy or Directions. Blank uses the default.", true, s => s.Length > 0 ? s : "Default")
+    ];
 
-        return new(EntityPage.CreatureGroups("Speeds are multiples of the normal rate: 1 is a player's walking pace, 1.14286 is the usual run.", "Tick the behaviours that apply. The raw value keeps any bits the list does not name."), fields);
-    }
+    /// <summary>The npcflag services, backed by the matching records on the other pages.</summary>
+    static FieldSpec[] InteractionFields() =>
+    [
+        new("interaction", AcTables.CreatureTemplate, "npcflag", "NPC services", "What players can do by right-clicking: talk, buy, train, take quests and so on. Each ticked service must be backed by the matching records on the other pages.", FieldKind.Flags, Flags: NpcServices, Raw: false)
+    ];
+
+    /// <summary>Damage school, attack timers and spreads, aggro range, regeneration and the immunities set.</summary>
+    static FieldSpec[] CombatFields() =>
+    [
+        Choice("combat", "dmgschool", "Damage type", "The school of magic the creature's melee attacks deal. Physical damage is reduced by armor, other schools by resistance.", DamageSchools),
+        Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default.", display: s => $"{s} ms"),
+        Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks.", display: s => $"{s} ms"),
+        Decimal("combat", "BaseVariance", "Melee damage spread", "How much melee hits vary. 1 uses the normal damage spread; 0 makes every hit the same size."),
+        Decimal("combat", "RangeVariance", "Ranged damage spread", "How much ranged hits vary, like the melee damage spread."),
+        Decimal("combat", "detection_range", "Aggro range", "Distance in yards at which the creature notices players and attacks. Higher level differences shrink or grow it.", s => Shown(s) + " yd"),
+        Check("combat", "RegenHealth", "Regenerates health", "Whether it heals itself when out of combat. Turn off for creatures that must stay wounded."),
+        Decimal("combat", "ExperienceModifier", "Experience multiplier", "Multiplies the experience a player earns for killing it. 1 is normal, 0 gives none."),
+        Whole("combat", "CreatureImmunitiesId", "Immunities set", "ID of a set of immunities to spells, mechanics and schools. Zero means none. Negative values are not used.")
+    ];
+
+    /// <summary>Movement behaviour, the four speeds, hover height and the movement style.</summary>
+    static FieldSpec[] MovementFields() =>
+    [
+        Choice("movement", "MovementType", "Movement behaviour", "What it does when it is not fighting.", MovementTypes),
+        Decimal("movement", "speed_walk", "Walk speed", "Speed when walking."),
+        Decimal("movement", "speed_run", "Run speed", "Speed when running, such as while chasing a target."),
+        Decimal("movement", "speed_swim", "Swim speed", "Speed while swimming."),
+        Decimal("movement", "speed_flight", "Flight speed", "Speed while flying."),
+        Decimal("movement", "HoverHeight", "Hover height", "How far above the ground the creature hovers, in yards. 1 is the normal standing height."),
+        Whole("movement", "movementId", "Movement style ID", "Selects a movement style from the server's creature movement table, such as always walking. Zero uses the default.")
+    ];
+
+    /// <summary>The loot table IDs and the money range.</summary>
+    static FieldSpec[] LootFields() =>
+    [
+        Whole("loot", "lootid", "Loot table", "ID of the loot table rolled when the creature dies. Zero drops nothing. It matches the 'entry' of its loot rows."),
+        Whole("loot", "pickpocketloot", "Pickpocket table", "ID of the loot table a rogue can steal with Pickpocket. Zero means it cannot be pickpocketed."),
+        Whole("loot", "skinloot", "Skinning table", "ID of the loot table gathered by skinning, mining or herbalism. Zero means it cannot be skinned."),
+        Whole("loot", "mingold", "Minimum money", "Lowest amount of money it can drop, in copper (100 copper = 1 silver, 100 silver = 1 gold).", display: Money),
+        Whole("loot", "maxgold", "Maximum money", "Highest amount of money it can drop, in copper.", display: Money)
+    ];
+
+    /// <summary>Kill credits, the difficulty entries, the vehicle, the pet spells and the C++ script.</summary>
+    static FieldSpec[] LinksFields() =>
+    [
+        Whole("links", "KillCredit1", "Kill credit 1", "A second creature entry that also counts as killed when this one dies, for quests that name another creature. Zero for none."),
+        Whole("links", "KillCredit2", "Kill credit 2", "A third creature entry that also counts as killed. Zero for none."),
+        Whole("links", "difficulty_entry_1", "Heroic version", "Entry used for this creature in heroic 10-player or 25-player normal dungeons and raids. Zero for none."),
+        Whole("links", "difficulty_entry_2", "25-player heroic version", "Entry used in 25-player heroic raids. Zero for none."),
+        Whole("links", "difficulty_entry_3", "Third difficulty version", "Entry used for a further difficulty setting. Zero for none."),
+        Whole("links", "VehicleId", "Vehicle ID", "ID of the vehicle seat layout if players can ride it. Zero if it is not a vehicle."),
+        Whole("links", "PetSpellDataId", "Pet spell set", "ID of the set of spells it offers on a hunter's or warlock's pet bar. Zero for none."),
+        Text("links", AcTables.CreatureDetails, "ScriptName", "C++ script", "Name of a compiled server script that drives the creature. It can replace gossip, quests and SmartAI entirely, so leave blank unless the script exists.", true, s => s.Length > 0 ? s : "None")
+    ];
+
+    /// <summary>The unit, type, extra and dynamic flag columns.</summary>
+    static FieldSpec[] FlagFields() =>
+    [
+        Flags("unit_flags", "State flags", "Basic state and combat switches, such as being unattackable or unselectable.", UnitFlags),
+        Flags("unit_flags2", "More state flags", "Additional state switches, such as hiding the model or ignoring reputation.", UnitFlags2),
+        Flags("type_flags", "Creature type flags", "Tags on the kind of creature: tameable, boss portrait, gatherable corpse and so on.", TypeFlags),
+        Flags("flags_extra", "Server rules", "Special rules the server applies to it, such as no parry, civilian or guard.", ExtraFlags),
+        Flags("dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
+    ];
 }
