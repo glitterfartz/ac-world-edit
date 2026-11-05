@@ -5,6 +5,7 @@ Usage:
     python Tools/refactor_gate.py --fast       # T0 + T1, no client data needed
     python Tools/refactor_gate.py --structural # T0 only, under one second
     python Tools/refactor_gate.py --ui-goldens # rendered editor dumps, needs a database
+    python Tools/refactor_gate.py --overlay-goldens  # overlay smoke tags, needs a database
     python Tools/refactor_gate.py --update-goldens   # human only: rewrite goldens + manifest
 
 T0 is instant and encodes the architecture rules. T1 is build + both test projects. The full gate
@@ -269,11 +270,33 @@ def ui_goldens_check() -> int:
     return 0
 
 
+# The overlay smokes that complete headless. Navigation needs its MMap folder override and a
+# renderer, so it stays a manual windowed check.
+OVERLAY_SMOKES = [
+    "spawn-authoring-smoke",
+    "creature-smoke",
+    "gameobject-smoke",
+    "graveyard-smoke",
+    "waypoint-smoke",
+    "areatrigger-smoke",
+    "gizmo-smoke",
+]
+
+
+def overlay_goldens_check() -> int:
+    python = [sys.executable]
+    for smoke in OVERLAY_SMOKES:
+        if run(python + ["Tools/smoke_golden.py", "--smoke", smoke, "--profile", "wrath"]) != 0:
+            return 1
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fast", action="store_true", help="structural + build + tests only")
     parser.add_argument("--structural", action="store_true", help="T0 only")
     parser.add_argument("--ui-goldens", action="store_true", help="rendered editor dumps (needs a database)")
+    parser.add_argument("--overlay-goldens", action="store_true", help="overlay smoke tags (needs a database)")
     parser.add_argument("--update-goldens", action="store_true", help="rewrite goldens, manifest and ratchets (human only)")
     args = parser.parse_args()
 
@@ -291,6 +314,9 @@ def main() -> int:
         ):
             if run(python + step) != 0:
                 return 1
+        for smoke in OVERLAY_SMOKES:
+            if run(python + ["Tools/smoke_golden.py", "--smoke", smoke, "--profile", "wrath", "--update"]) != 0:
+                return 1
         goldens.write_manifest()
         return 0
 
@@ -303,6 +329,8 @@ def main() -> int:
         return 0
     if args.ui_goldens:
         return ui_goldens_check()
+    if args.overlay_goldens:
+        return overlay_goldens_check()
     if fast() != 0:
         return 1
     if args.fast:

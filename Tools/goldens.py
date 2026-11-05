@@ -72,6 +72,26 @@ def normalize_text(output: str, code: int) -> str:
     return "\n".join(lines) + "\n"
 
 
+# Overlay smokes print live database rows and measured floats before their assertions (a target's
+# GUID, a click's screen point, a stopwatch). The smoke itself checks those values, so the golden
+# keeps only the step sequence and the pass/fail markers: a step line keeps its step name, every
+# other line keeps its tag.
+OVERLAY_LINE = re.compile(r"_(SMOKE_STEP|SMOKE_PASSED|SMOKE_FAILED|SMOKE_NOTE)\b|_(PASSED|FAILED|FAIL_CLOSED)\b")
+
+
+def normalize_overlay(output: str, code: int) -> str:
+    """Keep an overlay smoke's step sequence and pass/fail markers, plus the exit code."""
+    lines = []
+    for line in ANSI.sub("", output).splitlines():
+        line = line.rstrip()
+        if not (TAG.match(line) and not line.startswith(("ERROR:", "WARNING:", "SCRIPT ERROR:")) and OVERLAY_LINE.search(line)):
+            continue
+        parts = line.split()
+        lines.append(f"{parts[0]} {parts[1]}" if "_SMOKE_STEP" in parts[0] and len(parts) > 1 else parts[0])
+    lines.append(f"EXIT {code}")
+    return "\n".join(lines) + "\n"
+
+
 def extract_json(output: str, begin: str, end: str) -> str:
     lines = ANSI.sub("", output).splitlines()
     try:
