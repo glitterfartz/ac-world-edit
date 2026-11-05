@@ -178,7 +178,7 @@ Per-frame order in `_Process`:
 Six overlays are children of `ViewerShell`. Creature, GameObject, graveyard, waypoint and AreaTrigger share one shape (`RegionOverlay`); `NavigationOverlay` is independent (see [Navigation overlay](#navigation-overlay)). The shared shape:
 
 - `Connection` gives the `WorldConnection` (settings, hotfixes database and dialect); queries open it with `DBSource.Open`. `SetRegion` receives the query region from `UpdateWanted`.
-- `RegionQuery<T>` (`Overlays/RegionQuery.cs`) runs one cancellable, generation-checked query on a worker. A search box has a 0.3 s debounce.
+- `RegionQuery<T>` (`Overlays/Region/RegionQuery.cs`) runs one cancellable, generation-checked query on a worker. A search box has a 0.3 s debounce.
 - Results are diffed against existing markers by ID.
 - Each overlay exposes `FindHit`, `Select`, `Deselect`, `SelectionChanged`, `FocusRequested(WorldPose)`, `SetLayerEnabled` and `BuildPanel()`, which the sidebar hosts.
 
@@ -196,7 +196,7 @@ Creature models are shown for the nearest `Preview.ModelLimit` (128) creatures w
 
 ### Editing
 
-`IPlacementEditor` (`Overlays/IPlacementEditor.cs`) is implemented by `CreatureOverlay`, `GameObjectOverlay`, `GraveyardOverlay` and `WaypointOverlay`. `ViewerShell.ActiveEditor` sends menu, toolbar and viewport commands to whichever editor owns the selection.
+`IPlacementEditor` (`Overlays/Placement/IPlacementEditor.cs`) is implemented by `CreatureOverlay`, `GameObjectOverlay`, `GraveyardOverlay` and `WaypointOverlay`. `ViewerShell.ActiveEditor` sends menu, toolbar and viewport commands to whichever editor owns the selection.
 
 Spawn editors (`CreatureOverlay`, `GameObjectOverlay`) also implement the default members `CanDuplicate`, `CanDelete`, `Duplicate()` and `Delete()`, which graveyards and waypoints leave off. They appear as Edit menu items (Duplicate Ctrl+D, Delete Del), toolbar actions and inspector buttons. A copy goes two yards ahead of its source, dropped to the ground, under the next free GUID, and is selected; a delete removes the spawn and its addon row in one command. Both need the spawn's row, which is read when it is selected, so the commands stay disabled until it arrives. A delete removes only those two rows. When pools, spawn groups, event links, linked respawns, formations or per-GUID SmartAI still name the spawn, a dialog lists them first (`SpawnDeleteDialog`, counts from `IDBSource.CountSpawnReferencesAsync`; for a creature also the waypoint path it walks when nothing else uses it, from `IDBSource.ReadSpawnPathsAsync`); removing them with the spawn is not built yet (see [open-work.md](../status/open-work.md)).
 
@@ -206,7 +206,7 @@ Selecting several spawns: Ctrl-click adds or removes the spawn under the cursor,
 
 `PlacementTool` (`Overlays/PlacementTool.cs`, owned by `ViewerShell`, input in `_UnhandledInput`) places a new spawn from a template chosen in the creature or GameObject inspector's `PlaceCard`: the ghost is recomputed every frame from the last cursor position (so it stays under the cursor while the camera flies) and hides over panels; `RayGround` marches the camera ray against the terrain height map and, in terrain holes, the building-floor probe.
 
-`TransformGizmo` (`Overlays/TransformGizmo.cs`) draws three axis arrows and a yaw ring. It has Select, Move and Rotate modes, and emits `Changed(GizmoEdit)` events. Preview events have `Commit = false`; exactly one commit fires per gesture. Rotation snaps in steps, or 15° with Ctrl held.
+`TransformGizmo` (`Overlays/Placement/TransformGizmo.cs`) draws three axis arrows and a yaw ring. It has Select, Move and Rotate modes, and emits `Changed(GizmoEdit)` events. Preview events have `Commit = false`; exactly one commit fires per gesture. Rotation snaps in steps, or 15° with Ctrl held.
 
 A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before, after)`, a row edit on the content draft. The displayed pose is `poses.Effective(...)`, and `poses.Conflict` flags a change in the source database.
 
@@ -218,7 +218,7 @@ A committed creature move goes through `SpawnPoses.Move(sourceKey, guid, before,
 | Connection | `Ui/Settings/ConnectionForm.cs` | Database settings; tested on a worker before saving |
 | Sidebar | `Ui/Scene/SceneSidebar.cs` | Layers, spawn preview policy, connection, one tab per overlay, unsaved-changes button |
 | Content browser | `Ui/Scene/ContentBrowser.cs` | Bottom panel (Ctrl+B) with Creatures and Game objects tabs, template search, type filter and model thumbnails; double-click opens a creature (see below) |
-| Spawn inspector | `Ui/Scene/SpawnInspector.cs`, `Ui/Scene/PlaceCard.cs` with `Overlays/PlacementTool.cs` | The selected spawn's row fields (respawn, movement, visibility, template overrides, appearance) in the creature and GameObject overlays; the Place card arms click-to-place |
+| Spawn inspector | `Ui/Scene/SpawnInspector.cs`, `Ui/Scene/PlaceCard.cs` with `Overlays/Placement/PlacementTool.cs` | The selected spawn's row fields (respawn, movement, visibility, template overrides, appearance) in the creature and GameObject overlays; the Place card arms click-to-place |
 | Visibility preview | `Ui/VisibilityPreview/VisibilityPreviewPanel*.cs` | The sidebar's visibility card: preset with a description and a one-sentence summary (`Foundation/Pages/PreviewSummary`), then "Who is looking" (a phase dropdown of checkable items, each with how many stored spawns of the loaded area sit in it: AzerothCore phases are mask bits, any number tickable, with "Normal world" / "All phases" buttons and the typed mask underneath, `Foundation/AzerothCore/AcPhaseMasks`; TrinityCore previews one phase at a time, named from `phase_name`, with the phase ID typed underneath). The counts come with every region read (`AcPhaseSource` / `TcPhaseSource` → `PhaseCatalog` on the region result) and ignore the preview's phase filter, "Events" and "Also show". The panel builds the visibility rules and the sidebar merges in the display budget |
 | Editor base | `Ui/Framework/ContentEditorWindow.cs`, `Ui/Framework/ContentPanel.cs` | Window frame (drag, size pin) and frameless panel base; both carry the draft hooks, commits and the shared client catalog |
 | Creature properties | `Ui/CreatureProperties/` | One window per selected creature: a section picker on the left and the chosen section on the right (see below) |
