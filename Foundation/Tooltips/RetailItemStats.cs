@@ -74,87 +74,121 @@ public static class RetailItemStats
             5 => 5,
             _ => 0
         };
-        int FindIndex(int start)
+        return mode switch
         {
-            while (start < points.Count && points[start].X <= x)
-            {
-                start++;
-            }
+            0 => Linear(points, FindIndex(points, 0, x), x),
+            1 => CatmullRom(points, FindIndex(points, 1, x), x),
+            2 => DeCasteljau(points, x),
+            3 => Cosine(points, FindIndex(points, 0, x), x),
+            4 => Constant(points, x),
+            _ => Step(points, x)
+        };
+    }
 
-            return start;
+    static int FindIndex(IReadOnlyList<(float X, float Y)> points, int start, float x)
+    {
+        while (start < points.Count && points[start].X <= x)
+        {
+            start++;
         }
 
-        switch (mode)
-        {
-            case 0:
-            case 3:
-            {
-                int i = FindIndex(0);
-                if (i == 0) return points[0].Y;
-                if (i >= points.Count) return points[^1].Y;
-                float xDiff = points[i].X - points[i - 1].X;
-                if (xDiff == 0) return points[i].Y;
-                float t = (x - points[i - 1].X) / xDiff;
-                float dy = points[i].Y - points[i - 1].Y;
-                return mode == 0
-                    ? t * dy + points[i - 1].Y
-                    : dy * (1.0f - MathF.Cos(t * MathF.PI)) * 0.5f + points[i - 1].Y;
-            }
-            case 1:
-            {
-                int i = FindIndex(1);
-                if (i == 1) return points[1].Y;
-                if (i >= points.Count - 1) return points[^2].Y;
-                float xDiff = points[i].X - points[i - 1].X;
-                if (xDiff == 0) return points[i].Y;
-                float mu = (x - points[i - 1].X) / xDiff;
-                float a0 = -0.5f * points[i - 2].Y + 1.5f * points[i - 1].Y - 1.5f * points[i].Y + 0.5f * points[i + 1].Y;
-                float a1 = points[i - 2].Y - 2.5f * points[i - 1].Y + 2.0f * points[i].Y - 0.5f * points[i + 1].Y;
-                float a2 = -0.5f * points[i - 2].Y + 0.5f * points[i].Y;
-                return a0 * mu * mu * mu + a1 * mu * mu + a2 * mu + points[i - 1].Y;
-            }
-            case 6:
-            {
-                float xDiff = points[2].X - points[0].X;
-                if (xDiff == 0) return points[1].Y;
-                float mu = (x - points[0].X) / xDiff;
-                return (1.0f - mu) * (1.0f - mu) * points[0].Y + (1.0f - mu) * 2.0f * mu * points[1].Y + mu * mu * points[2].Y;
-            }
-            case 7:
-            {
-                float xDiff = points[3].X - points[0].X;
-                if (xDiff == 0) return points[1].Y;
-                float mu = (x - points[0].X) / xDiff;
-                return (1.0f - mu) * (1.0f - mu) * (1.0f - mu) * points[0].Y + 3.0f * mu * (1.0f - mu) * (1.0f - mu) * points[1].Y
-                    + 3.0f * mu * mu * (1.0f - mu) * points[2].Y + mu * mu * mu * points[3].Y;
-            }
-            case 2:
-            {
-                float xDiff = points[^1].X - points[0].X;
-                if (xDiff == 0) return points[^1].Y;
-                var tmp = points.Select(p => p.Y).ToArray();
-                float mu = (x - points[0].X) / xDiff;
-                for (int i = tmp.Length - 1; i > 0; i--)
-                {
-                    for (int k = 0; k < i; k++)
-                    {
-                        tmp[k] = tmp[k] + mu * (tmp[k + 1] - tmp[k]);
-                    }
-                }
+        return start;
+    }
 
-                return tmp[0];
-            }
-            case 4:
+    /// <summary>mode 0: linear between the two surrounding points.</summary>
+    static float Linear(IReadOnlyList<(float X, float Y)> points, int i, float x)
+    {
+        if (i == 0) return points[0].Y;
+        if (i >= points.Count) return points[^1].Y;
+        float xDiff = points[i].X - points[i - 1].X;
+        if (xDiff == 0) return points[i].Y;
+        float t = (x - points[i - 1].X) / xDiff;
+        float dy = points[i].Y - points[i - 1].Y;
+        return t * dy + points[i - 1].Y;
+    }
+
+    /// <summary>mode 3: half a cosine wave between the two surrounding points.</summary>
+    static float Cosine(IReadOnlyList<(float X, float Y)> points, int i, float x)
+    {
+        if (i == 0) return points[0].Y;
+        if (i >= points.Count) return points[^1].Y;
+        float xDiff = points[i].X - points[i - 1].X;
+        if (xDiff == 0) return points[i].Y;
+        float t = (x - points[i - 1].X) / xDiff;
+        float dy = points[i].Y - points[i - 1].Y;
+        return dy * (1.0f - MathF.Cos(t * MathF.PI)) * 0.5f + points[i - 1].Y;
+    }
+
+    /// <summary>mode 1: Catmull-Rom through the four surrounding points.</summary>
+    static float CatmullRom(IReadOnlyList<(float X, float Y)> points, int i, float x)
+    {
+        if (i == 1) return points[1].Y;
+        if (i >= points.Count - 1) return points[^2].Y;
+        float xDiff = points[i].X - points[i - 1].X;
+        if (xDiff == 0) return points[i].Y;
+        float mu = (x - points[i - 1].X) / xDiff;
+        float a0 = -0.5f * points[i - 2].Y + 1.5f * points[i - 1].Y - 1.5f * points[i].Y + 0.5f * points[i + 1].Y;
+        float a1 = points[i - 2].Y - 2.5f * points[i - 1].Y + 2.0f * points[i].Y - 0.5f * points[i + 1].Y;
+        float a2 = -0.5f * points[i - 2].Y + 0.5f * points[i].Y;
+        return a0 * mu * mu * mu + a1 * mu * mu + a2 * mu + points[i - 1].Y;
+    }
+
+    /// <summary>modes 6 and 7: quadratic or cubic Bezier over the first three or four points.</summary>
+    static float Bezier(IReadOnlyList<(float X, float Y)> points, float x) => points.Count switch
+    {
+        3 => QuadraticBezier(points, x),
+        _ => CubicBezier(points, x)
+    };
+
+    /// <summary>mode 6: quadratic Bezier over three points.</summary>
+    static float QuadraticBezier(IReadOnlyList<(float X, float Y)> points, float x)
+    {
+        float xDiff = points[2].X - points[0].X;
+        if (xDiff == 0) return points[1].Y;
+        float mu = (x - points[0].X) / xDiff;
+        return (1.0f - mu) * (1.0f - mu) * points[0].Y + (1.0f - mu) * 2.0f * mu * points[1].Y + mu * mu * points[2].Y;
+    }
+
+    /// <summary>mode 7: cubic Bezier over four points.</summary>
+    static float CubicBezier(IReadOnlyList<(float X, float Y)> points, float x)
+    {
+        float xDiff = points[3].X - points[0].X;
+        if (xDiff == 0) return points[1].Y;
+        float mu = (x - points[0].X) / xDiff;
+        return (1.0f - mu) * (1.0f - mu) * (1.0f - mu) * points[0].Y + 3.0f * mu * (1.0f - mu) * (1.0f - mu) * points[1].Y
+            + 3.0f * mu * mu * (1.0f - mu) * points[2].Y + mu * mu * mu * points[3].Y;
+    }
+
+    /// <summary>mode 2: de Casteljau over every point.</summary>
+    static float DeCasteljau(IReadOnlyList<(float X, float Y)> points, float x)
+    {
+        float xDiff = points[^1].X - points[0].X;
+        if (xDiff == 0) return points[^1].Y;
+        var tmp = points.Select(p => p.Y).ToArray();
+        float mu = (x - points[0].X) / xDiff;
+        for (int i = tmp.Length - 1; i > 0; i--)
+        {
+            for (int k = 0; k < i; k++)
             {
-                int i = FindIndex(0);
-                return i == 0 ? points[0].Y : i >= points.Count ? points[^1].Y : 0;
-            }
-            default:
-            {
-                int i = FindIndex(0);
-                return i == 0 ? points[0].Y : i >= points.Count ? points[^1].Y : points[i - 1].Y;
+                tmp[k] = tmp[k] + mu * (tmp[k + 1] - tmp[k]);
             }
         }
+
+        return tmp[0];
+    }
+
+    /// <summary>mode 4: the previous point's value, 0 inside the curve.</summary>
+    static float Constant(IReadOnlyList<(float X, float Y)> points, float x)
+    {
+        int i = FindIndex(points, 0, x);
+        return i == 0 ? points[0].Y : i >= points.Count ? points[^1].Y : 0;
+    }
+
+    /// <summary>mode 5 (and any unknown mode): hold the previous point's value.</summary>
+    static float Step(IReadOnlyList<(float X, float Y)> points, float x)
+    {
+        int i = FindIndex(points, 0, x);
+        return i == 0 ? points[0].Y : i >= points.Count ? points[^1].Y : points[i - 1].Y;
     }
 
     static float Curve(IRetailItemTables tables, uint curveId, float x) =>

@@ -132,44 +132,50 @@ public static class TcStatCalculator
         var (min, max) = CreatureLevels(tuning, difficulty.I("LevelScalingDeltaMin"), difficulty.I("LevelScalingDeltaMax"))!.Value;
         var mods = data.ContentTuningMods(tuningId).Where(m => ModApplies(m, data)).ToArray();
         var classMod = ClassModRow(unitClass) is { } row ? data.ExpectedStatMod(row) : null;
-        TcStatLine? At(int level)
-        {
-            var stat = data.ExpectedStat((uint)level, expansion) ?? data.ExpectedStat((uint)level, -2);
-            double Scale(double value, Func<TcExpectedStatMod, float> pick)
-            {
-                foreach (var mod in mods)
-                {
-                    value *= pick(mod.Mod);
-                }
-
-                return classMod == null ? value : value * pick(classMod);
-            }
-
-            // EvaluateExpectedStat answers 1 for a level with no row.
-            double health = stat == null ? 1 : Scale(stat.CreatureHealth, m => m.CreatureHealthMod);
-            double dps = stat == null ? 1 : Scale(stat.CreatureAutoAttackDps, m => m.CreatureAutoAttackDpsMod);
-            double armor = stat == null ? 1 : Scale(stat.CreatureArmor, m => m.CreatureArmorMod);
-            var baseStats = classStats((uint)level, unitClass);
-            double damage = dps * difficulty.F("DamageModifier");
-            // GetMaxHealthByLevel is ceil(expected * HealthModifier); UpdateLevelDependantStats then truncates it times the rate.
-            double baseHealth = Math.Ceiling(health * difficulty.F("HealthModifier"));
-            long scaledHealth = (long)(baseHealth * (rates ?? TcStatRates.None).HealthFor(template.Classification));
-            int power = baseStats?.AttackPower ?? 0, rangedPower = baseStats?.RangedAttackPower ?? 0;
-            double multiplier = difficulty.F("DamageModifier");
-            (double, double) Swing(int attackPower, float variance, uint attackTime) =>
-                ((dps + attackPower / 3.5 * variance) * multiplier * attackTime / 1000, (dps * 1.5 + attackPower / 3.5 * variance) * multiplier * attackTime / 1000);
-            return new(level, scaledHealth, (baseStats?.BaseMana ?? 0) * (double)difficulty.F("ManaModifier"),
-                armor * difficulty.F("ArmorModifier"), damage, damage * 1.5, power, rangedPower)
-            {
-                Melee = Swing(power, template.BaseVariance, template.BaseAttackTime),
-                Ranged = Swing(rangedPower, template.RangeVariance, template.RangeAttackTime)
-            };
-        }
-
+        var low = At(min, difficulty, template, data, classStats, expansion, mods, classMod, rates);
+        var high = At(max, difficulty, template, data, classStats, expansion, mods, classMod, rates);
         bool known = data.ExpectedStat((uint)max, expansion) != null || data.ExpectedStat((uint)max, -2) != null;
         string? note = known ? inherited : $"The client has no expected stats for level {max}, so the server computes 1 for health, damage and armor.";
-        return new(tuningId, expansion, min, max, At(min), At(max), note);
+        return new(tuningId, expansion, min, max, low, high, note);
     }
+
+    /// <summary>One level's ExpectedStat row, scaled by the content tuning and class modifiers and the template's multipliers.</summary>
+    static TcStatLine At(int level, Row difficulty, TcStatTemplate template, ITcStatData data, Func<uint, uint, TcClassLevelStats?> classStats, int expansion, TcContentTuningMod[] mods, TcExpectedStatMod? classMod, TcStatRates? rates)
+    {
+        var stat = data.ExpectedStat((uint)level, expansion) ?? data.ExpectedStat((uint)level, -2);
+        // EvaluateExpectedStat answers 1 for a level with no row.
+        double health = stat == null ? 1 : Scale(stat.CreatureHealth, mods, classMod, m => m.CreatureHealthMod);
+        double dps = stat == null ? 1 : Scale(stat.CreatureAutoAttackDps, mods, classMod, m => m.CreatureAutoAttackDpsMod);
+        double armor = stat == null ? 1 : Scale(stat.CreatureArmor, mods, classMod, m => m.CreatureArmorMod);
+        var baseStats = classStats((uint)level, template.UnitClass);
+        double damage = dps * difficulty.F("DamageModifier");
+        // GetMaxHealthByLevel is ceil(expected * HealthModifier); UpdateLevelDependantStats then truncates it times the rate.
+        double baseHealth = Math.Ceiling(health * difficulty.F("HealthModifier"));
+        long scaledHealth = (long)(baseHealth * (rates ?? TcStatRates.None).HealthFor(template.Classification));
+        int power = baseStats?.AttackPower ?? 0, rangedPower = baseStats?.RangedAttackPower ?? 0;
+        double multiplier = difficulty.F("DamageModifier");
+        return new(level, scaledHealth, (baseStats?.BaseMana ?? 0) * (double)difficulty.F("ManaModifier"),
+            armor * difficulty.F("ArmorModifier"), damage, damage * 1.5, power, rangedPower)
+        {
+            Melee = Swing(dps, power, template.BaseVariance, template.BaseAttackTime, multiplier),
+            Ranged = Swing(dps, rangedPower, template.RangeVariance, template.RangeAttackTime, multiplier)
+        };
+    }
+
+    /// <summary>Multiply by every content tuning modifier, then by the class modifier when there is one.</summary>
+    static double Scale(double value, TcContentTuningMod[] mods, TcExpectedStatMod? classMod, Func<TcExpectedStatMod, float> pick)
+    {
+        foreach (var mod in mods)
+        {
+            value *= pick(mod.Mod);
+        }
+
+        return classMod == null ? value : value * pick(classMod);
+    }
+
+    /// <summary>A swing's minimum and maximum damage from the expected DPS, attack power, variance and attack time.</summary>
+    static (double, double) Swing(double dps, int attackPower, float variance, uint attackTime, double multiplier) =>
+        ((dps + attackPower / 3.5 * variance) * multiplier * attackTime / 1000, (dps * 1.5 + attackPower / 3.5 * variance) * multiplier * attackTime / 1000);
 
     /// <summary>ExpectedStatModReducer with the active milestone season 0: a season's own row is skipped when it starts later or has already ended.</summary>
     static bool ModApplies(TcContentTuningMod mod, ITcStatData data)

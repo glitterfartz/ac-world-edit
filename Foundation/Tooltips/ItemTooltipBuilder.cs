@@ -18,26 +18,38 @@ public static class ItemTooltipBuilder
     {
         var v = vocabulary ?? ItemVocabulary.Wrath;
         List<TooltipLine> lines = [new(item.Info.Name, "", TooltipTone.Title, item.Info.Quality)];
-        void Add(string text, TooltipTone tone = TooltipTone.Normal) => lines.Add(new(text, "", tone));
+        AddHeader(lines, item, v);
+        AddCombat(lines, item);
+        AddStats(lines, item, v);
+        AddRequirements(lines, item, v);
+        AddEquipEffects(lines, item, v);
+        AddFooter(lines, item);
+        return new(lines);
+    }
 
+    static void Add(List<TooltipLine> lines, string text, TooltipTone tone = TooltipTone.Normal) => lines.Add(new(text, "", tone));
+
+    /// <summary>Heroic marker, item level, binding, uniqueness, slot and kind, and bag slots.</summary>
+    static void AddHeader(List<TooltipLine> lines, ItemDetails item, ItemVocabulary v)
+    {
         if ((item.Flags & 0x8) != 0)
         {
-            Add("Heroic", TooltipTone.Good);
+            Add(lines, "Heroic", TooltipTone.Good);
         }
 
         if (item.ItemLevel > 0)
         {
-            Add($"Item Level {item.ItemLevel}", TooltipTone.Flavor);
+            Add(lines, $"Item Level {item.ItemLevel}", TooltipTone.Flavor);
         }
 
         if (item.Bonding is > 0 and < 5)
         {
-            Add(Bondings[item.Bonding]);
+            Add(lines, Bondings[item.Bonding]);
         }
 
         if (item.MaxCount == 1)
         {
-            Add("Unique");
+            Add(lines, "Unique");
         }
 
         bool weapon = item.Class == 2, armor = item.Class == 4;
@@ -49,71 +61,89 @@ public static class ItemTooltipBuilder
         }
         else if (item.Class < v.Classes.Length && item.Class != 15 && v.Classes[item.Class].Length > 0)
         {
-            Add(v.Classes[item.Class]);
+            Add(lines, v.Classes[item.Class]);
         }
 
         if (item.ContainerSlots > 0)
         {
-            Add($"{item.ContainerSlots} Slot {(item.Class == 11 ? "Quiver" : "Bag")}");
+            Add(lines, $"{item.ContainerSlots} Slot {(item.Class == 11 ? "Quiver" : "Bag")}");
         }
+    }
 
+    /// <summary>Weapon damage, armor and block.</summary>
+    static void AddCombat(List<TooltipLine> lines, ItemDetails item)
+    {
         AddDamage(item, lines);
         if (item.Armor > 0)
         {
-            Add($"{item.Armor} Armor");
+            Add(lines, $"{item.Armor} Armor");
         }
 
         if (item.Block > 0)
         {
-            Add($"{item.Block} Block");
+            Add(lines, $"{item.Block} Block");
         }
+    }
 
+    /// <summary>Plain stats, resistances, sockets and durability.</summary>
+    static void AddStats(List<TooltipLine> lines, ItemDetails item, ItemVocabulary v)
+    {
         foreach (var (type, value) in item.Stats.Where(s => v.Plain.ContainsKey(s.Type) && s.Value != 0))
         {
-            Add($"{Signed(value)} {v.Plain[type]}");
+            Add(lines, $"{Signed(value)} {v.Plain[type]}");
         }
 
         for (int i = 0; i < item.Resistances.Length && i < 6; i++)
         {
             if (item.Resistances[i] != 0)
             {
-                Add($"{Signed(item.Resistances[i])} {Schools[i + 1]} Resistance");
+                Add(lines, $"{Signed(item.Resistances[i])} {Schools[i + 1]} Resistance");
             }
         }
 
         foreach (uint color in item.Sockets.Where(c => c != 0))
         {
-            Add($"{((color & 1) != 0 ? "Meta" : (color & 2) != 0 ? "Red" : (color & 4) != 0 ? "Yellow" : (color & 8) != 0 ? "Blue" : "Prismatic")} Socket", TooltipTone.Muted);
+            Add(lines, $"{((color & 1) != 0 ? "Meta" : (color & 2) != 0 ? "Red" : (color & 4) != 0 ? "Yellow" : (color & 8) != 0 ? "Blue" : "Prismatic")} Socket", TooltipTone.Muted);
         }
 
         if (item.MaxDurability > 0)
         {
-            Add($"Durability {item.MaxDurability} / {item.MaxDurability}");
+            Add(lines, $"Durability {item.MaxDurability} / {item.MaxDurability}");
         }
+    }
 
+    /// <summary>Class and race restrictions and the required level.</summary>
+    static void AddRequirements(List<TooltipLine> lines, ItemDetails item, ItemVocabulary v)
+    {
         AddRestriction(lines, item.AllowableClass, v.AllClasses, v.ClassNames, "Classes");
         AddRestriction(lines, item.AllowableRace, v.AllRaces, v.RaceNames, "Races");
         if (item.RequiredLevel > 1)
         {
-            Add($"Requires Level {item.RequiredLevel}");
+            Add(lines, $"Requires Level {item.RequiredLevel}");
         }
+    }
 
+    /// <summary>"Equip:" effects from the vocabulary.</summary>
+    static void AddEquipEffects(List<TooltipLine> lines, ItemDetails item, ItemVocabulary v)
+    {
         foreach (var (type, value) in item.Stats.Where(s => v.Equip.ContainsKey(s.Type) && s.Value != 0))
         {
-            Add(v.EquipPrefix + string.Format(CultureInfo.InvariantCulture, v.Equip[type], Math.Abs(value)), TooltipTone.Good);
+            Add(lines, v.EquipPrefix + string.Format(CultureInfo.InvariantCulture, v.Equip[type], Math.Abs(value)), TooltipTone.Good);
         }
+    }
 
+    /// <summary>Flavour text and sell price.</summary>
+    static void AddFooter(List<TooltipLine> lines, ItemDetails item)
+    {
         if (item.Description.Length > 0)
         {
-            Add($"\"{item.Description}\"", TooltipTone.Flavor);
+            Add(lines, $"\"{item.Description}\"", TooltipTone.Flavor);
         }
 
         if (item.SellPrice > 0)
         {
-            Add($"Sell Price: {Coins(item.SellPrice)}", TooltipTone.Gold);
+            Add(lines, $"Sell Price: {Coins(item.SellPrice)}", TooltipTone.Gold);
         }
-
-        return new(lines);
     }
 
     static void AddDamage(ItemDetails item, List<TooltipLine> lines)
