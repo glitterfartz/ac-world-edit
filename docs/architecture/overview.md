@@ -195,7 +195,7 @@ marks them, and the drafts stay as they are.
 | `Scripts/Data/` | Read-only MySQL sessions, `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), and the `Db*` read helpers |
 | `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
-| `Scripts/Overlays/` | Creature, GameObject, graveyard, AreaTrigger, waypoint and navigation overlays, gizmo, region query, placement tool |
+| `Scripts/Overlays/` | One folder per overlay family (`Region`, `Placement`, `Creature`, `GameObject`, `Graveyard`, `Waypoint`, `AreaTrigger`, `Navigation`); the creature collaborators and the waypoint path views live beside their layer |
 | `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
 | `Foundation/` | Drafts and spawn authoring, entity pages and rules, SQL export, tooltips, coordinates |
