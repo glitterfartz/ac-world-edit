@@ -37,11 +37,7 @@ internal sealed class CreatureModelView(Node3D owner)
         updated = 0;
     }
 
-    /// <summary>
-    /// Refresh the batches at most every 0.2 s: cache appearances, admit the nearest models and diff
-    /// the variant/clip groups rather than rebuilding them. <paramref name="previewAnimation"/>
-    /// applies to the selected creature only.
-    /// </summary>
+    /// <summary>Refresh the batches at most every 0.2 s; membership changes rebuild only that batch.</summary>
     public void Update(Camera3D camera, IEnumerable<CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary? library)
     {
         if (library?.Catalog == null || System.Diagnostics.Stopwatch.GetElapsedTime(updated).TotalSeconds <= 0.2)
@@ -50,10 +46,21 @@ internal sealed class CreatureModelView(Node3D owner)
         }
 
         var byGuid = markers.ToDictionary(m => m.Spawn.Guid);
+        var groups = GroupModels(camera, byGuid, preview, layerEnabled, selected, previewAnimation, library);
+        Reconcile(groups, byGuid, library);
+        updated = System.Diagnostics.Stopwatch.GetTimestamp();
+    }
+
+    /// <summary>
+    /// Cache appearances and group the admitted creatures by variant/clip. Selection can preview a
+    /// separate animation without changing the other creatures.
+    /// </summary>
+    Dictionary<ModelKey, List<ulong>> GroupModels(Camera3D camera, Dictionary<ulong, CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary library)
+    {
         var groups = new Dictionary<ModelKey, List<ulong>>();
         admitted.Clear();
         float viewDistanceSquared = preview.ViewDistance * preview.ViewDistance;
-        var candidates = byGuid.Values
+        var candidates = markers.Values
             .Select(m => (Marker: m, Distance: camera.GlobalPosition.DistanceSquaredTo(m.Node.GlobalPosition)))
             .Where(c => selected == c.Marker.Spawn.Guid || c.Distance <= viewDistanceSquared)
             .OrderBy(c => selected == c.Marker.Spawn.Guid ? 0 : 1).ThenBy(c => c.Distance)
@@ -96,6 +103,12 @@ internal sealed class CreatureModelView(Node3D owner)
             list.Add(marker.Spawn.Guid);
         }
 
+        return groups;
+    }
+
+    /// <summary>Diff the grouped membership against the current batches; unchanged batches keep their nodes.</summary>
+    void Reconcile(Dictionary<ModelKey, List<ulong>> groups, Dictionary<ulong, CreatureMarkers.Marker> markers, ModelLibrary library)
+    {
         foreach (var batch in batches.ToArray())
         {
             // Compare membership, not order: distance-sorted candidates reorder every tick while
@@ -108,7 +121,7 @@ internal sealed class CreatureModelView(Node3D owner)
 
             foreach (ulong guid in batch.Value.Guids)
             {
-                if (byGuid.TryGetValue(guid, out var marker))
+                if (markers.TryGetValue(guid, out var marker))
                 {
                     marker.Body.Visible = true;
                     marker.Label.Position = new(0, CreatureMarkers.FallbackLabelHeight, 0);
@@ -122,11 +135,9 @@ internal sealed class CreatureModelView(Node3D owner)
         {
             if (!batches.ContainsKey(group.Key))
             {
-                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(byGuid[guid])).ToArray()), group.Value.ToArray());
+                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(markers[guid])).ToArray()), group.Value.ToArray());
             }
         }
-
-        updated = System.Diagnostics.Stopwatch.GetTimestamp();
     }
 
     /// <summary>Update one creature's transform across its batch, for a gizmo preview or commit.</summary>

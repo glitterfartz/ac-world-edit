@@ -257,6 +257,17 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     /// </summary>
     public void Update(Camera3D camera)
     {
+        UpdateQuery(camera);
+        PrepareMarkers();
+        UpdateStatus();
+        UpdateModelBatches(camera);
+        UpdateVisibility(camera);
+        UpdateGizmo(camera);
+    }
+
+    /// <summary>Move the query center, debounce the search and start the one current query.</summary>
+    void UpdateQuery(Camera3D camera)
+    {
         if (LayerEnabled && region != null)
         {
             var next = ViewSpace.QueryPointAt(camera.Position, region.Map);
@@ -283,103 +294,129 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
             string term = filter.Text;
             query.Start(token => DBSource.Open(path).ReadCreaturesAsync(next, preview, center, term, token));
         }
+    }
 
-        if (pendingMarkers.Count > 0)
+    /// <summary>Create pending markers at a bounded rate, then restore the selection once they are drawn.</summary>
+    void PrepareMarkers()
+    {
+        if (pendingMarkers.Count == 0)
         {
-            var started = System.Diagnostics.Stopwatch.GetTimestamp();
-            int created = 0;
-            while (pendingMarkers.Count > 0 && created < 64 && (created == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 2))
-            {
-                var spawn = pendingMarkers[^1];
-                pendingMarkers.RemoveAt(pendingMarkers.Count - 1);
-                AddMarker(spawn);
-                created++;
-            }
+            return;
+        }
 
-            if (pendingMarkers.Count == 0)
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        int created = 0;
+        while (pendingMarkers.Count > 0 && created < 64 && (created == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 2))
+        {
+            var spawn = pendingMarkers[^1];
+            pendingMarkers.RemoveAt(pendingMarkers.Count - 1);
+            AddMarker(spawn);
+            created++;
+        }
+
+        if (pendingMarkers.Count == 0)
+        {
+            RestoreSelectionWhenDrawn();
+            queryStatus = CreatureStatusText();
+        }
+        else
+        {
+            queryStatus = $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}.";
+        }
+    }
+
+    /// <summary>A placed spawn (and its group) waits for its marker, then is selected as one action.</summary>
+    void RestoreSelectionWhenDrawn()
+    {
+        if (selectWhenDrawn is ulong placed && markers.ContainsKey(placed))
+        {
+            selectWhenDrawn = null;
+            Select(placed);
+            if (groupWhenDrawn != null)
             {
-                if (selectWhenDrawn is ulong placed && markers.ContainsKey(placed))
+                foreach (ulong other in groupWhenDrawn.Where(markers.ContainsKey))
                 {
-                    selectWhenDrawn = null;
-                    Select(placed);
-                    if (groupWhenDrawn != null)
-                    {
-                        foreach (ulong other in groupWhenDrawn.Where(markers.ContainsKey))
-                        {
-                            group.Add(other);
-                            LoadRow(other);
-                        }
-
-                        groupWhenDrawn = null;
-                        Select(placed);
-                    }
+                    group.Add(other);
+                    LoadRow(other);
                 }
 
-                if (selectedGuid.HasValue)
-                {
-                    if (markers.ContainsKey(selectedGuid.Value))
-                    {
-                        Select(selectedGuid.Value);
-                    }
-                    else
-                    {
-                        Deselect();
-                        details.Text = "Selected creature is outside the current region.";
-                    }
-                }
-
-                queryStatus = CreatureStatusText();
-            }
-            else
-            {
-                queryStatus = $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}…";
+                groupWhenDrawn = null;
+                Select(placed);
             }
         }
 
+        if (selectedGuid is not ulong selected)
+        {
+            return;
+        }
+
+        if (markers.ContainsKey(selected))
+        {
+            Select(selected);
+        }
+        else
+        {
+            Deselect();
+            details.Text = "Selected creature is outside the current region.";
+        }
+    }
+
+    void UpdateStatus()
+    {
         if (status != null)
         {
             status.Text = LayerEnabled ? queryStatus : "Creature layer hidden";
         }
+    }
 
+    /// <summary>Reconcile the native model batches and their labels/clip menu.</summary>
+    void UpdateModelBatches(Camera3D camera)
+    {
         modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models);
         foreach (var batch in modelView.Batches.Values)
         {
-            if (batch.Node.ModelReady)
+            if (!batch.Node.ModelReady)
             {
-                foreach (ulong guid in batch.Guids)
+                continue;
+            }
+
+            foreach (ulong guid in batch.Guids)
+            {
+                if (markers.TryGetValue(guid, out var marker))
                 {
-                    if (markers.TryGetValue(guid, out var marker))
-                    {
-                        marker.Body.Visible = false;
-                        marker.Label.Position = new(0, modelView.LabelHeight(marker, batch.Node.Bounds), 0);
-                    }
-                }
-
-                if (selectedGuid.HasValue && batch.Guids.Contains(selectedGuid.Value) && animationListGuid != selectedGuid)
-                {
-                    animation.Clear();
-                    int selectedIndex = 0;
-                    foreach (ushort id in batch.Node.AvailableAnimations)
-                    {
-                        animation.AddItem($"{Models?.Catalog?.AnimationNames.GetValueOrDefault(id) ?? "Animation"} ({id})", id);
-                        if (id == previewAnimation)
-                        {
-                            selectedIndex = animation.ItemCount - 1;
-                        }
-                    }
-
-                    if (animation.ItemCount == 0)
-                    {
-                        animation.AddItem("Static model", 0);
-                    }
-
-                    animation.Select(selectedIndex);
-                    animation.Disabled = batch.Node.AvailableAnimations.Length <= 1;
-                    animationListGuid = selectedGuid;
+                    marker.Body.Visible = false;
+                    marker.Label.Position = new(0, modelView.LabelHeight(marker, batch.Node.Bounds), 0);
                 }
             }
-        }
 
+            if (selectedGuid.HasValue && batch.Guids.Contains(selectedGuid.Value) && animationListGuid != selectedGuid)
+            {
+                animation.Clear();
+                int selectedIndex = 0;
+                foreach (ushort id in batch.Node.AvailableAnimations)
+                {
+                    animation.AddItem($"{Models?.Catalog?.AnimationNames.GetValueOrDefault(id) ?? "Animation"} ({id})", id);
+                    if (id == previewAnimation)
+                    {
+                        selectedIndex = animation.ItemCount - 1;
+                    }
+                }
+
+                if (animation.ItemCount == 0)
+                {
+                    animation.AddItem("Static model", 0);
+                }
+
+                animation.Select(selectedIndex);
+                animation.Disabled = batch.Node.AvailableAnimations.Length <= 1;
+                animationListGuid = selectedGuid;
+            }
+        }
+    }
+
+    /// <summary>Show only admitted markers and a bounded number of nearby names.</summary>
+    void UpdateVisibility(Camera3D camera)
+    {
         int visibleNames = 0;
         foreach (var marker in markers.Values)
         {
@@ -401,7 +438,11 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
                 visibleNames++;
             }
         }
+    }
 
+    /// <summary>Refresh the inspector buttons and put the gizmo on the editable marker.</summary>
+    void UpdateGizmo(Camera3D camera)
+    {
         UpdateInspectorActions();
         var editing = EditableMarker();
         gizmo.Update(camera, editing?.Node.GlobalPosition, editing?.Node.Rotation.Y ?? 0);
