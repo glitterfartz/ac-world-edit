@@ -97,7 +97,7 @@ Creature page metadata lives in `EntityPage.cs`. `ItemListSpec` describes child 
 
 Each draft holds a `DraftHistory<T>` (`Foundation/Drafts/DraftHistory.cs`):
 
-- Opening a draft takes an exclusive lock on a sibling `.lock` file, so a second writer fails.
+- Opening a draft takes an exclusive lock on a sibling `.lock` file, so a second writer fails. When that happens the editor says another ACWorldEdit may be using the profile's draft and offers to delete the lock file and continue; deleting it only works when the other process is gone or the file is not held.
 - The file is a JSON envelope `[payload, SHA-256(payload)]`. Saves write a `.tmp` file, flush it and move it over the real file.
 - On load, a checksum mismatch, an unknown version or an out-of-range cursor throws. A bad file is rejected, never silently reset. Each entry is re-validated by its draft type.
 - Entries before the cursor are applied; entries from the cursor onward are the redo branch. Appending drops the redo branch. Undo and redo move the cursor.
@@ -131,7 +131,7 @@ Details:
 - **Net changes.** Draft entries are collapsed per source, GUID or key: the first `Before` to the last `After`. Changes that end up at the baseline are dropped.
 - **Pending changes** (`Foundation/Drafts/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. The set of exported IDs is saved as a JSON array.
 - **Discard** calls the owning draft's `Revert`. Reverts are themselves undoable entries.
-- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/Settings/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict, and the second has editing disabled). `UseProfile` picks the folder at startup and on a client switch, which rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. The first launch after the split moves the old flat files into the profile in use. Files: `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
+- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/Settings/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict). If the content draft is locked, the viewer says another editor may be running and offers to delete the lock file and continue; the draft file itself is never deleted. `UseProfile` picks the folder at startup and on a client switch, which rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. The first launch after the split moves the old flat files into the profile in use. Files: `graveyards.json`, `waypoints.json`, `interactions.json`, `sources.json`, `exported.json`. Smoke runs use `res://artifacts/drafts/<guid>/`.
 
 ## SQL generation: `Foundation/Sql/SqlExport.cs`
 
