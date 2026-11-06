@@ -75,7 +75,16 @@ public sealed class PageFields(IEntityContext ctx)
 
     static string Hex(ulong value) => value == 0 ? "0" : "0x" + value.ToString("X", CultureInfo.InvariantCulture);
 
-    bool Commit(string label, FieldSpec field, Row row, object value) => ctx.Commit(label, ItemListSpec.Change(field.Table, row, row.With(field.Column, value)));
+    /// <summary>
+    /// Commit one field. A row the effective set does not contain yet (a default GameObject
+    /// addon row, for example) is inserted on its first edit instead of being updated.
+    /// </summary>
+    bool Commit(string label, FieldSpec field, Row row, object value)
+    {
+        var after = row.With(field.Column, value);
+        bool exists = ctx.Effective.Get(field.Table, field.Table.KeyOf(row)) != null;
+        return ctx.Commit(label, exists ? ItemListSpec.Change(field.Table, row, after) : [Insert(field.Table, after)]);
+    }
 
     void Reject(string message)
     {

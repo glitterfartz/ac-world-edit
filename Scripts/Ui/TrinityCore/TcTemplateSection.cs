@@ -16,11 +16,17 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcCreatureS
     public override string Id => PickerPages.Template.Id;
     public override string Title => PickerPages.Template.Title;
     public override string IconPath => PickerPages.Template.IconPath;
+    public override string Tip => "Who the creature is, how it fights and moves, what it drops, and the flags and script shared by every spawn.";
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 
     protected override void Populate(TcCreatureView v)
     {
+        uint display = Ctx.Look?.DisplayId ?? 0;
+        IThumbnailSource? thumbnails = Ctx.Thumbnails();
+        Func<uint, Action<Texture2D>, Texture2D?>? load = thumbnails == null ? null : thumbnails.Creature;
+        AddChild(ModelPreview.Row(display, load));
+
         if (Ctx.Editable)
         {
             Line($"The template applies to every spawn of entry {v.Entry}.", ClientStyle.Warning, 11);

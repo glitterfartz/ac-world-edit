@@ -37,6 +37,10 @@ public sealed partial class ContentBrowser : PanelContainer
         public IReadOnlyList<TemplateHit> Found = [];
         /// <summary>Display ID by entry for the current results.</summary>
         public IReadOnlyDictionary<uint, uint> Displays = new Dictionary<uint, uint>();
+        /// <summary>The dialect the type filter was built for; a client switch rebuilds it.</summary>
+        public WorldDialect? CatalogDialect;
+        /// <summary>The GameObjects type catalogue shown in this page's filter (null on the creature page).</summary>
+        public GameObjectTypeCatalog? Catalog;
         public int Generation;
         /// <summary>The page's running search; a newer search on the same page cancels it, other pages' searches do not.</summary>
         public CancellationTokenSource? Cancellation;
@@ -99,15 +103,9 @@ public sealed partial class ContentBrowser : PanelContainer
         page.Term.TextSubmitted += _ => Search(page);
         bar.AddChild(page.Term);
         page.Type = new OptionButton { Name = "TypeFilter", TooltipText = $"Only {title.ToLowerInvariant()} of this type." };
-        page.Type.AddItem("Any type", AnyType + 1);
-        int named = kind == SpawnKind.Creature ? CreatureTypes.MaxNamed : GameObjectTypes.MaxNamed;
-        for (int type = 0; type <= named; type++)
-        {
-            page.Type.AddItem(kind == SpawnKind.Creature ? CreatureTypes.Name(type) : GameObjectTypes.Name(type), type + 1);
-        }
-
         page.Type.ItemSelected += _ => Search(page);
         bar.AddChild(page.Type);
+        RefreshTypeFilter(page);
 
         var search = new Button { Text = "Search" };
         search.Pressed += () => Search(page);
@@ -130,6 +128,44 @@ public sealed partial class ContentBrowser : PanelContainer
         };
         page.Results.ItemActivated += index => Activate(page, (int)index);
         box.AddChild(page.Results);
+    }
+
+    /// <summary>
+    /// Build or rebuild a page's type filter for the open database's dialect. A client switch
+    /// changes the GameObject type names (type 29 is a capture point on AzerothCore and a
+    /// control zone on TrinityCore) and the highest type, so the list cannot be built once at
+    /// construction.
+    /// </summary>
+    void RefreshTypeFilter(Tab page)
+    {
+        var dialect = Connection().Dialect;
+        if (page.CatalogDialect == dialect)
+        {
+            return;
+        }
+
+        page.CatalogDialect = dialect;
+        page.Catalog = page.Kind == SpawnKind.GameObject ? GameObjectTypeCatalog.For(dialect) : null;
+        int selected = page.Type.ItemCount > 0 ? page.Type.GetSelectedId() : AnyType + 1;
+        page.Type.Clear();
+        page.Type.AddItem("Any type", AnyType + 1);
+        if (page.Kind == SpawnKind.Creature)
+        {
+            for (int type = 0; type <= CreatureTypes.MaxNamed; type++)
+            {
+                page.Type.AddItem(CreatureTypes.Name(type), type + 1);
+            }
+        }
+        else
+        {
+            foreach (var type in page.Catalog!.Types)
+            {
+                page.Type.AddItem(type.Name, type.Id + 1);
+            }
+        }
+
+        int index = page.Type.GetItemIndex(selected);
+        page.Type.Selected = index >= 0 ? index : 0;
     }
 
     void Activate(Tab page, int index)
@@ -156,6 +192,7 @@ public sealed partial class ContentBrowser : PanelContainer
         try
         {
             var db = DBSource.Open(Connection(), Lookup());
+            RefreshTypeFilter(page);
             string term = page.Term.Text.Trim();
             term = term[..Math.Min(80, term.Length)];
             int type = page.Type.GetSelectedId() - 1;
@@ -196,7 +233,7 @@ public sealed partial class ContentBrowser : PanelContainer
         foreach (var hit in page.Found)
         {
             string label = string.IsNullOrEmpty(hit.Name) ? $"({hit.Entry})" : hit.Name;
-            string kind = page.Kind == SpawnKind.Creature ? CreatureTypes.Name(hit.Type) : GameObjectTypes.Name(hit.Type);
+            string kind = page.Kind == SpawnKind.Creature ? CreatureTypes.Name(hit.Type) : page.Catalog?.Name(hit.Type) ?? $"Type {hit.Type}";
             int row = page.Results.AddItem($"{label}\n{hit.Entry} · {kind}", Thumbnail(page, generation, hit.Entry) ?? Blank);
             page.Results.SetItemTooltip(row, $"{label} ({hit.Entry}) · {kind}. Double-click to open, drag into the world to place.");
         }

@@ -41,7 +41,12 @@ public class CatalogManifestTests
         ("creature_addon", "ce77249617b0097a"),
         ("gameobject_addon", "bf2cc513545d50e2"),
         ("creature_template_addon", "e9e06c884e4445ae"),
-        ("conditions", "add21ca56426edbd")
+        ("conditions", "add21ca56426edbd"),
+        ("gameobject_template", "c78ae1dfb354e08b"),
+        ("gameobject_template_addon", "d730ff897bfc2539"),
+        ("gameobject_queststarter", "56f537e804fa821b"),
+        ("gameobject_questender", "c84f45775121cebc"),
+        ("gameobject_questitem", "c80f524d1a46551b")
     ];
 
     /// <summary>The TrinityCore master catalog in order, with a digest of each table's keys, columns and defaults.</summary>
@@ -77,7 +82,12 @@ public class CatalogManifestTests
         ("creature_template_addon", "f2d89873e5eb50ed"),
         ("broadcast_text", "dcde26e8f3ccdedb"),
         ("hotfix_data", "aaf4aa0913eb44f9"),
-        ("conditions", "01339ec5a5390766")
+        ("conditions", "01339ec5a5390766"),
+        ("gameobject_template", "8264e170bcaf47b1"),
+        ("gameobject_template_addon", "a7fb1228f8103fa6"),
+        ("gameobject_queststarter", "56f537e804fa821b"),
+        ("gameobject_questender", "c84f45775121cebc"),
+        ("gameobject_questitem", "c80f524d1a46551b")
     ];
 
     /// <summary>Everything a table means to the editors: identity, keys, every column with its kind and text limit, the defaults and the nullable set.</summary>

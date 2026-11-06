@@ -17,6 +17,7 @@ public partial class ViewerShell : IViewerInputHost
     WaypointOverlay IViewerInputHost.Waypoints => waypoints;
     AreaTriggerOverlay IViewerInputHost.AreaTriggers => areaTriggers;
     CreaturePropertiesWindow IViewerInputHost.CreatureProperties => creatureProps;
+    GameObjectPropertiesWindow IViewerInputHost.GameObjectProperties => gameObjectProps;
     bool IViewerInputHost.DatabaseEnabled => databaseEnabled;
     IPlacementEditor IViewerInputHost.ActiveEditor => ActiveEditor;
     bool IViewerInputHost.HandleSelectionGesture(InputEvent input) => HandleSelectionGesture(input);

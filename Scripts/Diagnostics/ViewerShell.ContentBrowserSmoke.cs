@@ -126,7 +126,18 @@ public partial class ViewerShell
         ("open-mailbox", () =>
         {
             Require(contentBrowser.SmokeActivate(SpawnKind.GameObject, SmokeMailbox), "the Mailbox is not listed");
-            Require(statusLog.Latest.StartsWith($"Game object {SmokeMailbox}", StringComparison.Ordinal), $"opening a GameObject said '{statusLog.Latest}'");
+            return true;
+        }),
+        ("mailbox-window", () =>
+        {
+            if (!gameObjectProps.Visible || gameObjectProps.Entry != SmokeMailbox || !gameObjectProps.SmokeLoaded)
+            {
+                return false;
+            }
+
+            gameObjectProps.ShowSection("type", null);
+            Require(gameObjectProps.ActiveSection == "type", "the GameObject window did not show its Type properties page");
+            gameObjectProps.Visible = false;
             // Searches on both tabs in one frame: neither may cancel the other.
             contentBrowser.SmokeSearch(SpawnKind.Creature, "Hogger", HumanoidType);
             contentBrowser.SmokeSearch(SpawnKind.GameObject, "Mailbox", null);

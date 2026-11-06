@@ -20,6 +20,8 @@ public partial class GameObjectOverlay : RegionOverlay
     public WorldEventInfo[] EventCatalog { get; private set; } = [];
     public PhaseCatalog PhaseCatalog { get; private set; } = PhaseCatalog.Empty;
     public ulong? SelectedGuid => selected;
+    /// <summary>The selected spawn, when it is loaded in the current region.</summary>
+    public GameObjectSpawn? SelectedSpawn => selected.HasValue && lookup.TryGetValue(selected.Value, out var spawn) ? spawn : null;
     public int ModelObjectCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedObjectCount { get; private set; }
     public bool IsLoading => query.IsLoading;

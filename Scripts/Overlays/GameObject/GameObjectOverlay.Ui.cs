@@ -6,8 +6,11 @@ namespace ACWorldEdit;
 /// <summary>Read-only GameObject inspector; filtering/source settings live on the shared Scene page.</summary>
 public partial class GameObjectOverlay
 {
-    Button duplicate = null!, remove = null!;
+    Button duplicate = null!, remove = null!, properties = null!;
     Button undo = null!, redo = null!, drop = null!, reset = null!, copyGo = null!;
+
+    /// <summary>Open the GameObject template window for a spawn (the inspector button or a short right-click).</summary>
+    public event Action<GameObjectSpawn>? PropertiesRequested;
     // Server-space pose entry: X, Y, Z and heading in degrees. Enter in any field commits all four.
     readonly LineEdit[] poseFields = new LineEdit[4];
 
@@ -37,6 +40,15 @@ public partial class GameObjectOverlay
         remove.TooltipText = "Delete this spawn (Del)";
         copies.AddChild(duplicate);
         copies.AddChild(remove);
+        properties = InspectorUi.Button("Properties…", () =>
+        {
+            if (SelectedSpawn is { } spawn)
+            {
+                PropertiesRequested?.Invoke(spawn);
+            }
+        });
+        properties.TooltipText = "Template data, type properties, quests, behavior and spawns of this GameObject";
+        card.AddChild(properties);
         InspectorUi.PoseCard(card, poseFields, SubmitPose);
 
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
@@ -78,6 +90,7 @@ public partial class GameObjectOverlay
         redo.Disabled = !CanRedo;
         duplicate.Disabled = !CanDuplicate;
         remove.Disabled = !CanDelete;
+        properties.Disabled = !selected.HasValue;
     }
 
     /// <summary>

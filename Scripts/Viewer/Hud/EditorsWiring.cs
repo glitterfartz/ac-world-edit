@@ -12,6 +12,7 @@ namespace ACWorldEdit;
 public partial class ViewerShell
 {
     CreaturePropertiesWindow creatureProps = null!;
+    GameObjectPropertiesWindow gameObjectProps = null!;
     ContentBrowser contentBrowser = null!;
     /// <summary>Off-screen model thumbnails for the content browser; reset when another client loads.</summary>
     ModelThumbnails? thumbnails;
@@ -52,10 +53,7 @@ public partial class ViewerShell
         contentBrowser.OffsetRight = sidebar.Visible ? sidebar.OffsetLeft - gap : -margin;
     }
 
-    /// <summary>
-    /// A template opened in the content browser: creatures open in the properties window; game objects
-    /// have no window yet, so they only name themselves on the status bar.
-    /// </summary>
+    /// <summary>A template opened in the content browser: creatures and GameObjects open in their properties windows.</summary>
     void OpenTemplate(SpawnKind kind, uint entry, string name)
     {
         string label = string.IsNullOrEmpty(name) ? $"{kind} {entry}" : name;
@@ -65,7 +63,7 @@ public partial class ViewerShell
         }
         else
         {
-            statusLog.Post($"Game object {entry}: {label}. Game objects have no properties window yet.");
+            gameObjectProps.OpenEntry(entry, label);
         }
     }
 
@@ -104,6 +102,13 @@ public partial class ViewerShell
             FlyToEntry = LocateCreature,
             BehaviorForEntryRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
+        gameObjectProps = new GameObjectPropertiesWindow
+        {
+            Connection = () => DatabaseConnection(),
+            Store = () => store,
+            Lookup = () => clientLookup,
+            Drafts = drafts
+        };
         areaBehavior = new BehaviorEditorWindow
         {
             Connection = () => DatabaseConnection(),
@@ -122,6 +127,7 @@ public partial class ViewerShell
         };
         // Floating windows sit on the UI layer above the panels.
         layer.AddChild(creatureProps);
+        layer.AddChild(gameObjectProps);
         layer.AddChild(questEditor);
         layer.AddChild(areaBehavior);
         pendingWindow = new PendingChangesWindow
@@ -169,6 +175,13 @@ public partial class ViewerShell
                 areaBehavior.OpenAreaTrigger(trigger.Owner);
             }
         };
+        gameObjects.PropertiesRequested += spawn =>
+        {
+            if (databaseEnabled)
+            {
+                gameObjectProps.Open(spawn);
+            }
+        };
     }
 
     /// <summary>The template browser, its thumbnail renderer and the wiring that keeps it fitted.</summary>
@@ -186,6 +199,8 @@ public partial class ViewerShell
             }
         };
         AddChild(thumbnails);
+        creatureProps.Thumbnails = thumbnails;
+        gameObjectProps.Thumbnails = thumbnails;
         contentBrowser.Activated += OpenTemplate;
         ui.AddChild(contentBrowser);
         foreach (var side in new Control[] { leftPanel, sidebar })

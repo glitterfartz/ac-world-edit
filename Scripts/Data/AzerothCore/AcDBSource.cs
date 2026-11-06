@@ -41,6 +41,7 @@ public sealed class AcDBSource : IDBSource
     public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnImpact.CountAsync(database, WorldDialect.AzerothCore, kind, guids, token);
     public Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnPaths.ReadAsync(database, WorldDialect.AzerothCore, guids, token);
     public Task<IReadOnlyDictionary<string, string>> ReadTemplateColumnsAsync(SpawnKind kind, uint entry, IReadOnlyList<string> columns, CancellationToken token) => DbTemplateColumns.ReadAsync(database, kind, entry, columns, token);
+    public Task<GameObjectSnapshot> ReadGameObjectTemplateAsync(uint entry, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, CancellationToken token) => DbGameObjectTemplate.ReadAsync(database, AcTables.Instance, entry, draftKeys, effective, token);
     public Task<Row?> ReadTemplateAddonAsync(uint entry, CancellationToken token) => DbTemplateAddon.ReadAsync(database, AcTables.Instance, entry, token);
     public Task<TemplateUse> CountTemplateUseAsync(uint entry, CancellationToken token) => DbTemplateAddon.CountAsync(database, entry, token);
     public Task<IReadOnlyList<TemplateHit>> SearchTemplatesAsync(SpawnKind kind, string term, int? type, CancellationToken token) => DbTemplateSearch.SearchAsync(database, kind, term, type, token);

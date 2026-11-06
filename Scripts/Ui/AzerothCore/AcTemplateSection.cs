@@ -24,6 +24,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
     public override string Id => PickerPages.Template.Id;
     public override string Title => PickerPages.Template.Title;
     public override string IconPath => PickerPages.Template.IconPath;
+    public override string Tip => "Who the creature is, how it fights and moves, what it drops, and the flags and script shared by every spawn.";
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 
@@ -35,6 +36,11 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             body.AddChild(ClientStyle.Text("This creature has no template row.", 14, ClientStyle.Faded));
             return;
         }
+
+        uint display = Ctx.Look?.DisplayId ?? 0;
+        IThumbnailSource? thumbnails = Ctx.Thumbnails();
+        Func<uint, Action<Texture2D>, Texture2D?>? load = thumbnails == null ? null : thumbnails.Creature;
+        body.AddChild(ModelPreview.Row(display, load));
 
         if (editable)
         {
@@ -120,7 +126,8 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             {
                 var fix = new Button
                 {
-                    Text = "Fix"
+                    Text = "Fix",
+                    TooltipText = "Apply the suggested change to this creature."
                 };
                 var edits = issue.Fix;
                 fix.Pressed += () => Commit("Fix npcflag", edits);
@@ -163,6 +170,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         }
 
         SearchPicker("click", "Add spell click: spell name or ID…", term => Task.FromResult<IReadOnlyList<(string, Action)>>(
-            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add spell click {s.Id}", [Insert(SpellClick,Row.Of(("npc_entry", v.Entry), ("spell_id", s.Id), ("cast_flags", 1u), ("user_type", 0u)))])))).ToList()));
+            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add spell click {s.Id}", [Insert(SpellClick,Row.Of(("npc_entry", v.Entry), ("spell_id", s.Id), ("cast_flags", 1u), ("user_type", 0u)))])))).ToList()),
+            tip: "Find a spell that casts when a player clicks the creature.");
     }
 }

@@ -15,6 +15,8 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
     public const string DefaultSectionId = "gossip";
 
     public Func<AreaLookup?> Areas { get; set; } = () => null;
+    /// <summary>Off-screen model thumbnails for the template page's preview.</summary>
+    public IThumbnailSource? Thumbnails { get; set; }
     /// <summary>The retail client's DB2 lookup, for names a TrinityCore database does not hold.</summary>
     public Func<IClientLookup?> Lookup { get; set; } = () => null;
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
@@ -50,6 +52,7 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
             Connection = () => Connection(),
             Lookup = () => Lookup(),
             Areas = () => Areas(),
+            Thumbnails = () => Thumbnails,
             FlyToEntry = (entry, name) => FlyToEntry(entry, name),
             BehaviorForEntryRequested = entry => BehaviorForEntryRequested(entry)
         };

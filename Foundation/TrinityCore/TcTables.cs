@@ -14,7 +14,7 @@ public sealed partial class TcTables : ITableCatalog
 
     static TcTables()
     {
-        Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText, AreaTriggerScripts, AreaTriggerAI, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon, BroadcastText, HotfixData, Conditions];
+        Tables = [CreatureTemplate, CreatureDifficulty, CreatureGossip, GossipMenu, NpcText, GossipOption, CreatureTrainer, Trainer, TrainerSpell, Vendor, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, QuestObjectives, QuestStarter, QuestEnder, SpellClick, CreatureAI, SmartScripts, CreatureText, AreaTriggerScripts, AreaTriggerAI, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon, BroadcastText, HotfixData, Conditions, GameObjectTemplate, GameObjectTemplateAddon, GameObjectQuestStarter, GameObjectQuestEnder, GameObjectQuestItem];
     }
 
     IReadOnlyList<TableSchema> ITableCatalog.All => Tables;

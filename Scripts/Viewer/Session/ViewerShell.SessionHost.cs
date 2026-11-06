@@ -46,6 +46,7 @@ public partial class ViewerShell : IViewerSessionHost
     WorldObjectScene IViewerSessionHost.Objects => objects;
     RegionOverlay[] IViewerSessionHost.Overlays => overlays;
     CreaturePropertiesWindow? IViewerSessionHost.CreatureProperties => creatureProps;
+    GameObjectPropertiesWindow? IViewerSessionHost.GameObjectProperties => gameObjectProps;
     ContentDrafts IViewerSessionHost.Drafts => drafts;
     OptionButton IViewerSessionHost.MapsSelect => maps;
     SpinBox IViewerSessionHost.TileX => tileX;

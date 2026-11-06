@@ -119,6 +119,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
     static readonly string[] AzerothTables =
     [
         "creature", "creature_template", "creature_template_model", "gameobject", "gameobject_template",
+        "gameobject_template_addon", "gameobject_queststarter", "gameobject_questender", "gameobject_questitem",
         "game_event", "game_event_creature", "game_event_gameobject", "pool_creature", "pool_gameobject", "conditions",
         "game_graveyard", "graveyard_zone", "game_tele", "gossip_menu", "gossip_menu_option", "npc_text", "broadcast_text",
         "creature_queststarter", "creature_questender", "quest_template", "npc_vendor", "item_template", "trainer",
@@ -135,6 +136,7 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
     static readonly string[] TrinityTables =
     [
         "creature", "creature_template", "creature_template_model", "creature_template_difficulty", "creature_template_gossip", "gameobject", "gameobject_template",
+        "gameobject_template_addon", "gameobject_queststarter", "gameobject_questender", "gameobject_questitem",
         "game_event", "game_event_creature", "game_event_gameobject", "pool_members", "conditions",
         "world_safe_locs", "graveyard_zone", "game_tele", "gossip_menu", "gossip_menu_option", "npc_text",
         "creature_queststarter", "creature_questender", "quest_template", "quest_objectives", "npc_vendor", "trainer",

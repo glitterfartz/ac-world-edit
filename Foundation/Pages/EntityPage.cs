@@ -41,7 +41,9 @@ public sealed record FieldSpec(
     bool AllowEmpty = false,
     bool Raw = true,
     ulong Max = 0,
-    Func<string, string>? Display = null);
+    Func<string, string>? Display = null,
+    string? Reference = null,
+    double Scale = 1);
 
 /// <summary>A titled section of the page; a group with no fields for a dialect is not drawn.</summary>
 public sealed record GroupSpec(string Id, string Title, string? Hint = null);

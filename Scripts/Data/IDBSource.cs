@@ -39,6 +39,9 @@ public interface IDBSource
     /// <summary>The named columns of one creature or GameObject template, as text; a column the database lacks, or a template it lacks, is left out.</summary>
     Task<IReadOnlyDictionary<string, string>> ReadTemplateColumnsAsync(SpawnKind kind, uint entry, IReadOnlyList<string> columns, CancellationToken token);
 
+    /// <summary>The GameObject template, its addon/quest rows and the spawns using it, with draft-touched rows loaded.</summary>
+    Task<GameObjectSnapshot> ReadGameObjectTemplateAsync(uint entry, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, CancellationToken token);
+
     /// <summary>The template's `creature_template_addon` row, or null when it has none: what its spawns look like unless they have their own addon.</summary>
     Task<Row?> ReadTemplateAddonAsync(uint entry, CancellationToken token);
 

@@ -23,6 +23,8 @@ public sealed class CreatureContext : IEntityContext
     public ContentDrafts Drafts { get; }
     public ClientIcons Icons { get; }
     public Func<AreaLookup?> Areas { get; set; } = () => null;
+    /// <summary>The viewer's model thumbnails for the template preview (null when no client is open).</summary>
+    public Func<IThumbnailSource?> Thumbnails { get; set; } = () => null;
     /// <summary>Locate a creature entry on the map (quest giver cards); returns a status line.</summary>
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
     /// <summary>A section wants the behavior of another creature entry (a quest giver card).</summary>
@@ -92,6 +94,8 @@ public sealed class CreatureContext : IEntityContext
     /// <summary>The selected creature spawn (null when nothing is selected).</summary>
     public CreatureSpawn? Target { get; private set; }
     public InteractionSnapshot? Snapshot { get; private set; }
+    /// <summary>The template's first model, read for the template page's preview; null while loading or without a client.</summary>
+    public CreatureLook? Look { get; private set; }
     /// <summary>The loaded creature in the open database's read model.</summary>
     public ICreatureView? View { get; private set; }
     public AcCreatureView? AcView => View as AcCreatureView;
@@ -162,6 +166,7 @@ public sealed class CreatureContext : IEntityContext
 
         Target = spawn;
         Snapshot = null;
+        Look = null;
         View = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(spawn);
@@ -184,6 +189,7 @@ public sealed class CreatureContext : IEntityContext
         cancellation.Cancel();
         Target = null;
         Snapshot = null;
+        Look = null;
         View = null;
         behaviorOpenedFor = null;
         CreatureChanged?.Invoke(null);
@@ -228,6 +234,21 @@ public sealed class CreatureContext : IEntityContext
             if (current != generation)
             {
                 return;
+            }
+
+            try
+            {
+                var looks = await source.ReadCreatureLooksAsync([spawn.TemplateId], token);
+                if (current != generation)
+                {
+                    return;
+                }
+
+                Look = looks.GetValueOrDefault(spawn.TemplateId);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                Look = null;
             }
 
             Snapshot = result;

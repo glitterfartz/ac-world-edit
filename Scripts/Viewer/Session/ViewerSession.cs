@@ -45,6 +45,7 @@ public interface IViewerSessionHost
     WorldObjectScene Objects { get; }
     RegionOverlay[] Overlays { get; }
     CreaturePropertiesWindow? CreatureProperties { get; }
+    GameObjectPropertiesWindow? GameObjectProperties { get; }
     ContentDrafts Drafts { get; }
     OptionButton MapsSelect { get; }
     SpinBox TileX { get; }
@@ -299,6 +300,7 @@ public sealed class ViewerSession
         }
 
         host.CreatureProperties?.Reset();
+        host.GameObjectProperties?.Reset();
         host.Objects.Clear();
     }
 

@@ -71,8 +71,12 @@ public sealed class PageRenderer(IEntityContext ctx)
         }
     }
 
-    /// <summary>Draw every group of the page, in order, and show the difficulty row the fields bind to.</summary>
-    public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable)
+    /// <summary>
+    /// Draw every group of the page, in order, and show the difficulty row the fields bind to.
+    /// A field the page owner has a specialized editor for (a reference picker, a scaled number)
+    /// is drawn by <paramref name="fieldControl"/>; the others use the standard editors.
+    /// </summary>
+    public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable, Func<FieldSpec, Row, Control?>? fieldControl = null)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
         Row? picked = null;
@@ -80,12 +84,12 @@ public sealed class PageRenderer(IEntityContext ctx)
         bool difficultyShown = false;
         foreach (var group in page.Groups)
         {
-            RenderGroup(parent, page, group, rows, key, entry, editable, ref picked, ref difficultyShown);
+            RenderGroup(parent, page, group, rows, key, entry, editable, ref picked, ref difficultyShown, fieldControl);
         }
     }
 
     void RenderGroup(Control parent, EntityPage page, GroupSpec group, RowSet rows, string key, uint entry, bool editable,
-        ref Row? picked, ref bool difficultyShown)
+        ref Row? picked, ref bool difficultyShown, Func<FieldSpec, Row, Control?>? fieldControl)
     {
         var groupFields = page.In(group.Id).ToList();
         if (groupFields.Count > 0 || After.ContainsKey(group.Id))
@@ -106,7 +110,7 @@ public sealed class PageRenderer(IEntityContext ctx)
         grid = null;
         foreach (var field in groupFields)
         {
-            RenderField(parent, field, rows, key, picked, editable);
+            RenderField(parent, field, rows, key, picked, editable, fieldControl);
         }
 
         grid = null;
@@ -116,7 +120,7 @@ public sealed class PageRenderer(IEntityContext ctx)
         }
     }
 
-    void RenderField(Control parent, FieldSpec field, RowSet rows, string key, Row? picked, bool editable)
+    void RenderField(Control parent, FieldSpec field, RowSet rows, string key, Row? picked, bool editable, Func<FieldSpec, Row, Control?>? fieldControl)
     {
         var row = field.Row == RowBinding.Template ? rows.Get(field.Table, key) : picked;
         if (row == null)
@@ -142,7 +146,8 @@ public sealed class PageRenderer(IEntityContext ctx)
         }
 
         grid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
-        var control = editable ? fields.Editor(field, row) : ClientStyle.Text(fields.Shown(field, row), 14);
+        var control = (editable ? fieldControl?.Invoke(field, row) : null)
+            ?? (editable ? fields.Editor(field, row) : ClientStyle.Text(fields.Shown(field, row), 14));
         control.TooltipText = field.Tip;
         if (control is Label label)
         {

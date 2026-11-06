@@ -17,6 +17,7 @@ public interface IViewerInputHost
     WaypointOverlay Waypoints { get; }
     AreaTriggerOverlay AreaTriggers { get; }
     CreaturePropertiesWindow CreatureProperties { get; }
+    GameObjectPropertiesWindow GameObjectProperties { get; }
     bool DatabaseEnabled { get; }
     IPlacementEditor ActiveEditor { get; }
     bool HandleSelectionGesture(InputEvent input);
@@ -210,7 +211,17 @@ public sealed class ViewerInput
             Yaw = press.Yaw;
             Pitch = press.Pitch;
             host.Camera.Rotation = new Vector3(Pitch, Yaw, 0);
-            if (host.Creatures.FindHit(host.Camera, press.Position) is { } hit)
+            var creatureHit = host.Creatures.FindHit(host.Camera, press.Position);
+            var objectHit = host.GameObjects.FindHit(host.Camera, press.Position);
+            if (objectHit is { } obj && (creatureHit == null || obj.Distance <= creatureHit.Value.Distance))
+            {
+                host.GameObjects.Select(obj.Guid);
+                if (host.DatabaseEnabled && host.GameObjects.SelectedSpawn is { } spawn)
+                {
+                    host.GameObjectProperties.Open(spawn, "template");
+                }
+            }
+            else if (creatureHit is { } hit)
             {
                 host.Creatures.Select(hit.Guid);
                 if (host.DatabaseEnabled && host.Creatures.SelectedSpawn is { } spawn)

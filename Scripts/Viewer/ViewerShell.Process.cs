@@ -85,6 +85,7 @@ public partial class ViewerShell
         waypoints.Update(camera);
         areaTriggers.Update(camera);
         creatureProps.Track(databaseEnabled ? creatures.SelectedSpawn : null);
+        gameObjectProps.Track(databaseEnabled ? gameObjects.SelectedSpawn : null);
         PerfMark(5);
     }
 }
