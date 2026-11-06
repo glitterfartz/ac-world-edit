@@ -24,9 +24,13 @@ public sealed class TcContentSource(WorldDatabase database, IClientLookup? clien
         }
 
         await AcInteractionSource.Load(session, rows, TcTables.QuestObjectives, "QuestID=@k0", [quest], token);
-        await AcInteractionSource.Load(session, rows, TcTables.QuestStarter, "quest=@k0", [quest], token);
-        await AcInteractionSource.Load(session, rows, TcTables.QuestEnder, "quest=@k0", [quest], token);
-        foreach (var (table, key) in draftKeys.Where(k => QuestTables.Contains(k.Table) || k.Table == TcTables.QuestObjectives || k.Table == TcTables.QuestStarter || k.Table == TcTables.QuestEnder))
+        foreach (var table in new[] { TcTables.QuestStarter, TcTables.QuestEnder, TcTables.GameObjectQuestStarter, TcTables.GameObjectQuestEnder })
+        {
+            await AcInteractionSource.Load(session, rows, table, "quest=@k0", [quest], token);
+        }
+
+        foreach (var (table, key) in draftKeys.Where(k => QuestTables.Contains(k.Table) || k.Table == TcTables.QuestObjectives
+            || k.Table == TcTables.QuestStarter || k.Table == TcTables.QuestEnder || k.Table == TcTables.GameObjectQuestStarter || k.Table == TcTables.GameObjectQuestEnder))
         {
             var parts = key.Split('|');
             await AcInteractionSource.Load(session, rows, table, string.Join(" AND ", table.Key.Select((k, i) => $"`{k}`=@k{i}")), parts.Cast<object>().ToArray(), token);
@@ -85,6 +89,7 @@ public sealed class TcContentSource(WorldDatabase database, IClientLookup? clien
         }
 
         creatures.UnionWith(view.All(TcTables.QuestStarter).Concat(view.All(TcTables.QuestEnder)).Select(r => r.U("id")));
+        objects.UnionWith(view.All(TcTables.GameObjectQuestStarter).Concat(view.All(TcTables.GameObjectQuestEnder)).Select(r => r.U("id")));
         await Fill(session, "SELECT entry,COALESCE(name,'') FROM creature_template WHERE entry IN ({0})", creatures, names.Creatures, token);
         await Fill(session, "SELECT entry,COALESCE(name,'') FROM gameobject_template WHERE entry IN ({0})", objects, names.GameObjects, token);
         await Fill(session, "SELECT ID,COALESCE(LogTitle,'') FROM quest_template WHERE ID IN ({0})", quests, names.Quests, token);
@@ -95,6 +100,10 @@ public sealed class TcContentSource(WorldDatabase database, IClientLookup? clien
         if (id != 0 && client?.Item(id) is { } item)
         {
             names.Items[id] = item.Name;
+            if (client.ItemDetails(id) is { } details)
+            {
+                names.ItemDetails[id] = details;
+            }
         }
     }
 

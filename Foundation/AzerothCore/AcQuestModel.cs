@@ -220,15 +220,15 @@ public static class AcQuestModel
             yield return new(false, $"Race mask has unknown bits 0x{q.U("AllowableRaces") & ~(AllianceRaces | HordeRaces):X}.");
         }
 
-        bool hasGiver = rows.All(AcTables.QuestStarter).Any(r => r.U("quest") == id);
+        bool hasGiver = rows.All(AcTables.QuestStarter).Concat(rows.All(AcTables.GameObjectQuestStarter)).Any(r => r.U("quest") == id);
         if (!hasGiver && q.U("StartItem") == 0 && (q.U("Flags") & 0x400) == 0)
         {
-            yield return new(false, "No creature starts this quest (it may be started by an item, object or script).");
+            yield return new(false, "No creature or game object starts this quest (it may be started by an item or script).");
         }
 
-        if (!rows.All(AcTables.QuestEnder).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
+        if (!rows.All(AcTables.QuestEnder).Concat(rows.All(AcTables.GameObjectQuestEnder)).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
         {
-            yield return new(false, "No creature completes this quest.");
+            yield return new(false, "No creature or game object completes this quest.");
         }
     }
 }

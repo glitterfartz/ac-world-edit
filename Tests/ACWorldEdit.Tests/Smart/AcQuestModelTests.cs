@@ -26,6 +26,35 @@ public class AcQuestModelTests
 
     static readonly Names Lookup = new();
 
+    [Fact]
+    public void AQuestCanBeStartedAndCompletedByGameObjects()
+    {
+        var rows = Valid(giver: false, ender: false);
+        rows.Set(AcTables.GameObjectQuestStarter, Row.Of(("id", 50u), ("quest", Id)));
+        rows.Set(AcTables.GameObjectQuestEnder, Row.Of(("id", 50u), ("quest", Id)));
+        var issues = AcQuestModel.Check(Id, rows, Lookup, null).ToArray();
+        Assert.DoesNotContain(issues, issue => issue.Message.Contains("starts this quest", StringComparison.Ordinal) || issue.Message.Contains("completes this quest", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AllRacesContainsEveryNamedAzerothCoreRaceBit()
+    {
+        foreach (var (bit, _) in AcQuestModel.Races)
+        {
+            Assert.Equal(bit, AcQuestModel.AllRaces & bit);
+        }
+    }
+
+    [Fact]
+    public void RaceBitsStartAtHumanAndStayWithin64Bits()
+    {
+        Assert.Equal(1UL, QuestVocabulary.RaceBit(1));
+        Assert.Equal(2UL, QuestVocabulary.RaceBit(2));
+        Assert.Equal(1UL << 63, QuestVocabulary.RaceBit(64));
+        Assert.Equal(0UL, QuestVocabulary.RaceBit(0));
+        Assert.Equal(0UL, QuestVocabulary.RaceBit(65));
+    }
+
     /// <summary>
     /// A complete, valid quest with a giver and an ender: the baseline every test perturbs.
     /// </summary>

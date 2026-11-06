@@ -31,9 +31,13 @@ public sealed class AcContentSource(WorldDatabase database)
             await AcInteractionSource.Load(session, rows, table, "ID=@k0", [quest], token);
         }
 
-        await AcInteractionSource.Load(session, rows, AcTables.QuestStarter, "quest=@k0", [quest], token);
-        await AcInteractionSource.Load(session, rows, AcTables.QuestEnder, "quest=@k0", [quest], token);
-        await LoadDraftKeys(session, rows, draftKeys, t => t == AcTables.QuestTemplate || t == AcTables.QuestAddon || t == AcTables.QuestRequestItems || t == AcTables.QuestOfferReward || t == AcTables.QuestStarter || t == AcTables.QuestEnder, token);
+        foreach (var table in new[] { AcTables.QuestStarter, AcTables.QuestEnder, AcTables.GameObjectQuestStarter, AcTables.GameObjectQuestEnder })
+        {
+            await AcInteractionSource.Load(session, rows, table, "quest=@k0", [quest], token);
+        }
+
+        await LoadDraftKeys(session, rows, draftKeys, t => t == AcTables.QuestTemplate || t == AcTables.QuestAddon || t == AcTables.QuestRequestItems || t == AcTables.QuestOfferReward
+            || t == AcTables.QuestStarter || t == AcTables.QuestEnder || t == AcTables.GameObjectQuestStarter || t == AcTables.GameObjectQuestEnder, token);
         var names = new ContentNames(catalog);
         await ResolveQuestNames(session, effective(rows), quest, names, token);
         uint max = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(ID),0) FROM quest_template", [], token));
@@ -71,7 +75,9 @@ public sealed class AcContentSource(WorldDatabase database)
         }
 
         creatures.AddRange(view.All(AcTables.QuestStarter).Concat(view.All(AcTables.QuestEnder)).Select(r => r.U("id")));
+        objects.AddRange(view.All(AcTables.GameObjectQuestStarter).Concat(view.All(AcTables.GameObjectQuestEnder)).Select(r => r.U("id")));
         await ResolveNames(session, names, creatures, objects, items, quests, token);
+        await AcInteractionSource.ReadItemDetails(session, items, names.ItemDetails, token);
     }
 
     /// <summary>

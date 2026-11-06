@@ -52,6 +52,18 @@ public class TcQuestTests
         TcQuestRules.Check(Id, rows, Lookup, zone => zone == 12, Client).Where(i => i.Error == errors).Select(i => i.Message).ToArray();
 
     [Fact]
+    public void AQuestCanBeStartedAndCompletedByGameObjects()
+    {
+        var rows = Valid();
+        rows.Remove(TcTables.QuestStarter, $"{6}|{Id}");
+        rows.Remove(TcTables.QuestEnder, $"{6}|{Id}");
+        rows.Set(TcTables.GameObjectQuestStarter, Row.Of(("id", 50u), ("quest", Id)));
+        rows.Set(TcTables.GameObjectQuestEnder, Row.Of(("id", 50u), ("quest", Id)));
+        var issues = TcQuestRules.Check(Id, rows, Lookup, zone => zone == 12, Client).ToArray();
+        Assert.DoesNotContain(issues, issue => issue.Message.Contains("starts this quest", StringComparison.Ordinal) || issue.Message.Contains("completes this quest", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void NewQuestIsValidAndHasEveryTable()
     {
         var rows = Valid(null, Objective(1, TcQuestRules.Monster, 6));

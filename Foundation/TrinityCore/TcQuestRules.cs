@@ -232,15 +232,15 @@ public static class TcQuestRules
             yield return new(false, "quest_template_addon row is missing; chain, class and skill settings use defaults.");
         }
 
-        bool hasGiver = rows.All(TcTables.QuestStarter).Any(r => r.U("quest") == id);
+        bool hasGiver = rows.All(TcTables.QuestStarter).Concat(rows.All(TcTables.GameObjectQuestStarter)).Any(r => r.U("quest") == id);
         if (!hasGiver && q.U("StartItem") == 0 && (q.U("Flags") & 0x400) == 0)
         {
-            yield return new(false, "No creature starts this quest (it may be started by an item, object or script).");
+            yield return new(false, "No creature or game object starts this quest (it may be started by an item or script).");
         }
 
-        if (!rows.All(TcTables.QuestEnder).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
+        if (!rows.All(TcTables.QuestEnder).Concat(rows.All(TcTables.GameObjectQuestEnder)).Any(r => r.U("quest") == id) && (q.U("Flags") & 0x10000) == 0)
         {
-            yield return new(false, "No creature completes this quest.");
+            yield return new(false, "No creature or game object completes this quest.");
         }
     }
 
