@@ -170,7 +170,8 @@ public partial class ViewerShell : Node3D
             Lookup = () => clientLookup,
             Store = () => store,
             Thumbnails = () => thumbnails,
-            Report = statusLog.Post
+            Report = statusLog.Post,
+            PerfProbe = creaturePerf
         };
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;

@@ -48,6 +48,7 @@ public partial class ViewerShell
         behaviorSmoke = flags.Contains("--behavior-smoke");
         perfSmoke = flags.Contains("--perf-smoke");
         PerfDiagnostics.Enabled = perfSmoke;
+        creaturePerf = flags.Contains("--creature-perf");
         perfBreakdown = flags.Contains("--perf-breakdown");
         clientShot = flags.Contains("--client-shot");
         if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-tile=", StringComparison.Ordinal)) is { } tileFlag)
@@ -285,6 +286,8 @@ public partial class ViewerShell
     bool smoke;
     bool waterSmoke, waterInterior;
     bool creatureSmoke;
+    /// <summary>Set from --creature-perf; enables the creature overlay's frame-time probe.</summary>
+    bool creaturePerf;
     bool visualSmoke;
     bool gizmoSmoke, gizmoVerified;
     int shortcutStage;

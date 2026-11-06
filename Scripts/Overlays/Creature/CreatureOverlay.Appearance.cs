@@ -50,6 +50,11 @@ public partial class CreatureOverlay
 
     Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)> ReadAppearanceStates()
     {
+        if (PerfProbe)
+        {
+            perfAppearanceRuns++;
+        }
+
         var states = new Dictionary<ulong, (uint, uint, uint, float, bool)>();
         if (poses == null || sourceKey.Length == 0)
         {
@@ -103,10 +108,26 @@ public partial class CreatureOverlay
                 }
 
                 bool flying = flyingCache.GetValueOrDefault(marker.Spawn.Guid);
-                if (mount != 0 && GroundAt?.Invoke(marker.Node.Position) is { Height: float ground })
+                if (mount != 0 && GroundAt != null)
                 {
-                    flying = marker.Node.Position.Y - ground > FlyingThresholdYards;
-                    flyingCache[marker.Spawn.Guid] = flying;
+                    GroundHit? hit = null;
+                    if (PerfProbe)
+                    {
+                        long gmark = PerfMark();
+                        hit = GroundAt.Invoke(marker.Node.Position);
+                        perfGroundCalls++;
+                        perfGroundMs += System.Diagnostics.Stopwatch.GetElapsedTime(gmark, PerfMark()).TotalMilliseconds;
+                    }
+                    else
+                    {
+                        hit = GroundAt.Invoke(marker.Node.Position);
+                    }
+
+                    if (hit is { Height: float ground })
+                    {
+                        flying = marker.Node.Position.Y - ground > FlyingThresholdYards;
+                        flyingCache[marker.Spawn.Guid] = flying;
+                    }
                 }
 
                 states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon), mount, scale, flying);

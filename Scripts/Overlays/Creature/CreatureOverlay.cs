@@ -241,6 +241,12 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     /// </summary>
     public void Update(Camera3D camera)
     {
+        if (PerfProbe)
+        {
+            UpdateTimed(camera);
+            return;
+        }
+
         UpdateQuery(camera);
         PrepareMarkers();
         UpdateStatus();

@@ -121,7 +121,21 @@ public partial class CreatureOverlay
             PrefetchTemplateAddons(records.Select(s => s.TemplateId).Distinct().ToArray());
         }
 
-        modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, AppearanceStates(), AppearanceEmoteName);
+        long mark = PerfProbe ? PerfMark() : 0;
+        var states = AppearanceStates();
+        if (PerfProbe)
+        {
+            PerfAdd(perfAppearance, mark);
+            mark = PerfMark();
+        }
+
+        modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, states, AppearanceEmoteName);
+        if (PerfProbe)
+        {
+            PerfAdd(perfModels, mark);
+            mark = PerfMark();
+        }
+
         foreach (var batch in modelView.Batches.Values)
         {
             if (!batch.Node.ModelReady)
@@ -160,6 +174,11 @@ public partial class CreatureOverlay
                 animation.Disabled = batch.Node.AvailableAnimations.Length <= 1;
                 animationListGuid = selectedGuid;
             }
+        }
+
+        if (PerfProbe)
+        {
+            PerfAdd(perfBatchLoop, mark);
         }
     }
 
