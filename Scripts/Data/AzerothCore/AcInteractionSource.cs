@@ -52,6 +52,20 @@ public sealed class AcInteractionSource(WorldDatabase database)
 
         await Load(session, rows, AcTables.CreatureStats, "entry=@k0", [entry], token);
         await Load(session, rows, AcTables.CreatureDetails, "entry=@k0", [entry], token);
+        if (session.Has("creature_template_model.CreatureDisplayID"))
+        {
+            await Load(session, rows, AcTables.CreatureTemplateModel, "CreatureID=@k0", [entry], token);
+        }
+
+        if (session.Has("creature_equip_template.ItemID1"))
+        {
+            await Load(session, rows, AcTables.CreatureEquipTemplate, "CreatureID=@k0", [entry], token);
+        }
+
+        if (session.Has("creature_immunities.MechanicsMask"))
+        {
+            await Load(session, rows, AcTables.CreatureImmunities, "1=1", [], token);
+        }
         await Load(session, rows, AcTables.QuestStarter, "id=@k0", [entry], token);
         await Load(session, rows, AcTables.QuestEnder, "id=@k0", [entry], token);
         await Load(session, rows, AcTables.Vendor, "entry=@k0", [entry], token);

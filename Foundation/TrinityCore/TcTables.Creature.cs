@@ -14,6 +14,7 @@ public sealed partial class TcTables
         ("faction", ColumnKind.UInt, 0),
         ("Classification", ColumnKind.UInt, 0),
         ("unit_class", ColumnKind.UInt, 0),
+        ("dmgschool", ColumnKind.Int, 0),
         ("BaseAttackTime", ColumnKind.UInt, 0),
         ("RangeAttackTime", ColumnKind.UInt, 0),
         ("BaseVariance", ColumnKind.Float, 0),
@@ -30,10 +31,15 @@ public sealed partial class TcTables
         ("RequiredExpansion", ColumnKind.Int, 0),
         ("VehicleId", ColumnKind.UInt, 0),
         ("MovementType", ColumnKind.UInt, 0),
+        ("movementId", ColumnKind.UInt, 0),
+        ("ExperienceModifier", ColumnKind.Float, 0),
+        ("RacialLeader", ColumnKind.UInt, 0),
+        ("RegenHealth", ColumnKind.UInt, 0),
+        ("CreatureImmunitiesId", ColumnKind.Int, 0),
         ("AIName", ColumnKind.Text, 64),
         ("ScriptName", ColumnKind.Text, 64),
         ("flags_extra", ColumnKind.UInt, 0)
-    ], Added: [("BaseAttackTime", "0"), ("RangeAttackTime", "0"), ("BaseVariance", "1"), ("RangeVariance", "1")]);
+    ], Added: [("BaseAttackTime", "0"), ("RangeAttackTime", "0"), ("BaseVariance", "1"), ("RangeVariance", "1"), ("ExperienceModifier", "1"), ("RegenHealth", "1")]);
 
     public static readonly TableSchema CreatureDifficulty = new("creature_template_difficulty", ["Entry", "DifficultyID"],
     [
@@ -65,6 +71,40 @@ public sealed partial class TcTables
         ("StaticFlags7", ColumnKind.UInt, 0),
         ("StaticFlags8", ColumnKind.UInt, 0)
     ], Added: [("LevelScalingDeltaMin", "0"), ("LevelScalingDeltaMax", "0")]);
+
+    /// <summary>The models a creature uses, one row per display with its own chance and scale. Idx 0 is the page's display.</summary>
+    public static readonly TableSchema CreatureTemplateModel = new("creature_template_model", ["CreatureID", "Idx"],
+    [
+        ("CreatureID", ColumnKind.UInt, 0),
+        ("Idx", ColumnKind.UInt, 0),
+        ("CreatureDisplayID", ColumnKind.UInt, 0),
+        ("DisplayScale", ColumnKind.Float, 0),
+        ("Probability", ColumnKind.Float, 0)
+    ]);
+
+    /// <summary>The weapon and armor sets this creature can wear.</summary>
+    public static readonly TableSchema CreatureEquipTemplate = new("creature_equip_template", ["CreatureID", "ID"],
+    [
+        ("CreatureID", ColumnKind.UInt, 0),
+        ("ID", ColumnKind.UInt, 0),
+        ("ItemID1", ColumnKind.UInt, 0),
+        ("ItemID2", ColumnKind.UInt, 0),
+        ("ItemID3", ColumnKind.UInt, 0)
+    ]);
+
+    /// <summary>Named immunity sets (school, mechanic, dispel and effect masks) a template can point at.</summary>
+    public static readonly TableSchema CreatureImmunities = new("creature_immunities", ["ID"],
+    [
+        ("ID", ColumnKind.Int, 0),
+        ("SchoolMask", ColumnKind.UInt, 0),
+        ("DispelTypeMask", ColumnKind.UInt, 0),
+        ("MechanicsMask", ColumnKind.ULong, 0),
+        ("Effects", ColumnKind.Text, 0),
+        ("Auras", ColumnKind.Text, 0),
+        ("ImmuneAoE", ColumnKind.UInt, 0),
+        ("ImmuneChain", ColumnKind.UInt, 0),
+        ("Comment", ColumnKind.Text, 0)
+    ]);
 
     /// <summary>A creature's gossip menus: one row per menu, so a creature can have several.</summary>
     public static readonly TableSchema CreatureGossip = new("creature_template_gossip", ["CreatureID", "MenuID"], [("CreatureID", ColumnKind.UInt, 0), ("MenuID", ColumnKind.UInt, 0)]);

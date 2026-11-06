@@ -29,6 +29,9 @@ public class CatalogManifestTests
         ("creature_ai", "9e8573d72b944fdb"),
         ("creature_stats", "08baccc0c3022f3e"),
         ("creature_details", "80c3feb19821c855"),
+        ("creature_template_model", "c2521926d153829e"),
+        ("creature_equip_template", "67c1eed6ec343c86"),
+        ("creature_immunities", "e1d57710e9436c71"),
         ("quest_template", "14c3f2c68415caff"),
         ("quest_template_addon", "c6a92205306f0913"),
         ("quest_request_items", "c714092021b1e462"),
@@ -52,8 +55,11 @@ public class CatalogManifestTests
     /// <summary>The TrinityCore master catalog in order, with a digest of each table's keys, columns and defaults.</summary>
     static readonly (string Name, string Digest)[] Tc =
     [
-        ("creature_template", "7645c1b34b0ecacc"),
+        ("creature_template", "2ea574a22e5d883b"),
         ("creature_template_difficulty", "f6e687d58cb9dca8"),
+        ("creature_template_model", "c2521926d153829e"),
+        ("creature_equip_template", "67c1eed6ec343c86"),
+        ("creature_immunities", "e1d57710e9436c71"),
         ("creature_template_gossip", "c2f187f0459e563a"),
         ("gossip_menu", "de5c68cfe20b07ef"),
         ("npc_text", "43a5b17d4eac3d29"),

@@ -34,6 +34,20 @@ public sealed class TcInteractionSource(WorldDatabase database, IClientLookup? c
         }
 
         await AcInteractionSource.Load(session, rows, TcTables.CreatureDifficulty, "Entry=@k0", [entry], token);
+        if (session.Has("creature_template_model.CreatureDisplayID"))
+        {
+            await AcInteractionSource.Load(session, rows, TcTables.CreatureTemplateModel, "CreatureID=@k0", [entry], token);
+        }
+
+        if (session.Has("creature_equip_template.ItemID1"))
+        {
+            await AcInteractionSource.Load(session, rows, TcTables.CreatureEquipTemplate, "CreatureID=@k0", [entry], token);
+        }
+
+        if (session.Has("creature_immunities.MechanicsMask"))
+        {
+            await AcInteractionSource.Load(session, rows, TcTables.CreatureImmunities, "1=1", [], token);
+        }
         await AcInteractionSource.Load(session, rows, TcTables.CreatureGossip, "CreatureID=@k0", [entry], token);
         await AcInteractionSource.Load(session, rows, TcTables.CreatureTrainer, "CreatureID=@k0", [entry], token);
         await AcInteractionSource.Load(session, rows, TcTables.Vendor, "entry=@k0", [entry], token);

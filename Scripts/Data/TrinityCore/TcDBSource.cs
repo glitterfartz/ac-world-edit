@@ -46,6 +46,8 @@ public sealed class TcDBSource : IDBSource
     public Task<IReadOnlyList<(ulong Guid, uint Map, double X, double Y, double Z)>> FindSpawnsAsync(uint entry, CancellationToken token) => spawns.FindSpawnsAsync(entry, token);
     public Task<RowSet> ReadSpawnRowsAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnRows.ReadAsync(database, TcTables.Instance, kind, guids, token);
     public Task<IReadOnlyDictionary<uint, CreatureLook>> ReadCreatureLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbCreatureLooks.ReadAsync(database, WorldDialect.TrinityCore, entries, token);
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchCreatureDisplaysAsync(string term, CancellationToken token) => DbCreatureDisplays.SearchAsync(database, term, token);
+    public Task<IReadOnlyList<(uint Id, uint First, uint Second, uint Third)>> ReadEquipmentSetsAsync(uint entry, CancellationToken token) => DbCreatureEquipment.ReadAsync(database, entry, token);
     public Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbGameObjectLooks.ReadAsync(database, entries, token);
     public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnImpact.CountAsync(database, WorldDialect.TrinityCore, kind, guids, token);
     public Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnPaths.ReadAsync(database, WorldDialect.TrinityCore, guids, token);

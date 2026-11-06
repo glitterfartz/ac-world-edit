@@ -20,8 +20,7 @@ public sealed partial class AcTables
     /// Every other editable creature_template column (identity, combat, movement, loot, flags) as one
     /// column group. Excludes the key, VerifiedBuild and the columns owned by the groups above.
     /// </summary>
-    public static readonly TableSchema CreatureDetails = new("creature_details", ["entry"], [
-        ("entry", ColumnKind.UInt, 0),
+    public static readonly TableSchema CreatureDetails = new("creature_details", ["entry"], [        ("entry", ColumnKind.UInt, 0),
         ("name", ColumnKind.Text, 100),
         ("IconName", ColumnKind.Text, 100),
         ("difficulty_entry_1", ColumnKind.UInt, 0),
@@ -64,4 +63,38 @@ public sealed partial class AcTables
         ("flags_extra", ColumnKind.UInt, 0),
         ("ScriptName", ColumnKind.Text, 64)
     ], "creature_template");
+
+    /// <summary>The models a creature uses, one row per display with its own chance and scale. Idx 0 is the page's display.</summary>
+    public static readonly TableSchema CreatureTemplateModel = new("creature_template_model", ["CreatureID", "Idx"],
+    [
+        ("CreatureID", ColumnKind.UInt, 0),
+        ("Idx", ColumnKind.UInt, 0),
+        ("CreatureDisplayID", ColumnKind.UInt, 0),
+        ("DisplayScale", ColumnKind.Float, 0),
+        ("Probability", ColumnKind.Float, 0)
+    ]);
+
+    /// <summary>The weapon and armor sets this creature can wear.</summary>
+    public static readonly TableSchema CreatureEquipTemplate = new("creature_equip_template", ["CreatureID", "ID"],
+    [
+        ("CreatureID", ColumnKind.UInt, 0),
+        ("ID", ColumnKind.UInt, 0),
+        ("ItemID1", ColumnKind.UInt, 0),
+        ("ItemID2", ColumnKind.UInt, 0),
+        ("ItemID3", ColumnKind.UInt, 0)
+    ]);
+
+    /// <summary>Named immunity sets (school, mechanic, dispel and effect masks) a template can point at.</summary>
+    public static readonly TableSchema CreatureImmunities = new("creature_immunities", ["ID"],
+    [
+        ("ID", ColumnKind.Int, 0),
+        ("SchoolMask", ColumnKind.UInt, 0),
+        ("DispelTypeMask", ColumnKind.UInt, 0),
+        ("MechanicsMask", ColumnKind.ULong, 0),
+        ("Effects", ColumnKind.Text, 0),
+        ("Auras", ColumnKind.Text, 0),
+        ("ImmuneAoE", ColumnKind.UInt, 0),
+        ("ImmuneChain", ColumnKind.UInt, 0),
+        ("Comment", ColumnKind.Text, 0)
+    ]);
 }

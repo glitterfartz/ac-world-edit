@@ -27,6 +27,12 @@ public interface IDBSource
     /// <summary>The name, model and scale of these creature templates (bounded); a template the database lacks is absent.</summary>
     Task<IReadOnlyDictionary<uint, CreatureLook>> ReadCreatureLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
 
+    /// <summary>Creature display models by the creature names that use them, or by display ID (bounded).</summary>
+    Task<IReadOnlyList<(uint Id, string Name)>> SearchCreatureDisplaysAsync(string term, CancellationToken token);
+
+    /// <summary>The equipment sets of one creature template (creature_equip_template).</summary>
+    Task<IReadOnlyList<(uint Id, uint First, uint Second, uint Third)>> ReadEquipmentSetsAsync(uint entry, CancellationToken token);
+
     /// <summary>The name, model, size and type of these GameObject templates (bounded); a template the database lacks is absent.</summary>
     Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token);
 
