@@ -273,6 +273,38 @@ public sealed partial class SpawnPoses
         return drafts.Commit(sender, source, snapshot, drafts.Draft.Effective(source, snapshot), label, edits, Rules(source));
     }
 
+    /// <summary>
+    /// Template display overrides from the draft: entry to the lowest-Idx creature_template_model
+    /// row the draft touches. The template editor only ever writes that row, so the After image is
+    /// what the world should draw without waiting for a database round trip.
+    /// </summary>
+    public IReadOnlyDictionary<uint, (uint Display, float Scale)> TemplateDisplayOverrides(string source)
+    {
+        if (drafts.Draft is not { } draft)
+        {
+            return new Dictionary<uint, (uint, float)>();
+        }
+
+        var best = new Dictionary<uint, (uint Idx, uint Display, float Scale)>();
+        foreach (var (s, edit) in draft.NetEdits())
+        {
+            if (s != source || edit.Table != "creature_template_model" || edit.After == null)
+            {
+                continue;
+            }
+
+            uint entry = edit.After.U("CreatureID");
+            uint idx = edit.After.U("Idx");
+            float scale = edit.After.F("DisplayScale");
+            if (!best.TryGetValue(entry, out var cur) || idx < cur.Idx)
+            {
+                best[entry] = (idx, edit.After.U("CreatureDisplayID"), float.IsFinite(scale) && scale > 0 ? scale : 1);
+            }
+        }
+
+        return best.ToDictionary(kv => kv.Key, kv => (kv.Value.Display, kv.Value.Scale));
+    }
+
     /// <summary>Delete a spawn and its addon row as one undoable command. The spawn's row must be loaded (or staged in the draft).</summary>
     public (bool Ok, string Message) Delete(object? sender, IWorldSchema schema, string source, ulong guid, string label = "Delete")
     {

@@ -24,7 +24,12 @@ public partial class CreatureOverlay
             return databaseSpawns;
         }
 
-        var spawns = databaseSpawns.Where(s => !poses.Deleted(sourceKey, s.Guid)).ToList();
+        var displays = poses.TemplateDisplayOverrides(sourceKey);
+        static CreatureSpawn WithDisplay(CreatureSpawn spawn, IReadOnlyDictionary<uint, (uint Display, float Scale)> overrides) =>
+            overrides.TryGetValue(spawn.TemplateId, out var d) && d.Display != 0
+                ? spawn with { DisplayId = d.Display, DisplayScale = d.Scale }
+                : spawn;
+        var spawns = databaseSpawns.Where(s => !poses.Deleted(sourceKey, s.Guid)).Select(s => WithDisplay(s, displays)).ToList();
         if (region == null)
         {
             return spawns;
@@ -42,6 +47,11 @@ public partial class CreatureOverlay
             uint entry = row.U("id");
             if (looks.TryGetValue(entry, out var look))
             {
+                if (displays.TryGetValue(entry, out var d) && d.Display != 0)
+                {
+                    look = look with { DisplayId = d.Display, Scale = d.Scale };
+                }
+
                 spawns.Add(SpawnPoses.CreatureOf(row, look, dialect));
             }
             else
