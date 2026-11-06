@@ -1,6 +1,7 @@
 using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
+using Godot;
 
 namespace ACWorldEdit;
 
@@ -40,11 +41,13 @@ public partial class CreatureOverlay
     const double AppearanceCacheSeconds = 0.5;
     /// <summary>More than a step-up above probed ground counts as airborne.</summary>
     const float FlyingThresholdYards = 4.0f;
+    /// <summary>Re-probe flight when the marker moved more than this (squared compare).</summary>
+    const float ReprobeMovedSquared = 0.25f;
     Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)> appearanceCache = [];
     long appearanceCacheAt;
     bool appearanceDirty = true;
-    /// <summary>Flight state per mounted marker; unknown ground keeps the last answer.</summary>
-    readonly Dictionary<ulong, bool> flyingCache = [];
+    /// <summary>Flight state per mounted marker and where it was probed; static spawns probe once ever.</summary>
+    readonly Dictionary<ulong, (bool Flying, Vector3 At)> flyingCache = [];
     /// <summary>Set when the region result changes, so the per-frame step fetches template addons once for the new entries instead of every frame.</summary>
     bool templatePrefetchDirty = true;
 
@@ -107,27 +110,11 @@ public partial class CreatureOverlay
                     }
                 }
 
-                bool flying = flyingCache.GetValueOrDefault(marker.Spawn.Guid);
-                if (mount != 0 && GroundAt != null)
+                bool flying = flyingCache.GetValueOrDefault(marker.Spawn.Guid).Flying;
+                if (mount != 0 && (!flyingCache.TryGetValue(marker.Spawn.Guid, out var probed) || probed.At.DistanceSquaredTo(marker.Node.Position) > ReprobeMovedSquared))
                 {
-                    GroundHit? hit = null;
-                    if (PerfProbe)
-                    {
-                        long gmark = PerfMark();
-                        hit = GroundAt.Invoke(marker.Node.Position);
-                        perfGroundCalls++;
-                        perfGroundMs += System.Diagnostics.Stopwatch.GetElapsedTime(gmark, PerfMark()).TotalMilliseconds;
-                    }
-                    else
-                    {
-                        hit = GroundAt.Invoke(marker.Node.Position);
-                    }
-
-                    if (hit is { Height: float ground })
-                    {
-                        flying = marker.Node.Position.Y - ground > FlyingThresholdYards;
-                        flyingCache[marker.Spawn.Guid] = flying;
-                    }
+                    flying = ProbeFlying(marker.Node.Position, flying);
+                    flyingCache[marker.Spawn.Guid] = (flying, marker.Node.Position);
                 }
 
                 states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon), mount, scale, flying);
@@ -138,6 +125,40 @@ public partial class CreatureOverlay
         }
 
         return states;
+    }
+
+    /// <summary>
+    /// Whether a mounted marker is airborne: clearly above the cheap terrain height, confirmed by
+    /// the full probe (terrain plus building floors) so perched mounts stay grounded. Unknown
+    /// ground keeps the previous answer instead of guessing. Probes run once per resting place;
+    /// the per-triangle WMO walk is what used to eat the frame in crowded cities.
+    /// </summary>
+    bool ProbeFlying(Vector3 pos, bool previous)
+    {
+        if (TerrainHeightAt?.Invoke(pos.X, pos.Z) is float terrain && pos.Y - terrain <= FlyingThresholdYards)
+        {
+            return false;
+        }
+
+        GroundHit? hit = null;
+        if (GroundAt == null)
+        {
+            return previous;
+        }
+
+        if (PerfProbe)
+        {
+            long mark = PerfMark();
+            hit = GroundAt.Invoke(pos);
+            perfGroundCalls++;
+            perfGroundMs += System.Diagnostics.Stopwatch.GetElapsedTime(mark, PerfMark()).TotalMilliseconds;
+        }
+        else
+        {
+            hit = GroundAt.Invoke(pos);
+        }
+
+        return hit is { Height: float ground } ? pos.Y - ground > FlyingThresholdYards : previous;
     }
 
     /// <summary>The emote's client name for animation matching: Wrath DBC names, else retail DB2 slash commands.</summary>

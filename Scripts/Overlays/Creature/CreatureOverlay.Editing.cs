@@ -23,6 +23,9 @@ public partial class CreatureOverlay : IPlacementEditor
     /// unavailable.
     /// </summary>
     public Func<Vector3, GroundHit>? GroundAt { get; set; }
+    /// <summary>Terrain-only height under a viewer-space point (no building floors); the cheap
+    /// prefilter before a full ground probe.</summary>
+    public Func<float, float, float?>? TerrainHeightAt { get; set; }
     /// <summary>
     /// Snap Z to the ground when a move gesture is released. Off by default so existing Z values
     /// never change without an explicit choice.

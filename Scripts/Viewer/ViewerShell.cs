@@ -176,6 +176,7 @@ public partial class ViewerShell : Node3D
         AddChild(creatures);
         creatures.FocusRequested += FocusPose;
         creatures.GroundAt = GroundAt;
+        creatures.TerrainHeightAt = TerrainHeightAt;
         gameObjects = new GameObjectOverlay { Models = models, Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post };
         AddChild(gameObjects);
         gameObjects.FocusRequested += FocusPose;
