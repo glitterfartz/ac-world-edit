@@ -16,13 +16,13 @@ public static class TrainerPage
             new("spell", table, column, label, tip, FieldKind.Whole, RowBinding.Item, Max: max);
         var fields = new List<FieldSpec>
         {
-            Whole("MoneyCost", "Cost in copper", "Cost to learn this spell."),
-            Whole("ReqLevel", "Required level", "Minimum player level to learn this spell.", byte.MaxValue),
-            Whole("ReqSkillLine", "Required skill", "SkillLine ID required to learn this spell. 0 means none."),
-            Whole("ReqSkillRank", "Required skill rank", "Minimum rank in the required skill.")
+            Whole("MoneyCost", "Cost in copper", "How much gold the player pays to learn this spell, in copper (100 copper = 1 silver, 100 silver = 1 gold)."),
+            Whole("ReqLevel", "Required level", "The minimum player level needed to learn this spell.", byte.MaxValue),
+            Whole("ReqSkillLine", "Required skill", "The SkillLine ID the player must have to learn this spell, such as 197 for Tailoring. 0 means no skill requirement."),
+            Whole("ReqSkillRank", "Required skill rank", "The minimum rank in that skill. 0 means any rank.")
         };
         for (int i = 1; i <= 3; i++)
-            fields.Add(Whole($"ReqAbility{i}", $"Required ability {i}", "Spell ID the player must already know. 0 means none."));
+            fields.Add(Whole($"ReqAbility{i}", $"Required ability {i}", "A spell ID the player must already know before this one can be learned. 0 means no requirement."));
         Row NewSpell(uint trainer, RowSet rows)
         {
             return Row.Of(("TrainerId", trainer), ("SpellId", 0u), ("MoneyCost", 0u), ("ReqLevel", 1u), ("ReqSkillLine", 0u), ("ReqSkillRank", 0u),

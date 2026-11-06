@@ -61,6 +61,18 @@ public class CreaturePropertiesWindowTests
     }
 
     [TestCase]
+    public void EverySectionPickerEntryExplainsItself()
+    {
+        var window = Spawn();
+        var picker = (ItemList)window.FindChild("SectionPicker", true, false)!;
+        for (int i = 0; i < picker.ItemCount; i++)
+        {
+            string tip = picker.GetItemTooltip(i);
+            AssertThat(tip.Length > 15).IsTrue();
+        }
+    }
+
+    [TestCase]
     public void ShowingASectionHidesTheOthers()
     {
         var window = Spawn();

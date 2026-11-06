@@ -28,6 +28,9 @@ public abstract partial class EntitySection : VBoxContainer
     /// <summary>Picker suffix such as a count (empty for none).</summary>
     public virtual string Badge => "";
 
+    /// <summary>Hover text for the picker entry (empty for none).</summary>
+    public virtual string Tip => "";
+
     /// <summary>
     /// False dims the picker entry: the entity has nothing for this section yet (it stays reachable
     /// because adding content happens inside it).

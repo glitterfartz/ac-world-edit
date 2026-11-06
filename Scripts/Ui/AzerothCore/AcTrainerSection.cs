@@ -11,6 +11,7 @@ public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractio
     public override string Id => PickerPages.Trainer.Id;
     public override string Title => PickerPages.Trainer.Title;
     public override string IconPath => PickerPages.Trainer.IconPath;
+    public override string Tip => "The trainer's type and greeting and the spells it teaches, with their cost, level and skill requirements.";
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Trainer != null);
 
     protected override void Populate(AcCreatureView v)
@@ -96,7 +97,8 @@ public sealed partial class AcTrainerSection(CreatureContext ctx) : AcInteractio
         RenderSpells(current);
 
         SearchPicker("spell", "Find spell by name or ID…", term => Task.FromResult<IReadOnlyList<(string, Action)>>(
-            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add trainer spell {s.Id}", [Page.Spells.Add(effective, current.Id, ("SpellId", s.Id))])))).ToList()));
+            (catalog?.SearchSpells(term) ?? []).Select(s => ($"{s.Name} ({s.Id})", (Action)(() => Commit($"Add trainer spell {s.Id}", [Page.Spells.Add(effective, current.Id, ("SpellId", s.Id))])))).ToList()),
+            tip: "Find a spell to add to this trainer.");
     }
 
     void RenderSpells(TrainerView trainer)

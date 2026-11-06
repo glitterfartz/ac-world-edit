@@ -12,6 +12,7 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcCreatureSec
     public override string Id => PickerPages.Gossip.Id;
     public override string Title => PickerPages.Gossip.Title;
     public override string IconPath => PickerPages.Gossip.IconPath;
+    public override string Tip => "The greeting text and the options players see when they talk to the creature, including where each option leads.";
     public override string Badge => Ctx.TcView is { } v && v.Menus.Length > 0 ? v.Menus.Count(m => m.Root).ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.Editable || Ctx.TcView is { Menus.Length: > 0 };
     bool greetingExpanded;
@@ -334,9 +335,9 @@ public sealed partial class TcGossipSection(CreatureContext ctx) : TcCreatureSec
         {
             int slot = i;
             grid.AddChild(ClientStyle.Tag($"Slot {slot}"));
-            var id = new LineEdit { Name = $"GreetingBroadcast{slot}", Text = row.T($"BroadcastTextID{slot}"), CustomMinimumSize = new(110, 0), TooltipText = "Broadcast text ID" };
-            var weight = new LineEdit { Name = $"GreetingWeight{slot}", Text = row.T($"Probability{slot}"), CustomMinimumSize = new(85, 0), TooltipText = "Relative weight (usually 0 to 1)" };
-            var save = new Button { Text = "Save", Name = $"SaveGreeting{slot}" };
+            var id = new LineEdit { Name = $"GreetingBroadcast{slot}", Text = row.T($"BroadcastTextID{slot}"), CustomMinimumSize = new(110, 0), TooltipText = "BroadcastText ID of this greeting variant. 0 clears the slot." };
+            var weight = new LineEdit { Name = $"GreetingWeight{slot}", Text = row.T($"Probability{slot}"), CustomMinimumSize = new(85, 0), TooltipText = "Relative weight when the server picks a greeting, usually 0 to 1. 0 clears the slot." };
+            var save = new Button { Text = "Save", Name = $"SaveGreeting{slot}", TooltipText = "Save this greeting slot's broadcast text and weight together." };
             void Save() => Ctx.Try(() =>
             {
                 uint broadcast = uint.Parse(id.Text, CultureInfo.InvariantCulture);

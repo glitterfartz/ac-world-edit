@@ -128,57 +128,57 @@ public static class SpawnFields
         var fields = new List<SpawnField>();
         if (kind == SpawnKind.Creature)
         {
-            fields.Add(new("spawntimesecs", "Respawn after (s)", SpawnSection, SpawnFieldKind.Number, "Seconds until a killed creature returns.", Max: uint.MaxValue));
-            fields.Add(new("MovementType", "Movement", SpawnSection, SpawnFieldKind.Choice, "Stands still, wanders within a radius, or follows a waypoint path.", Choices: Movement));
-            fields.Add(new("wander_distance", "Wander radius (yd)", SpawnSection, SpawnFieldKind.Decimal, "Setting a radius makes the creature wander; 0 makes it stand still.", Max: 1000));
+            fields.Add(new("spawntimesecs", "Respawn after (s)", SpawnSection, SpawnFieldKind.Number, "How long, in seconds, after it is killed before this spawn returns.", Max: uint.MaxValue));
+            fields.Add(new("MovementType", "Movement", SpawnSection, SpawnFieldKind.Choice, "What this spawn does when not fighting: stand still, wander within a radius, or follow a waypoint path.", Choices: Movement));
+            fields.Add(new("wander_distance", "Wander radius (yd)", SpawnSection, SpawnFieldKind.Decimal, "How far from its spawn point it may wander, in yards. A value above 0 switches it to random movement; 0 keeps it standing still.", Max: 1000));
             fields.Add(tc
-                ? new("curHealthPct", "Health (%)", SpawnSection, SpawnFieldKind.Number, "Starting health as a percentage.", SpawnInherit.Null, Max: 100)
-                : new("curhealth", "Health", SpawnSection, SpawnFieldKind.Number, "Starting health; only used by creatures that do not regenerate.", Max: uint.MaxValue));
+                ? new("curHealthPct", "Health (%)", SpawnSection, SpawnFieldKind.Number, "Starting health as a percentage of the template's maximum health. 100 is full health.", SpawnInherit.Null, Max: 100)
+                : new("curhealth", "Health", SpawnSection, SpawnFieldKind.Number, "Starting health in hit points. Only matters for creatures whose template turns off health regeneration.", Max: uint.MaxValue));
         }
         else
         {
-            fields.Add(new("spawntimesecs", "Respawn after (s)", SpawnSection, SpawnFieldKind.Number, "Seconds until a used object returns. Negative: it starts despawned.", Min: int.MinValue, Max: int.MaxValue));
-            fields.Add(new("state", "State", SpawnSection, SpawnFieldKind.Choice, "A door or chest in its usual state (ready) or switched (active).", Choices: ObjectState));
-            fields.Add(new("animprogress", "Animation progress", SpawnSection, SpawnFieldKind.Number, "0 to 255; 255 is fully open or visible.", Max: 255));
+            fields.Add(new("spawntimesecs", "Respawn after (s)", SpawnSection, SpawnFieldKind.Number, "How long, in seconds, after it is used before this object returns. A negative value makes it start despawned.", Min: int.MinValue, Max: int.MaxValue));
+            fields.Add(new("state", "State", SpawnSection, SpawnFieldKind.Choice, "The state this door, chest or gate starts in: ready (closed) or active (open).", Choices: ObjectState));
+            fields.Add(new("animprogress", "Animation progress", SpawnSection, SpawnFieldKind.Number, "How far through its opening animation it starts, from 0 to 255. 255 is fully open or visible.", Max: 255));
         }
 
         if (tc)
         {
-            fields.Add(new("spawnDifficulties", "Difficulties", VisibilitySection, SpawnFieldKind.Text, "Comma-separated difficulty IDs; 0 is the open world."));
-            fields.Add(new("PhaseId", "Phase", VisibilitySection, SpawnFieldKind.Number, "0 or empty: the spawn is in every phase.", Max: uint.MaxValue, BlankMeansZero: true));
-            fields.Add(new("PhaseGroup", "Phase group", VisibilitySection, SpawnFieldKind.Number, "Use a phase or a group, not both. 0 or empty: none.", Max: uint.MaxValue, BlankMeansZero: true));
-            fields.Add(new("phaseUseFlags", "Phase flags", VisibilitySection, SpawnFieldKind.Flags, "1 always visible, 2 inverse.", Max: 3));
+            fields.Add(new("spawnDifficulties", "Difficulties", VisibilitySection, SpawnFieldKind.Text, "Comma-separated difficulty IDs where this spawn appears. 0 is the open world."));
+            fields.Add(new("PhaseId", "Phase", VisibilitySection, SpawnFieldKind.Number, "The phase this spawn belongs to. 0 or empty puts it in every phase.", Max: uint.MaxValue, BlankMeansZero: true));
+            fields.Add(new("PhaseGroup", "Phase group", VisibilitySection, SpawnFieldKind.Number, "A group of phases that are shown together. Use a phase or a group, not both; 0 or empty means none.", Max: uint.MaxValue, BlankMeansZero: true));
+            fields.Add(new("phaseUseFlags", "Phase flags", VisibilitySection, SpawnFieldKind.Flags, "How the phase behaves: 1 always visible, 2 inverse (visible outside the phase).", Max: 3));
         }
         else
         {
-            fields.Add(new("spawnMask", "Difficulty mask", VisibilitySection, SpawnFieldKind.Flags, "Bit mask of the difficulties it spawns in; 1 is the open world or normal.", Max: 255));
-            fields.Add(new("phaseMask", "Phase mask", VisibilitySection, SpawnFieldKind.Flags, "Bit mask of the phases it is visible in; 1 is the default phase.", Max: uint.MaxValue));
+            fields.Add(new("spawnMask", "Difficulty mask", VisibilitySection, SpawnFieldKind.Flags, "Bit mask of the difficulties this spawn appears in: 1 is the open world, 2 normal dungeon, 4 heroic dungeon and so on.", Max: 255));
+            fields.Add(new("phaseMask", "Phase mask", VisibilitySection, SpawnFieldKind.Flags, "Bit mask of the phases this spawn is visible in. 1 is the default phase.", Max: uint.MaxValue));
         }
 
         if (kind == SpawnKind.Creature)
         {
-            fields.Add(new("equipment_id", "Equipment set", OverridesSection, SpawnFieldKind.Number, "0 none, -1 a random set of the template, or the set's ID.", Min: -1, Max: 127));
+            fields.Add(new("equipment_id", "Equipment set", OverridesSection, SpawnFieldKind.Number, "Which weapon and armor set it wears: 0 none, -1 a random set from the template, or a set ID.", Min: -1, Max: 127));
             if (tc)
             {
-                fields.Add(new("modelid", "Model", OverridesSection, SpawnFieldKind.Number, "0 uses the template's model.", Max: uint.MaxValue));
-                fields.Add(new("npcflag", "NPC flags", OverridesSection, SpawnFieldKind.Flags, "Empty uses the template's.", SpawnInherit.Null, "npcflag", Max: long.MaxValue));
-                fields.Add(new("unit_flags", "Unit flags", OverridesSection, SpawnFieldKind.Flags, "Empty uses the template's.", SpawnInherit.Null, "unit_flags", Max: uint.MaxValue));
-                fields.Add(new("unit_flags2", "Unit flags 2", OverridesSection, SpawnFieldKind.Flags, "Empty uses the template's.", SpawnInherit.Null, "unit_flags2", Max: uint.MaxValue));
-                fields.Add(new("unit_flags3", "Unit flags 3", OverridesSection, SpawnFieldKind.Flags, "Empty uses the template's.", SpawnInherit.Null, "unit_flags3", Max: uint.MaxValue));
+                fields.Add(new("modelid", "Model", OverridesSection, SpawnFieldKind.Number, "CreatureDisplayInfo ID of the model this spawn uses. 0 uses the template's model.", Max: uint.MaxValue));
+                fields.Add(new("npcflag", "NPC flags", OverridesSection, SpawnFieldKind.Flags, "The right-click services of this spawn. Empty uses the template's value.", SpawnInherit.Null, "npcflag", Max: long.MaxValue));
+                fields.Add(new("unit_flags", "Unit flags", OverridesSection, SpawnFieldKind.Flags, "State and combat switches for this spawn. Empty uses the template's value.", SpawnInherit.Null, "unit_flags", Max: uint.MaxValue));
+                fields.Add(new("unit_flags2", "Unit flags 2", OverridesSection, SpawnFieldKind.Flags, "Additional state switches for this spawn. Empty uses the template's value.", SpawnInherit.Null, "unit_flags2", Max: uint.MaxValue));
+                fields.Add(new("unit_flags3", "Unit flags 3", OverridesSection, SpawnFieldKind.Flags, "Further state switches for this spawn. Empty uses the template's value.", SpawnInherit.Null, "unit_flags3", Max: uint.MaxValue));
             }
             else
             {
-                const string zero = "0 uses the template's; a flag cannot be overridden to 0.";
-                fields.Add(new("npcflag", "NPC flags", OverridesSection, SpawnFieldKind.Flags, zero, SpawnInherit.Zero, "npcflag", Max: uint.MaxValue));
-                fields.Add(new("unit_flags", "Unit flags", OverridesSection, SpawnFieldKind.Flags, zero, SpawnInherit.Zero, "unit_flags", Max: uint.MaxValue));
-                fields.Add(new("dynamicflags", "Dynamic flags", OverridesSection, SpawnFieldKind.Flags, zero, SpawnInherit.Zero, "dynamicflags", Max: uint.MaxValue));
+                const string zero = "0 uses the template's value; a flag cannot be overridden to 0.";
+                fields.Add(new("npcflag", "NPC flags", OverridesSection, SpawnFieldKind.Flags, "The right-click services of this spawn. " + zero, SpawnInherit.Zero, "npcflag", Max: uint.MaxValue));
+                fields.Add(new("unit_flags", "Unit flags", OverridesSection, SpawnFieldKind.Flags, "State and combat switches for this spawn. " + zero, SpawnInherit.Zero, "unit_flags", Max: uint.MaxValue));
+                fields.Add(new("dynamicflags", "Dynamic flags", OverridesSection, SpawnFieldKind.Flags, "Runtime display flags such as lootable or tapped, normally set by the server. " + zero, SpawnInherit.Zero, "dynamicflags", Max: uint.MaxValue));
             }
         }
 
-        fields.Add(new("ScriptName", "Script", OverridesSection, SpawnFieldKind.Text, "C++ script bound to this spawn; empty uses the template's.", TemplateColumn: "ScriptName"));
+        fields.Add(new("ScriptName", "Script", OverridesSection, SpawnFieldKind.Text, "Name of a compiled C++ script bound to this one spawn. Empty uses the template's script.", TemplateColumn: "ScriptName"));
         if (tc)
         {
-            fields.Add(new("StringId", "String ID", OverridesSection, SpawnFieldKind.Text, "Names the spawn for scripts. Empty: none.", SpawnInherit.Null));
+            fields.Add(new("StringId", "String ID", OverridesSection, SpawnFieldKind.Text, "A name scripts use to find this spawn. Empty means none.", SpawnInherit.Null));
         }
 
         return fields;
@@ -199,29 +199,29 @@ public static class SpawnFields
         {
             return
             [
-                new("invisibilityType", "Invisibility type", AppearanceSection, SpawnFieldKind.Number, "0 visible to everyone; other types hide it from players without the matching invisibility.", Max: 31, Addon: true),
-                new("invisibilityValue", "Invisibility value", AppearanceSection, SpawnFieldKind.Number, "How strong the invisibility is.", Max: uint.MaxValue, Addon: true)
+                new("invisibilityType", "Invisibility type", AppearanceSection, SpawnFieldKind.Number, "The kind of invisibility it starts with. 0 is visible to everyone; other types hide it from players without the matching detection.", Max: 31, Addon: true),
+                new("invisibilityValue", "Invisibility value", AppearanceSection, SpawnFieldKind.Number, "How strong the invisibility is. Higher values need stronger detection to see through.", Max: uint.MaxValue, Addon: true)
             ];
         }
 
         var fields = new List<SpawnField>
         {
-            new("mount", "Mount model", AppearanceSection, SpawnFieldKind.Number, "Display ID of the mount it rides; 0 none.", Max: uint.MaxValue, Addon: true)
+            new("mount", "Mount model", AppearanceSection, SpawnFieldKind.Number, "CreatureDisplayInfo ID of the mount it rides. 0 means it is not mounted.", Max: uint.MaxValue, Addon: true)
         };
         if (tc)
         {
-            fields.Add(new("MountCreatureID", "Mount creature", AppearanceSection, SpawnFieldKind.Number, "Creature entry whose model it rides; 0 none.", Max: uint.MaxValue, Addon: true));
-            fields.Add(new("StandState", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How it stands when idle.", Choices: StandStates, Addon: true));
-            fields.Add(new("SheathState", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons it has drawn.", Choices: SheathStates, Addon: true));
+            fields.Add(new("MountCreatureID", "Mount creature", AppearanceSection, SpawnFieldKind.Number, "The creature entry whose model it rides. 0 means it is not mounted.", Max: uint.MaxValue, Addon: true));
+            fields.Add(new("StandState", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How the creature stands while idle: standing, sitting, sleeping, kneeling and so on.", Choices: StandStates, Addon: true));
+            fields.Add(new("SheathState", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons the creature has drawn while idle.", Choices: SheathStates, Addon: true));
         }
         else
         {
-            fields.Add(new("bytes1", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How it stands when idle (low byte of bytes1).", Choices: StandStates, Addon: true, Mask: 0xFF));
-            fields.Add(new("bytes2", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons it has drawn (low byte of bytes2).", Choices: SheathStates, Addon: true, Mask: 0xFF));
+            fields.Add(new("bytes1", "Stance", AppearanceSection, SpawnFieldKind.Choice, "How the creature stands while idle (the low byte of bytes1).", Choices: StandStates, Addon: true, Mask: 0xFF));
+            fields.Add(new("bytes2", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons the creature has drawn while idle (the low byte of bytes2).", Choices: SheathStates, Addon: true, Mask: 0xFF));
         }
 
-        fields.Add(new("emote", "Emote", AppearanceSection, SpawnFieldKind.Number, "Emote ID it plays while idle; 0 none.", Max: uint.MaxValue, Addon: true));
-        fields.Add(new("auras", "Auras", AppearanceSection, SpawnFieldKind.Text, "Spell IDs it has on spawn, separated by spaces.", Addon: true, BlankIsNull: tc));
+        fields.Add(new("emote", "Emote", AppearanceSection, SpawnFieldKind.Number, "The emote it plays while idle, such as waving or dancing. 0 means none.", Max: uint.MaxValue, Addon: true));
+        fields.Add(new("auras", "Auras", AppearanceSection, SpawnFieldKind.Text, "Aura spell IDs applied when it spawns, separated by spaces. Empty means no auras.", Addon: true, BlankIsNull: tc));
         return fields;
     }
 

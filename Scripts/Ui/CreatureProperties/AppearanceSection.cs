@@ -29,6 +29,7 @@ public sealed partial class AppearanceSection : CreatureSection
     public override string Id => "appearance";
     public override string Title => "Appearance";
     public override string IconPath => "Interface/Icons/INV_Misc_Cape_01.blp";
+    public override string Tip => "The mount, stance, weapons, idle emote and auras that every spawn of this creature shows unless the spawn has its own appearance.";
 
     void Build()
     {

@@ -25,7 +25,7 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
         get
         {
             var spec = base.Spec;
-            return spec with { Fields = spec.Fields.Where(f => f.Column != "incrtime").Select(f => f.Column == "maxcount" ? f with { Label = "Stock / restock", Tip = "Item stock (0 unlimited) and restock seconds, or currency quantity. Save both together." } : f).ToArray() };
+            return spec with { Fields = spec.Fields.Where(f => f.Column != "incrtime").Select(f => f.Column == "maxcount" ? f with { Label = "Stock / restock", Tip = "How many the vendor holds (0 means unlimited) and the seconds between restocks; for a currency row it is the quantity sold. Both values are saved together." } : f).ToArray() };
         }
     }
 
@@ -118,9 +118,9 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
     Control StockEditor(Row row)
     {
         var box = new HBoxContainer();
-        var count = new LineEdit { Text = row.T("maxcount"), CustomMinimumSize = new(100, 0), TooltipText = "Stock limit, or currency quantity" };
-        var time = new LineEdit { Text = row.T("incrtime"), CustomMinimumSize = new(100, 0), TooltipText = "Restock seconds (items only)" };
-        var save = new Button { Text = "Save stock" };
+        var count = new LineEdit { Text = row.T("maxcount"), CustomMinimumSize = new(100, 0), TooltipText = "How many the vendor holds before it stops selling; 0 means unlimited. For a currency row, the amount sold." };
+        var time = new LineEdit { Text = row.T("incrtime"), CustomMinimumSize = new(100, 0), TooltipText = "How many seconds until the vendor restocks one item after a purchase. Only used for item rows." };
+        var save = new Button { Text = "Save stock", TooltipText = "Save both the stock limit and the restock time together." };
         void Save() => Ctx.Try(() => Ctx.Commit("Change vendor stock", ItemListSpec.Change(Ctx.Schema.VendorPage.Table, row,
             row.With("maxcount", uint.Parse(count.Text, CultureInfo.InvariantCulture)).With("incrtime", uint.Parse(time.Text, CultureInfo.InvariantCulture)))));
         save.Pressed += Save;
@@ -166,11 +166,11 @@ public sealed partial class TcVendorSection(CreatureContext ctx) : VendorSection
 
         var manual = new HBoxContainer();
         AddChild(manual);
-        var id = new LineEdit { PlaceholderText = "Item or currency ID", CustomMinimumSize = new(180, 0) };
-        var type = new OptionButton();
+        var id = new LineEdit { PlaceholderText = "Item or currency ID", CustomMinimumSize = new(180, 0), TooltipText = "The item ID, or the currency ID for a currency row." };
+        var type = new OptionButton { TooltipText = "Whether the ID names an item or a currency." };
         type.AddItem("Item", 1);
         type.AddItem("Currency", 2);
-        var addId = new Button { Text = "Add ID" };
+        var addId = new Button { Text = "Add ID", TooltipText = "Add this item or currency to the vendor." };
         addId.Pressed += () => Ctx.Try(() => Add(int.Parse(id.Text, CultureInfo.InvariantCulture), (uint)type.GetSelectedId()));
         manual.AddChild(id);
         manual.AddChild(type);

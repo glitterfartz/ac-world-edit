@@ -357,13 +357,17 @@ public partial class BehaviorPanel : ContentPanel
         {
             int count = RulesOf(effective, each).Count;
             string text = each.IsActionList ? $"Action list #{each.EntryOrGuid} · {count} step(s)" : each.IsAreaTrigger ? $"On trigger · {count}" : each.IsSpawn ? $"This spawn only · {count}" : $"All {snapshot.CreatureName} spawns · {count}";
-            ScopeButton(text, each);
+            string tip = each.IsActionList ? "A list of steps that runs in order when a rule starts this action list."
+                : each.IsAreaTrigger ? "Rules that run when a player enters this AreaTrigger."
+                : each.IsSpawn ? "Rules for this one spawn. They replace the rules shared by every spawn of the creature."
+                : "Rules shared by every spawn of this creature.";
+            ScopeButton(text, each, tip);
         }
 
         if (!areaTrigger && SpeechInScopes)
         {
             int lines = effective.All(smart.CreatureText).Count(t => t.U("CreatureID") == entry);
-            ScopeButton($"Speech · {lines} line(s)", null);
+            ScopeButton($"Speech · {lines} line(s)", null, "The lines the creature can say; rules pick them by group.");
         }
 
         scope ??= areaTrigger ? EntryScope : null;
@@ -388,7 +392,8 @@ public partial class BehaviorPanel : ContentPanel
             {
                 var button = new Button
                 {
-                    Text = "Fix"
+                    Text = "Fix",
+                    TooltipText = "Apply the suggested change so these rules run."
                 };
                 button.Pressed += () => Commit(trigger is { } at ? $"Run SmartAI rules ({SmartCatalog.SmartScriptName(at)})" : "Enable SmartAI", fix);
                 row.AddChild(button);

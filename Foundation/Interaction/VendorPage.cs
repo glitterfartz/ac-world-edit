@@ -13,17 +13,17 @@ public static class VendorPage
         var fields = new List<FieldSpec>
         {
             Whole("slot", "Position", "Where the item appears in the vendor window. Lower numbers come first.", (ulong)short.MaxValue),
-            Whole("maxcount", "Stock limit", "How many the vendor holds. 0 means unlimited.", retail ? uint.MaxValue : byte.MaxValue),
-            Whole("incrtime", "Restock time", "Seconds between stock refills. Only used with a stock limit."),
-            Whole("ExtendedCost", "Alternate price", "ID of an extended cost (tokens, honor or other items). 0 uses the item's gold price.", retail ? uint.MaxValue : 16777215)
+            Whole("maxcount", "Stock limit", "How many the vendor holds before it stops selling. 0 means unlimited.", retail ? uint.MaxValue : byte.MaxValue),
+            Whole("incrtime", "Restock time", "How many seconds until the vendor restocks one item after a purchase. Only used with a stock limit."),
+            Whole("ExtendedCost", "Alternate price", "The ExtendedCost ID that takes tokens, honor or other items instead of gold. 0 charges the item's normal gold price.", retail ? uint.MaxValue : 16777215)
         };
         if (retail)
         {
-            fields.Insert(0, Whole("item", "Item or currency ID", "Client item ID, or currency ID for currency rows."));
-            fields.Insert(1, new("item", table, "type", "Type", "What the vendor sells.", FieldKind.Choice, RowBinding.Item, Options: [(1, "Item"), (2, "Currency")]));
-            fields.Add(new("item", table, "BonusListIDs", "Bonus lists", "Space-separated item bonus list IDs.", FieldKind.Text, RowBinding.Item, AllowEmpty: true));
-            fields.Add(Whole("PlayerConditionID", "Player condition", "PlayerCondition ID required to see this item. 0 means none."));
-            fields.Add(new("item", table, "IgnoreFiltering", "Ignore filtering", "Show this item regardless of the vendor's normal item filtering.", FieldKind.Check, RowBinding.Item));
+            fields.Insert(0, Whole("item", "Item or currency ID", "The client item ID, or the currency ID for a currency row."));
+            fields.Insert(1, new("item", table, "type", "Type", "What this row sells: an item or a currency.", FieldKind.Choice, RowBinding.Item, Options: [(1, "Item"), (2, "Currency")]));
+            fields.Add(new("item", table, "BonusListIDs", "Bonus lists", "Space-separated item bonus list IDs that change the item's stats or appearance. Empty means none.", FieldKind.Text, RowBinding.Item, AllowEmpty: true));
+            fields.Add(Whole("PlayerConditionID", "Player condition", "PlayerCondition ID that must pass before a player can see this item. 0 means no condition."));
+            fields.Add(new("item", table, "IgnoreFiltering", "Ignore filtering", "Show this item even when the vendor's normal item filtering would hide it.", FieldKind.Check, RowBinding.Item));
         }
 
         Row NewRow(uint entry, RowSet rows)

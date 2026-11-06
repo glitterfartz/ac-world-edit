@@ -254,6 +254,11 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
                 picker.SetItemIcon(i, Shell.Icons.Get(section.IconPath));
             }
 
+            if (section.Tip.Length > 0)
+            {
+                picker.SetItemTooltip(i, section.Tip);
+            }
+
             picker.SetItemCustomFgColor(i, section.HasContent ? ClientStyle.Body : ClientStyle.Faded);
             if (section == Active)
             {

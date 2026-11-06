@@ -62,12 +62,12 @@ public abstract partial class CreatureSection : EntitySection
     /// <see cref="SearchState{T}.Results"/>, reporting "n {noun}(s) found." on the status line. The
     /// button is disabled while searching and, when <paramref name="needsClient"/>, without a client lookup.
     /// </summary>
-    protected void SearchBox<T>(Control parent, SearchState<T> state, string name, string placeholder, string noun, bool needsClient, Func<string, Task<IReadOnlyList<T>>> run)
+    protected void SearchBox<T>(Control parent, SearchState<T> state, string name, string placeholder, string noun, bool needsClient, Func<string, Task<IReadOnlyList<T>>> run, string tooltip = "")
     {
         var box = new HBoxContainer();
         parent.AddChild(box);
-        var term = new LineEdit { Name = name, Text = state.Term, PlaceholderText = placeholder, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var search = new Button { Text = "Search", Disabled = state.Searching || (needsClient && Ctx.Lookup() == null) };
+        var term = new LineEdit { Name = name, Text = state.Term, PlaceholderText = placeholder, SizeFlagsHorizontal = SizeFlags.ExpandFill, TooltipText = tooltip };
+        var search = new Button { Text = "Search", Disabled = state.Searching || (needsClient && Ctx.Lookup() == null), TooltipText = tooltip };
         term.TextChanged += text => state.Term = text;
         async void Search()
         {
@@ -157,14 +157,14 @@ public abstract partial class CreatureSection : EntitySection
     /// A <see cref="SearchBox{T}"/> whose results are "+ label" buttons that survive redraws, each with
     /// an optional icon and game tooltip looked up by its label. The searches are bounded and read-only.
     /// </summary>
-    protected void SearchPicker(Control parent, string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null, bool needsClient = false)
+    protected void SearchPicker(Control parent, string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null, bool needsClient = false, string searchTip = "")
     {
         if (!pickers.TryGetValue(kind, out var state))
         {
             pickers[kind] = state = new();
         }
 
-        SearchBox(parent, state, "Search_" + kind, placeholder, kind, needsClient, run);
+        SearchBox(parent, state, "Search_" + kind, placeholder, kind, needsClient, run, searchTip);
         foreach (var (label, pick) in state.Results)
         {
             var result = new TooltipButton

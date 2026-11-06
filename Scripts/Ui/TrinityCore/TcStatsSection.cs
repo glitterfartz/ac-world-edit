@@ -19,6 +19,7 @@ public sealed partial class TcStatsSection(CreatureContext ctx) : TcCreatureSect
     public override string Id => PickerPages.Stats.Id;
     public override string Title => PickerPages.Stats.Title;
     public override string IconPath => PickerPages.Stats.IconPath;
+    public override string Tip => "Content tuning, level deltas and stat multipliers for the selected difficulty, plus the resulting level, health, mana and damage.";
 
     public override void OnCreatureChanged(CreatureSpawn? creature) => renderer.Reset();
 

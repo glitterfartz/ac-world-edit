@@ -41,13 +41,14 @@ public partial class BehaviorPanel
         return list;
     }
 
-    void ScopeButton(string text, SmartScope? value)
+    void ScopeButton(string text, SmartScope? value, string tip = "")
     {
         var button = new Button
         {
             Text = text,
             ToggleMode = true,
-            ButtonPressed = scope == value
+            ButtonPressed = scope == value,
+            TooltipText = tip
         };
         button.Pressed += () => ShowScope(value);
         scopes.AddChild(button);

@@ -37,7 +37,9 @@ public partial class BehaviorPanel
             }
 
             uint groupId = group.Key;
-            page.AddChild(ButtonOf("+ Add line to this group", () => AddLine(groupId)));
+            var addLine = ButtonOf("+ Add line to this group", () => AddLine(groupId));
+            addLine.TooltipText = "Add another line to this group; the server picks one line of the group at random.";
+            page.AddChild(addLine);
         }
 
         if (lines.Count == 0)
@@ -48,6 +50,7 @@ public partial class BehaviorPanel
         uint nextGroup = SpeechEdits.NextGroup(smart, effective, entry);
         var add = ButtonOf("+ New group", () => AddLine(nextGroup));
         add.Name = "AddSpeechGroup";
+        add.TooltipText = "Start a new text group; \"Say text\" actions pick a line from one group.";
         page.AddChild(add);
     }
 
@@ -63,35 +66,38 @@ public partial class BehaviorPanel
             }
         }
 
-        var text = EditorFields.Line(line.T("Text"), value => Put("Edit line", ("Text", value)), "What the creature says");
+        var text = EditorFields.Line(line.T("Text"), value => Put("Edit line", ("Text", value)), "What the creature says", 0, "The line the creature says. $n is replaced by the player's name. A linked broadcast text overrides it.");
         if (edited)
         {
             text.AddThemeColorOverride("font_color", ClientStyle.Edited);
         }
 
-        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", text, ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(smart, effective.Get(table, table.KeyOf(line)) ?? line)))));
+        var remove = ButtonOf("Remove", () => Commit("Remove line", SpeechEdits.Remove(smart, effective.Get(table, table.KeyOf(line)) ?? line)));
+        remove.TooltipText = "Delete this speech line.";
+        page.AddChild(EditorFields.Row($"Line {line.U("ID")}", "The line the creature says, plus how and where it is heard.", text, remove));
         var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
-        page.AddChild(EditorFields.Row("",
-            EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value))),
-            ClientStyle.Tag("in"), EditorFields.Choice(Languages, (uint)Math.Max(0, line.I("Language")), value => Put("Change language", ("Language", (int)value))),
-            ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value))),
-            ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50), ClientStyle.Tag("%"),
-            ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)))));
+        page.AddChild(EditorFields.Row("", "How this line is said, the language and range it is heard in, its chance weight when the group is picked, and its gesture.",
+            EditorFields.Choice(SpeechTypes, line.U("Type"), value => Put("Change how the line is said", ("Type", value)), "How the line is said: say, yell, emote text, whisper and so on."),
+            ClientStyle.Tag("in"), EditorFields.Choice(Languages, (uint)Math.Max(0, line.I("Language")), value => Put("Change language", ("Language", (int)value)), "The language the line is spoken in."),
+            ClientStyle.Tag("heard"), EditorFields.Choice(Ranges, line.U("TextRange"), value => Put("Change range", ("TextRange", value)), "How far the line is heard: nearby, area, zone, map or world."),
+            ClientStyle.Tag("chance"), EditorFields.Decimal(line.F("Probability"), value => Put("Change line chance", ("Probability", (float)Math.Max(0, value))), 50, "The weight of this line when the server picks one from its group; higher is more likely."), ClientStyle.Tag("%"),
+            ClientStyle.Tag("gesture"), EditorFields.Choice(emotes, line.U("Emote"), value => Put("Change line gesture", ("Emote", value)), "The emote the creature plays while saying this line.")));
         if (smart.HasStringParams)
         {
             // TrinityCore: the sound plays to everyone in range, or from the creature itself (SoundKitPlayType).
             (uint, string)[] playTypes = [(0, "Normal"), (1, "From the creature")];
-            var sound = EditorFields.Number(line.U("Sound"), value => Put("Change line sound", ("Sound", (uint)Math.Clamp(value, 0, uint.MaxValue))), 80, "Sound kit ID (0 = none)");
+            var sound = EditorFields.Number(line.U("Sound"), value => Put("Change line sound", ("Sound", (uint)Math.Clamp(value, 0, uint.MaxValue))), 80, "Sound kit ID played with the line; 0 means no sound.");
             sound.Name = "LineSound";
-            page.AddChild(EditorFields.Row("Sound", sound, ClientStyle.Tag("played"), EditorFields.Choice(playTypes, line.U("SoundPlayType"), value => Put("Change how the sound plays", ("SoundPlayType", value)))));
+            page.AddChild(EditorFields.Row("Sound", "The sound kit played with the line and whether it plays from the area or from the creature.",
+                sound, ClientStyle.Tag("played"), EditorFields.Choice(playTypes, line.U("SoundPlayType"), value => Put("Change how the sound plays", ("SoundPlayType", value)), "Normal plays to everyone in range; From the creature plays from the creature itself.")));
         }
 
         int broadcast = line.I("BroadcastTextId");
         string shown = broadcast <= 0 ? "none (the line's own text is used)"
             : snapshot!.Names.Broadcasts.TryGetValue((uint)broadcast, out var preview) ? $"#{broadcast}: {Shorten(preview)}" : $"#{broadcast}";
-        var reference = EditorFields.Reference(shown, () => ChooseBroadcast(line, id => Put("Link broadcast text", ("BroadcastTextId", (int)id))), broadcast > 0 ? () => Put("Unlink broadcast text", ("BroadcastTextId", 0)) : null);
+        var reference = EditorFields.Reference(shown, () => ChooseBroadcast(line, id => Put("Link broadcast text", ("BroadcastTextId", (int)id))), broadcast > 0 ? () => Put("Unlink broadcast text", ("BroadcastTextId", 0)) : null, false, "A BroadcastText ID whose localized text replaces the line above. 0 uses the literal text.");
         reference.Name = "BroadcastReference";
-        page.AddChild(EditorFields.Row("Broadcast text", reference));
+        page.AddChild(EditorFields.Row("Broadcast text", "A BroadcastText ID whose localized text replaces the line above when set.", reference));
         if (broadcast > 0)
         {
             page.AddChild(EditorFields.Row("", ClientStyle.Text("The server shows this (localized) text instead of the line above.", 11, ClientStyle.Warning)));

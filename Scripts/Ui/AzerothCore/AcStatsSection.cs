@@ -18,6 +18,7 @@ public sealed partial class AcStatsSection(CreatureContext ctx) : AcInteractionS
     public override string Id => PickerPages.Stats.Id;
     public override string Title => PickerPages.Stats.Title;
     public override string IconPath => PickerPages.Stats.IconPath;
+    public override string Tip => "The class, level range, expansion tier and stat multipliers used to compute health, mana, armor and damage.";
 
     /// <summary>The creature_template level, class and stat column group.</summary>
     TableSchema StatsTable => Ctx.Schema.Tables.Find("creature_stats");

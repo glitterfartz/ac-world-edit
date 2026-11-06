@@ -29,6 +29,7 @@ public abstract partial class VendorSection(CreatureContext ctx) : CreatureSecti
     public override string Id => PickerPages.Vendor.Id;
     public override string Title => PickerPages.Vendor.Title;
     public override string IconPath => PickerPages.Vendor.IconPath;
+    public override string Tip => "The items or currencies this creature sells, with their position, price, stock limit and restock time.";
     public override string Badge
     {
         get
@@ -177,7 +178,7 @@ public abstract partial class VendorSection(CreatureContext ctx) : CreatureSecti
 
         AddChild(new HSeparator());
         AddChild(ClientStyle.Text("Add an item", 16, ClientStyle.Header));
-        SearchPicker(this, "item", "Find item by name or ID…", SearchItems, label => ResultIcons.GetValueOrDefault(label), label => ResultTips.GetValueOrDefault(label), SearchNeedsClient);
+        SearchPicker(this, "item", "Find item by name or ID…", SearchItems, label => ResultIcons.GetValueOrDefault(label), label => ResultTips.GetValueOrDefault(label), SearchNeedsClient, "Find an item or currency to add to this vendor.");
         AddControls(v);
     }
 

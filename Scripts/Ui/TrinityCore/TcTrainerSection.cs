@@ -16,6 +16,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcCreatureSe
     public override string Id => PickerPages.Trainer.Id;
     public override string Title => PickerPages.Trainer.Title;
     public override string IconPath => PickerPages.Trainer.IconPath;
+    public override string Tip => "The trainer's type and greeting and the spells it teaches, with their cost, level and skill requirements.";
     public override string Badge => Ctx.TcView is { Trainers.Length: > 0 } v ? v.Trainers.Length.ToString(CultureInfo.InvariantCulture) : "";
     public override bool HasContent => Ctx.Editable || Ctx.TcView is { Trainers.Length: > 0 };
     readonly SearchState<(uint Id, string Name)> search = new();
@@ -202,7 +203,7 @@ public sealed partial class TcTrainerSection(CreatureContext ctx) : TcCreatureSe
         {
             var client = Ctx.Lookup()!;
             return Task.Run(() => client.SearchSpells(text, 30));
-        });
+        }, "Find a spell to add to this trainer.");
         if (Ctx.Lookup() == null) Line("Open a retail client to search and validate spell IDs.", ClientStyle.Warning, 11, block);
         foreach (var (id, name) in search.Results)
         {

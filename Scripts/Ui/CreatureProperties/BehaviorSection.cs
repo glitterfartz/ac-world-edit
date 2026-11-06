@@ -15,6 +15,7 @@ public sealed partial class BehaviorSection(CreatureContext ctx) : CreatureSecti
     public override string Id => "behavior";
     public override string Title => "Behavior";
     public override string IconPath => "Interface/Icons/INV_Misc_Gear_01.blp";
+    public override string Tip => "SmartAI rules for every spawn, one spawn or an action list: what triggers them, what they do and who they target.";
     public override bool ScrollsItself => true;
 
     public override void OnShown(object? argument)
@@ -39,6 +40,7 @@ public sealed partial class SpeechSection(CreatureContext ctx) : CreatureSection
     public override string Id => "speech";
     public override string Title => "Speech";
     public override string IconPath => "Interface/Icons/INV_Misc_Note_01.blp";
+    public override string Tip => "The creature_text lines the creature can say, grouped the way \"Say text\" actions pick them.";
     public override bool ScrollsItself => true;
 
     public override void OnShown(object? argument)

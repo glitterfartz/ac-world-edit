@@ -30,8 +30,11 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         var header = AddHeader(root, "Behavior");
         title = header.Title;
         undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        undo.TooltipText = "Undo the last behavior change.";
         redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
-        ButtonIn(header.Row, "✕", () => Visible = false);
+        redo.TooltipText = "Redo the last undone behavior change.";
+        var close = ButtonIn(header.Row, "✕", () => Visible = false);
+        close.TooltipText = "Close the behavior window.";
         root.AddChild(Panel);
         Panel.Rendered += Sync;
         Sync();

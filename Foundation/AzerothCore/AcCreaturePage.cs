@@ -166,7 +166,7 @@ public static class AcCreaturePage
     [
         Choice("combat", "dmgschool", "Damage type", "The school of magic the creature's melee attacks deal. Physical damage is reduced by armor, other schools by resistance.", DamageSchools),
         Whole("combat", "BaseAttackTime", "Melee attack interval", "Milliseconds between melee swings. Lower is faster; 2000 is the usual default.", display: s => $"{s} ms"),
-        Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks.", display: s => $"{s} ms"),
+        Whole("combat", "RangeAttackTime", "Ranged attack interval", "Milliseconds between ranged attacks. Lower is faster; 2000 is the usual default.", display: s => $"{s} ms"),
         Decimal("combat", "BaseVariance", "Melee damage spread", "How much melee hits vary. 1 uses the normal damage spread; 0 makes every hit the same size."),
         Decimal("combat", "RangeVariance", "Ranged damage spread", "How much ranged hits vary, like the melee damage spread."),
         Decimal("combat", "detection_range", "Aggro range", "Distance in yards at which the creature notices players and attacks. Higher level differences shrink or grow it.", s => Shown(s) + " yd"),
@@ -178,23 +178,23 @@ public static class AcCreaturePage
     /// <summary>Movement behaviour, the four speeds, hover height and the movement style.</summary>
     static FieldSpec[] MovementFields() =>
     [
-        Choice("movement", "MovementType", "Movement behaviour", "What it does when it is not fighting.", MovementTypes),
-        Decimal("movement", "speed_walk", "Walk speed", "Speed when walking."),
-        Decimal("movement", "speed_run", "Run speed", "Speed when running, such as while chasing a target."),
-        Decimal("movement", "speed_swim", "Swim speed", "Speed while swimming."),
-        Decimal("movement", "speed_flight", "Flight speed", "Speed while flying."),
-        Decimal("movement", "HoverHeight", "Hover height", "How far above the ground the creature hovers, in yards. 1 is the normal standing height."),
-        Whole("movement", "movementId", "Movement style ID", "Selects a movement style from the server's creature movement table, such as always walking. Zero uses the default.")
+        Choice("movement", "MovementType", "Movement behaviour", "What it does when it is not fighting: stand still, wander randomly around its spawn, or follow a waypoint path.", MovementTypes),
+        Decimal("movement", "speed_walk", "Walk speed", "Walk speed as a multiple of the normal rate. 1 is normal; this is used while patrolling or wandering."),
+        Decimal("movement", "speed_run", "Run speed", "Run speed as a multiple of the normal rate. 1 is normal; 1.14286 is the usual run speed while chasing a target."),
+        Decimal("movement", "speed_swim", "Swim speed", "Swim speed as a multiple of the normal rate. 1 is normal."),
+        Decimal("movement", "speed_flight", "Flight speed", "Flight speed as a multiple of the normal rate. 1 is normal."),
+        Decimal("movement", "HoverHeight", "Hover height", "How far above the ground the creature's model floats, in yards. 1 is the normal standing height; 0 keeps it on the ground."),
+        Whole("movement", "movementId", "Movement style ID", "Selects a movement style from the server's creature movement table, such as always walking or never swimming. 0 uses the default style.")
     ];
 
     /// <summary>The loot table IDs and the money range.</summary>
     static FieldSpec[] LootFields() =>
     [
-        Whole("loot", "lootid", "Loot table", "ID of the loot table rolled when the creature dies. Zero drops nothing. It matches the 'entry' of its loot rows."),
-        Whole("loot", "pickpocketloot", "Pickpocket table", "ID of the loot table a rogue can steal with Pickpocket. Zero means it cannot be pickpocketed."),
-        Whole("loot", "skinloot", "Skinning table", "ID of the loot table gathered by skinning, mining or herbalism. Zero means it cannot be skinned."),
-        Whole("loot", "mingold", "Minimum money", "Lowest amount of money it can drop, in copper (100 copper = 1 silver, 100 silver = 1 gold).", display: Money),
-        Whole("loot", "maxgold", "Maximum money", "Highest amount of money it can drop, in copper.", display: Money)
+        Whole("loot", "lootid", "Loot table", "The loot table rolled when the creature dies. It matches the entry of its loot rows; 0 drops nothing."),
+        Whole("loot", "pickpocketloot", "Pickpocket table", "The loot table a rogue can steal with Pickpocket. 0 means it cannot be pickpocketed."),
+        Whole("loot", "skinloot", "Skinning table", "The loot table gathered by skinning, mining or herbalism. 0 means it cannot be skinned or gathered."),
+        Whole("loot", "mingold", "Minimum money", "The lowest amount of money it can drop, in copper (100 copper = 1 silver, 100 silver = 1 gold). 0 means no money.", display: Money),
+        Whole("loot", "maxgold", "Maximum money", "The highest amount of money it can drop, in copper (100 copper = 1 silver, 100 silver = 1 gold). 0 means no money.", display: Money)
     ];
 
     /// <summary>Kill credits, the difficulty entries, the vehicle, the pet spells and the C++ script.</summary>
@@ -213,10 +213,10 @@ public static class AcCreaturePage
     /// <summary>The unit, type, extra and dynamic flag columns.</summary>
     static FieldSpec[] FlagFields() =>
     [
-        Flags("unit_flags", "State flags", "Basic state and combat switches, such as being unattackable or unselectable.", UnitFlags),
-        Flags("unit_flags2", "More state flags", "Additional state switches, such as hiding the model or ignoring reputation.", UnitFlags2),
-        Flags("type_flags", "Creature type flags", "Tags on the kind of creature: tameable, boss portrait, gatherable corpse and so on.", TypeFlags),
-        Flags("flags_extra", "Server rules", "Special rules the server applies to it, such as no parry, civilian or guard.", ExtraFlags),
+        Flags("unit_flags", "State flags", "Basic state and combat switches such as unattackable, unselectable, pacified, stunned, disarmed, mounted or immune to all damage.", UnitFlags),
+        Flags("unit_flags2", "More state flags", "Additional state switches such as feigning death, hiding the model, ignoring reputation, blocking spell-click and fixing its facing.", UnitFlags2),
+        Flags("type_flags", "Creature type flags", "Tags for the kind of creature: tameable, boss portrait, skinnable or gatherable corpse, hide nameplate and so on.", TypeFlags),
+        Flags("flags_extra", "Server rules", "Special rules the server applies to it, such as no parry or block, civilian, guard, trigger, no experience, immune to taunt or knockback, or ignoring pathfinding.", ExtraFlags),
         Flags("dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
     ];
 }

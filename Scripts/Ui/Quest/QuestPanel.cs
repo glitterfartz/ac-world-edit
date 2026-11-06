@@ -269,7 +269,17 @@ public abstract partial class QuestPanel : ContentPanel
                 Text = value == Tab.Chain ? "Chain & requirements" : value.ToString(),
                 ToggleMode = true,
                 ButtonPressed = tab == value,
-                Name = "Tab" + value
+                Name = "Tab" + value,
+                TooltipText = value switch
+                {
+                    Tab.Overview => "Title, category, level range, who can take it and its behaviour flags.",
+                    Tab.Story => "The text shown when the quest is offered, while it is in progress and when it is turned in.",
+                    Tab.Objectives => "What the player must kill, use, collect or reach, and the items given on accept.",
+                    Tab.Rewards => "Money, experience, items, reputation and other rewards.",
+                    Tab.Chain => "The quests before and after it, exclusive groups and requirements.",
+                    Tab.Givers => "The creatures that offer and accept the quest.",
+                    _ => "A read-only preview of the quest as the player sees it."
+                }
             };
             var chosen = value;
             button.Pressed += () =>

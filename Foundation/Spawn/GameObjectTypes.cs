@@ -1,22 +1,17 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
-/// Names of the `gameobject_template.type` values both servers share (0-35, from `GAMEOBJECT_TYPE_*` in
-/// SharedDefines.h). TrinityCore master goes on to 66 for retail-only types; those read as "Type N".
-/// Type 29 is AzerothCore's capture point and TrinityCore's control zone.
+/// Names of the `gameobject_template.type` values, per dialect. The names and fields live in
+/// the generated <see cref="GameObjectTypeCatalog"/> (AzerothCore has types 0-35, TrinityCore
+/// master has up to 66; type 29 is a capture point on AzerothCore and a control zone on
+/// TrinityCore). Use <see cref="For"/> when the dialect is known.
 /// </summary>
 public static class GameObjectTypes
 {
-    static readonly string[] Names =
-    [
-        "Door", "Button", "Quest giver", "Chest", "Binder", "Generic", "Trap", "Chair", "Spell focus", "Text", "Goober",
-        "Transport", "Area damage", "Camera", "Map object", "Map object transport", "Duel arbiter", "Fishing node", "Summoning ritual",
-        "Mailbox", "Unused (20)", "Guard post", "Spell caster", "Meeting stone", "Flag stand", "Fishing hole", "Flag drop", "Mini game",
-        "Unused (28)", "Capture point", "Aura generator", "Dungeon difficulty", "Barber chair", "Destructible building", "Guild bank", "Trap door"
-    ];
+    public static GameObjectTypeCatalog For(WorldDialect dialect) => GameObjectTypeCatalog.For(dialect);
 
-    /// <summary>The highest type with a name here.</summary>
-    public static int MaxNamed => Names.Length - 1;
+    /// <summary>The highest type with a name in this dialect.</summary>
+    public static int MaxNamed(WorldDialect dialect) => For(dialect).MaxType;
 
-    public static string Name(int type) => type >= 0 && type < Names.Length ? Names[type] : $"Type {type}";
+    public static string Name(WorldDialect dialect, int type) => For(dialect).Name(type);
 }

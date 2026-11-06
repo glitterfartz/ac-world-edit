@@ -40,11 +40,15 @@ public partial class QuestEditorWindow : ContentEditorWindow
         AddChild(root);
         var header = AddHeader(root, "Quest Editor");
         undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        undo.TooltipText = "Undo the last quest change.";
         redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
-        ButtonIn(header.Row, "+ New quest", () => _ = Panel.NewQuest(null));
+        redo.TooltipText = "Redo the last undone quest change.";
+        var create = ButtonIn(header.Row, "+ New quest", () => _ = Panel.NewQuest(null));
+        create.TooltipText = "Create an empty quest with a new ID.";
         duplicate = ButtonIn(header.Row, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
         duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
-        ButtonIn(header.Row, "✕", () => Visible = false);
+        var close = ButtonIn(header.Row, "✕", () => Visible = false);
+        close.TooltipText = "Close the quest window.";
         split = new HBoxContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill
@@ -58,7 +62,8 @@ public partial class QuestEditorWindow : ContentEditorWindow
         search = new LineEdit
         {
             PlaceholderText = "Find quest by title or ID…",
-            ClearButtonEnabled = true
+            ClearButtonEnabled = true,
+            TooltipText = "Find a quest by title or ID to open in the editor."
         };
         search.TextSubmitted += text =>
         {

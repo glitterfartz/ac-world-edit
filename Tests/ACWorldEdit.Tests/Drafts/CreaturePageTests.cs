@@ -60,4 +60,36 @@ public class CreaturePageTests
     {
         Assert.Equal(AcCreaturePage.Page.Groups.Select(g => g.Id), TcCreaturePage.Page.Groups.Select(g => g.Id));
     }
+
+    [Theory]
+    [MemberData(nameof(Dialects))]
+    public void EveryTemplateAndStatsFieldExplainsItself(WorldDialect dialect)
+    {
+        var schema = WorldSchemas.For(dialect);
+        foreach (var field in schema.TemplatePage.Fields.Concat(schema.StatsPage.Fields))
+        {
+            string where = $"{dialect} {field.Table.Name}.{field.Column}";
+            Assert.False(string.IsNullOrWhiteSpace(field.Tip), $"{where} has no tooltip");
+            Assert.True(field.Tip.Length >= 25, $"{where} tooltip is too short: {field.Tip}");
+            Assert.Contains(' ', field.Tip);
+            Assert.DoesNotContain(field.Tip, new[] { "On or off.", "One of the listed values.", "Not used.", "Raw value." });
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Dialects))]
+    public void EveryInteractionFieldExplainsItself(WorldDialect dialect)
+    {
+        var schema = WorldSchemas.For(dialect);
+        var fields = schema.VendorPage.Fields
+            .Concat(schema.TrainerPage.Spells.Fields)
+            .Concat(schema.GossipPage.Options.Fields);
+        foreach (var field in fields)
+        {
+            string where = $"{dialect} {field.Table.Name}.{field.Column}";
+            Assert.False(string.IsNullOrWhiteSpace(field.Tip), $"{where} has no tooltip");
+            Assert.True(field.Tip.Length >= 20, $"{where} tooltip is too short: {field.Tip}");
+            Assert.Contains(' ', field.Tip);
+        }
+    }
 }

@@ -47,6 +47,6 @@ public abstract partial class AcInteractionSection(CreatureContext ctx) : Creatu
     }
 
     /// <summary>The shared search picker drawn into this page's body.</summary>
-    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null) =>
-        SearchPicker(body, kind, placeholder, run, iconFor, tooltipFor);
+    protected void SearchPicker(string kind, string placeholder, Func<string, Task<IReadOnlyList<(string Label, Action Pick)>>> run, Func<string, string?>? iconFor = null, Func<string, Tooltip?>? tooltipFor = null, string tip = "") =>
+        SearchPicker(body, kind, placeholder, run, iconFor, tooltipFor, false, tip);
 }

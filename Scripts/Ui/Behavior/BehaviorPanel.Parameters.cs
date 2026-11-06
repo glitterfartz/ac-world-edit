@@ -27,8 +27,14 @@ public partial class BehaviorPanel
             // Times are edited in seconds; drop the server comment's "(ms)" unit from the caption.
             var caption = ClientStyle.Tag(param.Kind == SmartParamKind.Ms ? param.Label.Replace(" (ms)", "", StringComparison.Ordinal) : param.Label);
             caption.CustomMinimumSize = new(0, 0);
+            string tip = ParamTip(param, type);
+            caption.TooltipText = tip;
+            caption.MouseFilter = MouseFilterEnum.Stop;
+            var control = ParamControl(rule, isNew, param, $"{prefix}{i}", value(i));
+            control.TooltipText = tip;
+            EditorFields.Tip(control, tip);
             field.AddChild(caption);
-            field.AddChild(ParamControl(rule, isNew, param, $"{prefix}{i}", value(i)));
+            field.AddChild(control);
             flow.AddChild(field);
         }
 
@@ -37,6 +43,9 @@ public partial class BehaviorPanel
         margin.AddChild(flow);
         return margin;
     }
+
+    /// <summary>What a parameter means, so hovering over its caption explains the field.</summary>
+    static string ParamTip(SmartParam param, SmartType? type) => param.Tip(type?.Name ?? "", type?.Help ?? "");
 
     Control ParamControl(SmartRule rule, bool isNew, SmartParam param, string column, uint value)
     {

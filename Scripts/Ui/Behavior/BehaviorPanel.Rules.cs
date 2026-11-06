@@ -131,11 +131,13 @@ public partial class BehaviorPanel
         label.TooltipText = $"Rule {rule.Id}{(rule.Comment.Length > 0 ? " · " + rule.Comment : "")}{(edited ? " · edited in draft" : "")}";
         label.MouseFilter = MouseFilterEnum.Pass;
         header.AddChild(label);
-        ButtonIn(header, expanded == rule.Id ? "Done" : "Edit", () =>
+        var edit = ButtonIn(header, expanded == rule.Id ? "Done" : "Edit", () =>
         {
             expanded = expanded == rule.Id ? null : rule.Id;
             Render();
-        }).Name = $"Edit{rule.Id}";
+        });
+        edit.Name = $"Edit{rule.Id}";
+        edit.TooltipText = expanded == rule.Id ? "Collapse this rule." : "Expand this rule to change its event, action and target.";
         if (!linked)
         {
             int index = roots.FindIndex(r => r.Id == rule.Id);
@@ -151,7 +153,9 @@ public partial class BehaviorPanel
         var then = ButtonIn(header, "+ Then", () => StartThen(shown, rule));
         then.Name = $"Then{rule.Id}";
         then.TooltipText = "Add an action that runs right after this one";
-        ButtonIn(header, "Delete", () => Delete(shown, rule)).Name = $"Delete{rule.Id}";
+        var delete = ButtonIn(header, "Delete", () => Delete(shown, rule));
+        delete.Name = $"Delete{rule.Id}";
+        delete.TooltipText = "Delete this rule (and its \"Then\" steps).";
         if (expanded == rule.Id)
         {
             RenderEditor(box, shown, rule, linked, false);
@@ -190,12 +194,15 @@ public partial class BehaviorPanel
 
         var add = ButtonIn(header, $"Add {noun}", () => AddPending());
         add.Name = "PendingAdd";
-        ButtonIn(header, "Discard", () =>
+        add.TooltipText = $"Save this {noun} to the draft.";
+        var discard = ButtonIn(header, "Discard", () =>
         {
             pending = null;
             pendingError = "";
             Render();
-        }).Name = "PendingDiscard";
+        });
+        discard.Name = "PendingDiscard";
+        discard.TooltipText = $"Throw away this unsaved {noun}.";
         var rule = new SmartRule(p.Row);
         var sentence = ClientStyle.Text("Reads: " + (linked ? "↳ " : "") + smart.Describe(rule, snapshot!.Names, entry), 14, ClientStyle.Edited);
         sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart;
@@ -220,7 +227,7 @@ public partial class BehaviorPanel
         bool Put(string label, params (string Column, object Value)[] values) => Change(rule, isNew, label, values);
         if (linked)
         {
-            box.AddChild(EditorFields.Row("When", ClientStyle.Text("right after the step above", 14)));
+            box.AddChild(EditorFields.Row("When", "This step does not have its own event: it runs right after the step above.", ClientStyle.Text("right after the step above", 14)));
         }
         else if (shown.IsActionList && rule.Event is 0 or 1 or 60)
         {
@@ -228,30 +235,30 @@ public partial class BehaviorPanel
             {
                 uint ms = (uint)Math.Round(Math.Clamp(seconds, 0, uint.MaxValue / 1000.0) * 1000);
                 Put("Change step delay", ("event_param1", ms), ("event_param2", ms));
-            }, 60);
+            }, 60, "How many seconds to wait after the previous step before this step runs.");
             wait.Name = "StepDelay";
-            box.AddChild(EditorFields.Row("Wait", wait, ClientStyle.Tag("seconds after the previous step")));
+            box.AddChild(EditorFields.Row("Wait", "How long this step waits after the previous step, in seconds.", wait, ClientStyle.Tag("seconds after the previous step")));
         }
         else
         {
-            box.AddChild(EditorFields.Row("When", TypeChooser(rule.Event, "event", id => ChangeType(rule, isNew, "event", id))));
+            box.AddChild(EditorFields.Row("When", "The event that starts this rule, such as entering combat, a health percentage or a spell hit.", TypeChooser(rule.Event, "event", id => ChangeType(rule, isNew, "event", id))));
             box.AddChild(Parameters(rule, isNew, e, "event_param", rule.EventParam, smart.EventParamCount));
             RenderStringParam(box, rule, isNew, e, "event_param_string", rule.EventString);
         }
 
-        box.AddChild(EditorFields.Row("Do", TypeChooser(rule.Action, "action", id => ChangeType(rule, isNew, "action", id))));
+        box.AddChild(EditorFields.Row("Do", "The action this rule performs when its event fires, such as casting a spell, talking or summoning a creature.", TypeChooser(rule.Action, "action", id => ChangeType(rule, isNew, "action", id))));
         box.AddChild(Parameters(rule, isNew, a, "action_param", rule.ActionParam, smart.ActionParamCount));
         RenderStringParam(box, rule, isNew, a, "action_param_string", rule.ActionString);
-        box.AddChild(EditorFields.Row("On", TypeChooser(rule.Target, "target", id => ChangeType(rule, isNew, "target", id))));
+        box.AddChild(EditorFields.Row("On", "Who or what the action applies to, such as itself, its victim or a random player.", TypeChooser(rule.Target, "target", id => ChangeType(rule, isNew, "target", id))));
         box.AddChild(Parameters(rule, isNew, t, "target_param", i => i <= SmartCatalog.TargetParamCount ? rule.TargetParam(i) : 0, SmartCatalog.TargetParamCount));
         RenderStringParam(box, rule, isNew, t, "target_param_string", rule.TargetString);
         if (t != null && (t.Sentence.Contains("{x}", StringComparison.Ordinal) || t.Help.Contains("xyz", StringComparison.OrdinalIgnoreCase)))
         {
-            box.AddChild(EditorFields.Row("Position",
-                ClientStyle.Tag("x"), EditorFields.Decimal(rule.X, v => Put("Change target position", ("target_x", (float)v)), 80),
-                ClientStyle.Tag("y"), EditorFields.Decimal(rule.Y, v => Put("Change target position", ("target_y", (float)v)), 80),
-                ClientStyle.Tag("z"), EditorFields.Decimal(rule.Z, v => Put("Change target position", ("target_z", (float)v)), 70),
-                ClientStyle.Tag("facing"), EditorFields.Decimal(rule.O, v => Put("Change target facing", ("target_o", (float)v)), 50)));
+            box.AddChild(EditorFields.Row("Position", "The world position the target uses, in map coordinates, plus the facing angle in radians.",
+                ClientStyle.Tag("x"), EditorFields.Decimal(rule.X, v => Put("Change target position", ("target_x", (float)v)), 80, "World X coordinate."),
+                ClientStyle.Tag("y"), EditorFields.Decimal(rule.Y, v => Put("Change target position", ("target_y", (float)v)), 80, "World Y coordinate."),
+                ClientStyle.Tag("z"), EditorFields.Decimal(rule.Z, v => Put("Change target position", ("target_z", (float)v)), 70, "World Z coordinate (height)."),
+                ClientStyle.Tag("facing"), EditorFields.Decimal(rule.O, v => Put("Change target facing", ("target_o", (float)v)), 50, "Facing angle in radians.")));
         }
 
         if (!linked)
@@ -263,24 +270,27 @@ public partial class BehaviorPanel
                 TooltipText = "Run once per spawn (until it respawns, or resets unless \"Keep after reset\")."
             };
             once.Toggled += on => Put("Change only-once", ("event_flags", on ? rule.Flags | 1 : rule.Flags & ~1u));
-            box.AddChild(EditorFields.Row("Chance", EditorFields.Number(rule.Chance, value => Put("Change chance", ("event_chance", (uint)Math.Clamp(value, 0, uint.MaxValue))), 50), ClientStyle.Tag("%"), once));
+            box.AddChild(EditorFields.Row("Chance", "The percent chance the rule runs each time its event fires. 100 always runs it; 0 never runs it.",
+                EditorFields.Number(rule.Chance, value => Put("Change chance", ("event_chance", (uint)Math.Clamp(value, 0, uint.MaxValue))), 50, "Percent chance from 0 to 100; 100 always runs it."), ClientStyle.Tag("%"), once));
             var phases = Enumerable.Range(1, 12).Select(p => (1u << (p - 1), p.ToString(CultureInfo.InvariantCulture)));
-            var phaseRow = EditorFields.Row("Only in phases");
-            phaseRow.AddChild(EditorFields.Flags(phases, rule.Phases, value => Put("Change phases", ("event_phase_mask", value)), 12));
+            var phaseRow = EditorFields.Row("Only in phases", "Tick the phases in which the rule may run. None ticked means every phase.");
+            phaseRow.AddChild(EditorFields.Flags(phases, rule.Phases, value => Put("Change phases", ("event_phase_mask", value)), 12, "Tick each phase where this rule may run; none ticked means every phase."));
             phaseRow.AddChild(ClientStyle.Tag(rule.Phases == 0 ? "(none ticked = always)" : ""));
             box.AddChild(phaseRow);
-            box.AddChild(EditorFields.Row(smart.HasStringParams ? "More options" : "Difficulty & more", EditorFields.Flags(smart.EventFlags.Where(f => f.Bit != 1), rule.Flags, value => Put("Change rule options", ("event_flags", value)), 4)));
+            box.AddChild(EditorFields.Row(smart.HasStringParams ? "More options" : "Difficulty & more", "Extra rule flags such as only once, keep after reset, debug builds only, or difficulty-specific flags.",
+                EditorFields.Flags(smart.EventFlags.Where(f => f.Bit != 1), rule.Flags, value => Put("Change rule options", ("event_flags", value)), 4, "Extra rule flags; the raw value keeps every bit the list does not name.")));
             if (smart.HasStringParams)
             {
-                var difficulties = EditorFields.Line(rule.Row.T("Difficulties"), text => Put("Change difficulties", ("Difficulties", text.Trim())), "Difficulty IDs separated by commas; empty = every difficulty", 100);
+                var difficulties = EditorFields.Line(rule.Row.T("Difficulties"), text => Put("Change difficulties", ("Difficulties", text.Trim())), "Difficulty IDs separated by commas; empty = every difficulty", 100, "Comma-separated difficulty IDs where the rule runs; empty means every difficulty.");
                 difficulties.Name = "Difficulties";
-                box.AddChild(EditorFields.Row("Difficulties", difficulties));
+                box.AddChild(EditorFields.Row("Difficulties", "Comma-separated difficulty IDs where the rule runs; empty means every difficulty.", difficulties));
             }
         }
 
-        var comment = EditorFields.Line(rule.Comment, text => Put("Edit note", ("comment", text)), isNew ? "Note for other editors (written automatically if left empty)" : "Note for other editors", 255);
+        var comment = EditorFields.Line(rule.Comment, text => Put("Edit note", ("comment", text)), isNew ? "Note for other editors (written automatically if left empty)" : "Note for other editors", 255, "A short note shown in the collapsed rule list. Auto writes one from the event, action and target.");
         comment.Name = "Note";
-        box.AddChild(EditorFields.Row("Note", comment, ButtonOf("Auto", () => Put("Write note automatically", ("comment", smart.AutoComment(rule, snapshot!.CreatureName))))));
+        box.AddChild(EditorFields.Row("Note", "A note for other editors, shown under the collapsed rule sentence. Auto writes one for you.",
+            comment, ButtonOf("Auto", () => Put("Write note automatically", ("comment", smart.AutoComment(rule, snapshot!.CreatureName))))));
         foreach (var type in new[] { e, a, t }.Where(x => x is { ParamsKnown: false }))
         {
             var help = ClientStyle.Text($"{type!.Name}: {type.Help}", 11, ClientStyle.Faded);
@@ -300,12 +310,16 @@ public partial class BehaviorPanel
             return;
         }
 
-        var line = EditorFields.Line(value, text => Change(rule, isNew, "Change string parameter", (column, text.Trim())), "Text parameter (for example a StringId)", 255);
+        var line = EditorFields.Line(value, text => Change(rule, isNew, "Change string parameter", (column, text.Trim())), "Text parameter (for example a StringId)", 255, "A text parameter for this type, such as a script trigger name or a StringId.");
         line.Name = "Str" + column;
         var margin = new MarginContainer();
         margin.AddThemeConstantOverride("margin_left", 130);
         var field = new HBoxContainer();
-        field.AddChild(ClientStyle.Tag("Text"));
+        var caption = ClientStyle.Tag("Text");
+        caption.TooltipText = "A text parameter for this type, such as a script trigger name or a StringId.";
+        caption.MouseFilter = MouseFilterEnum.Stop;
+        field.AddChild(caption);
+        line.TooltipText = caption.TooltipText;
         field.AddChild(line);
         margin.AddChild(field);
         box.AddChild(margin);

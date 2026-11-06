@@ -39,43 +39,50 @@ public partial class AcQuestPanel : QuestPanel
     void RenderOverview(Row q)
     {
         Heading("Basics");
-        Add("Title", EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it"));
-        Add("Kind", EditorFields.Choice(QuestVocabulary.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value))),
-            ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "0 = solo"));
-        Add("Availability", EditorFields.Choice(AcQuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
+        Add("Title", "The quest title shown in the quest log, on the giver's dialog and in search results.",
+            EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it", 0, "The quest title shown in the quest log."));
+        Add("Kind", "The quest category shown by the client, such as Dungeon, Raid, PvP or Profession.",
+            EditorFields.Choice(QuestVocabulary.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value)), "The quest category shown by the client."),
+            ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "The suggested group size shown in the log; 0 means solo."));
+        Add("Availability", "Normal quests are offered when their requirements pass; disabled quests are hidden; auto-complete quests finish the moment they are accepted.",
+            EditorFields.Choice(AcQuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
         ZoneRow(q);
 
         Heading("Levels", "Quest level sets XP and the con colour; −1 scales with the player. Players outside required…maximum cannot accept it.");
-        Add("Quest level", UNumber(Template, "QuestLevel", "Change quest level", 60),
-            ClientStyle.Tag("Required"), UNumber(Template, "MinLevel", "Change required level", 60),
-            ClientStyle.Tag("Maximum"), UNumber(Addon, "MaxLevel", "Change maximum level", 60, "0 = no maximum"));
-        Add("Time limit", UNumber(Template, "TimeAllowed", "Change time limit", 80, "Seconds; 0 = untimed"), ClientStyle.Tag("seconds (0 = none)"));
+        Add("Quest level", "The level the quest is tuned for. It sets experience and the difficulty colour in the log; -1 scales with the player.",
+            UNumber(Template, "QuestLevel", "Change quest level", 60, "The level the quest is tuned for; -1 scales with the player."),
+            ClientStyle.Tag("Required"), UNumber(Template, "MinLevel", "Change required level", 60, "The minimum player level needed to accept the quest."),
+            ClientStyle.Tag("Maximum"), UNumber(Addon, "MaxLevel", "Change maximum level", 60, "The maximum player level that can accept it; 0 means no maximum."));
+        Add("Time limit", "How long the player has to finish the quest, in seconds. 0 means untimed.",
+            UNumber(Template, "TimeAllowed", "Change time limit", 80, "Seconds allowed to finish; 0 means untimed."), ClientStyle.Tag("seconds (0 = none)"));
 
         Heading("Who can take it");
         uint races = q.U("AllowableRaces");
         uint preset = races is 0 or AcQuestModel.AllianceRaces or AcQuestModel.HordeRaces ? races : 1;
-        Add("Faction", EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces : value))));
+        Add("Faction", "Which races can accept the quest: everyone, one faction, or a custom race mask.",
+            EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces : value)), "Which races can accept the quest."));
         if (preset == 1)
         {
-            page.AddChild(EditorFields.Flags(AcQuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5));
+            page.AddChild(EditorFields.Flags(AcQuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5, "Tick each race that can accept the quest."));
         }
 
         uint classes = RowOf(Addon).U("AllowableClasses");
         var allClasses = new CheckBox
         {
             Text = "All classes",
-            ButtonPressed = classes == 0
+            ButtonPressed = classes == 0,
+            TooltipText = "Tick to allow every class. Untick to choose specific classes below."
         };
         allClasses.Toggled += on => Set(Addon, "Change allowed classes", ("AllowableClasses", on ? 0u : 1u));
-        Add("Classes", allClasses);
+        Add("Classes", "Which classes can accept the quest. 'All classes' allows everyone.", allClasses);
         if (classes != 0)
         {
-            page.AddChild(EditorFields.Flags(AcQuestModel.Classes, classes, value => Set(Addon, "Change allowed classes", ("AllowableClasses", value)), 5));
+            page.AddChild(EditorFields.Flags(AcQuestModel.Classes, classes, value => Set(Addon, "Change allowed classes", ("AllowableClasses", value)), 5, "Tick each class that can accept the quest."));
         }
 
         Heading("Behavior");
-        page.AddChild(EditorFields.Flags(AcQuestModel.Flags, q.U("Flags"), value => Set(Template, "Change quest options", ("Flags", value)), 3));
-        page.AddChild(EditorFields.Flags(AcQuestModel.SpecialFlags, RowOf(Addon).U("SpecialFlags"), value => Set(Addon, "Change special options", ("SpecialFlags", value)), 3));
+        page.AddChild(EditorFields.Flags(AcQuestModel.Flags, q.U("Flags"), value => Set(Template, "Change quest options", ("Flags", value)), 3, "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."));
+        page.AddChild(EditorFields.Flags(AcQuestModel.SpecialFlags, RowOf(Addon).U("SpecialFlags"), value => Set(Addon, "Change special options", ("SpecialFlags", value)), 3, "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."));
     }
 
     void RenderObjectives(Row q)
@@ -91,46 +98,52 @@ public partial class AcQuestPanel : QuestPanel
             {
                 row.AddChild(ButtonOf("Kill a creature…", () => Pick(SmartParamKind.Creature, "Choose creature to defeat", id => SetObjective(slot, (int)id))));
                 row.AddChild(ButtonOf("Use an object…", () => Pick(SmartParamKind.GameObject, "Choose object to use", id => SetObjective(slot, -(int)id))));
+                EditorFields.Tip(row, "Pick a creature to kill or a game object to use for this objective.");
             }
             else
             {
                 var kind = target > 0 ? SmartParamKind.Creature : SmartParamKind.GameObject;
                 row.AddChild(ClientStyle.Tag(target > 0 ? "Defeat" : "Use"));
-                row.AddChild(EditorFields.Number(q.U($"RequiredNpcOrGoCount{slot}"), count => Set(Template, "Change objective count", ($"RequiredNpcOrGoCount{slot}", count)), 50));
+                row.AddChild(EditorFields.Number(q.U($"RequiredNpcOrGoCount{slot}"), count => Set(Template, "Change objective count", ($"RequiredNpcOrGoCount{slot}", count)), 50, "How many times the target must be defeated or used."));
                 row.AddChild(ClientStyle.Tag("×"));
-                row.AddChild(EditorFields.Reference(Named(kind, (uint)Math.Abs(target)), () => Pick(kind, "Choose target", id => SetObjective(slot, target > 0 ? (int)id : -(int)id)), () => Set(Template, "Remove objective", ($"RequiredNpcOrGo{slot}", 0), ($"RequiredNpcOrGoCount{slot}", 0), ($"ObjectiveText{slot}", "")), Missing(kind, (uint)Math.Abs(target))));
+                row.AddChild(EditorFields.Reference(Named(kind, (uint)Math.Abs(target)), () => Pick(kind, "Choose target", id => SetObjective(slot, target > 0 ? (int)id : -(int)id)), () => Set(Template, "Remove objective", ($"RequiredNpcOrGo{slot}", 0), ($"RequiredNpcOrGoCount{slot}", 0), ($"ObjectiveText{slot}", "")), Missing(kind, (uint)Math.Abs(target)), "The creature or game object this objective counts."));
             }
 
             page.AddChild(row);
             if (target != 0)
             {
-                Add("   custom text", EditorFields.Line(q.T($"ObjectiveText{slot}"), text => Set(Template, "Edit objective text", ($"ObjectiveText{slot}", text)), "Optional, e.g. \"Kobolds driven off\""));
+                Add("   custom text", "Optional quest-log text that replaces the default \"<name> slain\" line.",
+                    EditorFields.Line(q.T($"ObjectiveText{slot}"), text => Set(Template, "Edit objective text", ($"ObjectiveText{slot}", text)), "Optional, e.g. \"Kobolds driven off\"", 0, "Optional quest-log text that replaces the default \"<name> slain\" line."));
             }
         }
 
         Heading("Collect items", "Items the player must hold when turning in; they are taken on completion.");
         for (int i = 1; i <= 6; i++)
         {
-            ItemSlot(q, $"{i}.", $"RequiredItemId{i}", $"RequiredItemCount{i}", "required item", "Change required item");
+            ItemSlot(q, $"{i}.", $"RequiredItemId{i}", $"RequiredItemCount{i}", "required item", "Change required item", "An item the player must hold when turning in. It is taken on completion.");
         }
 
         Heading("Quest drops", "Items this quest makes drop for players on it (the loot itself is set on the creature or object).");
         for (int i = 1; i <= 4; i++)
         {
-            ItemSlot(q, $"{i}.", $"ItemDrop{i}", $"ItemDropQuantity{i}", "quest drop", "Change quest drop");
+            ItemSlot(q, $"{i}.", $"ItemDrop{i}", $"ItemDropQuantity{i}", "quest drop", "Change quest drop", "An item this quest makes drop for players on it. Set the loot itself on the creature or object.");
         }
 
         Heading("Other goals");
-        Add("Players defeated", UNumber(Template, "RequiredPlayerKills", "Change player kills", 60, "Honorable kills required"));
+        Add("Players defeated", "How many honorable player kills the quest requires.",
+            UNumber(Template, "RequiredPlayerKills", "Change player kills", 60, "Number of honorable player kills required."));
         for (int i = 1; i <= 2; i++)
         {
             int slot = i;
-            Add(slot == 1 ? "Reach reputation" : "", FactionRef(Template, $"RequiredFactionId{slot}", "Change reputation goal"), ClientStyle.Tag("at least"), UNumber(Template, $"RequiredFactionValue{slot}", "Change reputation goal", 70));
+            Add(slot == 1 ? "Reach reputation" : "", "A faction the player must reach at least a certain reputation value with.",
+                FactionRef(Template, $"RequiredFactionId{slot}", "Change reputation goal", "The faction the player must reach."), ClientStyle.Tag("at least"), UNumber(Template, $"RequiredFactionValue{slot}", "Change reputation goal", 70, "Reputation value the player must reach: 0 neutral, 3000 friendly, 9000 honored, 21000 revered, 42000 exalted."));
         }
 
         Heading("Given on accept", "An item the giver hands over when the quest is accepted.");
-        Add("Starting item", Ref(Template, "StartItem", SmartParamKind.Item, "starting item", "Change starting item"), ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50));
-        Add("Cast on accept", Ref(Addon, "SourceSpellID", SmartParamKind.Spell, "spell cast on accept", "Change spell cast on accept"));
+        Add("Starting item", "An item handed to the player when the quest is accepted.",
+            Ref(Template, "StartItem", SmartParamKind.Item, "starting item", "Change starting item", false, "The item handed over on accept."), ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50, "How many starting items are given."));
+        Add("Cast on accept", "A spell cast on the player when the quest is accepted.",
+            Ref(Addon, "SourceSpellID", SmartParamKind.Spell, "spell cast on accept", "Change spell cast on accept", false, "The spell cast on the player on accept. 0 means none."));
     }
 
     void SetObjective(int slot, int target)
@@ -158,23 +171,24 @@ public partial class AcQuestPanel : QuestPanel
             TooltipText = "Negative money: the quest takes this amount on turn-in."
         };
         pays.Toggled += on => SetMoney(abs / 10000, abs / 100 % 100, abs % 100, on);
-        Add("Money",
-            EditorFields.Number(abs / 10000, g => SetMoney(g, abs / 100 % 100, abs % 100, money < 0), 60), ClientStyle.Tag("g"),
-            EditorFields.Number(abs / 100 % 100, s => SetMoney(abs / 10000, s, abs % 100, money < 0), 40), ClientStyle.Tag("s"),
-            EditorFields.Number(abs % 100, c => SetMoney(abs / 10000, abs / 100 % 100, c, money < 0), 40), ClientStyle.Tag("c"), pays);
-        Add("Experience", EditorFields.Choice(XpTiers, q.U("RewardXPDifficulty"), value => Set(Template, "Change experience reward", ("RewardXPDifficulty", value)), "Scaled by quest level (QuestXP.dbc)"),
-            ClientStyle.Tag("Money at max level"), EditorFields.Choice(XpTiers, q.U("RewardMoneyDifficulty"), value => Set(Template, "Change max-level money", ("RewardMoneyDifficulty", value))));
+        Add("Money", "The money the player is rewarded, in gold, silver and copper. Ticking 'Player pays instead' takes it from the player.",
+            EditorFields.Number(abs / 10000, g => SetMoney(g, abs / 100 % 100, abs % 100, money < 0), 60, "Gold awarded (or taken when the player pays)."), ClientStyle.Tag("g"),
+            EditorFields.Number(abs / 100 % 100, s => SetMoney(abs / 10000, s, abs % 100, money < 0), 40, "Silver awarded (or taken)."), ClientStyle.Tag("s"),
+            EditorFields.Number(abs % 100, c => SetMoney(abs / 10000, abs / 100 % 100, c, money < 0), 40, "Copper awarded (or taken)."), ClientStyle.Tag("c"), pays);
+        Add("Experience", "The experience tier, scaled by quest level through QuestXP.dbc.",
+            EditorFields.Choice(XpTiers, q.U("RewardXPDifficulty"), value => Set(Template, "Change experience reward", ("RewardXPDifficulty", value)), "The experience tier, scaled by quest level (QuestXP.dbc)."),
+            ClientStyle.Tag("Money at max level"), EditorFields.Choice(XpTiers, q.U("RewardMoneyDifficulty"), value => Set(Template, "Change max-level money", ("RewardMoneyDifficulty", value)), "The money tier used when the player is at maximum level."));
 
         Heading("Always given", "Every player receives these items.");
         for (int i = 1; i <= 4; i++)
         {
-            ItemSlot(q, $"{i}.", $"RewardItem{i}", $"RewardAmount{i}", "reward item", "Change reward item");
+            ItemSlot(q, $"{i}.", $"RewardItem{i}", $"RewardAmount{i}", "reward item", "Change reward item", "An item every player receives when the quest is turned in.");
         }
 
         Heading("Choose one of", "The player picks one item from this list.");
         for (int i = 1; i <= 6; i++)
         {
-            ItemSlot(q, $"{i}.", $"RewardChoiceItemID{i}", $"RewardChoiceItemQuantity{i}", "choice", "Change choice reward");
+            ItemSlot(q, $"{i}.", $"RewardChoiceItemID{i}", $"RewardChoiceItemQuantity{i}", "choice", "Change choice reward", "One of the items the player can choose from on the reward screen.");
         }
 
         Heading("Reputation", "Standard tier (1–9) uses the client's reward table; an exact amount overrides it.");
@@ -186,17 +200,22 @@ public partial class AcQuestPanel : QuestPanel
                 continue;
             }
 
-            Add($"{slot}.", FactionRef(Template, $"RewardFactionID{slot}", "Change reputation reward"),
-                ClientStyle.Tag("tier"), UNumber(Template, $"RewardFactionValue{slot}", "Change reputation tier", 40),
-                ClientStyle.Tag("or exact"), EditorFields.Number(q.I($"RewardFactionOverride{slot}") / 100, value => Set(Template, "Change reputation amount", ($"RewardFactionOverride{slot}", value * 100)), 60));
+            Add($"{slot}.", "A faction whose reputation the quest rewards.",
+                FactionRef(Template, $"RewardFactionID{slot}", "Change reputation reward", "The faction whose reputation is rewarded."),
+                ClientStyle.Tag("tier"), UNumber(Template, $"RewardFactionValue{slot}", "Change reputation tier", 40, "Standard reputation tier from the client's reward table (1-9)."),
+                ClientStyle.Tag("or exact"), EditorFields.Number(q.I($"RewardFactionOverride{slot}") / 100, value => Set(Template, "Change reputation amount", ($"RewardFactionOverride{slot}", value * 100)), 60, "An exact reputation amount that overrides the tier, in reputation points."));
         }
 
         Heading("Other rewards");
-        Add("Spell cast on player", Ref(Template, "RewardSpell", SmartParamKind.Spell, "spell cast on the player", "Change reward spell"));
-        Add("Spell shown as reward", Ref(Template, "RewardDisplaySpell", SmartParamKind.Spell, "displayed reward spell", "Change displayed spell"));
-        Add("Honor", UNumber(Template, "RewardHonor", "Change honor reward", 60), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60),
-            ClientStyle.Tag("Talents"), UNumber(Template, "RewardTalents", "Change talent reward", 40), ClientStyle.Tag("Title ID"), UNumber(Template, "RewardTitle", "Change title reward", 50));
-        Add("Mail afterwards", UNumber(Addon, "RewardMailTemplateID", "Change reward mail", 70, "Mail template ID; 0 = none"), ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70), ClientStyle.Tag("seconds"));
+        Add("Spell cast on player", "A spell cast on the player when the quest is turned in.",
+            Ref(Template, "RewardSpell", SmartParamKind.Spell, "spell cast on the player", "Change reward spell", false, "The spell cast on the player on turn-in. 0 means none."));
+        Add("Spell shown as reward", "A spell shown on the reward screen as a teaser; it is not actually cast.",
+            Ref(Template, "RewardDisplaySpell", SmartParamKind.Spell, "displayed reward spell", "Change displayed spell", false, "The spell shown on the reward screen. 0 means none."));
+        Add("Honor", "Other rewards: honor points, arena points, talent points and a title ID.",
+            UNumber(Template, "RewardHonor", "Change honor reward", 60, "Honor points awarded."), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60, "Arena points awarded."),
+            ClientStyle.Tag("Talents"), UNumber(Template, "RewardTalents", "Change talent reward", 40, "Talent points awarded."), ClientStyle.Tag("Title ID"), UNumber(Template, "RewardTitle", "Change title reward", 50, "Title ID awarded."));
+        Add("Mail afterwards", "Mail sent to the player after the quest is turned in.",
+            UNumber(Addon, "RewardMailTemplateID", "Change reward mail", 70, "Mail template ID sent after turn-in; 0 means no mail."), ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70, "Seconds after turn-in before the mail arrives."), ClientStyle.Tag("seconds"));
     }
 
     /// <summary>

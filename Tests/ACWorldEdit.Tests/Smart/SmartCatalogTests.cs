@@ -31,6 +31,25 @@ public class SmartCatalogTests
         }
     }
 
+    [Fact]
+    public void EveryParameterHasADescriptiveTooltip()
+    {
+        foreach (var catalog in new[] { SmartCatalog.Ac, SmartCatalog.Trinity })
+        {
+            foreach (var type in catalog.Events.Concat(catalog.Actions).Concat(catalog.Targets))
+            {
+                foreach (var param in type.Params)
+                {
+                    string tip = param.Tip(type.Name, type.Help);
+                    string where = $"{catalog.Dialect} {type.Code}";
+                    Assert.StartsWith(param.Label + ":", tip);
+                    Assert.True(tip.Length >= 20, $"{where} {param.Label} tooltip is too short: {tip}");
+                    Assert.Contains(' ', tip);
+                }
+            }
+        }
+    }
+
     [KnownBug("KB-001", "Percent parameters already render with a trailing %, so catalog sentences that also write % show '30%%' (PROGRESS.md notes 'When its health is 0%-30%%').")]
     public void PercentParametersAreNotFollowedByLiteralPercent()
     {

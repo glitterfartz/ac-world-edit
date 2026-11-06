@@ -45,6 +45,18 @@ public class SpawnFieldsTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void EverySpawnFieldExplainsItself(WorldDialect dialect, SpawnKind kind)
+    {
+        foreach (var field in SpawnFields.All(dialect, kind))
+        {
+            Assert.False(string.IsNullOrWhiteSpace(field.Tip), $"{dialect} {kind} {field.Column} has no tooltip");
+            Assert.True(field.Tip.Length >= 25, $"{dialect} {kind} {field.Column} tooltip is too short: {field.Tip}");
+            Assert.Contains(' ', field.Tip);
+        }
+    }
+
     [Fact]
     public void TrinityCoreInheritsByNullAndAzerothCoreByZero()
     {

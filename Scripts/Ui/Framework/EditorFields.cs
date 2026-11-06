@@ -111,13 +111,14 @@ public static class EditorFields
         return edit;
     }
 
-    public static LineEdit Decimal(double value, Action<double> commit, int width = 80)
+    public static LineEdit Decimal(double value, Action<double> commit, int width = 80, string tooltip = "")
     {
         var edit = new LineEdit
         {
             Text = value.ToString("0.###", CultureInfo.InvariantCulture),
             CustomMinimumSize = new(width, 0),
-            SelectAllOnFocus = true
+            SelectAllOnFocus = true,
+            TooltipText = tooltip
         };
         CommitOnLeave(edit, edit.Text, text =>
         {
@@ -133,14 +134,15 @@ public static class EditorFields
         return edit;
     }
 
-    public static LineEdit Line(string value, Action<string> commit, string placeholder = "", int maxLength = 0)
+    public static LineEdit Line(string value, Action<string> commit, string placeholder = "", int maxLength = 0, string tooltip = "")
     {
         var edit = new LineEdit
         {
             Text = value,
             PlaceholderText = placeholder,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            MaxLength = maxLength
+            MaxLength = maxLength,
+            TooltipText = tooltip
         };
         CommitOnLeave(edit, value, commit);
         return edit;
@@ -150,14 +152,15 @@ public static class EditorFields
     /// Multi-line text that commits when focus leaves. LastFocused lets placeholder buttons insert
     /// tokens ($N, $B…) at the caret.
     /// </summary>
-    public static TextEdit Area(string value, Action<string> commit, int height = 90)
+    public static TextEdit Area(string value, Action<string> commit, int height = 90, string tooltip = "")
     {
         var edit = new TextEdit
         {
             Text = value,
             CustomMinimumSize = new(0, height),
             WrapMode = TextEdit.LineWrappingMode.Boundary,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            TooltipText = tooltip
         };
         string original = value;
         edit.FocusEntered += () => LastFocused = edit;
@@ -231,7 +234,7 @@ public static class EditorFields
     /// <summary>
     /// Checkbox grid for a bitmask; toggling commits the whole new mask.
     /// </summary>
-    public static GridContainer Flags(IEnumerable<(uint Bit, string Name)> flags, uint value, Action<uint> commit, int columns = 3)
+    public static GridContainer Flags(IEnumerable<(uint Bit, string Name)> flags, uint value, Action<uint> commit, int columns = 3, string tooltip = "")
     {
         var grid = new GridContainer
         {
@@ -242,7 +245,8 @@ public static class EditorFields
             var check = new CheckBox
             {
                 Text = name,
-                ButtonPressed = (value & bit) != 0
+                ButtonPressed = (value & bit) != 0,
+                TooltipText = tooltip.Length > 0 ? tooltip : $"{name}: tick to turn this behaviour on for the quest or creature."
             };
             check.Toggled += on => commit(on ? value | bit : value & ~bit);
             grid.AddChild(check);
@@ -254,21 +258,24 @@ public static class EditorFields
     /// <summary>
     /// A reference shown by name with Choose… and clear buttons.
     /// </summary>
-    public static HBoxContainer Reference(string text, Action choose, Action? clear, bool missing = false)
+    public static HBoxContainer Reference(string text, Action choose, Action? clear, bool missing = false, string tooltip = "")
     {
         var row = new HBoxContainer
         {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            TooltipText = tooltip
         };
         var label = ClientStyle.Text(text, 14, missing ? ClientStyle.Error : null);
         // Names stay on one line: in wrapping parameter rows a wrapping label is squeezed to one
         // character per line and stretches its neighbours.
         label.AutowrapMode = TextServer.AutowrapMode.Off;
         label.VerticalAlignment = VerticalAlignment.Center;
+        label.TooltipText = tooltip;
         row.AddChild(label);
         var pick = new Button
         {
-            Text = "Choose…"
+            Text = "Choose…",
+            TooltipText = tooltip
         };
         pick.Pressed += choose;
         row.AddChild(pick);
@@ -281,6 +288,27 @@ public static class EditorFields
             };
             remove.Pressed += clear;
             row.AddChild(remove);
+        }
+
+        return row;
+    }
+
+    /// <summary>
+    /// Labelled row: caption, then any controls. The tooltip is shown by the caption and by every
+    /// child control that does not already have one, so hovering anywhere on the row explains it.
+    /// </summary>
+    public static HBoxContainer Row(string caption, string tip, params Control[] controls)
+    {
+        var row = Row(caption, controls);
+        if (tip.Length > 0)
+        {
+            var label = (Label)row.GetChild(0);
+            label.TooltipText = tip;
+            label.MouseFilter = Control.MouseFilterEnum.Stop;
+            foreach (var control in controls)
+            {
+                Tip(control, tip);
+            }
         }
 
         return row;
@@ -301,5 +329,27 @@ public static class EditorFields
         }
 
         return row;
+    }
+
+    /// <summary>Set <paramref name="tip"/> on a control and every descendant that has no tooltip yet.</summary>
+    public static void Tip(Control control, string tip)
+    {
+        if (tip.Length == 0)
+        {
+            return;
+        }
+
+        if (control.TooltipText.Length == 0)
+        {
+            control.TooltipText = tip;
+        }
+
+        foreach (var child in control.GetChildren())
+        {
+            if (child is Control nested)
+            {
+                Tip(nested, tip);
+            }
+        }
     }
 }

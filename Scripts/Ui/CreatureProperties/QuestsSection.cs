@@ -16,6 +16,7 @@ public sealed partial class QuestsSection(CreatureContext ctx) : CreatureSection
     public override string Id => PickerPages.Quests.Id;
     public override string Title => PickerPages.Quests.Title;
     public override string IconPath => PickerPages.Quests.IconPath;
+    public override string Tip => "The quests this creature gives or accepts, with links to open each quest in the quest editor.";
     public override bool Supports(WorldDialect dialect) => true;
     public override bool HasContent => Ctx.View is { } v && (Ctx.Editable || v.Starts.Length + v.Ends.Length > 0);
     public override string Badge => Ctx.View is { } v && v.Starts.Length + v.Ends.Length > 0 ? (v.Starts.Length + v.Ends.Length).ToString(CultureInfo.InvariantCulture) : "";
@@ -40,12 +41,16 @@ public sealed partial class QuestsSection(CreatureContext ctx) : CreatureSection
         listScroll.AddChild(list);
         AddChild(listScroll);
         var row = new HBoxContainer();
-        row.AddChild(ContentEditorWindow.ButtonOf("◂ Back to quests", () =>
+        var back = ContentEditorWindow.ButtonOf("◂ Back to quests", () =>
         {
             questDetail = 0;
             Ctx.Redraw();
-        }));
-        row.AddChild(ContentEditorWindow.ButtonOf("Open in Quest window", () => Ctx.RequestQuestEditor(questDetail)));
+        });
+        back.TooltipText = "Return to the list of quests linked to this NPC.";
+        row.AddChild(back);
+        var open = ContentEditorWindow.ButtonOf("Open in Quest window", () => Ctx.RequestQuestEditor(questDetail));
+        open.TooltipText = "Open this quest in its own editor window.";
+        row.AddChild(open);
         detail.AddChild(row);
         AddChild(detail);
     }
@@ -192,7 +197,7 @@ public sealed partial class QuestsSection(CreatureContext ctx) : CreatureSection
         list.AddChild(new HSeparator());
         list.AddChild(ClientStyle.Text("Link a quest", 16, ClientStyle.Header));
         SearchBox(list, search, "Search_quest", "Find quest by title or ID…", "quest", false,
-            text => DBSource.Open(Ctx.Connection()).SearchQuestsAsync(text, CancellationToken.None));
+            text => DBSource.Open(Ctx.Connection()).SearchQuestsAsync(text, CancellationToken.None), "Find a quest by title or ID to link it to this NPC.");
         foreach (var quest in search.Results)
         {
             list.AddChild(LinkRow(v, quest));
@@ -228,7 +233,8 @@ public sealed partial class QuestsSection(CreatureContext ctx) : CreatureSection
         row.AddChild(ender);
         var link = new Button
         {
-            Text = "Link"
+            Text = "Link",
+            TooltipText = "Link the quest with the roles ticked above."
         };
         link.Pressed += () =>
         {

@@ -11,6 +11,7 @@ public sealed partial class AcGossipSection(CreatureContext ctx) : AcInteraction
     public override string Id => PickerPages.Gossip.Id;
     public override string Title => PickerPages.Gossip.Title;
     public override string IconPath => PickerPages.Gossip.IconPath;
+    public override string Tip => "The greeting text and the options players see when they talk to the creature, including where each option leads.";
     public override bool HasContent => Ctx.AcView is { } v && (Ctx.Editable || v.Menus.Count > 0 || (v.NpcFlag & AcNpcFlags.Gossip) != 0);
     readonly Stack<uint> menus = new();
 

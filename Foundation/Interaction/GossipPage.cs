@@ -98,37 +98,37 @@ public static class GossipPage
             new("option", table, column, label, tip, kind, RowBinding.Item, Options: options, AllowEmpty: true);
         var fields = new List<FieldSpec>
         {
-            Field("OptionText", "Option text", "Player-selectable text. A valid broadcast text takes precedence.", FieldKind.Text),
-            Field("OptionBroadcastTextID", "Broadcast text", "BroadcastText ID overriding the literal option text. 0 uses the literal text."),
+            Field("OptionText", "Option text", "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it.", FieldKind.Text),
+            Field("OptionBroadcastTextID", "Broadcast text", "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."),
             retail
                 ? Field("OptionNpc", "Service", "The client service this option opens.", FieldKind.Choice,
                     TcCreatureView.OptionNpcNames.Select((name, id) => (id, name)).ToArray())
                 : Field("OptionType", "Service", "What the client does when the option is selected.", FieldKind.Choice,
                     AcNpcFlags.OptionTypes.Select((name, id) => (id, name)).ToArray()),
-            Field("ActionMenuID", "Submenu", "Menu opened by this option. 0 means none."),
-            Field("ActionPoiID", "Point of interest", "Map marker shown by this option. 0 means none."),
-            Field("BoxText", "Confirmation text", "Text of the confirmation dialog.", FieldKind.Text),
-            Field("BoxMoney", "Confirmation cost", "Cost in copper shown in the confirmation dialog."),
-            Field("BoxBroadcastTextID", "Confirmation broadcast", "BroadcastText overriding the literal confirmation text."),
-            Field("BoxCoded", "Ask for code", "Ask the player to enter a code.", FieldKind.Check)
+            Field("ActionMenuID", "Submenu", "The gossip menu this option opens. 0 means it opens nothing."),
+            Field("ActionPoiID", "Point of interest", "The point-of-interest marker shown on the map by this option. 0 means none."),
+            Field("BoxText", "Confirmation text", "The text of the confirmation dialog shown before the option takes effect.", FieldKind.Text),
+            Field("BoxMoney", "Confirmation cost", "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."),
+            Field("BoxBroadcastTextID", "Confirmation broadcast", "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."),
+            Field("BoxCoded", "Ask for code", "Show a box where the player must type a code before the option runs.", FieldKind.Check)
         };
         if (retail)
         {
             fields.AddRange(new[]
             {
-                Field("GossipOptionID", "Client option ID", "Client gossip option record."),
-                Field("Language", "Language", "Language ID for this option."),
-                Field("Flags", "Flags", "Additional option flags."),
-                Field("GossipNpcOptionID", "NPC option ID", "Client NPC option record."),
-                Field("SpellID", "Spell", "Spell cast by this option."),
-                Field("OverrideIconID", "Icon override", "Client icon override.")
+                Field("GossipOptionID", "Client option ID", "The client's GossipOption record this row uses. 0 lets the server pick one from the service."),
+                Field("Language", "Language", "The language ID the option text is shown in. 0 is universal."),
+                Field("Flags", "Flags", "Additional client gossip-option flags. The raw value keeps every bit."),
+                Field("GossipNpcOptionID", "NPC option ID", "The client's GossipNpcOption record that decides what this option does. 0 follows the service."),
+                Field("SpellID", "Spell", "The spell cast when the player chooses this option. 0 means no spell."),
+                Field("OverrideIconID", "Icon override", "The client icon shown beside the option. 0 uses the icon from the service.")
             });
         }
         else
         {
-            fields.Insert(0, Field("OptionIcon", "Icon", "Icon shown beside this option.", FieldKind.Choice,
+            fields.Insert(0, Field("OptionIcon", "Icon", "The client icon shown beside this option, such as a chat bubble or a coin.", FieldKind.Choice,
                 AcNpcFlags.OptionIcons.Select((name, id) => (id, name)).ToArray()));
-            fields.Insert(4, Field("OptionNpcFlag", "NPC flag", "Shown only when this and the creature's npcflag overlap."));
+            fields.Insert(4, Field("OptionNpcFlag", "NPC flag", "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."));
         }
 
         Row NewOption(uint menu, RowSet rows)
