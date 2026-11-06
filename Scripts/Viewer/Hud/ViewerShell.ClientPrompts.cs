@@ -69,6 +69,11 @@ public partial class ViewerShell
     {
         ContentDraftFiles.UseProfile(kind);
         ContentDraftFiles.Rebind(drafts);
+        if (drafts.Locked)
+        {
+            Callable.From(PromptLockedDraft).CallDeferred();
+        }
+
         graveyards.ReopenDraft();
         waypoints.ReopenDraft();
         pendingStore = null!;

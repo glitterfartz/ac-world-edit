@@ -245,12 +245,16 @@ public class ContentDraftsRebindTests
         using var blocked = new ContentDrafts(sameFile);
         Assert.Null(blocked.Draft);
         Assert.NotNull(blocked.Error);
+        Assert.True(blocked.Locked);
+        Assert.Equal(sameFile + ".lock", blocked.LockPath);
 
         int changed = 0;
         blocked.Changed += _ => changed++;
         blocked.Rebind(Path.Combine(root, "other", "interactions.json"));
         Assert.NotNull(blocked.Draft);
         Assert.Null(blocked.Error);
+        Assert.False(blocked.Locked);
+        Assert.Null(blocked.LockPath);
         Assert.Equal(1, changed);
     }
 }

@@ -12,6 +12,10 @@ public sealed class ContentDrafts : IDisposable
     readonly Func<string, ITableCatalog> catalogFor;
     public InteractionDraft? Draft { get; private set; }
     public string? Error { get; private set; }
+    /// <summary>True when another process holds the draft's lock file, so editing is disabled.</summary>
+    public bool Locked { get; private set; }
+    /// <summary>The lock file another process holds (or that a failed open named), for the prompt.</summary>
+    public string? LockPath { get; private set; }
     /// <summary>
     /// Raised after every successful commit, undo or redo; the argument is the editor that caused it.
     /// </summary>
@@ -43,15 +47,58 @@ public sealed class ContentDrafts : IDisposable
     {
         Draft?.Dispose();
         Draft = null;
+        Locked = false;
+        LockPath = null;
         try
         {
             Draft = new InteractionDraft(path, catalogFor);
             Error = null;
         }
+        catch (IOException)
+        {
+            Locked = true;
+            LockPath = path + ".lock";
+            Error = $"Another editor is using the local content draft; its lock file is {LockPath}.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Locked = true;
+            LockPath = path + ".lock";
+            Error = $"The local content draft's lock file cannot be opened: {LockPath}.";
+        }
         catch (Exception)
         {
             Error = "Cannot open the local content draft; editing disabled, existing file preserved.";
         }
+    }
+
+    /// <summary>
+    /// Remove the detected lock file and try again. If another process still holds it the delete or
+    /// the reopen fails; the draft file itself is never deleted.
+    /// </summary>
+    public (bool Ok, string Message) DeleteLockAndReopen()
+    {
+        string lockPath = LockPath ?? path + ".lock";
+        try
+        {
+            if (File.Exists(lockPath))
+            {
+                File.Delete(lockPath);
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return (false, $"Could not delete {lockPath}. Close the other editor and try again.");
+        }
+
+        Reopen();
+        if (Draft != null)
+        {
+            Changed?.Invoke(null);
+            return (true, "Editing enabled.");
+        }
+
+        return (false, Error ?? "Editing is still disabled.");
     }
 
     /// <summary>

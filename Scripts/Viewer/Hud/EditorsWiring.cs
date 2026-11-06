@@ -74,6 +74,32 @@ public partial class ViewerShell
     bool BehaviorEditors => databaseEnabled;
 
     /// <summary>
+    /// Tell the user when another editor holds the draft's lock file and offer to delete a stale one.
+    /// The draft itself is never touched; only the sibling .lock file is removed.
+    /// </summary>
+    void PromptLockedDraft()
+    {
+        if (!drafts.Locked)
+        {
+            return;
+        }
+
+        string lockPath = drafts.LockPath ?? ContentDraftFiles.LocalPath("interactions.json.lock");
+        Dialogs.Confirm(this, "Draft is locked",
+            $"Another ACWorldEdit may be running with this draft.\n\nClose the other editor, or delete its lock file and continue:\n{lockPath}",
+            () =>
+            {
+                var (ok, message) = drafts.DeleteLockAndReopen();
+                statusLog.Post(message);
+                if (!ok)
+                {
+                    Dialogs.Info(this, "Still locked", message + "\nClose the other editor, then reopen this one.", "OK");
+                }
+            },
+            ok: "Delete lock file and continue", cancel: "Keep editing disabled");
+    }
+
+    /// <summary>
     /// The draft editor that owns the current selection; creatures when nothing editable is
     /// selected. Menus, toolbar and viewport drags route through it.
     /// </summary>
@@ -90,6 +116,11 @@ public partial class ViewerShell
     void BuildEditors(Node layer)
     {
         drafts = ContentDraftFiles.Open();
+        if (drafts.Locked)
+        {
+            Callable.From(PromptLockedDraft).CallDeferred();
+        }
+
         creatures.Attach(drafts);
         gameObjects.Attach(drafts);
         creatureProps = new CreaturePropertiesWindow
