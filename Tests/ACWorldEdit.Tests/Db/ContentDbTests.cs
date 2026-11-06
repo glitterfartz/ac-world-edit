@@ -31,6 +31,10 @@ public class ContentDbTests
         Check(catalog.SearchMails("", 20).Count > 0, "Mail subjects");
         Check(catalog.SearchTitles("", 20).Count > 0, "Title names");
         Check(catalog.QuestInfos().Count > 0 && catalog.QuestSorts().Count > 0, "Quest info/sort names");
+        Check(catalog.SearchFactionTemplates("Stormwind", 60).Count > 0, "FactionTemplate names");
+        Check(catalog.Classes().Count > 0, "Class names");
+        Check(catalog.CreatureTypes().Count > 0, "Creature type names");
+        Check(catalog.CreatureFamilies().Count > 0, "Creature family names");
         var config = Config;
         var source = AcSource(config);
         var quests = await source.SearchAsync(SmartParamKind.Quest, "Kobold Camp Cleanup", CancellationToken.None);

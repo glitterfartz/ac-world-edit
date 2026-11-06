@@ -13,10 +13,12 @@ public sealed class InteractionCatalog
 {
     readonly DbcTable spells, taxi, costs, displays, emotes, textEmotes, factions, factionTemplates;
     readonly DbcTable? skills, mails, titles, questInfos, questSorts, spellIcons;
+    readonly DbcTable? chrClasses, creatureTypes, creatureFamilies;
     readonly Dictionary<uint, string> spellNames = [];
 
     InteractionCatalog(DbcTable spells, DbcTable taxi, DbcTable costs, DbcTable displays, DbcTable emotes, DbcTable textEmotes, DbcTable factions, DbcTable factionTemplates,
-        DbcTable? skills, DbcTable? mails, DbcTable? titles, DbcTable? questInfos, DbcTable? questSorts, DbcTable? spellIcons)
+        DbcTable? skills, DbcTable? mails, DbcTable? titles, DbcTable? questInfos, DbcTable? questSorts, DbcTable? spellIcons,
+        DbcTable? chrClasses, DbcTable? creatureTypes, DbcTable? creatureFamilies)
     {
         this.spells = spells;
         this.taxi = taxi;
@@ -32,6 +34,9 @@ public sealed class InteractionCatalog
         this.questInfos = questInfos;
         this.questSorts = questSorts;
         this.spellIcons = spellIcons;
+        this.chrClasses = chrClasses;
+        this.creatureTypes = creatureTypes;
+        this.creatureFamilies = creatureFamilies;
         foreach (uint id in spells.Ids)
         {
             string name = spells.Str(id, 136);
@@ -71,7 +76,8 @@ public sealed class InteractionCatalog
 
         return new(tables[0], tables[1], tables[2], tables[3], tables[4], tables[5], tables[6], tables[7],
             Optional("SkillLine"), Optional("MailTemplate"), Optional("CharTitles"),
-            Optional("QuestInfo"), Optional("QuestSort"), Optional("SpellIcon"));
+            Optional("QuestInfo"), Optional("QuestSort"), Optional("SpellIcon"),
+            Optional("ChrClasses"), Optional("CreatureType"), Optional("CreatureFamily"));
     }
 
     /// <summary>
@@ -191,6 +197,29 @@ public sealed class InteractionCatalog
     public string? QuestInfoName(uint id) => questInfos != null && questInfos.Contains(id) ? questInfos.Str(id, 1) : null;
 
     public string? QuestSortName(uint id) => questSorts != null && questSorts.Contains(id) ? questSorts.Str(id, 1) : null;
+
+    public string? ClassName(uint id) => chrClasses != null && chrClasses.Contains(id) ? chrClasses.Str(id, 4) : null;
+
+    public string? CreatureTypeName(uint id) => creatureTypes != null && creatureTypes.Contains(id) ? creatureTypes.Str(id, 1) : null;
+
+    public string? CreatureFamilyName(uint id) => creatureFamilies != null && creatureFamilies.Contains(id) ? creatureFamilies.Str(id, 10) : null;
+
+    public IReadOnlyList<(uint Id, string Name)> Classes() => AllTable(chrClasses, 4);
+
+    public IReadOnlyList<(uint Id, string Name)> CreatureTypes() => AllTable(creatureTypes, 1);
+
+    public IReadOnlyList<(uint Id, string Name)> CreatureFamilies() => AllTable(creatureFamilies, 10);
+
+    /// <summary>Faction templates by ID or by the reputation faction's name.</summary>
+    public IReadOnlyList<(uint Id, string Name)> SearchFactionTemplates(string term, int limit)
+    {
+        term = term.Trim();
+        uint.TryParse(term, out uint exact);
+        return All("FactionTemplate")
+            .Where(f => f.Name.Length > 0 && (term.Length == 0 || f.Id == exact || f.Name.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(f => f.Id == exact ? 0 : 1).ThenBy(f => f.Name.Length).ThenBy(f => f.Id)
+            .Take(limit).ToList();
+    }
 
     public IReadOnlyList<(uint Id, string Name)> SearchSkills(string term, int limit = 50) => SearchTable(skills, 2, term, limit);
 

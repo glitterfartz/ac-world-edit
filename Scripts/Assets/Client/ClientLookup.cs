@@ -83,6 +83,19 @@ public interface IClientLookup : ITcStatData
     ClientFaction? Faction(uint id) => null;
     IReadOnlyList<ClientFaction> SearchFactions(string term, int limit) => [];
 
+    /// <summary>A creature's faction template (creature_template.faction), named by the faction it belongs to.</summary>
+    ClientFaction? FactionTemplate(uint id) => null;
+    IReadOnlyList<ClientFaction> SearchFactionTemplates(string term, int limit) => [];
+
+    /// <summary>Playable classes, for the unit class and trainer class dropdowns.</summary>
+    IReadOnlyList<(uint Id, string Name)> Classes() => [];
+
+    /// <summary>Creature types (beast, dragonkin, demon…), for the type dropdown.</summary>
+    IReadOnlyList<(uint Id, string Name)> CreatureTypes() => [];
+
+    /// <summary>Hunter pet families, for the pet family dropdown.</summary>
+    IReadOnlyList<(uint Id, string Name)> CreatureFamilies() => [];
+
     ClientMailTemplate? MailTemplate(uint id) => null;
     IReadOnlyList<ClientMailTemplate> SearchMailTemplates(string term, int limit) => [];
 
@@ -387,6 +400,49 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
 
     static ClientFaction DescribeFaction(DBCDRow row) =>
         new((uint)row.ID, row.Field<string>("Name_lang") ?? "", row.Field<string>("Description_lang") ?? "");
+
+    public ClientFaction? FactionTemplate(uint id) =>
+        Table("FactionTemplate").TryGetValue((int)id, out var row) ? DescribeFactionTemplate(row) : null;
+
+    public IReadOnlyList<ClientFaction> SearchFactionTemplates(string term, int limit)
+    {
+        term = term.Trim();
+        uint.TryParse(term, out uint exact);
+        var found = new List<ClientFaction>();
+        foreach (var row in Table("FactionTemplate").Values)
+        {
+            var template = DescribeFactionTemplate(row);
+            if (term.Length == 0 || row.ID == exact || template.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                found.Add(template);
+                if (found.Count >= limit)
+                {
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// creature_template.faction points at FactionTemplate, which itself points at a reputation
+    /// faction; show the faction's name and keep both IDs in the description.
+    /// </summary>
+    ClientFaction DescribeFactionTemplate(DBCDRow row)
+    {
+        uint factionId = row.FieldAs<uint>("Faction");
+        var faction = Table("Faction").TryGetValue((int)factionId, out var named) ? named : null;
+        string name = faction?.Field<string>("Name_lang") ?? "";
+        return new((uint)row.ID, name.Length > 0 ? name : $"Faction {factionId}",
+            $"Faction template {row.ID} · faction {factionId}");
+    }
+
+    public IReadOnlyList<(uint Id, string Name)> Classes() => All("ChrClasses", "Name_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> CreatureTypes() => All("CreatureType", "Name_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> CreatureFamilies() => All("CreatureFamily", "Name_lang");
 
     public ClientMailTemplate? MailTemplate(uint id) =>
         Table("MailTemplate").TryGetValue((int)id, out var row) ? DescribeMail(row) : null;

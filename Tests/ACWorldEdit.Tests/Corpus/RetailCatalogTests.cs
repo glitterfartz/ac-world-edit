@@ -339,6 +339,10 @@ public class RetailAnimationTests
         Assert.NotEmpty(lookup.SearchTitles("", 5));
         Assert.NotEmpty(lookup.SearchMailTemplates("", 5));
         Assert.NotEmpty(lookup.SearchFactions("Stormwind", 5));
+        Assert.NotEmpty(lookup.SearchFactionTemplates("Stormwind", 5));
+        Assert.Contains(lookup.Classes(), c => c.Name == "Warrior");
+        Assert.Contains(lookup.CreatureTypes(), t => t.Name == "Beast");
+        Assert.Contains(lookup.CreatureFamilies(), f => f.Name == "Wolf");
         Assert.True(lookup.SpellIcon(133) != 0);
 
         var areas = AreaLookup.FromRetail(RetailData.Tables);

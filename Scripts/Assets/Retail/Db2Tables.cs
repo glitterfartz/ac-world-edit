@@ -79,6 +79,10 @@ public sealed class Db2Tables
         ["CharTitles"] = 1349054,
         ["Emotes"] = 1343602,
         ["Faction"] = 1361972,
+        ["FactionTemplate"] = 1361579,
+        ["ChrClasses"] = 1361031,
+        ["CreatureType"] = 1131315,
+        ["CreatureFamily"] = 1351351,
         // What an item template does not store: its level squish and the tables its stats, armor, damage and durability come from.
         ["ItemSquishEra"] = 7322706,
         ["Curve"] = 892585,
