@@ -15,7 +15,9 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 - `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
 - `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, spawn authoring, SQL export).
 - `docs/architecture/testing-and-tooling.md`: test projects, test commands and settings, environment variables, tooling, CI, commit message rules (read before committing).
-- `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs: AzerothCore https://www.azerothcore.org/wiki/database-world, TrinityCore https://trinitycore.info/database/master/world/home.
+- `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs:
+  - AzerothCore world database: https://www.azerothcore.org/wiki/database-world
+  - TrinityCore world database (master): https://trinitycore.info/database/master/world/home
 - `docs/reference/shader-inspection-locations.md`: a map/tile/XYZ for inspecting each implemented liquid shader.
 - `docs/status/open-work.md`: what is built, partial and open, per area and per gap-plan phase.
 - `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.
@@ -55,6 +57,9 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 - Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/status/open-work.md` when work lands or a gap is found, `docs/status/needed-tests.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
 - For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/reference/database-differences.md`.
+  - AzerothCore: https://www.azerothcore.org/wiki/database-world (live database `acore_world`)
+  - TrinityCore master: https://trinitycore.info/database/master/world/home (live database `world`)
+- When the MySQL MCP server is available, use it to research DB structure and real rows instead of guessing: query `acore_world` for AzerothCore and `world` for TrinityCore (plus the client DB2s for retail-only data). The MCP connection is read-only; do not attempt writes. Check `information_schema.COLUMNS` / `SHOW CREATE TABLE` for column names and defaults, and use the official schema docs above to confirm meaning.
 - `azerothcore-wotlk` and `wow-data` are read-only reference and must never be modified.
 - Dialect-specific classes use the `Ac` / `Tc` prefix (file names too) and live in the layer's `AzerothCore/` / `TrinityCore/` folders (`Scripts/Ui/AzerothCore` beside `Scripts/Data/AzerothCore`, not one copy per feature). Shared interfaces, descriptors, context, renderers and the one factory or registry that names both dialects stay unprefixed. When working in a feature, rename and move legacy dialect-specific classes to match, moving `.cs.uid` companions with them.
 - Write tests after a feature works (not test-first for large features). Skip trivial getters/setters and Godot UI wiring. Keep tests fast and deterministic; slow corpus tests are opt-in.
