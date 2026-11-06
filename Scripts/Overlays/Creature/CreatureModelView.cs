@@ -38,7 +38,8 @@ internal sealed class CreatureModelView(Node3D owner)
     }
 
     /// <summary>Refresh the batches at most every 0.2 s; membership changes rebuild only that batch.</summary>
-    public void Update(Camera3D camera, IEnumerable<CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary? library)
+    public void Update(Camera3D camera, IEnumerable<CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary? library,
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states = null, Func<uint, string?>? emoteName = null)
     {
         if (library?.Catalog == null || System.Diagnostics.Stopwatch.GetElapsedTime(updated).TotalSeconds <= 0.2)
         {
@@ -46,16 +47,18 @@ internal sealed class CreatureModelView(Node3D owner)
         }
 
         var byGuid = markers.ToDictionary(m => m.Spawn.Guid);
-        var groups = GroupModels(camera, byGuid, preview, layerEnabled, selected, previewAnimation, library);
+        var groups = GroupModels(camera, byGuid, preview, layerEnabled, selected, previewAnimation, library, states, emoteName);
         Reconcile(groups, byGuid, library);
         updated = System.Diagnostics.Stopwatch.GetTimestamp();
     }
 
     /// <summary>
     /// Cache appearances and group the admitted creatures by variant/clip. Selection can preview a
-    /// separate animation without changing the other creatures.
+    /// separate animation without changing the other creatures; every other marker plays the looping
+    /// animation its addon row (stance and emote) resolves to.
     /// </summary>
-    Dictionary<ModelKey, List<ulong>> GroupModels(Camera3D camera, Dictionary<ulong, CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary library)
+    Dictionary<ModelKey, List<ulong>> GroupModels(Camera3D camera, Dictionary<ulong, CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary library,
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states, Func<uint, string?>? emoteName)
     {
         var groups = new Dictionary<ModelKey, List<ulong>>();
         admitted.Clear();
@@ -94,7 +97,7 @@ internal sealed class CreatureModelView(Node3D owner)
                 continue;
             }
 
-            var key = ModelKey.ForCreature(appearance, selected == marker.Spawn.Guid ? previewAnimation : (ushort)0);
+            var key = ModelKey.ForCreature(appearance, selected == marker.Spawn.Guid ? previewAnimation : AddonAnimation(marker.Spawn.Guid, states, emoteName, library));
             if (!groups.TryGetValue(key, out var list))
             {
                 groups[key] = list = [];
@@ -104,6 +107,40 @@ internal sealed class CreatureModelView(Node3D owner)
         }
 
         return groups;
+    }
+
+    /// <summary>The looping animation a marker's addon row resolves to (stance and emote); unknown
+    /// names fall back to Stand (or Death), never to a failed model: the loader shows the reference
+    /// pose for an animation the model lacks.</summary>
+    static ushort AddonAnimation(ulong guid, IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states, Func<uint, string?>? emoteName, ModelLibrary library)
+    {
+        if (states?.TryGetValue(guid, out var state) != true)
+        {
+            return 0;
+        }
+
+        return SpawnAppearance.AnimationFor(state.Stand, state.Emote, name => AnimByName(library, name), emote => emoteName?.Invoke(emote));
+    }
+
+    static object? animCatalog;
+    static Dictionary<string, ushort> animNames = new(StringComparer.Ordinal);
+
+    /// <summary>Client AnimationData names (normalized) to IDs, rebuilt when the client changes.</summary>
+    static ushort? AnimByName(ModelLibrary library, string name)
+    {
+        if (!ReferenceEquals(animCatalog, library.Catalog))
+        {
+            animCatalog = library.Catalog;
+            animNames = library.Catalog?.AnimationNames.ToDictionary(p => Normalize(p.Value), p => p.Key, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
+        }
+
+        return animNames.TryGetValue(Normalize(name), out ushort id) ? id : null;
+    }
+
+    static string Normalize(string name)
+    {
+        var letters = name.Where(char.IsLetterOrDigit).ToArray();
+        return new string(letters).ToLowerInvariant();
     }
 
     /// <summary>Diff the grouped membership against the current batches; unchanged batches keep their nodes.</summary>
