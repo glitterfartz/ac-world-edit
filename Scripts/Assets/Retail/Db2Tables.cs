@@ -83,6 +83,9 @@ public sealed class Db2Tables
         ["ChrClasses"] = 1361031,
         ["CreatureType"] = 1131315,
         ["CreatureFamily"] = 1351351,
+        // AnimationData.db2 FileDataID (validated by the corpus table test). Modern layouts carry
+        // no names, so seat/flight use numeric clips; the entry documents the ID for that check.
+        ["AnimationData"] = 1375431,
         // What an item template does not store: its level squish and the tables its stats, armor, damage and durability come from.
         ["ItemSquishEra"] = 7322706,
         ["Curve"] = 892585,

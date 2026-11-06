@@ -147,6 +147,16 @@ public class RetailClientLookupTests
     }
 
     [RetailClientFact]
+    public void EmoteAnimMapsEmotesToTheirAnimationClips()
+    {
+        var lookup = Lookup();
+        Assert.Equal(67u, lookup.EmoteAnim(3)); // wave -> EmoteWave
+        Assert.Equal(69u, lookup.EmoteAnim(10)); // dance -> EmoteDance
+        Assert.Equal(0u, lookup.EmoteAnim(12)); // sleep names no clip
+        Assert.Equal(0u, lookup.EmoteAnim(uint.MaxValue));
+    }
+
+    [RetailClientFact]
     public void PolygonTriggersTakeTheirCornersFromTheirPath()
     {
         var lookup = Lookup();

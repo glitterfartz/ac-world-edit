@@ -129,7 +129,7 @@ public partial class CreatureOverlay
             mark = PerfMark();
         }
 
-        modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, states, AppearanceEmoteName);
+        modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, states, AppearanceEmoteAnim);
         if (PerfProbe)
         {
             PerfAdd(perfModels, mark);

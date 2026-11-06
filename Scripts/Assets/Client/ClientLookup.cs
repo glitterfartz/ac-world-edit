@@ -102,6 +102,9 @@ public interface IClientLookup : ITcStatData
     /// <summary>The client's animation emotes (Emotes.db2), used by quest gesture pickers.</summary>
     IReadOnlyList<(uint Id, string Name)> Emotes() => [];
 
+    /// <summary>The AnimationData clip an emote loops (Emotes.db2 AnimID), or 0 when it names none.</summary>
+    uint EmoteAnim(uint id) => 0;
+
     /// <summary>Playable races as (ChrRaces ID, display name); empty when the client has no table.</summary>
     IReadOnlyList<(uint Id, string Name)> Races() => [];
 
@@ -477,6 +480,20 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
         }
 
         return list;
+    }
+
+    /// <summary>The AnimationData clip an emote loops (Emotes.db2 AnimID: wave is 67, dance is 69),
+    /// or 0 when the row is missing or names no clip.</summary>
+    public uint EmoteAnim(uint id)
+    {
+        try
+        {
+            return Table("Emotes").TryGetValue((int)id, out var row) ? (uint)Math.Max(0, row.FieldAs<int>("AnimID")) : 0;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
     }
 
     public IReadOnlyList<(uint Id, string Name)> Races() => All("ChrRaces", "Name_lang");

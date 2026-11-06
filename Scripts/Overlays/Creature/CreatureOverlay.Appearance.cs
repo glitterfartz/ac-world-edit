@@ -14,8 +14,6 @@ public partial class CreatureOverlay
 {
     InteractionCatalog? emoteCatalog;
     IClientFiles? emoteCatalogStore;
-    IClientLookup? emoteLookup;
-    Dictionary<uint, string> emoteLookupNames = [];
 
     /// <summary>
     /// Stance, emote, mount and flight per marker with a loaded addon row, for the
@@ -161,8 +159,9 @@ public partial class CreatureOverlay
         return hit is { Height: float ground } ? pos.Y - ground > FlyingThresholdYards : previous;
     }
 
-    /// <summary>The emote's client name for animation matching: Wrath DBC names, else retail DB2 slash commands.</summary>
-    string? AppearanceEmoteName(uint emote)
+    /// <summary>The AnimationData clip an emote loops (wrath DBC AnimID, else retail DB2 AnimID),
+    /// or null when the emote is none or names no clip.</summary>
+    ushort? AppearanceEmoteAnim(uint emote)
     {
         if (emote == 0)
         {
@@ -177,20 +176,17 @@ public partial class CreatureOverlay
             LoadEmoteCatalog(store);
         }
 
-        if (emoteCatalog?.EmoteName(emote) is { } wrath)
+        if (emoteCatalog?.EmoteAnim(emote) is uint wrath && wrath != 0 && wrath <= ushort.MaxValue)
         {
-            return wrath;
+            return (ushort)wrath;
         }
 
-        var lookup = Lookup();
-        if (!ReferenceEquals(lookup, emoteLookup))
+        if (Lookup() is { } lookup && lookup.EmoteAnim(emote) is uint retail && retail != 0 && retail <= ushort.MaxValue)
         {
-            emoteLookup = lookup;
-            emoteLookupNames = lookup?.Emotes().Where(e => e.Name.Length > 0).DistinctBy(e => e.Id)
-                .ToDictionary(e => e.Id, e => e.Name) ?? [];
+            return (ushort)retail;
         }
 
-        return emoteLookupNames.GetValueOrDefault(emote);
+        return null;
     }
 
     async void LoadEmoteCatalog(IClientFiles? store)

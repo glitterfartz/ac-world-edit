@@ -18,81 +18,63 @@ public static class SpawnAppearance
     /// <summary>The emote the creature loops.</summary>
     public static uint EmoteOf(Row addon) => addon.U("emote");
 
-    /// <summary>Seat animations to try for a rider, in preference order; the caller checks the
-    /// rider's model actually has the clip and falls back when none match.</summary>
-    public static readonly string[] SeatAnimations = ["Mount", "Ride", "SitChair", "SitGround", "Sit"];
+    /// <summary>Riders sit with clip 91 (Mount); verified in the wrath DBC and stable across builds.</summary>
+    public const ushort AnimMount = 91;
+    /// <summary>Airborne mounts flap with clip 135 (Fly); verified in the wrath DBC and stable across builds.</summary>
+    public const ushort AnimFly = 135;
 
-    /// <summary>Flight animations to try for an airborne mount, in preference order.</summary>
-    public static readonly string[] FlyAnimations = ["Fly", "Hover"];
-
-    /// <summary>First seat animation the model has, or null to keep the stance animation.</summary>
-    public static ushort? SeatAnimation(Func<string, ushort?> byName, Func<ushort, bool> available)
+    /// <summary>The looping AnimationData clip for a StandState value (0 is none: keep standing),
+    /// verified against the wrath DBC: 97 SitGround, 102 SitChairLow, 100 Sleep, 115 KneelLoop.</summary>
+    public static ushort StandClip(uint stand) => stand switch
     {
-        foreach (string name in SeatAnimations)
-        {
-            if (byName(name) is ushort id && available(id))
-            {
-                return id;
-            }
-        }
+        1 => 97,
+        2 => 102,
+        3 => 100,
+        4 => 97,
+        5 => 97,
+        6 => 97,
+        7 => AnimDeath,
+        8 => 115,
+        _ => AnimStand
+    };
 
-        return null;
-    }
-
-    /// <summary>First flight animation the model has, or null to keep standing.</summary>
-    public static ushort? FlyAnimation(Func<string, ushort?> byName, Func<ushort, bool> available)
-    {
-        foreach (string name in FlyAnimations)
-        {
-            if (byName(name) is ushort id && available(id))
-            {
-                return id;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>The mount: a display ID, or a creature entry whose model it rides (TrinityCore only).</summary>
-    public static (uint Display, uint Creature) MountOf(WorldDialect dialect, Row addon) =>
-        (addon.U("mount"), dialect == WorldDialect.TrinityCore ? addon.U("MountCreatureID") : 0);
-
-    /// <summary>Pick the looping animation: dead always plays Death; else the emote's animation when
-    /// the client names one, else the stance's, else Stand. Unknown names fall back instead of
-    /// failing, and the model loader shows the reference pose for an animation the model lacks.</summary>
-    public static ushort AnimationFor(uint stand, uint emote, Func<string, ushort?> animByName, Func<uint, string?> emoteName)
+    /// <summary>
+    /// Pick the rider's looping clip: dead always plays Death, else the emote's clip when it names
+    /// one the model has, else the seat clip when mounted and the model has it, else the stance
+    /// clip when the model has it, else Stand. A clip the model lacks is never picked: the loader
+    /// would show the reference pose.
+    /// </summary>
+    public static ushort RiderClip(uint stand, ushort? emoteAnim, bool mounted, Func<ushort, bool> available)
     {
         if (stand == 7)
         {
             return AnimDeath;
         }
 
-        if (emote != 0 && emoteName(emote) is { } name && animByName(name) is ushort fromEmote)
+        if (emoteAnim is ushort emote && emote != 0 && available(emote))
         {
-            return fromEmote;
+            return emote;
         }
 
-        if (stand != 0 && StandAnimation(stand) is { } stance && animByName(stance) is ushort fromStance)
+        if (mounted && available(AnimMount))
         {
-            return fromStance;
+            return AnimMount;
+        }
+
+        ushort stance = StandClip(stand);
+        if (stance != AnimStand && available(stance))
+        {
+            return stance;
         }
 
         return AnimStand;
     }
 
-    /// <summary>The AnimationData name a stance best matches; the caller resolves it (case-insensitively)
-    /// against the client's names and falls back when it is absent.</summary>
-    public static string? StandAnimation(uint stand) => stand switch
-    {
-        1 => "Sit",
-        2 => "SitChair",
-        3 => "Sleep",
-        4 => "Sit",
-        5 => "Sit",
-        6 => "Sit",
-        7 => "Death",
-        8 => "Kneel",
-        9 => "Submerged",
-        _ => null
-    };
+    /// <summary>Pick the mount's looping clip: Fly when airborne and the model has the clip, else Stand.</summary>
+    public static ushort MountClip(bool flying, Func<ushort, bool> available) =>
+        flying && available(AnimFly) ? AnimFly : AnimStand;
+
+    /// <summary>The mount: a display ID, or a creature entry whose model it rides (TrinityCore only).</summary>
+    public static (uint Display, uint Creature) MountOf(WorldDialect dialect, Row addon) =>
+        (addon.U("mount"), dialect == WorldDialect.TrinityCore ? addon.U("MountCreatureID") : 0);
 }

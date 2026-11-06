@@ -3,46 +3,70 @@ using Xunit;
 
 namespace ACWorldEdit.Tests.Drafts;
 
-/// <summary>The viewport animation follows the addon row: dead always plays Death, else the emote's
-/// animation when the client names one, else the stance's, else Stand.</summary>
+/// <summary>The viewport animation follows the addon row with numeric AnimationData clips (names
+/// do not exist on modern clients): dead always plays Death, else the emote's clip when the model
+/// has it, else the seat clip when mounted, else the stance clip, else Stand.</summary>
 public class SpawnAnimationTests
 {
-    static ushort? ByName(IReadOnlyDictionary<string, ushort> map, string name) =>
-        map.TryGetValue(name, out ushort id) ? id : null;
+    static bool All(ushort id) => true;
+    static bool None(ushort id) => false;
+
+    static Func<ushort, bool> Only(params ushort[] ids)
+    {
+        var set = new HashSet<ushort>(ids);
+        return set.Contains;
+    }
 
     [Fact]
     public void DeadAlwaysPlaysDeath()
     {
-        Assert.Equal(SpawnAppearance.AnimDeath, SpawnAppearance.AnimationFor(7, 0, _ => null, _ => null));
-        Assert.Equal(SpawnAppearance.AnimDeath, SpawnAppearance.AnimationFor(7, 69, _ => (ushort?)70, _ => "Wave"));
+        Assert.Equal(SpawnAppearance.AnimDeath, SpawnAppearance.RiderClip(7, null, false, All));
+        Assert.Equal(SpawnAppearance.AnimDeath, SpawnAppearance.RiderClip(7, 67, true, All));
     }
 
     [Fact]
     public void IdleWithNothingIsStand()
     {
-        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.AnimationFor(0, 0, _ => null, _ => null));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.RiderClip(0, null, false, All));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.MountClip(false, All));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.MountClip(true, None));
     }
 
     [Fact]
-    public void EmoteNameMatchWinsOverStance()
+    public void EmoteClipWinsOverSeatAndStanceWhenPresent()
     {
-        var anims = new Dictionary<string, ushort> { ["Wave"] = 70, ["Sleep"] = 5 };
-        Assert.Equal(70, SpawnAppearance.AnimationFor(3, 69, name => ByName(anims, name), emote => emote == 69 ? "Wave" : null));
+        Assert.Equal(67, SpawnAppearance.RiderClip(0, 67, true, Only(67, 91)));
+        Assert.Equal(67, SpawnAppearance.RiderClip(3, 67, false, Only(67, 100)));
     }
 
     [Fact]
-    public void StanceNameMatchPlaysWhenEmoteIsUnknown()
+    public void MissingEmoteClipFallsThroughToSeatThenStance()
     {
-        var anims = new Dictionary<string, ushort> { ["Sleep"] = 5 };
-        Assert.Equal(5, SpawnAppearance.AnimationFor(3, 69, name => ByName(anims, name), _ => "Something unknown"));
-        Assert.Equal(5, SpawnAppearance.AnimationFor(3, 0, name => ByName(anims, name), _ => null));
+        // Wave (67) not on the model: a mounted rider sits (91), then stance sleep (100), then Stand.
+        Assert.Equal(91, SpawnAppearance.RiderClip(0, 67, true, Only(91)));
+        Assert.Equal(91, SpawnAppearance.RiderClip(3, 67, true, Only(91)));
+        Assert.Equal(100, SpawnAppearance.RiderClip(3, 67, false, Only(100)));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.RiderClip(3, 67, false, None));
     }
 
     [Fact]
-    public void UnknownNamesFallBackToStand()
+    public void StandClipsFollowTheVerifiedIds()
     {
-        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.AnimationFor(3, 0, _ => null, _ => null));
-        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.AnimationFor(0, 69, _ => null, _ => "Wave"));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.StandClip(0));
+        Assert.Equal(97, SpawnAppearance.StandClip(1));
+        Assert.Equal(102, SpawnAppearance.StandClip(2));
+        Assert.Equal(100, SpawnAppearance.StandClip(3));
+        Assert.Equal(SpawnAppearance.AnimDeath, SpawnAppearance.StandClip(7));
+        Assert.Equal(115, SpawnAppearance.StandClip(8));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.StandClip(9));
+    }
+
+    [Fact]
+    public void MountClipNeedsFlightAndTheFlyClip()
+    {
+        Assert.Equal(135, SpawnAppearance.MountClip(true, Only(135)));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.MountClip(true, None));
+        Assert.Equal(SpawnAppearance.AnimStand, SpawnAppearance.MountClip(false, All));
     }
 
     [Fact]
@@ -69,26 +93,5 @@ public class SpawnAnimationTests
         Assert.Equal((0u, 0u), SpawnAppearance.MountOf(WorldDialect.TrinityCore, tcNone));
         var ac = Row.Of(("mount", 14337u));
         Assert.Equal((14337u, 0u), SpawnAppearance.MountOf(WorldDialect.AzerothCore, ac));
-    }
-
-    [Fact]
-    public void SeatAnimationPrefersMountAndNeedsTheClip()
-    {
-        var anims = new Dictionary<string, ushort> { ["Mount"] = 12, ["Sit"] = 8 };
-        var all = new HashSet<ushort> { 12, 8 };
-        Assert.Equal((ushort)12, SpawnAppearance.SeatAnimation(name => ByName(anims, name), all.Contains));
-        Assert.Equal((ushort)8, SpawnAppearance.SeatAnimation(name => ByName(anims, name), id => id == 8));
-        Assert.Null(SpawnAppearance.SeatAnimation(name => ByName(anims, name), _ => false));
-        Assert.Null(SpawnAppearance.SeatAnimation(_ => null, all.Contains));
-    }
-
-    [Fact]
-    public void FlyAnimationPrefersFlyAndNeedsTheClip()
-    {
-        var anims = new Dictionary<string, ushort> { ["Fly"] = 30, ["Hover"] = 31 };
-        var all = new HashSet<ushort> { 30, 31 };
-        Assert.Equal((ushort)30, SpawnAppearance.FlyAnimation(name => ByName(anims, name), all.Contains));
-        Assert.Equal((ushort)31, SpawnAppearance.FlyAnimation(name => ByName(anims, name), id => id == 31));
-        Assert.Null(SpawnAppearance.FlyAnimation(name => ByName(anims, name), _ => false));
     }
 }

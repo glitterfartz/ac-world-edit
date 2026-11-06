@@ -85,6 +85,20 @@ public sealed class InteractionCatalog
     /// </summary>
     public string? EmoteName(uint id) => emotes.Contains(id) ? System.Text.RegularExpressions.Regex.Replace(emotes.Str(id, 1), @"^(ONESHOT_|STATE_)|\(.*?\)", "").Replace('_', ' ').Trim().ToLowerInvariant() : null;
 
+    /// <summary>The AnimationData clip an emote loops (Emotes.dbc field 2: wave is 67, dance is 69),
+    /// or 0 when the row is missing or names no clip (pure states like sit and sleep use 0).</summary>
+    public uint EmoteAnim(uint id)
+    {
+        try
+        {
+            return emotes.U(id, 2);
+        }
+        catch (InvalidDataException)
+        {
+            return 0;
+        }
+    }
+
     public string? TextEmoteName(uint id) => textEmotes.Contains(id) ? textEmotes.Str(id, 1).ToLowerInvariant() : null;
 
     public string? FactionName(uint id) => factions.Contains(id) ? factions.Str(id, 23) : null;
