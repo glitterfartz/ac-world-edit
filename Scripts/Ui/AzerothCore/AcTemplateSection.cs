@@ -37,10 +37,7 @@ public sealed partial class AcTemplateSection : AcInteractionSection
             return;
         }
 
-        uint display = Ctx.Look?.DisplayId ?? 0;
-        IThumbnailSource? thumbnails = Ctx.Thumbnails();
-        Func<uint, Action<Texture2D>, Texture2D?>? load = thumbnails == null ? null : thumbnails.Creature;
-        body.AddChild(ModelPreview.Row(display, load));
+        CreatureDisplayEditor.Render(body, Ctx, v.Entry);
 
         if (editable)
         {
@@ -48,7 +45,6 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         }
 
         renderer.After.Clear();
-        renderer.After["identity"] = () => CreatureDisplayEditor.Render(body, Ctx, v.Entry);
         renderer.After["interaction"] = () => RenderInteraction(v);
         renderer.Render(body, Ctx.Schema.TemplatePage, effective, v.Entry, editable,
             (field, row) => CreatureReferenceEditor.Build(this, Ctx, field, row, null, null),

@@ -22,10 +22,7 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcCreatureS
 
     protected override void Populate(TcCreatureView v)
     {
-        uint display = Ctx.Look?.DisplayId ?? 0;
-        IThumbnailSource? thumbnails = Ctx.Thumbnails();
-        Func<uint, Action<Texture2D>, Texture2D?>? load = thumbnails == null ? null : thumbnails.Creature;
-        AddChild(ModelPreview.Row(display, load));
+        CreatureDisplayEditor.Render(this, Ctx, v.Entry);
 
         if (Ctx.Editable)
         {
@@ -33,7 +30,6 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcCreatureS
         }
 
         renderer.After.Clear();
-        renderer.After["identity"] = () => CreatureDisplayEditor.Render(this, Ctx, v.Entry);
         renderer.Render(this, Ctx.Schema.TemplatePage, Ctx.Effective, v.Entry, Ctx.Editable,
             (field, row) => CreatureReferenceEditor.Build(this, Ctx, field, row, renderer.Picked, TcTables.CreatureDifficulty),
             (field, row) => CreatureReferenceEditor.Describe(Ctx, field, row) is { } shown ? ClientStyle.Text(shown, 14) : null);
