@@ -39,7 +39,7 @@ internal sealed class CreatureModelView(Node3D owner)
 
     /// <summary>Refresh the batches at most every 0.2 s; membership changes rebuild only that batch.</summary>
     public void Update(Camera3D camera, IEnumerable<CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary? library,
-        IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states = null, Func<uint, string?>? emoteName = null)
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states = null, Func<uint, string?>? emoteName = null)
     {
         if (library?.Catalog == null || System.Diagnostics.Stopwatch.GetElapsedTime(updated).TotalSeconds <= 0.2)
         {
@@ -55,12 +55,13 @@ internal sealed class CreatureModelView(Node3D owner)
     /// <summary>
     /// Cache appearances and group the admitted creatures by variant/clip. Selection can preview a
     /// separate animation without changing the other creatures; every other marker plays the looping
-    /// animation its addon row (stance and emote) resolves to.
+    /// animation its addon row (stance and emote) resolves to, riding its mount when the row sets one.
     /// </summary>
     Dictionary<ModelKey, List<ulong>> GroupModels(Camera3D camera, Dictionary<ulong, CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary library,
-        IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states, Func<uint, string?>? emoteName)
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, Func<uint, string?>? emoteName)
     {
         var groups = new Dictionary<ModelKey, List<ulong>>();
+        elevations.Clear();
         admitted.Clear();
         float viewDistanceSquared = preview.ViewDistance * preview.ViewDistance;
         var candidates = markers.Values
@@ -104,15 +105,64 @@ internal sealed class CreatureModelView(Node3D owner)
             }
 
             list.Add(marker.Spawn.Guid);
+            AddMount(groups, marker, states, library);
         }
 
         return groups;
     }
 
+    /// <summary>A marker's mount as its own batch (tagged, so it never merges with a rider batch):
+    /// the rider's elevation is remembered for its own transform, label and gizmo moves.</summary>
+    void AddMount(Dictionary<ModelKey, List<ulong>> groups, CreatureMarkers.Marker marker, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, ModelLibrary library)
+    {
+        if (states?.TryGetValue(marker.Spawn.Guid, out var state) != true || state.Mount == 0)
+        {
+            return;
+        }
+
+        if (!appearances.TryGetValue(state.Mount, out var mount))
+        {
+            var catalog = library.Catalog;
+            if (catalog == null)
+            {
+                return;
+            }
+
+            try
+            {
+                mount = catalog.Resolve(state.Mount);
+            }
+            catch (Exception)
+            {
+                mount = null;
+                GD.PushWarning($"No client appearance for mount display {state.Mount}; riding without a mount model.");
+            }
+
+            appearances[state.Mount] = mount;
+        }
+
+        if (mount == null)
+        {
+            return;
+        }
+
+        var key = ModelKey.ForCreature(mount, 0) with { Extra = "mount" };
+        if (!groups.TryGetValue(key, out var list))
+        {
+            groups[key] = list = [];
+        }
+
+        list.Add(marker.Spawn.Guid);
+        float scale = state.MountScale * mount.Scale;
+        elevations[marker.Spawn.Guid] = 1.5f * (float.IsFinite(scale) && scale > 0 ? scale : 1);
+    }
+
+    readonly Dictionary<ulong, float> elevations = [];
+
     /// <summary>The looping animation a marker's addon row resolves to (stance and emote); unknown
     /// names fall back to Stand (or Death), never to a failed model: the loader shows the reference
     /// pose for an animation the model lacks.</summary>
-    static ushort AddonAnimation(ulong guid, IReadOnlyDictionary<ulong, (uint Stand, uint Emote)>? states, Func<uint, string?>? emoteName, ModelLibrary library)
+    static ushort AddonAnimation(ulong guid, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, Func<uint, string?>? emoteName, ModelLibrary library)
     {
         if (states?.TryGetValue(guid, out var state) != true)
         {
@@ -131,7 +181,14 @@ internal sealed class CreatureModelView(Node3D owner)
         if (!ReferenceEquals(animCatalog, library.Catalog))
         {
             animCatalog = library.Catalog;
-            animNames = library.Catalog?.AnimationNames.ToDictionary(p => Normalize(p.Value), p => p.Key, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
+            animNames = new Dictionary<string, ushort>(StringComparer.Ordinal);
+            if (library.Catalog?.AnimationNames is { } names)
+            {
+                foreach (var pair in names)
+                {
+                    animNames[Normalize(pair.Value)] = pair.Key;
+                }
+            }
         }
 
         return animNames.TryGetValue(Normalize(name), out ushort id) ? id : null;
@@ -172,37 +229,39 @@ internal sealed class CreatureModelView(Node3D owner)
         {
             if (!batches.ContainsKey(group.Key))
             {
-                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(markers[guid])).ToArray()), group.Value.ToArray());
+                bool mount = group.Key.Extra == "mount";
+                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(markers[guid], mount ? 0 : elevations.GetValueOrDefault(guid))).ToArray()), group.Value.ToArray());
             }
         }
     }
 
-    /// <summary>Update one creature's transform across its batch, for a gizmo preview or commit.</summary>
+    /// <summary>Update one creature's transform across its batches (rider and mount), for a gizmo preview or commit.</summary>
     public void Place(ulong guid, CreatureMarkers.Marker marker)
     {
-        foreach (var batch in batches.Values)
+        foreach (var batch in batches)
         {
-            int index = Array.IndexOf(batch.Guids, guid);
+            int index = Array.IndexOf(batch.Value.Guids, guid);
             if (index >= 0)
             {
-                batch.Node.SetPlacement(index, ModelTransform(marker));
+                batch.Value.Node.SetPlacement(index, ModelTransform(marker, batch.Key.Extra == "mount" ? 0 : elevations.GetValueOrDefault(guid)));
             }
         }
     }
 
-    /// <summary>Place the name label just above the scaled native model's reference-pose top.</summary>
+    /// <summary>Place the name label just above the scaled native model (plus its mount's height).</summary>
     public float LabelHeight(CreatureMarkers.Marker marker, Aabb bounds)
     {
         float scale = DisplayScale(marker.Spawn);
         float top = bounds.End.Y * scale;
-        return float.IsFinite(top) && top > 0 ? top + 0.6f : CreatureMarkers.FallbackLabelHeight;
+        float height = float.IsFinite(top) && top > 0 ? top + 0.6f : CreatureMarkers.FallbackLabelHeight;
+        return height + elevations.GetValueOrDefault(marker.Spawn.Guid);
     }
 
     /// <summary>The template/display scale a creature is drawn at.</summary>
     public float DisplayScale(CreatureSpawn spawn) =>
         spawn.DisplayScale * (appearances.GetValueOrDefault(spawn.DisplayId)?.Scale ?? 1);
 
-    /// <summary>Compose creature heading, effective draft position and template/display scale.</summary>
-    Transform3D ModelTransform(CreatureMarkers.Marker marker) =>
-        new(marker.Node.Basis.Scaled(Vector3.One * DisplayScale(marker.Spawn)), marker.Node.Position);
+    /// <summary>Compose creature heading, effective draft position, template/display scale and mount elevation.</summary>
+    Transform3D ModelTransform(CreatureMarkers.Marker marker, float elevation = 0) =>
+        new(marker.Node.Basis.Scaled(Vector3.One * DisplayScale(marker.Spawn)), marker.Node.Position + new Vector3(0, elevation, 0));
 }

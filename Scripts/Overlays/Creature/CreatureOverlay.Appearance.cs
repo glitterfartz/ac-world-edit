@@ -16,10 +16,10 @@ public partial class CreatureOverlay
     IClientLookup? emoteLookup;
     Dictionary<uint, string> emoteLookupNames = [];
 
-    /// <summary>Stance and emote per marker with a loaded addon row, for the model batches.</summary>
-    Dictionary<ulong, (uint Stand, uint Emote)> AppearanceStates()
+    /// <summary>Stance, emote and resolved mount display/scale per marker with a loaded addon row, for the model batches.</summary>
+    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)> AppearanceStates()
     {
-        var states = new Dictionary<ulong, (uint, uint)>();
+        var states = new Dictionary<ulong, (uint, uint, uint, float)>();
         if (poses == null || sourceKey.Length == 0)
         {
             return states;
@@ -48,7 +48,23 @@ public partial class CreatureOverlay
 
             try
             {
-                states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon));
+                var (display, creature) = SpawnAppearance.MountOf(dialect, addon);
+                uint mount = display;
+                float scale = 1;
+                if (mount == 0 && creature != 0)
+                {
+                    if (looks.TryGetValue(creature, out var look) && look.DisplayId != 0)
+                    {
+                        mount = look.DisplayId;
+                        scale = look.Scale;
+                    }
+                    else
+                    {
+                        FetchLooks([creature]);
+                    }
+                }
+
+                states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon), mount, scale);
             }
             catch (Exception)
             {

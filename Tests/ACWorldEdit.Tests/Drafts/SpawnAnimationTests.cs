@@ -59,4 +59,15 @@ public class SpawnAnimationTests
     {
         Assert.Equal(69u, SpawnAppearance.EmoteOf(Row.Of(("emote", 69u))));
     }
+
+    [Fact]
+    public void MountReadsDisplayAndCreatureColumns()
+    {
+        var tc = Row.Of(("mount", 14337u), ("MountCreatureID", 123u));
+        Assert.Equal((14337u, 123u), SpawnAppearance.MountOf(WorldDialect.TrinityCore, tc));
+        var tcNone = Row.Of(("mount", 0u), ("MountCreatureID", 0u));
+        Assert.Equal((0u, 0u), SpawnAppearance.MountOf(WorldDialect.TrinityCore, tcNone));
+        var ac = Row.Of(("mount", 14337u));
+        Assert.Equal((14337u, 0u), SpawnAppearance.MountOf(WorldDialect.AzerothCore, ac));
+    }
 }

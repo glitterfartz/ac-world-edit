@@ -18,6 +18,10 @@ public static class SpawnAppearance
     /// <summary>The emote the creature loops.</summary>
     public static uint EmoteOf(Row addon) => addon.U("emote");
 
+    /// <summary>The mount: a display ID, or a creature entry whose model it rides (TrinityCore only).</summary>
+    public static (uint Display, uint Creature) MountOf(WorldDialect dialect, Row addon) =>
+        (addon.U("mount"), dialect == WorldDialect.TrinityCore ? addon.U("MountCreatureID") : 0);
+
     /// <summary>Pick the looping animation: dead always plays Death; else the emote's animation when
     /// the client names one, else the stance's, else Stand. Unknown names fall back instead of
     /// failing, and the model loader shows the reference pose for an animation the model lacks.</summary>
