@@ -271,13 +271,13 @@ public partial class RecordPicker : PopupPanel
             }
 
             button.ExpandIcon = true;
-            button.AddThemeConstantOverride("icon_max_width", 44);
+            button.AddThemeConstantOverride("icon_max_width", 96);
         }
         else if (record.Icon.Length > 0)
         {
             button.Icon = Icon(record.Icon);
             button.ExpandIcon = true;
-            button.AddThemeConstantOverride("icon_max_width", 28);
+            button.AddThemeConstantOverride("icon_max_width", 36);
         }
 
         button.Pressed += () => Choose(record);
