@@ -47,12 +47,18 @@ internal static class DbGameObjectTemplate
 
         foreach (var (table, key) in draftKeys)
         {
+            // Rows of another database (a new broadcast text) exist only in the draft; there is nothing to read back.
+            if (table.SqlName.Contains('.'))
+            {
+                continue;
+            }
+
             var parts = key.Split('|');
             await AcInteractionSource.Load(session, rows, table,
                 string.Join(" AND ", table.Key.Select((k, i) => $"`{k}`=@k{i}")), parts.Cast<object>().ToArray(), token).ConfigureAwait(false);
         }
 
-        var (count, spawns) = await DbGameObjectSpawns.ReadAsync(session, entry, 20, token).ConfigureAwait(false);
+        var (count, spawns) = await DbGameObjectSpawns.ReadAsync(session, entry, DbLimits.MaxRows, token).ConfigureAwait(false);
         var view = effective(rows);
         var questIds = view.All(starters).Concat(view.All(enders)).Select(r => r.U("quest")).Where(id => id != 0).Distinct().ToArray();
         var questTitles = new Dictionary<uint, string>();

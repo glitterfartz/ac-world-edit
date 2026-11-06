@@ -86,6 +86,9 @@ public sealed class Db2Tables
         // AnimationData.db2 FileDataID (validated by the corpus table test). Modern layouts carry
         // no names, so seat/flight use numeric clips; the entry documents the ID for that check.
         ["AnimationData"] = 1375431,
+        // MountXDisplay.db2 FileDataID (from the WoWDBDefs manifest): mount journal entry to
+        // CreatureDisplayInfo, so the mount pickers list only mountable displays.
+        ["MountXDisplay"] = 1576117,
         // What an item template does not store: its level squish and the tables its stats, armor, damage and durability come from.
         ["ItemSquishEra"] = 7322706,
         ["Curve"] = 892585,

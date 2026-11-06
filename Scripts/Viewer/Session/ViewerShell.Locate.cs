@@ -15,9 +15,9 @@ namespace ACWorldEdit;
 public partial class ViewerShell
 {
     /// <summary>
-    /// Spawn to select when it appears in the creature region, with its name and a deadline.
+    /// Spawn to select when it appears in its region, with its kind, name and a deadline.
     /// </summary>
-    (ulong Guid, string Name, double Remaining)? pendingLocate;
+    (SpawnKind Kind, ulong Guid, string Name, double Remaining)? pendingLocate;
     int locateGeneration;
 
     /// <summary>
@@ -77,7 +77,7 @@ public partial class ViewerShell
         }
 
         FocusPose(new WorldPose((ushort)target.Map, target.X, target.Y, target.Z, 0));
-        pendingLocate = (target.Guid, name, 30);
+        pendingLocate = (SpawnKind.Creature, target.Guid, name, 30);
         string where = mapList.First(m => m.Id == target.Map).Name;
         string others = available.Count > 1 ? $" (1 of {available.Count} spawns)" : "";
         return $"Travelling to {name} in {where}{others}; it is selected when its area loads.";
@@ -88,16 +88,28 @@ public partial class ViewerShell
     /// </summary>
     void UpdatePendingLocate(double delta)
     {
-        if (pendingLocate is not { } pending || busy || creatures.IsLoading)
+        if (pendingLocate is not { } pending || busy || creatures.IsLoading || gameObjects.IsLoading)
         {
             return;
         }
 
-        if (creatures.Records.Any(s => s.Guid == pending.Guid))
+        bool present = pending.Kind == SpawnKind.Creature
+            ? creatures.Records.Any(s => s.Guid == pending.Guid)
+            : gameObjects.Records.Any(s => s.Guid == pending.Guid);
+        if (present)
         {
             pendingLocate = null;
-            creatures.Select(pending.Guid);
-            creatures.FlyToSelection();
+            if (pending.Kind == SpawnKind.Creature)
+            {
+                creatures.Select(pending.Guid);
+                creatures.FlyToSelection();
+            }
+            else
+            {
+                gameObjects.Select(pending.Guid);
+                gameObjects.FlyToSelection();
+            }
+
             return;
         }
 
@@ -106,5 +118,57 @@ public partial class ViewerShell
         {
             message = $"{pending.Name} (spawn #{pending.Guid}) is hidden by the current visibility filters (phase, event or pool); the camera is at its position.";
         }
+    }
+
+    /// <summary>
+    /// Teleport to one spawn of a template from its Spawns page: select it at once when it is
+    /// loaded on this map, otherwise open its map, move there and select it once its area loads.
+    /// Returns a user-facing status line (empty when the spawn was selected immediately).
+    /// </summary>
+    async Task<string> LocateSpawn(SpawnKind kind, ulong guid, uint map, double x, double y, double z)
+    {
+        if (map == currentMapId)
+        {
+            bool loaded = kind == SpawnKind.Creature
+                ? creatures.Records.Any(s => s.Guid == guid)
+                : gameObjects.Records.Any(s => s.Guid == guid);
+            if (loaded)
+            {
+                pendingLocate = null;
+                if (kind == SpawnKind.Creature)
+                {
+                    creatures.Select(guid);
+                    creatures.FlyToSelection();
+                }
+                else
+                {
+                    gameObjects.Select(guid);
+                    gameObjects.FlyToSelection();
+                }
+
+                return "";
+            }
+
+            FocusPose(new WorldPose((ushort)map, x, y, z, 0));
+            pendingLocate = (kind, guid, $"spawn #{guid}", 30);
+            return $"Travelling to spawn #{guid}; it is selected when its area loads.";
+        }
+
+        if (busy)
+        {
+            return "The viewer is busy loading; try again in a moment.";
+        }
+
+        OpenMapAtServerPose(map, x, y, z);
+        await OpenMap();
+        if (currentMapId != map)
+        {
+            return $"Could not open map {map}.";
+        }
+
+        FocusPose(new WorldPose((ushort)map, x, y, z, 0));
+        pendingLocate = (kind, guid, $"spawn #{guid}", 30);
+        string where = mapList.FirstOrDefault(m => m.Id == map)?.Name ?? $"map {map}";
+        return $"Travelling to spawn #{guid} in {where}; it is selected when its area loads.";
     }
 }

@@ -32,13 +32,13 @@ public class CreaturePropertiesWindowTests
     public void PickerListsEachDialectsSectionsInRegistryOrder()
     {
         AssertSections(WorldDialect.AzerothCore,
-            "behavior,stats,gossip,quests,speech,template,trainer,vendor,appearance",
+            "behavior,stats,gossip,quests,speech,template,trainer,vendor,appearance,spawns",
             typeof(TcStatsSection),
-            typeof(AcStatsSection), typeof(AcGossipSection), typeof(AcTemplateSection), typeof(AcTrainerSection), typeof(AcVendorSection));
+            typeof(AcStatsSection), typeof(AcGossipSection), typeof(AcTemplateSection), typeof(AcTrainerSection), typeof(AcVendorSection), typeof(SpawnsSection));
         AssertSections(WorldDialect.TrinityCore,
-            "behavior,quests,speech,stats,gossip,template,trainer,vendor,appearance",
+            "behavior,quests,speech,stats,gossip,template,trainer,vendor,appearance,spawns",
             typeof(AcStatsSection),
-            typeof(TcStatsSection), typeof(TcGossipSection), typeof(TcTemplateSection), typeof(TcTrainerSection), typeof(TcVendorSection));
+            typeof(TcStatsSection), typeof(TcGossipSection), typeof(TcTemplateSection), typeof(TcTrainerSection), typeof(TcVendorSection), typeof(SpawnsSection));
     }
 
     static void AssertSections(WorldDialect dialect, string expected, Type absent, params Type[] pages)

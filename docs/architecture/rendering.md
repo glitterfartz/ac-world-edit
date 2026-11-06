@@ -99,11 +99,12 @@ undersides are not shipped by the client, so they keep their single path.
 
 ### Terrain (`terrain`)
 
-The layer and height blend already matched. Lighting is in (`client_surface_light`: ambient + diffuse
-N.L in gamma space, layer-alpha-masked Blinn-Phong exponent 20, baked shadow 30 %, doubled vertex tint).
-Not done: permutations 36 to 39 (per-layer color LUTs by distance, hemisphere ambient), the point-light
-buffer, emissive and scrolling layers, `terrainlow` and the blend bake. Highlight strength is an
-estimate.
+The layer and height blend already matched. Lighting is in (`client_surface_light`: ambient + wrapped
+diffuse N.L in gamma space, hemisphere hue from the dome bands, layer-alpha-masked Blinn-Phong highlight,
+baked shadow 30 %, doubled vertex tint, LightParams glow lift).
+Not done: permutations 36 to 39 (per-layer color LUTs by distance), the point-light
+buffer, emissive and scrolling layers, `terrainlow` and the blend bake. Highlight strength (exponent 32,
+0.3), wrap (0.3) and glow gain are estimates.
 
 Permutations 36 to 39 blend each layer toward a 32x32x32 color LUT by log2 eye distance (curve =
 `TerrainColorGradingRamp` Min/Max, textures 0 and 1), masked by the layer height map's green channel.
@@ -114,10 +115,10 @@ is decided by CPU constants, so it is left unported.
 
 ### Model and WMO materials (`combiners_*`, `uber`, `skin`, …)
 
-Lighting is in (`client_model_light`: ambient with wrap + diffuse N.L in gamma space, shared by M2 and
-WMO batches; Godot lights and shadows no longer apply). Not done: hemisphere ambient colors, the light
-buffer's point lights, `skin`, `uber`, `litsphere`, `proj_*`, and the combiner math itself (still the
-wowdev combiner table).
+Lighting is in (`client_model_light`: ambient with wrap + diffuse N.L in gamma space, hemisphere hue
+from the dome bands, LightParams glow lift, shared by M2 and WMO batches; Godot lights and shadows no
+longer apply). Not done: the light buffer's point lights, `skin`, `uber`, `litsphere`, `proj_*`, and
+the combiner math itself (still the wowdev combiner table).
 
 ### Lighting and shadows
 

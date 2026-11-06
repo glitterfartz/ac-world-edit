@@ -356,6 +356,7 @@ public sealed partial class SpawnInspector : VBoxContainer
     {
         readonly HBoxContainer row = new();
         readonly Label label;
+        readonly Button clear;
         readonly SpawnField field;
         readonly Func<SpawnField, Action<uint>, bool> choose;
         readonly Action<SpawnField, string> send;
@@ -367,6 +368,9 @@ public sealed partial class SpawnInspector : VBoxContainer
             this.send = send;
             label = new Label { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.Off };
             row.AddChild(label);
+            clear = new Button { Text = "✕", TooltipText = $"Remove the {field.Label.ToLowerInvariant()} (set to 0).", FocusMode = FocusModeEnum.None };
+            clear.Pressed += () => send(field, "0");
+            row.AddChild(clear);
             var pick = new Button { Text = "Choose…", TooltipText = $"Search for the {field.Label.ToLowerInvariant()}." };
             pick.Pressed += () => choose(field, id => send(field, id.ToString(CultureInfo.InvariantCulture)));
             row.AddChild(pick);
@@ -384,6 +388,7 @@ public sealed partial class SpawnInspector : VBoxContainer
             string value = inherited && templateText.Length > 0 ? templateText : text;
             label.Text = value.Length == 0 ? "None" : _describe?.Invoke(field, value) ?? value;
             label.Modulate = inherited ? new Color(1, 1, 1, 0.6f) : Colors.White;
+            clear.Visible = value.Length > 0 && value != "0";
             foreach (var child in row.GetChildren())
             {
                 if (child is Button button)
@@ -692,6 +697,39 @@ public sealed partial class SpawnInspector : VBoxContainer
     }
 
     public void SmokePressReset(string column) => entries[column].Reset.EmitSignal(BaseButton.SignalName.Pressed);
+
+    /// <summary>Whether the reference field's ✕ clear button is shown, for tests.</summary>
+    public bool SmokeClearVisible(string column)
+    {
+        if (entries[column].Editor.Root is HBoxContainer box)
+        {
+            foreach (var child in box.GetChildren())
+            {
+                if (child is Button b && b.Text == "✕")
+                {
+                    return b.Visible;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Press a reference field's ✕ clear button, the way the user removes a mount.</summary>
+    public void SmokePressClear(string column)
+    {
+        if (entries[column].Editor.Root is HBoxContainer box)
+        {
+            foreach (var child in box.GetChildren())
+            {
+                if (child is Button b && b.Text == "✕")
+                {
+                    b.EmitSignal(BaseButton.SignalName.Pressed);
+                    return;
+                }
+            }
+        }
+    }
 
     /// <summary>The note under the Appearance header, for tests: which appearance is in force.</summary>
     public string SmokeNote => appearanceNote is { Visible: true } ? appearanceNote.Text : "";

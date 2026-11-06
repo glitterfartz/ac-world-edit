@@ -455,7 +455,47 @@ public static class M2Model
             }
         }
 
-        return new(surfaces.ToArray(), skeleton, duration, [], warnings.Distinct().ToArray(), available);
+        return new(surfaces.ToArray(), skeleton, duration, [], warnings.Distinct().ToArray(), available, Seat: RiderSeat(b));
+    }
+
+    /// <summary>
+    /// Where a rider sits on this model: the MountMain attachment (ID 0) through the attachment
+    /// lookup, with the bone it hangs off and its position in that bone's space, converted to the
+    /// viewer basis. The client glues the rider's root to boneMatrix * position, so a rider follows
+    /// the seat bone's animation; verified on Horse (bone 56, back height 1.87) and Wyvern (bone 47,
+    /// shoulder height 2.66 through the bone, 1.19 without it). Character models reuse ID 0 for
+    /// shields, so only creature seats are meaningful. A missing or malformed table means no seat,
+    /// never a bad read.
+    /// </summary>
+    static ModelSeat? RiderSeat(BinaryAsset b)
+    {
+        try
+        {
+            var seats = b.Array(240, 40);
+            var lookup = b.Array(248, 2);
+            if (lookup.Count == 0)
+            {
+                return null;
+            }
+
+            int index = b.H(lookup.Offset);
+            if (index >= seats.Count)
+            {
+                return null;
+            }
+
+            int p = seats.Offset + index * 40;
+            if (b.U(p) != 0)
+            {
+                return null;
+            }
+
+            return new(b.H(p + 4), BinaryAsset.View(b.V(p + 8)));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>

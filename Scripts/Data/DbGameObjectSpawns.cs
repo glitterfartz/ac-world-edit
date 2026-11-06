@@ -3,7 +3,7 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 
-/// <summary>The bounded spawn count and sample shown on the GameObject Used by page.</summary>
+/// <summary>The bounded spawn count and sample shown on the GameObject Spawns page.</summary>
 internal static class DbGameObjectSpawns
 {
     public static async Task<(int Count, IReadOnlyList<GameObjectSpawnSample> Spawns)> ReadAsync(
@@ -19,7 +19,7 @@ internal static class DbGameObjectSpawns
         List<GameObjectSpawnSample> spawns = [];
         await using (var command = session.Command(""))
         {
-            command.CommandText = $"SELECT guid,map,position_x,position_y,position_z FROM gameobject WHERE id=@k0 ORDER BY guid LIMIT {Math.Clamp(limit, 1, 200)}";
+            command.CommandText = $"SELECT guid,map,position_x,position_y,position_z FROM gameobject WHERE id=@k0 ORDER BY guid LIMIT {Math.Clamp(limit, 1, DbLimits.MaxRows)}";
             command.Parameters.AddWithValue("@k0", entry);
             await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))

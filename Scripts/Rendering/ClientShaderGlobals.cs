@@ -45,6 +45,15 @@ public static class ClientShaderGlobals
     public const string SunDiffuse = "client_sun_diffuse";
     public const string SunSpecular = "client_sun_specular";
     /// <summary>
+    /// Hemisphere bounce colors (zenith / horizon, gamma space), blended like the sky dome bands.
+    /// </summary>
+    public const string SkyTop = "client_sky_top";
+    public const string SkyGround = "client_sky_ground";
+    /// <summary>
+    /// LightParams glow: the client adds some of the fog to everything in bright places.
+    /// </summary>
+    public const string Glow = "client_glow";
+    /// <summary>
     /// Water gradient ends, rgb color plus alpha: ocean shallow/deep, river shallow/deep.
     /// </summary>
     public const string OceanShallow = "client_water_ocean_shallow";
@@ -62,6 +71,13 @@ public static class ClientShaderGlobals
     public const int FogVolumeTexels = 6;
     /// <summary>Seconds the volumes' noise has drifted for.</summary>
     public const string FogVolumeTime = "client_fog_volume_time";
+    /// <summary>
+    /// The shared bone-animation clock both the model shader and the CPU seat follow read: seconds
+    /// since the engine started, written every frame by SkyLighting. Shader TIME is renderer-private
+    /// and offset from it, so sharing one value keeps glued riders in phase with their mounts. A
+    /// negative value means "not set yet": shaders fall back to TIME.
+    /// </summary>
+    public const string CreatureClock = "creature_clock";
     static bool registered;
 
     /// <summary>

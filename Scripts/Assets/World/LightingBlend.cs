@@ -82,7 +82,7 @@ public readonly record struct CelestialDetail(
 
 /// <summary>
 /// Everything the renderer publishes for one light sample: sky bands, clouds, fog, water, sun
-/// specular, shafts, stars and the celestial positions. All arithmetic lives here; the Godot node only
+/// specular, shafts, stars and the celestial positions, plus the static LightParams glow. All arithmetic lives here; the Godot node only
 /// builds Color/Vector values from these floats and sets shader parameters.
 /// </summary>
 public readonly record struct LightingDetail(
@@ -94,7 +94,8 @@ public readonly record struct LightingDetail(
     ShaftDetail Shafts,
     float StarsFade,
     float DayFraction,
-    CelestialDetail Celestials);
+    CelestialDetail Celestials,
+    float Glow = 0);
 
 /// <summary>
 /// The second half of the day-night model: blend every published band from one
@@ -142,7 +143,7 @@ public static class LightingBlend
 
         return new(sky, clouds, Fog(light, retail, viewDistance), Water(background, foreground, weight, tick),
             SunSpecular(background, foreground, weight, tick), Shafts(background, foreground, weight, tick, dayFraction),
-            SkyDome.StarFade(dayFraction), dayFraction, celestials);
+            SkyDome.StarFade(dayFraction), dayFraction, celestials, Glow(background, foreground, weight));
     }
 
     /// <summary>Blend one colour band; a null or zero-weight foreground leaves the background colour.</summary>
@@ -162,6 +163,10 @@ public static class LightingBlend
 
     static SkyDome.Planet LightPlanet(float dayFraction) =>
         dayFraction < 0.2013889f || dayFraction > 0.9236111f ? SkyDome.Moon(dayFraction) : SkyDome.Sun(dayFraction);
+
+    /// <summary>The static LightParams glow, blended like the other terms.</summary>
+    public static float Glow(LightProfile background, LightProfile? foreground, float weight) =>
+        foreground != null && weight > 0 ? Mix(background.Glow, foreground.Glow, weight) : background.Glow;
 
     static float Mix(float from, float to, float weight) => from + (to - from) * weight;
 

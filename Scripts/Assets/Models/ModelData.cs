@@ -34,7 +34,8 @@ public sealed record ModelDoodad(string Path, Vector3 Position, Quaternion Rotat
 /// Worker-produced geometry, requested skeleton/clip and embedded doodads. Warnings preserve
 /// fidelity limits; fields never own Godot objects or database rows.
 /// </summary>
-public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null)
+public sealed record ModelSeat(int Bone, Vector3 Position);
+public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null, ModelSeat? Seat = null)
 {
     /// <summary>
     /// Bytes held by the surfaces' arrays. Batches of one WMO group share a <see cref="ModelSurface.Positions"/>

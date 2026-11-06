@@ -14,8 +14,8 @@ public class LightingBlendTests
     static LightFloatBand Number(float value) => LightFloatBand.FromSamples([(0u, value)]);
 
     static LightProfile Profile(uint packed, LightBand? sun = null, WaterColors? water = null, WaterAlphas? alphas = null,
-        FogCurve? fog = null, CloudBands? clouds = null, ShaftBands? shafts = null, RetailFog? retail = null) =>
-        new(0, Band(packed), Band(packed), Band(packed), Band(packed), Band(packed), fog, water, alphas, sun, null, retail, clouds, shafts);
+        FogCurve? fog = null, CloudBands? clouds = null, ShaftBands? shafts = null, RetailFog? retail = null, float glow = 0) =>
+        new(0, Band(packed), Band(packed), Band(packed), Band(packed), Band(packed), fog, water, alphas, sun, null, retail, clouds, shafts, glow);
 
     static LightingSample Sample(LightProfile background, LightProfile? foreground = null, float weight = 0, double hours = 12,
         uint foregroundParams = 20)
@@ -143,5 +143,22 @@ public class LightingBlendTests
 
         Assert.True(noon.StarsFade < 0.01f);
         Assert.Equal(1f, midnight.StarsFade, 5);
+    }
+
+    [Fact]
+    public void GlowBlendsHalfway()
+    {
+        var light = Sample(Profile(0x00FF0000, glow: 2f), Profile(0x00FF0000, glow: 0f), weight: 0.5f);
+        var detail = LightingBlend.Describe(light, retail: false, viewDistance: 777);
+
+        Assert.Equal(1f, detail.Glow, 5);
+    }
+
+    [Fact]
+    public void GlowFallsBackToBackground()
+    {
+        var detail = LightingBlend.Describe(Sample(Profile(0x00FF0000, glow: 3f)), retail: false, viewDistance: 777);
+
+        Assert.Equal(3f, detail.Glow, 5);
     }
 }

@@ -18,6 +18,8 @@ public partial class GameObjectPropertiesWindow : PropertiesWindow
     /// <summary>Off-screen model thumbnails for the template page, owned by the viewer.</summary>
     public IThumbnailSource? Thumbnails { get; set; }
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
+    /// <summary>Teleport to one spawn of this template (its GUID, map and server position); returns a status line.</summary>
+    public Func<ulong, uint, double, double, double, Task<string>> FlyToSpawn { get; set; } = (_, _, _, _, _) => Task.FromResult("");
 
     public GameObjectContext Context { get; private set; } = null!;
 
@@ -45,7 +47,8 @@ public partial class GameObjectPropertiesWindow : PropertiesWindow
             Connection = () => Connection(),
             Store = () => Store(),
             Lookup = () => Lookup(),
-            Thumbnails = () => Thumbnails
+            Thumbnails = () => Thumbnails,
+            FlyToSpawn = (guid, map, x, y, z) => FlyToSpawn(guid, map, x, y, z)
         };
         BuildShell(GameObjectSectionRegistry.Create(Context));
     }

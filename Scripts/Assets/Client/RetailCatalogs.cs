@@ -53,6 +53,9 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
     readonly Lazy<ILookup<int, int>> choicesByExtra;
     readonly Lazy<ILookup<int, DBCDRow>> elementsByChoice;
     readonly Lazy<Dictionary<int, int>> targetTypes;
+    // MountHeight by model FileDataID for hotfixed displays (whose override names no model data
+    // row): the rider's feet sit at the mount's back height, matching the M2 MountMain seat.
+    readonly Lazy<Dictionary<uint, float>> seatByFile;
     readonly Dictionary<uint, CreatureDisplayOverride> overrides = [];
 
     public RetailCreatureCatalog(Db2Tables tables)
@@ -91,6 +94,26 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
             }
 
             return types;
+        });
+        seatByFile = new(() =>
+        {
+            Dictionary<uint, float> seats = [];
+            foreach (var row in models.Values)
+            {
+                try
+                {
+                    float seat = row.FieldAs<float>("MountHeight");
+                    if (float.IsFinite(seat) && seat > 0)
+                    {
+                        seats.TryAdd(row.FieldAs<uint>("FileDataID"), seat);
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            return seats;
         });
     }
 
@@ -131,7 +154,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
     {
         if (overrides.TryGetValue(displayId, out var hotfix))
         {
-            return Humanoid(Appearance(displayId, hotfix.ModelFileId, hotfix.TextureFileIds, hotfix.Scale), hotfix.ExtraId);
+            return Humanoid(Appearance(displayId, hotfix.ModelFileId, hotfix.TextureFileIds, hotfix.Scale, seatByFile.Value.GetValueOrDefault(hotfix.ModelFileId)), hotfix.ExtraId);
         }
 
         if (!displays.TryGetValue((int)displayId, out var display))
@@ -145,7 +168,21 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
             throw new InvalidDataException($"Creature display {displayId} names model data {model}, which the client does not have.");
         }
 
-        return Humanoid(Appearance(displayId, data.FieldAs<uint>("FileDataID"), display.FieldAs<uint[]>("TextureVariationFileDataID"), display.FieldAs<float>("CreatureModelScale")), display.FieldAs<int>("ExtendedDisplayInfoID"));
+        return Humanoid(Appearance(displayId, data.FieldAs<uint>("FileDataID"), display.FieldAs<uint[]>("TextureVariationFileDataID"), display.FieldAs<float>("CreatureModelScale"), SeatOf(data)), display.FieldAs<int>("ExtendedDisplayInfoID"));
+    }
+
+    /// <summary>The mount seat height of a model data row (MountHeight), or 0 when it is no mount seat.</summary>
+    static float SeatOf(DBCDRow data)
+    {
+        try
+        {
+            float seat = data.FieldAs<float>("MountHeight");
+            return float.IsFinite(seat) && seat > 0 ? seat : 0;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
     }
 
     /// <summary>Add a humanoid's baked skin and customization; displays without a baked extra are returned as they are.</summary>
@@ -225,7 +262,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
         return null;
     }
 
-    static CreatureAppearance Appearance(uint displayId, uint modelFileId, uint[] textureFileIds, float scale)
+    static CreatureAppearance Appearance(uint displayId, uint modelFileId, uint[] textureFileIds, float scale, float seat)
     {
         if (modelFileId == 0)
         {
@@ -238,7 +275,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
             textures[i] = i < textureFileIds.Length && textureFileIds[i] != 0 ? AssetRef.FromFileId(textureFileIds[i]) : "";
         }
 
-        return new(AssetRef.FromFileId(modelFileId), textures, scale > 0 ? scale : 1f, null);
+        return new(AssetRef.FromFileId(modelFileId), textures, scale > 0 ? scale : 1f, null, SeatHeight: seat);
     }
 }
 

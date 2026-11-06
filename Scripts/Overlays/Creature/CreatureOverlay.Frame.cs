@@ -130,10 +130,21 @@ public partial class CreatureOverlay
         }
 
         modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, states, AppearanceEmoteAnim);
+        modelView.FollowSeats(markers, states, Models);
         if (PerfProbe)
         {
             PerfAdd(perfModels, mark);
             mark = PerfMark();
+        }
+
+        // The clip menu defaults to the marker's own stance/seat animation: when the addon rows
+        // arrive after selection (a mounted creature first reports no rows, then Stand, then Mount),
+        // follow the appearance instead of freezing on the stale Stand. A hand-picked clip stays.
+        if (selectedGuid.HasValue && !userPreviewAnim && modelView.RiderAnimFor(selectedGuid.Value) is ushort current && current != previewAnimation)
+        {
+            previewAnimation = current;
+            animationListGuid = null;
+            modelView.ResetTimer();
         }
 
         foreach (var batch in modelView.Batches.Values)

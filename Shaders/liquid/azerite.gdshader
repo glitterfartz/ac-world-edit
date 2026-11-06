@@ -17,10 +17,12 @@ render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
 // same bytes), so it is not bound; the flow comes from the slot-5 sequence.
 // Native depth arrives as the vertex-colour alpha, quantised per MH2O vertex. Reading
 // it at 0..1 painted whole triangles blue wherever it dipped, which read as blotches,
-// so it is scaled first and the ramp is wide: blue only at the true zero-depth edge,
-// a soft yellow band, then the gold body. The coefficient is tuned to the retail look,
-// not recovered; it and the client's depth scale cannot be separated. Per-layer UV
-// matrices (CB1[13..20]) are stripped CPU constants, so layers share one UV and scroll.
+// so it is scaled first (depth_coefficient, tuned, not recovered). The ramp is the
+// client's linear form: w = saturate(1 - depth * K), body = lerp(deep, center, w),
+// masked by the blend texture green channel in the azerite_1 shape when present.
+// Per-layer UVs in the client are mesh UVs through stripped 2x2 matrices (vertex
+// CB1[13..32]); identity-style defaults warped this pool in testing, so the layers
+// keep the shared world-UV tiling until the matrices are bound from client data.
 // The emissive boost approximates the client's self-lit pool; the per-light medium loop
 // is not ported.
 uniform sampler2D deep_tex : filter_linear_mipmap, repeat_enable;
@@ -34,9 +36,13 @@ uniform sampler2D scene_depth : hint_depth_texture, filter_nearest, repeat_disab
 uniform float deep_scroll = 0.36;
 uniform float center_scroll = 0.36;
 // Native depth is an 8-bit MH2O vertex value, so reading it at 0..1 painted whole
-// triangles blue. Scaling it up first keeps the blue centre layer on the true
-// zero-depth edge instead of blotching the body.
-uniform float depth_coefficient = 4.0;
+// triangles blue. The client ramps linearly (w = saturate(1 - depth * K)), but its
+// depth input is mesh-UV2 units, not this 0..1 byte: K = 40 keeps the blue centre
+// layer on the true zero-depth edge, matching the old smoothstep(0, 0.10) edge.
+// Recovered as CB1[12].z once the settings fill is bound; until then this is tuned.
+uniform float depth_coefficient = 40.0;
+// Fleck-mask scale (client CB1[15].z in the azerite_1 permutation).
+uniform float fleck_scale = 1.0;
 uniform float normal_frames = 1.0;
 uniform float normal_fps = 10.0;
 uniform float normal_scale = 1.0;
@@ -77,6 +83,8 @@ vec4 normal_frame(vec2 uv, float frame) {
 }
 
 // procazerite blends the normals reconstructed from two adjacent animation frames.
+// procazerite blends the normals reconstructed from two adjacent animation frames:
+// n = normalize(mix(n0, n1, fract)), z = sqrt(1 - |xy|^2).
 vec3 ripple(vec2 uv, float time) {
     if (!has_normals) {
         return vec3(0.0, 0.0, 1.0);
@@ -85,7 +93,8 @@ vec3 ripple(vec2 uv, float time) {
     vec2 a = normal_frame(uv, floor(phase)).rg * 2.0 - 1.0;
     vec2 b = normal_frame(uv, floor(phase) + 1.0).rg * 2.0 - 1.0;
     vec2 slope = mix(a, b, fract(phase));
-    return normalize(vec3(slope, 1.0));
+    float z2 = max(1.0 - dot(slope, slope), 0.0);
+    return normalize(vec3(slope, sqrt(z2)));
 }
 
 void fragment() {
@@ -109,8 +118,9 @@ void fragment() {
     vec3 center = texture(center_tex, p + warp * 0.6 + vec2(-time * center_scroll, time * center_scroll * 0.4) * flow_speed * 0.1).rgb;
 
     float depth = clamp(COLOR.a * depth_coefficient, 0.0, 1.0);
-    float center_weight = 1.0 - smoothstep(0.0, 0.10, depth);
-    float trans_weight = (1.0 - center_weight) * (1.0 - smoothstep(0.10, 0.45, depth));
+    // azerite_0 depth ramp, exact: w = saturate(1 - depth * K), body = lerp(deep, center, w).
+    float center_weight = clamp(1.0 - depth, 0.0, 1.0);
+    float trans_weight = (1.0 - center_weight) * (1.0 - clamp(depth * 1.6, 0.0, 1.0));
 
     vec3 body = deep * gold_color;
     body = mix(body, trans * vec3(1.0, 0.92, 0.6), trans_weight * 0.5);

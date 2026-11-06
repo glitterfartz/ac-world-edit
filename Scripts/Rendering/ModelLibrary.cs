@@ -15,6 +15,13 @@ public sealed record ModelKey(string Path, string Texture1 = "", string Texture2
 }
 
 /// <summary>
+/// A mount variant's seat-bone track for riders glued to its seat: baked world matrices per
+/// palette frame (row-major 4x4s, viewer space), the frame count, the clip duration and the
+/// seat position in bone space.
+/// </summary>
+public sealed record SeatTrack(float[] Frames, int Count, float Duration, System.Numerics.Vector3 Seat);
+
+/// <summary>
 /// Main-thread resource owner with a few decode workers. Upload surfaces incrementally, batch
 /// placements and animate on the GPU; active resources can exceed the dormant-cache target.
 /// </summary>
@@ -26,6 +33,9 @@ public sealed class ModelLibrary
         /// <summary>The batch summary the diagnostic dump reads; set when the entry is published, since <see cref="Data"/> then drops it.</summary>
         public ModelReport? Report;
         public AnimationPalette Palette = palette;
+        /// <summary>Seat-bone world matrices per palette frame for riders glued to this mount's
+        /// seat (baked at decode; survives <see cref="ReleaseUploadData"/>).</summary>
+        public float[]? SeatFrames;
         public MaterialPalette Materials = materials;
         public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
         public Dictionary<string, BlpTexture> Decoded = textures;
@@ -158,6 +168,14 @@ public sealed class ModelLibrary
     /// IDs. Null means the variant is still decoding/uploading (or failed), not that it has no geometry.
     /// </summary>
     public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
+    /// <summary>
+    /// A mount variant's seat-bone track for riders glued to its seat: baked world matrices per
+    /// palette frame (row-major 4x4s, viewer space) plus the clip duration and the seat position
+    /// in bone space. Null while the variant decodes or when the model names no seat.
+    /// </summary>
+    public SeatTrack? SeatTrack(ModelKey key) => cache.TryGetValue(key, out var e) && e.Data.Seat is { } seat && e.SeatFrames != null
+        ? new(e.SeatFrames, e.SeatFrames.Length / 16, e.Palette.Duration, seat.Position)
+        : null;
     /// <summary>The batches and warnings of a decoded variant (kept after upload), for the diagnostic dump; null while it decodes or after it failed.</summary>
     public ModelReport? ReportFor(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Report ?? ModelReport.From(e.Data) : null;
     public bool HasFailed(ModelKey key) => failed.Contains(key);
@@ -520,7 +538,7 @@ public sealed class ModelLibrary
     /// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
     /// liquid-atlas mipmaps to prevent cross-frame bleeding.
     /// </summary>
-    void AddSurface(Entry e, int index, bool skybox)
+    void AddSurface(Entry e, int index, bool skybox, bool animationHold = false)
     {
         var surface = e.Upload[index];
         var appearance = e.UploadMaterials[index];
@@ -683,6 +701,9 @@ public sealed class ModelLibrary
         material.SetShaderParameter("skinned", surface.Bones != null);
         material.SetShaderParameter("animation_frames", e.Palette.Height);
         material.SetShaderParameter("animation_duration", e.Palette.Duration);
+        // Animation 1 is Death (SpawnAppearance.AnimDeath): the client plays it once and holds
+        // the corpse's last frame instead of looping it.
+        material.SetShaderParameter("animation_hold", animationHold);
         material.SetShaderParameter("blend_mode", surface.Blend);
         material.SetShaderParameter("vertex_color", (int)surface.ColorMode);
         material.SetShaderParameter("material_column", appearance.Column);
@@ -845,7 +866,7 @@ public sealed class ModelLibrary
             // upload can still exceed the deadline.
             for (; budget < maxSurfaces && building.Surface < building.Upload.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
             {
-                AddSurface(building, building.Surface++, buildingKey.Skybox);
+                AddSurface(building, building.Surface++, buildingKey.Skybox, buildingKey.Animation == 1);
                 stats.Uploads++;
             }
 
@@ -1072,6 +1093,17 @@ public sealed class ModelLibrary
 
         var materials = MaterialPalette.Bake(data, token);
         var entry = new Entry(data, AnimationPalette.Bake(data, token), materials, decoded);
+        if (data.Seat is { } seat && seat.Bone >= 0 && seat.Bone < data.Bones.Length)
+        {
+            try
+            {
+                entry.SeatFrames = AnimationPalette.SampleBoneFrames(data, seat.Bone, entry.Palette.Height, entry.Palette.Duration, token);
+            }
+            catch (Exception)
+            {
+                entry.SeatFrames = null;
+            }
+        }
         // Sky batches keep one surface each: their render priority encodes the native draw order.
         if (!key.Skybox)
         {

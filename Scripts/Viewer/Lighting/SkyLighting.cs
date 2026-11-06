@@ -219,6 +219,9 @@ public sealed partial class SkyLighting : Node3D
     /// </summary>
     public void Update(Camera3D camera, double delta)
     {
+        // The shared bone-animation clock: shader TIME is renderer-private and offset from engine
+        // ticks, so the model shader and the CPU seat follow read this one value to stay in phase.
+        ClientShaderGlobals.Set(ClientShaderGlobals.CreatureClock, Time.GetTicksMsec() / 1000.0f);
         if (Playing)
         {
             TimeOfDayHours = LightingSampler.Advance(TimeOfDayHours, delta, Speed);
@@ -252,7 +255,7 @@ public sealed partial class SkyLighting : Node3D
             SkyMaterial = skyMaterial
         };
         var detail = LightingBlend.Describe(light, Retail, ViewDistance);
-        PublishSky(detail.Sky);
+        PublishSky(detail.Sky, detail.Glow);
         PublishClouds(detail.Clouds, camera);
         PublishCelestials(detail, camera);
         UpdateFogVolumes(camera);

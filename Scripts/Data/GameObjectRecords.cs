@@ -2,7 +2,7 @@ using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
 
-/// <summary>One spawn of a GameObject template, for the Used by page and locate actions.</summary>
+/// <summary>One spawn of a GameObject template, for the Spawns page and locate actions.</summary>
 public sealed record GameObjectSpawnSample(ulong Guid, uint Map, double X, double Y, double Z);
 
 /// <summary>

@@ -45,7 +45,7 @@ public sealed partial class GameObjectTemplateSection(GameObjectContext ctx) : G
         }
 
         AddChild(ClientStyle.Text(
-            $"Used by {Ctx.SpawnCount} spawns. Respawn, phase, rotation and pose are per spawn; select a spawn to edit them.",
+            $"Used by {Ctx.SpawnCount} spawns (see the Spawns page). Respawn, phase, rotation and pose are per spawn; select a spawn to edit them.",
             12, ClientStyle.Faded));
     }
 

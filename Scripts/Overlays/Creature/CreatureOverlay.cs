@@ -45,6 +45,9 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     OptionButton animation = null!;
     ushort previewAnimation;
     ulong? animationListGuid;
+    /// <summary>Whether the clip menu was hand-picked: set, selection follows the marker's own
+    /// stance/seat animation instead of forcing Stand; cleared on selection change.</summary>
+    bool userPreviewAnim;
     public bool IsDragging => poseEditor.Dragging;
     public int ModelCreatureCount => modelView.ReadyCount;
     public int AdmittedCreatureCount => modelView.AdmittedCount;

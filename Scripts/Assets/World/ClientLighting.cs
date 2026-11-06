@@ -59,9 +59,9 @@ public sealed record CloudBands(LightFloatBand Density, LightBand Sun, LightBand
 /// One LightParams entry's resolved skybox and relevant time-of-day bands. Only the Default
 /// weather/time slot is read; dungeon/underwater/combat/death overrides and bands 8-13 (shadow
 /// opacity and sun/cloud colors) are unused future fidelity work. Water is null when the client
-/// tables carry no water bands.
+/// tables carry no water bands. Glow is the static LightParams glow (fog added to everything).
 /// </summary>
-public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null, CloudBands? Clouds = null, ShaftBands? Shafts = null)
+public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Ambient, LightBand SkyTop, LightBand SkyHorizon, LightBand Fog, FogCurve? FogDistance = null, WaterColors? Water = null, WaterAlphas? WaterAlpha = null, LightBand? SunColor = null, SkyBands? Sky = null, RetailFog? RetailFog = null, CloudBands? Clouds = null, ShaftBands? Shafts = null, float Glow = 0)
 {
     /// <summary>
     /// Fog end (yards) and start multiplier at a tick; null when the light defines no usable distance.
@@ -132,12 +132,21 @@ public sealed class ClientLighting
             Dictionary<uint, uint> paramSkybox = [];
             Dictionary<uint, WaterAlphas> paramWater = [];
             Dictionary<uint, bool> paramHighlight = [];
+            Dictionary<uint, float> paramGlow = [];
             foreach (var row in tables.Table("LightParams").Values)
             {
                 paramSkybox[(uint)row.ID] = Convert.ToUInt32(row["LightSkyboxID"]);
                 paramHighlight[(uint)row.ID] = Convert.ToUInt32(row["HighlightSky"]) != 0;
                 paramWater[(uint)row.ID] = new(Convert.ToSingle(row["WaterShallowAlpha"]), Convert.ToSingle(row["WaterDeepAlpha"]),
                     Convert.ToSingle(row["OceanShallowAlpha"]), Convert.ToSingle(row["OceanDeepAlpha"]));
+                try
+                {
+                    paramGlow[(uint)row.ID] = Convert.ToSingle(row["Glow"]);
+                }
+                catch (Exception e) when (e is ArgumentException or InvalidDataException or FormatException or InvalidCastException)
+                {
+                    // Older layouts carry no glow column; the shaders treat a missing glow as zero.
+                }
             }
 
             // Each sample of a light can name a LightShaft row; they are optional and only newer builds have them.
@@ -228,7 +237,8 @@ public sealed class ClientLighting
                         Band(rows, "SunFogColor"),
                         FloatBand(rows, r => Convert.ToSingle(r["SunFogStrength"]))),
                     new(FloatBand(rows, r => Convert.ToSingle(r["CloudDensity"])), Band(rows, "CloudSunColor"), Band(rows, "CloudEmissiveColor"), Band(rows, "CloudLayer1AmbientColor")),
-                    shafts);
+                    shafts,
+                    paramGlow.GetValueOrDefault(paramsId));
             }
 
             Dictionary<uint, float> presence = [];
@@ -288,6 +298,17 @@ public sealed class ClientLighting
                 int position = lightParams.Position(paramsId), baseRow = position * 18;
                 // LightFloatBand holds 6 rows per entry: band 0 is the fog end, band 1 its start multiplier.
                 int floatRow = position * 6;
+                // Field 4 is the LightParams glow (fog added to everything); older rows may lack it.
+                float glow;
+                try
+                {
+                    glow = lightParams.F(paramsId, 4);
+                }
+                catch (InvalidDataException)
+                {
+                    glow = 0;
+                }
+
                 profiles[paramsId] = new(
                     skyboxId,
                     LightBand.Read(intBand, baseRow + 0),
@@ -301,7 +322,9 @@ public sealed class ClientLighting
                     LightBand.Read(intBand, baseRow + 9),
                     new(LightBand.Read(intBand, baseRow + 3), LightBand.Read(intBand, baseRow + 4), LightBand.Read(intBand, baseRow + 5), lightParams.U(paramsId, 1) != 0),
                     null,
-                    new(LightFloatBand.Read(floatBand, floatRow + 3), LightBand.Read(intBand, baseRow + 10), LightBand.Read(intBand, baseRow + 11), LightBand.Read(intBand, baseRow + 12)));
+                    new(LightFloatBand.Read(floatBand, floatRow + 3), LightBand.Read(intBand, baseRow + 10), LightBand.Read(intBand, baseRow + 11), LightBand.Read(intBand, baseRow + 12)),
+                    null,
+                    glow);
                 if (skyboxId > 0 && skybox.Contains(skyboxId) && !skyboxPaths.ContainsKey(skyboxId))
                 {
                     skyboxPaths[skyboxId] = BinaryAsset.ModelPath(skybox.Str(skyboxId, 1));

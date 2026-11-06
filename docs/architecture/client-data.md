@@ -187,6 +187,7 @@ Two readers exist and share no abstraction:
 
 - `DbcTable` (`Formats/DbcTable.cs`) reads WDBC by fixed field index. Callers hard-code the indexes and document them in comments (for example `AreaLookup.cs` and `InteractionCatalog.cs`).
 - `Db2Tables` (`Retail/Db2Tables.cs`) reads through DBCD with WoWDBDefs layouts and accesses fields by column name, for example `row.FieldAs<uint>("WdtFileDataID")`. It caches tables lazily; table loads are locked, so any thread can read tables. A build the definitions do not cover raises `InvalidDataException`.
+- DBC field positions and DB2 FileDataIDs are checked against wowdev.wiki (`DB/<Table>` pages) and wago.tools (the DB2 browser); the WoWDBDefs `manifest.json` maps each table to its FileDataID.
 
 Callers choose the reader that matches their client. `ClientLighting` has both `TryLoad` (Wrath) and `TryLoadRetail` (retail).
 
@@ -194,11 +195,11 @@ Callers choose the reader that matches their client. `ClientLighting` has both `
 
 | Type | File | Purpose | Client |
 |---|---|---|---|
-| `CreatureCatalog` | `Client/CreatureCatalog.cs` | Joins display, model, extra and char-section tables into a model path, skins, scale and textures | Wrath (DBC) |
+| `CreatureCatalog` | `Client/CreatureCatalog.cs` | Joins display, model, extra and char-section tables into a model path, skins, scale, textures and the mount seat height (`CreatureModelData.mountHeight`) | Wrath (DBC) |
 | `GameObjectCatalog` | `Client/GameObjectCatalog.cs` | Display ID to model path | Wrath (DBC) |
 | `RetailCreatureCatalog`, `RetailGameObjectCatalog` | `Client/RetailCatalogs.cs` | The same jobs from DB2 (`ICreatureCatalog` / `IGameObjectCatalog`), with `hotfixes.creature_display_info` overrides | Retail |
 | `RetailClientLookup` | `Client/ClientLookup.cs` | `IClientLookup` (and `ITcStatData`, the creature scaling tables): the TrinityCore stats page's `ContentTuning`, `ExpectedStat`, `ExpectedStatMod`, `ContentTuningXExpected`, `MythicPlusSeason` (`MilestoneSeason`), `MapDifficulty` (`MapDifficultyTuning`) and `AreaTable` (`AreaTuning`, walking `ParentAreaID`) lookups, `MaxBroadcastTextId()` for numbering new broadcast texts, and an optional `fileExists` callback (CASC `fdid:` existence, for `ClientRecord.FileData`); retail `ItemDetails(id)` (ItemSparse and Item rows filled into the tooltip record; item level, stat values, armor, weapon damage and durability computed by `RetailItemStats` from `RetailItemTables`, the DB2 adapter over ItemSquishEra, Curve, CurvePoint, RandPropPoints, ItemArmorQuality/Total/Shield, ArmorLocation and ItemDamage*), AreaTrigger rows (with `ShapeID`) and polygon corners (`Polygon(pathId)`: Path, PathNode, Location and PathProperty as `ObjectMgr::LoadAreaTriggerPolygons` builds them, first node dropped, VolumeHeight as the height), broadcast text, item and spell names, `Exists(ClientRecord, id)` (currency, extended cost, player condition, bonus list, skill line and difficulty rows, for the TC reference checks), and the ContentTuning, ExpectedStat, ExpectedStatMod and ContentTuningXExpected rows behind creature scaling (`ITcStatData`), for the TrinityCore sources | Retail |
-| `InteractionCatalog` | `Client/InteractionCatalog.cs` | Spell, taxi, item cost, emote, faction lookups for the NPC and content editors | Wrath (DBC) |
+| `InteractionCatalog` | `Client/InteractionCatalog.cs` | Spell, taxi, item cost, emote, faction lookups for the NPC and content editors, plus the mount-spell displays (`MountDisplays`: aura-78 `EffectMiscValue`) behind the mount pickers | Wrath (DBC) |
 | `LiquidTextures` | `Client/LiquidTextures.cs` | Liquid texture atlases; uses `RetailLiquids` on retail | Both |
 | `ClientLighting`, `LightBand`, `LightFloatBand`, `FogCurve` | `Viewer/Lighting/ClientLighting.cs`, `World/LightBand.cs`, `World/FogCurve.cs` | Time-of-day colour and float keyframes, fog curves and light regions | Both |
 | `SkyDome` | `World/SkyDome.cs` | The client's sky tables: highlight curve, sun and moon paths and widths, dome ring geometry and `InterpTable` | Both |

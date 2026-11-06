@@ -20,6 +20,8 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
     /// <summary>The retail client's DB2 lookup, for names a TrinityCore database does not hold.</summary>
     public Func<IClientLookup?> Lookup { get; set; } = () => null;
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
+    /// <summary>Teleport to one spawn of this creature (its GUID, map and server position); returns a status line.</summary>
+    public Func<ulong, uint, double, double, double, Task<string>> FlyToSpawn { get; set; } = (_, _, _, _, _) => Task.FromResult("");
     /// <summary>Open the behavior of another creature entry (quest giver cards).</summary>
     public Action<uint> BehaviorForEntryRequested { get; set; } = _ => { };
 
@@ -54,6 +56,7 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
             Areas = () => Areas(),
             Thumbnails = () => Thumbnails,
             FlyToEntry = (entry, name) => FlyToEntry(entry, name),
+            FlyToSpawn = (guid, map, x, y, z) => FlyToSpawn(guid, map, x, y, z),
             BehaviorForEntryRequested = entry => BehaviorForEntryRequested(entry)
         };
         Context.CreatureChanged += creature =>

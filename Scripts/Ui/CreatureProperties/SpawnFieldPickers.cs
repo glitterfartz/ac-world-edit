@@ -54,10 +54,10 @@ public static class SpawnFieldPickers
         switch (field.Column)
         {
             case "mount" or "modelid":
-                ChooseDisplay(owner, field, picked, connection, store, thumbnails);
+                ChooseDisplay(owner, field, picked, connection, store, lookup, thumbnails);
                 break;
             case "MountCreatureID":
-                ChooseCreature(owner, field, picked, connection, store, thumbnails);
+                ChooseCreature(owner, field, picked, connection, store, lookup, thumbnails);
                 break;
         }
     }
@@ -124,13 +124,25 @@ public static class SpawnFieldPickers
     }
 
     static void ChooseDisplay(Node owner, SpawnField field, Action<uint> picked, Func<WorldConnection> connection,
-        Func<IClientFiles?> store, IThumbnailSource? thumbnails)
+        Func<IClientFiles?> store, Func<IClientLookup?> lookup, IThumbnailSource? thumbnails)
     {
-        _ = field;
-        RecordPicker.Show(owner, store, "Choose a display model",
+        // The mount field lists only mountable displays: wrath mount spells' aura-78 displays, retail
+        // MountXDisplay. An unavailable or empty set (or a term matching nothing mountable, such as an
+        // exact non-mount ID) falls back to the unfiltered list instead of hiding everything.
+        bool mountOnly = field.Column == "mount";
+        RecordPicker.Show(owner, store, mountOnly ? "Choose a mount" : "Choose a display model",
             async term =>
             {
                 var found = await DBSource.Open(connection()).SearchCreatureDisplaysAsync(term, CancellationToken.None);
+                if (mountOnly && await MountableDisplays(store, lookup) is { } set)
+                {
+                    var filtered = found.Where(hit => set.Contains(hit.Id)).ToList();
+                    if (filtered.Count > 0)
+                    {
+                        found = filtered;
+                    }
+                }
+
                 return found.Select(hit => new PickerRecord(hit.Id, hit.Name.Length > 0 ? hit.Name : $"Display {hit.Id}", $"display · {hit.Id}",
                     Thumbnail: thumbnails == null ? null : ready => thumbnails.Creature(hit.Id, ready))).ToList();
             },
@@ -138,7 +150,7 @@ public static class SpawnFieldPickers
     }
 
     static void ChooseCreature(Node owner, SpawnField field, Action<uint> picked, Func<WorldConnection> connection,
-        Func<IClientFiles?> store, IThumbnailSource? thumbnails)
+        Func<IClientFiles?> store, Func<IClientLookup?> lookup, IThumbnailSource? thumbnails)
     {
         _ = field;
         RecordPicker.Show(owner, store, "Choose a mount creature",
@@ -147,6 +159,15 @@ public static class SpawnFieldPickers
                 var db = DBSource.Open(connection());
                 var found = await db.SearchTemplatesAsync(SpawnKind.Creature, term, null, CancellationToken.None);
                 var looks = found.Count == 0 ? new Dictionary<uint, CreatureLook>() : await db.ReadCreatureLooksAsync(found.Select(f => f.Entry).ToList(), CancellationToken.None);
+                if (await MountableDisplays(store, lookup) is { } set)
+                {
+                    var filtered = found.Where(hit => looks.TryGetValue(hit.Entry, out var look) && set.Contains(look.DisplayId)).ToList();
+                    if (filtered.Count > 0)
+                    {
+                        found = filtered;
+                    }
+                }
+
                 return found.Select(hit =>
                 {
                     uint display = looks.GetValueOrDefault(hit.Entry)?.DisplayId ?? 0;
@@ -155,5 +176,36 @@ public static class SpawnFieldPickers
                 }).ToList();
             },
             record => picked(record.Id));
+    }
+
+    /// <summary>
+    /// CreatureDisplayInfo IDs the client defines as mounts (retail MountXDisplay first, else wrath
+    /// mount spells), or null when neither client names any so the pickers stay unfiltered.
+    /// </summary>
+    static async Task<HashSet<uint>?> MountableDisplays(Func<IClientFiles?> store, Func<IClientLookup?> lookup)
+    {
+        try
+        {
+            if (lookup() is { } client && client.MountDisplays() is { Count: > 0 } retail)
+            {
+                return [.. retail];
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        try
+        {
+            if (await ContentEditorWindow.LoadCatalog(store()) is { } catalog && catalog.MountDisplays is { Count: > 0 } wrath)
+            {
+                return [.. wrath];
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        return null;
     }
 }

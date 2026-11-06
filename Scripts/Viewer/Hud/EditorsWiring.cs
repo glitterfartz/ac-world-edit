@@ -131,6 +131,7 @@ public partial class ViewerShell
             Areas = () => areas,
             Drafts = drafts,
             FlyToEntry = LocateCreature,
+            FlyToSpawn = (guid, map, x, y, z) => LocateSpawn(SpawnKind.Creature, guid, map, x, y, z),
             BehaviorForEntryRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
         gameObjectProps = new GameObjectPropertiesWindow
@@ -138,7 +139,8 @@ public partial class ViewerShell
             Connection = () => DatabaseConnection(),
             Store = () => store,
             Lookup = () => clientLookup,
-            Drafts = drafts
+            Drafts = drafts,
+            FlyToSpawn = (guid, map, x, y, z) => LocateSpawn(SpawnKind.GameObject, guid, map, x, y, z)
         };
         areaBehavior = new BehaviorEditorWindow
         {

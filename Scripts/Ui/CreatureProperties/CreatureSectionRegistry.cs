@@ -24,7 +24,8 @@ public static class CreatureSectionRegistry
         ctx => new TcTemplateSection(ctx),
         ctx => new TcTrainerSection(ctx),
         ctx => new TcVendorSection(ctx),
-        ctx => new AppearanceSection(ctx)
+        ctx => new AppearanceSection(ctx),
+        ctx => new SpawnsSection(ctx)
     ];
 
     public static List<CreatureSection> Create(CreatureContext ctx) => Factories.Select(factory => factory(ctx)).ToList();

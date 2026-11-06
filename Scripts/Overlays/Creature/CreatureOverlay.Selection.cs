@@ -70,7 +70,10 @@ public partial class CreatureOverlay
 
         if (selectedGuid != guid)
         {
-            previewAnimation = 0;
+            // Keep playing the marker's own stance/seat animation instead of resetting to Stand;
+            // the clip menu re-selects it below once the batches report their clips.
+            previewAnimation = modelView.RiderAnimFor(guid);
+            userPreviewAnim = false;
             animationListGuid = null;
             modelView.ResetTimer();
             animation.Disabled = true;

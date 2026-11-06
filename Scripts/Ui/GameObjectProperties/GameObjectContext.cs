@@ -21,6 +21,8 @@ public sealed class GameObjectContext : IEntityContext
     public Func<IThumbnailSource?> Thumbnails { get; set; } = () => null;
     public ContentDrafts Drafts { get; }
     public ClientIcons Icons { get; }
+    /// <summary>Teleport to one spawn of this template (its GUID, map and server position); returns a status line.</summary>
+    public Func<ulong, uint, double, double, double, Task<string>> FlyToSpawn { get; set; } = (_, _, _, _, _) => Task.FromResult("");
 
     /// <summary>The template entry shown, or null when none is selected.</summary>
     public uint? Entry { get; private set; }

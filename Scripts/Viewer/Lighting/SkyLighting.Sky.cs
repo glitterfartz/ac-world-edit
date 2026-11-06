@@ -90,7 +90,7 @@ public sealed partial class SkyLighting
     static Vector3 Vec(RgbBand band) => new(band.R, band.G, band.B);
 
     /// <summary>Publish the six dome bands, the sun glow, the highlight and the celestial switch.</summary>
-    void PublishSky(SkyDetail sky)
+    void PublishSky(SkyDetail sky, float glow)
     {
         var zenith = Vec(sky.Zenith);
         var horizon = Vec(sky.Smog);
@@ -103,6 +103,10 @@ public sealed partial class SkyLighting
         skyMaterial.SetShaderParameter("sky_smog", horizon);
         skyMaterial.SetShaderParameter("sky_fog", Vec(sky.Fog));
         skyMaterial.SetShaderParameter("sun_glow_color", Vec(sky.SunGlow));
+        // Hemisphere bounce for the world shaders, from the same bands as the dome.
+        ClientShaderGlobals.Set(ClientShaderGlobals.SkyTop, zenith);
+        ClientShaderGlobals.Set(ClientShaderGlobals.SkyGround, horizon);
+        ClientShaderGlobals.Set(ClientShaderGlobals.Glow, glow);
         // A LightSkybox model brings its own sun, moons and clouds, and the client then draws none of ours.
         skyMaterial.SetShaderParameter("celestial_enabled", skyboxPath == null);
     }

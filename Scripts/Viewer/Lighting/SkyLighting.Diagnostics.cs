@@ -48,6 +48,10 @@ public sealed partial class SkyLighting
         ClientShaderGlobals.Set(ClientShaderGlobals.SunAmbient, new Vector3(1, 1, 1));
         ClientShaderGlobals.Set(ClientShaderGlobals.SunDiffuse, Vector3.Zero);
         ClientShaderGlobals.Set(ClientShaderGlobals.SunSpecular, Vector3.Zero);
+        // White hemisphere (unit tint) and no glow so flat shows the raw texture everywhere.
+        ClientShaderGlobals.Set(ClientShaderGlobals.SkyTop, new Vector3(1, 1, 1));
+        ClientShaderGlobals.Set(ClientShaderGlobals.SkyGround, new Vector3(1, 1, 1));
+        ClientShaderGlobals.Set(ClientShaderGlobals.Glow, 0f);
         env.TonemapMode = Godot.Environment.ToneMapper.Linear;
     }
 

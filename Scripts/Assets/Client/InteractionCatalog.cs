@@ -28,6 +28,7 @@ public sealed class InteractionCatalog
         this.textEmotes = textEmotes;
         this.factions = factions;
         this.factionTemplates = factionTemplates;
+        mountDisplays = new(ReadMountDisplays);
         this.skills = skills;
         this.mails = mails;
         this.titles = titles;
@@ -100,6 +101,39 @@ public sealed class InteractionCatalog
     }
 
     public string? TextEmoteName(uint id) => textEmotes.Contains(id) ? textEmotes.Str(id, 1).ToLowerInvariant() : null;
+
+    /// <summary>
+    /// CreatureDisplayInfo IDs the client defines as mounts: every mount spell's aura-78 effect names
+    /// its display in EffectMiscValue (Spell.dbc fields 95-97/110-112; Brown Horse is 284). Verified
+    /// against the 3.3.5 client (396 mount spells). Used to filter the mount pickers to mountable
+    /// displays; a client without these fields yields an empty set and the pickers stay unfiltered.
+    /// </summary>
+    public IReadOnlySet<uint> MountDisplays => mountDisplays.Value;
+
+    readonly Lazy<HashSet<uint>> mountDisplays;
+
+    HashSet<uint> ReadMountDisplays()
+    {
+        HashSet<uint> found = [];
+        try
+        {
+            foreach (uint id in spells.Ids)
+            {
+                for (int e = 0; e < 3; e++)
+                {
+                    if (spells.U(id, 95 + e) == 78 && spells.U(id, 110 + e) is uint display && display != 0)
+                    {
+                        found.Add(display);
+                    }
+                }
+            }
+        }
+        catch (InvalidDataException)
+        {
+        }
+
+        return found;
+    }
 
     public string? FactionName(uint id) => factions.Contains(id) ? factions.Str(id, 23) : null;
 

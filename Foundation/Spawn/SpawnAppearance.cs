@@ -1,8 +1,9 @@
 namespace ACWorldEdit.Foundation;
 
 /// <summary>
-/// Maps a creature_addon / creature_template_addon row to what the viewport draws: the looping
-/// animation for its stance and emote, and the mount it rides. Sheath state has no body-visual
+/// Maps a creature_addon / creature_template_addon row to what the viewport draws: the
+/// animation for its stance and emote, and the mount it rides. Death plays once and holds its
+/// last frame like the client; every other clip loops. Sheath state has no body-visual
 /// change (weapons are not composed yet), so it is stored but ignored here.
 /// </summary>
 public static class SpawnAppearance
@@ -39,7 +40,8 @@ public static class SpawnAppearance
     };
 
     /// <summary>
-    /// Pick the rider's looping clip: dead always plays Death, else the emote's clip when it names
+    /// Pick the rider's clip: dead always plays Death (the shader holds its last frame instead
+    /// of looping, like the client), else the emote's clip when it names
     /// one the model has, else the seat clip when mounted and the model has it, else the stance
     /// clip when the model has it, else Stand. A clip the model lacks is never picked: the loader
     /// would show the reference pose.

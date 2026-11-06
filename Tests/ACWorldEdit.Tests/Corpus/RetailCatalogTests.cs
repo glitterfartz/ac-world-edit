@@ -157,6 +157,23 @@ public class RetailClientLookupTests
     }
 
     [RetailClientFact]
+    public void MountJournalDisplaysAreMountableAndSeated()
+    {
+        var lookup = Lookup();
+        var mounts = lookup.MountDisplays();
+        Assert.True(mounts.Count > 1000, $"only {mounts.Count} mount displays");
+        // Every sampled mount display resolves and seats its rider above the ground.
+        var catalog = new RetailCreatureCatalog(RetailData.Tables);
+        int seated = 0;
+        foreach (uint display in mounts.Take(60))
+        {
+            seated += catalog.Resolve(display).SeatHeight > 0 ? 1 : 0;
+        }
+
+        Assert.Equal(60, seated);
+    }
+
+    [RetailClientFact]
     public void PolygonTriggersTakeTheirCornersFromTheirPath()
     {
         var lookup = Lookup();

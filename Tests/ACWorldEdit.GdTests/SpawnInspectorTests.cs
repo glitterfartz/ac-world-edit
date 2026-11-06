@@ -73,4 +73,31 @@ public class SpawnInspectorTests
             }
         }
     }
+
+    [TestCase]
+    public void MountFieldsOfferAClearButtonWhenSet()
+    {
+        var inspector = new SpawnInspector
+        {
+            Choices = field => field.Column == "emote" ? [(0, "None"), (69, "Wave")] : null,
+            FlagBits = field => SpawnFieldPickers.Flags(WorldDialect.TrinityCore, field),
+            Describe = SpawnFieldPickers.Describe,
+            Choose = (field, picked) => true
+        };
+        AutoFree(inspector);
+        var row = SpawnEdits.NewCreature(TcSchema.Instance, 5, 448, Here, 0, 0);
+        var addon = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5).With("mount", 14337u).With("MountCreatureID", 123u);
+        inspector.Show(WorldDialect.TrinityCore, SpawnKind.Creature, row, addon, null, null, true);
+
+        AssertThat(inspector.SmokeClearVisible("mount")).IsTrue();
+        AssertThat(inspector.SmokeClearVisible("MountCreatureID")).IsTrue();
+
+        string sent = "";
+        inspector.Edited += (field, text) => sent = field.Column + "=" + text;
+        inspector.SmokePressClear("mount");
+        AssertThat(sent).IsEqual("mount=0");
+
+        inspector.Show(WorldDialect.TrinityCore, SpawnKind.Creature, row, addon.With("mount", 0u), null, null, true);
+        AssertThat(inspector.SmokeClearVisible("mount")).IsFalse();
+    }
 }

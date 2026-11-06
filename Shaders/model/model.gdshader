@@ -14,6 +14,13 @@ uniform sampler2D albedo_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D animation_palette : filter_nearest, repeat_disable;
 uniform float animation_duration = 0.0;
 uniform int animation_frames = 1;
+// Death (animation 1) plays once and holds its last frame like the client, instead of looping.
+uniform bool animation_hold = false;
+// Shared bone-animation clock (ClientShaderGlobals.CreatureClock, seconds since engine start,
+// written every frame): shader TIME is renderer-private and offset from it, so the CPU seat
+// follow and the skinned mounts must read the same value to stay in phase. Negative until the
+// first write, when shaders fall back to TIME.
+global uniform float creature_clock = -1.0;
 uniform bool skinned = false;
 uniform int blend_mode = 0;
 // 0 none, 1 baked interior WMO lighting (replaces scene light, modulate-2x), 2 exterior WMO
@@ -72,8 +79,13 @@ void vertex() {
     if (skinned) {
         // All instances of a variant share the native pose palette. Interpolate sampled
         // matrices between rows rather than rebuilding every creature's mesh on the CPU.
+        // The clock is shared with the CPU seat follow; TIME is only the pre-first-write fallback.
+        float clock = creature_clock >= 0.0 ? creature_clock : TIME;
+        float cycle = animation_duration > 0.0
+            ? (animation_hold ? min(clock, animation_duration) : mod(clock, animation_duration))
+            : 0.0;
         float frame = animation_duration > 0.0
-            ? mod(TIME, animation_duration) / animation_duration * float(animation_frames - 1)
+            ? cycle / animation_duration * float(animation_frames - 1)
             : 0.0;
         int a = int(floor(frame));
         int b = min(a + 1, animation_frames - 1);

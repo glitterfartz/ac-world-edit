@@ -105,6 +105,10 @@ public interface IClientLookup : ITcStatData
     /// <summary>The AnimationData clip an emote loops (Emotes.db2 AnimID), or 0 when it names none.</summary>
     uint EmoteAnim(uint id) => 0;
 
+    /// <summary>CreatureDisplayInfo IDs the client defines as mounts (retail MountXDisplay); empty
+    /// when the table is missing, and the mount pickers stay unfiltered then.</summary>
+    IReadOnlySet<uint> MountDisplays() => new HashSet<uint>();
+
     /// <summary>Playable races as (ChrRaces ID, display name); empty when the client has no table.</summary>
     IReadOnlyList<(uint Id, string Name)> Races() => [];
 
@@ -137,6 +141,41 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
     }
 
     IReadOnlyList<ClientAreaTrigger>? areaTriggers;
+
+    HashSet<uint>? mountDisplays;
+
+    /// <summary>
+    /// CreatureDisplayInfo IDs the client defines as mounts (MountXDisplay): the mount journal's
+    /// display for each mount. Missing table or columns yield an empty set; the mount pickers
+    /// stay unfiltered then instead of failing.
+    /// </summary>
+    public IReadOnlySet<uint> MountDisplays()
+    {
+        lock (gate)
+        {
+            if (mountDisplays != null)
+            {
+                return mountDisplays;
+            }
+
+            mountDisplays = [];
+            try
+            {
+                foreach (var row in tables.Table("MountXDisplay").Values)
+                {
+                    if (row.FieldAs<uint>("CreatureDisplayInfoID") is uint display && display != 0)
+                    {
+                        mountDisplays.Add(display);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return mountDisplays;
+        }
+    }
 
     /// <summary>Built once: the overlay asks again every time the camera crosses a query cell.</summary>
     public IReadOnlyList<ClientAreaTrigger> AreaTriggers()

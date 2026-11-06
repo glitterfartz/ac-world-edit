@@ -27,6 +27,8 @@ public sealed class CreatureContext : IEntityContext
     public Func<IThumbnailSource?> Thumbnails { get; set; } = () => null;
     /// <summary>Locate a creature entry on the map (quest giver cards); returns a status line.</summary>
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
+    /// <summary>Teleport to one spawn of this creature (its GUID, map and server position); returns a status line.</summary>
+    public Func<ulong, uint, double, double, double, Task<string>> FlyToSpawn { get; set; } = (_, _, _, _, _) => Task.FromResult("");
     /// <summary>A section wants the behavior of another creature entry (a quest giver card).</summary>
     public Action<uint> BehaviorForEntryRequested { get; set; } = _ => { };
 

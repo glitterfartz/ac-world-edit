@@ -38,7 +38,7 @@ public class GameObjectPropertiesWindowTests
             AssertThat(window.Sections.Count).IsEqual(GameObjectSectionRegistry.Factories.Count);
             var listed = window.Sections.Where(s => s.Supports(dialect)).ToArray();
             AssertThat(picker.ItemCount).IsEqual(listed.Length);
-            AssertThat(string.Join(",", listed.Select(s => s.Id))).IsEqual("template,type,quests,usedby");
+            AssertThat(string.Join(",", listed.Select(s => s.Id))).IsEqual("template,type,quests,spawns");
             AssertThat(window.ActiveSection).IsEqual(GameObjectPropertiesWindow.DefaultSectionId);
             AssertThat(listed.All(s => s is GameObjectSection)).IsTrue();
         }
@@ -55,8 +55,8 @@ public class GameObjectPropertiesWindowTests
             AssertThat(section.Visible).IsEqual(section.Id == "type");
         }
 
-        window.ShowSection("usedby", null);
-        AssertThat(window.ActiveSection).IsEqual("usedby");
-        AssertThat(window.Section("usedby")).IsNotNull();
+        window.ShowSection("spawns", null);
+        AssertThat(window.ActiveSection).IsEqual("spawns");
+        AssertThat(window.Section("spawns")).IsNotNull();
     }
 }

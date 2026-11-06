@@ -10,7 +10,7 @@ namespace ACWorldEdit.Assets;
 /// (type 19) and the variant shown in each geoset group, which replaces the hair-geoset rule. Equipment
 /// is not composed.
 /// </summary>
-public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1, string? EyeTexture = null, GeosetVariants? Geosets = null, string? ExtraTexture = null);
+public sealed record CreatureAppearance(string Path, string[] Textures, float Scale, string? BakedTexture, string? HairTexture = null, string? FurTexture = null, int HairGeoset = 1, string? EyeTexture = null, GeosetVariants? Geosets = null, string? ExtraTexture = null, float SeatHeight = 0);
 
 /// <summary>
 /// The variant shown in each geoset group (group 0 is the hairstyle; skin geoset 0 always shows).
@@ -81,6 +81,17 @@ public sealed class CreatureCatalog : ICreatureCatalog
         string path = BinaryAsset.ModelPath(models.Str(model, 2));
         string dir = path[..(path.LastIndexOf('/') + 1)];
         string[] textures = Enumerable.Range(6, 3).Select(f => displays.Str(id, f)).Select(s => s.Length == 0 ? "" : dir + s + ".blp").ToArray();
+
+        // MountHeight (field 16) puts the rider's feet on the mount's back; 0 means the model
+        // is not a mount seat (plain Ram, tame/pack Kodos) and the caller falls back instead.
+        float seat = 0;
+        try
+        {
+            seat = models.F(model, 16);
+        }
+        catch (Exception)
+        {
+        }
         string? baked = extra != 0 && extras.Contains(extra) ? extras.Str(extra, 20) : null;
         string? hairTexture = null, furTexture = null;
         int hairGeoset = 1;
@@ -95,7 +106,7 @@ public sealed class CreatureCatalog : ICreatureCatalog
             }
         }
 
-        return new(path, textures, displays.F(id, 4), string.IsNullOrEmpty(baked) ? null : "Textures/BakedNpcTextures/" + baked, hairTexture, furTexture, hairGeoset);
+        return new(path, textures, displays.F(id, 4), string.IsNullOrEmpty(baked) ? null : "Textures/BakedNpcTextures/" + baked, hairTexture, furTexture, hairGeoset, SeatHeight: float.IsFinite(seat) && seat > 0 ? seat : 0);
     }
 
     string? SectionTexture(uint race, uint sex, uint type, uint variation, uint color, int field, string modelDirectory)

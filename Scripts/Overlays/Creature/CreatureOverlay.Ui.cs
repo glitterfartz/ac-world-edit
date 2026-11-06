@@ -38,6 +38,7 @@ public partial class CreatureOverlay
         animation.ItemSelected += index =>
         {
             previewAnimation = (ushort)animation.GetItemId((int)index);
+            userPreviewAnim = true;
             modelView.ResetTimer();
         };
         (undo, redo) = InspectorUi.HistoryRow(card, () => History(false), () => History(true));
