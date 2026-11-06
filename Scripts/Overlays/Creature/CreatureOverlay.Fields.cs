@@ -61,6 +61,8 @@ public partial class CreatureOverlay
         {
             spawnFields.Show(WorldDialect.AzerothCore, SpawnKind.Creature, null, null, null, null, false);
             ShowWanderRing(null);
+            RefreshPathCard();
+            RefreshFormationCard();
             return;
         }
 
@@ -76,6 +78,8 @@ public partial class CreatureOverlay
             templateValues.GetValueOrDefault(entry), true, force);
         LoadTemplateValues(entry, dialect);
         LoadTemplateAddon(entry);
+        RefreshPathCard();
+        RefreshFormationCard();
     }
 
     /// <summary>

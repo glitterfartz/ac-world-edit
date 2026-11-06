@@ -139,7 +139,7 @@ public class StagedSpawnTests
         var edits = drafts.Draft!.NetEdits().Select(e => e.Edit).ToArray();
         Assert.Equal(["creature_addon", "creature"], edits.Select(e => e.Table));
         Assert.Equal(spawn, edits[1].Before);
-        string apply = SqlExport.Build(Source, [], edits, null, null, TcSchema.Instance).Apply;
+        string apply = SqlExport.Build(Source, [], edits, null, TcSchema.Instance).Apply;
         Assert.True(apply.IndexOf("DELETE FROM `creature_addon`", StringComparison.Ordinal) < apply.IndexOf("DELETE FROM `creature` WHERE", StringComparison.Ordinal));
 
         poses.Undo(null);

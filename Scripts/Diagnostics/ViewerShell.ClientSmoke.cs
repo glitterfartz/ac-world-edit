@@ -620,7 +620,7 @@ public partial class ViewerShell
                 // TrinityCore stores facing and delay per node; the rest must not look editable.
                 if (waypoints.SmokeSelected is null || fields.SmoothShown || fields.ActionShown || fields.VelocityEditable || fields.MoveTypeEditable || !fields.DelayEditable || !fields.FacingEditable)
                 { SmokeFail($"CLIENT_SHOT_WAYPOINT_FIELDS {fields}"); return; }
-                if (!waypoints.SmokeEditing())
+                if (!waypoints.SmokeEditing(camera))
                 { SmokeFail("CLIENT_SHOT_WAYPOINT_EDIT"); return; }
                 waypoints.SmokeScrollToEnd();
                 clientShotFrames = 0;

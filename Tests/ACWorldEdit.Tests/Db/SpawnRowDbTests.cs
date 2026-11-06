@@ -28,7 +28,7 @@ public class SpawnRowDbTests
 
         // The export of a one-column move guards the database value and touches only that column.
         var edit = SpawnEdits.Move(source.Schema, SpawnKind.Creature, row, SpawnEdits.PoseOf(row) with { Z = SpawnEdits.PoseOf(row).Z + 1 });
-        string apply = SqlExport.Build("src", [], [edit], Stamp, null, source.Schema).Apply;
+        string apply = SqlExport.Build("src", [], [edit], Stamp, source.Schema).Apply;
         Assert.Contains("UPDATE `creature` SET `position_z` =", apply);
         Assert.DoesNotContain("position_x` =", apply);
 

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -44,6 +45,15 @@ public partial class WaypointOverlay
         preview.Toggled += value => SetPreview(value);
         display.AddChild(preview);
         display.AddChild(InspectorUi.Text("Green to orange follows the walking direction; purple closes the loop. Yellow dots have a delay; grey paths belong to creatures whose MovementType is not 2.", 11, true));
+        addMode = new Button
+        {
+            Text = "Add points",
+            ToggleMode = true,
+            CustomMinimumSize = new(0, 34),
+            TooltipText = "Click the ground to append a point to the shown path; Alt-click inserts after the nearest segment. Esc leaves this mode."
+        };
+        addMode.Toggled += value => AddingPoints = value;
+        display.AddChild(addMode);
 
         var selection = InspectorUi.SelectionCard(page, "Select a waypoint", "Click a point or choose a path above");
         var card = selection.Box;
@@ -51,6 +61,9 @@ public partial class WaypointOverlay
         identity = selection.Identity;
         EditorFields.CoordinateGrid(card, ["X", "Y", "Z"], position, SubmitPosition);
         (drop, reset, copyGo) = InspectorUi.PlacementButtons(card, this);
+        deletePoint = InspectorUi.Button("Delete point", DeleteSelectedPoint);
+        deletePoint.TooltipText = "Delete the selected point and renumber its followers (the last point stays).";
+        card.AddChild(deletePoint);
         var history = new HBoxContainer();
         card.AddChild(history);
         undo = InspectorUi.Button("Undo", Undo);
@@ -58,9 +71,11 @@ public partial class WaypointOverlay
         history.AddChild(undo);
         history.AddChild(redo);
         BuildProps(page);
+        BuildHeaderCard(page);
         var notes = InspectorUi.Card(page, "Details");
         details = InspectorUi.Text("Selection details appear here.", 12, true);
         notes.AddChild(details);
+        BuildImportButton(display);
         ShowSelection();
         return scroll;
     }
@@ -164,13 +179,9 @@ public partial class WaypointOverlay
     LineEdit delay = null!, facing = null!, velocity = null!, action = null!, actionChance = null!;
     OptionButton moveType = null!;
     CheckBox smooth = null!;
-
+    Button addMode = null!, deletePoint = null!, importLegacy = null!;
     static string FacingText(double? radians) => radians is double r ? (r * 180 / Math.PI).ToString("F2", CultureInfo.InvariantCulture) : "";
 
-    /// <summary>
-    /// Parse a typed number and pass it on; bad text shows the message in the status bar and
-    /// restores the fields.
-    /// </summary>
     void ParseThen<T>(string text, string error, Action<T> apply) where T : IParsable<T>
     {
         if (T.TryParse(text, CultureInfo.InvariantCulture, out var value))
@@ -188,7 +199,7 @@ public partial class WaypointOverlay
     /// </summary>
     void ShowProps(WaypointProps? props, WorldDialect dialect = WorldDialect.AzerothCore)
     {
-        bool editable = props.HasValue && draft != null;
+        bool editable = props.HasValue && shared?.Draft != null;
         var p = props.GetValueOrDefault();
         // TrinityCore stores facing and delay per node; move type and velocity belong to the whole
         // path (shown, not editable here) and smooth transition and actions do not exist.
@@ -258,24 +269,29 @@ public partial class WaypointOverlay
             }
 
             ShowProps(null);
+            RefreshHeader(null);
             return;
         }
 
         var (path, node) = current;
         var effective = PositionOf(path, node);
         title.Text = $"Waypoint {node.Point}";
-        int index = Array.IndexOf(path.Nodes, node) + 1;
-        identity.Text = $"Path {path.Id}   /   Map {path.Map}   /   {index} of {path.Nodes.Length}";
+        var display = DisplayNodes(path);
+        int index = Array.IndexOf(display.Select(n => n.Point).ToArray(), node.Point) + 1;
+        identity.Text = $"Path {path.Id}   /   Map {path.Map}   /   {index} of {display.Length}";
         double[] values = [effective.X, effective.Y, effective.Z];
         for (int i = 0; i < 3; i++)
         {
             position[i].Text = values[i].ToString("F4", CultureInfo.InvariantCulture);
-            position[i].Editable = draft != null;
+            position[i].Editable = shared?.Draft != null;
         }
 
         ShowProps(StateOf(path, node).Props, path.Dialect);
+        RefreshHeader(path);
         var lines = new List<string>();
-        if (draft?.Conflict(sourceKey, path.Id, node.Point, SourceState(node)) == true)
+        var schema = ContentDraftFiles.Sources.SchemaFor(sourceKey);
+        string key = DbWaypointRows.NodeKey(path.Dialect, path.Id, node.Point);
+        if (conflicts.Contains((MovementEdits.NodeTable(schema).Name, key)))
         {
             lines.Add("Source waypoint changed since this draft; draft requires review.");
         }
@@ -302,6 +318,13 @@ public partial class WaypointOverlay
         drop.Disabled = !editable || GroundAt == null;
         reset.Disabled = !editable;
         copyGo.Disabled = !selected.HasValue;
+        deletePoint.Disabled = !editable;
+        if (addMode.ButtonPressed != AddingPoints)
+        {
+            addMode.SetPressedNoSignal(AddingPoints);
+        }
+
+        addMode.Disabled = shared?.Draft == null;
         undo.Disabled = !CanUndo;
         redo.Disabled = !CanRedo;
         preview.Disabled = !CanPreview;

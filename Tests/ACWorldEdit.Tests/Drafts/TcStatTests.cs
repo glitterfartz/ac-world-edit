@@ -246,7 +246,7 @@ public class TcStatTests
         Assert.Equal("0", net.Before!.T("LevelScalingDeltaMin"));
         Assert.Equal("0", net.After!.T("LevelScalingDeltaMax"));
         Assert.Equal("5", net.After.T("LootID"));
-        var scripts = SqlExport.Build("tc", [], [net], new DateTime(2026, 1, 1), null, TcSchema.Instance);
+        var scripts = SqlExport.Build("tc", [], [net], new DateTime(2026, 1, 1), TcSchema.Instance);
         Assert.Contains("`LootID` = 5", scripts.Apply);
     }
 }

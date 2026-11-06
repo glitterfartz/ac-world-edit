@@ -54,7 +54,7 @@ public class SpawnAppearanceTests
         var own = poses.AddonOf(Source, Guid)!;
         Assert.Equal((69u, 777u, "111 222"), (own.U("emote"), own.U("mount"), own["auras"]));
         Assert.Equal(Guid, own.UL("guid"));
-        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, Schema(dialect)).Apply);
+        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, Schema(dialect)).Apply);
     }
 
     [Theory]
@@ -71,7 +71,7 @@ public class SpawnAppearanceTests
         Assert.Null(poses.AddonOf(Source, Guid));
         var edit = Assert.Single(drafts.Draft!.NetEdits()).Edit;
         Assert.Null(edit.After);
-        Assert.Contains("DELETE FROM `creature_addon` WHERE `guid` = 5", SqlExport.Build(Source, [], [edit], null, null, Schema(dialect)).Apply);
+        Assert.Contains("DELETE FROM `creature_addon` WHERE `guid` = 5", SqlExport.Build(Source, [], [edit], null, Schema(dialect)).Apply);
 
         poses.Undo(null);
         Assert.Equal(69u, poses.AddonOf(Source, Guid)!.U("emote"));

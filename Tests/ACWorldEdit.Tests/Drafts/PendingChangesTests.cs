@@ -23,13 +23,13 @@ public class PendingChangesTests
         return new("s", id, before, before with { X = 9 });
     }
 
-    static List<PendingChange> Collect(PendingChanges pending, IEnumerable<(string Source, RowEdit Edit)> moves) => pending.Collect([], moves, []);
+    static List<PendingChange> Collect(PendingChanges pending, IEnumerable<(string Source, RowEdit Edit)> moves) => pending.Collect([], moves);
 
     [Fact]
     public void ListsGraveyardsByIdThenRowsInDraftOrder()
     {
         var pending = new PendingChanges(TempPath());
-        var list = pending.Collect([Edit(7), Edit(3)], [Move(9), Move(2)], []);
+        var list = pending.Collect([Edit(7), Edit(3)], [Move(9), Move(2)]);
         Assert.Equal([PendingKind.Graveyard, PendingKind.Graveyard, PendingKind.Row, PendingKind.Row], list.Select(c => c.Kind));
         Assert.Equal([3u, 7u], list.Take(2).Select(c => c.Graveyard!.Id));
         Assert.Equal(["9", "2"], list.Skip(2).Select(c => c.Row!.Key));
@@ -79,7 +79,7 @@ public class PendingChangesTests
     [Fact]
     public void EmptyInputsYieldNothing()
     {
-        Assert.Empty(new PendingChanges(TempPath()).Collect([], [], []));
+        Assert.Empty(new PendingChanges(TempPath()).Collect([], []));
     }
 }
 

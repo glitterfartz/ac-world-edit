@@ -43,10 +43,15 @@ public sealed partial class SpawnPoses
 
     RowSet Snapshot(string source) => snapshots.TryGetValue(source, out var rows) ? rows : snapshots[source] = new RowSet();
 
-    /// <summary>The rules of the source's server, applied to every spawn row; none without a dialect.</summary>
+    /// <summary>
+    /// The rules of the source's server, applied to every spawn row plus any waypoint or formation
+    /// rows a command carries; none without a dialect.
+    /// </summary>
     Func<RowSet, IEnumerable<InteractionIssue>> Rules(string source) => dialectOf == null
         ? _ => []
-        : rows => SpawnRules.Check(dialectOf(source), kind, rows, Table(source), Facts).Concat(SpawnRules.CheckAddons(dialectOf(source), kind, rows, AddonTable(source)));
+        : rows => SpawnRules.Check(dialectOf(source), kind, rows, Table(source), Facts)
+            .Concat(SpawnRules.CheckAddons(dialectOf(source), kind, rows, AddonTable(source)))
+            .Concat(SpawnRules.CheckMovement(WorldSchemas.For(dialectOf(source)), rows));
 
     /// <summary>Remember database rows as the baseline of later edits (replaces a row loaded before).</summary>
     public void Load(string source, IEnumerable<Row> rows)
@@ -80,8 +85,42 @@ public sealed partial class SpawnPoses
         }
     }
 
+    /// <summary>Remember the formation rows of a database read as the baseline of later edits.</summary>
+    public void LoadFormationRows(string source, RowSet rows)
+    {
+        if (!Available)
+        {
+            return;
+        }
+
+        var table = drafts.Draft!.Tables(source).Find("creature_formations");
+        foreach (var row in rows.All(table))
+        {
+            Snapshot(source).Set(table, row);
+        }
+    }
+
+    /// <summary>All formation rows with the draft applied (loaded formations only).</summary>
+    public IReadOnlyList<Row> FormationRows(string source, IWorldSchema schema)
+    {
+        if (drafts.Draft == null)
+        {
+            return [];
+        }
+
+        return drafts.Draft.Effective(source, Snapshot(source)).All(MovementEdits.FormationTable(schema)).ToList();
+    }
+
     /// <summary>The GUID for a new spawn: past every database row and every spawn the draft has staged, undone ones included.</summary>
     public ulong NextGuid(string source, ulong databaseMax) => IdAllocator.Next(databaseMax, drafts.Draft?.MaxStaged(source, Table(source), "guid") ?? 0);
+
+    /// <summary>The ID for a new waypoint path: past every database path and every path the draft has staged.</summary>
+    public ulong NextPathId(string source, IWorldSchema schema, ulong databaseMax)
+    {
+        var table = MovementEdits.NodeTable(schema);
+        string column = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
+        return IdAllocator.Next(databaseMax, drafts.Draft?.MaxStaged(source, table, column) ?? 0);
+    }
 
     /// <summary>Whether the database row of a spawn is loaded, so it can be edited.</summary>
     public bool Has(string source, ulong guid) => Available && Snapshot(source).Get(Table(source), Key(guid)) != null;

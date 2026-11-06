@@ -8,7 +8,7 @@ namespace ACWorldEdit;
 /// Bounded projection of waypoint paths (waypoint_data, or waypoint_path_node in TrinityCore) used by the creatures near the streamed region: a
 /// direction-shaded line per path (closed back to the first point, as the server repeats the path),
 /// a dot per point and, for the emphasized path, numbered labels. Source rows stay detached and
-/// read-only; WaypointDraft owns durable local moves. A path is emphasized while one of its points
+/// read-only; point and path edits are row-edit commands on the shared content draft. A path is emphasized while one of its points
 /// is selected or one of its creatures is selected in the creature layer.
 /// </summary>
 public partial class WaypointOverlay : RegionOverlay
@@ -42,6 +42,12 @@ public partial class WaypointOverlay : RegionOverlay
     readonly RegionQuery<WaypointRegionResult> query = new();
     string sourceKey = "";
     (uint Path, uint Point)? selected;
+
+    /// <summary>The selected path, for the creature inspector's link-to-selected.</summary>
+    public uint? SelectedPath => selected?.Path;
+
+    /// <summary>The selected point, for formation turn-around pickers.</summary>
+    public uint? SelectedPoint => selected?.Point;
     uint? focusedPath, emphasized;
     ulong? focusedGuid;
     MeshInstance3D handle = null!, walker = null!;
@@ -50,7 +56,7 @@ public partial class WaypointOverlay : RegionOverlay
     {
         handle = paths.Marker(WaypointPaths.SelectedColor, 0.9f);
         walker = paths.Marker(new Color("5bd8ff"), 0.7f);
-        OpenDraft();
+        SetupEditing();
     }
 
     protected override void OnRegionChanged(bool mapChanged)
@@ -68,6 +74,10 @@ public partial class WaypointOverlay : RegionOverlay
             Deselect();
             paths.Clear();
             lookup.Clear();
+            snapshots.Clear();
+            loaded.Clear();
+            effective = null;
+            conflicts = [];
             emphasized = focusedPath = null;
             focusedGuid = null;
             StopPreview();
@@ -147,14 +157,26 @@ public partial class WaypointOverlay : RegionOverlay
     }
 
     /// <summary>
-    /// Replace the source snapshot and reconcile path nodes: unchanged paths keep their nodes.
+    /// Replace the source snapshot and selection state: unchanged paths keep their nodes. Drafted
+    /// rows layer over the new records on the next rebuild.
     /// </summary>
     void Publish(WaypointRegionResult result)
     {
         sourceKey = result.SourceKey;
+        RefreshEffective();
+        if (legacyKey != result.SourceKey && importLegacy != null)
+        {
+            RefreshLegacyCount();
+        }
         var incoming = result.Paths.ToDictionary(p => p.Id);
         foreach (uint id in paths.Views.Keys.Where(id => !incoming.ContainsKey(id)).ToArray())
         {
+            // Draft-created paths have no database rows yet; keep their views.
+            if (HasStagedRows(id))
+            {
+                continue;
+            }
+
             if (selected?.Path == id)
             {
                 Deselect();
@@ -175,8 +197,15 @@ public partial class WaypointOverlay : RegionOverlay
 
         foreach (uint id in lookup.Keys.Where(id => !incoming.ContainsKey(id)).ToArray())
         {
+            if (HasStagedRows(id))
+            {
+                continue;
+            }
+
             lookup.Remove(id);
         }
+
+        RefreshStagedPaths();
 
         focusedGuid = null;
         PopulateList();
@@ -185,15 +214,38 @@ public partial class WaypointOverlay : RegionOverlay
         if (selected.HasValue)
         {
             ShowSelection();
+            EnsurePathLoaded(selected.Value.Path);
         }
     }
 
     static WaypointState SourceState(WaypointNode node) => new(new(node.X, node.Y, node.Z), new(node.Orientation, node.Velocity, node.Delay, node.Smooth, node.MoveType, node.Action, node.ActionChance));
 
     /// <summary>
-    /// The point as the draft leaves it: every editable column, source values where untouched.
+    /// The point as the draft leaves it: the effective row's columns, source values where untouched.
+    /// TrinityCore nodes carry only position, facing and delay; the path's move type and velocity
+    /// come from the record, and smooth transition and actions do not exist.
     /// </summary>
-    WaypointState StateOf(WaypointPath path, WaypointNode node) => draft?.Effective(sourceKey, path.Id, node.Point, SourceState(node)) ?? SourceState(node).ToColumn();
+    WaypointState StateOf(WaypointPath path, WaypointNode node)
+    {
+        var source = SourceState(node).ToColumn();
+        if (EffectiveRow(path, node) is not { } row)
+        {
+            return source;
+        }
+
+        bool tc = path.Dialect == WorldDialect.TrinityCore;
+        string x = tc ? "PositionX" : "position_x", y = tc ? "PositionY" : "position_y", z = tc ? "PositionZ" : "position_z";
+        string facing = tc ? "Orientation" : "orientation";
+        var position = new WaypointPosition(row.F(x), row.F(y), row.F(z)).ToColumn();
+        if (tc)
+        {
+            return new(position, source.Props with { Orientation = row.IsNull(facing) ? null : (double?)row.F(facing), Delay = row.U("Delay") });
+        }
+
+        return new(position, new WaypointProps(row.IsNull(facing) ? null : (double?)row.F(facing),
+            row.F("velocity"), row.U("delay"), row.I("smoothTransition") != 0,
+            row.I("move_type"), row.I("action"), row.I("action_chance")).ToColumn());
+    }
 
     WaypointPosition PositionOf(WaypointPath path, WaypointNode node) => StateOf(path, node).Position;
 
@@ -204,7 +256,7 @@ public partial class WaypointOverlay : RegionOverlay
     /// point's view position while it is being dragged.
     /// </summary>
     void BuildPath(WaypointPath path, (uint Point, Vector3 View)? preview = null) =>
-        paths.Rebuild(path, node => StateOf(path, node), path.Id == emphasized, preview);
+        paths.Rebuild(path, node => StateOf(path, node), path.Id == emphasized, preview, DisplayNodes(path));
 
     /// <summary>
     /// Show the gold handle on the selected point (its node is where the gizmo attaches).
@@ -220,7 +272,7 @@ public partial class WaypointOverlay : RegionOverlay
     }
 
     /// <summary>The handle node when a point is selected and editing is available.</summary>
-    Node3D? EditableNode() => draft != null && selected.HasValue && handle.Visible ? handle : null;
+    Node3D? EditableNode() => shared?.Draft != null && selected.HasValue && handle.Visible ? handle : null;
 
     Vector3? SelectedView()
     {
@@ -229,15 +281,21 @@ public partial class WaypointOverlay : RegionOverlay
             return null;
         }
 
-        int index = Array.FindIndex(path.Nodes, n => n.Point == selected.Value.Point);
+        var nodes = DisplayNodes(path);
+        int index = Array.FindIndex(nodes, n => n.Point == selected.Value.Point);
         return index >= 0 && index < view.Positions.Length ? view.Positions[index] : null;
     }
 
     public void Select(uint pathId, uint point)
     {
-        if (!lookup.TryGetValue(pathId, out var path) || path.Nodes.All(n => n.Point != point))
+        if (!lookup.TryGetValue(pathId, out var path) || DisplayNodes(path).All(n => n.Point != point))
         {
-            return;
+            // A path created in this session lives only in the draft until exported.
+            RefreshStagedPaths();
+            if (!lookup.TryGetValue(pathId, out path) || DisplayNodes(path).All(n => n.Point != point))
+            {
+                return;
+            }
         }
 
         var previous = selected;
@@ -250,6 +308,7 @@ public partial class WaypointOverlay : RegionOverlay
         handle.Visible = true;
         handle.Position = SelectedView() ?? handle.Position;
         ShowSelection();
+        EnsurePathLoaded(pathId);
     }
 
     /// <summary>
@@ -257,9 +316,10 @@ public partial class WaypointOverlay : RegionOverlay
     /// </summary>
     public void SelectPath(uint pathId)
     {
-        if (lookup.TryGetValue(pathId, out var path) && path.Nodes.Length > 0)
+        RefreshStagedPaths();
+        if (lookup.TryGetValue(pathId, out var path) && DisplayNodes(path) is { Length: > 0 } nodes)
         {
-            Select(pathId, path.Nodes[0].Point);
+            Select(pathId, nodes[0].Point);
         }
     }
 
@@ -306,7 +366,8 @@ public partial class WaypointOverlay : RegionOverlay
                 continue;
             }
 
-            for (int i = 0; i < view.Positions.Length && i < path.Nodes.Length; i++)
+            var nodes = DisplayNodes(path);
+            for (int i = 0; i < view.Positions.Length && i < nodes.Length; i++)
             {
                 var position = view.Positions[i];
                 if (camera.IsPositionBehind(position))
@@ -324,7 +385,7 @@ public partial class WaypointOverlay : RegionOverlay
                 if (pixels <= bestPixels)
                 {
                     bestPixels = pixels;
-                    best = (id, path.Nodes[i].Point, along);
+                    best = (id, nodes[i].Point, along);
                 }
             }
         }
@@ -335,6 +396,5 @@ public partial class WaypointOverlay : RegionOverlay
     public override void _ExitTree()
     {
         query.Dispose();
-        draft?.Dispose();
     }
 }

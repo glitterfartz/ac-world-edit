@@ -109,7 +109,7 @@ public class SpawnPosesTests
         Assert.True(ok, message);
         Assert.Equal(3.0, poses.Effective(Source, 6, original).Pose.Heading, 4);
 
-        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, Tc).Apply;
+        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, Tc).Apply;
         Assert.Contains("`orientation` = 3", apply);
         Assert.Contains("`rotation2`", apply);
         Assert.DoesNotContain("`position_x`", apply);

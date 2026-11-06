@@ -14,6 +14,7 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     public CreatureOverlay() : base(true, "Waiting for an outdoor map.")
     {
         markers = new CreatureMarkers(this);
+        formationLines = new FormationLines(this);
         modelView = new CreatureModelView(this);
         poseEditor = new CreaturePoseEditor(this);
     }
@@ -53,6 +54,8 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     public int AdmittedCreatureCount => modelView.AdmittedCount;
 
     readonly CreatureMarkers markers;
+    readonly FormationLines formationLines;
+    readonly List<(ulong Leader, ulong Member)> formationPairs = [];
     ItemList list = null!;
     Label details = null!, status = null!;
     LineEdit filter = null!;
@@ -96,6 +99,7 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     /// </summary>
     public void Attach(ContentDrafts drafts)
     {
+        sharedDrafts = drafts;
         poses = new SpawnPoses(drafts, SpawnKind.Creature, ContentDraftFiles.Sources.DialectOf);
         templateAddons = new TemplateAddons(drafts, ContentDraftFiles.Sources.DialectOf);
         drafts.Changed += _ =>
@@ -103,6 +107,8 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
             if (IsInsideTree() && gizmo != null)
             {
                 Resync();
+                RefreshFormationPairs();
+                RefreshFormationCard();
             }
         };
     }
@@ -187,12 +193,14 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     /// </summary>
     void Clear(bool preserveSelection)
     {
+        gizmo?.Finish(false);
         if (gizmo != null)
         {
-            gizmo.Finish(false);
             gizmo.Visible = false;
         }
 
+        formationLines.Clear();
+        formationPairs.Clear();
         modelView.Clear();
         animationListGuid = null;
         if (animation != null)
@@ -236,7 +244,9 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         }
 
         PopulateList();
+        LoadRegionFormations();
     }
+
 
     /// <summary>
     /// Publish only current queries, create bounded marker batches and reconcile models/list/gizmo
@@ -256,6 +266,10 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         UpdateModelBatches(camera);
         UpdateVisibility(camera);
         UpdateGizmo(camera);
+        if (IsDragging)
+        {
+            RebuildFormationLines();
+        }
     }
 
     /// <summary>
@@ -283,6 +297,7 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         templatePrefetchDirty = true;
         pendingMarkers = spawns.Where(s => !markers.ContainsKey(s.Guid)).ToList();
         queryStatus = pendingMarkers.Count > 0 ? $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}…" : CreatureStatusText();
+        RebuildFormationLines();
     }
 
     string CreatureStatusText() => records.Count == 0 ? "No creatures in this region." : truncated ? $"{records.Count} nearest results · limit reached\nNarrow the distance or search." : $"{records.Count} matches in this neighborhood";

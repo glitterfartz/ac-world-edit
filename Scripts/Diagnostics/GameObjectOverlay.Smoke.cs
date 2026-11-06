@@ -36,7 +36,7 @@ public partial class GameObjectOverlay
     }
 
     /// <summary>The apply script of the content draft's net edits, written in the source's dialect.</summary>
-    string ExportNet() => SqlExport.Build(sourceKey, [], content!.Draft!.NetEdits().Select(e => e.Edit), null, null, ContentDraftFiles.Sources.SchemaFor(sourceKey)).Apply;
+    string ExportNet() => SqlExport.Build(sourceKey, [], content!.Draft!.NetEdits().Select(e => e.Edit), null, ContentDraftFiles.Sources.SchemaFor(sourceKey)).Apply;
 
     /// <summary>
     /// Drag the real move handle, then check the draft, the drawn transform, undo/redo, a typed

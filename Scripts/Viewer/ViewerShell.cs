@@ -185,6 +185,16 @@ public partial class ViewerShell : Node3D
         graveyards.FocusRequested += FocusPose;
         waypoints = new WaypointOverlay { Connection = () => DatabaseConnection(), GroundAt = GroundAt, Report = statusLog.Post, FocusedCreature = () => creatures.SelectedGuid };
         AddChild(waypoints);
+        creatures.WaypointSelection = () => waypoints.SelectedPath;
+        creatures.WaypointPointSelection = () => waypoints.SelectedPath is { } path && waypoints.SelectedPoint is { } point ? (path, point) : null;
+        creatures.PathCreated += id =>
+        {
+            // The new path lives only in the draft until exported, so select it from the
+            // staged rows and bring the Waypoints tab up ready to extend it.
+            waypoints.SelectPath(id);
+            waypoints.AddingPoints = true;
+            sidebar.ShowWaypointsTab();
+        };
         waypoints.FocusRequested += FocusPose;
         areaTriggers = new AreaTriggerOverlay { Connection = () => DatabaseConnection(), Lookup = () => clientLookup };
         AddChild(areaTriggers);

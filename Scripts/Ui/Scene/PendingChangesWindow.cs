@@ -95,11 +95,12 @@ public partial class PendingChangesWindow : ContentEditorWindow
             row.AddChild(ClientStyle.Tag(change.Kind switch
             {
                 PendingKind.Graveyard => "GRAVEYARD",
-                PendingKind.Waypoint => "WAYPOINT",
                 _ => change.Row?.Table switch
                 {
                     "creature" or "creature_addon" => "CREATURE",
                     "gameobject" or "gameobject_addon" => "GAMEOBJECT",
+                    "waypoint_data" or "waypoint_path" or "waypoint_path_node" => "PATH",
+                    "creature_formations" => "FORMATION",
                     _ => "ROW"
                 }
             }));

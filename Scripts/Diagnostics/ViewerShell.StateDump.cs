@@ -429,16 +429,20 @@ public partial class ViewerShell
     object[] ExportSamples()
     {
         static GraveyardRecord Site(double x, string comment) => new(4, 0, x, 2, 3, comment, []);
+        static Foundation.Row WaypointRow(uint path, uint point, double x, double y, double z) => Foundation.Row.Of(
+            ("id", path), ("point", point), ("position_x", (float)x), ("position_y", (float)y), ("position_z", (float)z),
+            ("orientation", null), ("velocity", 0f), ("delay", 0u), ("move_type", 0), ("smoothTransition", 0),
+            ("action", 0), ("action_chance", 100), ("wpguid", 0u));
         PendingChange[] changes =
         [
             new("dump-gy-a", PendingKind.Graveyard, "dump_a", "Graveyard 4",
                 new GraveyardEdit("dump_a", 4, Site(1, "Dump"), Site(9, "Dump moved")), null),
             new("dump-gy-b", PendingKind.Graveyard, "dump_b", "Graveyard 7",
                 new GraveyardEdit("dump_b", 7, Site(4, "Other"), Site(6, "Other moved")), null),
-            new("dump-wp-a", PendingKind.Waypoint, "dump_a", "Path 7 point 1", null, null,
-                new WaypointEdit("dump_a", 7, 1, new(1, 2, 3), new(4, 5, 6))),
-            new("dump-wp-b", PendingKind.Waypoint, "dump_b", "Path 9 point 2", null, null,
-                new WaypointEdit("dump_b", 9, 2, new(-1, 0, 1), new(-2, 0, 2)))
+            new("dump-wp-a", PendingKind.Row, "dump_a", "waypoint_data 7|1: update position_x, position_y, position_z", null,
+                new RowEdit("waypoint_data", "7|1", WaypointRow(7, 1, 1, 2, 3), WaypointRow(7, 1, 4, 5, 6))),
+            new("dump-wp-b", PendingKind.Row, "dump_b", "waypoint_data 9|2: update position_x, position_y, position_z", null,
+                new RowEdit("waypoint_data", "9|2", WaypointRow(9, 2, -1, 0, 1), WaypointRow(9, 2, -2, 0, 2)))
         ];
         return SqlExportBatch.Build(changes, SourceDialects.SchemaFor)
             .Select(e => (object)new

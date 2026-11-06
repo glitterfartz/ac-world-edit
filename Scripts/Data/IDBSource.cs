@@ -42,6 +42,15 @@ public interface IDBSource
     /// <summary>The waypoint paths these creatures walk, with node counts and how many others use each path; creatures without a path are left out.</summary>
     Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>Every database user of some waypoint paths: the spawns that walk them (own or template addon) and the SmartAI rules that start them.</summary>
+    Task<IReadOnlyList<PathUsers>> ReadPathUsersAsync(IReadOnlyList<uint> pathIds, CancellationToken token);
+
+    /// <summary>One waypoint path as editable rows (nodes plus the TrinityCore header), the baseline of row-edit commands.</summary>
+    Task<RowSet> ReadWaypointPathRowsAsync(uint pathId, CancellationToken token);
+
+    /// <summary>The formation rows touching some spawns (led or joined), bounded.</summary>
+    Task<RowSet> ReadFormationsAsync(IReadOnlyList<ulong> guids, CancellationToken token);
+
     /// <summary>The named columns of one creature or GameObject template, as text; a column the database lacks, or a template it lacks, is left out.</summary>
     Task<IReadOnlyDictionary<string, string>> ReadTemplateColumnsAsync(SpawnKind kind, uint entry, IReadOnlyList<string> columns, CancellationToken token);
 

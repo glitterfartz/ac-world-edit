@@ -42,7 +42,7 @@ public partial class ViewerShell
 
     string AuthoringScript(string key)
     {
-        return SqlExport.Build(key, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, ContentDraftFiles.Sources.SchemaFor(key)).Apply;
+        return SqlExport.Build(key, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, ContentDraftFiles.Sources.SchemaFor(key)).Apply;
     }
 
     /// <summary>Place the template at the pose and keep the task so a step can wait for it.</summary>

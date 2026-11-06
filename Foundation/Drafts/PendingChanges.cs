@@ -9,17 +9,16 @@ namespace ACWorldEdit.Foundation;
 public enum PendingKind
 {
     Graveyard,
-    Row,
-    Waypoint
+    Row
 }
 
 /// <summary>
-/// One discardable unit of unsaved work: a graveyard's net edit, one content row's net edit (which
-/// includes a creature or GameObject spawn moved, placed or deleted) or one waypoint's net move. Id
+/// One discardable unit of unsaved work: a graveyard's net edit or one content row's net edit (which
+/// includes a creature or GameObject spawn moved, placed or deleted and waypoint path rows). Id
 /// fingerprints the generated apply statements (not the timestamp), so the same net change keeps
 /// its Id across sessions and a changed one gets a new Id.
 /// </summary>
-public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, GraveyardEdit? Graveyard, RowEdit? Row, WaypointEdit? Waypoint = null);
+public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, GraveyardEdit? Graveyard, RowEdit? Row);
 
 /// <summary>
 /// Lists the net draft changes as individual pending changes and remembers which were exported.
@@ -53,29 +52,23 @@ public sealed class PendingChanges
     }
 
     /// <summary>
-    /// Every net change not yet exported, in graveyard, row, waypoint order.
+    /// Every net change not yet exported, in graveyard then row order.
     /// Each change is fingerprinted with its source's schema (AzerothCore when none is given).
     /// </summary>
-    public List<PendingChange> Collect(IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, IEnumerable<WaypointEdit>? waypoints = null, Func<string, IWorldSchema>? schemaFor = null)
+    public List<PendingChange> Collect(IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, Func<string, IWorldSchema>? schemaFor = null)
     {
         IWorldSchema? Schema(string source) => schemaFor?.Invoke(source);
         var all = new List<PendingChange>();
         foreach (var edit in graveyards.OrderBy(e => e.Id))
         {
-            var scripts = SqlExport.Build(edit.Source, [edit], [], FixedStamp, null, Schema(edit.Source));
+            var scripts = SqlExport.Build(edit.Source, [edit], [], FixedStamp, Schema(edit.Source));
             all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Graveyard, edit.Source, string.Join("; ", scripts.Summary), edit, null));
         }
 
         foreach (var (source, edit) in rows)
         {
-            var scripts = SqlExport.Build(source, [], [edit], FixedStamp, null, Schema(source));
+            var scripts = SqlExport.Build(source, [], [edit], FixedStamp, Schema(source));
             all.Add(new(Fingerprint(source, scripts), PendingKind.Row, source, string.Join("; ", scripts.Summary), null, edit));
-        }
-
-        foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
-        {
-            var scripts = SqlExport.Build(edit.Source, [], [], FixedStamp, [edit], Schema(edit.Source));
-            all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Waypoint, edit.Source, string.Join("; ", scripts.Summary), null, null, edit));
         }
 
         return all.Where(c => !exported.Contains(c.Id)).ToList();

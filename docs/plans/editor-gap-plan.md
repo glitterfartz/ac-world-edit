@@ -20,7 +20,7 @@ Phases continue the numbering in [`open-work.md`](../status/open-work.md) (1–9
 | 11 Spawn authoring | mostly | Model ghost, cross-zone paste, dependency delete, new template |
 | 12 GameObject editor | mostly | SmartAI `source_type = 1` behavior and a dedicated edit/undo smoke |
 | 13 Conditions builder | not started | Strip, builder, tester, `ReadConditionsAsync` |
-| 14 Movement authoring | partial | Node insert/delete, new paths, links/orphans, formations |
+| 14 Movement authoring | mostly | Node insert/delete/renumber, new paths, path properties, links and formations; open: unused-paths list, convoys, cascade deletes |
 | 15 Loot editor | not started | Loot source, model, roller, rules, window |
 | 16 Population control | not started | Pool, spawn-group and linked-respawn editors |
 | 17 Events and phases | not started | Event timeline, phase authoring |
@@ -84,7 +84,7 @@ Implementation:
   - Migrate existing `creature-positions.json` and `gameobject-positions.json` entries into `interactions.json` on first open, the way `SettingsResolver.LegacyDatabaseMigration` moves old settings, and then retire the pose drafts.
   - The goal is one history, so move → delete → undo has a defined order. A delete's every-column guard then sees the moved pose instead of going STALE against the old one.
   - The move export keeps its float-tolerant guard (`ABS(col - v) < 0.0001`), so `SqlExport` needs float-tolerant guards for content-row updates and deletes too.
-  - `GraveyardDraft` and `WaypointDraft` stay as they are; waypoints move to row edits in Phase 14.
+  - `GraveyardDraft` stays as it is; waypoints moved to row edits in Phase 14.
 - **Nullable columns.** Add NULL to `TableSchema` / `Row` (`Foundation/Interaction/InteractionRows.cs`) and to `SqlExport` (`col IS NULL` guards, `NULL` literals), plus an "inherit" state in `FieldSpec`.
 - **`IdAllocator`** (Foundation). Next free ID per (table, key column) = max(database max, draft-staged inserts) + 1, with an optional **user ID range** per entity kind in Settings so custom content doesn't collide with future TDB imports. The database max comes from one new `IDBSource.MaxIdsAsync(tables)`. Inserts keep their existing `COUNT(*)=0` preflight. The existing `MaxMenuId` / `MaxTextId` / `MaxTrainerId` and the quest `max` still read their own maxima and are not moved onto it yet.
 - **Reference index.** `IDBSource.FindReferencesAsync(kind, id)` returns which tables point at an entity. Each `IWorldSchema` holds a per-dialect reference map (e.g. creature entry ← `creature.id`, `smart_scripts` target params, `quest_objectives` ObjectID, `creature_queststarter`, …). It feeds the "Used by" panel and delete-impact dialogs.
@@ -168,7 +168,7 @@ Implementation: a `ConditionCatalog` (Phase 10) plus a `ConditionStrip` control 
 
 ## Phase 14: Movement authoring (paths, formations)
 
-**Status:** partial. Existing node move/facing/delay (both dialects) and the path-orphan warning are in. Open: add/insert/delete/renumber, new paths, path-level properties, "Link to path…", the unused-paths list, formations, SmartAI path users and the preview animation.
+**Status:** mostly built. Node move/facing/delay, add/insert/delete/renumber, new paths, path-level properties, spawn and template link/unlink, SmartAI path users, formations and the preview animation are in. Open: the unused-paths list and formation cascade deletes.
 
 **Why:** Paths can be nudged but not built: no new path, no inserting nodes, no deleting nodes (open-work Phase 9 gap). Patrols and escorts are among the most common content tasks. Formations (3.1k rows) decide how groups move together and are invisible today.
 
@@ -179,12 +179,12 @@ UX:
 - A preview button animates a ghost along the path at the path's speed.
 - **Formations:** select a leader to see its members linked by lines. Dragging a member around the leader edits `dist`/`angle` (polar). Group AI flags appear as checkboxes, and patrol turn-around points can be picked from the path.
 
-Implementation: extend `WaypointDraft` or move waypoints onto `RowEdit` for node insert/delete/renumber (renumbering = delete + insert in one command). Add path creation through `IdAllocator` and the creature's `creature_addon.PathId` plus `MovementType=2` together. AC: `waypoint_data` / `creature_addon.path_id`. Follow SmartAI `WAYPOINT_START` users (open-work gap). Formations go in both catalogs (same schema).
+Implementation: waypoint and formation rows moved onto `RowEdit` in the shared content draft (`MovementEdits` builds the commands; renumbering is delete + insert in one command; the old `waypoints.json` draft imports once from the Waypoints tab). New paths take IDs from `IdAllocator` over `MaxIdAsync`, linked with the creature's `creature_addon.PathId` plus `MovementType=2` together (AC: `waypoint_data` / `creature_addon.path_id`; the template link edits `creature_template_addon`). SmartAI path users (TC action 53, AC 53/232/233) show in "Used by" and block path deletes. Formations are in both catalogs (same schema, 64-bit GUIDs on TrinityCore); the leader self-row convention, polar offsets, group AI bits and turn-around points mirror the loader.
 
 Path links and orphans (added after the spawn delete shipped):
 - **Orphan warning on delete (Phase 11, built).** Deleting a creature also deletes its `creature_addon` row, which is the only link to its path, so a path nothing else uses is left behind. The delete dialog says "walks waypoint path N (X nodes) that nothing else uses" and counts other users in `creature_addon` and `creature_template_addon`.
-- **Link to path… (Phase 14).** An action on a selected creature that points it at an existing path, picked from a list or by clicking the path in the viewport, and sets the path ID and movement type "path" in one command. It also covers re-attaching a path whose creature was deleted, and the template-level link in `creature_template_addon`.
-- **Unused paths list (Phase 14).** Lists the paths no creature, template or SmartAI `WAYPOINT_START` uses, so an orphan can be re-linked or deleted, and warns before deleting a path other creatures still use.
+- **Link to path… (built).** An action on a selected creature that points it at an existing path, typed or picked from the Waypoints tab ("Use selected"), and sets the path ID and movement type "path" in one command. It also covers re-attaching a path whose creature was deleted, and the template-level link in `creature_template_addon`.
+- **Unused paths list (open).** Lists the paths no creature, template or SmartAI `WAYPOINT_START` uses, so an orphan can be re-linked or deleted, and warns before deleting a path other creatures still use.
 
 ---
 

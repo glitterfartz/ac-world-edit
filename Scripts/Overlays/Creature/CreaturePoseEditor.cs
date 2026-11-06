@@ -29,6 +29,11 @@ internal interface ICreaturePoseHost
     IReadOnlyList<CreatureSpawn> WithDraft();
     void ReconcileSpawns(IReadOnlyList<CreatureSpawn> spawns);
     bool MoveGroup(string success, WorldPose before, WorldPose after);
+    /// <summary>
+    /// Polar-drag interception: when the overlay arms formation-offset dragging and this spawn
+    /// follows a streamed leader, the drop moves its follow offset instead of its pose.
+    /// </summary>
+    bool TryFormationOffset(ulong guid, WorldPose drop);
 }
 
 /// <summary>
@@ -109,6 +114,11 @@ internal sealed class CreaturePoseEditor(ICreaturePoseHost host)
         else if (edit.Yaw != (float)before.Heading)
         {
             after = before with { Heading = WorldCoordinates.NormalizeHeading(edit.Yaw) };
+        }
+
+        if (edit.Moved && host.TryFormationOffset(guid, after))
+        {
+            return;
         }
 
         Commit(marker.Spawn, after, success);

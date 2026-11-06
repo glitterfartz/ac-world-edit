@@ -27,7 +27,7 @@ public partial class ViewerShell
     {
         pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
         RememberSourceDialect();
-        var all = pendingStore.Collect(graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], waypoints.NetEdits(), SourceDialects.SchemaFor);
+        var all = pendingStore.Collect(graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], SourceDialects.SchemaFor);
         return all;
     }
 
@@ -54,7 +54,7 @@ public partial class ViewerShell
         sidebar.SetUnsaved(changes.Count);
         if (pendingWindow.Visible)
         {
-            int total = graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0) + waypoints.NetEdits().Count;
+            int total = graveyards.NetEdits().Count + (drafts.Draft?.NetEdits().Count ?? 0);
             exportedHidden = total - changes.Count;
             pendingWindow.Refresh(changes, exportedHidden);
         }
@@ -86,9 +86,6 @@ public partial class ViewerShell
         {
             case PendingKind.Graveyard:
                 graveyards.Revert(change.Graveyard!);
-                break;
-            case PendingKind.Waypoint:
-                waypoints.Revert(change.Waypoint!);
                 break;
             default:
                 drafts.Revert(change.Source, change.Row!);
@@ -126,7 +123,6 @@ public partial class ViewerShell
         Dialogs.Confirm(this, "Clear cache", "Clear all saved edits, undo history, the exported-changes record and model thumbnails? Unexported changes are lost.", () =>
         {
             graveyards.ClearDraft();
-            waypoints.ClearDraft();
             drafts.Clear();
             pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
             pendingStore.ClearExported();

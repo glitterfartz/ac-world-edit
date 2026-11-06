@@ -140,7 +140,7 @@ public class SpawnFieldsTests
         var (ok, message) = poses.Edit(null, "src", 5, "Set respawn", r => SpawnFields.Apply(field, r, "900").Row!);
         Assert.True(ok, message);
         Assert.Equal(900u, poses.RowOf("src", 5)!.U("spawntimesecs"));
-        string apply = SqlExport.Build("src", [], drafts.Draft.NetEdits().Select(e => e.Edit), null, null, TcSchema.Instance).Apply;
+        string apply = SqlExport.Build("src", [], drafts.Draft.NetEdits().Select(e => e.Edit), null, TcSchema.Instance).Apply;
         Assert.Contains("SET `spawntimesecs` = 900", apply);
 
         poses.Undo(null);
@@ -219,7 +219,7 @@ public class SpawnFieldsTests
         var edit = Assert.Single(drafts.Draft.NetEdits()).Edit;
         Assert.Equal(("creature_addon", null), (edit.Table, edit.Before));
         Assert.Equal(69u, poses.AddonOf("src", 5)!.U("emote"));
-        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build("src", [], [edit], null, null, TcSchema.Instance).Apply);
+        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build("src", [], [edit], null, TcSchema.Instance).Apply);
 
         // A second edit updates the staged row: still one insert.
         Assert.True(poses.EditAddon(null, "src", 5, "Set emote", blank, r => SpawnFields.Apply(field, r, "70").Row!).Ok);
@@ -239,7 +239,7 @@ public class SpawnFieldsTests
         var blank = SpawnEdits.NewAddon(TcSchema.Instance, SpawnKind.Creature, 5);
 
         Assert.True(poses.EditAddon(null, "src", 5, "Set stance", blank, r => SpawnFields.Apply(stance, r, "Sleeping").Row!).Ok);
-        string apply = SqlExport.Build("src", [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, TcSchema.Instance).Apply;
+        string apply = SqlExport.Build("src", [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, TcSchema.Instance).Apply;
         Assert.Contains("UPDATE `creature_addon` SET `StandState` = 3", apply);
         Assert.DoesNotContain("mount`", apply.Split('\n').Single(l => l.StartsWith("UPDATE `creature_addon`", StringComparison.Ordinal)).Split("WHERE")[0]);
     }

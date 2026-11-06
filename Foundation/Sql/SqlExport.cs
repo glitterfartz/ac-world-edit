@@ -25,12 +25,12 @@ public static class SqlExport
     const string Tolerance = "0.0001";
 
     /// <summary>
-    /// Build the scripts for one database source. Graveyards, content rows (which include spawn moves,
-    /// placements and deletes) and waypoints may each be empty. The schema is the source's dialect
-    /// (AzerothCore when omitted): its table catalog validates the rows and its
+    /// Build the scripts for one database source. Graveyards and content rows (which include spawn
+    /// moves, placements, deletes and waypoint paths) may each be empty. The schema is the source's
+    /// dialect (AzerothCore when omitted): its table catalog validates the rows and its
     /// <see cref="ISqlDialect"/> writes the other statements.
     /// </summary>
-    public static SqlScripts Build(string source, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IEnumerable<WaypointEdit>? waypoints = null, IWorldSchema? schema = null)
+    public static SqlScripts Build(string source, IEnumerable<GraveyardEdit> graveyards, IEnumerable<RowEdit> rows, DateTime? generated = null, IWorldSchema? schema = null)
     {
         schema ??= AcSchema.Instance;
         var steps = new List<SqlStep>();
@@ -42,11 +42,6 @@ public static class SqlExport
         foreach (var edit in rows)
         {
             steps.Add(Row(edit, schema.Tables));
-        }
-
-        foreach (var edit in (waypoints ?? []).OrderBy(e => e.Path).ThenBy(e => e.Point))
-        {
-            steps.Add(schema.Sql.Waypoint(edit));
         }
 
         var summary = steps.Select(s => s.Label).ToList();

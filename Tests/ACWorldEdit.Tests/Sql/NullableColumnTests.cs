@@ -19,9 +19,9 @@ public class NullableColumnTests
         return row.With("guid", guid).With("npcflag", null).With("unit_flags", null).With("StringId", null).With("PhaseId", null);
     }
 
-    static string Apply(RowEdit edit) => SqlExport.Build("src", [], [edit], Stamp, null, TcSchema.Instance).Apply;
+    static string Apply(RowEdit edit) => SqlExport.Build("src", [], [edit], Stamp, TcSchema.Instance).Apply;
 
-    static string Revert(RowEdit edit) => SqlExport.Build("src", [], [edit], Stamp, null, TcSchema.Instance).Revert;
+    static string Revert(RowEdit edit) => SqlExport.Build("src", [], [edit], Stamp, TcSchema.Instance).Revert;
 
     static RowEdit Update(Row before, Row after) => new(Spawn.Name, Spawn.KeyOf(before), before, after);
 

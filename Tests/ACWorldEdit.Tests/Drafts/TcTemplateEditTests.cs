@@ -27,7 +27,7 @@ public class TcTemplateEditTests
         ulong high = (1ul << 32) | 0x81;
         var before = Template(0x81);
         var edit = new RowEdit("creature_template", "54", before, before.With("npcflag", high));
-        var scripts = SqlExport.Build("tc", [], [edit], new DateTime(2026, 1, 1), null, TcSchema.Instance);
+        var scripts = SqlExport.Build("tc", [], [edit], new DateTime(2026, 1, 1), TcSchema.Instance);
         Assert.Contains($"UPDATE `creature_template` SET `npcflag` = {high} WHERE `entry` = 54 AND `npcflag` = 129;", scripts.Apply);
     }
 
@@ -38,7 +38,7 @@ public class TcTemplateEditTests
             ("CreatureDifficultyID", 5), ("TypeFlags", 0u), ("TypeFlags2", 0u), ("TypeFlags3", 0u), ("LootID", 0u), ("PickPocketLootID", 0u), ("SkinLootID", 0u), ("GoldMin", 0u), ("GoldMax", 0u),
             ("StaticFlags1", 0u), ("StaticFlags2", 0u), ("StaticFlags3", 0u), ("StaticFlags4", 0u), ("StaticFlags5", 0u), ("StaticFlags6", 0u), ("StaticFlags7", 0u), ("StaticFlags8", 0u));
         var edit = new RowEdit("creature_template_difficulty", TcTables.CreatureDifficulty.KeyOf(before), before, before.With("LootID", 123u));
-        var scripts = SqlExport.Build("tc", [], [edit], new DateTime(2026, 1, 1), null, TcSchema.Instance);
+        var scripts = SqlExport.Build("tc", [], [edit], new DateTime(2026, 1, 1), TcSchema.Instance);
         Assert.Contains("UPDATE `creature_template_difficulty` SET `LootID` = 123 WHERE `Entry` = 54 AND `DifficultyID` = 0 AND (`LootID` = 0 OR `LootID` IS NULL);", scripts.Apply);
     }
 

@@ -102,6 +102,8 @@ public sealed class StatusLog
             entries.RemoveAt(0);
         }
 
+        // Mirror to stdout so messages also show in the Godot console and log files.
+        GD.Print(text);
         Posted?.Invoke();
     }
 

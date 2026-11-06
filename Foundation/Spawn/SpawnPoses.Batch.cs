@@ -65,8 +65,8 @@ public sealed partial class SpawnPoses
         return Commit(sender, source, label, edits);
     }
 
-    /// <summary>Copy several spawns, each to its own pose under the matching new GUID, as one undoable command.</summary>
-    public (bool Ok, string Message) DuplicateMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<(ulong Guid, ulong NewGuid, WorldPose Pose)> copies, string label = "Duplicate")
+    /// <summary>Copy several spawns, each to its own pose under the matching new GUID, as one undoable command. Extra edits (formation remaps) join the same command.</summary>
+    public (bool Ok, string Message) DuplicateMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<(ulong Guid, ulong NewGuid, WorldPose Pose)> copies, string label = "Duplicate", IReadOnlyList<RowEdit>? extra = null)
     {
         if (drafts.Draft == null)
         {
@@ -85,6 +85,11 @@ public sealed partial class SpawnPoses
                 }
 
                 edits.AddRange(SpawnEdits.Duplicate(schema, kind, effective, row, newGuid, pose));
+            }
+
+            if (extra != null)
+            {
+                edits.AddRange(extra);
             }
         }
         catch (InvalidDataException error)

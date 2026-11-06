@@ -139,49 +139,4 @@ public sealed class TcSqlDialect : ISqlDialect
     /// <summary>The comment TDB gives a graveyard team row: "Graveyard - ID - zone - name - zone name - Team Alliance".</summary>
     static string TeamComment(uint id, string graveyard, GraveyardLink link) =>
         $"Graveyard - {id} - {link.GhostZone} - {graveyard} - {link.Comment} - Team {(link.Faction == GraveyardLink.Horde ? "Horde" : "Alliance")}";
-
-    /// <summary>
-    /// A node of waypoint_path_node, keyed by (PathId, NodeId). Only position, facing and delay are
-    /// node columns: move type and velocity belong to waypoint_path (shared by every user of the
-    /// path) and smooth transition and actions do not exist, so an edit that changes them is refused
-    /// instead of being dropped. As in AzerothCore only the columns that changed are set and guarded.
-    /// </summary>
-    public SqlStep Waypoint(WaypointEdit edit)
-    {
-        var (before, after) = edit.Resolve(edit.BeforeProps ?? default);
-        bool propsKnown = edit.BeforeProps != null && edit.AfterProps != null;
-        if (propsKnown && !before.Props.EditableOn(WorldDialect.TrinityCore, after.Props))
-        {
-            throw new InvalidDataException("Only position, facing and delay can be exported for a TrinityCore waypoint; move type and velocity belong to the whole path.");
-        }
-
-        var changes = new List<(string Label, Func<WaypointState, string> Guard, Func<WaypointState, string> Set)>();
-        if (before.Position != after.Position)
-        {
-            changes.Add((FormattableString.Invariant($"({before.Position.X:0.###}, {before.Position.Y:0.###}, {before.Position.Z:0.###}) -> ({after.Position.X:0.###}, {after.Position.Y:0.###}, {after.Position.Z:0.###})"),
-                s => $"{Near("PositionX", s.Position.X)} AND {Near("PositionY", s.Position.Y)} AND {Near("PositionZ", s.Position.Z)}",
-                s => $"`PositionX` = {Num(s.Position.X)}, `PositionY` = {Num(s.Position.Y)}, `PositionZ` = {Num(s.Position.Z)}"));
-        }
-
-        if (propsKnown && before.Props.Orientation != after.Props.Orientation)
-        {
-            changes.Add((FormattableString.Invariant($"facing {before.Props.Orientation} -> {after.Props.Orientation}"),
-                s => s.Props.Orientation is double o ? Near("Orientation", o) : "`Orientation` IS NULL",
-                s => $"`Orientation` = {(s.Props.Orientation is double o ? Num(o) : "NULL")}"));
-        }
-
-        if (propsKnown && before.Props.Delay != after.Props.Delay)
-        {
-            changes.Add(($"delay {before.Props.Delay} -> {after.Props.Delay}", s => $"`Delay` = {s.Props.Delay}", s => $"`Delay` = {s.Props.Delay}"));
-        }
-
-        string key = $"`PathId` = {edit.Path} AND `NodeId` = {edit.Point}";
-        string where(WaypointState s) => string.Join(" AND ", changes.Select(c => c.Guard(s)).Prepend(key));
-        string set(WaypointState s) => string.Join(", ", changes.Select(c => c.Set(s)));
-        string label = $"waypoint path {edit.Path} node {edit.Point}: {string.Join("; ", changes.Select(c => c.Label))}";
-        return new(label,
-            $"UPDATE `waypoint_path_node` SET {set(after)} WHERE {where(before)};",
-            $"UPDATE `waypoint_path_node` SET {set(before)} WHERE {where(after)};",
-            Check(label, "waypoint_path_node", where(before)), Check(label, "waypoint_path_node", where(after)));
-    }
 }

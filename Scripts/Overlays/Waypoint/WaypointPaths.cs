@@ -86,9 +86,10 @@ internal sealed class WaypointPaths(Node3D owner)
     /// <summary>
     /// (Re)create a path's nodes from its effective positions. <paramref name="stateOf"/> resolves the
     /// draft over the source row; the optional override substitutes a point's view position while it
-    /// is being dragged.
+    /// is being dragged. <paramref name="nodes"/> defaults to the region records; pass the display
+    /// nodes when row edits added or renumbered points the records do not have yet.
     /// </summary>
-    public void Rebuild(WaypointPath path, Func<WaypointNode, WaypointState> stateOf, bool emphasized, (uint Point, Vector3 View)? preview = null)
+    public void Rebuild(WaypointPath path, Func<WaypointNode, WaypointState> stateOf, bool emphasized, (uint Point, Vector3 View)? preview = null, WaypointNode[]? nodes = null)
     {
         if (!views.TryGetValue(path.Id, out var view))
         {
@@ -110,19 +111,20 @@ internal sealed class WaypointPaths(Node3D owner)
         view.Dots = null;
         view.Labels = null;
         view.Emphasized = emphasized;
-        var states = path.Nodes.Select(stateOf).ToArray();
-        view.Positions = path.Nodes.Select((n, i) => preview is { } p && p.Point == n.Point ? p.View : ViewSpace.ToView(states[i].Position.X, states[i].Position.Y, states[i].Position.Z)).ToArray();
-        int count = path.Nodes.Length;
+        var display = nodes ?? path.Nodes;
+        var states = display.Select(stateOf).ToArray();
+        view.Positions = display.Select((n, i) => preview is { } p && p.Point == n.Point ? p.View : ViewSpace.ToView(states[i].Position.X, states[i].Position.Y, states[i].Position.Z)).ToArray();
+        int count = display.Length;
         if (count == 0)
         {
             return;
         }
 
         BuildLine(path, view, emphasized, count);
-        BuildDots(path, view, states, emphasized, count);
+        BuildDots(path, view, states, display, emphasized, count);
         if (emphasized)
         {
-            BuildLabels(path, view, states, count);
+            BuildLabels(path, view, states, display, count);
         }
     }
 
@@ -148,7 +150,7 @@ internal sealed class WaypointPaths(Node3D owner)
         }
     }
 
-    void BuildDots(WaypointPath path, View view, WaypointState[] states, bool emphasized, int count)
+    void BuildDots(WaypointPath path, View view, WaypointState[] states, WaypointNode[] display, bool emphasized, int count)
     {
         float alpha = emphasized ? 1 : 0.55f;
         Color Gradient(int i) => path.Active ? StartColor.Lerp(EndColor, count > 1 ? i / (float)(count - 1) : 0) : IdleColor;
@@ -176,13 +178,13 @@ internal sealed class WaypointPaths(Node3D owner)
         view.Root.AddChild(view.Dots);
     }
 
-    static void BuildLabels(WaypointPath path, View view, WaypointState[] states, int count)
+    static void BuildLabels(WaypointPath path, View view, WaypointState[] states, WaypointNode[] nodes, int count)
     {
         view.Labels = new Node3D();
         view.Root.AddChild(view.Labels);
         for (int i = 0; i < count; i++)
         {
-            var node = path.Nodes[i];
+            var node = nodes[i];
             view.Labels.AddChild(new Label3D
             {
                 Text = states[i].Props.Delay > 0 ? $"{node.Point} · wait {states[i].Props.Delay / 1000.0:0.#}s" : node.Point.ToString(System.Globalization.CultureInfo.InvariantCulture),

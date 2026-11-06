@@ -184,7 +184,13 @@ public partial class CreatureOverlay
             }
 
             string label = originals.Length == 1 ? "Duplicate" : $"Duplicate {originals.Length} creatures";
-            var (ok, message) = poses.DuplicateMany(this, database.Schema, key, copies, label);
+            var formationExtra = await FormationRemapAsync(database, key, originals, fresh);
+            if (formationExtra == null)
+            {
+                return null;
+            }
+
+            var (ok, message) = poses.DuplicateMany(this, database.Schema, key, copies, label, formationExtra);
             Say(ok ? (originals.Length == 1 ? $"Duplicated {markers[originals[0]].Spawn.Name}." : $"Duplicated {originals.Length} creatures.") : message);
             if (!ok)
             {

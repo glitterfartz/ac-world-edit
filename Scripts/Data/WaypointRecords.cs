@@ -19,8 +19,10 @@ public sealed record WaypointUser(ulong Guid, uint Entry, string Name, bool Walk
 /// One path with the spawns in the region that use it. A path id may be shared by several spawns.
 /// TrinityCore keeps move type and velocity on the path, so its nodes repeat them and only the
 /// position, facing and delay of a node are editable (<see cref="WaypointProps.EditableOn"/>).
+/// Flags and Comment are the TrinityCore path header's own columns (always 0 and empty on
+/// AzerothCore); most paths leave both at their defaults.
 /// </summary>
-public sealed record WaypointPath(uint Id, ushort Map, WaypointNode[] Nodes, WaypointUser[] Users, WorldDialect Dialect = WorldDialect.AzerothCore)
+public sealed record WaypointPath(uint Id, ushort Map, WaypointNode[] Nodes, WaypointUser[] Users, WorldDialect Dialect = WorldDialect.AzerothCore, int Flags = 0, string Comment = "")
 {
     /// <summary>
     /// True when at least one user actually follows the path (MovementType 2).

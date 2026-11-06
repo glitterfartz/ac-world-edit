@@ -21,7 +21,6 @@ public static class SqlExportBatch
             g.Where(c => c.Graveyard != null).Select(c => c.Graveyard!),
             g.Where(c => c.Row != null).Select(c => c.Row!),
             null,
-            g.Where(c => c.Waypoint != null).Select(c => c.Waypoint!),
             schemaFor(g.Key))))
         .ToList();
 

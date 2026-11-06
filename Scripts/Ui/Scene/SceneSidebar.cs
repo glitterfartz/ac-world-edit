@@ -17,6 +17,7 @@ public partial class SceneSidebar : PanelContainer
     readonly WorldObjectScene scenery;
     readonly NavigationOverlay? navigation;
     TabContainer tabs = null!;
+    readonly int waypointTab;
     OptionButton budget = null!;
     VisibilityPreviewPanel visibility = null!;
     CheckBox names = null!;
@@ -91,6 +92,7 @@ public partial class SceneSidebar : PanelContainer
         tabs.AddChild(graveyardPage);
         tabs.AddChild(triggerPage);
         tabs.AddChild(waypointPage);
+        waypointTab = tabs.GetTabCount() - 1;
         if (navigation != null) tabs.AddChild(navigation.BuildPanel());
         // One selection at a time across kinds, so menus and the gizmo act on a single target.
         Action[] deselect = [creatures.Deselect, gameObjects.Deselect, graveyards.Deselect, areaTriggers.Deselect, waypoints.Deselect];
@@ -105,6 +107,7 @@ public partial class SceneSidebar : PanelContainer
             }
 
             tabs.CurrentTab = kind + 1;
+            FitWidth();
         }
 
         root.AddChild(unsaved);
@@ -113,6 +116,24 @@ public partial class SceneSidebar : PanelContainer
         graveyards.SelectionChanged += () => Exclusive(2);
         areaTriggers.SelectionChanged += () => Exclusive(3);
         waypoints.SelectionChanged += () => Exclusive(4);
+        tabs.TabChanged += _ => FitWidth();
+        CallDeferred(nameof(FitWidth));
+    }
+
+    /// <summary>
+    /// Widen the panel to fit the current tab's content. The right edge stays pinned to the
+    /// window; extra width grows the panel leftwards so wide inspector cards are never cut off
+    /// on the right. Narrow tabs shrink it back to the default width.
+    /// </summary>
+    void FitWidth()
+    {
+        if (!IsInsideTree() || tabs.GetCurrentTabControl() is not ScrollContainer scroll || scroll.GetChildCount() == 0 || scroll.GetChild(0) is not Control page)
+        {
+            return;
+        }
+
+        float want = Mathf.Max(424, page.GetCombinedMinimumSize().X + 32);
+        OffsetLeft = Mathf.Max(OffsetRight - want, 20 - GetViewportRect().Size.X);
     }
 
     Button unsaved = null!;
@@ -129,6 +150,12 @@ public partial class SceneSidebar : PanelContainer
 
     public void ShowNavigationTab() => tabs.CurrentTab = tabs.GetTabCount() - 1;
     public void ShowSceneTab() => tabs.CurrentTab = 0;
+    /// <summary>Switch to the Waypoints tab (e.g. after creating a path on a creature).</summary>
+    public void ShowWaypointsTab()
+    {
+        tabs.CurrentTab = waypointTab;
+        FitWidth();
+    }
     Label databaseNote = null!;
 
     /// <summary>

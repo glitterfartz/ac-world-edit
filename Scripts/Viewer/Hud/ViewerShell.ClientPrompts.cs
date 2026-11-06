@@ -75,7 +75,6 @@ public partial class ViewerShell
         }
 
         graveyards.ReopenDraft();
-        waypoints.ReopenDraft();
         pendingStore = null!;
         RefreshPending();
     }

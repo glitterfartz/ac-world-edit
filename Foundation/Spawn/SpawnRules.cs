@@ -221,4 +221,111 @@ public static class SpawnRules
     }
 
     static InteractionIssue Error(string message) => new(true, message);
+
+    /// <summary>
+    /// The checks of one command that touches waypoint or formation rows: node coordinates, the
+    /// TrinityCore path header and formation offsets. Only errors a command introduces refuse it, so
+    /// pre-existing database rows never block an unrelated edit.
+    /// </summary>
+    public static IEnumerable<InteractionIssue> CheckMovement(IWorldSchema schema, RowSet rows)
+    {
+        foreach (var issue in CheckWaypointNodes(schema.Dialect, rows, MovementEdits.NodeTable(schema)))
+        {
+            yield return issue;
+        }
+
+        if (MovementEdits.HeaderTable(schema) is { } header)
+        {
+            foreach (var issue in CheckWaypointHeaders(rows, header))
+            {
+                yield return issue;
+            }
+        }
+
+        foreach (var issue in CheckFormations(rows, MovementEdits.FormationTable(schema)))
+        {
+            yield return issue;
+        }
+    }
+
+    /// <summary>Mirror what the servers load: every node needs finite coordinates and a finite facing.</summary>
+    public static IEnumerable<InteractionIssue> CheckWaypointNodes(WorldDialect dialect, RowSet rows, TableSchema nodes)
+    {
+        string point = dialect == WorldDialect.TrinityCore ? "NodeId" : "point";
+        string id = dialect == WorldDialect.TrinityCore ? "PathId" : "id";
+        (string X, string Y, string Z, string Facing) = dialect == WorldDialect.TrinityCore
+            ? ("PositionX", "PositionY", "PositionZ", "Orientation")
+            : ("position_x", "position_y", "position_z", "orientation");
+        foreach (var row in rows.All(nodes))
+        {
+            string who = $"Waypoint path {row[id]} point {row[point]}";
+            if (!float.IsFinite(row.F(X)) || !float.IsFinite(row.F(Y)) || !float.IsFinite(row.F(Z)))
+            {
+                yield return Error($"{who}: coordinates must be finite numbers.");
+            }
+
+            if (!row.IsNull(Facing) && !float.IsFinite(row.F(Facing)))
+            {
+                yield return Error($"{who}: facing must be a number.");
+            }
+        }
+    }
+
+    /// <summary>The TrinityCore path header both servers' move types share (0 walk, 1 run, 2 land, 3 take off).</summary>
+    public static IEnumerable<InteractionIssue> CheckWaypointHeaders(RowSet rows, TableSchema header)
+    {
+        foreach (var row in rows.All(header))
+        {
+            string who = $"Waypoint path {row["PathId"]}";
+            if (row.U("MoveType") > WaypointProps.MaxMoveType)
+            {
+                yield return Error($"{who}: move type must be 0 (walk), 1 (run), 2 (land) or 3 (take off).");
+            }
+
+            if (!row.IsNull("Velocity") && (!float.IsFinite(row.F("Velocity")) || row.F("Velocity") < 0))
+            {
+                yield return Error($"{who}: velocity must be zero or more.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mirror the formation loader: guids must name creatures (zero never does) and turn-around
+    /// points fit 16 bits the way the loader reads them. A negative distance or an angle outside
+    /// 0–360 still loads, so those are warnings, not errors.
+    /// </summary>
+    public static IEnumerable<InteractionIssue> CheckFormations(RowSet rows, TableSchema formations)
+    {
+        foreach (var row in rows.All(formations))
+        {
+            string who = $"Formation member {row["memberGUID"]}";
+            if (row["leaderGUID"] == "0" || row["memberGUID"] == "0")
+            {
+                yield return Error($"{who}: leader and member must be creature spawns.");
+            }
+
+            if (!float.IsFinite(row.F("dist")))
+            {
+                yield return Error($"{who}: distance must be a number.");
+            }
+            else if (row.F("dist") < 0)
+            {
+                yield return new(false, $"{who}: a negative distance still loads, but the follower walks through its leader.");
+            }
+
+            if (!float.IsFinite(row.F("angle")))
+            {
+                yield return Error($"{who}: angle must be a number.");
+            }
+            else if (row.F("angle") < 0 || row.F("angle") > 360)
+            {
+                yield return new(false, $"{who}: angle is in degrees, 0 to 360; other values still load.");
+            }
+
+            if (row.U("point_1") > ushort.MaxValue || row.U("point_2") > ushort.MaxValue)
+            {
+                yield return Error($"{who}: turn-around points must fit a 16-bit number.");
+            }
+        }
+    }
 }

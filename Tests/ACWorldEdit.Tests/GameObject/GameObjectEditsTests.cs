@@ -63,7 +63,7 @@ public class GameObjectEditsTests
         var dialect = WorldDialect.AzerothCore;
         var row = Template(dialect, 0).With("Data1", 43);
         var edit = GameObjectEdits.ChangeType(dialect, row, 3);
-        var scripts = SqlExport.Build("src", [], [edit], DateTime.UnixEpoch, null, AcSchema.Instance);
+        var scripts = SqlExport.Build("src", [], [edit], DateTime.UnixEpoch, AcSchema.Instance);
         Assert.Contains("UPDATE `gameobject_template`", scripts.Apply);
         Assert.Contains("`Data1`", scripts.Apply);
         Assert.DoesNotContain("VerifiedBuild", scripts.Apply);

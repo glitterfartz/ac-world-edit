@@ -108,7 +108,7 @@ public class TemplateAddonTests
         var own = poses.AddonOf(Source, 5)!;
         Assert.Equal(template["mount"], own["mount"]);
         Assert.Equal(template["auras"], own["auras"]);
-        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, schema).Apply);
+        Assert.Contains("INSERT INTO `creature_addon`", SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, schema).Apply);
 
         // Overriding again changes nothing.
         Assert.True(poses.OverrideAddon(null, schema, Source, 5, template).Ok);
@@ -134,7 +134,7 @@ public class TemplateAddonTests
         poses.Load(Source, rows);
 
         Assert.True(poses.RemoveAddon(null, Source, 5).Ok);
-        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, schema).Apply;
+        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, schema).Apply;
         Assert.Contains("DELETE FROM `creature_addon` WHERE `guid` = 5", apply);
         Assert.True(poses.RemoveAddon(null, Source, 777).Ok);
     }
@@ -158,7 +158,7 @@ public class TemplateAddonTests
         Assert.True(ok, message);
         var edit = Assert.Single(drafts.Draft!.NetEdits()).Edit;
         Assert.Equal("creature_template_addon", edit.Table);
-        Assert.Contains("INSERT INTO `creature_template_addon`", SqlExport.Build(Source, [], [edit], null, null, schema).Apply);
+        Assert.Contains("INSERT INTO `creature_template_addon`", SqlExport.Build(Source, [], [edit], null, schema).Apply);
 
         // A second edit updates the staged row; undo twice leaves no row.
         Assert.True(addons.Edit(null, Source, 328, "Set emote", blank, r => SpawnFields.Apply(emote, r, "70").Row!).Ok);
@@ -179,7 +179,7 @@ public class TemplateAddonTests
         var fields = SpawnFields.AddonFor(WorldDialect.TrinityCore, SpawnKind.Creature).ToDictionary(f => f.Column);
 
         Assert.True(addons.Edit(null, Source, 328, "Set stance", blank, r => SpawnFields.Apply(fields["StandState"], r, "Sleeping").Row!).Ok);
-        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, null, schema).Apply;
+        string apply = SqlExport.Build(Source, [], drafts.Draft!.NetEdits().Select(e => e.Edit), null, schema).Apply;
         Assert.Contains("UPDATE `creature_template_addon` SET `StandState` = 3", apply);
 
         Assert.Contains("stance 12", addons.Edit(null, Source, 328, "Set stance", blank, r => r.With("StandState", 12u)).Message);

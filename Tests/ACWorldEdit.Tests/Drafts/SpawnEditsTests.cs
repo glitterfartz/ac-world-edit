@@ -70,7 +70,7 @@ public class SpawnEditsTests
     {
         var before = SpawnEdits.NewCreature(Tc, 5, 1, Here, 0, 0);
         var edit = SpawnEdits.Move(Tc, SpawnKind.Creature, before, Here with { X = -9450 });
-        string apply = SqlExport.Build("src", [], [edit], Stamp, null, Tc).Apply;
+        string apply = SqlExport.Build("src", [], [edit], Stamp, Tc).Apply;
         Assert.Contains("UPDATE `creature` SET `position_x` = -9450 WHERE `guid` = 5 AND ABS(`position_x` - (-9449.5)) < 0.0001;", apply);
         Assert.Throws<InvalidDataException>(() => SpawnEdits.Move(Tc, SpawnKind.Creature, before, Here with { Map = 1 }));
     }
@@ -130,7 +130,7 @@ public class SpawnEditsTests
         var net = Assert.Single(draft.NetEdits());
         Assert.Null(net.Edit.After);
         Assert.Equal(original, net.Edit.Before);
-        string apply = SqlExport.Build("src", [], [net.Edit], Stamp, null, Tc).Apply;
+        string apply = SqlExport.Build("src", [], [net.Edit], Stamp, Tc).Apply;
         Assert.Contains("ABS(`position_x` - (-9449.5)) < 0.0001", apply);
         Assert.DoesNotContain("-9400", apply);
 

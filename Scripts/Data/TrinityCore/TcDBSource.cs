@@ -51,6 +51,9 @@ public sealed class TcDBSource : IDBSource
     public Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbGameObjectLooks.ReadAsync(database, entries, token);
     public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnImpact.CountAsync(database, WorldDialect.TrinityCore, kind, guids, token);
     public Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnPaths.ReadAsync(database, WorldDialect.TrinityCore, guids, token);
+    public Task<IReadOnlyList<PathUsers>> ReadPathUsersAsync(IReadOnlyList<uint> pathIds, CancellationToken token) => DbPathUsers.ReadAsync(database, WorldDialect.TrinityCore, pathIds, token);
+    public Task<RowSet> ReadWaypointPathRowsAsync(uint pathId, CancellationToken token) => DbWaypointRows.ReadPathAsync(database, TcTables.Instance, WorldDialect.TrinityCore, pathId, token);
+    public Task<RowSet> ReadFormationsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => DbFormations.ReadAsync(database, TcTables.Instance, guids, token);
     public Task<IReadOnlyDictionary<string, string>> ReadTemplateColumnsAsync(SpawnKind kind, uint entry, IReadOnlyList<string> columns, CancellationToken token) => DbTemplateColumns.ReadAsync(database, kind, entry, columns, token);
     public Task<GameObjectSnapshot> ReadGameObjectTemplateAsync(uint entry, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, CancellationToken token) => DbGameObjectTemplate.ReadAsync(database, TcTables.Instance, entry, draftKeys, effective, token);
     public Task<Row?> ReadTemplateAddonAsync(uint entry, CancellationToken token) => DbTemplateAddon.ReadAsync(database, TcTables.Instance, entry, token);

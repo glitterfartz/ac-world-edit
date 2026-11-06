@@ -82,6 +82,13 @@ public sealed class ViewerInput
 
         if (input is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
         {
+            if (host.Waypoints.AddingPoints)
+            {
+                host.Waypoints.AddingPoints = false;
+                host.Report("Stopped adding points.");
+                return;
+            }
+
             Capture = false;
             Input.MouseMode = Input.MouseModeEnum.Visible;
         }
@@ -133,6 +140,13 @@ public sealed class ViewerInput
     {
         if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !Capture)
         {
+            // Waypoint add mode consumes ground clicks (Alt inserts after the nearest segment);
+            // clicks on existing points still select them.
+            if (host.Waypoints.AddPointAt(host.Camera, mouse.Position, mouse.AltPressed))
+            {
+                return;
+            }
+
             if (!host.ActiveEditor.BeginDrag(host.Camera, mouse.Position))
             {
                 PickAt(mouse.Position);

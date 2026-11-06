@@ -93,7 +93,7 @@ public class SourceCatalogTests
     {
         var before = Row.Of(("guid", 5_000_000_000ul), ("money", -5_000_000_000L));
         var edit = new RowEdit("wide", "5000000000", before, before.With("money", 7_000_000_000L));
-        var scripts = SqlExport.Build("src", [], [edit], new DateTime(2026, 1, 1), null, new WideSchema());
+        var scripts = SqlExport.Build("src", [], [edit], new DateTime(2026, 1, 1), new WideSchema());
         Assert.Contains("UPDATE `wide` SET `money` = 7000000000 WHERE `guid` = 5000000000 AND `money` = -5000000000;", scripts.Apply);
     }
 }

@@ -123,6 +123,7 @@ public partial class ViewerShell
 
         creatures.Attach(drafts);
         gameObjects.Attach(drafts);
+        waypoints.Attach(drafts);
         creatureProps = new CreaturePropertiesWindow
         {
             Connection = () => DatabaseConnection(),

@@ -95,7 +95,7 @@ public partial class ViewerShell
                     GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/waypoint-preview.png"));
                 }
 
-                if (!waypoints.SmokeEditing())
+                if (!waypoints.SmokeEditing(camera))
                 {
                     GetTree().Quit(1);
                     return;

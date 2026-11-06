@@ -22,9 +22,10 @@ public readonly record struct WaypointProps(double? Orientation, double Velocity
     public const int MaxMoveType = 3;
 
     /// <summary>
-    /// True when this differs from <paramref name="other"/> only in properties the dialect can store.
+    /// True when this differs from <paramref name="other"/> only in properties a dialect stores.
     /// TrinityCore's waypoint_path_node holds just facing and delay; the rest belongs to the path or
-    /// does not exist.
+    /// does not exist. Row-edit commands enforce the same rule by column, so this stays for the
+    /// display model only.
     /// </summary>
     public bool EditableOn(WorldDialect dialect, WaypointProps other) =>
         dialect != WorldDialect.TrinityCore || this with { Orientation = other.Orientation, Delay = other.Delay } == other;
@@ -59,129 +60,9 @@ public readonly record struct WaypointProps(double? Orientation, double Velocity
 }
 
 /// <summary>
-/// Everything an edit can change about one waypoint.
+/// Everything an edit can change about one waypoint: the display model of a node row.
 /// </summary>
 public readonly record struct WaypointState(WaypointPosition Position, WaypointProps Props)
 {
     public WaypointState ToColumn() => new(Position.ToColumn(), Props.ToColumn());
-}
-
-/// <summary>
-/// One local history command: point Point of path Path changed from Before to After. The (id, point)
-/// key never changes, so exports are plain guarded UPDATEs. Draft files written before properties
-/// were editable carry no props: both sides then mean "properties as in the source", which is why
-/// the props are nullable and the JSON names stay as they were.
-/// </summary>
-public sealed record WaypointEdit(string Source, uint Path, uint Point, WaypointPosition Before, WaypointPosition After, WaypointProps? BeforeProps = null, WaypointProps? AfterProps = null)
-{
-    /// <summary>
-    /// Both full states, filling props from a source baseline when this edit has none.
-    /// </summary>
-    public (WaypointState Before, WaypointState After) Resolve(WaypointProps source) =>
-        (new(Before, BeforeProps ?? source), new(After, AfterProps ?? source));
-
-    /// <summary>
-    /// True when the edit changes anything, comparing props only where both sides carry them.
-    /// </summary>
-    public bool Changes => Before != After || (BeforeProps is { } b && AfterProps is { } a && b != a);
-}
-
-/// <summary>
-/// Local waypoint_data draft, independent of scene nodes and the database, persisted by
-/// DraftHistory. Follows the creature draft rules: the earliest applied edit's Before must still
-/// equal the source row, or the draft is reported as a conflict and not applied.
-/// </summary>
-public sealed class WaypointDraft : IDisposable
-{
-    readonly DraftHistory<WaypointEdit> history;
-    public bool CanUndo => history.CanUndo;
-    public bool CanRedo => history.CanRedo;
-
-    public WaypointDraft(string path) => history = new(path, "waypoint", Check);
-
-    static WaypointEdit Check(WaypointEdit edit)
-    {
-        if (!edit.Before.IsFinite || !edit.After.IsFinite)
-        {
-            throw new InvalidDataException("Waypoint coordinates must be finite.");
-        }
-
-        edit.BeforeProps?.Validate();
-        edit.AfterProps?.Validate();
-        return edit with { Before = edit.Before.ToColumn(), After = edit.After.ToColumn(), BeforeProps = edit.BeforeProps?.ToColumn(), AfterProps = edit.AfterProps?.ToColumn() };
-    }
-
-    IEnumerable<WaypointEdit> Applied(string source, uint path, uint point) => history.State.AppliedEntries().Where(e => e.Source == source && e.Path == path && e.Point == point);
-
-    /// <summary>
-    /// Last applied state when its first baseline still equals the source; otherwise the source.
-    /// </summary>
-    public WaypointState Effective(string source, uint path, uint point, WaypointState original)
-    {
-        original = original.ToColumn();
-        var edits = Applied(source, path, point).ToArray();
-        return edits.Length > 0 && edits[0].Resolve(original.Props).Before == original ? edits[^1].Resolve(original.Props).After : original;
-    }
-
-    public bool Conflict(string source, uint path, uint point, WaypointState original)
-    {
-        original = original.ToColumn();
-        var first = Applied(source, path, point).FirstOrDefault();
-        return first != null && first.Resolve(original.Props).Before != original;
-    }
-
-    /// <summary>
-    /// Validate and save one edit. A stale baseline is refused; a no-op adds no history.
-    /// </summary>
-    public void Edit(string source, uint path, uint point, WaypointState original, WaypointState after)
-    {
-        if (!after.Position.IsFinite)
-        {
-            throw new InvalidDataException("Waypoint coordinates must be finite.");
-        }
-
-        after.Props.Validate();
-        original = original.ToColumn();
-        after = after.ToColumn();
-        if (Conflict(source, path, point, original))
-        {
-            throw new InvalidDataException("Source waypoint changed; draft requires review.");
-        }
-
-        var before = Effective(source, path, point, original);
-        if (after != before)
-        {
-            history.Append(new WaypointEdit(source, path, point, before.Position, after.Position, before.Props, after.Props));
-        }
-    }
-
-    /// <summary>
-    /// Net change per (source, path, point) over the applied history, omitting edits that return to
-    /// the baseline. When only some of the history carries props, the baseline props come from the
-    /// first edit that has them (legacy edits never changed props, so that is the source).
-    /// </summary>
-    public IReadOnlyList<WaypointEdit> NetEdits() => history.State.AppliedEntries()
-        .GroupBy(e => (e.Source, e.Path, e.Point))
-        .Select(g =>
-        {
-            var before = g.Select(e => e.BeforeProps).FirstOrDefault(p => p != null);
-            var after = g.Last().AfterProps;
-            return new WaypointEdit(g.Key.Source, g.Key.Path, g.Key.Point, g.First().Before, g.Last().After, after == null ? null : before, after);
-        })
-        .Where(e => e.Changes)
-        .OrderBy(e => e.Path).ThenBy(e => e.Point)
-        .ToList();
-
-    public void Clear() => history.Clear();
-
-    /// <summary>
-    /// Discard one net change as a normal undoable command that returns the point to its baseline.
-    /// </summary>
-    public void Revert(WaypointEdit net) => history.Append(new WaypointEdit(net.Source, net.Path, net.Point, net.After, net.Before, net.AfterProps, net.BeforeProps));
-
-    public void Undo() => history.Undo();
-
-    public void Redo() => history.Redo();
-
-    public void Dispose() => history.Dispose();
 }
