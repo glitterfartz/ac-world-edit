@@ -53,6 +53,29 @@ public sealed class TemplateAddons
     public Row? RowOf(string source, uint entry) => drafts.Draft?.Effective(source, Snapshot(source)).Get(Table(source), Key(entry));
 
     /// <summary>
+    /// Many templates' addon rows with the draft applied, sharing one effective view. The per-frame
+    /// appearance pass uses this; one lookup per marker would clone the whole snapshot for every
+    /// creature on screen.
+    /// </summary>
+    public IReadOnlyDictionary<uint, Row?> RowsOf(string source, IEnumerable<uint> entries)
+    {
+        if (!Available)
+        {
+            return new Dictionary<uint, Row?>();
+        }
+
+        var table = Table(source);
+        var effective = drafts.Draft!.Effective(source, Snapshot(source));
+        var map = new Dictionary<uint, Row?>();
+        foreach (uint entry in entries.Distinct())
+        {
+            map[entry] = effective.Get(table, Key(entry));
+        }
+
+        return map;
+    }
+
+    /// <summary>
     /// Change the template's addon row as one undoable command. A template without a row starts from
     /// <paramref name="blank"/> and gets the row inserted; a change that leaves the row as it was records nothing.
     /// </summary>

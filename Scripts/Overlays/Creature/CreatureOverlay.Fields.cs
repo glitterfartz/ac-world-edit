@@ -173,7 +173,7 @@ public partial class CreatureOverlay
             templateValues[entry] = new Dictionary<string, string>();
         }
 
-        if (IsInsideTree())
+        if (IsInsideTree() && SelectedEntry == entry)
         {
             RefreshSpawnFields();
         }
@@ -202,11 +202,15 @@ public partial class CreatureOverlay
             return;
         }
 
-        if (IsInsideTree())
+        appearanceDirty = true;
+        if (IsInsideTree() && SelectedEntry == entry)
         {
             RefreshSpawnFields();
         }
     }
+
+    /// <summary>The selected marker's template, if any, so background loads only redraw the inspector they belong to.</summary>
+    uint? SelectedEntry => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker.Spawn.TemplateId : null;
 
     /// <summary>Apply a typed value as one undoable command; a refused value says why and the field shows the row again.</summary>
     void EditSpawnField(SpawnField field, string text)

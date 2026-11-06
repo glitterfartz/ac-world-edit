@@ -222,6 +222,29 @@ public sealed partial class SpawnPoses
     public Row? AddonOf(string source, ulong guid) => drafts.Draft?.Effective(source, Snapshot(source)).Get(AddonTable(source), Key(guid));
 
     /// <summary>
+    /// Many spawns' addon rows with the draft applied, sharing one effective view instead of one
+    /// per spawn. The per-frame appearance pass uses this; one lookup per marker would clone the
+    /// whole snapshot for every creature on screen.
+    /// </summary>
+    public IReadOnlyDictionary<ulong, Row?> AddonsOf(string source, IEnumerable<ulong> guids)
+    {
+        if (drafts.Draft == null)
+        {
+            return new Dictionary<ulong, Row?>();
+        }
+
+        var table = AddonTable(source);
+        var effective = drafts.Draft.Effective(source, Snapshot(source));
+        var map = new Dictionary<ulong, Row?>();
+        foreach (ulong guid in guids.Distinct())
+        {
+            map[guid] = effective.Get(table, Key(guid));
+        }
+
+        return map;
+    }
+
+    /// <summary>
     /// Change some columns of a spawn row as one undoable command named <paramref name="label"/>. A
     /// change that leaves the row as it was records nothing.
     /// </summary>

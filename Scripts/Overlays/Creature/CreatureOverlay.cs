@@ -123,6 +123,7 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         {
             var rows = await DBSource.Open(config).ReadSpawnRowsAsync(SpawnKind.Creature, [guid], default);
             poses.Load(key, rows);
+            appearanceDirty = true;
             RefreshSpawnFields();
         }
         catch (Exception)
@@ -269,6 +270,8 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         }
 
         records = spawns;
+        appearanceDirty = true;
+        templatePrefetchDirty = true;
         pendingMarkers = spawns.Where(s => !markers.ContainsKey(s.Guid)).ToList();
         queryStatus = pendingMarkers.Count > 0 ? $"Preparing markers {records.Count - pendingMarkers.Count}/{records.Count}…" : CreatureStatusText();
     }

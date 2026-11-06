@@ -66,6 +66,34 @@ public class TemplateAddonTests
 
     [Theory]
     [MemberData(nameof(Dialects))]
+    public void BatchAddonReadsMatchOneByOneReads(WorldDialect dialect)
+    {
+        var schema = WorldSchemas.For(dialect);
+        using var drafts = Open(dialect);
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature, _ => dialect);
+        var rows = new RowSet();
+        rows.Set(SpawnEdits.SpawnTable(schema, SpawnKind.Creature), SpawnEdits.NewCreature(schema, 5, 328, Here, 0, 0));
+        rows.Set(SpawnEdits.SpawnTable(schema, SpawnKind.Creature), SpawnEdits.NewCreature(schema, 6, 329, Here, 0, 0));
+        rows.Set(SpawnEdits.AddonTable(schema, SpawnKind.Creature), SpawnEdits.AddonFromTemplate(schema, FilledTemplate(dialect), 5));
+        poses.Load(Source, rows);
+
+        // The per-frame appearance pass shares one effective view per table; results must equal the single lookups.
+        var batch = poses.AddonsOf(Source, [5, 6, 777]);
+        Assert.Equal(poses.AddonOf(Source, 5)?.U("mount"), batch[5]?.U("mount"));
+        Assert.Equal(poses.AddonOf(Source, 6)?.U("mount"), batch[6]?.U("mount"));
+        Assert.Null(batch[777]);
+
+        var addons = new TemplateAddons(drafts, _ => dialect);
+        addons.Load(Source, 328, FilledTemplate(dialect));
+        addons.Load(Source, 329, null);
+        var templates = addons.RowsOf(Source, [328, 329, 999]);
+        Assert.Equal(addons.RowOf(Source, 328)?.U("mount"), templates[328]?.U("mount"));
+        Assert.Equal(addons.RowOf(Source, 329)?.U("mount"), templates[329]?.U("mount"));
+        Assert.Null(templates[999]);
+    }
+
+    [Theory]
+    [MemberData(nameof(Dialects))]
     public void OverridingThenRemovingGoesBackToTheTemplateAndUndoRestoresEach(WorldDialect dialect)
     {
         var schema = WorldSchemas.For(dialect);
