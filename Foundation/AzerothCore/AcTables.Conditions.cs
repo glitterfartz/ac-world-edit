@@ -3,7 +3,7 @@ namespace ACWorldEdit.Foundation;
 // The conditions tables of AcTables.
 public sealed partial class AcTables
 {
-    /// <summary>The server's conditions table. Only the gossip menu sources (14 and 15) are read and copied so far; the visual builder is Phase 12.</summary>
+    /// <summary>The server's conditions table. Only the gossip menu sources (14 and 15) are read and copied so far; the visual builder is Phase 13.</summary>
     public static readonly TableSchema Conditions = new("conditions", ["SourceTypeOrReferenceId", "SourceGroup", "SourceEntry", "SourceId", "ElseGroup", "ConditionTypeOrReference", "ConditionTarget", "ConditionValue1", "ConditionValue2", "ConditionValue3"],
     [
         ("SourceTypeOrReferenceId", ColumnKind.Int, 0),

@@ -16,10 +16,10 @@ Phases continue the numbering in [`open-work.md`](../status/open-work.md) (1–9
 
 | Phase | State | Main work left |
 |---|---|---|
-| 10 Editor foundation | mostly | Reference index, cascade-delete specs, allocator adoption, browser drag |
-| 11 Spawn authoring | mostly | Browser drag, model ghost, cross-zone paste, dependency delete, new template |
-| 12 Conditions builder | not started | Strip, builder, tester, `ReadConditionsAsync` |
-| 13 GameObject editor | not started | Data field catalog and GO properties window |
+| 10 Editor foundation | mostly | Reference index, cascade-delete specs, allocator adoption |
+| 11 Spawn authoring | mostly | Model ghost, cross-zone paste, dependency delete, new template |
+| 12 GameObject editor | mostly | SmartAI `source_type = 1` behavior and a dedicated edit/undo smoke |
+| 13 Conditions builder | not started | Strip, builder, tester, `ReadConditionsAsync` |
 | 14 Movement authoring | partial | Node insert/delete, new paths, links/orphans, formations |
 | 15 Loot editor | not started | Loot source, model, roller, rules, window |
 | 16 Population control | not started | Pool, spawn-group and linked-respawn editors |
@@ -89,7 +89,7 @@ Implementation:
 - **`IdAllocator`** (Foundation). Next free ID per (table, key column) = max(database max, draft-staged inserts) + 1, with an optional **user ID range** per entity kind in Settings so custom content doesn't collide with future TDB imports. The database max comes from one new `IDBSource.MaxIdsAsync(tables)`. Inserts keep their existing `COUNT(*)=0` preflight. The existing `MaxMenuId` / `MaxTextId` / `MaxTrainerId` and the quest `max` still read their own maxima and are not moved onto it yet.
 - **Reference index.** `IDBSource.FindReferencesAsync(kind, id)` returns which tables point at an entity. Each `IWorldSchema` holds a per-dialect reference map (e.g. creature entry ← `creature.id`, `smart_scripts` target params, `quest_objectives` ObjectID, `creature_queststarter`, …). It feeds the "Used by" panel and delete-impact dialogs.
 - **Cascade delete specs.** Each entity kind declares its dependents, mirroring the server's own `DeleteFromDB`. TrinityCore's `Creature::DeleteFromDB` (`Creature.cpp:2042+`) removes `spawn_group`, `creature_addon`, `game_event_creature`, `game_event_model_equip` and `linked_respawn` rows. It does **not** remove pool, formation, SmartAI or `conditions` rows, so the dialog lists those and offers to remove them too.
-- **Condition engine (model only).** Add `ConditionCatalog` per dialect: source types from `ConditionMgr.h` (TC; AC's equivalent), condition types with parameter kinds, and sentences such as "Player has aura {spell}". Generate it with a script modelled on `Tools/generate_smart_catalog.py`. The visual builder is Phase 12.
+- **Condition engine (model only).** Add `ConditionCatalog` per dialect: source types from `ConditionMgr.h` (TC; AC's equivalent), condition types with parameter kinds, and sentences such as "Player has aura {spell}". Generate it with a script modelled on `Tools/generate_smart_catalog.py`. The visual builder is Phase 13.
 - **Content browser shell.** A dockable bottom panel (Unreal "Content Browser" style) with tabs per entity kind (creature templates, GO templates, later loot tables, pools, events). It offers search, filters and a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Rows drag into the world to place a spawn.
 
 Docs: `architecture/editing-and-export.md` (allocator, nullable, references), `architecture/viewer-runtime.md` (shell, browser), `open-work.md` rows. TrinityCore's condition source ids run 0-36 with 20 unused (the catalog skips it).
@@ -98,14 +98,14 @@ Docs: `architecture/editing-and-export.md` (allocator, nullable, references), `a
 
 ## Phase 11: Spawn authoring (place, duplicate, delete, instance overrides)
 
-**Status:** mostly built: place (pick, then click), duplicate, delete with an impact warning, multi-select, the spawn inspector and the template addon. Open: drag from the browser, a model ghost, cross-zone copy/paste, group field editing, preview-this-phase, GameObject parent rotation, removing dependent rows on delete, new template from selection, `SpawnFacts` lookups, multi-floor picking, and WMO/equipment thumbnails. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
+**Status:** mostly built: place (pick, then click), duplicate, delete with an impact warning, multi-select, the spawn inspector and the template addon. Open: a model ghost, cross-zone copy/paste, group field editing, preview-this-phase, GameObject parent rotation, removing dependent rows on delete, new template from selection, `SpawnFacts` lookups, multi-floor picking, and WMO/equipment thumbnails. Detail: [open-work.md](../status/open-work.md#gap-plan-phases-10-and-11).
 
 **Why:** This is the core of a world editor. At planning time a designer could move Hogger but could not add a second Hogger, remove a misplaced crate, give a guard a longer respawn, make a creature wander, or put it in a phase. Every content task ("populate this camp", "add a quest object") starts with placement. Placement, duplication, deletion, multi-select and the spawn inspector are now built; see the status line above.
 
 **Benefit to the user:** You can build a camp in minutes by dragging templates from the browser onto the terrain. Ctrl+D duplicates a selection, Delete removes it, and the inspector sets per-spawn behavior. This is the Unity/Unreal "drop prefab, tweak instance" loop.
 
 UX:
-- **Drag from the Content Browser** shows a ghost model that follows the ground (`ViewerShell.Ground.cs`, `ScenePicking`) and snaps to WMO floors. Click places it. Shift keeps placing. Facing comes from a rotate-drag or the existing gizmo.
+- **Drag from the Content Browser** (`TemplateDrag`, `ViewportDropSurface`) arms the placement tool: a ghost that follows the ground (`ViewerShell.Ground.cs`, `ScenePicking`) and snaps to WMO floors. Dropping places it; Shift keeps placing. Esc stops. Facing comes from the existing gizmo.
 - **Multi-select** (box select, Ctrl-click) for move, duplicate and delete together. Copy/paste across zones keeps relative layout.
 - **Spawn inspector** (in `CreatureOverlay.Ui` / `GameObjectOverlay.Ui`):
   - *Spawn*: respawn timer (min/sec), wander radius drawn as a ring in the viewport, movement type (Idle, Random, Path → Phase 14), current health %.
@@ -130,11 +130,29 @@ Verify: `--client-shot-overlays` place/duplicate/delete flow in both dialects. E
 
 ---
 
-## Phase 12: Conditions builder (one visual editor for "when does this apply")
+## Phase 12: GameObject editor (template + type-aware properties)
+
+**Status:** mostly built. `Tools/generate_gameobject_catalog.py` emits the per-dialect `AcGameObjectTypes` / `TcGameObjectTypes` catalogues; `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter`/`questender`/`questitem` are in both table catalogs; `DbGameObjectTemplate` reads them; `GameObjectPropertiesWindow` has Template, Type properties, Quests and Used by pages; the content browser, the GO inspector's Properties button and a short right-click open it. Open: the Behavior page for SmartAI `source_type = 1` (reusing `BehaviorPanel`) and a dedicated edit/undo smoke.
+
+**Why:** GameObjects are half of world content: chests (type 3, 7k), doors (0, 5k), quest objects (2, 10), traps (6), spell focuses (8, 10k), chairs (7, 17.6k). At planning time they were move-only; their spawns are now editable (Phase 11), but nothing about the template can be seen or changed. The template's 35 `Data` columns mean different things per type, which is why raw editing is hopeless.
+
+**Benefit to the user:** Pick a chest and the page reads "Lock: Rusty Lock · Loot: (table) · Despawn after loot · Respawn 5 min". Pick a door and it reads "Starts closed · Auto-close after 3 s". It works like a Unity component inspector that changes with the object type.
+
+UX: a Properties window (Phase 10 shell) with pages Template (name, display with a cached thumbnail, size, type selector, faction, flags), **Type properties** (labelled, typed fields for the chosen type), Loot (Phase 15 page), Quests (GO starters/enders/questitems), Behavior (SmartAI source type 1, reusing `BehaviorPanel`, still open), Used by.
+
+Implementation:
+- **Generated type catalog:** `TrinityCore/GameObjectData.h` comments are machine-readable per field (`// 1 open, References: Lock_, NoValue = 0`, `enum { false, true, }; Default: false`, `Min value / Max value`), and `SharedDefines.h` carries every type name. `Tools/generate_gameobject_catalog.py` emits `TcGameObjectTypes.cs` and `AcGameObjectTypes.cs` separately (AC: Data0–23 from its `GameObjectData.h`). Each field carries a kind (bool, int range, ms, reference → picker kind: Lock, BroadcastText, GameObject, Spell, Loot, QuestGiver, Gossip, PlayerCondition…).
+- `GameObjectPage` builds the Template page and the per-type page from `GameObjectTypeCatalog` for the row's `type`. Changing the type asks before it resets the Data fields to their defaults.
+- Tables: `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter`/`questender`/`questitem` (both catalogs). The reads go through `DbGameObjectTemplate` and `DbGameObjectSpawns`.
+- The content browser opens a GO; the inspector's Properties button and a short right-click do too.
+
+---
+
+## Phase 13: Conditions builder (one visual editor for "when does this apply")
 
 **Status:** not started. The catalog, sentences and source labels are built (Phase 10); menu copy carries types 14/15, graveyard team rows (27) and quest counts (19) read conditions. Open: `ConditionStrip`, `ReadConditionsAsync`, the builder, the tester and the wiring.
 
-**Why:** `conditions` gates gossip options, quest availability, loot, vendor items, phases, spell targets, SmartAI events and graveyards: 17k rows in ~30 source types. Every existing editor shows "has conditions" counts (quest links, gossip) but can't edit them. Copying a gossip menu doesn't copy its conditions (open open-work gap).
+**Why:** `conditions` gates gossip options, quest availability, loot, vendor items, phases, spell targets, SmartAI events and graveyards: 17k rows in ~30 source types. Every existing editor shows "has conditions" counts (quest links, gossip) but can't edit them: only menu copy (sources 14 and 15), graveyard teams (27) and quest counts (19) read the rows, so nothing can be added, changed or removed.
 
 **Benefit to the user:** "Show this option only to Alliance players on quest X" becomes three clicks in a readable sentence instead of decoding `SourceTypeOrReferenceId`/`ElseGroup`/`NegativeCondition`. One editor works everywhere.
 
@@ -145,24 +163,6 @@ UX:
 - A **live tester** pane: pick class, race, level and completed quests, and see whether it passes. This uses only the `ConditionCatalog` semantics; no server is needed.
 
 Implementation: a `ConditionCatalog` (Phase 10) plus a `ConditionStrip` control in `Scripts/Ui`, and an `IDBSource.ReadConditionsAsync(sourceType, group, entry)`. `conditions` goes into both table catalogs. Wire it into gossip (types 14, 15), quest availability (19, and the quest editor), SmartAI (22), vendor (23), graveyard (27, which replaces today's team-only handling), and spawn groups / phases (26, 33). Copy-menu then copies its conditions (built in Phase 6 for menu sources 14 and 15; the builder generalises it). Rules mirror `ConditionMgr::isConditionTypeValid` / `isSourceTypeValid` for each dialect.
-
----
-
-## Phase 13: GameObject editor (template + type-aware properties)
-
-**Status:** not started. GameObject spawns are editable from Phase 11; `Foundation/Spawn/GameObjectTypes.cs` is only a name table. Open: the Data0–34 field catalog, its generator, the GO properties window, GO quest links, SmartAI type 1 and the right-click entry point.
-
-**Why:** GameObjects are half of world content: chests (type 3, 7k), doors (0, 5k), quest objects (2, 10), traps (6), spell focuses (8, 10k), chairs (7, 17.6k). At planning time they were move-only; their spawns are now editable (Phase 11), but nothing about the template can be seen or changed. The template's 35 `Data` columns mean different things per type, which is why raw editing is hopeless.
-
-**Benefit to the user:** Pick a chest and the page reads "Lock: Rusty Lock · Loot: (table) · Despawn after loot · Respawn 5 min". Pick a door and it reads "Starts closed · Auto-close after 3 s". It works like a Unity component inspector that changes with the object type.
-
-UX: a Properties window (Phase 10 shell) with pages Template (name, display with live model preview, size, type selector, faction, flags), **Type properties** (labelled, typed fields for the chosen type), Loot (Phase 15 page), Quests (GO starters/enders/questitems), Behavior (SmartAI source type 1, reusing `BehaviorPanel`), Used by.
-
-Implementation:
-- **Generated type catalog:** `TrinityCore/GameObjectData.h` comments are machine-readable per field (`// 1 open, References: Lock_, NoValue = 0`, `enum { false, true, }; Default: false`, `Min value / Max value`). Write `Tools/generate_gameobject_catalog.py` (pattern from `generate_smart_catalog.py`) to emit `TcGameObjectTypes.cs` and `AcGameObjectTypes.cs` (AC: Data0–23 from its `GameObjectData.h`). Each field carries a kind (bool, int range, ms, reference → picker kind: Lock, BroadcastText, GameObject, Spell, Loot, QuestGiver, Gossip, PlayerCondition…).
-- `EntityPage` for GO: the type-properties group is built at runtime from the catalog for the row's `type`. Changing the type asks before it resets the Data fields to their defaults.
-- Tables: `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter`/`questender`/`questitem`, SmartAI type 1 (closes a open-work Phase 8 gap). The reads go through a new `Tc/AcGameObjectPropertiesSource`.
-- Right-click a GO in the world → Properties… (same entry point as creatures).
 
 ---
 
@@ -200,7 +200,7 @@ UX:
 - A **Loot window** opened from creature (loot, pickpocket, skin), GO (chest), item (container) or the Content Browser.
 - **Group cards:** ungrouped rows are independent rolls ("each kill: 35% Linen Cloth ×1–2"). A group shows "exactly one of these" with stacked chance bars, and equal-chance rows split the rest automatically.
 - **References** expand inline as nested, collapsible tables marked "shared by N tables". Editing one prompts "Edit shared table / Make a private copy".
-- Items get icon, quality colour and a tooltip. Flags: quest-only (with the quest), loot mode as named checkboxes, and the condition strip (Phase 12).
+- Items get icon, quality colour and a tooltip. Flags: quest-only (with the quest), loot mode as named checkboxes, and the condition strip (Phase 13).
 - A **Simulate** button runs N rolls with the server algorithm and shows a histogram of what a player gets.
 - **Who drops this?** search: item → every creature/GO/table that can drop it.
 
@@ -361,7 +361,7 @@ Implementation: `Tc/AcItemSource` and catalogs, a tooltip preview (the retail it
 
 ## Recommended order and sizing
 
-10 (foundation, M) → 11 (spawns, L) → 12 (conditions, M) → 13 (GameObjects, M) → 15 (loot, L) → 14 (movement, M) → 16 (pools, M) → 17 (events/phases, M) → 18 (creature pages, M) → 19 (quest completion, M) → 20 (travel, S) → 21 (ambience, M) → 23 (text, M) → 24 (items, L) → 22 (cinematics, M).
+10 (foundation, M) → 11 (spawns, L) → 12 (GameObjects, M) → 13 (conditions, M) → 15 (loot, L) → 14 (movement, M) → 16 (pools, M) → 17 (events/phases, M) → 18 (creature pages, M) → 19 (quest completion, M) → 20 (travel, S) → 21 (ambience, M) → 23 (text, M) → 24 (items, L) → 22 (cinematics, M).
 
 Sizes (S/M/L) already include full AC+TC parity (about 1.5× a single-dialect phase). Phases on TC-only systems (spawn groups, 21's spawned triggers, 22) cost less on the AC side because it only shows "not supported".
 

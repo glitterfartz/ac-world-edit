@@ -60,6 +60,7 @@ Schema references for column meanings, flags and enums:
 - `creature_equip_template`: + AppearanceModID1-3, ItemVisual1-3. `creature_text`: + SoundPlayType. `creature_questitem`: + DifficultyID. `creature_queststarter/ender`, `gameobject_queststarter/ender`, `gossip_menu`: + VerifiedBuild.
 - `creature_formations`, `game_event_creature`, `spawn_group`: guids → bigint. `game_event`: + WorldStateId.
 - `gameobject_template`: + Data24-34, ContentTuningId, RequiredLevel, StringId. `gameobject_template_addon`: + artkit4, WorldEffectID, AIAnimKitID. `gameobject_addon`: + WorldEffectID, AIAnimKitID.
+  - The **Data meanings are not the same** even where the type ID matches. AzerothCore has types 0-35 (no 28); TrinityCore master has 0-66. Type 29 is AzerothCore's capture point and TrinityCore's control zone, with completely different fields; type 42 is TrinityCore's capture point. AzerothCore door `Data2` is `autoCloseTime` in 1/65536-second units, TrinityCore `Data2` is `autoClose` in milliseconds. Trap `Data4` is a trap type on AzerothCore and a charge count on TrinityCore. The editor therefore generates a catalogue per dialect (`Tools/generate_gameobject_catalog.py`), never a union. The physical signedness also differs: AzerothCore `Data0`/`Data2` are unsigned and the rest signed; TrinityCore `Data0-34` and the scaling columns are signed.
 - `gossip_menu_option`:
   - Removed: OptionIcon, OptionType, OptionNpcFlag.
   - Added: GossipOptionID, OptionNpc, Language, Flags, GossipNpcOptionID, SpellID, OverrideIconID.
@@ -103,7 +104,7 @@ Schema references for column meanings, flags and enums:
   - `reputation_spillover_template` faction6, `spell_area` autocast→flags, `spell_custom_attr` spell_id→entry, `spell_enchant_proc_data` (renamed columns), `spell_group_stack_rules`.description, `spell_proc` + SpellFamilyMask3/ProcFlags2, `spell_target_position` + OrderIndex.
   - `transports` + phase columns, `vehicle_(template_)accessory` + RideSpellID.
 
-- `conditions`: the same 15 columns in both, plus TC's `ConditionStringValue1` (varchar 64) before `NegativeCondition`; AC's `ScriptName` is char(64), TC's varchar(64). `TcTables.Conditions` and `AcTables.Conditions` carry them; only gossip menu sources (14 text, 15 option) are read and copied before Phase 12.
+- `conditions`: the same 15 columns in both, plus TC's `ConditionStringValue1` (varchar 64) before `NegativeCondition`; AC's `ScriptName` is char(64), TC's varchar(64). `TcTables.Conditions` and `AcTables.Conditions` carry them; only gossip menu sources (14 text, 15 option) are read and copied before Phase 13.
 
 ### TC gossip editing rules
 
