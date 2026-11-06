@@ -209,6 +209,49 @@ public partial class CreatureOverlay
         }
     }
 
+    int prefetchGeneration;
+
+    /// <summary>
+    /// Warm the template addon rows for a new region result with one query at a time. Firing one
+    /// query per entry at once opened hundreds of concurrent connections in crowded cities, which
+    /// hitched the editor and drowned the status bar in failure notices; a newer region result
+    /// abandons the older pump.
+    /// </summary>
+    async void PrefetchTemplateAddons(uint[] entries)
+    {
+        int generation = ++prefetchGeneration;
+        foreach (uint entry in entries)
+        {
+            if (generation != prefetchGeneration)
+            {
+                return;
+            }
+
+            string key = sourceKey;
+            if (templateAddons == null || templateAddons.IsLoaded(key, entry) || !templateAddonRequests.Add(entry))
+            {
+                continue;
+            }
+
+            try
+            {
+                templateAddons.Load(key, entry, await DBSource.Open(Connection()).ReadTemplateAddonAsync(entry, default));
+            }
+            catch (Exception)
+            {
+                // Silent here: the inspector reports a failure for the selected entry when it asks.
+                templateAddonRequests.Remove(entry);
+                continue;
+            }
+
+            appearanceDirty = true;
+            if (IsInsideTree() && SelectedEntry == entry)
+            {
+                RefreshSpawnFields();
+            }
+        }
+    }
+
     /// <summary>The selected marker's template, if any, so background loads only redraw the inspector they belong to.</summary>
     uint? SelectedEntry => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) ? marker.Spawn.TemplateId : null;
 

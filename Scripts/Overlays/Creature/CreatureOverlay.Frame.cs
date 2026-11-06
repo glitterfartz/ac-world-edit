@@ -115,13 +115,10 @@ public partial class CreatureOverlay
     /// <summary>Reconcile the native model batches and their labels/clip menu.</summary>
     void UpdateModelBatches(Camera3D camera)
     {
-        if (templatePrefetchDirty)
+        if (templatePrefetchDirty && LayerEnabled)
         {
             templatePrefetchDirty = false;
-            foreach (uint entry in records.Select(s => s.TemplateId).Distinct())
-            {
-                LoadTemplateAddon(entry);
-            }
+            PrefetchTemplateAddons(records.Select(s => s.TemplateId).Distinct().ToArray());
         }
 
         modelView.Update(camera, markers.Values, Preview, LayerEnabled, selectedGuid, previewAnimation, Models, AppearanceStates(), AppearanceEmoteName);
