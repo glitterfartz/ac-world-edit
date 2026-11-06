@@ -56,8 +56,11 @@ jobs:
 
       - uses: ./.github/actions/setup-godot
 
+      # Debug on purpose: the gdUnit4 adapter runs its own `dotnet build` without a
+      # configuration (so Debug). A Release-only checkout leaves the Debug ref
+      # assemblies missing and the run fails with CS0006.
       - name: Test (gdUnit4)
-        run: dotnet test Tests/ACWorldEdit.GdTests -c Release -p:NuGetAudit=false --logger "trx;LogFileName=results.trx" --results-directory TestResults
+        run: dotnet test Tests/ACWorldEdit.GdTests -c Debug -p:NuGetAudit=false --logger "trx;LogFileName=results.trx" --results-directory TestResults
 
       - name: Upload test results
         if: failure()
