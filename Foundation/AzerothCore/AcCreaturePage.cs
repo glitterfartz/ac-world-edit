@@ -26,7 +26,7 @@ public static class AcCreaturePage
         (42, "Worm"), (43, "Rhino"), (44, "Wasp"), (45, "Core hound"), (46, "Spirit beast")
     ];
 
-    static readonly FlagBit[] UnitFlags =
+    public static readonly FlagBit[] UnitFlags =
     [
         new(0x2, "Cannot be attacked", "Players cannot target it for attack at all."),
         new(0x4, "Cannot move", "The creature is rooted in place."),
@@ -45,7 +45,7 @@ public static class AcCreaturePage
         new(0x80000000, "Immune to all damage", "Takes no damage from anything.")
     ];
 
-    static readonly FlagBit[] UnitFlags2 =
+    public static readonly FlagBit[] UnitFlags2 =
     [
         new(0x1, "Feigns death", "Plays the feign-death pose while alive."),
         new(0x2, "Hides model", "Hides the creature's model."),
@@ -63,7 +63,7 @@ public static class AcCreaturePage
         new(0x20000, "Special death animation", "Plays its special death animation.")
     ];
 
-    static readonly FlagBit[] TypeFlags =
+    public static readonly FlagBit[] TypeFlags =
     [
         new(0x1, "Tameable", "Hunters can tame it. It must also be a beast with a family."),
         new(0x2, "Visible to ghosts", "Dead players can see and interact with it."),
@@ -84,7 +84,7 @@ public static class AcCreaturePage
         new(0x10000000, "Never sheathe weapons", "Keeps its weapons drawn.")
     ];
 
-    static readonly FlagBit[] ExtraFlags =
+    public static readonly FlagBit[] ExtraFlags =
     [
         new(0x1, "Binds instance on kill", "Killing it locks the killer and their group to the instance."),
         new(0x2, "Civilian", "Never initiates combat, regardless of faction."),
@@ -110,7 +110,7 @@ public static class AcCreaturePage
         new(0x40000000, "Immune to knockback", "Cannot be knocked back.")
     ];
 
-    static readonly FlagBit[] NpcServices = AcNpcFlags.All.Select(f => new FlagBit(f.Bit, f.Name)).ToArray();
+    static readonly FlagBit[] NpcServices = AcNpcFlags.All.Select(f => new FlagBit(f.Bit, f.Name, f.Tip)).ToArray();
 
     static string Money(string copper)
     {
@@ -140,7 +140,7 @@ public static class AcCreaturePage
 
     static FieldSpec Check(string group, string column, string label, string tip) => new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Check);
 
-    static FieldSpec Flags(string column, string label, string tip, FlagBit[] bits) => new("flags", AcTables.CreatureDetails, column, label, tip, FieldKind.Flags, Flags: bits);
+    static FieldSpec Flags(string group, string column, string label, string tip, FlagBit[] bits) => new(group, AcTables.CreatureDetails, column, label, tip, FieldKind.Flags, Flags: bits);
 
     /// <summary>Name, title, type, family, classification, faction, leader flag and cursor icon.</summary>
     static FieldSpec[] IdentityFields() =>
@@ -155,10 +155,13 @@ public static class AcCreaturePage
         Text("identity", AcTables.CreatureDetails, "IconName", "Mouse cursor icon", "Name of the cursor icon shown when hovering over the creature, such as Speak, Taxi, Buy or Directions. Blank uses the default.", true, s => s.Length > 0 ? s : "Default")
     ];
 
-    /// <summary>The npcflag services, backed by the matching records on the other pages.</summary>
+    /// <summary>The npcflag services, backed by the matching records on the other pages, and the state and type flags beside them.</summary>
     static FieldSpec[] InteractionFields() =>
     [
-        new("interaction", AcTables.CreatureTemplate, "npcflag", "NPC services", "What players can do by right-clicking: talk, buy, train, take quests and so on. Each ticked service must be backed by the matching records on the other pages.", FieldKind.Flags, Flags: NpcServices, Raw: false)
+        new("interaction", AcTables.CreatureTemplate, "npcflag", "NPC services", "What players can do by right-clicking: talk, buy, train, take quests and so on. Each ticked service must be backed by the matching records on the other pages.", FieldKind.Flags, Flags: NpcServices, Raw: false),
+        Flags("interaction", "unit_flags", "State flags", "Basic state and combat switches such as unattackable, unselectable, pacified, stunned, disarmed, mounted or immune to all damage.", UnitFlags),
+        Flags("interaction", "unit_flags2", "More state flags", "Additional state switches such as feigning death, hiding the model, ignoring reputation, blocking spell-click and fixing its facing.", UnitFlags2),
+        Flags("interaction", "type_flags", "Creature type flags", "Tags for the kind of creature: tameable, boss portrait, skinnable or gatherable corpse, hide nameplate and so on.", TypeFlags)
     ];
 
     /// <summary>Damage school, attack timers and spreads, aggro range, regeneration and the immunities set.</summary>
@@ -210,13 +213,10 @@ public static class AcCreaturePage
         Text("links", AcTables.CreatureDetails, "ScriptName", "C++ script", "Name of a compiled server script that drives the creature. It can replace gossip, quests and SmartAI entirely, so leave blank unless the script exists.", true, s => s.Length > 0 ? s : "None")
     ];
 
-    /// <summary>The unit, type, extra and dynamic flag columns.</summary>
+    /// <summary>The extra and dynamic flag columns; unit and type flags sit beside the NPC services.</summary>
     static FieldSpec[] FlagFields() =>
     [
-        Flags("unit_flags", "State flags", "Basic state and combat switches such as unattackable, unselectable, pacified, stunned, disarmed, mounted or immune to all damage.", UnitFlags),
-        Flags("unit_flags2", "More state flags", "Additional state switches such as feigning death, hiding the model, ignoring reputation, blocking spell-click and fixing its facing.", UnitFlags2),
-        Flags("type_flags", "Creature type flags", "Tags for the kind of creature: tameable, boss portrait, skinnable or gatherable corpse, hide nameplate and so on.", TypeFlags),
-        Flags("flags_extra", "Server rules", "Special rules the server applies to it, such as no parry or block, civilian, guard, trigger, no experience, immune to taunt or knockback, or ignoring pathfinding.", ExtraFlags),
-        Flags("dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
+        Flags("flags", "flags_extra", "Server rules", "Special rules the server applies to it, such as no parry or block, civilian, guard, trigger, no experience, immune to taunt or knockback, or ignoring pathfinding.", ExtraFlags),
+        Flags("flags", "dynamicflags", "Dynamic flags", "Runtime display state such as lootable or tapped. The server sets these while the game runs, so they are normally left at 0.", [])
     ];
 }

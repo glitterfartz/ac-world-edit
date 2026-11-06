@@ -61,6 +61,33 @@ public class CreaturePageTests
         Assert.Equal(AcCreaturePage.Page.Groups.Select(g => g.Id), TcCreaturePage.Page.Groups.Select(g => g.Id));
     }
 
+    [Fact]
+    public void FlagFieldsHaveNamedBitsAndSitBesideTheNpcServices()
+    {
+        foreach (var (page, unit, extra, type, typeColumn) in new[]
+        {
+            (TcCreaturePage.Page, TcCreaturePage.UnitFlags, TcCreaturePage.ExtraFlags, TcCreaturePage.TypeFlags, "TypeFlags"),
+            (AcCreaturePage.Page, AcCreaturePage.UnitFlags, AcCreaturePage.ExtraFlags, AcCreaturePage.TypeFlags, "type_flags")
+        })
+        {
+            foreach (var (column, bits, group) in new[]
+            {
+                ("unit_flags", unit, "interaction"),
+                ("flags_extra", extra, "flags"),
+                (typeColumn, type, "interaction")
+            })
+            {
+                Assert.True(page.Fields.Any(f => f.Column == column), $"{column} is not on the page");
+                var field = page.Fields.Single(f => f.Column == column);
+                Assert.True(field.Flags is { Length: > 0 }, $"{column} has no named bits");
+                Assert.Equal(group, field.Group);
+            }
+        }
+
+        Assert.NotEmpty(TcCreaturePage.UnitFlags3);
+        Assert.NotEmpty(TcCreaturePage.TypeFlags2);
+    }
+
     [Theory]
     [MemberData(nameof(Dialects))]
     public void EveryTemplateAndStatsFieldExplainsItself(WorldDialect dialect)

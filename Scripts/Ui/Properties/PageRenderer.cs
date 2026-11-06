@@ -76,20 +76,29 @@ public sealed class PageRenderer(IEntityContext ctx)
     /// A field the page owner has a specialized editor for (a reference picker, a scaled number)
     /// is drawn by <paramref name="fieldControl"/>; the others use the standard editors.
     /// </summary>
-    public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable, Func<FieldSpec, Row, Control?>? fieldControl = null)
+    public void Render(Control parent, EntityPage page, RowSet rows, uint entry, bool editable, Func<FieldSpec, Row, Control?>? fieldControl = null,
+        Func<FieldSpec, Row, Control?>? readControl = null)
     {
         string key = entry.ToString(CultureInfo.InvariantCulture);
         Row? picked = null;
         Picked = null;
         bool difficultyShown = false;
+        // The difficulty picker sits above the first group: identity fields such as the pet family
+        // read and write the difficulty row's TypeFlags, and a page must not need to scroll to it.
+        if (page.Difficulty is { } spec && page.Fields.Any(f => f.Row == RowBinding.Difficulty))
+        {
+            picked = Picked = ShowPicker(parent, spec, rows, entry, editable);
+            difficultyShown = true;
+        }
+
         foreach (var group in page.Groups)
         {
-            RenderGroup(parent, page, group, rows, key, entry, editable, ref picked, ref difficultyShown, fieldControl);
+            RenderGroup(parent, page, group, rows, key, entry, editable, ref picked, ref difficultyShown, fieldControl, readControl);
         }
     }
 
     void RenderGroup(Control parent, EntityPage page, GroupSpec group, RowSet rows, string key, uint entry, bool editable,
-        ref Row? picked, ref bool difficultyShown, Func<FieldSpec, Row, Control?>? fieldControl)
+        ref Row? picked, ref bool difficultyShown, Func<FieldSpec, Row, Control?>? fieldControl, Func<FieldSpec, Row, Control?>? readControl)
     {
         var groupFields = page.In(group.Id).ToList();
         if (groupFields.Count > 0 || After.ContainsKey(group.Id))
@@ -110,7 +119,7 @@ public sealed class PageRenderer(IEntityContext ctx)
         grid = null;
         foreach (var field in groupFields)
         {
-            RenderField(parent, field, rows, key, picked, editable, fieldControl);
+            RenderField(parent, field, rows, key, picked, editable, fieldControl, readControl);
         }
 
         grid = null;
@@ -120,7 +129,8 @@ public sealed class PageRenderer(IEntityContext ctx)
         }
     }
 
-    void RenderField(Control parent, FieldSpec field, RowSet rows, string key, Row? picked, bool editable, Func<FieldSpec, Row, Control?>? fieldControl)
+    void RenderField(Control parent, FieldSpec field, RowSet rows, string key, Row? picked, bool editable,
+        Func<FieldSpec, Row, Control?>? fieldControl, Func<FieldSpec, Row, Control?>? readControl)
     {
         var row = field.Row == RowBinding.Template ? rows.Get(field.Table, key) : picked;
         if (row == null)
@@ -146,8 +156,9 @@ public sealed class PageRenderer(IEntityContext ctx)
         }
 
         grid.AddChild(ClientStyle.Caption(field.Label, field.Tip));
-        var control = (editable ? fieldControl?.Invoke(field, row) : null)
-            ?? (editable ? fields.Editor(field, row) : ClientStyle.Text(fields.Shown(field, row), 14));
+        var control = editable
+            ? (fieldControl?.Invoke(field, row) ?? fields.Editor(field, row))
+            : (readControl?.Invoke(field, row) ?? ClientStyle.Text(fields.Shown(field, row), 14));
         control.TooltipText = field.Tip;
         if (control is Label label)
         {

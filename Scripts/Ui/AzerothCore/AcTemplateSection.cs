@@ -48,8 +48,11 @@ public sealed partial class AcTemplateSection : AcInteractionSection
         }
 
         renderer.After.Clear();
+        renderer.After["identity"] = () => CreatureDisplayEditor.Render(body, Ctx, v.Entry);
         renderer.After["interaction"] = () => RenderInteraction(v);
-        renderer.Render(body, Ctx.Schema.TemplatePage, effective, v.Entry, editable);
+        renderer.Render(body, Ctx.Schema.TemplatePage, effective, v.Entry, editable,
+            (field, row) => CreatureReferenceEditor.Build(this, Ctx, field, row, null, null),
+            (field, row) => CreatureReferenceEditor.Describe(Ctx, field, row) is { } shown ? ClientStyle.Text(shown, 14) : null);
         RenderIssues(v);
     }
 

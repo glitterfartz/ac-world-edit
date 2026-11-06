@@ -32,6 +32,10 @@ public sealed partial class TcTemplateSection(CreatureContext ctx) : TcCreatureS
             Line($"The template applies to every spawn of entry {v.Entry}.", ClientStyle.Warning, 11);
         }
 
-        renderer.Render(this, Ctx.Schema.TemplatePage, Ctx.Effective, v.Entry, Ctx.Editable);
+        renderer.After.Clear();
+        renderer.After["identity"] = () => CreatureDisplayEditor.Render(this, Ctx, v.Entry);
+        renderer.Render(this, Ctx.Schema.TemplatePage, Ctx.Effective, v.Entry, Ctx.Editable,
+            (field, row) => CreatureReferenceEditor.Build(this, Ctx, field, row, renderer.Picked, TcTables.CreatureDifficulty),
+            (field, row) => CreatureReferenceEditor.Describe(Ctx, field, row) is { } shown ? ClientStyle.Text(shown, 14) : null);
     }
 }

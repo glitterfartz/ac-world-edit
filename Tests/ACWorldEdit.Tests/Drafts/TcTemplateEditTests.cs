@@ -8,8 +8,9 @@ public class TcTemplateEditTests
 {
     static Row Template(ulong npcflag) => Row.Of(
         ("entry", 54u), ("name", "Innkeeper"), ("subname", ""), ("IconName", ""), ("npcflag", npcflag), ("faction", 12u), ("Classification", 0u),
-        ("unit_class", 1u), ("BaseAttackTime", 2000u), ("RangeAttackTime", 0u), ("BaseVariance", 1f), ("RangeVariance", 1f), ("type", 7u), ("family", 0), ("trainer_class", 0u), ("unit_flags", 0u), ("unit_flags2", 0u), ("unit_flags3", 0u),
-        ("speed_walk", 1f), ("speed_run", 1.14286f), ("scale", 1f), ("RequiredExpansion", 0), ("VehicleId", 0u), ("MovementType", 0u),
+        ("unit_class", 1u), ("dmgschool", 0), ("BaseAttackTime", 2000u), ("RangeAttackTime", 0u), ("BaseVariance", 1f), ("RangeVariance", 1f), ("type", 7u), ("family", 0), ("trainer_class", 0u), ("unit_flags", 0u), ("unit_flags2", 0u), ("unit_flags3", 0u),
+        ("speed_walk", 1f), ("speed_run", 1.14286f), ("scale", 1f), ("RequiredExpansion", 0), ("VehicleId", 0u), ("MovementType", 0u), ("movementId", 0u),
+        ("ExperienceModifier", 1f), ("RacialLeader", 0u), ("RegenHealth", 1u), ("CreatureImmunitiesId", 0),
         ("AIName", ""), ("ScriptName", ""), ("flags_extra", 0u));
 
     static string TempPath() => Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "interactions.json");

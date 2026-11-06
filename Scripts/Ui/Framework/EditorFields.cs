@@ -233,6 +233,45 @@ public static class EditorFields
     }
 
     /// <summary>
+    /// Dropdown for text columns (a cursor icon name, an AI name) with the value stored as the item
+    /// metadata. A value the list does not name is kept as "Other (value)".
+    /// </summary>
+    public static OptionButton TextChoice(IEnumerable<(string Value, string Name, string Icon)> options, string value, Action<string> commit,
+        Func<string, Texture2D?>? texture = null, string tooltip = "")
+    {
+        var picker = new OptionButton
+        {
+            FitToLongestItem = false,
+            TooltipText = tooltip
+        };
+        var list = options.ToList();
+        if (!list.Any(o => o.Value == value))
+        {
+            list.Add((value, value.Length == 0 ? "Default" : $"Other ({value})", ""));
+        }
+
+        foreach (var (option, name, icon) in list)
+        {
+            int index = picker.ItemCount;
+            var image = texture?.Invoke(icon);
+            if (image != null)
+            {
+                picker.AddIconItem(image, name);
+            }
+            else
+            {
+                picker.AddItem(name);
+            }
+
+            picker.SetItemMetadata(index, option);
+        }
+
+        picker.Select(list.FindIndex(o => o.Value == value));
+        picker.ItemSelected += index => commit(picker.GetItemMetadata((int)index).AsString());
+        return picker;
+    }
+
+    /// <summary>
     /// Checkbox grid for a bitmask; toggling commits the whole new mask.
     /// </summary>
     public static GridContainer Flags(IEnumerable<(uint Bit, string Name)> flags, uint value, Action<uint> commit, int columns = 3, string tooltip = "")
