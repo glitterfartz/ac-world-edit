@@ -63,12 +63,35 @@ public static class SpawnFieldPickers
     }
 
     public static void ChooseAura(Node owner, SpawnField field, Action<uint> picked, Func<WorldConnection> connection,
-        Func<IClientFiles?> store, Func<IClientLookup?> lookup)
+        Func<IClientFiles?> store, Func<IClientLookup?> lookup, WorldDialect dialect, InteractionCatalog? catalog = null)
     {
         _ = field;
-        RecordPicker.Show(owner, "Choose an aura spell",
-            term => DBSource.Open(connection(), lookup()).SearchAsync(SmartParamKind.Spell, term, CancellationToken.None),
-            (id, name) => picked(id), store: store);
+        RecordPicker.Show(owner, store, "Choose an aura spell",
+            async term =>
+            {
+                var client = lookup();
+                if (dialect == WorldDialect.TrinityCore)
+                {
+                    var hits = await DBSource.Open(connection(), client).SearchAsync(SmartParamKind.Spell, term, CancellationToken.None);
+                    return hits.Select(h => AuraRecord(catalog, client, h.Id, h.Name)).ToList();
+                }
+
+                catalog ??= await ContentEditorWindow.LoadCatalog(store());
+                return (catalog?.SearchSpells(term) ?? []).Select(s => AuraRecord(catalog, client, s.Id, s.Name)).ToList();
+            },
+            record => picked(record.Id));
+    }
+
+    static PickerRecord AuraRecord(InteractionCatalog? catalog, IClientLookup? lookup, uint id, string name) =>
+        new(id, name.Length > 0 ? name : $"Spell {id}", $"spell · {id}", SpellIcon(catalog, lookup, id), SpellTip(catalog, lookup, id, name));
+
+    static string SpellIcon(InteractionCatalog? catalog, IClientLookup? lookup, uint id) =>
+        catalog?.SpellIconPath(id) ?? (lookup?.SpellIcon(id) is uint file && file != 0 ? AssetRef.FromFileId(file) : "");
+
+    static Tooltip? SpellTip(InteractionCatalog? catalog, IClientLookup? lookup, uint id, string name)
+    {
+        string shown = name.Length > 0 ? name : catalog?.SpellName(id) ?? lookup?.SpellName(id) ?? $"Spell {id}";
+        return new Tooltip([new(shown, "", TooltipTone.Title), new($"Spell {id}", "", TooltipTone.Muted)]);
     }
 
     public static void ChooseEquipment(Node owner, uint entry, Action<long> picked, Func<WorldConnection> connection,

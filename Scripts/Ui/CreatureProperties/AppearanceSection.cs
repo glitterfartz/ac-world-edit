@@ -50,7 +50,7 @@ public sealed partial class AppearanceSection : CreatureSection
             SpawnFieldPickers.Choose(fields, field, picked, () => Ctx.Connection(), () => Ctx.Store(), () => Ctx.Lookup(), Ctx.Thumbnails());
             return true;
         };
-        fields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(fields, field, picked, () => Ctx.Connection(), () => Ctx.Store(), () => Ctx.Lookup());
+        fields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(fields, field, picked, () => Ctx.Connection(), () => Ctx.Store(), () => Ctx.Lookup(), Ctx.Dialect, Ctx.Catalog);
         fields.Edited += Edit;
     }
 

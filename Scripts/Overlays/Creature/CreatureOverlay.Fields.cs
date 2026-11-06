@@ -33,7 +33,7 @@ public partial class CreatureOverlay
             SpawnFieldPickers.Choose(spawnFields, field, picked, () => Connection(), () => Store(), () => Lookup(), Thumbnails());
             return true;
         };
-        spawnFields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(spawnFields, field, picked, () => Connection(), () => Store(), () => Lookup());
+        spawnFields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(spawnFields, field, picked, () => Connection(), () => Store(), () => Lookup(), ContentDraftFiles.Sources.DialectOf(sourceKey));
         spawnFields.ChooseEquipment = (field, picked) =>
         {
             if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
