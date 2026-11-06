@@ -15,6 +15,9 @@ internal sealed class CreatureModelView(Node3D owner)
     readonly HashSet<ulong> admitted = [];
     readonly Dictionary<uint, CreatureAppearance?> appearances = [];
     readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> batches = [];
+    /// <summary>Animation clips the client's models actually have, by display: seat and flight
+    /// animations are only picked when the model lists them, never blind by name.</summary>
+    readonly Dictionary<uint, ushort[]> displayAnims = [];
     long updated;
 
     public IReadOnlyDictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> Batches => batches;
@@ -33,13 +36,15 @@ internal sealed class CreatureModelView(Node3D owner)
     {
         batches.FreeAll(b => b.Node);
         appearances.Clear();
+        displayAnims.Clear();
+        elevations.Clear();
         admitted.Clear();
         updated = 0;
     }
 
     /// <summary>Refresh the batches at most every 0.2 s; membership changes rebuild only that batch.</summary>
     public void Update(Camera3D camera, IEnumerable<CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary? library,
-        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states = null, Func<uint, string?>? emoteName = null)
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)>? states = null, Func<uint, string?>? emoteName = null)
     {
         if (library?.Catalog == null || System.Diagnostics.Stopwatch.GetElapsedTime(updated).TotalSeconds <= 0.2)
         {
@@ -49,7 +54,37 @@ internal sealed class CreatureModelView(Node3D owner)
         var byGuid = markers.ToDictionary(m => m.Spawn.Guid);
         var groups = GroupModels(camera, byGuid, preview, layerEnabled, selected, previewAnimation, library, states, emoteName);
         Reconcile(groups, byGuid, library);
+        NoteAvailableAnimations(byGuid, states);
         updated = System.Diagnostics.Stopwatch.GetTimestamp();
+    }
+
+    /// <summary>Remember which clips the built models list, so seat and flight animations are only
+    /// picked for models that have them (a missing clip would show the reference pose).</summary>
+    void NoteAvailableAnimations(Dictionary<ulong, CreatureMarkers.Marker> markers, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)>? states)
+    {
+        foreach (var batch in batches)
+        {
+            if (!batch.Value.Node.ModelReady)
+            {
+                continue;
+            }
+
+            foreach (ulong guid in batch.Value.Guids)
+            {
+                if (!markers.TryGetValue(guid, out var marker))
+                {
+                    continue;
+                }
+
+                uint display = batch.Key.Extra == "mount" && states?.TryGetValue(guid, out var state) == true && state.Mount != 0
+                    ? state.Mount
+                    : marker.Spawn.DisplayId;
+                if (display != 0)
+                {
+                    displayAnims[display] = batch.Value.Node.AvailableAnimations;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -58,7 +93,7 @@ internal sealed class CreatureModelView(Node3D owner)
     /// animation its addon row (stance and emote) resolves to, riding its mount when the row sets one.
     /// </summary>
     Dictionary<ModelKey, List<ulong>> GroupModels(Camera3D camera, Dictionary<ulong, CreatureMarkers.Marker> markers, SpawnPreview preview, bool layerEnabled, ulong? selected, ushort previewAnimation, ModelLibrary library,
-        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, Func<uint, string?>? emoteName)
+        IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)>? states, Func<uint, string?>? emoteName)
     {
         var groups = new Dictionary<ModelKey, List<ulong>>();
         elevations.Clear();
@@ -98,7 +133,7 @@ internal sealed class CreatureModelView(Node3D owner)
                 continue;
             }
 
-            var key = ModelKey.ForCreature(appearance, selected == marker.Spawn.Guid ? previewAnimation : AddonAnimation(marker.Spawn.Guid, states, emoteName, library));
+            var key = ModelKey.ForCreature(appearance, selected == marker.Spawn.Guid ? previewAnimation : RiderAnimation(marker, states, emoteName, library));
             if (!groups.TryGetValue(key, out var list))
             {
                 groups[key] = list = [];
@@ -112,8 +147,9 @@ internal sealed class CreatureModelView(Node3D owner)
     }
 
     /// <summary>A marker's mount as its own batch (tagged, so it never merges with a rider batch):
-    /// the rider's elevation is remembered for its own transform, label and gizmo moves.</summary>
-    void AddMount(Dictionary<ModelKey, List<ulong>> groups, CreatureMarkers.Marker marker, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, ModelLibrary library)
+    /// the rider's elevation is remembered for its own transform, label and gizmo moves. An airborne
+    /// mount flaps when its model has a flight clip, otherwise it stands.</summary>
+    void AddMount(Dictionary<ModelKey, List<ulong>> groups, CreatureMarkers.Marker marker, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)>? states, ModelLibrary library)
     {
         if (states?.TryGetValue(marker.Spawn.Guid, out var state) != true || state.Mount == 0)
         {
@@ -146,7 +182,14 @@ internal sealed class CreatureModelView(Node3D owner)
             return;
         }
 
-        var key = ModelKey.ForCreature(mount, 0) with { Extra = "mount" };
+        ushort anim = 0;
+        if (state.Flying && displayAnims.TryGetValue(state.Mount, out var clips) &&
+            SpawnAppearance.FlyAnimation(n => AnimByName(library, n), id => clips.Contains(id)) is ushort fly)
+        {
+            anim = fly;
+        }
+
+        var key = ModelKey.ForCreature(mount, anim) with { Extra = "mount" };
         if (!groups.TryGetValue(key, out var list))
         {
             groups[key] = list = [];
@@ -159,17 +202,41 @@ internal sealed class CreatureModelView(Node3D owner)
 
     readonly Dictionary<ulong, float> elevations = [];
 
-    /// <summary>The looping animation a marker's addon row resolves to (stance and emote); unknown
-    /// names fall back to Stand (or Death), never to a failed model: the loader shows the reference
-    /// pose for an animation the model lacks.</summary>
-    static ushort AddonAnimation(ulong guid, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)>? states, Func<uint, string?>? emoteName, ModelLibrary library)
+    /// <summary>
+    /// The looping animation a marker plays: dead always plays Death, else the emote's animation,
+    /// else the seat animation when mounted and the rider's model has one, else the stance's, else
+    /// Stand. Unknown names fall back instead of failing, and a clip the model lacks is never
+    /// picked: the loader would show the reference pose.
+    /// </summary>
+    ushort RiderAnimation(CreatureMarkers.Marker marker, IReadOnlyDictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)>? states, Func<uint, string?>? emoteName, ModelLibrary library)
     {
-        if (states?.TryGetValue(guid, out var state) != true)
+        if (states?.TryGetValue(marker.Spawn.Guid, out var state) != true)
         {
             return 0;
         }
 
-        return SpawnAppearance.AnimationFor(state.Stand, state.Emote, name => AnimByName(library, name), emote => emoteName?.Invoke(emote));
+        if (state.Stand == 7)
+        {
+            return SpawnAppearance.AnimDeath;
+        }
+
+        if (state.Emote != 0 && emoteName?.Invoke(state.Emote) is { } name && AnimByName(library, name) is ushort fromEmote)
+        {
+            return fromEmote;
+        }
+
+        if (state.Mount != 0 && displayAnims.TryGetValue(marker.Spawn.DisplayId, out var clips) &&
+            SpawnAppearance.SeatAnimation(n => AnimByName(library, n), id => clips.Contains(id)) is ushort seat)
+        {
+            return seat;
+        }
+
+        if (state.Stand != 0 && SpawnAppearance.StandAnimation(state.Stand) is { } stance && AnimByName(library, stance) is ushort fromStance)
+        {
+            return fromStance;
+        }
+
+        return 0;
     }
 
     static object? animCatalog;

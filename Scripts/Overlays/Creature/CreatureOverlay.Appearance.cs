@@ -17,12 +17,13 @@ public partial class CreatureOverlay
     Dictionary<uint, string> emoteLookupNames = [];
 
     /// <summary>
-    /// Stance, emote and resolved mount display/scale per marker with a loaded addon row, for the
+    /// Stance, emote, mount and flight per marker with a loaded addon row, for the
     /// model batches. Rebuilt at most twice a second (or when the markers, rows or draft change):
     /// every lookup used to clone the whole draft snapshot, so doing it per marker per frame ate
-    /// the frame rate in crowded cities.
+    /// the frame rate in crowded cities. Ground probes run only for mounted markers; an unknown
+    /// height keeps the previous flight state instead of guessing.
     /// </summary>
-    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)> AppearanceStates()
+    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)> AppearanceStates()
     {
         if (!appearanceDirty && System.Diagnostics.Stopwatch.GetElapsedTime(appearanceCacheAt).TotalSeconds <= AppearanceCacheSeconds)
         {
@@ -37,18 +38,27 @@ public partial class CreatureOverlay
     }
 
     const double AppearanceCacheSeconds = 0.5;
-    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)> appearanceCache = [];
+    /// <summary>More than a step-up above probed ground counts as airborne.</summary>
+    const float FlyingThresholdYards = 4.0f;
+    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)> appearanceCache = [];
     long appearanceCacheAt;
     bool appearanceDirty = true;
+    /// <summary>Flight state per mounted marker; unknown ground keeps the last answer.</summary>
+    readonly Dictionary<ulong, bool> flyingCache = [];
     /// <summary>Set when the region result changes, so the per-frame step fetches template addons once for the new entries instead of every frame.</summary>
     bool templatePrefetchDirty = true;
 
-    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale)> ReadAppearanceStates()
+    Dictionary<ulong, (uint Stand, uint Emote, uint Mount, float MountScale, bool Flying)> ReadAppearanceStates()
     {
-        var states = new Dictionary<ulong, (uint, uint, uint, float)>();
+        var states = new Dictionary<ulong, (uint, uint, uint, float, bool)>();
         if (poses == null || sourceKey.Length == 0)
         {
             return states;
+        }
+
+        foreach (ulong guid in flyingCache.Keys.Where(g => !markers.ContainsKey(g)).ToArray())
+        {
+            flyingCache.Remove(guid);
         }
 
         var dialect = ContentDraftFiles.Sources.DialectOf(sourceKey);
@@ -92,7 +102,14 @@ public partial class CreatureOverlay
                     }
                 }
 
-                states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon), mount, scale);
+                bool flying = flyingCache.GetValueOrDefault(marker.Spawn.Guid);
+                if (mount != 0 && GroundAt?.Invoke(marker.Node.Position) is { Height: float ground })
+                {
+                    flying = marker.Node.Position.Y - ground > FlyingThresholdYards;
+                    flyingCache[marker.Spawn.Guid] = flying;
+                }
+
+                states[marker.Spawn.Guid] = (SpawnAppearance.StandStateOf(dialect, addon), SpawnAppearance.EmoteOf(addon), mount, scale, flying);
             }
             catch (Exception)
             {

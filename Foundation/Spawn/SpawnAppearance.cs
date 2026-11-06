@@ -18,6 +18,41 @@ public static class SpawnAppearance
     /// <summary>The emote the creature loops.</summary>
     public static uint EmoteOf(Row addon) => addon.U("emote");
 
+    /// <summary>Seat animations to try for a rider, in preference order; the caller checks the
+    /// rider's model actually has the clip and falls back when none match.</summary>
+    public static readonly string[] SeatAnimations = ["Mount", "Ride", "SitChair", "SitGround", "Sit"];
+
+    /// <summary>Flight animations to try for an airborne mount, in preference order.</summary>
+    public static readonly string[] FlyAnimations = ["Fly", "Hover"];
+
+    /// <summary>First seat animation the model has, or null to keep the stance animation.</summary>
+    public static ushort? SeatAnimation(Func<string, ushort?> byName, Func<ushort, bool> available)
+    {
+        foreach (string name in SeatAnimations)
+        {
+            if (byName(name) is ushort id && available(id))
+            {
+                return id;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>First flight animation the model has, or null to keep standing.</summary>
+    public static ushort? FlyAnimation(Func<string, ushort?> byName, Func<ushort, bool> available)
+    {
+        foreach (string name in FlyAnimations)
+        {
+            if (byName(name) is ushort id && available(id))
+            {
+                return id;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>The mount: a display ID, or a creature entry whose model it rides (TrinityCore only).</summary>
     public static (uint Display, uint Creature) MountOf(WorldDialect dialect, Row addon) =>
         (addon.U("mount"), dialect == WorldDialect.TrinityCore ? addon.U("MountCreatureID") : 0);

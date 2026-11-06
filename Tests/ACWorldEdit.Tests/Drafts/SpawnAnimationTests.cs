@@ -70,4 +70,25 @@ public class SpawnAnimationTests
         var ac = Row.Of(("mount", 14337u));
         Assert.Equal((14337u, 0u), SpawnAppearance.MountOf(WorldDialect.AzerothCore, ac));
     }
+
+    [Fact]
+    public void SeatAnimationPrefersMountAndNeedsTheClip()
+    {
+        var anims = new Dictionary<string, ushort> { ["Mount"] = 12, ["Sit"] = 8 };
+        var all = new HashSet<ushort> { 12, 8 };
+        Assert.Equal((ushort)12, SpawnAppearance.SeatAnimation(name => ByName(anims, name), all.Contains));
+        Assert.Equal((ushort)8, SpawnAppearance.SeatAnimation(name => ByName(anims, name), id => id == 8));
+        Assert.Null(SpawnAppearance.SeatAnimation(name => ByName(anims, name), _ => false));
+        Assert.Null(SpawnAppearance.SeatAnimation(_ => null, all.Contains));
+    }
+
+    [Fact]
+    public void FlyAnimationPrefersFlyAndNeedsTheClip()
+    {
+        var anims = new Dictionary<string, ushort> { ["Fly"] = 30, ["Hover"] = 31 };
+        var all = new HashSet<ushort> { 30, 31 };
+        Assert.Equal((ushort)30, SpawnAppearance.FlyAnimation(name => ByName(anims, name), all.Contains));
+        Assert.Equal((ushort)31, SpawnAppearance.FlyAnimation(name => ByName(anims, name), id => id == 31));
+        Assert.Null(SpawnAppearance.FlyAnimation(name => ByName(anims, name), _ => false));
+    }
 }
