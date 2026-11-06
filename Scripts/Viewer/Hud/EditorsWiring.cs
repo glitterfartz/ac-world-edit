@@ -201,6 +201,7 @@ public partial class ViewerShell
         AddChild(thumbnails);
         creatureProps.Thumbnails = thumbnails;
         gameObjectProps.Thumbnails = thumbnails;
+        questEditor.Thumbnails = thumbnails;
         contentBrowser.Activated += OpenTemplate;
         ui.AddChild(contentBrowser);
         foreach (var side in new Control[] { leftPanel, sidebar })
@@ -216,8 +217,8 @@ public partial class ViewerShell
     /// </summary>
     void OpenCreatureTemplateSearch()
     {
-        PickerPopup.Show(this, "Find creature template", term => DBSource.Open(DatabaseConnection(), clientLookup).SearchAsync(SmartParamKind.Creature, term, CancellationToken.None),
-            (entry, name) => creatureProps.OpenEntry(entry, name));
+        RecordPicker.Show(this, "Find creature template", term => DBSource.Open(DatabaseConnection(), clientLookup).SearchAsync(SmartParamKind.Creature, term, CancellationToken.None),
+            (entry, name) => creatureProps.OpenEntry(entry, name), store: () => store);
     }
 
     /// <summary>

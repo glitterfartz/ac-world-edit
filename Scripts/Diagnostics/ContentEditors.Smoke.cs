@@ -33,7 +33,7 @@ public partial class QuestPanel
 
     public string? SmokeObjectiveName(int slot) => Quest is { } q && q.I($"RequiredNpcOrGo{slot}") > 0 ? snapshot?.Names.Creature((uint)q.I($"RequiredNpcOrGo{slot}")) : null;
 
-    public PickerPopup? SmokePicker => GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
+    public RecordPicker? SmokePicker => GetChildren().OfType<RecordPicker>().LastOrDefault(p => p.Visible);
 }
 
 public partial class QuestEditorWindow
@@ -48,7 +48,7 @@ public partial class QuestEditorWindow
     public void SmokeHistory(bool forward) => Panel.SmokeHistory(forward);
     public bool SmokePress(string text) => Panel.SmokePress(text);
     public string? SmokeObjectiveName(int slot) => Panel.SmokeObjectiveName(slot);
-    public PickerPopup? SmokePicker => Panel.SmokePicker;
+    public RecordPicker? SmokePicker => Panel.SmokePicker;
 
     public void SmokeSearch(string term)
     {
@@ -162,17 +162,5 @@ public partial class BehaviorPanel
         {
             Commit("Edit line", new RowEdit(table.Name, table.KeyOf(line), line, line.With("Text", text)));
         }
-    }
-}
-
-public partial class PickerPopup
-{
-    /// <summary>
-    /// Type into the search box (the TextChanged path runs the bounded search).
-    /// </summary>
-    public void SmokeSearch(string term)
-    {
-        search.Text = term;
-        _ = Search();
     }
 }

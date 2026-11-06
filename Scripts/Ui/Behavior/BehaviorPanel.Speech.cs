@@ -107,7 +107,7 @@ public partial class BehaviorPanel
     void ChooseBroadcast(Row line, Action<uint> choose)
     {
         var source = DBSource.Open(Connection(), Lookup());
-        PickerPopup.Show(this, "Choose broadcast text", async term =>
+        RecordPicker.Show(this, "Choose broadcast text", async term =>
         {
             var found = await source.SearchBroadcastAsync(term, CancellationToken.None);
             foreach (var (id, name) in found)
@@ -116,7 +116,7 @@ public partial class BehaviorPanel
             }
 
             return found.Select(f => (f.Id, $"{f.Id}: {Shorten(f.Name)}")).ToList();
-        }, (id, _) => choose(id), current: (uint)Math.Max(0, line.I("BroadcastTextId")));
+        }, (id, _) => choose(id), current: (uint)Math.Max(0, line.I("BroadcastTextId")), store: Store);
     }
 
     void AddLine(uint group)

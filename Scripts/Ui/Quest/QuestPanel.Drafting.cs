@@ -129,8 +129,20 @@ public abstract partial class QuestPanel
     /// </summary>
     protected void Pick(SmartParamKind kind, string heading, Action<uint> apply)
     {
+        if (kind == SmartParamKind.Item)
+        {
+            ChooseItem(heading, (id, _) => apply(id));
+            return;
+        }
+
+        if (kind == SmartParamKind.Spell)
+        {
+            ChooseSpell(heading, apply);
+            return;
+        }
+
         var names = snapshot?.Names;
-        PickerPopup.Show(this, heading, term => DBSource.Open(Connection(), Lookup()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        RecordPicker.Show(this, heading, term => DBSource.Open(Connection(), Lookup()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
         {
             var target = kind switch
             {
@@ -145,11 +157,10 @@ public abstract partial class QuestPanel
             }
 
             apply(id);
-        });
+        }, store: Store);
     }
 
-    protected void PickSpell(string heading, Action<uint> apply) =>
-        PickerPopup.Show(this, heading, term => SearchSpells(term), (id, _) => apply(id));
+    protected void PickSpell(string heading, Action<uint> apply) => ChooseSpell(heading, apply);
 
     /// <summary>Spell search for the spell pickers: the 3.3.5 client's spells, or the retail client's for TrinityCore.</summary>
     protected virtual Task<IReadOnlyList<(uint Id, string Name)>> SearchSpells(string term) => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(catalog?.SearchSpells(term) ?? []);
@@ -157,9 +168,9 @@ public abstract partial class QuestPanel
     protected void PickFromList(string heading, IEnumerable<(uint Id, string Name)> all, Action<uint> apply)
     {
         var list = all.Where(e => e.Name.Length > 0).ToList();
-        PickerPopup.Show(this, heading, term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(list
+        RecordPicker.Show(this, heading, term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(list
             .Where(e => term.Length == 0 || e.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || e.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
-            .OrderBy(e => e.Name.Length).Take(200).ToList()), (id, _) => apply(id));
+            .OrderBy(e => e.Name.Length).Take(200).ToList()), (id, _) => apply(id), store: Store);
     }
 
     protected void UpdateStatus()

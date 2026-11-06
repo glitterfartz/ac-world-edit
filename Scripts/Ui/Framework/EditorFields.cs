@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -256,26 +257,64 @@ public static class EditorFields
     }
 
     /// <summary>
-    /// A reference shown by name with Choose… and clear buttons.
+    /// Checkbox grid for a 64-bit bitmask (quest race masks); toggling commits the whole new mask.
     /// </summary>
-    public static HBoxContainer Reference(string text, Action choose, Action? clear, bool missing = false, string tooltip = "")
+    public static GridContainer Flags64(IEnumerable<(ulong Bit, string Name)> flags, ulong value, Action<ulong> commit, int columns = 3, string tooltip = "")
     {
-        var row = new HBoxContainer
+        var grid = new GridContainer
         {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            TooltipText = tooltip
+            Columns = columns
         };
+        foreach (var (bit, name) in flags)
+        {
+            var check = new CheckBox
+            {
+                Text = name,
+                ButtonPressed = (value & bit) != 0,
+                TooltipText = tooltip.Length > 0 ? tooltip : $"{name}: tick to allow this race."
+            };
+            check.Toggled += on => commit(on ? value | bit : value & ~bit);
+            grid.AddChild(check);
+        }
+
+        return grid;
+    }
+
+    /// <summary>
+    /// A reference shown by name with Choose… and clear buttons. <paramref name="icon"/> adds the
+    /// reference's client icon; <paramref name="gameTooltip"/> makes the whole row show a
+    /// WoW-style tooltip on hover.
+    /// </summary>
+    public static HBoxContainer Reference(string text, Action choose, Action? clear, bool missing = false, string tooltip = "", Texture2D? icon = null, Tooltip? gameTooltip = null)
+    {
+        HBoxContainer row = gameTooltip == null
+            ? new HBoxContainer()
+            : new TooltipRow { Source = () => gameTooltip, TooltipText = text };
+        row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.TooltipText = tooltip.Length > 0 ? tooltip : text;
+        if (icon != null)
+        {
+            row.AddChild(new TextureRect
+            {
+                Texture = icon,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                CustomMinimumSize = new(24, 24),
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
+            });
+        }
+
         var label = ClientStyle.Text(text, 14, missing ? ClientStyle.Error : null);
         // Names stay on one line: in wrapping parameter rows a wrapping label is squeezed to one
         // character per line and stretches its neighbours.
         label.AutowrapMode = TextServer.AutowrapMode.Off;
         label.VerticalAlignment = VerticalAlignment.Center;
-        label.TooltipText = tooltip;
+        label.TooltipText = tooltip.Length > 0 ? tooltip : text;
         row.AddChild(label);
         var pick = new Button
         {
             Text = "Choose…",
-            TooltipText = tooltip
+            TooltipText = tooltip.Length > 0 ? tooltip : text
         };
         pick.Pressed += choose;
         row.AddChild(pick);

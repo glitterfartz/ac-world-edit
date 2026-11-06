@@ -367,9 +367,9 @@ public partial class BehaviorPanel
         }
 
         var all = SmartCatalog.Grouped(TypesOf(kind), kind).SelectMany(g => g.Types.Select(t => (g.Category, Type: t))).ToList();
-        button.Pressed += () => PickerPopup.Show(this, $"Choose {kind}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
+        button.Pressed += () => RecordPicker.Show(this, $"Choose {kind}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
             .Where(x => term.Length == 0 || x.Type.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Code.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Sentence.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Category.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Type.Id.ToString(CultureInfo.InvariantCulture) == term.Trim())
-            .Select(x => ((uint)x.Type.Id, $"{x.Category}: {x.Type.Name}{(x.Type.Sentence.Length > 0 ? " — " + x.Type.Sentence : "")}")).ToList()), (picked, _) => choose(picked), current: id, singleClick: true);
+            .Select(x => ((uint)x.Type.Id, $"{x.Category}: {x.Type.Name}{(x.Type.Sentence.Length > 0 ? " — " + x.Type.Sentence : "")}")).ToList()), (picked, _) => choose(picked), current: id, store: Store);
         return button;
     }
 
@@ -379,8 +379,8 @@ public partial class BehaviorPanel
     void ChooseTemplate(SmartScope shown)
     {
         var templates = TemplatesFor(shown);
-        PickerPopup.Show(this, shown.IsActionList ? "Start a step from a template" : "Start a rule from a template", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(templates
-            .Select((t, i) => ((uint)i, t.Label)).Where(x => x.Label.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList()), (index, _) => StartPending(shown, templates[(int)index], null), singleClick: true);
+        RecordPicker.Show(this, shown.IsActionList ? "Start a step from a template" : "Start a rule from a template", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(templates
+            .Select((t, i) => ((uint)i, t.Label)).Where(x => x.Label.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList()), (index, _) => StartPending(shown, templates[(int)index], null), store: Store);
     }
 
     /// <summary>

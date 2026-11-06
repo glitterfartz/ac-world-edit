@@ -13,7 +13,8 @@ public partial class AcQuestPanel : QuestPanel
     public override WorldDialect Dialect => WorldDialect.AzerothCore;
 
     static readonly (uint Value, string Name)[] XpTiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
-    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (AcQuestModel.AllianceRaces, "Alliance only"), (AcQuestModel.HordeRaces, "Horde only"), (1, "Specific races…")];
+    const uint SpecificRaces = uint.MaxValue;
+    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (1, "Alliance only"), (2, "Horde only"), (SpecificRaces, "Specific races…")];
 
     protected override TableSchema Template => AcTables.QuestTemplate;
     protected override TableSchema Addon => AcTables.QuestAddon;
@@ -21,6 +22,8 @@ public partial class AcQuestPanel : QuestPanel
     protected override TableSchema Offer => AcTables.QuestOfferReward;
     protected override TableSchema Starter => AcTables.QuestStarter;
     protected override TableSchema Ender => AcTables.QuestEnder;
+    protected override TableSchema ObjectStarter => AcTables.GameObjectQuestStarter;
+    protected override TableSchema ObjectEnder => AcTables.GameObjectQuestEnder;
     protected override TableSchema[] Tables => AcQuestModel.Tables;
     protected override Row[] NewQuestRows(uint id, string title) => AcQuestModel.NewQuest(id, title);
 
@@ -42,7 +45,7 @@ public partial class AcQuestPanel : QuestPanel
         Add("Title", "The quest title shown in the quest log, on the giver's dialog and in search results.",
             EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it", 0, "The quest title shown in the quest log."));
         Add("Kind", "The quest category shown by the client, such as Dungeon, Raid, PvP or Profession.",
-            EditorFields.Choice(QuestVocabulary.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value)), "The quest category shown by the client."),
+            EditorFields.Choice(QuestInfoChoices(), q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value)), "The quest category shown by the client."),
             ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "The suggested group size shown in the log; 0 means solo."));
         Add("Availability", "Normal quests are offered when their requirements pass; disabled quests are hidden; auto-complete quests finish the moment they are accepted.",
             EditorFields.Choice(AcQuestModel.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
@@ -58,12 +61,18 @@ public partial class AcQuestPanel : QuestPanel
 
         Heading("Who can take it");
         uint races = q.U("AllowableRaces");
-        uint preset = races is 0 or AcQuestModel.AllianceRaces or AcQuestModel.HordeRaces ? races : 1;
+        uint preset = races == 0 ? 0u : races == AcQuestModel.AllianceRaces ? 1u : races == AcQuestModel.HordeRaces ? 2u : SpecificRaces;
         Add("Faction", "Which races can accept the quest: everyone, one faction, or a custom race mask.",
-            EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value == 1 ? AcQuestModel.AllianceRaces | AcQuestModel.HordeRaces : value)), "Which races can accept the quest."));
-        if (preset == 1)
+            EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value switch
+            {
+                0 => 0u,
+                1 => AcQuestModel.AllianceRaces,
+                2 => AcQuestModel.HordeRaces,
+                _ => races is 0 or AcQuestModel.AllianceRaces or AcQuestModel.HordeRaces ? AcQuestModel.AllRaces : races
+            })), "Which races can accept the quest."));
+        if (preset == SpecificRaces)
         {
-            page.AddChild(EditorFields.Flags(AcQuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5, "Tick each race that can accept the quest."));
+            page.AddChild(EditorFields.Flags(AcQuestModel.Races, races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 5, "Tick each race that can accept the quest. Unticking all makes it available to everyone."));
         }
 
         uint classes = RowOf(Addon).U("AllowableClasses");
@@ -140,10 +149,24 @@ public partial class AcQuestPanel : QuestPanel
         }
 
         Heading("Given on accept", "An item the giver hands over when the quest is accepted.");
-        Add("Starting item", "An item handed to the player when the quest is accepted.",
-            Ref(Template, "StartItem", SmartParamKind.Item, "starting item", "Change starting item", false, "The item handed over on accept."), ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50, "How many starting items are given."));
+        uint startItem = q.U("StartItem");
+        if (startItem == 0)
+        {
+            Add("Starting item", "An item handed to the player when the quest is accepted.",
+                ButtonOf("Add starting item…", () => ChooseItem("Choose starting item", (id, _) =>
+                    Set(Template, "Change starting item", ("StartItem", id)))));
+        }
+        else
+        {
+            Add("Starting item", "An item handed to the player when the quest is accepted.",
+                ItemReference(startItem, "starting item", () => ChooseItem("Choose starting item",
+                    (id, _) => Set(Template, "Change starting item", ("StartItem", id)), startItem),
+                    () => Set(Template, "Clear starting item", ("StartItem", 0)), "The item handed over on accept."),
+                ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50, "How many starting items are given."));
+        }
+
         Add("Cast on accept", "A spell cast on the player when the quest is accepted.",
-            Ref(Addon, "SourceSpellID", SmartParamKind.Spell, "spell cast on accept", "Change spell cast on accept", false, "The spell cast on the player on accept. 0 means none."));
+            SpellReference(Addon, "SourceSpellID", "spell cast on accept", "Change spell cast on accept", "The spell cast on the player on accept. 0 means none."));
     }
 
     void SetObjective(int slot, int target)
@@ -208,14 +231,16 @@ public partial class AcQuestPanel : QuestPanel
 
         Heading("Other rewards");
         Add("Spell cast on player", "A spell cast on the player when the quest is turned in.",
-            Ref(Template, "RewardSpell", SmartParamKind.Spell, "spell cast on the player", "Change reward spell", false, "The spell cast on the player on turn-in. 0 means none."));
+            SpellReference(Template, "RewardSpell", "spell cast on the player", "Change reward spell", "The spell cast on the player on turn-in. 0 means none."));
         Add("Spell shown as reward", "A spell shown on the reward screen as a teaser; it is not actually cast.",
-            Ref(Template, "RewardDisplaySpell", SmartParamKind.Spell, "displayed reward spell", "Change displayed spell", false, "The spell shown on the reward screen. 0 means none."));
-        Add("Honor", "Other rewards: honor points, arena points, talent points and a title ID.",
+            SpellReference(Template, "RewardDisplaySpell", "displayed reward spell", "Change displayed spell", "The spell shown on the reward screen. 0 means none."));
+        Add("Honor", "Other rewards: honor points, arena points, talent points and a title.",
             UNumber(Template, "RewardHonor", "Change honor reward", 60, "Honor points awarded."), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60, "Arena points awarded."),
-            ClientStyle.Tag("Talents"), UNumber(Template, "RewardTalents", "Change talent reward", 40, "Talent points awarded."), ClientStyle.Tag("Title ID"), UNumber(Template, "RewardTitle", "Change title reward", 50, "Title ID awarded."));
+            ClientStyle.Tag("Talents"), UNumber(Template, "RewardTalents", "Change talent reward", 40, "Talent points awarded."));
+        Add("Title", "A character title the quest awards. 0 means no title.", TitleReference(Template, "RewardTitle", "Change title reward", "The character title awarded by this quest."));
         Add("Mail afterwards", "Mail sent to the player after the quest is turned in.",
-            UNumber(Addon, "RewardMailTemplateID", "Change reward mail", 70, "Mail template ID sent after turn-in; 0 means no mail."), ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70, "Seconds after turn-in before the mail arrives."), ClientStyle.Tag("seconds"));
+            MailReference(Addon, "RewardMailTemplateID", "Change reward mail", "The mail template sent after turn-in; 0 means no mail."),
+            ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70, "Seconds after turn-in before the mail arrives."), ClientStyle.Tag("seconds"));
     }
 
     /// <summary>

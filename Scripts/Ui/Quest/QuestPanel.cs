@@ -29,6 +29,8 @@ public abstract partial class QuestPanel : ContentPanel
     public Func<AreaLookup?> Areas { get; set; } = () => null;
     /// <summary>The client's tables for item, spell and currency names (TrinityCore).</summary>
     public Func<IClientLookup?> Lookup { get; set; } = () => null;
+    /// <summary>Creature and GameObject model thumbnails for the giver picker (null without a client).</summary>
+    public IThumbnailSource? Thumbnails { get; set; }
     /// <summary>
     /// Locate a creature entry (loading its map when needed) by entry and display name; returns a
     /// status line, empty when it was selected immediately.
@@ -48,6 +50,8 @@ public abstract partial class QuestPanel : ContentPanel
     protected VBoxContainer page = null!, issueBox = null!;
     HBoxContainer tabs = null!;
     Label title = null!, subtitle = null!, statusLabel = null!;
+    /// <summary>Client icon textures for the item, spell, currency and skill references on the pages.</summary>
+    readonly ClientIcons icons;
     public uint? QuestId { get; private set; }
     /// <summary>Raised after every redraw so a host can refresh its Duplicate/Undo/Redo state.</summary>
     public event Action? Rendered;
@@ -70,6 +74,9 @@ public abstract partial class QuestPanel : ContentPanel
     protected abstract TableSchema Offer { get; }
     protected abstract TableSchema Starter { get; }
     protected abstract TableSchema Ender { get; }
+    /// <summary>GameObject quest links; a quest may be offered or completed by either kind.</summary>
+    protected abstract TableSchema ObjectStarter { get; }
+    protected abstract TableSchema ObjectEnder { get; }
 
     /// <summary>The per-quest tables (all keyed by ID), in the order <see cref="NewQuestRows"/> returns their rows.</summary>
     protected abstract TableSchema[] Tables { get; }
@@ -98,6 +105,16 @@ public abstract partial class QuestPanel : ContentPanel
         Name = GetType().Name;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
+        icons = new(() => Store());
+    }
+
+    /// <summary>Icons decode on a worker; redraw once when they arrive so the references show them.</summary>
+    public override void _Process(double delta)
+    {
+        if (icons.Poll() && Quest != null && IsVisibleInTree())
+        {
+            Render();
+        }
     }
 
     public override void _Ready()

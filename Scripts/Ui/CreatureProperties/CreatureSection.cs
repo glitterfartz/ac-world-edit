@@ -227,22 +227,22 @@ public abstract partial class CreatureSection : EntitySection
     protected void ChooseMenu(Action<uint> chosen, uint? current = null) => Ctx.Try(() =>
     {
         var db = DBSource.Open(Ctx.Connection(), Ctx.Lookup());
-        PickerPopup.Show(this, "Choose gossip menu", async term =>
+        RecordPicker.Show(this, "Choose gossip menu", async term =>
         {
             var found = await db.SearchMenusAsync(term, CancellationToken.None);
             return found.Select(m => (m.Id, $"{m.Id}: {Preview(m.Name)}")).ToList();
-        }, (id, _) => chosen(id), current: current);
+        }, (id, _) => chosen(id), current: current, store: Ctx.Store);
     });
 
     /// <summary>Pick an existing broadcast text by ID or text; <paramref name="chosen"/> gets its ID.</summary>
     protected void ChooseBroadcast(Action<uint> chosen, uint? current = null) => Ctx.Try(() =>
     {
         var db = DBSource.Open(Ctx.Connection(), Ctx.Lookup());
-        PickerPopup.Show(this, "Choose broadcast text", async term =>
+        RecordPicker.Show(this, "Choose broadcast text", async term =>
         {
             var found = await db.SearchBroadcastAsync(term, CancellationToken.None);
             return found.Select(b => (b.Id, $"{b.Id}: {Preview(b.Name)}")).ToList();
-        }, (id, _) => chosen(id), current: current);
+        }, (id, _) => chosen(id), current: current, store: Ctx.Store);
     });
 
     protected virtual void Clear()

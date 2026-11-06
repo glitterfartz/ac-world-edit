@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
@@ -164,7 +165,7 @@ public sealed partial class GameObjectQuestsSection(GameObjectContext ctx) : Gam
 
     void PickQuest(string title, Action<uint> picked)
     {
-        PickerPopup.Show(this, title, SearchQuests, (id, _) => picked(id));
+        RecordPicker.Show(this, title, SearchQuests, (id, _) => picked(id), store: Ctx.Store);
     }
 
     async Task<IReadOnlyList<(uint Id, string Name)>> SearchQuests(string term)
@@ -198,22 +199,32 @@ public sealed partial class GameObjectQuestsSection(GameObjectContext ctx) : Gam
 
     void PickItem(uint entry, uint index)
     {
-        PickerPopup.Show(this, "Choose a quest item", SearchItems, (id, _) =>
+        RecordPicker.Show(this, Ctx.Store, "Choose a quest item", SearchItemRecords, record =>
         {
-            var edit = Ctx.QuestPage.Items.Add(Ctx.Effective, entry, ("Idx", index), ("ItemId", id));
-            Ctx.Commit($"Add quest item {id}", [edit]);
+            var edit = Ctx.QuestPage.Items.Add(Ctx.Effective, entry, ("Idx", index), ("ItemId", record.Id));
+            Ctx.Commit($"Add quest item {record.Id}", [edit]);
         });
     }
 
-    async Task<IReadOnlyList<(uint Id, string Name)>> SearchItems(string term)
+    async Task<IReadOnlyList<PickerRecord>> SearchItemRecords(string term)
     {
         if (Ctx.Lookup() is { } client)
         {
-            return client.SearchItems(term, 50).Select(i => (i.Id, i.Name)).ToList();
+            var items = await Task.Run(() => client.SearchItems(term, 50));
+            return items.Select(item =>
+            {
+                var details = client.ItemDetails(item.Id);
+                Tooltip tip = details == null
+                    ? new Tooltip([new(item.Name, "", TooltipTone.Title), new($"Item {item.Id}", "", TooltipTone.Muted)])
+                    : ItemTooltipBuilder.Build(details, ItemVocabulary.Retail);
+                return new PickerRecord(item.Id, item.Name, $"item · {item.Id}",
+                    item.IconFileId > 0 ? AssetRef.FromFileId(item.IconFileId) : "", tip, details);
+            }).ToList();
         }
 
         var found = await DBSource.Open(Ctx.Connection()).SearchItemDetailsAsync(term, CancellationToken.None);
-        return found.Select(i => (i.Info.Id, i.Info.Name)).ToList();
+        return found.Select(details => new PickerRecord(details.Info.Id, details.Info.Name, $"item · {details.Info.Id}",
+            Ctx.Catalog?.ItemIconPath(details.Info.DisplayId) ?? "", ItemTooltipBuilder.Build(details), details)).ToList();
     }
 
     HBoxContainer QuestIcons(bool gives, bool takes)

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
@@ -77,13 +78,13 @@ public partial class BehaviorPanel
                 check.Toggled += on => Put(on ? 1u : 0u);
                 return check;
             case SmartParamKind.Spell:
-                return EditorFields.Reference(value == 0 ? "None" : text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => SearchSpells(term), (id, _) => Put(id)), value == 0 ? null : () => Put(0), value != 0 && !names.TryName(param.Kind, value, out _));
+                return EditorFields.Reference(value == 0 ? "None" : text, () => PickSpellParam(param.Label, value, Put), value == 0 ? null : () => Put(0), value != 0 && !names.TryName(param.Kind, value, out _));
             case SmartParamKind.Creature or SmartParamKind.GameObject or SmartParamKind.Quest or SmartParamKind.Item:
                 return EditorFields.Reference(value == 0 ? "None" : text, () => PickNamed(param.Kind, param.Label, Put), value == 0 ? null : () => Put(0), value != 0 && !names.TryName(param.Kind, value, out _));
             case SmartParamKind.Emote or SmartParamKind.TextEmote or SmartParamKind.FactionTemplate:
                 var all = (catalog?.All(param.Kind.ToString()) ?? []).Where(x => x.Name.Length > 0).ToList();
-                return EditorFields.Reference(text, () => PickerPopup.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
-                    .Where(x => term.Length == 0 || x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Id.ToString(CultureInfo.InvariantCulture) == term.Trim()).OrderBy(x => x.Name.Length).Take(200).ToList()), (id, _) => Put(id), current: value), value == 0 ? null : () => Put(0));
+                return EditorFields.Reference(text, () => RecordPicker.Show(this, $"Choose {param.Label.ToLowerInvariant()}", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(all
+                    .Where(x => term.Length == 0 || x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || x.Id.ToString(CultureInfo.InvariantCulture) == term.Trim()).OrderBy(x => x.Name.Length).Take(200).ToList()), (id, _) => Put(id), current: value, store: Store), value == 0 ? null : () => Put(0));
             case SmartParamKind.TextGroup:
                 return TextGroupChoice(value, Put);
             case SmartParamKind.ActionList:
@@ -98,10 +99,22 @@ public partial class BehaviorPanel
         ? Task.FromResult(Lookup()?.SearchSpells(term, DbLimits.MaxSearch) ?? [])
         : Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(catalog?.SearchSpells(term) ?? []);
 
+    string SpellIconPath(uint id) => catalog?.SpellIconPath(id) ??
+        (Lookup()?.SpellIcon(id) is uint file && file != 0 ? AssetRef.FromFileId(file) : "");
+
+    Tooltip SpellTooltip(uint id) => new([new(catalog?.SpellName(id) ?? Lookup()?.SpellName(id) ?? $"Spell {id}", "", TooltipTone.Title), new($"Spell {id}", "", TooltipTone.Muted)]);
+
+    void PickSpellParam(string caption, uint value, Action<uint> apply) =>
+        RecordPicker.Show(this, Store, $"Choose {caption.ToLowerInvariant()}", async term =>
+        {
+            var hits = await SearchSpells(term);
+            return hits.Select(hit => new PickerRecord(hit.Id, hit.Name, $"spell · {hit.Id}", SpellIconPath(hit.Id), SpellTooltip(hit.Id))).ToList();
+        }, record => apply(record.Id), current: value == 0 ? null : value);
+
     void PickNamed(SmartParamKind kind, string caption, Action<uint> apply)
     {
         var names = snapshot?.Names;
-        PickerPopup.Show(this, $"Choose {caption.ToLowerInvariant()}", term => DBSource.Open(Connection(), Lookup()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
+        RecordPicker.Show(this, $"Choose {caption.ToLowerInvariant()}", term => DBSource.Open(Connection(), Lookup()).SearchAsync(kind, term, CancellationToken.None), (id, name) =>
         {
             var target = kind switch
             {
@@ -116,7 +129,7 @@ public partial class BehaviorPanel
             }
 
             apply(id);
-        });
+        }, store: Store);
     }
 
     Control TextGroupChoice(uint value, Action<uint> put)

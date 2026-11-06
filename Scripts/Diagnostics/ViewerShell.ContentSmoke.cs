@@ -263,7 +263,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            picker.SmokeSearch("Kobold Vermin");
+            picker.SearchFor("Kobold Vermin");
             return true;
         }),
         ("quest-picker-choose", () =>
@@ -273,7 +273,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            picker.Choose(0);
+            picker.ChooseResult(0);
             return true;
         }),
         ("quest-objective-set", () =>

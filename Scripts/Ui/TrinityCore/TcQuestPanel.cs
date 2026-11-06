@@ -17,7 +17,7 @@ public partial class TcQuestPanel : QuestPanel
     public override WorldDialect Dialect => WorldDialect.TrinityCore;
 
     static readonly (uint Value, string Name)[] Tiers = [(0, "None"), (1, "Tiny"), (2, "Very small"), (3, "Small"), (4, "Below normal"), (5, "Normal"), (6, "Above normal"), (7, "Large"), (8, "Very large"), (9, "Huge")];
-    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (1, "Alliance only"), (2, "Horde only"), (3, "Specific races (mask)…")];
+    static readonly (uint Value, string Name)[] RacePresets = [(0, "Everyone"), (1, "Alliance only"), (2, "Horde only"), (3, "Specific races…")];
 
     protected override TableSchema Template => TcTables.QuestTemplate;
     protected override TableSchema Addon => TcTables.QuestAddon;
@@ -25,6 +25,8 @@ public partial class TcQuestPanel : QuestPanel
     protected override TableSchema Offer => TcTables.QuestOfferReward;
     protected override TableSchema Starter => TcTables.QuestStarter;
     protected override TableSchema Ender => TcTables.QuestEnder;
+    protected override TableSchema ObjectStarter => TcTables.GameObjectQuestStarter;
+    protected override TableSchema ObjectEnder => TcTables.GameObjectQuestEnder;
     protected override TableSchema[] Tables => TcQuestRules.Tables;
     protected override Row[] NewQuestRows(uint id, string title) => TcQuestRules.NewQuest(id, title);
 
@@ -49,7 +51,7 @@ public partial class TcQuestPanel : QuestPanel
         Add("Title", "The quest title shown in the quest log, on the giver's dialog and in search results.",
             EditorFields.Line(q.T("LogTitle"), text => Set(Template, "Rename quest", ("LogTitle", text.Trim())), "What the quest log calls it", 0, "The quest title shown in the quest log."));
         Add("Kind", "The quest category shown by the client, such as Dungeon, Raid, PvP or Profession.",
-            EditorFields.Choice(QuestVocabulary.Types, q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value)), "The quest category shown by the client."),
+            EditorFields.Choice(QuestInfoChoices(), q.U("QuestInfoID"), value => Set(Template, "Change quest kind", ("QuestInfoID", value)), "The quest category shown by the client."),
             ClientStyle.Tag("Group size"), UNumber(Template, "SuggestedGroupNum", "Change suggested group size", 50, "The suggested group size shown in the log; 0 means solo."));
         Add("Availability", "Normal quests are offered when their requirements pass; disabled quests are hidden; auto-complete quests finish the moment they are accepted.",
             EditorFields.Choice(TcQuestRules.Methods, q.U("QuestType"), value => Set(Template, "Change quest availability", ("QuestType", value)), "Disabled quests are hidden; auto-complete quests finish on accept."));
@@ -61,35 +63,24 @@ public partial class TcQuestPanel : QuestPanel
             ClientStyle.Tag("Maximum level"), UNumber(Addon, "MaxLevel", "Change maximum level", 60, "The maximum player level that can accept it; 0 means no maximum."));
         Add("Time limit", "How long the player has to finish the quest, in seconds. 0 means untimed.",
             UNumber(Template, "TimeAllowed", "Change time limit", 80, "Seconds allowed to finish; 0 means untimed."), ClientStyle.Tag("seconds (0 = none)"));
-        Add("Expansion", "The expansion this quest belongs to. -1 means unset.",
-            UNumber(Template, "Expansion", "Change expansion", 60, "Expansion the quest belongs to; -1 means unset."));
+        Add("Expansion", "The expansion this quest belongs to. 'Not set' stores -1.",
+            ExpansionChoice(q));
 
         Heading("Who can take it");
         ulong races = q.UL("AllowableRaces");
         uint preset = races is ulong.MaxValue or 0 ? 0u : races == TcQuestRules.AllianceRaces ? 1u : races == TcQuestRules.HordeRaces ? 2u : 3u;
-        Add("Faction", "Which races can accept the quest: everyone, one faction, or a custom mask.",
+        Add("Faction", "Which races can accept the quest: everyone, one faction, or a custom race mask.",
             EditorFields.Choice(RacePresets, preset, value => Set(Template, "Change allowed races", ("AllowableRaces", value switch
         {
             0 => TcQuestRules.AllRaces,
             1 => TcQuestRules.AllianceRaces,
             2 => TcQuestRules.HordeRaces,
-            _ => races is ulong.MaxValue or 0 ? TcQuestRules.AllianceRaces | TcQuestRules.HordeRaces : races
+            _ => races is ulong.MaxValue or 0 ? NamedRaceMask() : races
         })), "Which races can accept the quest."));
         if (preset == 3)
         {
-            Add("Race mask", "A bit mask of the races that can accept the quest: one bit per ChrRaces ID.",
-                EditorFields.Line(races.ToString(CultureInfo.InvariantCulture), text =>
-            {
-                if (ulong.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out ulong mask))
-                {
-                    Set(Template, "Change allowed races", ("AllowableRaces", mask));
-                }
-                else
-                {
-                    status = "The race mask is a whole number, one bit per race ID.";
-                    UpdateStatus();
-                }
-            }, "One bit per ChrRaces ID (1 = Human, 2 = Orc, 4 = Dwarf, ...)", 0, "One bit per ChrRaces ID (1 = Human, 2 = Orc, 4 = Dwarf, ...)."));
+            page.AddChild(EditorFields.Flags64(RaceBits(), races, value => Set(Template, "Change allowed races", ("AllowableRaces", value)), 4,
+                "Tick each race that can accept the quest. The raw mask keeps any bits the list does not name."));
         }
 
         uint classes = RowOf(Addon).U("AllowableClasses");
@@ -142,10 +133,23 @@ public partial class TcQuestPanel : QuestPanel
         }
 
         Heading("Given on accept", "An item the giver hands over when the quest is accepted.");
-        Add("Starting item", "An item handed to the player when the quest is accepted.",
-            Ref(Template, "StartItem", SmartParamKind.Item, "starting item", "Change starting item", false, "The item handed over on accept."), ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50, "How many starting items are given."));
+        uint startItem = q.U("StartItem");
+        if (startItem == 0)
+        {
+            Add("Starting item", "An item handed to the player when the quest is accepted.",
+                ButtonOf("Add starting item…", () => ChooseItem("Choose starting item", (id, _) => Set(Template, "Change starting item", ("StartItem", id)))));
+        }
+        else
+        {
+            Add("Starting item", "An item handed to the player when the quest is accepted.",
+                ItemReference(startItem, "starting item", () => ChooseItem("Choose starting item",
+                    (id, _) => Set(Template, "Change starting item", ("StartItem", id)), startItem),
+                    () => Set(Template, "Clear starting item", ("StartItem", 0)), "The item handed over on accept."),
+                ClientStyle.Tag("×"), UNumber(Addon, "ProvidedItemCount", "Change starting item count", 50, "How many starting items are given."));
+        }
+
         Add("Cast on accept", "A spell cast on the player when the quest is accepted.",
-            Ref(Addon, "SourceSpellID", SmartParamKind.Spell, "spell cast on accept", "Change spell cast on accept", false, "The spell cast on the player on accept. 0 means none."));
+            SpellReference(Addon, "SourceSpellID", "spell cast on accept", "Change spell cast on accept", "The spell cast on the player on accept. 0 means none."));
     }
 
     void RenderObjective(Row objective)
@@ -175,39 +179,53 @@ public partial class TcQuestPanel : QuestPanel
     Control ObjectTarget(Row objective, uint type)
     {
         uint id = (uint)Math.Max(objective.I("ObjectID"), 0);
+        void Choose(uint picked) => SetObjective(objective, "Change objective target", ("ObjectID", (int)picked));
+        Action? clear = id == 0 ? null : () => SetObjective(objective, "Clear objective target", ("ObjectID", 0));
+        if (type == TcQuestRules.Item)
+        {
+            return ItemReference(id, "item", () => ChooseItem("Choose item", (picked, _) => Choose(picked), id), clear, "The item this objective counts.");
+        }
+
+        if (type == TcQuestRules.LearnSpell)
+        {
+            return EditorFields.Reference(id == 0 ? "Choose spell…" : SpellNameOf(id) is { Length: > 0 } spell ? $"{spell}  ·  {id}" : $"Missing #{id}",
+                () => ChooseSpell("Choose spell", Choose, id), clear, id != 0 && SpellNameOf(id) == null,
+                "The spell the player must learn.", IconOfPath(SpellIconOf(id)), SpellTipOf(id));
+        }
+
+        if (type is TcQuestRules.Currency or TcQuestRules.HaveCurrency or TcQuestRules.ObtainCurrency)
+        {
+            return CurrencyReferenceFor(id, clear, "The currency this objective counts.", Choose);
+        }
+
+        if (type is TcQuestRules.MinReputation or TcQuestRules.MaxReputation or TcQuestRules.IncreaseReputation)
+        {
+            return EditorFields.Reference(id == 0 ? "Choose faction…" : FactionNameOf(id) is { Length: > 0 } faction ? $"{faction}  ·  {id}" : $"Missing #{id}",
+                () => ChooseFaction("Choose faction", Choose, id), clear, id != 0 && FactionNameOf(id) == null,
+                "The reputation faction this objective counts.", null, FactionTip(id));
+        }
+
         SmartParamKind? kind = type switch
         {
             TcQuestRules.Monster or TcQuestRules.TalkTo => SmartParamKind.Creature,
             TcQuestRules.GameObject => SmartParamKind.GameObject,
-            TcQuestRules.Item => SmartParamKind.Item,
-            TcQuestRules.LearnSpell => SmartParamKind.Spell,
             _ => null
         };
         if (kind is not { } known)
         {
-            // Currencies, reputations, area triggers and the rest are IDs of tables the editor has no search for.
-            return EditorFields.Number(objective.I("ObjectID"), value => SetObjective(objective, "Change objective target", ("ObjectID", (int)value)), 100, "The ID in the table this objective type refers to (currency, reputation, area trigger and so on).");
+            // Area triggers and the rest are IDs of tables the editor has no search for.
+            return EditorFields.Number(objective.I("ObjectID"), value => SetObjective(objective, "Change objective target", ("ObjectID", (int)value)), 100, "The ID in the table this objective type refers to (an area trigger, for example).");
         }
 
-        string what = known switch
-        {
-            SmartParamKind.Creature => "creature",
-            SmartParamKind.GameObject => "object",
-            SmartParamKind.Item => "item",
-            _ => "spell"
-        };
-        return EditorFields.Reference(Named(known, id, $"Choose {what}…"), () =>
-        {
-            if (known == SmartParamKind.Spell)
-            {
-                PickSpell("Choose spell", picked => SetObjective(objective, "Change objective target", ("ObjectID", (int)picked)));
-            }
-            else
-            {
-                Pick(known, $"Choose {what}", picked => SetObjective(objective, "Change objective target", ("ObjectID", (int)picked)));
-            }
-        }, id == 0 ? null : () => SetObjective(objective, "Clear objective target", ("ObjectID", 0)), Missing(known, id), $"The {what} this objective counts.");
+        string what = known == SmartParamKind.Creature ? "creature" : "object";
+        return EditorFields.Reference(Named(known, id, $"Choose {what}…"), () => Pick(known, $"Choose {what}", Choose), clear, Missing(known, id), $"The {what} this objective counts.");
     }
+
+    /// <summary>A currency reference for a quest_objectives row, whose target is an action rather than a table column.</summary>
+    Control CurrencyReferenceFor(uint id, Action? clear, string tooltip, Action<uint> choose) =>
+        EditorFields.Reference(id == 0 ? "Choose currency…" : CurrencyNameOf(id) is { Length: > 0 } name ? $"{name}  ·  {id}" : $"Missing #{id}",
+            () => ChooseCurrency("Choose currency", choose, id), clear, id != 0 && CurrencyNameOf(id) == null,
+            tooltip, IconOfPath(CurrencyIconOf(id)), CurrencyTipOf(id));
 
     bool SetObjective(Row objective, string label, params (string Column, object Value)[] values)
     {
@@ -287,11 +305,12 @@ public partial class TcQuestPanel : QuestPanel
             ItemSlot(q, $"{i}.", $"RewardChoiceItemID{i}", $"RewardChoiceItemQuantity{i}", "choice", "Change choice reward", "One of the items the player can choose from on the reward screen.");
         }
 
-        Heading("Currencies", "Currency IDs (CurrencyTypes); the client checks that each exists.");
+        Heading("Currencies", "Currencies the quest awards, with the client's icon and description.");
         for (int i = 1; i <= 4; i++)
         {
-            Add($"{i}.", "A currency the quest awards; use CurrencyTypes IDs.",
-                UNumber(Template, $"RewardCurrencyID{i}", "Change reward currency", 80, "CurrencyTypes ID awarded."), ClientStyle.Tag("×"), UNumber(Template, $"RewardCurrencyQty{i}", "Change reward currency amount", 60, "How much of the currency is awarded."));
+            Add($"{i}.", "A currency the quest awards.",
+                CurrencyReference(Template, $"RewardCurrencyID{i}", "Change reward currency", "The currency awarded."),
+                ClientStyle.Tag("×"), UNumber(Template, $"RewardCurrencyQty{i}", "Change reward currency amount", 60, "How much of the currency is awarded."));
         }
 
         Heading("Reputation", "Standard tier (1–9) uses the client's reward table; an exact amount overrides it.");
@@ -304,27 +323,28 @@ public partial class TcQuestPanel : QuestPanel
 
             int slot = i;
             Add($"{slot}.", "A faction whose reputation the quest rewards.",
-                ClientStyle.Tag("Faction"), UNumber(Template, $"RewardFactionID{slot}", "Change reputation reward", 70, "The faction whose reputation is rewarded."),
+                FactionRef(Template, $"RewardFactionID{slot}", "Change reputation reward", "The faction whose reputation is rewarded."),
                 ClientStyle.Tag("tier"), EditorFields.Number(q.I($"RewardFactionValue{slot}"), value => Set(Template, "Change reputation tier", ($"RewardFactionValue{slot}", (int)value)), 40, "Standard reputation tier from the client's reward table (1-9)."),
                 ClientStyle.Tag("or exact"), EditorFields.Number(q.I($"RewardFactionOverride{slot}") / 100, value => Set(Template, "Change reputation amount", ($"RewardFactionOverride{slot}", (int)value * 100)), 60, "An exact reputation amount that overrides the tier, in reputation points."));
         }
 
         Heading("Other rewards");
         Add("Spell cast on player", "A spell cast on the player when the quest is turned in.",
-            Ref(Template, "RewardSpell", SmartParamKind.Spell, "spell cast on the player", "Change reward spell", false, "The spell cast on the player on turn-in. 0 means none."));
+            SpellReference(Template, "RewardSpell", "spell cast on the player", "Change reward spell", "The spell cast on the player on turn-in. 0 means none."));
         for (int i = 1; i <= 3; i++)
         {
             Add(i == 1 ? "Spells shown as reward" : "", "Spells shown on the reward screen as teasers; they are not actually cast.",
-                Ref(Template, $"RewardDisplaySpell{i}", SmartParamKind.Spell, "displayed reward spell", "Change displayed spell", false, "A spell shown on the reward screen. 0 means none."));
+                SpellReference(Template, $"RewardDisplaySpell{i}", "displayed reward spell", "Change displayed spell", "A spell shown on the reward screen. 0 means none."));
         }
 
-        Add("Honor", "Other rewards: honor points, arena points and a title ID.",
-            UNumber(Template, "RewardHonor", "Change honor reward", 60, "Honor points awarded."), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60, "Arena points awarded."),
-            ClientStyle.Tag("Title ID"), UNumber(Template, "RewardTitle", "Change title reward", 50, "Title ID awarded."));
+        Add("Honor", "Other rewards: honor points and arena points.",
+            UNumber(Template, "RewardHonor", "Change honor reward", 60, "Honor points awarded."), ClientStyle.Tag("Arena points"), UNumber(Template, "RewardArenaPoints", "Change arena reward", 60, "Arena points awarded."));
+        Add("Title", "A character title the quest awards. 0 means no title.", TitleReference(Template, "RewardTitle", "Change title reward", "The character title awarded by this quest."));
         Add("Skill", "A profession skill the quest rewards, and how many skill-ups it gives.",
-            UNumber(Template, "RewardSkillLineID", "Change skill reward", 60, "SkillLine ID whose skill is increased."), ClientStyle.Tag("skill-ups"), UNumber(Template, "RewardNumSkillUps", "Change skill-ups", 40, "How many skill points are awarded."));
+            SkillReference(Template, "RewardSkillLineID", "Change skill reward", "The skill whose rank is increased."), ClientStyle.Tag("skill-ups"), UNumber(Template, "RewardNumSkillUps", "Change skill-ups", 40, "How many skill points are awarded."));
         Add("Mail afterwards", "Mail sent to the player after the quest is turned in.",
-            UNumber(Addon, "RewardMailTemplateID", "Change reward mail", 70, "Mail template ID sent after turn-in; 0 means no mail."), ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70, "Seconds after turn-in before the mail arrives."), ClientStyle.Tag("seconds"));
+            MailReference(Addon, "RewardMailTemplateID", "Change reward mail", "The mail template sent after turn-in; 0 means no mail."),
+            ClientStyle.Tag("after"), UNumber(Addon, "RewardMailDelay", "Change mail delay", 70, "Seconds after turn-in before the mail arrives."), ClientStyle.Tag("seconds"));
     }
 
     void SetMultiplier(string column, string label, string text)

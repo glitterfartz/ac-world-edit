@@ -511,20 +511,20 @@ public partial class ViewerShell
                 // Creature Templates toolbar button: search by name, pick, and the creature window opens on it.
                 creatureProps.Visible = false;
                 OpenCreatureTemplateSearch();
-                if (GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible) is not { } templatePicker) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_MISSING"); return; }
-                templatePicker.SmokeSearch("Farley");
+                if (GetChildren().OfType<RecordPicker>().LastOrDefault(p => p.Visible) is not { } templatePicker) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_MISSING"); return; }
+                templatePicker.SearchFor("Farley");
                 clientShotFrames = 0;
                 clientShotCreatureStage = 61;
                 return;
             case 61:
-                var picker = GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible);
+                var picker = GetChildren().OfType<RecordPicker>().LastOrDefault(p => p.Visible);
                 if (picker == null) { SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_CLOSED"); return; }
                 if (picker.ResultCount == 0 || picker.ShownTerm != "Farley")
                 {
                     if (clientShotFrames++ > 1200) SmokeFail("CLIENT_SHOT_TEMPLATE_SEARCH_EMPTY");
                     return;
                 }
-                picker.Choose(0);
+                picker.ChooseResult(0);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 62;
                 return;

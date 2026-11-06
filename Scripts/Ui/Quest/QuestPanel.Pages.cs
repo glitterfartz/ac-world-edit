@@ -1,5 +1,6 @@
 using System.Globalization;
 using Godot;
+using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
@@ -66,30 +67,19 @@ public abstract partial class QuestPanel
             return;
         }
 
-        uint zone = q.I("QuestSortID") > 0 ? (uint)q.I("QuestSortID") : 0;
-        bool zoneMissing = zone != 0 && !areas.Contains(zone);
-        string zoneText = q.I("QuestSortID") switch
+        int sort = q.I("QuestSortID");
+        bool zoneMissing = sort > 0 && !areas.Contains((uint)sort);
+        string category = sort < 0 ? catalog?.QuestSortName((uint)-sort) ?? Lookup()?.QuestSorts().FirstOrDefault(s => s.Id == (uint)-sort).Name ?? $"Quest log category {-sort}" : "";
+        string zoneText = sort switch
         {
             0 => "No zone",
-            < 0 => $"Quest log category {-q.I("QuestSortID")}",
-            _ => zoneMissing ? $"Missing zone #{zone}" : areas!.Describe(zone).Zone
+            < 0 => category,
+            _ => zoneMissing ? $"Missing zone #{sort}" : areas.Describe((uint)sort).Zone
         };
         Add("Quest log zone", "The area the quest appears under in the quest log, and the map a breadcrumb points at.",
-            EditorFields.Reference(zoneText, PickZone, q.I("QuestSortID") == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing, "The quest-log zone (AreaTable ID), or a negative quest-log category."));
-    }
-
-    protected void PickZone()
-    {
-        if (Areas() is not { } areas)
-        {
-            status = "Zone names need the client AreaTable; enter the zone ID in the search box instead.";
-            UpdateStatus();
-            return;
-        }
-
-        PickerPopup.Show(this, "Choose quest log zone", term => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>(areas.Search(term, null, 60)
-            .Select(a => (a.Id, a.Parent == null ? a.Name : $"{a.Name} ({a.Parent})")).ToList()),
-            (id, _) => Set(Template, "Change quest zone", ("QuestSortID", (int)id)));
+            EditorFields.Reference(zoneText, () => ChooseArea(zone => Set(Template, "Change quest zone", ("QuestSortID", zone)), sort),
+                sort == 0 ? null : () => Set(Template, "Clear quest zone", ("QuestSortID", 0)), zoneMissing,
+                "The quest-log zone (AreaTable ID), or a negative quest-log category."));
     }
 
     protected void RenderStory(Row q)
@@ -120,7 +110,7 @@ public abstract partial class QuestPanel
 
     protected OptionButton EmoteChoice(TableSchema table, string column, string label, string tooltip = "")
     {
-        var emotes = (catalog?.All("Emote") ?? []).Where(e => e.Name.Length > 0).Prepend((0u, "none")).DistinctBy(e => e.Item1).ToList();
+        var emotes = EmoteChoices();
         return EditorFields.Choice(emotes, RowOf(table).U(column), value => Set(table, label, (column, value)), tooltip);
     }
 
@@ -129,19 +119,23 @@ public abstract partial class QuestPanel
         uint item = q.U(itemColumn);
         if (item == 0)
         {
-            Add(caption, tooltip, ButtonOf($"Add {what}…", () => Pick(SmartParamKind.Item, $"Choose {what}", id => Set(Template, label, (itemColumn, id), (countColumn, Math.Max(1u, Quest!.U(countColumn)))))));
+            Add(caption, tooltip, ButtonOf($"Add {what}…", () => ChooseItem($"Choose {what}", (id, _) =>
+                Set(Template, label, (itemColumn, id), (countColumn, Math.Max(1u, Quest!.U(countColumn)))))));
             return;
         }
 
-        Add(caption, tooltip, EditorFields.Number(q.U(countColumn), count => Set(Template, label, (countColumn, count)), 50, "How many are required."), ClientStyle.Tag("×"),
-            EditorFields.Reference(Named(SmartParamKind.Item, item), () => Pick(SmartParamKind.Item, $"Choose {what}", id => Set(Template, label, (itemColumn, id))), () => Set(Template, label, (itemColumn, 0), (countColumn, 0)), Missing(SmartParamKind.Item, item), tooltip));
+        Add(caption, tooltip, ItemReference(item, what,
+                () => ChooseItem($"Choose {what}", (id, _) => Set(Template, label, (itemColumn, id)), item),
+                () => Set(Template, label, (itemColumn, 0), (countColumn, 0)), tooltip),
+            ClientStyle.Tag("×"), EditorFields.Number(q.U(countColumn), count => Set(Template, label, (countColumn, count)), 50, "How many are required."));
     }
 
     protected HBoxContainer FactionRef(TableSchema table, string column, string label, string tooltip = "")
     {
         uint faction = RowOf(table).U(column);
-        string text = faction == 0 ? "None" : catalog?.FactionName(faction) is { } name ? name : $"Faction {faction}";
-        return EditorFields.Reference(text, () => PickFromList("Choose faction", catalog?.All("Faction") ?? [], id => Set(table, label, (column, id))), faction == 0 ? null : () => Set(table, label, (column, 0)), false, tooltip);
+        string text = faction == 0 ? "None" : FactionNameOf(faction) is { Length: > 0 } name ? $"{name}  ·  {faction}" : $"Missing #{faction}";
+        return EditorFields.Reference(text, () => ChooseFaction("Choose faction", id => Set(table, label, (column, id)), faction),
+            faction == 0 ? null : () => Set(table, label, (column, 0)), faction != 0 && FactionNameOf(faction) == null, tooltip, null, FactionTip(faction));
     }
 
     protected void RenderChain(Row q)
@@ -170,7 +164,8 @@ public abstract partial class QuestPanel
 
         Heading("Requirements");
         Add("Skill", "A profession or skill the player must have before this quest is offered.",
-            UNumber(Addon, "RequiredSkillID", "Change required skill", 60, "SkillLine ID, e.g. 197 Tailoring. 0 means no skill."), ClientStyle.Tag("at least"), UNumber(Addon, "RequiredSkillPoints", "Change required skill", 60, "Minimum rank in the required skill."));
+            SkillReference(Addon, "RequiredSkillID", "Change required skill", "The profession or skill the player must have."),
+            ClientStyle.Tag("at least"), UNumber(Addon, "RequiredSkillPoints", "Change required skill", 60, "Minimum rank in the required skill."));
         Add("Reputation at least", "A faction the player must be at least friendly with before this quest is offered.",
             FactionRef(Addon, "RequiredMinRepFaction", "Change reputation requirement", "The faction the player must be at least friendly with."), UNumber(Addon, "RequiredMinRepValue", "Change reputation requirement", 70, "Reputation value required: 0 neutral, 3000 friendly, 9000 honored, 21000 revered, 42000 exalted."));
         Add("Reputation below", "A faction the player must be below a certain standing with before this quest is offered.",
@@ -184,60 +179,119 @@ public abstract partial class QuestPanel
     {
     }
 
+    sealed record GiverLink(TableSchema Table, Row Link, bool IsObject);
+
+    sealed record GiverChoice(bool IsObject, uint Id);
+
+    IEnumerable<GiverLink> GiverLinks(TableSchema creatures, TableSchema objects) =>
+        effective.All(creatures).Where(r => r.U("quest") == QuestId).OrderBy(r => r.U("id")).Select(r => new GiverLink(creatures, r, false))
+            .Concat(effective.All(objects).Where(r => r.U("quest") == QuestId).OrderBy(r => r.U("id")).Select(r => new GiverLink(objects, r, true)));
+
     protected void RenderGivers()
     {
-        GiverList(Starter, "Who offers it", "quest giver", "Add quest giver");
-        GiverList(Ender, "Who completes it", "quest ender", "Add quest ender");
-        var starters = effective.All(Starter).Where(r => r.U("quest") == QuestId).Select(r => r.U("id")).ToList();
-        var enders = effective.All(Ender).Where(r => r.U("quest") == QuestId).Select(r => r.U("id")).ToHashSet();
+        GiverList(Starter, ObjectStarter, "Who offers it", "quest giver", "Add quest giver");
+        GiverList(Ender, ObjectEnder, "Who completes it", "quest ender", "Add quest ender");
+        var starters = GiverLinks(Starter, ObjectStarter).Select(l => (l.IsObject, l.Link.U("id"))).ToList();
+        var enders = GiverLinks(Ender, ObjectEnder).Select(l => (l.IsObject, l.Link.U("id"))).ToHashSet();
         var missing = starters.Where(s => !enders.Contains(s)).ToList();
         if (missing.Count > 0)
         {
-            var also = ButtonOf("Givers also complete it", () => Commit("Givers also complete the quest", missing.Select(id =>
-                new RowEdit(Ender.Name, $"{id}|{QuestId}", null, Row.Of(("id", id), ("quest", QuestId!.Value)))).ToArray()));
+            var also = ButtonOf("Givers also complete it", () => Commit("Givers also complete the quest", missing.Select(s =>
+                new RowEdit((s.IsObject ? ObjectEnder : Ender).Name, $"{s.Item2}|{QuestId}", null, Row.Of(("id", s.Item2), ("quest", QuestId!.Value)))).ToArray()));
             also.TooltipText = "Make every giver that does not already accept this quest also accept it.";
             page.AddChild(also);
         }
 
-        page.AddChild(ClientStyle.Text("Creatures also need the Quest Giver flag (Interactions window). Object and item starters are not edited here.", 11, ClientStyle.Faded));
+        page.AddChild(ClientStyle.Text("Creatures need the Quest Giver flag (Interactions window); objects need a questgiver type. Item starters are not edited here.", 11, ClientStyle.Faded));
     }
 
-    protected void GiverList(TableSchema table, string heading, string what, string label)
+    protected void GiverList(TableSchema creatures, TableSchema objects, string heading, string what, string label)
     {
         Heading(heading);
-        foreach (var link in effective.All(table).Where(r => r.U("quest") == QuestId).OrderBy(r => r.U("id")))
+        foreach (var (table, link, isObject) in GiverLinks(creatures, objects))
         {
             uint entry = link.U("id");
+            SmartParamKind kind = isObject ? SmartParamKind.GameObject : SmartParamKind.Creature;
             var row = new HBoxContainer();
-            row.AddChild(ClientStyle.Text(Named(SmartParamKind.Creature, entry), 14, Missing(SmartParamKind.Creature, entry) ? ClientStyle.Error : null));
-            var fly = ButtonOf("Fly to", async () =>
+            row.AddChild(ClientStyle.Text(Named(kind, entry), 14, Missing(kind, entry) ? ClientStyle.Error : null));
+            if (!isObject)
             {
-                status = $"Locating {snapshot!.Names.Creature(entry) ?? $"creature {entry}"}…";
-                UpdateStatus();
-                status = await FlyToEntry(entry, snapshot.Names.Creature(entry) ?? $"Creature {entry}");
-                UpdateStatus();
-            });
-            fly.TooltipText = "Select this creature in the world.";
-            row.AddChild(fly);
-            var behavior = ButtonOf("Behavior…", () => BehaviorRequested(entry));
-            behavior.TooltipText = "Open this creature's SmartAI rules.";
-            row.AddChild(behavior);
-            var linkRow = link;
-            var remove = ButtonOf("Remove", () => Commit($"Remove {what}", new RowEdit(table.Name, table.KeyOf(linkRow), linkRow, null)));
-            remove.TooltipText = $"Stop this creature being a {what} for the quest.";
+                var fly = ButtonOf("Fly to", async () =>
+                {
+                    status = $"Locating {snapshot!.Names.Creature(entry) ?? $"creature {entry}"}…";
+                    UpdateStatus();
+                    status = await FlyToEntry(entry, snapshot.Names.Creature(entry) ?? $"Creature {entry}");
+                    UpdateStatus();
+                });
+                fly.TooltipText = "Select this creature in the world.";
+                row.AddChild(fly);
+                var behavior = ButtonOf("Behavior…", () => BehaviorRequested(entry));
+                behavior.TooltipText = "Open this creature's SmartAI rules.";
+                row.AddChild(behavior);
+            }
+
+            var remove = ButtonOf("Remove", () => Commit($"Remove {what}", new RowEdit(table.Name, table.KeyOf(link), link, null)));
+            remove.TooltipText = $"Stop this {(isObject ? "game object" : "creature")} being a {what} for the quest.";
             row.AddChild(remove);
             page.AddChild(row);
         }
 
-        var add = ButtonOf($"+ Add {what}…", () => Pick(SmartParamKind.Creature, $"Choose {what}", id =>
-        {
-            var row = Row.Of(("id", id), ("quest", QuestId!.Value));
-            if (effective.Get(table, table.KeyOf(row)) == null)
-            {
-                Commit(label, new RowEdit(table.Name, table.KeyOf(row), null, row));
-            }
-        }));
-        add.TooltipText = $"Choose a creature to add as a {what}.";
+        var add = ButtonOf($"+ {label}…", () => ChooseGiver(creatures, objects, what, label));
+        add.TooltipText = $"Search creatures and game objects to add as a {what}.";
         page.AddChild(add);
+    }
+
+    void ChooseGiver(TableSchema creatures, TableSchema objects, string what, string label) =>
+        RecordPicker.Show(this, Store, label,
+        [
+            new PickerTab("Creatures", SearchCreatureGivers),
+            new PickerTab("Game objects", SearchGameObjectGivers)
+        ], record =>
+        {
+            if (record.Value is not GiverChoice choice)
+            {
+                return;
+            }
+
+            var table = choice.IsObject ? objects : creatures;
+            var row = Row.Of(("id", choice.Id), ("quest", QuestId!.Value));
+            if (effective.Get(table, table.KeyOf(row)) != null)
+            {
+                status = $"{record.Label} is already a {what} for this quest.";
+                UpdateStatus();
+                return;
+            }
+
+            Commit($"{label} {choice.Id}", new RowEdit(table.Name, table.KeyOf(row), null, row));
+        });
+
+    async Task<IReadOnlyList<PickerRecord>> SearchCreatureGivers(string term)
+    {
+        var db = DBSource.Open(Connection(), Lookup());
+        var found = await db.SearchAsync(SmartParamKind.Creature, term, CancellationToken.None);
+        var looks = found.Count == 0 ? new Dictionary<uint, CreatureLook>() : await db.ReadCreatureLooksAsync(found.Select(hit => hit.Id).ToList(), CancellationToken.None);
+        IThumbnailSource? thumbnails = Thumbnails;
+        return found.Select(hit =>
+        {
+            uint display = looks.GetValueOrDefault(hit.Id)?.DisplayId ?? 0;
+            return new PickerRecord(hit.Id, hit.Name, $"creature · {hit.Id}",
+                Thumbnail: thumbnails != null && display != 0 ? ready => thumbnails.Creature(display, ready) : null,
+                Value: new GiverChoice(false, hit.Id));
+        }).ToList();
+    }
+
+    async Task<IReadOnlyList<PickerRecord>> SearchGameObjectGivers(string term)
+    {
+        var db = DBSource.Open(Connection(), Lookup());
+        var found = await db.SearchAsync(SmartParamKind.GameObject, term, CancellationToken.None);
+        var looks = found.Count == 0 ? new Dictionary<uint, GameObjectLook>() : await db.ReadGameObjectLooksAsync(found.Select(hit => hit.Id).ToList(), CancellationToken.None);
+        IThumbnailSource? thumbnails = Thumbnails;
+        return found.Select(hit =>
+        {
+            uint display = looks.GetValueOrDefault(hit.Id)?.DisplayId ?? 0;
+            return new PickerRecord(hit.Id, hit.Name, $"game object · {hit.Id}",
+                Thumbnail: thumbnails != null && display != 0 ? ready => thumbnails.GameObject(display, ready) : null,
+                Value: new GiverChoice(true, hit.Id));
+        }).ToList();
     }
 }

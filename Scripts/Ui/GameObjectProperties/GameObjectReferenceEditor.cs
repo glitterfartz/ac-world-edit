@@ -47,7 +47,7 @@ public static class GameObjectReferenceEditor
     static void Pick(Node owner, GameObjectContext ctx, FieldSpec field, Row row, Func<string, Task<IReadOnlyList<(uint Id, string Name)>>> search)
     {
         uint? current = uint.TryParse(row.T(field.Column), NumberStyles.Integer, CultureInfo.InvariantCulture, out uint value) ? value : null;
-        PickerPopup.Show(owner, $"Choose {field.Label}", search, (id, _) => Set(ctx, field, row, id.ToString(CultureInfo.InvariantCulture)), current: current);
+        RecordPicker.Show(owner, $"Choose {field.Label}", search, (id, _) => Set(ctx, field, row, id.ToString(CultureInfo.InvariantCulture)), current: current, store: () => ctx.Store());
     }
 
     static void Set(GameObjectContext ctx, FieldSpec field, Row row, string text)

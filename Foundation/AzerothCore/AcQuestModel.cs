@@ -24,6 +24,8 @@ public static class AcQuestModel
     public static readonly (uint Bit, string Name)[] Races = [(1, "Human"), (2, "Orc"), (4, "Dwarf"), (8, "Night Elf"), (16, "Undead"), (32, "Tauren"), (64, "Gnome"), (128, "Troll"), (512, "Blood Elf"), (1024, "Draenei")];
     public static readonly (uint Bit, string Name)[] Classes = [(1, "Warrior"), (2, "Paladin"), (4, "Hunter"), (8, "Rogue"), (16, "Priest"), (32, "Death Knight"), (64, "Shaman"), (128, "Mage"), (256, "Warlock"), (1024, "Druid")];
     public const uint AllianceRaces = 1 | 4 | 8 | 64 | 1024, HordeRaces = 2 | 16 | 32 | 128 | 512;
+    /// <summary>Every race bit the 3.3.5 client defines; the mask a custom race selection starts from.</summary>
+    public const uint AllRaces = 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 512 | 1024;
 
     /// <summary>
     /// The four per-quest tables (all keyed by ID), in the order NewQuest returns their rows.

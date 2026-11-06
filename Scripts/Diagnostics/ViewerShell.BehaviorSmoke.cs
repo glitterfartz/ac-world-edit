@@ -176,13 +176,14 @@ public partial class ViewerShell
     /// </summary>
     bool ClickPickerItem(int index)
     {
-        var list = behaviorEditor.GetChildren().OfType<PickerPopup>().LastOrDefault(p => p.Visible)?.FindChildren("*", "ItemList", true, false).OfType<ItemList>().FirstOrDefault();
-        if (list == null || list.ItemCount <= index)
+        var list = behaviorEditor.GetChildren().OfType<RecordPicker>().LastOrDefault(p => p.Visible)?.FindChild("RecordList", true, false) as VBoxContainer;
+        if (list == null || list.GetChildCount() <= index)
         {
             return false;
         }
 
-        ClickAt(list.GetScreenTransform() * list.GetItemRect(index).GetCenter());
+        var row = (Button)list.GetChild(index);
+        ClickAt(row.GetScreenTransform() * (row.Size / 2));
         return true;
     }
 }

@@ -16,6 +16,17 @@ public partial class QuestEditorWindow : ContentEditorWindow
     public QuestPanel Panel { get; private set; } = new AcQuestPanel();
     public Func<AreaLookup?> Areas { get; set; } = () => null;
     public Func<IClientLookup?> Lookup { get; set; } = () => null;
+    IThumbnailSource? thumbnails;
+    /// <summary>Model thumbnails for the creature/GameObject giver picker.</summary>
+    public IThumbnailSource? Thumbnails
+    {
+        get => thumbnails;
+        set
+        {
+            thumbnails = value;
+            Panel.Thumbnails = value;
+        }
+    }
     public Func<uint, string, Task<string>> FlyToEntry { get; set; } = (_, _) => Task.FromResult("");
     public Action<uint> BehaviorRequested { get; set; } = _ => { };
     HBoxContainer split = null!;
@@ -90,6 +101,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         panel.Drafts = Drafts;
         panel.Areas = () => Areas();
         panel.Lookup = () => Lookup();
+        panel.Thumbnails = thumbnails;
         panel.FlyToEntry = (entry, name) => FlyToEntry(entry, name);
         panel.BehaviorRequested = entry => BehaviorRequested(entry);
         panel.Rendered += Sync;
