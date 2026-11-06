@@ -142,6 +142,14 @@ public partial class ViewerShell
             Drafts = drafts,
             FlyToSpawn = (guid, map, x, y, z) => LocateSpawn(SpawnKind.GameObject, guid, map, x, y, z)
         };
+        bookmarkWindow = new BookmarkWindow
+        {
+            Drafts = drafts,
+            FilePath = () => BookmarkStore.PathFor(profile.Kind),
+            Capture = CaptureBookmark,
+            CanCapture = () => world != null && currentMapId != null,
+            OpenBookmark = OpenBookmark
+        };
         areaBehavior = new BehaviorEditorWindow
         {
             Connection = () => DatabaseConnection(),
@@ -161,6 +169,7 @@ public partial class ViewerShell
         // Floating windows sit on the UI layer above the panels.
         layer.AddChild(creatureProps);
         layer.AddChild(gameObjectProps);
+        layer.AddChild(bookmarkWindow);
         layer.AddChild(questEditor);
         layer.AddChild(areaBehavior);
         pendingWindow = new PendingChangesWindow

@@ -54,7 +54,7 @@
       "text": "Overview",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Title, category, level range, who can take it and its behaviour flags."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabStory",
@@ -65,7 +65,7 @@
       "text": "Story",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "The text shown when the quest is offered, while it is in progress and when it is turned in."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabObjectives",
@@ -76,7 +76,7 @@
       "text": "Objectives",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "What the player must kill, use, collect or reach, and the items given on accept."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabRewards",
@@ -87,7 +87,7 @@
       "text": "Rewards",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Money, experience, items, reputation and other rewards."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabChain",
@@ -98,7 +98,7 @@
       "text": "Chain & requirements",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "The quests before and after it, exclusive groups and requirements."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabGivers",
@@ -109,7 +109,7 @@
       "text": "Givers",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "The creatures that offer and accept the quest."
     },
     {
       "path": "AcQuestPanel/@<auto>/TabPreview",
@@ -120,7 +120,7 @@
       "text": "Preview",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "A read-only preview of the quest as the player sees it."
     },
     {
       "path": "AcQuestPanel/@<auto>",
@@ -175,7 +175,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest title shown in the quest log, on the giver's dialog and in search results."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -186,7 +186,7 @@
       "text": "Kanrethad's Quest",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest title shown in the quest log."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -208,7 +208,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest category shown by the client, such as Dungeon, Raid, PvP or Profession."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -216,10 +216,10 @@
       "Name": {
         "IsEmpty": false
       },
-      "text": "Normal|Group (elite)|Life|PvP|Raid|Dungeon|World event|Legendary|Escort|Heroic|Raid (10)|Raid (25)",
+      "text": "Normal|Dungeon|Escort|Group|Heroic|Legendary|Life|PvP|Raid|Raid (10)|Raid (25)|World Event",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "The quest category shown by the client."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -230,7 +230,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest category shown by the client, such as Dungeon, Raid, PvP or Profession."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -241,7 +241,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "0 = solo"
+      "tooltip": "The suggested group size shown in the log; 0 means solo."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -263,7 +263,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "Normal quests are offered when their requirements pass; disabled quests are hidden; auto-complete quests finish the moment they are accepted."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -296,7 +296,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The area the quest appears under in the quest log, and the map a breadcrumb points at."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -307,7 +307,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest-log zone (AreaTable ID), or a negative quest-log category."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -318,7 +318,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The quest-log zone (AreaTable ID), or a negative quest-log category."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -329,7 +329,7 @@
       "text": "Choose…",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "The quest-log zone (AreaTable ID), or a negative quest-log category."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -384,7 +384,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The level the quest is tuned for. It sets experience and the difficulty colour in the log; -1 scales with the player."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -395,7 +395,7 @@
       "text": "80",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The level the quest is tuned for; -1 scales with the player."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -406,7 +406,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The level the quest is tuned for. It sets experience and the difficulty colour in the log; -1 scales with the player."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -417,7 +417,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The minimum player level needed to accept the quest."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -428,7 +428,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "The level the quest is tuned for. It sets experience and the difficulty colour in the log; -1 scales with the player."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -439,7 +439,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "0 = no maximum"
+      "tooltip": "The maximum player level that can accept it; 0 means no maximum."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -461,7 +461,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "How long the player has to finish the quest, in seconds. 0 means untimed."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -472,7 +472,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Seconds; 0 = untimed"
+      "tooltip": "Seconds allowed to finish; 0 means untimed."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -483,7 +483,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "How long the player has to finish the quest, in seconds. 0 means untimed."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -516,7 +516,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "Which races can accept the quest: everyone, one faction, or a custom race mask."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -527,7 +527,7 @@
       "text": "Everyone|Alliance only|Horde only|Specific races…",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Which races can accept the quest."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -549,7 +549,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": ""
+      "tooltip": "Which classes can accept the quest. 'All classes' allows everyone."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -560,7 +560,7 @@
       "text": "All classes",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Tick to allow every class. Untick to choose specific classes below."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -593,7 +593,7 @@
       "text": "Fails on death",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -604,7 +604,7 @@
       "text": "Party accept",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -615,7 +615,7 @@
       "text": "Shareable",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -626,7 +626,7 @@
       "text": "Hidden rewards",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -637,7 +637,7 @@
       "text": "Tracking (auto-rewarded, hidden)",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -648,7 +648,7 @@
       "text": "Daily",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -659,7 +659,7 @@
       "text": "Forces PvP",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -670,7 +670,7 @@
       "text": "Unavailable",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -681,7 +681,7 @@
       "text": "Weekly",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -692,7 +692,7 @@
       "text": "Auto-complete",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -703,7 +703,7 @@
       "text": "Usable item in tracker",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -714,7 +714,7 @@
       "text": "Objective text as completion text",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -725,7 +725,7 @@
       "text": "Auto-accept",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Quest behaviour flags: failure on death, party accept, sharing, hidden rewards, daily or weekly, auto-accept and more."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>",
@@ -747,7 +747,7 @@
       "text": "Repeatable",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -758,7 +758,7 @@
       "text": "Completed by exploration or event",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -769,7 +769,7 @@
       "text": "Auto-accept",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -780,7 +780,7 @@
       "text": "Dungeon Finder quest",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -791,7 +791,7 @@
       "text": "Monthly",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -802,7 +802,7 @@
       "text": "Credit by spell, not kill",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -813,7 +813,7 @@
       "text": "No reputation spillover",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -824,7 +824,7 @@
       "text": "Can fail in any state",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -835,7 +835,7 @@
       "text": "Not counted for Loremaster",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Additional server flags: repeatable, auto-accept, Dungeon Finder, monthly, and quests that are not counted for Loremaster."
     },
     {
       "path": "AcQuestPanel/@<auto>",

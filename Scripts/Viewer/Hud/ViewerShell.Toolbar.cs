@@ -47,5 +47,6 @@ public partial class ViewerShell
         toolbar.Action("Quests", "Open the quest editor", () => questEditor.Open(0), () => databaseEnabled);
         toolbar.Action("Behavior", "Edit the selected creature's SmartAI rules and speech", OpenBehaviorEditor, () => BehaviorEditors);
         toolbar.Action("Creature Templates", "Search the database for a creature template by name or ID", OpenCreatureTemplateSearch, () => databaseEnabled);
+        toolbar.Action("Bookmarks", "Save and revisit camera locations", () => bookmarkWindow.Open(), () => world != null);
     }
 }

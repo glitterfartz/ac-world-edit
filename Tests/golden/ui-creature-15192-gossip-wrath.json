@@ -307,7 +307,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -318,7 +318,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -329,7 +329,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -340,7 +340,7 @@
       "text": "I've lost my Signet for Path of the Conqueror.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -351,7 +351,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -362,7 +362,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -395,7 +395,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -406,7 +406,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -417,7 +417,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -428,7 +428,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -439,7 +439,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -450,7 +450,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -461,7 +461,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -472,7 +472,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -483,29 +483,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -516,7 +494,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -527,7 +505,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -538,7 +538,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -648,7 +648,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -659,7 +659,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -670,7 +670,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -681,7 +681,7 @@
       "text": "I've lost my Signet for Path of the Conqueror.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -692,7 +692,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -703,7 +703,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -736,7 +736,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -747,7 +747,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -758,7 +758,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -769,7 +769,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -780,7 +780,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -791,7 +791,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -802,7 +802,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -813,7 +813,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -824,29 +824,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -857,7 +835,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -868,7 +846,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -879,7 +879,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -989,7 +989,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1000,7 +1000,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1011,7 +1011,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1022,7 +1022,7 @@
       "text": "I've lost my Signet for Path of the Conqueror.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1033,7 +1033,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1044,7 +1044,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1077,7 +1077,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1088,7 +1088,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1099,7 +1099,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1110,7 +1110,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1121,7 +1121,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1132,7 +1132,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1143,7 +1143,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1154,7 +1154,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1165,29 +1165,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1198,7 +1176,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1209,7 +1187,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1220,7 +1220,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1330,7 +1330,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1341,7 +1341,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1352,7 +1352,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1363,7 +1363,7 @@
       "text": "I've lost my Signet for Path of the Conqueror.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1374,7 +1374,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1385,7 +1385,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1418,7 +1418,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1429,7 +1429,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1440,7 +1440,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1451,7 +1451,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1462,7 +1462,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1473,7 +1473,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1484,7 +1484,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1495,7 +1495,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1506,29 +1506,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1539,7 +1517,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1550,7 +1528,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1561,7 +1561,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1671,7 +1671,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1682,7 +1682,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1693,7 +1693,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1704,7 +1704,7 @@
       "text": "I've lost my Signet for Path of the Invoker.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1715,7 +1715,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1726,7 +1726,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1759,7 +1759,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1770,7 +1770,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1781,7 +1781,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1792,7 +1792,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1803,7 +1803,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1814,7 +1814,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1825,7 +1825,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1836,7 +1836,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1847,29 +1847,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1880,7 +1858,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1891,7 +1869,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -1902,7 +1902,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2012,7 +2012,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2023,7 +2023,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2034,7 +2034,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2045,7 +2045,7 @@
       "text": "I've lost my Signet for Path of the Invoker.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2056,7 +2056,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2067,7 +2067,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2100,7 +2100,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2111,7 +2111,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2122,7 +2122,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2133,7 +2133,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2144,7 +2144,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2155,7 +2155,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2166,7 +2166,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2177,7 +2177,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2188,29 +2188,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2221,7 +2199,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2232,7 +2210,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2243,7 +2243,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2353,7 +2353,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2364,7 +2364,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2375,7 +2375,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2386,7 +2386,7 @@
       "text": "I've lost my Signet for Path of the Invoker.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2397,7 +2397,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2408,7 +2408,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2441,7 +2441,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2452,7 +2452,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2463,7 +2463,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2474,7 +2474,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2485,7 +2485,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2496,7 +2496,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2507,7 +2507,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2518,7 +2518,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2529,29 +2529,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2562,7 +2540,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2573,7 +2551,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2584,7 +2584,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2694,7 +2694,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2705,7 +2705,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2716,7 +2716,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2727,7 +2727,7 @@
       "text": "I've lost my Signet for Path of the Invoker.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2738,7 +2738,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2749,7 +2749,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2782,7 +2782,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2793,7 +2793,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2804,7 +2804,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2815,7 +2815,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2826,7 +2826,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2837,7 +2837,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2848,7 +2848,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2859,7 +2859,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2870,29 +2870,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2903,7 +2881,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2914,7 +2892,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -2925,7 +2925,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3035,7 +3035,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3046,7 +3046,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3057,7 +3057,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3068,7 +3068,7 @@
       "text": "I've lost my Signet for Path of the Protector.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3079,7 +3079,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3090,7 +3090,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3123,7 +3123,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3134,7 +3134,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3145,7 +3145,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3156,7 +3156,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3167,7 +3167,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3178,7 +3178,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3189,7 +3189,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3200,7 +3200,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3211,29 +3211,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3244,7 +3222,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3255,7 +3233,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3266,7 +3266,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3376,7 +3376,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3387,7 +3387,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3398,7 +3398,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3409,7 +3409,7 @@
       "text": "I've lost my Signet for Path of the Protector.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3420,7 +3420,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3431,7 +3431,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3464,7 +3464,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3475,7 +3475,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3486,7 +3486,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3497,7 +3497,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3508,7 +3508,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3519,7 +3519,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3530,7 +3530,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3541,7 +3541,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3552,29 +3552,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3585,7 +3563,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3596,7 +3574,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3607,7 +3607,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3717,7 +3717,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3728,7 +3728,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3739,7 +3739,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3750,7 +3750,7 @@
       "text": "I've lost my Signet for Path of the Protector.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3761,7 +3761,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3772,7 +3772,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3805,7 +3805,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3816,7 +3816,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3827,7 +3827,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3838,7 +3838,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3849,7 +3849,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3860,7 +3860,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3871,7 +3871,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3882,7 +3882,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3893,29 +3893,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3926,7 +3904,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3937,7 +3915,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -3948,7 +3948,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4058,7 +4058,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4069,7 +4069,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4080,7 +4080,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4091,7 +4091,7 @@
       "text": "I've lost my Signet for Path of the Protector.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4102,7 +4102,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4113,7 +4113,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4146,7 +4146,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4157,7 +4157,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4168,7 +4168,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4179,7 +4179,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4190,7 +4190,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4201,7 +4201,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4212,7 +4212,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4223,7 +4223,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4234,29 +4234,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4267,7 +4245,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4278,7 +4256,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4289,7 +4289,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4399,7 +4399,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4410,7 +4410,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4421,7 +4421,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4432,7 +4432,7 @@
       "text": "I've lost my Signet for Path of the Conqueror.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4443,7 +4443,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4454,7 +4454,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4487,7 +4487,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4498,7 +4498,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4509,7 +4509,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4520,7 +4520,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4531,7 +4531,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4542,7 +4542,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4553,7 +4553,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4564,7 +4564,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4575,29 +4575,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4608,7 +4586,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4619,7 +4597,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4630,7 +4630,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4740,7 +4740,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4751,7 +4751,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4762,7 +4762,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4773,7 +4773,7 @@
       "text": "I've lost my Signet for Path of the Invoker.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4784,7 +4784,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4795,7 +4795,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4828,7 +4828,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4839,7 +4839,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4850,7 +4850,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4861,7 +4861,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4872,7 +4872,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4883,7 +4883,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4894,7 +4894,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4905,7 +4905,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4916,29 +4916,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4949,7 +4927,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4960,7 +4938,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -4971,7 +4971,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5081,7 +5081,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5092,7 +5092,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5103,7 +5103,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5114,7 +5114,7 @@
       "text": "I've lost my Signet for Path of the Protector.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5125,7 +5125,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5136,7 +5136,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5169,7 +5169,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5180,7 +5180,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5191,7 +5191,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5202,7 +5202,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5213,7 +5213,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5224,7 +5224,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5235,7 +5235,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5246,7 +5246,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5257,29 +5257,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5290,7 +5268,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5301,7 +5279,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5312,7 +5312,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5422,7 +5422,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5433,7 +5433,7 @@
       "text": "Chat|Vendor|Taxi|Trainer|Interact|Interact 2|Money bag|Talk|Tabard|Battle|Dot|Chat 11|Chat 12|Chat 13|Invalid 14|Invalid 15|Chat 16|Chat 17|Chat 18|Chat 19|Chat 20",
       "visible": true,
       "disabled": false,
-      "tooltip": "Icon shown beside this option."
+      "tooltip": "The client icon shown beside this option, such as a chat bubble or a coin."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5444,7 +5444,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5455,7 +5455,7 @@
       "text": "I am ready, Anachronos. Please grant me the Scepter of the Shifting Sands.",
       "visible": true,
       "disabled": null,
-      "tooltip": "Player-selectable text. A valid broadcast text takes precedence."
+      "tooltip": "The text the player clicks in the gossip menu. A valid broadcast text takes precedence over it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5466,7 +5466,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5477,7 +5477,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText ID overriding the literal option text. 0 uses the literal text."
+      "tooltip": "The BroadcastText ID that replaces the literal option text in game. 0 uses the literal text."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5510,7 +5510,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5521,7 +5521,7 @@
       "text": "1",
       "visible": true,
       "disabled": null,
-      "tooltip": "Shown only when this and the creature's npcflag overlap."
+      "tooltip": "The option is shown only when this flag overlaps the creature's npcflag. 0 always shows it."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5532,7 +5532,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5543,7 +5543,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Menu opened by this option. 0 means none."
+      "tooltip": "The gossip menu this option opens. 0 means it opens nothing."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5554,7 +5554,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5565,7 +5565,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "Map marker shown by this option. 0 means none."
+      "tooltip": "The point-of-interest marker shown on the map by this option. 0 means none."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5576,7 +5576,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5587,7 +5587,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Text of the confirmation dialog."
+      "tooltip": "The text of the confirmation dialog shown before the option takes effect."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5598,29 +5598,7 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "0",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Cost in copper shown in the confirmation dialog."
-    },
-    {
-      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5631,7 +5609,7 @@
       "text": "0",
       "visible": true,
       "disabled": null,
-      "tooltip": "BroadcastText overriding the literal confirmation text."
+      "tooltip": "How much money the confirmation dialog asks for, in copper (100 copper = 1 silver, 100 silver = 1 gold)."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5642,7 +5620,29 @@
       "text": "",
       "visible": true,
       "disabled": null,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "0",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "The BroadcastText ID that replaces the literal confirmation text in game. 0 uses the literal text."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5653,7 +5653,7 @@
       "text": "",
       "visible": true,
       "disabled": false,
-      "tooltip": "Ask the player to enter a code."
+      "tooltip": "Show a box where the player must type a code before the option runs."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5832,6 +5832,17 @@
       "tooltip": ""
     },
     {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "SpawnsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
       "type": "VBoxContainer",
       "Name": {
@@ -5917,7 +5928,7 @@
       "text": "◂ Back to quests",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Return to the list of quests linked to this NPC."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
@@ -5928,7 +5939,7 @@
       "text": "Open in Quest window",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Open this quest in its own editor window."
     },
     {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",

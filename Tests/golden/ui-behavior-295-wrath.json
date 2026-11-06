@@ -43,7 +43,7 @@
       "text": "All Innkeeper Farley spawns · 2",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Rules shared by every spawn of this creature."
     },
     {
       "path": "BehaviorPanel/@<auto>",
@@ -131,7 +131,7 @@
       "text": "Edit",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Expand this rule to change its event, action and target."
     },
     {
       "path": "BehaviorPanel/@<auto>/@<auto>/Rule0/@<auto>/@<auto>/@<auto>",
@@ -186,7 +186,7 @@
       "text": "Delete",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Delete this rule (and its \"Then\" steps)."
     },
     {
       "path": "BehaviorPanel/@<auto>/@<auto>/Rule1",
@@ -241,7 +241,7 @@
       "text": "Edit",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Expand this rule to change its event, action and target."
     },
     {
       "path": "BehaviorPanel/@<auto>/@<auto>/Rule1/@<auto>/@<auto>/Then1",
@@ -263,7 +263,7 @@
       "text": "Delete",
       "visible": true,
       "disabled": false,
-      "tooltip": ""
+      "tooltip": "Delete this rule (and its \"Then\" steps)."
     },
     {
       "path": "BehaviorPanel/@<auto>/@<auto>/@<auto>",
