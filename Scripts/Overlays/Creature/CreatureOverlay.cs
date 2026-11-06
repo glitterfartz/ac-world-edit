@@ -19,6 +19,9 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
     }
 
     public ModelLibrary? Models { get; set; }
+    /// <summary>The client the model and cursor pickers read names, icons and thumbnails from.</summary>
+    public Func<IClientFiles?> Store { get; set; } = () => null;
+    public Func<IThumbnailSource?> Thumbnails { get; set; } = () => null;
 
     readonly CreatureModelView modelView;
     // Source records are immutable baselines. Markers/native transforms show effective

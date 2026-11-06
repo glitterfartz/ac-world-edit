@@ -20,6 +20,30 @@ public partial class CreatureOverlay
     void BuildSpawnFields(Container card)
     {
         spawnFields = new SpawnInspector();
+        spawnFields.Choices = _ => SpawnFieldPickers.Emotes(ContentDraftFiles.Sources.DialectOf(sourceKey), null, Lookup());
+        spawnFields.FlagBits = field => SpawnFieldPickers.Flags(ContentDraftFiles.Sources.DialectOf(sourceKey), field);
+        spawnFields.Describe = SpawnFieldPickers.Describe;
+        spawnFields.Choose = (field, picked) =>
+        {
+            if (field.Column is not ("mount" or "modelid" or "MountCreatureID"))
+            {
+                return false;
+            }
+
+            SpawnFieldPickers.Choose(spawnFields, field, picked, () => Connection(), () => Store(), () => Lookup(), Thumbnails());
+            return true;
+        };
+        spawnFields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(spawnFields, field, picked, () => Connection(), () => Store(), () => Lookup());
+        spawnFields.ChooseEquipment = (field, picked) =>
+        {
+            if (!selectedGuid.HasValue || !markers.TryGetValue(selectedGuid.Value, out var marker))
+            {
+                return false;
+            }
+
+            SpawnFieldPickers.ChooseEquipment(spawnFields, marker.Spawn.TemplateId, picked, () => Connection(), () => Store(), () => Lookup());
+            return true;
+        };
         spawnFields.Edited += EditSpawnField;
         spawnFields.UseTemplateRequested += UseTemplateAppearance;
         card.AddChild(spawnFields);

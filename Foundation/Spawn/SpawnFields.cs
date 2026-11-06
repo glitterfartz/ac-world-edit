@@ -95,6 +95,15 @@ public sealed record SpawnField(string Column, string Label, string Section, Spa
                 return (true, text.Length == 0 && BlankIsNull ? null : text, "");
             case SpawnFieldKind.Choice:
                 var choice = Choices?.FirstOrDefault(c => string.Equals(c.Label, text, StringComparison.OrdinalIgnoreCase) || c.Value.ToString(CultureInfo.InvariantCulture) == text);
+                if (Choices == null)
+                {
+                    // A choice whose list is supplied later by the inspector (the emote list) still
+                    // accepts the raw numeric value the static descriptor would show.
+                    return long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long raw)
+                        ? (true, raw, "")
+                        : (false, null, $"{Label}: enter a whole number.");
+                }
+
                 return choice is { Label: not null } ? (true, choice.Value.Value, "") : (false, null, $"{Label}: choose {string.Join(", ", Choices?.Select(c => c.Label) ?? [])}.");
             case SpawnFieldKind.Decimal:
                 return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double number) && double.IsFinite(number) && number >= Min && number <= Max
@@ -220,7 +229,7 @@ public static class SpawnFields
             fields.Add(new("bytes2", "Weapons", AppearanceSection, SpawnFieldKind.Choice, "Which weapons the creature has drawn while idle (the low byte of bytes2).", Choices: SheathStates, Addon: true, Mask: 0xFF));
         }
 
-        fields.Add(new("emote", "Emote", AppearanceSection, SpawnFieldKind.Number, "The emote it plays while idle, such as waving or dancing. 0 means none.", Max: uint.MaxValue, Addon: true));
+        fields.Add(new("emote", "Emote", AppearanceSection, SpawnFieldKind.Choice, "The emote it plays while idle, such as waving or dancing. 0 means none.", Addon: true));
         fields.Add(new("auras", "Auras", AppearanceSection, SpawnFieldKind.Text, "Aura spell IDs applied when it spawns, separated by spaces. Empty means no auras.", Addon: true, BlankIsNull: tc));
         return fields;
     }

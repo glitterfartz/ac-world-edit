@@ -167,6 +167,9 @@ public partial class ViewerShell : Node3D
         {
             Models = models,
             Connection = () => DatabaseConnection(),
+            Lookup = () => clientLookup,
+            Store = () => store,
+            Thumbnails = () => thumbnails,
             Report = statusLog.Post
         };
         AddChild(creatures);

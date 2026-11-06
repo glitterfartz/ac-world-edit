@@ -37,6 +37,20 @@ public sealed partial class AppearanceSection : CreatureSection
         use.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         AddChild(use);
         AddChild(fields);
+        fields.Choices = _ => SpawnFieldPickers.Emotes(Ctx.Dialect, Ctx.Catalog, Ctx.Lookup());
+        fields.FlagBits = field => SpawnFieldPickers.Flags(Ctx.Dialect, field);
+        fields.Describe = SpawnFieldPickers.Describe;
+        fields.Choose = (field, picked) =>
+        {
+            if (field.Column is not ("mount" or "modelid" or "MountCreatureID"))
+            {
+                return false;
+            }
+
+            SpawnFieldPickers.Choose(fields, field, picked, () => Ctx.Connection(), () => Ctx.Store(), () => Ctx.Lookup(), Ctx.Thumbnails());
+            return true;
+        };
+        fields.ChooseAura = (field, picked) => SpawnFieldPickers.ChooseAura(fields, field, picked, () => Ctx.Connection(), () => Ctx.Store(), () => Ctx.Lookup());
         fields.Edited += Edit;
     }
 
