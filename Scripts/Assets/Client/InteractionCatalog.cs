@@ -12,9 +12,11 @@ namespace ACWorldEdit.Assets;
 public sealed class InteractionCatalog
 {
     readonly DbcTable spells, taxi, costs, displays, emotes, textEmotes, factions, factionTemplates;
+    readonly DbcTable? skills, mails, titles, questInfos, questSorts, spellIcons;
     readonly Dictionary<uint, string> spellNames = [];
 
-    InteractionCatalog(DbcTable spells, DbcTable taxi, DbcTable costs, DbcTable displays, DbcTable emotes, DbcTable textEmotes, DbcTable factions, DbcTable factionTemplates)
+    InteractionCatalog(DbcTable spells, DbcTable taxi, DbcTable costs, DbcTable displays, DbcTable emotes, DbcTable textEmotes, DbcTable factions, DbcTable factionTemplates,
+        DbcTable? skills, DbcTable? mails, DbcTable? titles, DbcTable? questInfos, DbcTable? questSorts, DbcTable? spellIcons)
     {
         this.spells = spells;
         this.taxi = taxi;
@@ -24,6 +26,12 @@ public sealed class InteractionCatalog
         this.textEmotes = textEmotes;
         this.factions = factions;
         this.factionTemplates = factionTemplates;
+        this.skills = skills;
+        this.mails = mails;
+        this.titles = titles;
+        this.questInfos = questInfos;
+        this.questSorts = questSorts;
+        this.spellIcons = spellIcons;
         foreach (uint id in spells.Ids)
         {
             string name = spells.Str(id, 136);
@@ -47,7 +55,23 @@ public sealed class InteractionCatalog
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
         }
 
-        return new(tables[0], tables[1], tables[2], tables[3], tables[4], tables[5], tables[6], tables[7]);
+        // The editor reference tables are optional: a client missing one loses that picker's names,
+        // not the whole catalog.
+        DbcTable? Optional(string name)
+        {
+            try
+            {
+                return new DbcTable(store.Read($"DBFilesClient/{name}.dbc"));
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        return new(tables[0], tables[1], tables[2], tables[3], tables[4], tables[5], tables[6], tables[7],
+            Optional("SkillLine"), Optional("MailTemplate"), Optional("CharTitles"),
+            Optional("QuestInfo"), Optional("QuestSort"), Optional("SpellIcon"));
     }
 
     /// <summary>
@@ -89,6 +113,114 @@ public sealed class InteractionCatalog
         uint.TryParse(term, out uint exact);
         return spellNames.Where(s => s.Key == exact || s.Value.Contains(term, StringComparison.OrdinalIgnoreCase))
             .OrderBy(s => s.Key == exact ? 0 : 1).ThenBy(s => s.Value.Length).ThenBy(s => s.Key).Take(limit).Select(s => (s.Key, s.Value)).ToList();
+    }
+
+    /// <summary>The icon texture path of a spell (SpellIcon.dbc through Spell.dbc's SpellIconID), or null.</summary>
+    public string? SpellIconPath(uint id)
+    {
+        if (spellIcons == null || !spells.Contains(id))
+        {
+            return null;
+        }
+
+        try
+        {
+            uint icon = spells.U(id, 133);
+            if (icon == 0 || !spellIcons.Contains(icon))
+            {
+                return null;
+            }
+
+            string path = spellIcons.Str(icon, 1).Replace('\\', '/');
+            if (path.Length == 0)
+            {
+                return null;
+            }
+
+            if (!path.EndsWith(".blp", StringComparison.OrdinalIgnoreCase))
+            {
+                path += ".blp";
+            }
+
+            return path.Contains('/') ? path : $"Interface/Icons/{path}";
+        }
+        catch (InvalidDataException)
+        {
+            // A client whose Spell.dbc has fewer fields than 3.3.5 simply has no spell icons.
+            return null;
+        }
+    }
+
+    /// <summary>A profession or secondary skill name (SkillLine.dbc).</summary>
+    public string? SkillName(uint id) => skills != null && skills.Contains(id) ? skills.Str(id, 2) : null;
+
+    public string? SkillIconPath(uint id)
+    {
+        if (skills == null || spellIcons == null || !skills.Contains(id))
+        {
+            return null;
+        }
+
+        try
+        {
+            uint icon = skills.U(id, 4);
+            if (icon == 0 || !spellIcons.Contains(icon))
+            {
+                return null;
+            }
+
+            string path = spellIcons.Str(icon, 1).Replace('\\', '/');
+            return path.Length == 0 ? null : path.Contains('/') ? path : $"Interface/Icons/{path}";
+        }
+        catch (InvalidDataException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Wrath's CurrencyTypes.dbc has no string block (currency names are client-side), so this is
+    /// null; retail reads names from CurrencyTypes.db2 instead.
+    /// </summary>
+    public string? CurrencyName(uint id) => null;
+
+    public string? MailSubject(uint id) => mails != null && mails.Contains(id) ? mails.Str(id, 18) : null;
+
+    public string? TitleName(uint id) => titles != null && titles.Contains(id) ? titles.Str(id, 2) : null;
+
+    public string? QuestInfoName(uint id) => questInfos != null && questInfos.Contains(id) ? questInfos.Str(id, 1) : null;
+
+    public string? QuestSortName(uint id) => questSorts != null && questSorts.Contains(id) ? questSorts.Str(id, 1) : null;
+
+    public IReadOnlyList<(uint Id, string Name)> SearchSkills(string term, int limit = 50) => SearchTable(skills, 2, term, limit);
+
+    public IReadOnlyList<(uint Id, string Name)> SearchCurrencies(string term, int limit = 50) => [];
+
+    public IReadOnlyList<(uint Id, string Name)> SearchMails(string term, int limit = 50) => SearchTable(mails, 18, term, limit);
+
+    public IReadOnlyList<(uint Id, string Name)> SearchTitles(string term, int limit = 50) => SearchTable(titles, 2, term, limit);
+
+    public IReadOnlyList<(uint Id, string Name)> QuestInfos() => AllTable(questInfos, 1);
+
+    public IReadOnlyList<(uint Id, string Name)> QuestSorts() => AllTable(questSorts, 1);
+
+    static IReadOnlyList<(uint Id, string Name)> AllTable(DbcTable? table, int nameField) =>
+        table == null ? [] : table.Ids.Select(id => (id, table.Str(id, nameField))).Where(e => e.Item2.Length > 0).ToList();
+
+    static IReadOnlyList<(uint Id, string Name)> SearchTable(DbcTable? table, int nameField, string term, int limit)
+    {
+        if (table == null)
+        {
+            return [];
+        }
+
+        term = term.Trim();
+        uint.TryParse(term, out uint exact);
+        return table.Ids
+            .Select(id => (Id: id, Name: table.Str(id, nameField)))
+            .Where(e => e.Name.Length > 0 && (term.Length == 0 || e.Id == exact || e.Name.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(e => e.Id == exact ? 0 : 1).ThenBy(e => e.Name.Length).ThenBy(e => e.Id)
+            .Take(limit).ToList();
     }
 
     public bool ExtendedCostExists(uint id) => costs.Contains(id);

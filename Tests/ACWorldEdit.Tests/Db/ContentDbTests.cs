@@ -15,9 +15,22 @@ public class ContentDbTests
     [DbFact(NeedsClientData = true)]
     public async Task Passes() => await Core(ClientData.Store);
 
+    [DbFact]
+    public async Task ItemSearchReturnsTemplatesForTheQuestPicker()
+    {
+        var items = await AcSource(Config).SearchItemDetailsAsync("Linen Cloth", CancellationToken.None);
+        Check(items.Any(item => item.Info.Id == 2589 && item.Info.Name == "Linen Cloth"),
+            "Item search did not return Linen Cloth: " + string.Join(", ", items.Take(5).Select(i => $"{i.Info.Id} {i.Info.Name}")));
+    }
+
     static async Task Core(AssetStore store)
     {
         var catalog = InteractionCatalog.Load(store);
+        Check(catalog.SpellIconPath(133) is { Length: > 0 }, "Spell icon");
+        Check(catalog.SearchSkills("", 20).Count > 0, "Skill names");
+        Check(catalog.SearchMails("", 20).Count > 0, "Mail subjects");
+        Check(catalog.SearchTitles("", 20).Count > 0, "Title names");
+        Check(catalog.QuestInfos().Count > 0 && catalog.QuestSorts().Count > 0, "Quest info/sort names");
         var config = Config;
         var source = AcSource(config);
         var quests = await source.SearchAsync(SmartParamKind.Quest, "Kobold Camp Cleanup", CancellationToken.None);

@@ -70,6 +70,15 @@ public sealed class Db2Tables
         ["Difficulty"] = 1352127,
         ["Languages"] = 1135325,
         ["GossipNPCOption"] = 4278503,
+        // Editor reference names: currencies, skills, factions, mails, emotes, races and quest text.
+        ["SpellMisc"] = 1003144,
+        ["QuestInfo"] = 1120960,
+        ["QuestSort"] = 1134585,
+        ["MailTemplate"] = 1240344,
+        ["ChrRaces"] = 1305311,
+        ["CharTitles"] = 1349054,
+        ["Emotes"] = 1343602,
+        ["Faction"] = 1361972,
         // What an item template does not store: its level squish and the tables its stats, armor, damage and durability come from.
         ["ItemSquishEra"] = 7322706,
         ["Curve"] = 892585,

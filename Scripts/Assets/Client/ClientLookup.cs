@@ -21,6 +21,18 @@ public sealed record ClientPolygon(IReadOnlyList<(float X, float Y)> Vertices, f
 /// <summary>An item as the client names it (ItemSparse + Item).</summary>
 public sealed record ClientItem(uint Id, string Name, uint Quality, uint IconFileId);
 
+/// <summary>A currency the client's CurrencyTypes table names (honor, valor, a raid token…).</summary>
+public sealed record ClientCurrency(uint Id, string Name, string Description, uint IconFileId, uint Quality);
+
+/// <summary>A profession or secondary skill from SkillLine.</summary>
+public sealed record ClientSkillLine(uint Id, string Name, string Description, uint IconFileId);
+
+/// <summary>A reputation faction the client names.</summary>
+public sealed record ClientFaction(uint Id, string Name, string Description);
+
+/// <summary>A mail template the client names by its subject or, in current retail, by the first body line.</summary>
+public sealed record ClientMailTemplate(uint Id, string Name);
+
 /// <summary>
 /// Reference data the retail world database does not hold, served from the client's DB2 tables:
 /// area trigger volumes, broadcast text, item names, spell names and the tables behind TrinityCore's
@@ -57,6 +69,36 @@ public interface IClientLookup : ITcStatData
     string? SpellName(uint id);
 
     IReadOnlyList<(uint Id, string Name)> SearchSpells(string term, int limit);
+
+    /// <summary>The FileDataID of a spell's icon, or 0 when the client has none.</summary>
+    uint SpellIcon(uint id) => 0;
+
+    /// <summary>Reference rows the quest editor can name and pick. Defaults keep test doubles compiling.</summary>
+    ClientCurrency? Currency(uint id) => null;
+    IReadOnlyList<ClientCurrency> SearchCurrencies(string term, int limit) => [];
+
+    ClientSkillLine? SkillLine(uint id) => null;
+    IReadOnlyList<ClientSkillLine> SearchSkillLines(string term, int limit) => [];
+
+    ClientFaction? Faction(uint id) => null;
+    IReadOnlyList<ClientFaction> SearchFactions(string term, int limit) => [];
+
+    ClientMailTemplate? MailTemplate(uint id) => null;
+    IReadOnlyList<ClientMailTemplate> SearchMailTemplates(string term, int limit) => [];
+
+    /// <summary>The client's animation emotes (Emotes.db2), used by quest gesture pickers.</summary>
+    IReadOnlyList<(uint Id, string Name)> Emotes() => [];
+
+    /// <summary>Playable races as (ChrRaces ID, display name); empty when the client has no table.</summary>
+    IReadOnlyList<(uint Id, string Name)> Races() => [];
+
+    /// <summary>Quest categories and quest-log sorts, for the quest kind and zone pickers.</summary>
+    IReadOnlyList<(uint Id, string Name)> QuestInfos() => [];
+    IReadOnlyList<(uint Id, string Name)> QuestSorts() => [];
+
+    /// <summary>Character titles, for the quest reward title picker.</summary>
+    IReadOnlyList<(uint Id, string Name)> Titles() => [];
+    IReadOnlyList<(uint Id, string Name)> SearchTitles(string term, int limit) => [];
 
     /// <summary>Whether the client's table for <paramref name="kind"/> has a row with this ID.</summary>
     bool Exists(ClientRecord kind, uint id);
@@ -289,6 +331,137 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
             if (Matches(row.ID, name, term))
             {
                 found.Add(((uint)row.ID, name));
+                if (found.Count >= limit)
+                {
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
+
+    Dictionary<uint, uint>? spellIcons;
+
+    public uint SpellIcon(uint id)
+    {
+        lock (gate)
+        {
+            if (spellIcons == null)
+            {
+                spellIcons = [];
+                foreach (var row in tables.Table("SpellMisc").Values)
+                {
+                    uint spell = row.FieldAs<uint>("SpellID"), icon = row.FieldAs<uint>("SpellIconFileDataID");
+                    if (spell != 0 && icon != 0 && !spellIcons.ContainsKey(spell))
+                    {
+                        spellIcons[spell] = icon;
+                    }
+                }
+            }
+
+            return spellIcons.GetValueOrDefault(id);
+        }
+    }
+
+    public ClientCurrency? Currency(uint id) =>
+        Table("CurrencyTypes").TryGetValue((int)id, out var row) ? DescribeCurrency(row) : null;
+
+    public IReadOnlyList<ClientCurrency> SearchCurrencies(string term, int limit) => Search("CurrencyTypes", "Name_lang", term, limit, DescribeCurrency);
+
+    static ClientCurrency DescribeCurrency(DBCDRow row) =>
+        new((uint)row.ID, row.Field<string>("Name_lang") ?? "", row.Field<string>("Description_lang") ?? "", row.FieldAs<uint>("InventoryIconFileID"), row.FieldAs<uint>("Quality"));
+
+    public ClientSkillLine? SkillLine(uint id) =>
+        Table("SkillLine").TryGetValue((int)id, out var row) ? DescribeSkill(row) : null;
+
+    public IReadOnlyList<ClientSkillLine> SearchSkillLines(string term, int limit) => Search("SkillLine", "DisplayName_lang", term, limit, DescribeSkill);
+
+    static ClientSkillLine DescribeSkill(DBCDRow row) =>
+        new((uint)row.ID, row.Field<string>("DisplayName_lang") ?? "", row.Field<string>("Description_lang") ?? "", row.FieldAs<uint>("SpellIconFileID"));
+
+    public ClientFaction? Faction(uint id) =>
+        Table("Faction").TryGetValue((int)id, out var row) ? DescribeFaction(row) : null;
+
+    public IReadOnlyList<ClientFaction> SearchFactions(string term, int limit) => Search("Faction", "Name_lang", term, limit, DescribeFaction);
+
+    static ClientFaction DescribeFaction(DBCDRow row) =>
+        new((uint)row.ID, row.Field<string>("Name_lang") ?? "", row.Field<string>("Description_lang") ?? "");
+
+    public ClientMailTemplate? MailTemplate(uint id) =>
+        Table("MailTemplate").TryGetValue((int)id, out var row) ? DescribeMail(row) : null;
+
+    public IReadOnlyList<ClientMailTemplate> SearchMailTemplates(string term, int limit) => Search("MailTemplate", "Body_lang", term, limit, DescribeMail);
+
+    /// <summary>
+    /// The current retail MailTemplate.db2 has no subject column, so use the first line of the body
+    /// as the readable name (the editor asks for a name or at least what the mail contains).
+    /// </summary>
+    static ClientMailTemplate DescribeMail(DBCDRow row)
+    {
+        string body = row.Field<string>("Body_lang") ?? "";
+        string first = body.ReplaceLineEndings("\n").Split('\n', 2)[0].Trim();
+        return new((uint)row.ID, first.Length <= 90 ? first : first[..89] + "…");
+    }
+
+    /// <summary>
+    /// Retail Emotes.db2 names the slash command (for example "/wave"), not the Wrath "Name" field;
+    /// show it without the slash so it reads like the DBC names.
+    /// </summary>
+    public IReadOnlyList<(uint Id, string Name)> Emotes()
+    {
+        var list = new List<(uint, string)>();
+        foreach (var row in Table("Emotes").Values)
+        {
+            string name = (row.Field<string>("EmoteSlashCommand") ?? "").TrimStart('/').Replace('_', ' ').Trim();
+            if (name.Length > 0)
+            {
+                list.Add(((uint)row.ID, name));
+            }
+        }
+
+        return list;
+    }
+
+    public IReadOnlyList<(uint Id, string Name)> Races() => All("ChrRaces", "Name_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> QuestInfos() => All("QuestInfo", "InfoName_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> QuestSorts() => All("QuestSort", "SortName_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> Titles() => All("CharTitles", "Name_lang");
+
+    public IReadOnlyList<(uint Id, string Name)> SearchTitles(string term, int limit) =>
+        Search("CharTitles", "Name_lang", term, limit, row => ((uint)row.ID, row.Field<string>("Name_lang") ?? ""));
+
+    /// <summary>Every row of a table as (ID, name), skipping rows without a name.</summary>
+    IReadOnlyList<(uint Id, string Name)> All(string table, string nameField)
+    {
+        var list = new List<(uint, string)>();
+        foreach (var row in Table(table).Values)
+        {
+            string name = row.Field<string>(nameField) ?? "";
+            if (name.Length > 0)
+            {
+                list.Add(((uint)row.ID, name));
+            }
+        }
+
+        return list;
+    }
+
+    /// <summary>Bounded name/ID search over a DB2 table; used by the editor pickers.</summary>
+    IReadOnlyList<T> Search<T>(string table, string nameField, string term, int limit, Func<DBCDRow, T> describe)
+    {
+        term = term.Trim();
+        uint.TryParse(term, out uint exact);
+        var found = new List<T>();
+        foreach (var row in Table(table).Values)
+        {
+            string name = row.Field<string>(nameField) ?? "";
+            if (term.Length == 0 || row.ID == exact || name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                found.Add(describe(row));
                 if (found.Count >= limit)
                 {
                     break;

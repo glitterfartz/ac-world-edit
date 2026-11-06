@@ -27,8 +27,8 @@ public sealed partial record ClientServices
     }
 
     /// <summary>
-    /// Retail CASC storage, served by a TrinityCore world database. Lighting and liquids are loaded
-    /// from the DB2 tables; area names are not yet and stay null.
+    /// Retail CASC storage, served by a TrinityCore world database. Lighting, liquids and area names
+    /// come from the DB2 tables.
     /// </summary>
     public static ClientServices OpenRetail(string directory, string? listfile = null, Action<string>? warn = null)
     {
@@ -60,7 +60,7 @@ public sealed partial record ClientServices
             }
 
             RetailLiquids.Register(files, RetailLiquids.Load(tables));
-            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables, warn), null, files.ProvidesWorldDatabase, $"{files.DisplayName} {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
+            return new ClientServices(files, maps, ClientLighting.TryLoadRetail(tables, warn), AreaLookup.FromRetail(tables), files.ProvidesWorldDatabase, $"{files.DisplayName} {files.Build} · {maps.Count} maps", new RetailCreatureCatalog(tables).PrepareIndexes(), new RetailGameObjectCatalog(tables), new RetailClientLookup(tables, id => files.Exists("fdid:" + id.ToString(System.Globalization.CultureInfo.InvariantCulture))), tables.NavigationParents());
         }
         catch
         {

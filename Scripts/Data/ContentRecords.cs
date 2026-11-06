@@ -10,6 +10,8 @@ namespace ACWorldEdit.Data;
 public sealed class ContentNames(InteractionCatalog? catalog, IClientLookup? client = null) : IContentNames
 {
     public readonly Dictionary<uint, string> Creatures = [], GameObjects = [], Quests = [], Items = [];
+    /// <summary>The tooltip fields of the items this snapshot resolved, when the source could read them.</summary>
+    public readonly Dictionary<uint, ItemDetails> ItemDetails = [];
     public readonly Dictionary<(uint Entry, uint Group), string> Texts = [];
     public readonly HashSet<ulong> Spawns = [];
     /// <summary>broadcast_text ID to its text, for the speech lines that link one.</summary>
@@ -21,6 +23,8 @@ public sealed class ContentNames(InteractionCatalog? catalog, IClientLookup? cli
     public string? GameObject(uint id) => GameObjects.GetValueOrDefault(id);
     public string? Quest(uint id) => Quests.GetValueOrDefault(id);
     public string? Item(uint id) => Items.GetValueOrDefault(id);
+    /// <summary>The item template fields behind <see cref="Item"/>, or null when they were not read.</summary>
+    public ItemDetails? Details(uint id) => ItemDetails.GetValueOrDefault(id);
     public string? Text(uint entry, uint group) => Texts.GetValueOrDefault((entry, group));
     public bool CreatureSpawnExists(ulong guid) => Spawns.Contains(guid);
     public string? Emote(uint id) => catalog?.EmoteName(id);

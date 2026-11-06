@@ -6,6 +6,10 @@ and remove the entry when the test exists. The current feature status is in
 `GeosetVariantsTests`, `AssetRefTests` and `RetailLiquidTests` already cover the cases they were listed
 for; what is left is below.
 
+## Known broken smokes
+
+- [x] `--client-shot-overlays` used to get stuck after opening the quest editor: switching to the Story tab threw `KeyNotFoundException` because retail `Emotes.db2` has `EmoteSlashCommand`, not `Name`. Fixed; the smoke now reaches `CLIENT_SHOT_QUEST_EDITOR_OK` and completes.
+
 ## Retail terrain
 
 - [ ] Viewer notices: dropped layers and FileDataID-0 layers are reported once per map, not once per

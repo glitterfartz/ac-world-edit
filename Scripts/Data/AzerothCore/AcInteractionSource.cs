@@ -444,6 +444,25 @@ public sealed class AcInteractionSource(WorldDatabase database)
         + string.Join(",", Enumerable.Range(1, 10).Select(i => $"stat_type{i},stat_value{i}"))
         + ",dmg_min1,dmg_max1,dmg_type1,dmg_min2,dmg_max2,dmg_type2,delay,armor,block,holy_res,fire_res,nature_res,frost_res,shadow_res,arcane_res,MaxDurability,socketColor_1,socketColor_2,socketColor_3,COALESCE(description,''),SellPrice";
 
+    /// <summary>Read the item templates behind an already-resolved set of item IDs into <paramref name="target"/>.</summary>
+    internal static async Task ReadItemDetails(WorldReadSession session, IEnumerable<uint> ids, Dictionary<uint, ItemDetails> target, CancellationToken token)
+    {
+        var list = ids.Where(id => id != 0).Distinct().ToArray();
+        if (list.Length == 0)
+        {
+            return;
+        }
+
+        await using var command = session.Command("");
+        command.CommandText = $"SELECT {ItemColumns} FROM item_template WHERE entry IN ({InList(command, list, "i")})";
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            var details = ReadItem(reader);
+            target[details.Info.Id] = details;
+        }
+    }
+
     static ItemDetails ReadItem(System.Data.Common.DbDataReader reader)
     {
         uint U(int i) => Convert.ToUInt32(reader.GetValue(i));

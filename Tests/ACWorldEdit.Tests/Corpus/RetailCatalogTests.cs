@@ -323,4 +323,26 @@ public class RetailAnimationTests
         // Without open client files a file cannot be checked, so it is not refused.
         Assert.True(lookup.Exists(ClientRecord.FileData, 4000000000u));
     }
+
+    [RetailClientFact]
+    public void EditorReferenceLookupsNameTheirRows()
+    {
+        var lookup = new RetailClientLookup(RetailData.Tables);
+
+        var currencies = lookup.SearchCurrencies("", 5);
+        Assert.NotEmpty(currencies);
+        Assert.False(string.IsNullOrWhiteSpace(currencies[0].Name));
+        Assert.NotEmpty(lookup.SearchSkillLines("Blacksmithing", 5));
+        Assert.Equal("Stormwind", lookup.Faction(72)?.Name);
+        Assert.NotEmpty(lookup.Emotes());
+        Assert.Contains(lookup.Races(), race => race.Name == "Human");
+        Assert.NotEmpty(lookup.SearchTitles("", 5));
+        Assert.NotEmpty(lookup.SearchMailTemplates("", 5));
+        Assert.NotEmpty(lookup.SearchFactions("Stormwind", 5));
+        Assert.True(lookup.SpellIcon(133) != 0);
+
+        var areas = AreaLookup.FromRetail(RetailData.Tables);
+        Assert.True(areas.Contains(12));
+        Assert.Equal("Elwynn Forest", areas.Describe(12).Zone);
+    }
 }
