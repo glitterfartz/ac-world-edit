@@ -195,6 +195,47 @@ public class ChangeHistoryWindowInteractionTests
     }
 
     [TestCase]
+    public void CheckedBoxesSurviveRefreshWithChangedRows()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "first")], null);
+        CheckRow(window, 0);
+        // A background sync rebuilds the rows (new label here); the checked box must come back.
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "first, edited")], null);
+        List<string>? applied = null;
+        window.ApplyRequested += fps => applied = fps.ToList();
+        ButtonText(window, "Apply selected").EmitSignal(BaseButton.SignalName.Pressed);
+        AssertThat(applied).IsNotNull();
+        AssertThat(applied!.Single()).IsEqual(Fingerprint('a'));
+    }
+
+    [TestCase]
+    public void UncheckingRemovesTheRowFromTheSelection()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "s")], null);
+        CheckRow(window, 0);
+        All<CheckBox>(window).First().ButtonPressed = false;
+        List<string>? applied = null;
+        window.ApplyRequested += fps => applied = fps.ToList();
+        ButtonText(window, "Apply selected").EmitSignal(BaseButton.SignalName.Pressed);
+        AssertThat(applied).IsNotNull();
+        AssertThat(applied!.Count).IsEqual(0);
+    }
+
+    [TestCase]
+    public void InProgressNotesSurviveRefresh()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "s")], null);
+        var field = All<LineEdit>(window).First();
+        field.Text = "half-typed";
+        // The stored note is still blank, but the user's keystrokes must not be lost.
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "s")], null);
+        AssertThat(All<LineEdit>(window).First().Text).IsEqual("half-typed");
+    }
+
+    [TestCase]
     public void EmptyChecklistDisablesBulkActions()
     {
         var window = Spawn();

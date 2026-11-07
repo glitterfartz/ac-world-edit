@@ -23,10 +23,19 @@ public partial class PendingChangesWindow : ContentEditorWindow
     public event Action? HistoryRefreshRequested;
 
     VBoxContainer list = null!;
+    ScrollContainer scroll = null!;
     Label summary = null!, status = null!;
     Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!;
     CheckButton showAll = null!;
     OptionButton exportKind = null!;
+
+    /// <summary>
+    /// Checked fingerprints, kept outside the rows so the periodic history refresh never drops the
+    /// user's selection. Row boxes update this set when toggled and read it when rebuilt.
+    /// </summary>
+    readonly HashSet<string> checkedFingerprints = new(StringComparer.Ordinal);
+    List<ChangeRecord>? shownRecords;
+    string? shownError;
 
     protected override Vector2 TargetSize => new(860, 560);
 
@@ -44,7 +53,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
         ButtonIn(header.Row, "✕", () => Visible = false);
         summary = ClientStyle.Text("", 12, ClientStyle.Faded);
         root.AddChild(summary);
-        var scroll = new ScrollContainer
+        scroll = new ScrollContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
@@ -133,10 +142,44 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
     /// <summary>
     /// Rebuild the rows from the change history. Staged rows can be applied or discarded, applied
-    /// rows can be reverted; notes save when the field loses focus or Enter is pressed.
+    /// rows can be reverted; notes save when the field loses focus or Enter is pressed. Refreshes
+    /// with identical content are skipped, and rebuilds preserve the checked boxes, in-progress
+    /// notes, focus and scroll position, so the periodic sync never disturbs the selection.
     /// </summary>
     public void RefreshHistory(IReadOnlyList<ChangeRecord> records, string? historyError = null)
     {
+        if (shownRecords != null && shownError == historyError && shownRecords.SequenceEqual(records))
+        {
+            return;
+        }
+
+        shownRecords = records.ToList();
+        shownError = historyError;
+
+        // Capture what the user is doing before the rows are replaced.
+        var notesText = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? focused = null;
+        var focusOwner = GetViewport()?.GuiGetFocusOwner();
+        int scrollPos = scroll?.ScrollVertical ?? 0;
+        foreach (var row in list.GetChildren())
+        {
+            string? fingerprint = FingerprintOf(row);
+            if (fingerprint == null)
+            {
+                continue;
+            }
+
+            var field = FindFirst<LineEdit>(row);
+            if (field != null)
+            {
+                notesText[fingerprint] = field.Text;
+                if (field == focusOwner)
+                {
+                    focused = fingerprint;
+                }
+            }
+        }
+
         foreach (var child in list.GetChildren())
         {
             list.RemoveChild(child);
@@ -157,14 +200,28 @@ public partial class PendingChangesWindow : ContentEditorWindow
         applySelected.Disabled = revertSelected.Disabled = previewSelected.Disabled = exportSelected.Disabled = !any;
         discardAll.Disabled = staged == 0;
 
+        Control? focusTarget = null;
         foreach (var record in records)
         {
             var row = new VBoxContainer();
             row.AddThemeConstantOverride("separation", 2);
             var top = new HBoxContainer();
             top.AddThemeConstantOverride("separation", 8);
+            string fp = record.Fingerprint;
             var box = new CheckBox();
-            box.SetMeta("fingerprint", record.Fingerprint);
+            box.SetMeta("fingerprint", fp);
+            box.ButtonPressed = checkedFingerprints.Contains(fp);
+            box.Toggled += pressed =>
+            {
+                if (pressed)
+                {
+                    checkedFingerprints.Add(fp);
+                }
+                else
+                {
+                    checkedFingerprints.Remove(fp);
+                }
+            };
             top.AddChild(box);
             top.AddChild(ClientStyle.Tag(record.Status switch
             {
@@ -187,30 +244,69 @@ public partial class PendingChangesWindow : ContentEditorWindow
             top.AddChild(text);
             if (record.Status == ChangeStatus.Staged)
             {
-                string fp = record.Fingerprint;
                 ButtonIn(top, "Apply", () => ApplyRequested?.Invoke([fp]));
                 ButtonIn(top, "Discard", () => DiscardStagedRequested?.Invoke([fp]));
             }
             else if (record.Status == ChangeStatus.Applied)
             {
-                string fp = record.Fingerprint;
                 ButtonIn(top, "Revert", () => RevertRequested?.Invoke([fp]));
             }
 
             row.AddChild(top);
             var notes = new LineEdit
             {
-                Text = record.Notes ?? "",
+                // The user's in-progress text wins over the stored note, so typing through a
+                // background refresh never loses a keystroke.
+                Text = notesText.TryGetValue(fp, out var typed) ? typed : record.Notes ?? "",
                 PlaceholderText = "Optional note…",
                 SizeFlagsHorizontal = SizeFlags.ExpandFill
             };
             notes.TooltipText = "Optional note saved with this change.";
-            string fpNotes = record.Fingerprint;
-            notes.TextSubmitted += text => NotesChanged?.Invoke(fpNotes, text);
-            notes.FocusExited += () => NotesChanged?.Invoke(fpNotes, notes.Text);
+            notes.TextSubmitted += text => NotesChanged?.Invoke(fp, text);
+            notes.FocusExited += () => NotesChanged?.Invoke(fp, notes.Text);
             row.AddChild(notes);
+            if (fp == focused)
+            {
+                focusTarget = notes;
+            }
+
             list.AddChild(row);
         }
+
+        if (scroll != null)
+        {
+            scroll.ScrollVertical = scrollPos;
+        }
+
+        if (focusTarget != null)
+        {
+            focusTarget.GrabFocus();
+        }
+    }
+
+    static string? FingerprintOf(Node row)
+    {
+        var box = FindFirst<CheckBox>(row);
+        return box != null && box.HasMeta("fingerprint") ? box.GetMeta("fingerprint").AsString() : null;
+    }
+
+    static T? FindFirst<T>(Node node) where T : Node
+    {
+        foreach (var child in node.GetChildren())
+        {
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var deeper = FindFirst<T>(child);
+            if (deeper != null)
+            {
+                return deeper;
+            }
+        }
+
+        return null;
     }
 }
 
