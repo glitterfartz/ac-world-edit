@@ -4,9 +4,11 @@ namespace ACWorldEdit.Data;
 
 /// <summary>
 /// Everything needed to reach one world database: the connection, the optional hotfixes database
-/// name (TrinityCore only) and the schema dialect, which follows the client kind.
+/// name (TrinityCore only) and the schema dialect, which follows the client kind. The optional
+/// acworld override points the change history at a different server; when null the history lives
+/// in `acworld` on the same server and credentials as the world.
 /// </summary>
-public sealed record WorldConnection(DatabaseSettings World, string? Hotfixes, WorldDialect Dialect)
+public sealed record WorldConnection(DatabaseSettings World, string? Hotfixes, WorldDialect Dialect, DatabaseSettings? AcworldOverride = null)
 {
     public const string DefaultHotfixes = "hotfixes";
 
@@ -39,4 +41,7 @@ public sealed record WorldConnection(DatabaseSettings World, string? Hotfixes, W
 
     /// <summary>The same server and credentials pointed at the hotfixes database, or null when there is none.</summary>
     public DatabaseSettings? HotfixesSettings => string.IsNullOrWhiteSpace(Hotfixes) ? null : World with { Database = Hotfixes.Trim() };
+
+    /// <summary>The change-history database: the override when set, else `acworld` on the world server.</summary>
+    public DatabaseSettings Acworld => AcworldOverride ?? AcworldStore.DerivedFrom(World);
 }

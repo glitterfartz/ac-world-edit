@@ -173,10 +173,7 @@ public partial class ViewerShell
         layer.AddChild(bookmarkWindow);
         layer.AddChild(questEditor);
         layer.AddChild(areaBehavior);
-        pendingWindow = new PendingChangesWindow
-        {
-            Drafts = drafts
-        };
+        pendingWindow = new PendingChangesWindow();
         sqlPreview = new SqlPreviewWindow();
         layer.AddChild(sqlPreview);
         layer.AddChild(pendingWindow);
@@ -184,18 +181,26 @@ public partial class ViewerShell
         WireEditors();
     }
 
-    /// <summary>Pending-changes buttons and the cross-window summaries.</summary>
+    /// <summary>Change-history buttons and the cross-window summaries.</summary>
     void WirePendingWindow()
     {
-        pendingWindow.DiscardRequested += change =>
+        pendingWindow.ApplyRequested += fingerprints => ApplyHistoryAsync(fingerprints);
+        pendingWindow.RevertRequested += fingerprints => RevertHistoryAsync(fingerprints);
+        pendingWindow.DiscardStagedRequested += fingerprints => DiscardStagedAsync(fingerprints);
+        pendingWindow.DiscardAllStagedRequested += DiscardAllPending;
+        pendingWindow.PreviewRequested += (fingerprints, revert) => PreviewHistory(fingerprints, revert);
+        pendingWindow.ExportRequested += (fingerprints, revert) => ExportHistory(fingerprints, revert);
+        pendingWindow.NotesChanged += (fingerprint, notes) => SaveNotesAsync(fingerprint, notes);
+        pendingWindow.ShowAllChanged += showAll =>
         {
-            DiscardPending(change);
-            RefreshPending();
-            pendingWindow.SetStatus("Discarded.");
+            historyShowAll = showAll;
+            LoadHistoryAsync();
         };
-        pendingWindow.PreviewSqlRequested += PreviewPendingSql;
-        pendingWindow.ExportAllRequested += ExportAllPending;
-        pendingWindow.DiscardAllRequested += DiscardAllPending;
+        pendingWindow.HistoryRefreshRequested += () =>
+        {
+            historyPoll = 0;
+            LoadHistoryAsync();
+        };
         sidebar.ReviewPendingRequested += OpenPendingChanges;
         creatureProps.SummaryChanged += creatures.SetInteractionSummary;
         creatureProps.QuestEditorRequested += questEditor.Open;

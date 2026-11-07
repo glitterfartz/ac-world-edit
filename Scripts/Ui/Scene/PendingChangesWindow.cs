@@ -4,21 +4,31 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// The one place to review, export or discard unsaved draft changes. It only presents the list the
-/// viewer gives it and raises requests; the viewer owns the drafts, so this window never touches
-/// them or the database. Reuses the editor-window frame for the client look and header dragging.
+/// Change history: every staged and applied world change with its timestamp, status and optional
+/// note. Staged rows come from local drafts; applying runs their SQL against the world database and
+/// marks them applied in acworld. Applied rows revert by running their stored revert SQL. Any
+/// checked rows export into one SQL file for sharing. The window only presents the list and raises
+/// requests; the viewer owns the drafts and the database, so this window never touches them.
 /// </summary>
 public partial class PendingChangesWindow : ContentEditorWindow
 {
-    public event Action<PendingChange>? DiscardRequested;
-    public event Action? PreviewSqlRequested;
-    public event Action? ExportAllRequested;
-    public event Action? DiscardAllRequested;
+    public event Action<IReadOnlyList<string>>? ApplyRequested;
+    public event Action<IReadOnlyList<string>>? RevertRequested;
+    public event Action<IReadOnlyList<string>>? DiscardStagedRequested;
+    public event Action? DiscardAllStagedRequested;
+    public event Action<IReadOnlyList<string>, bool>? ExportRequested;
+    public event Action<IReadOnlyList<string>, bool>? PreviewRequested;
+    public event Action<string, string>? NotesChanged;
+    public event Action<bool>? ShowAllChanged;
+    public event Action? HistoryRefreshRequested;
+
     VBoxContainer list = null!;
     Label summary = null!, status = null!;
-    Button previewSql = null!, exportAll = null!, discardAll = null!;
+    Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!;
+    CheckButton showAll = null!;
+    OptionButton exportKind = null!;
 
-    protected override Vector2 TargetSize => new(760, 520);
+    protected override Vector2 TargetSize => new(860, 560);
 
     public PendingChangesWindow() : base("PendingChanges")
     {
@@ -30,7 +40,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);
-        var header = AddHeader(root, "Pending Changes");
+        var header = AddHeader(root, "Change History");
         ButtonIn(header.Row, "✕", () => Visible = false);
         summary = ClientStyle.Text("", 12, ClientStyle.Faded);
         root.AddChild(summary);
@@ -46,13 +56,37 @@ public partial class PendingChangesWindow : ContentEditorWindow
         };
         list.AddThemeConstantOverride("separation", 4);
         scroll.AddChild(list);
+
+        var options = new HBoxContainer();
+        options.AddThemeConstantOverride("separation", 8);
+        root.AddChild(options);
+        showAll = new CheckButton { Text = "Show all worlds" };
+        showAll.TooltipText = "Show changes from every world database, not just the open one.";
+        showAll.Toggled += pressed => ShowAllChanged?.Invoke(pressed);
+        options.AddChild(showAll);
+        exportKind = new OptionButton();
+        exportKind.AddItem("Export: apply script");
+        exportKind.AddItem("Export: revert script");
+        exportKind.TooltipText = "Whether Export selected writes the apply or the revert scripts.";
+        options.AddChild(exportKind);
+        refreshButton = new Button { Text = "Refresh" };
+        refreshButton.TooltipText = "Re-read drafts and the change history.";
+        refreshButton.Pressed += () => HistoryRefreshRequested?.Invoke();
+        options.AddChild(refreshButton);
+
         var footer = new HBoxContainer();
+        footer.AddThemeConstantOverride("separation", 6);
         root.AddChild(footer);
-        previewSql = ButtonIn(footer, "Preview SQL…", () => PreviewSqlRequested?.Invoke());
-        previewSql.TooltipText = "Show the apply and revert scripts an export would write.";
-        exportAll = ButtonIn(footer, "Export All…", () => ExportAllRequested?.Invoke());
-        exportAll.TooltipText = "Save an apply script and a revert script for every pending change.";
-        discardAll = ButtonIn(footer, "Discard All…", () => DiscardAllRequested?.Invoke());
+        applySelected = ButtonIn(footer, "Apply selected", () => ApplyRequested?.Invoke(Checked()));
+        applySelected.TooltipText = "Run the checked staged changes against the world database.";
+        revertSelected = ButtonIn(footer, "Revert selected", () => RevertRequested?.Invoke(Checked()));
+        revertSelected.TooltipText = "Undo the checked applied changes by running their revert scripts.";
+        previewSelected = ButtonIn(footer, "Preview…", () => PreviewRequested?.Invoke(Checked(), exportKind.Selected == 1));
+        previewSelected.TooltipText = "Show the combined script the export would write.";
+        exportSelected = ButtonIn(footer, "Export selected…", () => ExportRequested?.Invoke(Checked(), exportKind.Selected == 1));
+        exportSelected.TooltipText = "Save the checked changes into one SQL file for sharing.";
+        discardAll = ButtonIn(footer, "Discard staged…", () => DiscardAllStagedRequested?.Invoke());
+        discardAll.TooltipText = "Throw away every staged (not yet applied) change.";
         status = ClientStyle.Text("", 12, ClientStyle.Faded);
         footer.AddChild(status);
     }
@@ -69,11 +103,39 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
     public void SetStatus(string text) => status.Text = text;
 
+    public void SetShowAll(bool value)
+    {
+        if (showAll != null && showAll.ButtonPressed != value)
+        {
+            showAll.ButtonPressed = value;
+        }
+    }
+
+    List<string> Checked()
+    {
+        var selected = new List<string>();
+        void Walk(Node node)
+        {
+            foreach (var child in node.GetChildren())
+            {
+                if (child is CheckBox box && box.ButtonPressed && box.HasMeta("fingerprint"))
+                {
+                    selected.Add(box.GetMeta("fingerprint").AsString());
+                }
+
+                Walk(child);
+            }
+        }
+
+        Walk(list);
+        return selected;
+    }
+
     /// <summary>
-    /// Rebuild the rows. hiddenExported counts changes already exported that remain applied in the
-    /// viewer but are no longer unsaved.
+    /// Rebuild the rows from the change history. Staged rows can be applied or discarded, applied
+    /// rows can be reverted; notes save when the field loses focus or Enter is pressed.
     /// </summary>
-    public void Refresh(IReadOnlyList<PendingChange> changes, int hiddenExported)
+    public void RefreshHistory(IReadOnlyList<ChangeRecord> records, string? historyError = null)
     {
         foreach (var child in list.GetChildren())
         {
@@ -81,33 +143,72 @@ public partial class PendingChangesWindow : ContentEditorWindow
             child.QueueFree();
         }
 
-        string hidden = hiddenExported > 0 ? $" {hiddenExported} exported change(s) stay applied in the viewer until the database matches." : "";
-        summary.Text = changes.Count == 0
-            ? "No unsaved changes." + hidden
-            : $"{changes.Count} unsaved change(s). Drafts are kept between sessions. Discard reverts only that one change." + hidden;
-        previewSql.Disabled = changes.Count == 0;
-        exportAll.Disabled = changes.Count == 0;
-        discardAll.Disabled = changes.Count == 0;
-        foreach (var change in changes)
+        int staged = records.Count(r => r.Status == ChangeStatus.Staged);
+        int applied = records.Count(r => r.Status == ChangeStatus.Applied);
+        summary.Text = records.Count == 0
+            ? "No tracked changes yet. Edit something and it stages here."
+            : $"{records.Count} change(s): {staged} staged, {applied} applied.";
+        if (!string.IsNullOrEmpty(historyError))
         {
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 8);
-            row.AddChild(ClientStyle.Tag(change.Kind switch
+            summary.Text += " " + historyError;
+        }
+
+        bool any = records.Count > 0;
+        applySelected.Disabled = revertSelected.Disabled = previewSelected.Disabled = exportSelected.Disabled = !any;
+        discardAll.Disabled = staged == 0;
+
+        foreach (var record in records)
+        {
+            var row = new VBoxContainer();
+            row.AddThemeConstantOverride("separation", 2);
+            var top = new HBoxContainer();
+            top.AddThemeConstantOverride("separation", 8);
+            var box = new CheckBox();
+            box.SetMeta("fingerprint", record.Fingerprint);
+            top.AddChild(box);
+            top.AddChild(ClientStyle.Tag(record.Status switch
             {
-                PendingKind.Graveyard => "GRAVEYARD",
-                _ => change.Row?.Table switch
-                {
-                    "creature" or "creature_addon" => "CREATURE",
-                    "gameobject" or "gameobject_addon" => "GAMEOBJECT",
-                    "waypoint_data" or "waypoint_path" or "waypoint_path_node" => "PATH",
-                    "creature_formations" => "FORMATION",
-                    _ => "ROW"
-                }
+                ChangeStatus.Staged => "STAGED",
+                ChangeStatus.Applied => "APPLIED",
+                ChangeStatus.Reverted => "REVERTED",
+                _ => "FAILED"
             }));
-            var text = ClientStyle.Text(change.Label, 13);
-            text.TooltipText = change.Label;
-            row.AddChild(text);
-            ButtonIn(row, "Discard", () => DiscardRequested?.Invoke(change));
+            var when = record.Status == ChangeStatus.Applied && record.AppliedAt != null
+                ? $"applied {record.AppliedAt:yyyy-MM-dd HH:mm} UTC"
+                : record.Status == ChangeStatus.Reverted && record.RevertedAt != null
+                    ? $"reverted {record.RevertedAt:yyyy-MM-dd HH:mm} UTC"
+                    : $"staged {record.CreatedAt:yyyy-MM-dd HH:mm} UTC";
+            var time = ClientStyle.Text(when, 12, ClientStyle.Faded);
+            time.CustomMinimumSize = new Vector2(190, 0);
+            top.AddChild(time);
+            var text = ClientStyle.Text(record.Label, 13);
+            text.TooltipText = record.Label;
+            text.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            top.AddChild(text);
+            if (record.Status == ChangeStatus.Staged)
+            {
+                string fp = record.Fingerprint;
+                ButtonIn(top, "Apply", () => ApplyRequested?.Invoke([fp]));
+                ButtonIn(top, "Discard", () => DiscardStagedRequested?.Invoke([fp]));
+            }
+            else if (record.Status == ChangeStatus.Applied)
+            {
+                string fp = record.Fingerprint;
+                ButtonIn(top, "Revert", () => RevertRequested?.Invoke([fp]));
+            }
+
+            row.AddChild(top);
+            var notes = new LineEdit
+            {
+                Text = record.Notes ?? "",
+                PlaceholderText = "Optional note…",
+                SizeFlagsHorizontal = SizeFlags.ExpandFill
+            };
+            notes.TooltipText = "Optional note saved with this change.";
+            string fpNotes = record.Fingerprint;
+            notes.TextSubmitted += text => NotesChanged?.Invoke(fpNotes, text);
+            notes.FocusExited += () => NotesChanged?.Invoke(fpNotes, notes.Text);
+            row.AddChild(notes);
             list.AddChild(row);
         }
     }
@@ -153,8 +254,26 @@ public sealed partial class SqlPreviewWindow : AcceptDialog
         PopupCentered();
     }
 
+    public void OpenText(string combined)
+    {
+        exports = [];
+        text.Text = combined;
+        PopupCentered();
+    }
+
     void Render()
     {
+        if (exports.Count == 0 && string.IsNullOrEmpty(text.Text))
+        {
+            text.Text = "-- Nothing to export.";
+            return;
+        }
+
+        if (exports.Count == 0)
+        {
+            return;
+        }
+
         bool revert = kind.Selected == 1;
         text.Text = exports.Count == 0
             ? "-- Nothing to export."

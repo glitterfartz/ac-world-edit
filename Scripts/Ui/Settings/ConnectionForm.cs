@@ -6,9 +6,13 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Host/port/user/password/database fields for the read-only world database, plus the hotfixes
-/// database for TrinityCore. Apply tests a real read-only session first; only a working connection is
-/// saved (per client profile) and announced through Applied.
+/// Host/port/user/password/database fields for the world database, plus the hotfixes
+/// database for TrinityCore and the editor's own change-history database. The history lives in
+/// the named database (`acworld` unless changed) on the world server unless the checkbox points
+/// it at a different server. Apply tests the world session first, then prepares the history
+/// database; only working settings are saved (per client profile) and announced through Applied.
+/// A history database the user may not create (error 1044) does not block connecting: the world
+/// connects and the history window explains what to ask the admin for.
 /// </summary>
 public sealed partial class ConnectionForm : VBoxContainer
 {
@@ -19,6 +23,13 @@ public sealed partial class ConnectionForm : VBoxContainer
     readonly LineEdit database = new() { PlaceholderText = "Database (e.g. acore_world)" };
     readonly LineEdit hotfixes = new() { PlaceholderText = "Hotfixes database (optional, e.g. hotfixes)" };
     readonly List<Control> hotfixRows = [];
+    readonly CheckButton acworldCustom = new() { Text = "Keep change history on a different server" };
+    readonly LineEdit acworldHost = new() { PlaceholderText = "Host (e.g. 127.0.0.1)" };
+    readonly SpinBox acworldPort = new() { MinValue = 1, MaxValue = 65535, Step = 1, Value = 3306 };
+    readonly LineEdit acworldUser = new() { PlaceholderText = "User" };
+    readonly LineEdit acworldPassword = new() { PlaceholderText = "Password", Secret = true };
+    readonly LineEdit acworldDatabase = new() { PlaceholderText = "Database (e.g. acworld)" };
+    readonly List<Control> acworldRows = [];
     readonly Label result = InspectorUi.Text("", 12);
     bool testing;
     WorldDialect dialect;
@@ -34,8 +45,24 @@ public sealed partial class ConnectionForm : VBoxContainer
         AddField("Password", password);
         AddField("Database", database);
         hotfixRows.Add(AddField("Hotfixes database", hotfixes));
+        AddField("History database", acworldDatabase);
+        acworldDatabase.TooltipText = $"The change history lives in this database (`{AcworldStore.DefaultDatabase}` unless changed), on the world server unless the box below points it elsewhere.";
+        AddChild(acworldCustom);
+        acworldRows.Add(AddField("History host", acworldHost));
+        acworldRows.Add(AddField("History port", acworldPort));
+        acworldRows.Add(AddField("History user", acworldUser));
+        acworldRows.Add(AddField("History password", acworldPassword));
+        acworldCustom.Toggled += pressed => SetAcworldVisible(pressed);
         result.AutowrapMode = TextServer.AutowrapMode.WordSmart; AddChild(result);
         Dialect = dialect;
+    }
+
+    void SetAcworldVisible(bool visible)
+    {
+        foreach (var row in acworldRows)
+        {
+            row.Visible = visible;
+        }
     }
 
     /// <summary>
@@ -59,11 +86,68 @@ public sealed partial class ConnectionForm : VBoxContainer
 
     public WorldConnection Connection
     {
-        get => new(Settings, dialect == WorldDialect.TrinityCore ? hotfixes.Text.Trim() : null, dialect);
+        get => new(Settings, dialect == WorldDialect.TrinityCore ? hotfixes.Text.Trim() : null, dialect, AcworldOverride);
         set
         {
             Settings = value.World;
             hotfixes.Text = value.Hotfixes ?? WorldConnection.DefaultHotfixes;
+            AcworldOverride = value.AcworldOverride;
+        }
+    }
+
+    /// <summary>
+    /// The history database override, or null for `acworld` on the world server. The database name
+    /// field always applies: a custom name alone saves the world server's details with that name,
+    /// so hosted users without CREATE rights can point at a database they already own.
+    /// </summary>
+    public DatabaseSettings? AcworldOverride
+    {
+        get
+        {
+            string name = HistoryDatabaseName;
+            if (!acworldCustom.ButtonPressed)
+            {
+                return name == AcworldStore.DefaultDatabase ? null : AcworldStore.DerivedFrom(Settings) with { Database = name };
+            }
+
+            return new(acworldHost.Text.Trim(), (uint)acworldPort.Value, acworldUser.Text.Trim(), acworldPassword.Text, name);
+        }
+        set
+        {
+            if (value == null)
+            {
+                acworldCustom.ButtonPressed = false;
+                var derived = AcworldStore.DerivedFrom(Settings);
+                acworldHost.Text = derived.Host;
+                acworldPort.Value = derived.Port;
+                acworldUser.Text = derived.User;
+                acworldPassword.Text = derived.Password;
+                acworldDatabase.Text = derived.Database;
+            }
+            else
+            {
+                // A name-only override still counts as the world server: the box stays unchecked and
+                // only the database name differs from the default.
+                bool sameServer = value.Host == Settings.Host && value.Port == Settings.Port &&
+                    value.User == Settings.User && value.Password == Settings.Password;
+                acworldCustom.ButtonPressed = !sameServer;
+                acworldHost.Text = value.Host;
+                acworldPort.Value = value.Port;
+                acworldUser.Text = value.User;
+                acworldPassword.Text = value.Password;
+                acworldDatabase.Text = value.Database;
+            }
+
+            SetAcworldVisible(acworldCustom.ButtonPressed);
+        }
+    }
+
+    string HistoryDatabaseName
+    {
+        get
+        {
+            string name = acworldDatabase.Text.Trim();
+            return name.Length > 0 ? name : AcworldStore.DefaultDatabase;
         }
     }
 
@@ -80,7 +164,11 @@ public sealed partial class ConnectionForm : VBoxContainer
         }
     }
 
-    /// <summary>Test the entered settings; on success save them and raise Applied, otherwise show why not.</summary>
+    /// <summary>
+    /// Test the entered settings; on success save them and raise Applied, otherwise show why not.
+    /// The history database is prepared too, but a history failure only warns: the world still
+    /// connects and the history window explains what to ask the admin for.
+    /// </summary>
     public async Task<bool> ApplyAsync()
     {
         if (testing)
@@ -89,8 +177,33 @@ public sealed partial class ConnectionForm : VBoxContainer
         }
 
         var connection = Connection;
+        if (acworldCustom.ButtonPressed)
+        {
+            string? historyError = DatabaseDiagnostics.Validate(connection.AcworldOverride!);
+            if (historyError != null)
+            {
+                Show("History database: " + historyError, false);
+                return false;
+            }
+        }
+
         SetTesting(true);
         string? error = await Task.Run(() => DatabaseDiagnostics.TestAsync(connection));
+        string? historyWarning = null;
+        if (error == null)
+        {
+            try
+            {
+                var acworld = connection.Acworld;
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                await AcworldStore.EnsureSchemaAsync(acworld, timeout.Token);
+            }
+            catch (Exception historyError)
+            {
+                historyWarning = AcworldDiagnostics.Describe(historyError, connection.Acworld);
+            }
+        }
+
         SetTesting(false);
         if (error != null)
         {
@@ -99,7 +212,9 @@ public sealed partial class ConnectionForm : VBoxContainer
         }
 
         UserSettings.SaveDatabase(connection);
-        Show($"Connected to {connection.World}.", true);
+        Show(historyWarning == null
+            ? $"Connected to {connection.World}."
+            : $"Connected to {connection.World}. Change history is unavailable: {historyWarning}", historyWarning == null);
         Applied?.Invoke();
         return true;
     }
@@ -116,6 +231,8 @@ public sealed partial class ConnectionForm : VBoxContainer
     {
         testing = value;
         host.Editable = user.Editable = password.Editable = database.Editable = hotfixes.Editable = port.Editable = !value;
+        acworldCustom.Disabled = value;
+        acworldHost.Editable = acworldUser.Editable = acworldPassword.Editable = acworldDatabase.Editable = acworldPort.Editable = !value;
         if (value)
         {
             Show("Connecting…", true);
@@ -159,7 +276,7 @@ public sealed partial class ConnectionDialog : AcceptDialog
         var box = new VBoxContainer { CustomMinimumSize = new Vector2(380, 0) };
         // A wrapping label measured before it has a width asks for one line per word, which makes the
         // dialog as tall as the window; a minimum width keeps its height to the real line count.
-        var intro = InspectorUi.Text($"Enter your {(initial.Dialect == WorldDialect.TrinityCore ? "TrinityCore" : "AzerothCore")} world database. The connection is read-only; nothing is written.", 12, true);
+        var intro = InspectorUi.Text($"Enter your {(initial.Dialect == WorldDialect.TrinityCore ? "TrinityCore" : "AzerothCore")} world database. Edits apply directly to the world and are tracked in the change history (database `acworld` by default).", 12, true);
         intro.CustomMinimumSize = new Vector2(380, 0);
         box.AddChild(intro);
         box.AddChild(form);

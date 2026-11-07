@@ -30,10 +30,11 @@ The dotted links show why `Scripts/Assets` and `Scripts/Data` must stay free of 
 Folders mirror the layers:
 
 - `Assets/`: area lookup, asset references, animations, BLP, client folder, fog curves and volumes, geoset variants, light bands, liquid styles, listfile store, malformed input, model layers and data, MPQ, navigation, retail client, retail liquids, sky dome, split terrain, surface merge, terrain geometry.
+- `ChangeLog/`: change-record merging, combined export ordering, and the legacy exported-file bypass.
 - `Conditions/`: the condition catalog for both dialects.
 - `Corpus/`: tests that need real client data (world, model, liquid, item details, parallel model decode, retail catalog, retail client, listfile).
-- `Data/`: database settings, read-only guard, settings resolution, user-data reset.
-- `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`), plus spawn rows/impact, phase catalog, template search, graveyards, AreaTriggers, content and the real-data phase tests.
+- `Data/`: database settings, read-only guard, settings resolution, user-data reset, acworld error text.
+- `Db/`: tests that need a live database: AzerothCore ones per source (`DbFact`), TrinityCore ones in `TrinityConnectionDbTests` and `TrinityReadDbTests` (`TcDbFact`), plus spawn rows/impact, phase catalog, template search, graveyards, AreaTriggers, content and the real-data phase tests. History write-path tests (`AcworldStoreDbTests`, `WorldApplierDbTests`) use `DbWriteFact`: they skip unless the connection's user holds CREATE; the schema test additionally asserts the actionable 1044 failure on restricted servers, so it passes everywhere a connection exists.
 - `Drafts/`: creature, graveyard, content, spawn and interaction drafts, history, pending changes, item lists, tooltips, stat rules.
 - `Placement/`: AreaTrigger shapes, placement ownership and geometry, pose text, spawn preview, world coordinates.
 - `Smart/`: quest model, SmartAI behaviour, catalog and rule edits.
@@ -49,13 +50,13 @@ Categories and runsettings:
 | `Db` | needs `ACWORLD_DB_INFO` (AzerothCore) or `ACWORLD_TC_DB_INFO` (TrinityCore) | the default suite; each test skips when its variable is unset |
 | `KnownBug` | `KnownBug` attribute, added by a custom discoverer | `knownbugs.runsettings` (also needs `ACWE_RUN_KNOWN_BUGS=1`) |
 
-Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, `TcDbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).
+Skip attributes live in `Support/Attributes.cs`: `ClientDataFact`, `ClientDataTheory`, `DbFact`, `DbWriteFact` (live write path: skips when the user lacks CREATE), `TcDbFact`, and `KnownBug`. Retail tests additionally need `ACWORLD_RETAIL_DIR`, `CascLib.dll` and the definitions (`RetailEnvironment` in `Support/RetailData.cs`).
 
 Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehaviorTests` and `LightBandTests`. They are listed in the test attributes, not in this document. Tests deferred until their feature works are in `docs/status/needed-tests.md`.
 
 ### `Tests/ACWorldEdit.GdTests` (gdUnit4)
 
-Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form, the pending-changes window (headless, no drafts or database), the picker popup, creature properties, user settings and the UI framework (`UiForm`, `MenuSheet`, dialogs, window headers and the inspector card parts). `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
+Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form (world and history fields), the change-history window and its full interaction flows (headless, no drafts or database), the picker popup, creature properties, user settings and the UI framework (`UiForm`, `MenuSheet`, dialogs, window headers and the inspector card parts). Every suite that touches Godot natives carries `[RequireGodotRuntime]`; without it the test host can crash instead of failing. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
 
 ### Golden regression captures (`Tests/golden`)
 

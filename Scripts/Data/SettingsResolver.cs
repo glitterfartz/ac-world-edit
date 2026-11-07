@@ -14,6 +14,8 @@ public static class SettingsResolver
     public const string DataVariable = "ACWORLD_DATA_DIR";
     public const string DatabaseVariable = "ACWORLD_DB_INFO";
     public const string TrinityDatabaseVariable = "ACWORLD_TC_DB_INFO";
+    public const string AcworldVariable = "ACWORLD_ACWORLD_INFO";
+    public const string TrinityAcworldVariable = "ACWORLD_TC_ACWORLD_INFO";
     public const string RetailVariable = "ACWORLD_RETAIL_DIR";
     public const string ProfileVariable = "ACWORLD_CLIENT_PROFILE";
 
@@ -46,6 +48,9 @@ public static class SettingsResolver
     /// <summary>Saved settings live in [database.wrath] / [database.retail], one section per client profile.</summary>
     public static string DatabaseSection(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? "database.retail" : "database.wrath";
 
+    /// <summary>Change-history overrides live in [acworld.wrath] / [acworld.retail]; absent means same server as the world.</summary>
+    public static string AcworldSection(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? "acworld.retail" : "acworld.wrath";
+
     /// <summary>The section settings were saved in before client profiles existed.</summary>
     public const string LegacyDatabaseSection = "database";
 
@@ -60,6 +65,8 @@ public static class SettingsResolver
         LegacyDatabaseKeys.Where(key => !profileHas(key)).Select(key => (Key: key, Value: legacy(key))).Where(pair => pair.Value != null).Select(pair => (pair.Key, pair.Value!)).ToList();
 
     public static string DatabaseVariableFor(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? TrinityDatabaseVariable : DatabaseVariable;
+
+    public static string AcworldVariableFor(WorldDialect dialect) => dialect == WorldDialect.TrinityCore ? TrinityAcworldVariable : AcworldVariable;
 
     /// <summary>
     /// The connection for a dialect: its environment override (ACWORLD_DB_INFO, or ACWORLD_TC_DB_INFO for
@@ -90,5 +97,40 @@ public static class SettingsResolver
             Read("password", empty.Password),
             Read("name", empty.Database));
         return new WorldConnection(world, dialect == WorldDialect.TrinityCore ? Read("hotfixes", WorldConnection.DefaultHotfixes) : null, dialect);
+    }
+
+    /// <summary>
+    /// The change-history database for a dialect: its environment override, else the saved
+    /// [acworld.*] section, else null meaning "same server as the world" (database `acworld`).
+    /// read(section, key, fallback) returns a saved value or the fallback; hasSection reports whether
+    /// the user ever saved an override.
+    /// </summary>
+    public static DatabaseSettings? AcworldOverride(WorldDialect dialect, string? environmentValue, Func<string, string, string, string> read, Func<string, bool> hasSection)
+    {
+        if (!string.IsNullOrWhiteSpace(environmentValue))
+        {
+            try
+            {
+                return DatabaseSettings.Parse(environmentValue);
+            }
+            catch (InvalidDataException)
+            {
+            }
+        }
+
+        string section = AcworldSection(dialect);
+        if (!hasSection(section))
+        {
+            return null;
+        }
+
+        string Read(string key, string fallback) => read(section, key, fallback);
+        var saved = new DatabaseSettings(
+            Read("host", ""),
+            uint.TryParse(Read("port", ""), out uint port) ? port : 3306,
+            Read("user", ""),
+            Read("password", ""),
+            Read("name", AcworldStore.DefaultDatabase));
+        return saved.Host.Length == 0 && saved.User.Length == 0 ? null : saved;
     }
 }

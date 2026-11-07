@@ -58,7 +58,7 @@ public partial class ViewerShell
                 new MenuCommand("Update listfile…", () => _ = UpdateListfile(), () => !busy && listfileDownload == null),
                 new MenuCommand("Database connection…", () => _ = PromptConnection()),
                 new MenuSeparator(),
-                new MenuCommand("Pending changes…", OpenPendingChanges),
+                new MenuCommand("Change history…", OpenPendingChanges),
                 new MenuCommand("Clear cache…", ClearCache, () => !busy),
                 new MenuCommand("Reset configs and delete cache…", ResetEverything, () => OperatingSystem.IsWindows()),
                 new MenuSeparator(),

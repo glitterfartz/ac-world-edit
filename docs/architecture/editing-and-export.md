@@ -1,8 +1,13 @@
-# Editing, data access and SQL export
+# Editing, data access and change history
 
-Covers `Scripts/Data/` (read-only database access) and `Foundation/` (the draft model, SQL generation and rule checks). Foundation has no Godot or MySQL references, and the tests compile it directly.
+Covers `Scripts/Data/` (world database reads, the editor's own `acworld` tracking database and
+applying changes) and `Foundation/` (the draft model, SQL generation, the change record and rule
+checks). Foundation has no Godot or MySQL references, and the tests compile it directly.
 
-The guarantee this part of the system exists to keep: **the app never writes to the database.** Reads run inside read-only transactions that are never committed. Edits are kept in local drafts. The only output that changes the server is SQL that a person reviews and runs.
+Reads run inside read-only transactions that are never committed. Edits stage in local drafts, sync
+into the `acworld` change log, and only reach the world when the user applies them from the Change
+History window; every apply runs the same guarded scripts the export writes, with a stale-row abort
+before anything is written.
 
 ## Read path: `Scripts/Data`
 
@@ -118,20 +123,24 @@ flowchart TB
     rule -->|ok| hist["DraftHistory.Append<br/>saved to user://drafts/*.json"]
     hist --> eff
     hist --> net["NetMoves / NetEdits<br/>first Before to last After"]
-    net --> pend["PendingChanges.Collect<br/>IDs are SHA-256 of source and script"]
-    pend --> poll["Sidebar and Pending window<br/>polled every 0.4 s"]
-    pend --> build["SqlExport.Build per source"]
-    build --> files["exports/yyyyMMdd-HHmmss/<br/>source-apply.sql, source-revert.sql"]
-    files --> mark["PendingChanges.MarkExported<br/>drafts are not modified"]
-    mark --> person(["Person reviews and runs SQL"])
+    net --> pend["PendingChanges.CollectAll<br/>IDs are SHA-256 of source and script"]
+    pend --> stage["AcworldStore.UpsertStaged<br/>acworld.change_log (staged)"]
+    stage --> window["Change History window<br/>timestamps, notes, status"]
+    window --> apply["WorldApplier.ExecuteAsync<br/>preflight, transaction, post-check"]
+    apply --> applied["MarkApplied + discard draft<br/>or MarkFailed on STALE"]
+    window --> revert["Revert: stored revert SQL<br/>newest first, MarkReverted"]
+    window --> export["ChangeLogExport.BuildCombined<br/>checked rows into one .sql file"]
 ```
 
 Details:
 
 - **Net changes.** Draft entries are collapsed per source, GUID or key: the first `Before` to the last `After`. Changes that end up at the baseline are dropped.
-- **Pending changes** (`Foundation/Drafts/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. The set of exported IDs is saved as a JSON array.
-- **Discard** calls the owning draft's `Revert`. Reverts are themselves undoable entries.
-- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/Settings/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict). If the content draft is locked, the viewer says another editor may be running and offers to delete the lock file and continue; the draft file itself is never deleted. `UseProfile` picks the folder at startup and on a client switch, which rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. Files: `graveyards.json`, `interactions.json`, `sources.json`, `exported.json` (plus the retired `waypoints.json`, imported once from the Waypoints tab). Smoke runs use `res://artifacts/drafts/<guid>/`.
+- **Staged changes** (`Foundation/Drafts/PendingChanges.cs`): each net change becomes a `PendingChange`. Its ID is a SHA-256 of the source and its apply script, built with a fixed timestamp so the ID is stable. `CollectAll` lists everything staged; the legacy `exported.json` set is no longer written (it only hides old file exports, and is cleared with the drafts).
+- **Change log** (`Foundation/ChangeLog/ChangeRecord.cs`, `Scripts/Data/AcworldStore.cs`): each staged change is upserted into the history database with its apply/revert scripts, status (`staged`, `applied`, `reverted`, `failed`), timestamps and the user's optional note. Applied and reverted rows survive draft clears; the history defaults to the open world (its `SourceKey`) with a "Show all worlds" checkbox for the full audit. The connection form always shows the history database name (`acworld` unless changed, so hosted users without CREATE rights can point at a database they already own); the "different server" box points the whole connection elsewhere. Saved under `[acworld.wrath]` / `[acworld.retail]`, or `ACWORLD_ACWORLD_INFO` / `ACWORLD_TC_ACWORLD_INFO`.
+- **Applying** (`Scripts/Data/WorldApplier.cs`): the stored script's preflight SELECTs run first and any `STALE` row aborts before anything is written; the body then runs in one transaction with a post-check. Success marks the row applied and discards its draft (the database now holds the values).
+- **Reverting** runs the stored revert script the same way (newest first for multi-select) and marks the row reverted. Stale rows never partially apply: the transaction rolls back.
+- **Discard** calls the owning draft's `Revert` and deletes the staged row. Applied history is kept; Clear cache removes drafts and their staged rows but never applied history.
+- **Local file locations** come from `ContentDraftFiles` (`Scripts/Ui/Settings/UserSettings.cs`). Each client profile has its own folder, `user://drafts/wrath/` or `user://drafts/retail/`, so a Wrath and a retail viewer can run together (each draft file is single-writer; two viewers on the same profile still conflict). If the content draft is locked, the viewer says another editor may be running and offers to delete the lock file and continue; the draft file itself is never deleted. `UseProfile` picks the folder at startup and on a client switch, which rebinds the content draft (`ContentDrafts.Rebind`); drafts stay on disk across a switch. Files: `graveyards.json`, `interactions.json`, `sources.json` (plus the retired `exported.json`, `waypoints.json` and `exports/` folders from the file-export era). Smoke runs use `res://artifacts/drafts/<guid>/`.
 
 ## SQL generation: `Foundation/Sql/SqlExport.cs`
 
@@ -161,14 +170,15 @@ Escaping and guards:
 - Numbers are re-parsed before they are written, so only canonical values appear unquoted.
 - INSERT statements have no guard by design. A duplicate primary key makes the script fail, which is the intended signal.
 
-## Export flow in the viewer
+## Change-history flow in the viewer
 
 `Scripts/Viewer/Export/ViewerShell.Export.cs` ties it together:
 
-- `CollectPending` feeds creature `NetMoves`, graveyard `NetEdits` and content `NetEdits` into `PendingChanges.Collect`.
-- `BuildSqlExports` groups changes by source and calls `SqlExport.Build` once per group.
-- `WriteSqlExports` writes UTF-8 without BOM to `user://drafts/<profile>/exports/<yyyyMMdd-HHmmss>/<source-prefix>-apply.sql` and `-revert.sql`.
-- `ExportAllPending` writes, calls `MarkExported`, then opens the folder.
+- `CollectStaged` feeds creature `NetMoves`, graveyard `NetEdits` and content `NetEdits` into `PendingChanges.CollectAll` (the sidebar staged count polls this every 0.4 s; the history itself reloads at most every 5 s while open, plus on demand).
+- `LoadHistoryAsync` ensures the `acworld` schema, upserts every staged change (preserving notes and applied/reverted status), then lists the filtered history into the window.
+- `ApplyHistoryAsync` runs the checked staged rows oldest-first through `WorldApplier`; each success marks the row applied and discards its draft.
+- `RevertHistoryAsync` runs the checked applied rows newest-first and marks them reverted.
+- `PreviewHistory` / `ExportHistory` build one combined file from the checked rows via `ChangeLogExport.BuildCombined` (apply oldest-first, revert newest-first) for review or sharing; the preview shows the same text the file would contain.
 
 ## SmartAI and quest rules
 
@@ -191,7 +201,8 @@ SmartAI is one engine over two catalogs; `AcQuestModel` and `AcCreatureView` are
 | `CreatureSpawn.cs` | `CreatureSpawn`, `CreatureRegion`, `CreatureRegionResult` |
 | `SpawnPreview.cs` | `SpawnPreview`, `EventPreviewMode`, `SpawnQueryPoint`, `SpawnVisibility`, `GameObjectSpawn` (phase and event filters, `QueryLimit` 384, `ModelLimit` 128) |
 | `AreaTrigger.cs` | `AreaTriggerRecord` (shape, server membership test `Contains`, `Focus`, spawn identity), `AreaTriggerShape`, `AreaTriggerKind`, `AreaTriggerKey`, `AreaTriggerOwner` (whose rules: source type 2, or 11/12 with the spawn), `AreaTriggerTeleport` |
-| `PendingChanges.cs` | `PendingKind`, `PendingChange`, `PendingChanges` |
+| `PendingChanges.cs` | `PendingKind`, `PendingChange`, `PendingChanges` (`CollectAll` lists everything staged; the legacy `Collect`/`MarkExported` file set is retired) |
+| `ChangeRecord.cs` | `ChangeStatus`, `ChangeRecord`, `ChangeLogExport` (one combined apply/revert file from checked rows) |
 | `SqlExport.cs` | `SqlScripts`, `SqlExport` (`ISqlDialect`, `AcSqlDialect`, `TcSqlDialect` live in `SqlDialect.cs`) |
 | `EntityPage.cs` | `EntityPage`, `FieldSpec`, `ItemListSpec`, `RowBinding`, `DifficultySpec` (the descriptor every properties page is drawn from) |
 | `SpawnPoses.cs` | `SpawnPoses`, `AddonEdit` (spawn rows and addon rows as draft edits) |

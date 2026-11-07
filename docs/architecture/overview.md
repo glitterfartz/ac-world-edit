@@ -7,15 +7,17 @@ interactions, quests and SmartAI scripts. A 3.3.5 client uses AzerothCore; a ret
 TrinityCore master (`world` plus `hotfixes`). Read
 [status/open-work.md](../status/open-work.md) for what is built and what is open.
 
-The application never writes to the database or the game files. Edits are staged as local drafts and
-leave the app only as SQL scripts that a person reviews and runs.
+The application never writes to the game files. Edits stage as local drafts, sync into the
+`acworld` change history, and reach the world database only when the user applies them from the
+Change History window (stale rows abort before anything is written). Checked rows also export into
+one SQL file for sharing.
 
 Detail pages:
 
 - [Client data and asset pipeline](client-data.md): `Scripts/Assets`
 - [Viewer runtime](viewer-runtime.md): `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`
 - [Rendering and the retail shader port](rendering.md): `Shaders/`, materials, lighting passes
-- [Editing, data access and SQL export](editing-and-export.md): `Scripts/Data` and `Foundation`
+- [Editing, data access and change history](editing-and-export.md): `Scripts/Data` and `Foundation`
 - [Testing and tooling](testing-and-tooling.md): `Tests`, `Tools`, `launch_viewer.py`, CI
 - [Database differences](../reference/database-differences.md): AzerothCore vs TrinityCore schema
 - [Performance](../status/performance.md): the `--perf-smoke` and `--perf-breakdown` benchmarks and open work
@@ -32,17 +34,15 @@ flowchart LR
     db[("World database (MySQL)<br/>AzerothCore acore_world, or<br/>TrinityCore world + hotfixes")]
     listfile[("wowdev community listfile<br/>downloaded on request")]
     drafts[("Local drafts<br/>user://drafts/wrath-or-retail/*.json")]
-    sql[("SQL scripts<br/>user://drafts/wrath-or-retail/exports/")]
-    dba["Operator reviews and runs SQL"]
 
     user <--> app
     client -->|read by MpqArchive or CascLib| app
-    db -->|read-only transaction| app
+    db -->|read-only transactions| app
     listfile -->|HTTPS download| app
     app -->|edits saved| drafts
-    app -->|pending changes exported| sql
-    sql --> dba
-    dba -.->|applies changes| db
+    app -->|staged/applied changes| acworld[("Change history (MySQL)<br/>acworld.change_log")]
+    app -->|applies with stale abort| db
+    app -->|checked rows exported| sql[("Shared SQL file<br/>chosen by the user")]
 ```
 
 ## Architecture overview
@@ -64,7 +64,7 @@ flowchart TB
         overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger,<br/>Waypoint, Navigation, Gizmo, PlacementTool"]
         ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers"]
         diag["Diagnostics<br/>smoke workflows, CLI flags"]
-        data["Data (Godot-free)<br/>WorldDatabase, IDBSource, per-dialect sources, read helpers"]
+        data["Data (Godot-free)<br/>WorldDatabase, AcworldStore, WorldApplier, IDBSource, per-dialect sources, read helpers"]
         assets["Assets (Godot-free)<br/>Archives, Formats, Models, World, Retail, Client, Navigation"]
     end
 
@@ -72,7 +72,7 @@ flowchart TB
         drafts["Drafts<br/>SpawnPoses, GraveyardDraft,<br/>InteractionDraft, DraftHistory"]
         authoring["Authoring<br/>SpawnEdits, SpawnFields, SpawnRules,<br/>TemplateAddons, IdAllocator"]
         pages["Pages and rules<br/>EntityPage, Vendor/Gossip/Trainer/QuestLinks,<br/>SmartCatalog, AcQuestModel, ConditionCatalog"]
-        export["PendingChanges, SqlExport, SqlDialect"]
+        export["Change history<br/>PendingChanges, ChangeRecord, SqlExport, WorldApplier"]
         misc["Coordinates and views<br/>WorldCoordinates, SpawnPreview,<br/>Ac/TcCreatureView, tooltips"]
     end
 
@@ -147,8 +147,10 @@ Rules that follow from the layering:
   (`ClientLighting.cs`, `LightBand.cs`).
 - **Per-client side data is attached to the source, not passed around.** `RetailLiquids` and
   `LiquidTextures` are looked up through `ConditionalWeakTable` keyed on the `IClientFiles` instance.
-- **Edits only reach Foundation drafts.** Overlays and editors never write to the database. SQL leaves
-  the app only through `Foundation/Sql/SqlExport.cs`.
+- **Edits stage in Foundation drafts.** Overlays and editors write row edits into local drafts, never
+  directly to the database. `Foundation/Sql/SqlExport.cs` builds the guarded apply/revert scripts;
+  the Change History window applies them through `Scripts/Data/WorldApplier.cs` (preflight first,
+  then one transaction) or exports checked rows into one file.
 - **Dialect-specific classes are prefixed.** `Ac`/`Tc` classes (and file names) live in the layer's
   `AzerothCore/` / `TrinityCore/` folders (`Scripts/Ui/AzerothCore`, `Scripts/Data/AzerothCore`), not
   in a copy of those folders under each feature. Shared interfaces, descriptors, context, renderers
@@ -183,22 +185,23 @@ come from the tile data and from read-only database queries.
 
 The user edits in the viewport and in the entity windows: moves and places spawns with the gizmo or the
 content browser (drag a template into the world), edits a spawn's row fields or a creature template's pages, edits graveyards, waypoints and
-content rows. Every edit becomes a row edit in a local draft with undo history. The pending-changes
-window turns the net changes into SQL apply and revert scripts; exporting moves the scripts to disk and
-marks them, and the drafts stay as they are.
+content rows. Every edit becomes a row edit in a local draft with undo history. The Change
+History window stages the net changes in `acworld.change_log`; applying runs the guarded apply and
+revert scripts against the world (stale rows abort first), and exporting writes the checked rows
+into one SQL file for sharing.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `Scripts/Assets/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs and generated MMaps (`Navigation/`) |
-| `Scripts/Data/` | Read-only MySQL sessions, `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), and the `Db*` read helpers |
+| `Scripts/Data/` | MySQL sessions (`WorldDatabase` reads, `AcworldStore` history, `WorldApplier` guarded writes), `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), and the `Db*` read helpers |
 | `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
 | `Scripts/Overlays/` | One folder per overlay family (`Region`, `Placement`, `Creature`, `GameObject`, `Graveyard`, `Waypoint`, `AreaTrigger`, `Navigation`); the creature collaborators and the waypoint path views live beside their layer |
 | `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
-| `Foundation/` | Drafts and spawn authoring, entity pages and rules, SQL export, tooltips, coordinates |
+| `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, coordinates |
 | `Shaders/` | Subfolders by pass: `terrain/`, `model/`, `sky/`, `liquid/` (water, magma and the specialized liquid materials) and `shared/` (the `client_lighting.gdshaderinc` include); each stage keeps its `.gdshader`/`.gdshaderinc` and `.uid` beside its siblings |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
 | `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py` |

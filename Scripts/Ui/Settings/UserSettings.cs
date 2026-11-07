@@ -38,8 +38,16 @@ public static class UserSettings
 
     public static void SaveProfile(ClientKind kind) => Write("client", "profile", SettingsResolver.ProfileName(kind));
 
-    public static WorldConnection LoadDatabase(WorldDialect dialect = WorldDialect.AzerothCore) =>
-        SettingsResolver.Connection(dialect, System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariableFor(dialect)), Read);
+    public static WorldConnection LoadDatabase(WorldDialect dialect = WorldDialect.AzerothCore)
+    {
+        var connection = SettingsResolver.Connection(dialect, System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariableFor(dialect)), Read);
+        var acworld = SettingsResolver.AcworldOverride(
+            dialect,
+            System.Environment.GetEnvironmentVariable(SettingsResolver.AcworldVariableFor(dialect)),
+            Read,
+            section => Open().HasSection(section));
+        return connection with { AcworldOverride = acworld };
+    }
 
     public static void SaveDatabase(WorldConnection connection)
     {
@@ -53,6 +61,20 @@ public static class UserSettings
         if (connection.Hotfixes != null)
         {
             file.SetValue(section, "hotfixes", connection.Hotfixes);
+        }
+
+        string acworldSection = SettingsResolver.AcworldSection(connection.Dialect);
+        if (connection.AcworldOverride is { } acworld)
+        {
+            file.SetValue(acworldSection, "host", acworld.Host);
+            file.SetValue(acworldSection, "port", acworld.Port.ToString());
+            file.SetValue(acworldSection, "user", acworld.User);
+            file.SetValue(acworldSection, "password", acworld.Password);
+            file.SetValue(acworldSection, "name", acworld.Database);
+        }
+        else if (file.HasSection(acworldSection))
+        {
+            file.EraseSection(acworldSection);
         }
 
         file.Save(Path);

@@ -77,6 +77,30 @@ public sealed class PendingChanges
     static string Fingerprint(string source, SqlScripts scripts) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source + "\n" + scripts.Apply)));
 
     /// <summary>
+    /// Every net change regardless of the exported set: the change-history flow stages these in the
+    /// acworld database instead of hiding exported ones in a local file. The fingerprint stays the
+    /// same stable ID <see cref="Collect"/> assigns.
+    /// </summary>
+    public List<PendingChange> CollectAll(IEnumerable<GraveyardEdit> graveyards, IEnumerable<(string Source, RowEdit Edit)> rows, Func<string, IWorldSchema>? schemaFor = null)
+    {
+        IWorldSchema? Schema(string source) => schemaFor?.Invoke(source);
+        var all = new List<PendingChange>();
+        foreach (var edit in graveyards.OrderBy(e => e.Id))
+        {
+            var scripts = SqlExport.Build(edit.Source, [edit], [], FixedStamp, Schema(edit.Source));
+            all.Add(new(Fingerprint(edit.Source, scripts), PendingKind.Graveyard, edit.Source, string.Join("; ", scripts.Summary), edit, null));
+        }
+
+        foreach (var (source, edit) in rows)
+        {
+            var scripts = SqlExport.Build(source, [], [edit], FixedStamp, Schema(source));
+            all.Add(new(Fingerprint(source, scripts), PendingKind.Row, source, string.Join("; ", scripts.Summary), null, edit));
+        }
+
+        return all;
+    }
+
+    /// <summary>
     /// Forget which changes were exported and delete the saved list.
     /// </summary>
     public void ClearExported()
