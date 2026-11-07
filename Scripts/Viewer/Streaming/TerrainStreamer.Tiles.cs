@@ -21,6 +21,16 @@ public sealed partial class TerrainStreamer
         DecodeLiquids(assets, tile, decoded, errors, token);
         token.ThrowIfCancellationRequested();
         var terrain = TerrainRenderer.PrepareTile(tile, WorkerOptions(token));
+        if (assets.Kind == ClientKind.Retail)
+        {
+            // Low-LOD bake on the worker: same decoded layers the full path samples.
+            var bake = TerrainLowBake.Bake(tile.Chunks, decoded, map.BigAlpha);
+            if (bake != null)
+            {
+                terrain = terrain with { LowAlbedo = bake.Value.Albedo, LowNormal = bake.Value.Normal };
+            }
+        }
+
         return new(version, tile, decoded, errors, notices, terrain);
     }
 
@@ -264,6 +274,7 @@ public sealed partial class TerrainStreamer
     void PublishBuilding(PreparedTile tile, Node3D node)
     {
         loaded[tile.Tile.Key] = node;
+        ApplyLod(CameraTile(), force: true);
         tilePublished(tile.Tile.Key);
         var ids = new uint[256];
         foreach (var c in tile.Tile.Chunks)

@@ -60,7 +60,7 @@ void fragment() {
     vec3 lit = layered.rgb * COLOR.rgb;
     vec3 color = wrath_lighting
         ? client_wrath_surface_light(lit, 1.0 - splat.a, NORMAL, VIEW_MATRIX)
-        : client_surface_light(lit, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX);
+        : client_surface_light(lit, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX, client_world_pos(VERTEX, INV_VIEW_MATRIX), client_world_normal(NORMAL, VIEW_MATRIX));
     if (grid) {
         vec2 edge = min(UV, 1.0 - UV);
         float line = 1.0 - smoothstep(0.0, 0.006, min(edge.x, edge.y));

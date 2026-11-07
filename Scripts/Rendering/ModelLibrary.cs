@@ -436,7 +436,7 @@ public sealed class ModelLibrary
                 // A margin with the default (disabled) fade mode acts as hysteresis around the cutoff,
                 // not a visual fade: it stops small back-and-forth drift at the boundary from popping
                 // geometry in and out every frame while flying.
-                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
+                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
             }
             else if (node.Key.Skybox)
             {
@@ -446,7 +446,7 @@ public sealed class ModelLibrary
             }
             else
             {
-                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
+                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
             }
         }
 

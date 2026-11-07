@@ -241,6 +241,56 @@ vec3 client_hemi_tint(vec3 normal, mat4 view_matrix) {
     return hemi / max((hemi.r + hemi.g + hemi.b) / 3.0, 0.001);
 }
 
+// World-space helpers shared by the point-light term: the transpose idiom recovers
+// the world normal from a view-space one, and the inverse view matrix recovers the
+// world position from the fragment's view-space VERTEX.
+vec3 client_world_normal(vec3 normal, mat4 view_matrix) {
+    mat3 rotation = mat3(view_matrix);
+    return vec3(dot(rotation[0], normal), dot(rotation[1], normal), dot(rotation[2], normal));
+}
+vec3 client_world_pos(vec3 view_position, mat4 inv_view) {
+    return (inv_view * vec4(view_position, 1.0)).xyz;
+}
+
+// The nearest placed WMO dynamic lights (MNLD, Shadowlands 9.1+), published per frame
+// by SkyLighting like the fog volumes: four RGBA-float texels each (world position and
+// attenuation end; gamma color times intensity and attenuation start; spot direction
+// and type flag; cone cosines and falloff). Falls off linearly to the end radius;
+// spots additionally narrow by the cone (smoothstep between the outer and inner
+// cosines; the falloff exponent is not applied). No shadows, no flicker, no cookies.
+// Gamma space like the other client terms, so callers add it to their lit color.
+global uniform sampler2D client_point_lights : filter_nearest, repeat_disable;
+global uniform float client_point_light_count;
+const int CLIENT_POINT_LIGHT_MAX = 8;
+
+vec3 client_point_light(vec3 world_pos, vec3 world_normal) {
+    vec3 sum = vec3(0.0);
+    int count = int(client_point_light_count + 0.5);
+    for (int i = 0; i < CLIENT_POINT_LIGHT_MAX; i++) {
+        if (i >= count) {
+            break;
+        }
+        int at = i * 4;
+        vec4 t0 = texelFetch(client_point_lights, ivec2(at, 0), 0);
+        vec4 t1 = texelFetch(client_point_lights, ivec2(at + 1, 0), 0);
+        vec4 t2 = texelFetch(client_point_lights, ivec2(at + 2, 0), 0);
+        vec4 t3 = texelFetch(client_point_lights, ivec2(at + 3, 0), 0);
+        vec3 to_light = t0.xyz - world_pos;
+        float dist = length(to_light);
+        if (dist >= t0.w || dist <= 0.0001) {
+            continue;
+        }
+        float atten = 1.0 - smoothstep(t1.w, t0.w, dist);
+        vec3 l = to_light / dist;
+        float cone = 1.0;
+        if (t2.w > 0.5) {
+            cone = smoothstep(t3.y, t3.x, dot(l, normalize(t2.xyz)));
+        }
+        sum += t1.rgb * (atten * cone * max(dot(world_normal, l), 0.0));
+    }
+    return sum;
+}
+
 // The client's light on a model or WMO batch (the retail combiners shaders), in gamma space: ambient, widened a little
 // toward the sun side by a wrap term, plus diffuse N.L. It multiplies the surface color; there is no specular.
 // Hemisphere steers the ambient hue by orientation; glow lifts everything a little in bright places (estimate).
@@ -262,11 +312,12 @@ const float CLIENT_SPECULAR_EXPONENT = 32.0;
 const float CLIENT_SPECULAR_STRENGTH = 0.3;
 const float CLIENT_SHADOW_STRENGTH = 0.3;
 const float CLIENT_DIFFUSE_WRAP = 0.3;
-vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 view_position, vec3 normal, mat4 view_matrix) {
+vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 view_position, vec3 normal, mat4 view_matrix, vec3 world_pos, vec3 world_normal) {
     vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
     float facing = dot(-sun, normal);
     float wrapped = clamp((facing + CLIENT_DIFFUSE_WRAP) / (1.0 + CLIENT_DIFFUSE_WRAP), 0.0, 1.0);
-    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped, 0.0, 1.0);
+    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped, 0.0, 1.0)
+        + client_point_light(world_pos, world_normal);
     vec3 half_vector = normalize(normalize(view_position) + sun);
     float highlight = pow(max(dot(-half_vector, normal), 0.0), CLIENT_SPECULAR_EXPONENT);
     vec3 specular = clamp(client_sun_specular * highlight * shadow * specular_mask * CLIENT_SPECULAR_STRENGTH, 0.0, 1.0);

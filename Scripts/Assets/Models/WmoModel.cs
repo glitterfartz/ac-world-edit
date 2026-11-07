@@ -40,6 +40,7 @@ public static class WmoModel
         uint[] groupIds = FileIds(b, root, "GFID"), doodadIds = FileIds(b, root, "MODI");
         List<ModelSurface> surfaces = [];
         List<string> warnings = [];
+        List<WmoLight> lights = ReadLights(b, root, warnings);
         for (int group = 0; group < groups; group++)
         {
             token.ThrowIfCancellationRequested();
@@ -349,7 +350,57 @@ public static class WmoModel
 
             return new ModelSurface(positions.ToArray(), normals.ToArray(), uv.ToArray(), indices.ToArray(), group.Key.Texture, group.Key.Blend, group.Key.TwoSided, Colors: colors.ToArray(), Unlit: group.Key.Unlit, ColorMode: group.Key.ColorMode, Layers: layers == null ? null : layers with { Uv2 = uv2.ToArray(), Alpha2 = alpha2.ToArray() }, Debug: string.Join(" / ", group.Select(s => s.Debug).Where(d => d != null).Distinct()));
         }).ToArray();
-        return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray());
+        return new(merged.Concat(surfaces.Where(s => s.LiquidType != null)).ToArray(), [], 0, doodads.ToArray(), warnings.Distinct().ToArray(), Lights: [.. lights]);
+    }
+
+    /// <summary>
+    /// Retail dynamic lights (MNLD, Shadowlands 9.1+): 184-byte entries with type, doodad set,
+    /// BGRA color, local position/rotation, attenuation range, intensity and spot cone angles.
+    /// Positions and spot directions convert to viewer space like the geometry. Entries with
+    /// unknown types or non-finite numbers are skipped; a truncated chunk warns and yields nothing.
+    /// </summary>
+    static List<WmoLight> ReadLights(BinaryAsset b, Dictionary<string, ChunkHeader> root, List<string> warnings)
+    {
+        var result = new List<WmoLight>();
+        if (!root.TryGetValue("MNLD", out var chunk))
+        {
+            return result;
+        }
+
+        if (chunk.Size % 184 != 0)
+        {
+            warnings.Add("WMO has a truncated MNLD light chunk and its point lights are skipped.");
+            return result;
+        }
+
+        for (int i = 0; i < chunk.Size / 184; i++)
+        {
+            int p = chunk.Data + i * 184;
+            int type = b.I(p);
+            if (type is < 0 or > 3)
+            {
+                continue;
+            }
+
+            var color = new Vector3(b.Bytes[p + 18] / 255f, b.Bytes[p + 17] / 255f, b.Bytes[p + 16] / 255f);
+            var position = BinaryAsset.View(b.V(p + 20));
+            float attenStart = b.F(p + 44), attenEnd = b.F(p + 48), intensity = b.F(p + 52);
+            if (!float.IsFinite(position.X + position.Y + position.Z) || !float.IsFinite(attenStart + attenEnd + intensity))
+            {
+                continue;
+            }
+
+            // Spot direction: the Euler rotation applied to -Z, the presumed forward axis
+            // (the client's convention is not documented; wrong here only mis-aims the cone).
+            var direction = type == 1
+                ? BinaryAsset.View(Vector3.Transform(-Vector3.UnitZ, Quaternion.CreateFromYawPitchRoll(b.F(p + 36), b.F(p + 32), b.F(p + 40))))
+                : Vector3.Zero;
+            result.Add(new(type, position, color, attenStart, attenEnd, intensity, b.I(p + 12),
+                direction == Vector3.Zero ? direction : Vector3.Normalize(direction),
+                b.F(p + 128), b.F(p + 132), b.F(p + 124)));
+        }
+
+        return result;
     }
 
     /// <summary>

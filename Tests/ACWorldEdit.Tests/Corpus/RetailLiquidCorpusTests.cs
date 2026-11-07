@@ -110,6 +110,11 @@ public class RetailLiquidCorpusTests
         var density = textures.Decode(750);
         Assert.NotEmpty(density.Rgba);
         Assert.Same(density, textures.Decode(751));
+        // liquidfog_1 mask: the shipped fog rows name waterchop7bw in textures[3], resolved here.
+        Assert.Equal(@"XTextures\foam\waterchop7bw.blp", RetailLiquids.For(RetailData.Files)!.Fog(750)!.Mask);
+        Assert.NotNull(forest.FogMask);
+        Assert.NotEmpty(forest.FogMask.Rgba);
+        Assert.Same(forest.FogMask, witch.FogMask);
     }
 
     [RetailListfileFact]
@@ -146,6 +151,25 @@ public class RetailLiquidCorpusTests
         Assert.Equal(90, ley.Ley.Settings.FirstUv.Y);
         Assert.Equal(-0.02f, ley.Ley.Settings.FirstUv.Z);
         Assert.True(ley.Ley.Settings.Color.LengthSquared() > 0);
+        // procleylineabove inputs: the slot-3 bump ripple and slot-4 shore resolve on the
+        // shipped rows; void rows (924) name no shore texture and keep the foam term off.
+        Assert.NotNull(ley.Ley.Ripple);
+        Assert.NotEmpty(ley.Ley.Ripple.Rgba);
+        Assert.NotNull(mana.Ley.Shore);
+        Assert.NotEmpty(mana.Ley.Shore.Rgba);
+        Assert.Equal(@"xtextures/ocean/newoceanbump.blp", RetailLiquids.For(RetailData.Files)!.Ley(890)!.Ripple.Replace('\\', '/'));
+        Assert.Equal(@"xtextures/manawater/manawater_shore.blp", RetailLiquids.For(RetailData.Files)!.Ley(890)!.Shore.Replace('\\', '/'));
+        var voidStyle = textures.Style(924);
+        Assert.NotNull(voidStyle.Ley!.Ripple);
+        Assert.Null(voidStyle.Ley.Shore);
+        Assert.Equal(180, RetailLiquids.For(RetailData.Files)!.Ley(890)!.RippleUv.Y, 3);
+        Assert.Equal(0.02f, RetailLiquids.For(RetailData.Files)!.Ley(890)!.RippleUv.Z);
+        // mediumleylinebelow blends toward Color[1] (CB1[21] has no confirmed source).
+        uint deep = unchecked((uint)-14005641);
+        var deepColor = new System.Numerics.Vector3((deep >> 16 & 255) / 255f, (deep >> 8 & 255) / 255f, (deep & 255) / 255f);
+        Assert.Equal(deepColor, RetailLiquids.For(RetailData.Files)!.Ley(890)!.DeepColor);
+        // The shore presence above also picks the below-water half: procleylinebelow_0's
+        // shore mix for 890, mediumleylinebelow_0's deep-color blend for shoreless 924.
     }
 
     [RetailListfileFact]
@@ -198,6 +222,21 @@ public class RetailLiquidCorpusTests
         Assert.NotNull(felStyle.Fel);
         Assert.NotEmpty(felStyle.Fel.Shallow.Rgba);
         Assert.NotEqual(felStyle.CacheKey, LiquidStyle.River.CacheKey);
+        // procfel inputs resolve on the shipped rows: slot-4 emissive overlay and the
+        // slot-5 animated normal sequence (30 frames).
+        Assert.NotNull(felStyle.Fel.Overlay);
+        Assert.NotEmpty(felStyle.Fel.Overlay.Rgba);
+        Assert.NotNull(felStyle.Fel.Normals);
+        Assert.Equal(30, felStyle.Fel.Normals.Width / felStyle.Fel.Normals.Height);
+        // procfel_2/3 inputs: slot-2 specular and slot-3 shore resolve on both rows.
+        Assert.NotNull(felStyle.Fel.Specular);
+        Assert.NotEmpty(felStyle.Fel.Specular.Rgba);
+        Assert.NotNull(felStyle.Fel.Shore);
+        Assert.NotEmpty(felStyle.Fel.Shore.Rgba);
+        var lavaStyle = textures.Style(1177);
+        Assert.NotNull(lavaStyle.Fel!.Overlay);
+        Assert.NotNull(lavaStyle.Fel.Normals);
+        Assert.Equal(30, lavaStyle.Fel.Normals.Width / lavaStyle.Fel.Normals.Height);
     }
 
     [RetailListfileFact]

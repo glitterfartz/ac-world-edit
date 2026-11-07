@@ -86,7 +86,9 @@ void fragment() {
         // and scaled by the gradient alpha.
         color += .4*fresnel*fresnel*water.a*highlight*client_sun_specular;
     } else {
-        vec3 reflection = linear_to_gamma(liquid_reflection(VERTEX,reflect(-to_eye,normal_view),client_gamma_to_linear(client_fog_color),SCREEN_UV,fwidth(SCREEN_UV),PROJECTION_MATRIX,INV_PROJECTION_MATRIX));
+        vec3 view_dir = reflect(-to_eye,normal_view);
+        vec3 world_dir = normalize((INV_VIEW_MATRIX * vec4(view_dir, 0.0)).xyz);
+        vec3 reflection = linear_to_gamma(liquid_reflection(VERTEX,view_dir,world_dir,client_gamma_to_linear(client_fog_color),SCREEN_UV,fwidth(SCREEN_UV),PROJECTION_MATRIX,INV_PROJECTION_MATRIX));
         // Retail's reflection response is drawn 60% toward the lit depth color.
         reflection = mix(reflection,body,.6);
         color = mix(color,reflection,.1+.5*fresnel);

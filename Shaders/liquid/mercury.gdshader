@@ -45,7 +45,9 @@ void fragment() {
     float fresnel4 = fresnel2*fresnel2;
     // Retail blends two separate reflection inputs. A single bounded screen trace
     // replaces both, with client fog/sky colour for offscreen or missing geometry.
-    vec3 reflected = linear_to_gamma(liquid_reflection(VERTEX,reflect(-to_eye,normal_view),client_gamma_to_linear(client_fog_color),SCREEN_UV,fwidth(SCREEN_UV),PROJECTION_MATRIX,INV_PROJECTION_MATRIX));
+    vec3 view_dir = reflect(-to_eye,normal_view);
+    vec3 world_dir = normalize((INV_VIEW_MATRIX * vec4(view_dir, 0.0)).xyz);
+    vec3 reflected = linear_to_gamma(liquid_reflection(VERTEX,view_dir,world_dir,client_gamma_to_linear(client_fog_color),SCREEN_UV,fwidth(SCREEN_UV),PROJECTION_MATRIX,INV_PROJECTION_MATRIX));
     float luminance = dot(reflected,vec3(.3,.6,.1));
     vec3 gray = vec3(luminance);
     // procmercury_0: two desaturation lobes and the fixed .2 material pedestal.

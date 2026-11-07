@@ -2,16 +2,26 @@ shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
 #include "res://Shaders/shared/client_lighting.gdshaderinc"
 
-// Retail azerite (material 18). The shipped pixel shaders split the surface into a
-// three-stop depth ramp and warp every layer with an animated normal map:
+// Retail azerite (material 18), recovered from the Midnight binary (base 0x7ff748f20000,
+// build 70575): the render at 0x7ff74c6faf20 binds texture slots 0, 1 (body layers), 7, 8
+// (shared defaults), 9, 2, 3, 4 (masks), then the slot-5 and slot-6 animated sequences.
+// Slot descriptors are contiguous at settings+8+(slot+0x4e)*0x18. Per-slot constants land
+// at CB +0x1f80/+0x1f84 (1.0/settings+0x728, guarded)/+0x1f88/+0x1f8c (from
+// +0x71c/+0x728/+0x734/+0x738), +0x1f90 = 3, +0x1f94/+0x1f98 (from +0x73c/+0x718), anim
+// phase at +0x1f9c over period settings+0x720 seconds, and the +0x6e4 UV-matrix block is
+// copied to +0x1fc0. Which DB2 floats feed +0x718..+0x73c is still unknown, so K, fleck
+// scale and the scroll split below stay tuned/estimated. The shipped pixel shaders split
+// the surface into a three-stop depth ramp and warp every layer with an animated normal map:
 //   deep      = azeritedeep        (slot 0, thick gold marble with cream ridges)
 //   transcolor= azeritetranscolor  (slot 4, flat yellow transition band)
 //   center    = azeritecentercolor (slot 1, blue speckle - the zero-depth fringe)
 //   mask      = azeriteblend       (slot 2, cyan/white/pink detail flecks)
 //   normals   = azeriteanim_%d.blp (slot 5, 30 animated normal frames)
-// procazerite samples two consecutive normal frames and crossfades them, then offsets
-// every layer UV by CB1[12].x * normal.xy (refracted flow). azerite_1 multiplies the
-// blend by azeriteblend: blend = saturate(1 - mask * CB1[15].z * CB1[12].z).
+// procazerite samples two consecutive normal frames and crossfades them (FUN_7ff74c6f9760
+// returns the fractional phase; the count cycles over rate settings+0x72c seconds x 1000,
+// the last frame wraps to 0; static slots bind with divisor 1 so they always use frame 0),
+// then offsets every layer UV by CB1[12].x * normal.xy (refracted flow). azerite_1
+// multiplies the blend by azeriteblend: blend = saturate(1 - mask * CB1[15].z * CB1[12].z).
 //
 // The shipped slot-3 azerite_basenormal is a flat placeholder (every DXT block is the
 // same bytes), so it is not bound; the flow comes from the slot-5 sequence.
@@ -157,7 +167,9 @@ void fragment() {
     // The body terms are gamma-space like the client's; convert once, then blend the
     // (already linear) screen reflection.
     vec3 linear_body = client_gamma_to_linear(body);
-    vec3 reflection = liquid_reflection(VERTEX, reflect(-to_eye, normal_view), to_linear(client_fog_color), SCREEN_UV, fwidth(SCREEN_UV), PROJECTION_MATRIX, INV_PROJECTION_MATRIX);
+    vec3 view_dir = reflect(-to_eye, normal_view);
+    vec3 world_dir = normalize((INV_VIEW_MATRIX * vec4(view_dir, 0.0)).xyz);
+    vec3 reflection = liquid_reflection(VERTEX, view_dir, world_dir, to_linear(client_fog_color), SCREEN_UV, fwidth(SCREEN_UV), PROJECTION_MATRIX, INV_PROJECTION_MATRIX);
     ALBEDO = mix(linear_body, reflection, clamp(fresnel * reflection_strength, 0.0, 1.0));
     ALPHA = 1.0;
     FOG = client_fog_output(VERTEX, INV_VIEW_MATRIX);

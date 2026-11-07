@@ -10,6 +10,7 @@ namespace ACWorldEdit;
 public sealed class TerrainRenderer
 {
     readonly Shader shader = ClientShaderGlobals.Load("res://Shaders/terrain/terrain.gdshader");
+    readonly Shader lowShader = ClientShaderGlobals.Load("res://Shaders/terrain/terrainlow.gdshader");
     readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly ImageTexture fallback;
     readonly HashSet<ShaderMaterial> materials = [];
@@ -30,6 +31,8 @@ public sealed class TerrainRenderer
 
     // Splat atlas per tile node, shared by that tile's group materials.
     readonly Dictionary<Node3D, ImageTexture> splats = [];
+    // Low-LOD bake per tile node (albedo + normal), uploaded with the splat atlas.
+    readonly Dictionary<Node3D, (ImageTexture Albedo, ImageTexture Normal)> bakes = [];
     public int LiquidSurfaceCount => liquids.Values.Sum(e => e.References);
     /// <summary>Terrain chunks uploaded across loaded and building tiles.</summary>
     public int CellCount { get; private set; }
@@ -85,10 +88,11 @@ public sealed class TerrainRenderer
     public sealed record PreparedGroup(string[] Textures, float[] Scales, string[] Heights, float[] HeightScales, float[] HeightOffsets, int Chunks, Vector3[] Vertices, Vector3[] Normals, Vector2[] Uv, Vector2[] Uv2, Color[] Colors, int[] Indices);
 
     /// <summary>
-    /// A tile ready for upload: one group per distinct layer list and the 1024x1024 RGBA splat atlas
-    /// (64x64 per chunk; RGB layer opacity, A baked shadow).
+    /// A tile ready for upload: one group per distinct layer list, the 1024x1024 RGBA splat atlas
+    /// (64x64 per chunk; RGB layer opacity, A baked shadow), and the optional low-LOD bake (256x256
+    /// albedo + normal) for far tiles. Null bake keeps the full shader everywhere.
     /// </summary>
-    public sealed record PreparedTerrain(PreparedGroup[] Groups, byte[] Splat);
+    public sealed record PreparedTerrain(PreparedGroup[] Groups, byte[] Splat, BlpTexture? LowAlbedo = null, BlpTexture? LowNormal = null);
 
     const int SplatSize = 16 * 64;
 
@@ -231,12 +235,17 @@ public sealed class TerrainRenderer
     }
 
     /// <summary>
-    /// Upload the tile's splat atlas; call once after BeginTile and before AddGroup.
+    /// Upload the tile's splat atlas and its low-LOD bake (when the worker produced one).
+    /// Call once after BeginTile and before AddGroup.
     /// </summary>
     public void BeginTerrain(Node3D tile, PreparedTerrain terrain)
     {
         using var image = Image.CreateFromData(SplatSize, SplatSize, false, Image.Format.Rgba8, terrain.Splat);
         splats[tile] = ImageTexture.CreateFromImage(image);
+        if (terrain.LowAlbedo is { } albedo && terrain.LowNormal is { } normal)
+        {
+            bakes[tile] = (Texture(albedo), Texture(normal));
+        }
     }
 
     /// <summary>
@@ -317,11 +326,26 @@ public sealed class TerrainRenderer
         material.SetShaderParameter("grid", grid);
         materials.Add(material);
         mesh.SurfaceSetMaterial(0, material);
+        // The low-LOD material shares the mesh and tile textures; SetTileLod swaps it in on far tiles.
+        var low = new ShaderMaterial { Shader = lowShader };
+        if (bakes.TryGetValue(tile, out var bake) && !WrathLighting)
+        {
+            low.SetShaderParameter("baked_albedo", bake.Albedo);
+            low.SetShaderParameter("baked_normal", bake.Normal);
+            low.SetShaderParameter("splat_map", splats[tile]);
+            low.SetShaderParameter("wrath_lighting", WrathLighting);
+            low.SetShaderParameter("grid", grid);
+            materials.Add(low);
+        }
         var instance = new MeshInstance3D
         {
             Mesh = mesh,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.On
+            // Shadowless like everything else: all world materials are unshaded, so no
+            // shader samples the shadowmap this would render into.
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
         };
+        instance.SetMeta("full", material);
+        instance.SetMeta("low", low);
         instance.SetMeta("textures", group.Textures.Concat(group.Heights.Take(4).Where(h => h.Length > 0 && decoded.ContainsKey(h))).ToArray());
         instance.SetMeta("chunks", group.Chunks);
         CellCount += group.Chunks;
@@ -374,6 +398,33 @@ public sealed class TerrainRenderer
     }
 
     /// <summary>
+    /// Swap a tile's group surfaces between the full and baked materials. No-ops when the tile
+    /// has no bake (Wrath) or already shows the requested variant. Called on streaming changes,
+    /// not per frame.
+    /// </summary>
+    public void SetTileLod(Node3D tile, bool low)
+    {
+        if (!bakes.ContainsKey(tile))
+        {
+            return;
+        }
+
+        foreach (var child in tile.GetChildren().OfType<MeshInstance3D>())
+        {
+            if (!child.HasMeta("low") || !child.HasMeta("full"))
+            {
+                continue;
+            }
+
+            var want = low ? child.GetMeta("low").As<ShaderMaterial>() : child.GetMeta("full").As<ShaderMaterial>();
+            if (child.Mesh.SurfaceGetMaterial(0) != want)
+            {
+                child.Mesh.SurfaceSetMaterial(0, want);
+            }
+        }
+    }
+
+    /// <summary>
     /// Unregister materials, release liquid meshes/last-use atlases and queue the tile for deletion.
     /// Call once per loaded or partially built tile.
     /// </summary>
@@ -381,10 +432,27 @@ public sealed class TerrainRenderer
     {
         foreach (var child in tile.GetChildren().OfType<MeshInstance3D>())
         {
+            // The surface may hold either variant; both live in the materials set.
+            var live = new HashSet<ShaderMaterial>();
             if (child.Mesh.SurfaceGetMaterial(0) is ShaderMaterial material)
             {
-                materials.Remove(material);
-                material.Dispose();
+                live.Add(material);
+            }
+
+            if (child.HasMeta("full") && child.GetMeta("full").As<ShaderMaterial>() is { } full)
+            {
+                live.Add(full);
+            }
+
+            if (child.HasMeta("low") && child.GetMeta("low").As<ShaderMaterial>() is { } low)
+            {
+                live.Add(low);
+            }
+
+            foreach (var m in live)
+            {
+                materials.Remove(m);
+                m.Dispose();
             }
 
             CellCount -= child.GetMeta("chunks").AsInt32();
@@ -418,6 +486,12 @@ public sealed class TerrainRenderer
         if (splats.Remove(tile, out var splat))
         {
             splat.Dispose();
+        }
+
+        if (bakes.Remove(tile, out var bake))
+        {
+            bake.Albedo.Dispose();
+            bake.Normal.Dispose();
         }
 
         tile.QueueFree();

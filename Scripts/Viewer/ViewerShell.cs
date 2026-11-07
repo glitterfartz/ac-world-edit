@@ -157,6 +157,7 @@ public partial class ViewerShell : Node3D
         };
         AddChild(camera);
         sky = new SkyLighting(models);
+        sky.LightPlacements = () => objects.Placements();
         AddChild(sky);
     }
 

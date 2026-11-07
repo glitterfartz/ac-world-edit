@@ -92,6 +92,23 @@ public sealed partial class TerrainStreamer
         UpdateSpawnRegion(center);
     }
 
+    TileKey? lastLodCenter;
+
+    /// <summary>Swap far tiles to the baked material; near tiles keep the full shader.</summary>
+    void ApplyLod(TileKey center, bool force = false)
+    {
+        if (!force && lastLodCenter == center)
+        {
+            return;
+        }
+
+        lastLodCenter = center;
+        foreach (var key in loaded.Keys)
+        {
+            renderer.SetTileLod(loaded[key], TerrainLowBake.IsFarTile(key, center, TerrainLowBake.LowLodRing));
+        }
+    }
+
     /// <summary>Fill the wanted set and release anything outside the hysteresis ring.</summary>
     void UpdateWantedTiles(TileKey center)
     {
@@ -120,6 +137,8 @@ public sealed partial class TerrainStreamer
             building = null;
             buildingNode = null;
         }
+
+        ApplyLod(center);
     }
 
     /// <summary>The sticky database query window, then one region fan-out to every overlay.</summary>
