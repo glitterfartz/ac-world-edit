@@ -246,7 +246,24 @@ public partial class CreatureOverlay
             }
 
             leaderPathId = use?.PathId ?? 0;
-            formationLeaderPath.Text = use == null ? "The leader walks no path." : $"Leader path {use.PathId} ({use.Nodes} point(s)). Turn-around points name that path's nodes.";
+            if (use == null)
+            {
+                // The leader may walk a path created this session, which the database read lacks.
+                string column = MovementEdits.AddonPathColumn(ContentDraftFiles.Sources.DialectOf(key));
+                if (poses.AddonOf(key, leader) is { } addon && uint.TryParse(addon[column], NumberStyles.None, CultureInfo.InvariantCulture, out uint staged) && staged != 0)
+                {
+                    leaderPathId = staged;
+                    formationLeaderPath.Text = $"Leader path {staged} (new this session; point count from the Waypoints tab).";
+                }
+                else
+                {
+                    formationLeaderPath.Text = "The leader walks no path.";
+                }
+            }
+            else
+            {
+                formationLeaderPath.Text = $"Leader path {use.PathId} ({use.Nodes} point(s)). Turn-around points name that path's nodes.";
+            }
         }
         catch (Exception)
         {

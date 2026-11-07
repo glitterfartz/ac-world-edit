@@ -109,12 +109,20 @@ public static class LegacyWaypointImport
             .With("action_chance", props.ActionChance);
     }
 
-    /// <summary>True when another process holds the legacy draft file open.</summary>
+    /// <summary>True when another process holds the legacy draft file open (missing lock file means unlocked).</summary>
     public static bool LockHeld(string path)
     {
         try
         {
-            using var _ = new FileStream(path + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            using var _ = new FileStream(path + ".lock", FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
+        catch (DirectoryNotFoundException)
+        {
             return false;
         }
         catch (IOException)

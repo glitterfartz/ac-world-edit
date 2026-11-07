@@ -139,7 +139,7 @@ public partial class CreatureOverlay
             var source = DBSource.Open(config);
             var rows = await source.ReadWaypointPathRowsAsync(path, default);
             var users = (await source.ReadPathUsersAsync([path], default)).FirstOrDefault();
-            if (!IsInsideTree() || generation != pathGeneration || selectedGuid != guid)
+            if (!IsInsideTree() || generation != pathGeneration || selectedGuid != guid || key != sourceKey)
             {
                 return;
             }
@@ -161,46 +161,6 @@ public partial class CreatureOverlay
                 pathStatus.Text = "Could not read the path; try again.";
             }
         }
-    }
-
-    /// <summary>Node count with the draft applied (renumbers are delete+insert pairs).</summary>
-    int DraftNodeTotal(string key, IWorldSchema schema, uint pathId, int dbCount)
-    {
-        if (sharedDrafts?.Draft == null)
-        {
-            return dbCount;
-        }
-
-        string table = MovementEdits.NodeTable(schema).Name;
-        string id = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
-        int adds = 0, drops = 0;
-        bool touches = false;
-        foreach (var (source, edit) in sharedDrafts.Draft.NetEdits())
-        {
-            if (source != key || edit.Table != table)
-            {
-                continue;
-            }
-
-            bool before = edit.Before != null && edit.Before.U(id) == pathId;
-            bool after = edit.After != null && edit.After.U(id) == pathId;
-            if (!before && !after)
-            {
-                continue;
-            }
-
-            touches = true;
-            if (edit.After == null)
-            {
-                drops++;
-            }
-            else if (edit.Before == null)
-            {
-                adds++;
-            }
-        }
-
-        return touches ? dbCount + adds - drops : dbCount;
     }
 
     void UseWaypointSelection()
@@ -243,7 +203,7 @@ public partial class CreatureOverlay
         try
         {
             var rows = await DBSource.Open(config).ReadWaypointPathRowsAsync(path, default);
-            if (!IsInsideTree() || selectedGuid != guid)
+            if (!IsInsideTree() || selectedGuid != guid || key != sourceKey)
             {
                 return;
             }
@@ -281,7 +241,6 @@ public partial class CreatureOverlay
         }
 
         var schema = ContentDraftFiles.Sources.SchemaFor(sourceKey);
-        var dialect = ContentDraftFiles.Sources.DialectOf(sourceKey);
         var baseline = SpawnEdits.AddonBaseline(schema, SpawnKind.Creature, templateAddons?.RowOf(sourceKey, SelectedEntry ?? 0), guid);
         var edits = MovementEdits.Unlink(schema, spawn, poses!.AddonOf(sourceKey, guid), baseline, guid);
         var (ok, message) = poses.Commit(this, sourceKey, "Unlink path", edits);
@@ -353,7 +312,7 @@ public partial class CreatureOverlay
             var database = DBSource.Open(config);
             var rows = await database.ReadWaypointPathRowsAsync(own, default);
             var users = (await database.ReadPathUsersAsync([own], default)).FirstOrDefault();
-            if (!IsInsideTree() || selectedGuid != guid)
+            if (!IsInsideTree() || selectedGuid != guid || key != sourceKey)
             {
                 return;
             }
@@ -368,12 +327,14 @@ public partial class CreatureOverlay
                 return;
             }
 
-            var nodes = rows.All(MovementEdits.NodeTable(schema)).ToArray();
+            var nodes = DraftPathRows(key, schema, own, rows.All(MovementEdits.NodeTable(schema)));
             var baseline = SpawnEdits.AddonBaseline(schema, SpawnKind.Creature, templateAddons?.RowOf(key, entry), guid);
-            var edits = MovementEdits.DeletePath(schema, nodes, MovementEdits.HeaderTable(schema) is { } header ? rows.Get(header, own.ToString(CultureInfo.InvariantCulture)) : null)
+            var headerTable = MovementEdits.HeaderTable(schema);
+            var header = headerTable is { } headerTable2 ? DraftHeaderRow(key, headerTable2, own, rows.Get(headerTable2, own.ToString(CultureInfo.InvariantCulture))) : null;
+            var edits = MovementEdits.DeletePath(schema, nodes, header)
                 .Concat(MovementEdits.Unlink(schema, spawn, poses.AddonOf(key, guid), baseline, guid)).ToArray();
             var (ok, message) = poses.Commit(this, key, $"Delete path {own}", edits);
-            Say(ok ? $"Deleted path {own} ({nodes.Length} point(s))." : message);
+            Say(ok ? $"Deleted path {own} ({nodes.Count} point(s))." : message);
             RefreshSpawnFields(true);
         }
         catch (Exception)

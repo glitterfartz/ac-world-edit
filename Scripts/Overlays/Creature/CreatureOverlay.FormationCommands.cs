@@ -76,7 +76,8 @@ public partial class CreatureOverlay
     }
 
     /// <summary>Polar offset of a member from its leader: yards plus the bearing from the member to
-    /// the leader in degrees, the way the server stores it (it walks the member to the opposite side).</summary>
+    /// the leader in degrees (the server adds π before placing the member, so the column is the
+    /// member-to-leader bearing).</summary>
     public static (float Dist, float Angle) FormationOffset(WorldPose leader, WorldPose member) =>
         MovementEdits.FormationOffset(leader.X, leader.Y, member.X, member.Y);
 
@@ -176,7 +177,7 @@ public partial class CreatureOverlay
             // The loader drops formations whose guids do not exist, so check first.
             var rows = await DBSource.Open(Connection()).ReadSpawnRowsAsync(SpawnKind.Creature, [leader], default);
             var schema = ContentDraftFiles.Sources.SchemaFor(key);
-            if (!IsInsideTree() || selectedGuid != guid)
+            if (!IsInsideTree() || selectedGuid != guid || key != sourceKey)
             {
                 return;
             }
@@ -274,17 +275,27 @@ public partial class CreatureOverlay
         var schema = database.Schema;
         var map = originals.Zip(fresh).ToDictionary(p => p.First, p => p.Second);
         var edits = new List<RowEdit>();
+        int skipped = 0;
         foreach (var row in poses.FormationRows(key, schema))
         {
-            if (!map.TryGetValue(row.UL("leaderGUID"), out ulong freshLeader) || !map.TryGetValue(row.UL("memberGUID"), out ulong freshMember))
+            bool leaderCopied = map.TryGetValue(row.UL("leaderGUID"), out ulong freshLeader);
+            bool memberCopied = map.TryGetValue(row.UL("memberGUID"), out ulong freshMember);
+            if (leaderCopied && memberCopied)
             {
-                continue;
+                if (MovementEdits.JoinFormation(schema, null, freshMember, freshLeader, row.F("dist"), row.F("angle"), row.U("groupAI"), row.U("point_1"), row.U("point_2")) is { } edit)
+                {
+                    edits.Add(edit);
+                }
             }
+            else if (leaderCopied || memberCopied)
+            {
+                skipped++;
+            }
+        }
 
-            if (MovementEdits.JoinFormation(schema, null, freshMember, freshLeader, row.F("dist"), row.F("angle"), row.U("groupAI"), row.U("point_1"), row.U("point_2")) is { } edit)
-            {
-                edits.Add(edit);
-            }
+        if (skipped > 0)
+        {
+            Say($"Formation kept for fully-copied members; {skipped} row(s) involve creatures outside the copy.");
         }
 
         return edits;

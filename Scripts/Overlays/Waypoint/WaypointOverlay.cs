@@ -74,6 +74,7 @@ public partial class WaypointOverlay : RegionOverlay
             Deselect();
             paths.Clear();
             lookup.Clear();
+            stagedPaths.Clear();
             snapshots.Clear();
             loaded.Clear();
             effective = null;
@@ -189,6 +190,8 @@ public partial class WaypointOverlay : RegionOverlay
         {
             bool unchanged = lookup.TryGetValue(path.Id, out var old) && old.Nodes.SequenceEqual(path.Nodes) && paths.Contains(path.Id);
             lookup[path.Id] = path;
+            // A formerly staged path now has a database record; it is no longer synthetic.
+            stagedPaths.Remove(path.Id);
             if (!unchanged)
             {
                 BuildPath(path);

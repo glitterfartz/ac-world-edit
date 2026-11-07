@@ -138,12 +138,16 @@ internal static class DbPathUsers
                     continue;
                 }
 
+                // One rule can name the same path in both params (e.g. action 233); count it once.
                 if (!users.TryGetValue(path, out var list2))
                 {
                     users[path] = list2 = [];
                 }
 
-                list2.Add(new(owner, source, action, path));
+                if (!list2.Any(r => r.Owner == owner && r.SourceType == source && r.Action == action))
+                {
+                    list2.Add(new(owner, source, action, path));
+                }
             }
         }
 

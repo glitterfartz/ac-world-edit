@@ -247,7 +247,6 @@ public partial class CreatureOverlay : RegionOverlay, ICreaturePoseHost
         LoadRegionFormations();
     }
 
-
     /// <summary>
     /// Publish only current queries, create bounded marker batches and reconcile models/list/gizmo
     /// state.

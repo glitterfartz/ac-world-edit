@@ -289,7 +289,9 @@ public static class MovementEdits
     }
 
     /// <summary>Polar offset of a member from its leader: yards plus the bearing from the member to
-    /// the leader in degrees, the way the server stores it (it walks the member to the opposite side).</summary>
+    /// the leader in degrees. Verified against the server: CreatureGroup::LeaderStartedMoving adds
+    /// π to the stored angle before placing the member, so the column holds the member-to-leader
+    /// bearing, not the leader-to-member offset the member visibly stands at.</summary>
     public static (float Dist, float Angle) FormationOffset(double leaderX, double leaderY, double memberX, double memberY)
     {
         float dx = (float)(memberX - leaderX), dy = (float)(memberY - leaderY);
