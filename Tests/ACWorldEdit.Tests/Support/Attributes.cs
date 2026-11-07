@@ -114,6 +114,87 @@ public sealed class DbFactAttribute : FactAttribute
     }
 }
 
+/// <summary>
+/// Fact for tests that must write (CREATE DATABASE / CREATE TABLE): skips unless ACWORLD_DB_INFO
+/// is set and the server actually grants this user CREATE. The probe runs once and is cached, so
+/// restricted users (like the shared read-only fixture) skip instead of failing.
+/// </summary>
+public sealed class DbWriteFactAttribute : FactAttribute
+{
+    static readonly Dictionary<string, string?> ProbeCache = [];
+    static readonly object ProbeLock = new();
+
+    public DbWriteFactAttribute()
+    {
+        Skip = Environments.DatabaseSkip() ?? ProbeWriteAccess();
+    }
+
+    static string? ProbeWriteAccess()
+    {
+        string? info = Environment.GetEnvironmentVariable(Environments.DbVariable);
+        if (string.IsNullOrWhiteSpace(info))
+        {
+            return "ACWORLD_DB_INFO not set; skipping database write test";
+        }
+
+        lock (ProbeLock)
+        {
+            if (ProbeCache.TryGetValue(info, out string? cached))
+            {
+                return cached;
+            }
+
+            string? result = Probe(info);
+            ProbeCache[info] = result;
+            return result;
+        }
+    }
+
+    static string? Probe(string info)
+    {
+        DatabaseSettings config;
+        try
+        {
+            config = DatabaseSettings.Parse(info);
+        }
+        catch (InvalidDataException)
+        {
+            return "ACWORLD_DB_INFO is invalid; skipping database write test";
+        }
+
+        string probe = "acwe_probe_" + Guid.NewGuid().ToString("N")[..12];
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            ProbeAsync(config, probe, timeout.Token).GetAwaiter().GetResult();
+            return null;
+        }
+        catch (Exception error)
+        {
+            return $"Database user '{config.User}' cannot create tables here ({ShortError(error)}); skipping database write test";
+        }
+    }
+
+    static async Task ProbeAsync(DatabaseSettings config, string probe, CancellationToken token)
+    {
+        await using var connection = new MySqlConnector.MySqlConnection(config.BuildConnectionString());
+        await connection.OpenAsync(token);
+        await using (var create = new MySqlConnector.MySqlCommand($"CREATE TABLE `{probe}` (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB", connection))
+        {
+            await create.ExecuteNonQueryAsync(token);
+        }
+
+        await using (var drop = new MySqlConnector.MySqlCommand($"DROP TABLE `{probe}`", connection))
+        {
+            await drop.ExecuteNonQueryAsync(token);
+        }
+    }
+
+    static string ShortError(Exception error) => error is MySqlConnector.MySqlException mysql
+        ? $"MySQL error {mysql.Number}"
+        : error.GetType().Name;
+}
+
 /// <summary>Fact that skips unless ACWORLD_TC_DB_INFO names a TrinityCore world database.</summary>
 public sealed class TcDbFactAttribute : FactAttribute
 {

@@ -7,22 +7,25 @@ using static GdUnit4.Assertions;
 namespace ACWorldEdit.GdTests;
 
 /// <summary>
-/// The real PendingChangesWindow control, headless. It only presents a list and raises requests, so
-/// these tests never touch a draft file, the database or the viewer.
+/// The real change-history window control, headless. It only presents a list and raises requests,
+/// so these tests never touch a draft file, the database or the viewer.
 /// </summary>
 [TestSuite]
 [RequireGodotRuntime]
 public class PendingChangesWindowTests
 {
-    // A moved creature spawn is a row edit of a "creature" table row, so it tags as CREATURE.
-    static PendingChange Creature(string label, uint guid = 1) =>
-        new("id-" + guid, PendingKind.Row, "s", label, null, new RowEdit("creature", guid.ToString(), null, null));
-
-    static PendingChange Graveyard(string label) =>
-        new("gy", PendingKind.Graveyard, "s", label, new GraveyardEdit("s", 4, new(4, 0, 1, 2, 3, "GY", []), new(4, 0, 9, 2, 3, "GY", [])), null);
-
-    static PendingChange Row(string label) =>
-        new("row", PendingKind.Row, "s", label, null, new RowEdit("creature_template", "42", null, null));
+    static ChangeRecord Record(string fingerprint, ChangeStatus status, string label = "Move Kobold") => new(
+        fingerprint.PadRight(64, '0'),
+        "source",
+        WorldDialect.AzerothCore,
+        label,
+        "-- apply",
+        "-- revert",
+        status,
+        new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc),
+        status == ChangeStatus.Applied ? new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc) : null,
+        null,
+        "");
 
     /// <summary>
     /// A window added to the scene tree so _Ready builds its controls; freed with the test.
@@ -58,78 +61,82 @@ public class PendingChangesWindowTests
     static Button ButtonText(PendingChangesWindow window, string text) => All<Button>(window).First(b => b.Text == text);
 
     [TestCase]
-    public void EmptyListSaysSoAndDisablesBulkActions()
+    public void EmptyHistorySaysSoAndDisablesBulkActions()
     {
         var window = Spawn();
-        window.Refresh([], 0);
-        AssertThat(All<Label>(window).Any(l => l.Text == "No unsaved changes.")).IsTrue();
-        AssertThat(ButtonText(window, "Export All…").Disabled).IsTrue();
-        AssertThat(ButtonText(window, "Discard All…").Disabled).IsTrue();
-        AssertThat(ButtonText(window, "Preview SQL…").Disabled).IsTrue();
-        AssertThat(All<Button>(window).Count(b => b.Text == "Discard")).IsEqual(0);
+        window.RefreshHistory([], null);
+        AssertThat(All<Label>(window).Any(l => l.Text.Contains("No tracked changes"))).IsTrue();
+        AssertThat(ButtonText(window, "Apply selected").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Revert selected").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Export selected…").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Discard staged…").Disabled).IsTrue();
     }
 
     [TestCase]
-    public void ExportedChangesAreMentionedWhenHidden()
+    public void StagedRowsShowStatusAndPerRowActions()
     {
         var window = Spawn();
-        window.Refresh([], 3);
-        AssertThat(All<Label>(window).Any(l => l.Text.Contains("3 exported change(s) stay applied"))).IsTrue();
-    }
-
-    [TestCase]
-    public void EachChangeGetsATagLabelAndDiscardButton()
-    {
-        var window = Spawn();
-        window.Refresh([Creature("Move Kobold"), Graveyard("Edit GY 4"), Row("Row edit")], 0);
-        AssertThat(All<Button>(window).Count(b => b.Text == "Discard")).IsEqual(3);
-        AssertThat(All<Label>(window).Any(l => l.Text == "3 unsaved change(s). Drafts are kept between sessions. Discard reverts only that one change.")).IsTrue();
-        foreach (string label in new[] { "Move Kobold", "Edit GY 4", "Row edit" })
-        {
-            AssertThat(All<Label>(window).Any(l => l.Text == label && l.TooltipText == label)).IsTrue();
-        }
-
-        foreach (string tag in new[] { "CREATURE", "GRAVEYARD", "ROW" })
-        {
-            AssertThat(All<Label>(window).Any(l => l.Text == tag)).IsTrue();
-        }
-
-        AssertThat(ButtonText(window, "Export All…").Disabled).IsFalse();
-        AssertThat(ButtonText(window, "Discard All…").Disabled).IsFalse();
+        window.RefreshHistory([Record("a", ChangeStatus.Staged), Record("b", ChangeStatus.Applied, "Revert me")], null);
+        AssertThat(All<Label>(window).Any(l => l.Text.Contains("2 change(s): 1 staged, 1 applied."))).IsTrue();
+        AssertThat(All<Label>(window).Any(l => l.Text == "STAGED")).IsTrue();
+        AssertThat(All<Label>(window).Any(l => l.Text == "APPLIED")).IsTrue();
+        AssertThat(All<Button>(window).Count(b => b.Text == "Apply")).IsEqual(1);
+        AssertThat(All<Button>(window).Count(b => b.Text == "Revert")).IsEqual(1);
+        AssertThat(All<Button>(window).Count(b => b.Text == "Discard")).IsEqual(1);
+        AssertThat(All<LineEdit>(window).Count).IsEqual(2);
     }
 
     [TestCase]
     public void RefreshReplacesTheOldRows()
     {
         var window = Spawn();
-        window.Refresh([Creature("a", 1), Creature("b", 2)], 0);
-        window.Refresh([Creature("c", 3)], 0);
-        // RemoveChild is immediate, so only the new row's button remains.
-        AssertThat(All<Button>(window).Count(b => b.Text == "Discard")).IsEqual(1);
-        AssertThat(All<Label>(window).Any(l => l.Text == "a")).IsFalse();
-        AssertThat(All<Label>(window).Any(l => l.Text == "c")).IsTrue();
+        window.RefreshHistory([Record("a", ChangeStatus.Staged, "first"), Record("b", ChangeStatus.Staged, "second")], null);
+        window.RefreshHistory([Record("c", ChangeStatus.Staged, "third")], null);
+        AssertThat(All<Label>(window).Any(l => l.Text == "first")).IsFalse();
+        AssertThat(All<Label>(window).Any(l => l.Text == "third")).IsTrue();
     }
 
     [TestCase]
     public void ButtonsRaiseRequestsWithoutActingThemselves()
     {
         var window = Spawn();
-        var change = Creature("Move Kobold");
-        window.Refresh([change], 0);
-        PendingChange? discarded = null;
-        int exports = 0, discardAlls = 0, previews = 0;
-        window.DiscardRequested += c => discarded = c;
-        window.ExportAllRequested += () => exports++;
-        window.DiscardAllRequested += () => discardAlls++;
-        window.PreviewSqlRequested += () => previews++;
-        ButtonText(window, "Discard").EmitSignal(BaseButton.SignalName.Pressed);
-        ButtonText(window, "Preview SQL…").EmitSignal(BaseButton.SignalName.Pressed);
-        ButtonText(window, "Export All…").EmitSignal(BaseButton.SignalName.Pressed);
-        ButtonText(window, "Discard All…").EmitSignal(BaseButton.SignalName.Pressed);
-        AssertThat(discarded).IsEqual(change);
+        window.RefreshHistory([Record("a", ChangeStatus.Staged, "Move Kobold")], null);
+        int applies = 0, reverts = 0, discardAlls = 0, previews = 0, exports = 0, refreshes = 0;
+        window.ApplyRequested += _ => applies++;
+        window.RevertRequested += _ => reverts++;
+        window.DiscardAllStagedRequested += () => discardAlls++;
+        window.PreviewRequested += (_, _) => previews++;
+        window.ExportRequested += (_, _) => exports++;
+        window.HistoryRefreshRequested += () => refreshes++;
+        // Check the row so bulk actions have a selection.
+        All<CheckBox>(window).First().ButtonPressed = true;
+        ButtonText(window, "Apply").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Apply selected").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Revert selected").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Preview…").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Export selected…").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Discard staged…").EmitSignal(BaseButton.SignalName.Pressed);
+        ButtonText(window, "Refresh").EmitSignal(BaseButton.SignalName.Pressed);
+        AssertThat(applies).IsEqual(2);
+        AssertThat(reverts).IsEqual(1);
         AssertThat(previews).IsEqual(1);
         AssertThat(exports).IsEqual(1);
         AssertThat(discardAlls).IsEqual(1);
+        AssertThat(refreshes).IsEqual(1);
+    }
+
+    [TestCase]
+    public void NotesSaveOnEnter()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record("a", ChangeStatus.Staged, "Move Kobold")], null);
+        (string Fingerprint, string Notes) saved = ("", "");
+        window.NotesChanged += (fp, notes) => saved = (fp, notes);
+        var field = All<LineEdit>(window).First();
+        field.Text = "near the tree";
+        field.EmitSignal(LineEdit.SignalName.TextSubmitted, "near the tree");
+        AssertThat(saved.Notes).IsEqual("near the tree");
+        AssertThat(saved.Fingerprint.Length).IsEqual(64);
     }
 
     [TestCase]
@@ -138,8 +145,8 @@ public class PendingChangesWindowTests
         var window = Spawn();
         window.Open();
         AssertThat(window.Visible).IsTrue();
-        window.SetStatus("Exported 2 change(s).");
-        AssertThat(All<Label>(window).Any(l => l.Text == "Exported 2 change(s).")).IsTrue();
+        window.SetStatus("Applied 2 change(s).");
+        AssertThat(All<Label>(window).Any(l => l.Text == "Applied 2 change(s).")).IsTrue();
         ButtonText(window, "✕").EmitSignal(BaseButton.SignalName.Pressed);
         AssertThat(window.Visible).IsFalse();
     }

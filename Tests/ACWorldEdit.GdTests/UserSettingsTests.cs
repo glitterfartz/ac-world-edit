@@ -6,6 +6,7 @@ namespace ACWorldEdit.GdTests;
 
 /// <summary>Environment overrides of the per-user settings (read-only: the saved settings file is never written).</summary>
 [TestSuite]
+[RequireGodotRuntime]
 public class UserSettingsTests
 {
     static void WithEnvironment(string name, string? value, Action body)

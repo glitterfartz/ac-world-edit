@@ -39,7 +39,7 @@ public class ConnectionFormTests
         });
 
     [TestCase]
-    public void PasswordFieldIsMasked() =>
+    public void PasswordFieldsAreMasked() =>
         WithDatabaseInfo("h;3306;u;secret;d", () =>
         {
             var form = AutoFree(new ConnectionForm())!;
@@ -58,7 +58,11 @@ public class ConnectionFormTests
             }
 
             Walk(form);
-            AssertThat(masked.Count).IsEqual(1);
-            AssertString(masked[0].Text).IsEqual("secret");
+            // World password plus the history password, both carried over from the world settings.
+            AssertThat(masked.Count).IsEqual(2);
+            foreach (var field in masked)
+            {
+                AssertString(field.Text).IsEqual("secret");
+            }
         });
 }

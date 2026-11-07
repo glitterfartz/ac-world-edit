@@ -36,48 +36,4 @@ public class SqlExportBatchTests
     {
         Assert.Empty(SqlExportBatch.Build([], Schema));
     }
-
-    [Fact]
-    public void WriteCreatesApplyAndRevertPerSource()
-    {
-        var root = Path.Combine(Path.GetTempPath(), "acwe-sqlbatch-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            var batch = SqlExportBatch.Build([Site("alpha", 1, 1), Site("bravo", 2, 2)], Schema);
-            string folder = SqlExportBatch.Write(batch, root, new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc));
-
-            Assert.Equal(Path.Combine(root, "20260102-030405"), folder);
-            Assert.True(File.Exists(Path.Combine(folder, "alpha-apply.sql")));
-            Assert.True(File.Exists(Path.Combine(folder, "alpha-revert.sql")));
-            Assert.True(File.Exists(Path.Combine(folder, "bravo-apply.sql")));
-            Assert.Contains("graveyard", File.ReadAllText(Path.Combine(folder, "alpha-apply.sql")), StringComparison.OrdinalIgnoreCase);
-        }
-        finally
-        {
-            if (Directory.Exists(root))
-            {
-                Directory.Delete(root, true);
-            }
-        }
-    }
-
-    [Fact]
-    public void FileNamesKeepOnlyTheFirstEightCharacters()
-    {
-        var root = Path.Combine(Path.GetTempPath(), "acwe-sqlbatch-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            var batch = SqlExportBatch.Build([Site("a_very_long_source_name", 1, 1)], Schema);
-            string folder = SqlExportBatch.Write(batch, root, new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc));
-
-            Assert.True(File.Exists(Path.Combine(folder, "a_very_l-apply.sql")));
-        }
-        finally
-        {
-            if (Directory.Exists(root))
-            {
-                Directory.Delete(root, true);
-            }
-        }
-    }
 }

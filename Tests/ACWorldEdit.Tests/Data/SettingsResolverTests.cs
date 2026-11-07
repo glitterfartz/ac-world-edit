@@ -218,4 +218,45 @@ public class SettingsResolverTests
         Assert.Equal("env", SettingsResolver.RetailDirectory("env", () => "saved"));
         Assert.Equal("saved", SettingsResolver.RetailDirectory(" ", () => "saved"));
     }
+
+    [Fact]
+    public void AcworldSectionsArePerProfile()
+    {
+        Assert.Equal("acworld.wrath", SettingsResolver.AcworldSection(WorldDialect.AzerothCore));
+        Assert.Equal("acworld.retail", SettingsResolver.AcworldSection(WorldDialect.TrinityCore));
+        Assert.Equal("ACWORLD_ACWORLD_INFO", SettingsResolver.AcworldVariableFor(WorldDialect.AzerothCore));
+        Assert.Equal("ACWORLD_TC_ACWORLD_INFO", SettingsResolver.AcworldVariableFor(WorldDialect.TrinityCore));
+    }
+
+    [Fact]
+    public void MissingAcworldSectionMeansSameServerAsTheWorld()
+    {
+        Assert.Null(SettingsResolver.AcworldOverride(WorldDialect.AzerothCore, null, Nothing, _ => false));
+        var world = new DatabaseSettings("h", 3306, "u", "p", "acore_world");
+        Assert.Equal(new DatabaseSettings("h", 3306, "u", "p", "acworld"), new WorldConnection(world, null, WorldDialect.AzerothCore).Acworld);
+    }
+
+    [Fact]
+    public void AcworldEnvironmentOverridesSaved()
+    {
+        static string SavedAcworld(string section, string key, string fallback) => (section, key) switch
+        {
+            ("acworld.wrath", "host") => "saved-history",
+            ("acworld.wrath", "port") => "3310",
+            ("acworld.wrath", "user") => "saved-user",
+            ("acworld.wrath", "password") => "saved-pw",
+            ("acworld.wrath", "name") => "saved_acworld",
+            _ => fallback
+        };
+        static bool Has(string section) => section == "acworld.wrath";
+
+        var fromEnv = SettingsResolver.AcworldOverride(WorldDialect.AzerothCore, "env-host;3307;u;p;env_acworld", SavedAcworld, Has);
+        Assert.Equal(new DatabaseSettings("env-host", 3307, "u", "p", "env_acworld"), fromEnv);
+
+        var fromSaved = SettingsResolver.AcworldOverride(WorldDialect.AzerothCore, null, SavedAcworld, Has);
+        Assert.Equal(new DatabaseSettings("saved-history", 3310, "saved-user", "saved-pw", "saved_acworld"), fromSaved);
+
+        var invalidEnv = SettingsResolver.AcworldOverride(WorldDialect.AzerothCore, "nope", SavedAcworld, Has);
+        Assert.Equal(fromSaved, invalidEnv);
+    }
 }
