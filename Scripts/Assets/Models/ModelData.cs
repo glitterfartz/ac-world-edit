@@ -31,11 +31,19 @@ public sealed record ModelSurface(Vector3[] Positions, Vector3[] Normals, Vector
 /// </summary>
 public sealed record ModelDoodad(string Path, Vector3 Position, Quaternion Rotation, float Scale);
 /// <summary>
+/// A retail dynamic point/spot light from the WMO root's MNLD chunk (Shadowlands 9.1+,
+/// 184 bytes per entry): local position and color, attenuation range and intensity, and
+/// for spotlights a direction plus inner/outer cone angles. Colors are gamma 0..1 RGB;
+/// positions and directions are viewer-space. Flicker terms and the light cookie are not
+/// carried: the viewer renders a steady light without cookies.
+/// </summary>
+public sealed record WmoLight(int Type, Vector3 Position, Vector3 Color, float AttenStart, float AttenEnd, float Intensity, int DoodadSet, Vector3 Direction, float InnerAngle, float OuterAngle, float Falloff);
+/// <summary>
 /// Worker-produced geometry, requested skeleton/clip and embedded doodads. Warnings preserve
 /// fidelity limits; fields never own Godot objects or database rows.
 /// </summary>
 public sealed record ModelSeat(int Bone, Vector3 Position);
-public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null, ModelSeat? Seat = null)
+public sealed record ModelData(ModelSurface[] Surfaces, ModelBone[] Bones, uint Duration, ModelDoodad[] Doodads, string[] Warnings, ushort[]? AnimationIds = null, ModelSeat? Seat = null, WmoLight[]? Lights = null)
 {
     /// <summary>
     /// Bytes held by the surfaces' arrays. Batches of one WMO group share a <see cref="ModelSurface.Positions"/>

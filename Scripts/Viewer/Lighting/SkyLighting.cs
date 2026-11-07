@@ -90,7 +90,10 @@ public sealed partial class SkyLighting : Node3D
         {
             RotationDegrees = new Vector3(-50, -30, 0),
             LightEnergy = 1.25f,
-            ShadowEnabled = true,
+            // No world material reads Godot lights or shadowmaps: terrain, models and
+            // liquids are all unshaded and do the client's own lighting in-shader, so
+            // the shadow pass rendered depth nobody sampled (about 30 % of the frame).
+            ShadowEnabled = false,
             DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits,
             DirectionalShadowMaxDistance = 400,
             DirectionalShadowBlendSplits = true
@@ -188,6 +191,7 @@ public sealed partial class SkyLighting : Node3D
     /// </summary>
     public void SetMap(ClientLighting? lightTable, uint? activeMapId, bool isInterior)
     {
+        lastLightCenter = new(float.NaN, float.NaN, float.NaN);
         ViewDistance = Retail ? RetailViewDistance : ClassicViewDistance;
         table = lightTable;
         mapId = activeMapId;
@@ -226,6 +230,9 @@ public sealed partial class SkyLighting : Node3D
         {
             TimeOfDayHours = LightingSampler.Advance(TimeOfDayHours, delta, Speed);
         }
+
+        // Runs even without a light table or inside: MNLD torches are the interior's sun.
+        UpdatePointLights(camera);
 
         if (interior || table == null || mapId == null)
         {

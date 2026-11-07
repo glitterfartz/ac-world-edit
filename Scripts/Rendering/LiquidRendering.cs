@@ -59,6 +59,8 @@ public static class LiquidRendering
         {
             material.SetShaderParameter("fog_tint", new Vector3(fog.Color.X, fog.Color.Y, fog.Color.Z));
             material.SetShaderParameter("opacity_scale", fog.OpacityScale);
+            material.SetShaderParameter("has_mask", style.FogMask != null);
+            if (style.FogMask is { } mask) material.SetShaderParameter("mask_tex", ExtraTexture(mask));
             return;
         }
         if (style.Mercury)
@@ -77,6 +79,14 @@ public static class LiquidRendering
             material.SetShaderParameter("first_uv", new Vector3(first.X, first.Y, first.Z));
             material.SetShaderParameter("second_uv", new Vector3(second.X, second.Y, second.Z));
             material.SetShaderParameter("base_color", new Vector3(color.X, color.Y, color.Z));
+            material.SetShaderParameter("has_ripple", ley.Ripple != null);
+            if (ley.Ripple is { } ripple) material.SetShaderParameter("ripple_tex", ExtraTexture(ripple));
+            material.SetShaderParameter("has_shore", ley.Shore != null);
+            if (ley.Shore is { } shore) material.SetShaderParameter("shore_tex", ExtraTexture(shore));
+            var rippleUv = ley.Settings.RippleUv;
+            material.SetShaderParameter("ripple_uv", new Vector3(rippleUv.X, rippleUv.Y, rippleUv.Z));
+            var deep = ley.Settings.DeepColor;
+            material.SetShaderParameter("deep_color", new Vector3(deep.X, deep.Y, deep.Z));
             return;
         }
         if (style.Fel is { } fel)
@@ -87,6 +97,18 @@ public static class LiquidRendering
             material.SetShaderParameter("deep_uv", new Vector3(deep.X, deep.Y, deep.Z));
             material.SetShaderParameter("shallow_uv", new Vector3(shallow.X, shallow.Y, shallow.Z));
             material.SetShaderParameter("depth_coefficient", fel.Settings.DepthCoefficient);
+            material.SetShaderParameter("has_overlay", fel.Overlay != null);
+            if (fel.Overlay is { } overlay) material.SetShaderParameter("overlay_tex", ExtraTexture(overlay));
+            material.SetShaderParameter("has_normals", fel.Normals != null);
+            if (fel.Normals is { } normals)
+            {
+                material.SetShaderParameter("normal_tex", ExtraTexture(normals, mipmaps: false));
+                material.SetShaderParameter("normal_frames", (float)normals.Width / normals.Height);
+            }
+            material.SetShaderParameter("has_specular", fel.Specular != null);
+            if (fel.Specular is { } specular) material.SetShaderParameter("specular_tex", ExtraTexture(specular));
+            material.SetShaderParameter("has_shore", fel.Shore != null);
+            if (fel.Shore is { } shore) material.SetShaderParameter("shore_tex", ExtraTexture(shore));
             return;
         }
         if (style.Azerite is { } azerite)

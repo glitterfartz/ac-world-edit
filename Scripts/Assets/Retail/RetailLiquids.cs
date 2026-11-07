@@ -40,16 +40,25 @@ public sealed class RetailLiquids
     public MagmaSettings? Magma(uint type) => magmas.GetValueOrDefault(type);
     static string BlpPath(string path) => string.IsNullOrWhiteSpace(path) || Path.HasExtension(path) ? path : path + ".blp";
 
-    // liquidfog_0 CB1[18].rgb and CB1[17].y; DB2 bindings remain inferred.
-    public sealed record FogSettings(System.Numerics.Vector3 Color, float OpacityScale);
+    // liquidfog_0 CB1[18].rgb and CB1[17].y; liquidfog_1 multiplies the alpha by the
+    // red channel of an auxiliary mask (LiquidType textures[3], e.g. waterchop7bw on the
+    // shipped fog rows 750/751/1147 — the only other populated texture slot, since 0 is
+    // the density atlas, 1 the procedural depth and 2 the ripple bump). DB2 bindings remain inferred.
+    public sealed record FogSettings(System.Numerics.Vector3 Color, float OpacityScale, string Mask = "");
     public FogSettings? Fog(uint type) => fogs.GetValueOrDefault(type);
 
     public sealed record LeySettings(string Detail, System.Numerics.Vector3 FirstUv,
-        System.Numerics.Vector3 SecondUv, System.Numerics.Vector3 Color);
+        System.Numerics.Vector3 SecondUv, System.Numerics.Vector3 Color, string Ripple = "", string Shore = "", System.Numerics.Vector3 RippleUv = default, System.Numerics.Vector3 DeepColor = default);
     public LeySettings? Ley(uint type) => leys.GetValueOrDefault(type);
 
-    // Material 13: two scale/angle/scroll triples; depth mapping remains inferred.
-    public sealed record FelSettings(string Shallow, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 ShallowUv, float DepthCoefficient);
+    // Material 13: two scale/angle/scroll triples (floats 0..2, 3..5); Float[14] is the
+    // depth coefficient (1.5/4.5/15 on the shipped rows). procfel_0 adds the slot-5 animated
+    // normal sequence (felanim_%d, azeriteanim_%d and fxntoxicsludge_%d on the shipped rows:
+    // two frames crossfaded, warping the base and overlay UVs and shading the sun diffuse)
+    // and the slot-4 emissive overlay (added, masked: (a+b)*a.a*b.a, the only slot whose
+    // content is safe to add unconditionally — specular/shore feed the unported variants).
+    // Overlay/normals stay optional so a type that names only the body keeps the fel_0 path.
+    public sealed record FelSettings(string Shallow, System.Numerics.Vector3 DeepUv, System.Numerics.Vector3 ShallowUv, float DepthCoefficient, string Overlay = "", string NormalPattern = "", string Specular = "", string Shore = "");
     public FelSettings? Fel(uint type) => fels.GetValueOrDefault(type);
 
     /// <summary>
@@ -113,23 +122,46 @@ public sealed class RetailLiquids
                     var colors = row.Field<int[]>("Color") ?? [];
                     uint color = colors.Length > 0 ? unchecked((uint)colors[0]) : 0;
                     result.fogs[(uint)row.ID] = new(
-                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f), floats[1]);
+                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f), floats[1],
+                        textures.Length > 3 ? BlpPath(textures[3] ?? "") : "");
                 }
-                if (row.FieldAs<uint>("MaterialID") == 12 && floats.Length >= 6 && textures.Length >= 2)
+                if (row.FieldAs<uint>("MaterialID") == 12 && floats.Length >= 9 && textures.Length >= 2)
                 {
                     var colors = row.Field<int[]>("Color") ?? [];
                     uint color = colors.Length > 0 ? unchecked((uint)colors[0]) : 0;
+                    uint deep = colors.Length > 1 ? unchecked((uint)colors[1]) : 0;
+                    // procleylineabove_0 samples the slot-3 ripple normal map twice (near/coarse
+                    // scrolling UVs) and the slot-4 shore texture against the scene depth; slot 5 is
+                    // empty on every shipped row, so there is no animated normal sequence here.
+                    // mediumleylinebelow_0 blends the same warped body toward a deep color (CB1[21]);
+                    // no per-row source for it is known, so Color[1] is read the way Color[0] is.
                     result.leys[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
                         new(floats[3], floats[4], floats[5]),
-                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f));
+                        new((color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f),
+                        textures.Length > 3 ? textures[3] ?? "" : "",
+                        textures.Length > 4 ? textures[4] ?? "" : "",
+                        new(floats[6], floats[7], floats[8]),
+                        new((deep >> 16 & 255) / 255f, (deep >> 8 & 255) / 255f, (deep & 255) / 255f));
                 }
                 if (row.FieldAs<uint>("MaterialID") == 13 && floats.Length >= 15 && textures.Length >= 2)
                 {
+                    // procfel_0 samples the slot-5 animated normal sequence twice (two frames
+                    // crossfaded) and the slot-4 emissive overlay twice; procfel_2/3 add the
+                    // slot-2 specular (masked add, same (a+b)*a.a*b.a shape) and the slot-3
+                    // shore (depth-masked lerp against the t6 depth resolve).
                     result.fels[(uint)row.ID] = new(textures[1], new(floats[0], floats[1], floats[2]),
-                        new(floats[3], floats[4], floats[5]), floats[14]);
+                        new(floats[3], floats[4], floats[5]), floats[14],
+                        textures.Length > 4 ? BlpPath(textures[4] ?? "") : "",
+                        textures.Length > 5 ? textures[5] ?? "" : "",
+                        textures.Length > 2 ? BlpPath(textures[2] ?? "") : "",
+                        textures.Length > 3 ? BlpPath(textures[3] ?? "") : "");
                 }
                 if (row.FieldAs<uint>("MaterialID") == 18 && floats.Length >= 2 && textures.Length >= 2)
                 {
+                    // Slot order confirmed by the Midnight render at 0x7ff74c6faf20 (binds slots
+                    // 0, 1 then 2, 3, 4 then animated 5, 6): deep = slot 0, center = slot 1,
+                    // blend = slot 2, transcolor = slot 4, anim sequence = slot 5 (slot 3 is the
+                    // flat basenormal placeholder).
                     result.azerites[(uint)row.ID] = new(BlpPath(textures[0] ?? ""), BlpPath(textures[1] ?? ""),
                         floats[0], floats[1],
                         textures.Length > 2 ? BlpPath(textures[2] ?? "") : "",
@@ -170,9 +202,17 @@ public sealed class RetailLiquids
     /// Test seam: build the catalog from plain values (type to pattern/kind/material, object to type,
     /// material to vertex format).
     /// </summary>
-    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null, IEnumerable<(uint Type, ProceduralWaterSettings Settings)>? waters = null, IEnumerable<(uint Type, AzeriteSettings Settings)>? azerites = null)
+    public static RetailLiquids From(IEnumerable<(uint Type, string Pattern, uint Kind, uint Material)> types, IEnumerable<(uint Object, uint Type)> objects, IEnumerable<(uint Material, int Format)> materials, IEnumerable<(uint Type, string Bump)>? bumps = null, IEnumerable<(uint Type, float U, float V)>? scrolls = null, IEnumerable<(uint Type, SwampSettings Settings)>? swamps = null, IEnumerable<(uint Type, FogSettings Settings)>? fogs = null, IEnumerable<(uint Type, MagmaSettings Settings)>? magmas = null, IEnumerable<(uint Type, ProceduralWaterSettings Settings)>? waters = null, IEnumerable<(uint Type, AzeriteSettings Settings)>? azerites = null, IEnumerable<(uint Type, FelSettings Settings)>? fels = null, IEnumerable<(uint Type, LeySettings Settings)>? leys = null)
     {
         var result = new RetailLiquids();
+        foreach (var ley in leys ?? [])
+        {
+            result.leys[ley.Type] = ley.Settings;
+        }
+        foreach (var fel in fels ?? [])
+        {
+            result.fels[fel.Type] = fel.Settings;
+        }
         foreach (var azerite in azerites ?? [])
         {
             result.azerites[azerite.Type] = azerite.Settings;

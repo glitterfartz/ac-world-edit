@@ -222,6 +222,127 @@ public class RetailLiquidTests
     }
 
     [Fact]
+    public void FogMaskResolvesSeparatelyFromTint()
+    {
+        using var files = new SwampFiles(false);
+        var tinted = new RetailLiquids.FogSettings(new(0, 1, 0), 0.5f, "middle.blp");
+        var plain = new RetailLiquids.FogSettings(new(0, 1, 0), 0.5f);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(750, "shallow.blp", 0, 10), (751, "shallow.blp", 0, 10)], [], [],
+            fogs: [(750, tinted), (751, plain)]));
+        var textures = LiquidTextures.For(files);
+        var masked = textures.Style(750);
+        var unmasked = textures.Style(751);
+        Assert.NotNull(masked.FogMask);
+        Assert.Null(unmasked.FogMask);
+        Assert.NotEqual(masked.CacheKey, unmasked.CacheKey);
+    }
+
+    [Fact]
+    public void FogMaskFallsBackWhenUnreadable()
+    {
+        using var files = new SwampFiles(false);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(750, "shallow.blp", 0, 10)], [], [],
+            fogs: [(750, new RetailLiquids.FogSettings(new(0, 1, 0), 0.5f, "missing.blp"))]));
+        Assert.Null(LiquidTextures.For(files).Style(750).FogMask);
+    }
+
+    [Fact]
+    public void LeyRippleAndShoreResolveSeparatelyFromTheDetail()
+    {
+        using var files = new SwampFiles(false);
+        var full = new RetailLiquids.LeySettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), new(1, 1, 1), "middle.blp", "shore.blp", new(0.5f, 45, 0.01f), new(0.1f, 0.2f, 0.3f));
+        var bare = new RetailLiquids.LeySettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), new(1, 1, 1), RippleUv: new(0.5f, 45, 0.01f));
+        var noShore = new RetailLiquids.LeySettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), new(1, 1, 1), "middle.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(890, "shallow.blp", 1, 12), (868, "shallow.blp", 1, 12), (924, "shallow.blp", 1, 12)], [], [],
+            leys: [(890, full), (868, bare), (924, noShore)]));
+        var textures = LiquidTextures.For(files);
+        var layered = textures.Style(890);
+        var flat = textures.Style(868);
+        var shoreless = textures.Style(924);
+        Assert.NotNull(layered.Ley!.Ripple);
+        Assert.NotNull(layered.Ley.Shore);
+        Assert.Equal(new System.Numerics.Vector3(0.5f, 45, 0.01f), layered.Ley.Settings.RippleUv);
+        Assert.Equal(new System.Numerics.Vector3(0.1f, 0.2f, 0.3f), layered.Ley.Settings.DeepColor);
+        Assert.Null(flat.Ley!.Ripple);
+        Assert.Null(flat.Ley.Shore);
+        Assert.NotNull(shoreless.Ley!.Ripple);
+        Assert.Null(shoreless.Ley.Shore);
+        Assert.NotEqual(layered.CacheKey, flat.CacheKey);
+        Assert.NotEqual(layered.CacheKey, shoreless.CacheKey);
+    }
+
+    [Fact]
+    public void FelOverlaysAndNormalsResolveSeparatelyFromTheBody()
+    {
+        using var files = new SwampFiles(false);
+        var full = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f, "middle.blp", "normal_%d.blp");
+        var bare = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f);
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1177, "shallow.blp", 2, 13), (898, "shallow.blp", 2, 13)], [], [],
+            fels: [(1177, full), (898, bare)]));
+        var textures = LiquidTextures.For(files);
+        var layered = textures.Style(1177);
+        var flat = textures.Style(898);
+        Assert.NotNull(layered.Fel);
+        Assert.NotNull(layered.Fel.Overlay);
+        Assert.NotNull(layered.Fel.Normals);
+        Assert.Equal(2, layered.Fel.Normals.Width / layered.Fel.Normals.Height);
+        Assert.Null(flat.Fel!.Overlay);
+        Assert.Null(flat.Fel.Normals);
+        Assert.NotEqual(layered.CacheKey, flat.CacheKey);
+    }
+
+    [Fact]
+    public void FelSpecularAndShoreResolveSeparatelyFromTheBody()
+    {
+        using var files = new SwampFiles(false);
+        var full = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f, "middle.blp", "normal_%d.blp", "spec.blp", "shore.blp");
+        var bare = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f, "middle.blp", "normal_%d.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1177, "shallow.blp", 2, 13), (898, "shallow.blp", 2, 13)], [], [],
+            fels: [(1177, full), (898, bare)]));
+        var textures = LiquidTextures.For(files);
+        var layered = textures.Style(1177);
+        var plain = textures.Style(898);
+        Assert.NotNull(layered.Fel!.Specular);
+        Assert.NotNull(layered.Fel.Shore);
+        Assert.Null(plain.Fel!.Specular);
+        Assert.Null(plain.Fel.Shore);
+        Assert.NotEqual(layered.CacheKey, plain.CacheKey);
+    }
+
+    [Fact]
+    public void FelSpecularAndShoreFallBackWhenUnreadable()
+    {
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f, "", "", "missing.blp", "missing.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1177, "shallow.blp", 2, 13)], [], [],
+            fels: [(1177, settings)]));
+        var style = LiquidTextures.For(files).Style(1177);
+        Assert.NotNull(style.Fel);
+        Assert.Null(style.Fel.Specular);
+        Assert.Null(style.Fel.Shore);
+    }
+
+    [Fact]
+    public void FelOverlaysFallBackWhenUnreadable()
+    {
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.FelSettings("shallow.blp", new(1, 0, 0), new(1, 0, 0), 1.5f, "missing.blp", "missing_%d.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(1177, "shallow.blp", 2, 13)], [], [],
+            fels: [(1177, settings)]));
+        var style = LiquidTextures.For(files).Style(1177);
+        Assert.NotNull(style.Fel);
+        Assert.Null(style.Fel.Overlay);
+        Assert.Null(style.Fel.Normals);
+    }
+
+    [Fact]
     public void FogTintsDoNotShareMaterialsOrSelectOrdinaryWaterRipples()
     {
         using var files = new SwampFiles(false);
@@ -314,6 +435,32 @@ public class RetailLiquidTests
     }
 
     [Fact]
+    public void AzeriteResolvesItsFullSlotTable()
+    {
+        // Slot order confirmed by the Midnight render at 0x7ff74c6faf20: masks from slots
+        // 2 (blend) and 4 (transcolor), then the animated slot-5 normal sequence.
+        using var files = new SwampFiles(false);
+        var settings = new RetailLiquids.AzeriteSettings("deep.blp", "center.blp", 0.36f, 0.36f,
+            Blend: "middle.blp", Transcolor: "shallow.blp", NormalPattern: "normal_%d.blp");
+        RetailLiquids.Register(files, RetailLiquids.From(
+            [(940, "shallow.blp", 2, 18)], [], [],
+            azerites: [(940, settings)]));
+        var textures = LiquidTextures.For(files);
+        var style = textures.Style(940);
+        Assert.NotNull(style.Azerite);
+        Assert.NotNull(style.Azerite.Blend);
+        Assert.NotNull(style.Azerite.Transcolor);
+        Assert.NotNull(style.Azerite.Normals);
+        Assert.Equal(2, style.Azerite.Normals.Width / style.Azerite.Normals.Height);
+        // The slot table is locked by string: blend = slot 2, transcolor = slot 4,
+        // normal sequence = slot 5 (slot 3 basenormal is never bound).
+        Assert.Equal("middle.blp", style.Azerite.Settings.Blend);
+        Assert.Equal("shallow.blp", style.Azerite.Settings.Transcolor);
+        Assert.Equal("normal_%d.blp", style.Azerite.Settings.NormalPattern);
+        Assert.NotSame(style.Azerite.Blend, style.Azerite.Transcolor);
+    }
+
+    [Fact]
     public void ProceduralWaterNeedsNoFrameAndItsGradientDoesNotFollowSoundBank()
     {
         using var files = new SwampFiles(false);
@@ -343,7 +490,7 @@ public class RetailLiquidTests
     {
         public ClientKind Kind => ClientKind.Retail;
         public string Build => "synthetic";
-        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" or "shore.blp" or "normal_1.blp" or "normal_2.blp" or "center.blp" || path == "deep.blp" && !missingDeep;
+        public bool Exists(string path) => path is "shallow.blp" or "middle.blp" or "shore.blp" or "spec.blp" or "normal_1.blp" or "normal_2.blp" or "center.blp" || path == "deep.blp" && !missingDeep;
         public string Source(string path) => "synthetic";
         public void Dispose() { }
         public byte[] Read(string path)

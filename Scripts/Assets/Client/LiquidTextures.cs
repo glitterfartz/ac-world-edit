@@ -19,13 +19,13 @@ public enum LiquidGradient
 /// the depth gradient and the table mapping the stored depth byte onto it, the animation period, and
 /// the texture scale, rotation (radians) and depth scale.
 /// </summary>
-public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null, RetailLiquids.ProceduralWaterSettings? ProceduralWater = null, AzeriteLiquidStyle? Azerite = null)
+public sealed record LiquidStyle(LiquidGradient Gradient, int DepthTable, int PeriodMs, float Scale, float Rotation, float DepthScale, BlpTexture? Bump = null, float ScrollU = 0, float ScrollV = 0, SwampLiquidStyle? Swamp = null, FelLiquidStyle? Fel = null, LeyLiquidStyle? Ley = null, bool Mercury = false, RetailLiquids.FogSettings? Fog = null, MagmaLiquidStyle? Magma = null, RetailLiquids.ProceduralWaterSettings? ProceduralWater = null, AzeriteLiquidStyle? Azerite = null, BlpTexture? FogMask = null)
 {
     /// <summary>
     /// What distinguishes one style's material from another's, so surfaces that share a texture but not a
     /// style (magma that scrolls and WMO magma that scrolls faster) do not share a material.
     /// </summary>
-    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}|{ProceduralWater}|{Azerite?.CacheKey}";
+    public string CacheKey => $"{Gradient}|{DepthTable}|{PeriodMs}|{Scale}|{Rotation}|{DepthScale}|{ScrollU}|{ScrollV}|{(Bump == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Bump))}|{Swamp?.CacheKey}|{Fel?.CacheKey}|{Ley?.CacheKey}|{Mercury}|{Fog}|{Magma?.CacheKey}|{ProceduralWater}|{Azerite?.CacheKey}|{(FogMask == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(FogMask))}";
 
     /// <summary>
     /// What the stock river and lake types use.
@@ -51,16 +51,18 @@ public sealed record MagmaLiquidStyle(BlpTexture Middle, BlpTexture Top, RetailL
     public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Middle)}|{RuntimeHelpers.GetHashCode(Top)}";
 }
 
-/// <summary>Decoded material 12 detail atlas and inferred settings; no engine resources.</summary>
-public sealed record LeyLiquidStyle(BlpTexture Detail, RetailLiquids.LeySettings Settings)
+/// <summary>Decoded material 12 detail atlas, ripple normal map and shore texture; no engine resources.</summary>
+public sealed record LeyLiquidStyle(BlpTexture Detail, RetailLiquids.LeySettings Settings,
+    BlpTexture? Ripple = null, BlpTexture? Shore = null)
 {
-    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Detail)}";
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Detail)}|{(Ripple == null ? 0 : RuntimeHelpers.GetHashCode(Ripple))}|{(Shore == null ? 0 : RuntimeHelpers.GetHashCode(Shore))}";
 }
 
-/// <summary>Decoded material 13 shallow layer and inferred settings; no engine resources.</summary>
-public sealed record FelLiquidStyle(BlpTexture Shallow, RetailLiquids.FelSettings Settings)
+/// <summary>Decoded material 13 shallow layer, emissive overlay, animated normal sequence, specular and shore; no engine resources.</summary>
+public sealed record FelLiquidStyle(BlpTexture Shallow, RetailLiquids.FelSettings Settings,
+    BlpTexture? Overlay = null, BlpTexture? Normals = null, BlpTexture? Specular = null, BlpTexture? Shore = null)
 {
-    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Shallow)}";
+    public string CacheKey => $"{Settings}|{RuntimeHelpers.GetHashCode(Shallow)}|{(Overlay == null ? 0 : RuntimeHelpers.GetHashCode(Overlay))}|{(Normals == null ? 0 : RuntimeHelpers.GetHashCode(Normals))}|{(Specular == null ? 0 : RuntimeHelpers.GetHashCode(Specular))}|{(Shore == null ? 0 : RuntimeHelpers.GetHashCode(Shore))}";
 }
 
 /// <summary>Decoded material 18 body layers, masks and animated normal sequence; no engine resources.</summary>
@@ -131,7 +133,8 @@ public sealed class LiquidTextures
             }
             if (retail!.Fog(type) is { } fog)
             {
-                return stock with { Fog = fog };
+                BlpTexture? mask = string.IsNullOrEmpty(fog.Mask) ? null : Extra(fog.Mask);
+                return stock with { Fog = fog, FogMask = mask };
             }
             if (retail!.Material(type) == 5)
             {
@@ -139,11 +142,15 @@ public sealed class LiquidTextures
             }
             if (retail!.Ley(type) is { } ley && OptionalSequence(ley.Detail) is { } detail)
             {
-                return stock with { Ley = new(detail, ley) };
+                // Ripple and shore are optional: without the ripple map the shader keeps the flat
+                // leyline_0 path, and without a shore texture the foam term is omitted (void rows).
+                return stock with { Ley = new(detail, ley, OptionalExtra(ley.Ripple), OptionalExtra(ley.Shore)) };
             }
             if (retail!.Fel(type) is { } fel && Extra(fel.Shallow) is { } shallow)
             {
-                return stock with { Fel = new(shallow, fel) };
+                // The overlay, normal sequence, specular and shore are optional: a type that
+                // names only the body keeps the flat fel_0 path instead of drawing a half material.
+                return stock with { Fel = new(shallow, fel, OptionalExtra(fel.Overlay), OptionalSequence(fel.NormalPattern, 256), OptionalExtra(fel.Specular), OptionalExtra(fel.Shore)) };
             }
             if (retail!.Swamp(type) is { } settings)
             {

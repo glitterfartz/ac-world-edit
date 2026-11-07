@@ -237,7 +237,7 @@ void fragment() {
     // emissive term, doubled like mode 1. Mode 2 (exterior WMO) adds its colors on top of the sun lighting.
     vec3 surface = vertex_color == 3 ? base * COLOR.a : base;
     vec3 emission = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
-    vec3 light = LIT && vertex_color != 1 ? client_model_light(NORMAL, VIEW_MATRIX) : vec3(1.0);
+    vec3 light = LIT && vertex_color != 1 ? client_model_light(NORMAL, VIEW_MATRIX) + client_point_light(client_world_pos(VERTEX, INV_VIEW_MATRIX), client_world_normal(NORMAL, VIEW_MATRIX)) : vec3(1.0);
     ALBEDO = client_gamma_to_linear(vertex_color == 1 ? base * COLOR.rgb * 2.0 + emission : surface * light + emission);
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;

@@ -113,6 +113,14 @@ client_glow={
 "type": "float",
 "value": 0.0
 }
+client_point_lights={
+"type": "sampler2D",
+"value": ""
+}
+client_point_light_count={
+"type": "float",
+"value": 0.0
+}
 client_water_ocean_shallow={
 "type": "vec4",
 "value": Vector4(0.1, 0.25, 0.35, 0.75)

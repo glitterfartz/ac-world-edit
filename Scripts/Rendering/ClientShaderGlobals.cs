@@ -72,6 +72,16 @@ public static class ClientShaderGlobals
     /// <summary>Seconds the volumes' noise has drifted for.</summary>
     public const string FogVolumeTime = "client_fog_volume_time";
     /// <summary>
+    /// The nearest placed WMO dynamic lights as a texture of four RGBA-float texels each:
+    /// world position and attenuation end; gamma color times intensity and attenuation start;
+    /// spot direction and type flag; cone cosines and falloff. The count is how many are filled.
+    /// </summary>
+    public const string PointLights = "client_point_lights";
+    public const string PointLightCount = "client_point_light_count";
+    /// <summary>Lights the shaders integrate at once.</summary>
+    public const int MaxPointLights = 8;
+    public const int PointLightTexels = 4;
+    /// <summary>
     /// The shared bone-animation clock both the model shader and the CPU seat follow read: seconds
     /// since the engine started, written every frame by SkyLighting. Shader TIME is renderer-private
     /// and offset from it, so sharing one value keeps glued riders in phase with their mounts. A

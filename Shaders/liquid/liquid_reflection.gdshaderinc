@@ -28,7 +28,10 @@ float view_depth(vec2 uv, mat4 inv_projection) {
 // from forming, and a binary search refines the crossing. The result fades to the
 // fog colour with distance so nearby scenery reflects and the rest reads as water
 // instead of a full-scene mirror (which is what a bird's-eye view used to show).
-vec3 liquid_reflection(vec3 position, vec3 direction, vec3 fallback, vec2 screen_uv, vec2 pixel, mat4 projection, mat4 inv_projection) {
+// world_dir is the same ray in world space; its up component drives retail's
+// radial map window max(0.75 - z^2, 0) * 1.333, which is 1.0 looking horizontal
+// and 0.0 looking straight up/down.
+vec3 liquid_reflection(vec3 position, vec3 direction, vec3 world_dir, vec3 fallback, vec2 screen_uv, vec2 pixel, mat4 projection, mat4 inv_projection) {
     const float max_distance = 40.0;
     // The per-pixel phase offset breaks up the sampling grid without moving hits.
     float jitter = fract(sin(dot(screen_uv, vec2(12.9898, 78.233))) * 43758.5453);
@@ -59,13 +62,12 @@ vec3 liquid_reflection(vec3 position, vec3 direction, vec3 fallback, vec2 screen
     vec4 clip = projection * vec4(point, 1.0);
     vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
     // Retail's projected-map window: max(1 - x^2, 0) * sat(1 - y^2) on the map
-    // coordinate. Its extra max(0.75 - z^2, 0) * 1.333 factor keys the client's
-    // reflection-map vertical coverage, where z is the reflected ray's world-up
-    // component; on a screen trace that factor only suppresses steep rays, so a
-    // reflection of a tall nearby object drops to ~0.15. It is not applied.
+    // coordinate, times max(0.75 - z^2, 0) * 1.333 on the reflected ray's
+    // world-up component (1.0 horizontal, 0.0 vertical).
     vec2 ndc = uv * 2.0 - 1.0;
+    float elevation = max(0.75 - world_dir.z * world_dir.z, 0.0) * 1.333333;
     float weight = max(1.0 - ndc.x * ndc.x, 0.0)
-        * clamp(1.0 - ndc.y * ndc.y, 0.0, 1.0);
+        * clamp(1.0 - ndc.y * ndc.y, 0.0, 1.0) * elevation;
     // Retail renders its reflection at a fraction of screen resolution. The blur
     // grows a little with distance, which keeps far hits soft rather than mirrored.
     vec2 blur = pixel * (1.5 + hi * 0.05);

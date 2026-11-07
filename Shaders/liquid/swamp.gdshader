@@ -115,7 +115,9 @@ void fragment() {
     vec3 local = mix(to_linear(layer.rgb * lighting), fog.rgb, fog.a);
     vec3 body = mix(background, local, max(layer.a, 0.35));
 
-    vec3 reflection = liquid_reflection(VERTEX, reflect(-to_eye, normal_view), to_linear(client_fog_color), SCREEN_UV, fwidth(SCREEN_UV), PROJECTION_MATRIX, INV_PROJECTION_MATRIX);
+    vec3 view_dir = reflect(-to_eye, normal_view);
+    vec3 world_dir = normalize((INV_VIEW_MATRIX * vec4(view_dir, 0.0)).xyz);
+    vec3 reflection = liquid_reflection(VERTEX, view_dir, world_dir, to_linear(client_fog_color), SCREEN_UV, fwidth(SCREEN_UV), PROJECTION_MATRIX, INV_PROJECTION_MATRIX);
     vec3 half_vector = normalize(-client_sun_dir + normalize((INV_VIEW_MATRIX * vec4(to_eye, 0.0)).xyz));
     // procswamp_20: Blinn-Phong plus the small normal-up lobe above 0.8.
     float highlight = pow(clamp(dot(half_vector, normal_world), 0.0, 1.0), max(specular_power, 1.0))

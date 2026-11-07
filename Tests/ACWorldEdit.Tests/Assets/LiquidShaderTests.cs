@@ -86,6 +86,35 @@ public class LiquidShaderTests
         Assert.DoesNotContain("uv_scale", shader);
     }
 
+    [Fact]
+    public void LeyUndersidePicksProcOrMediumByShorePresence()
+    {
+        // Both shipped below variants draw in the same fragment shader, picked by the
+        // eye's side of the surface; proc vs medium is picked by shore-texture presence
+        // (void rows name none), matching the has_shore uniform the router binds.
+        string shader = Shader("leyline.gdshader");
+        Assert.Contains("INV_VIEW_MATRIX[3].y < world_position.y", shader);
+        // procleylinebelow_0: same warped body mixed halfway toward the shore texture.
+        Assert.Contains("mix(body, shore_below.rgb, 0.5)", shader);
+        // mediumleylinebelow_0 fallback for shoreless types: deep-color view-angle blend.
+        Assert.Contains("mix(deep_color, body, k)", shader);
+    }
+
+    [Fact]
+    public void FelSpecularAndShoreFollowTheBytecode()
+    {
+        string shader = Shader("fel.gdshader");
+        // procfel_2 specular (slot 2): same masked add as the emissive overlay,
+        // scaled by native depth.
+        Assert.Contains("texture(specular_tex", shader);
+        Assert.Contains("smask", shader);
+        Assert.Contains("COLOR.a * specular_strength", shader);
+        // procfel_2/3 shore (slot 3): depth-masked lerp toward the shore texel.
+        Assert.Contains("texture(shore_tex", shader);
+        Assert.Contains("shore_factor", shader);
+        Assert.Contains("view_depth(SCREEN_UV", shader);
+    }
+
     static int Count(string text, string value)
     {
         int count = 0;
