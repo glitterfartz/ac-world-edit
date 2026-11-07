@@ -145,6 +145,36 @@ public class ChangeLogExportTests
     }
 
     [Fact]
+    public void EvaluateCheckResultReadsTheStateColumnNotTheLabel()
+    {
+        // The exact reported failure: label "creature 11800166: insert" contains neither ok nor
+        // STALE, but the row reads ok. The old scalar check read the label and aborted every apply.
+        var (label, ok) = WorldApplier.EvaluateCheckResult(
+            ["change", "state"], ["creature 11800166: insert", "ok"]);
+        Assert.Equal("creature 11800166: insert", label);
+        Assert.True(ok);
+    }
+
+    [Fact]
+    public void EvaluateCheckResultFailsStaleEvenWhenTheLabelContainsOk()
+    {
+        var (label, ok) = WorldApplier.EvaluateCheckResult(
+            ["change", "state"], ["smoking gun", "STALE"]);
+        Assert.Equal("smoking gun", label);
+        Assert.False(ok);
+    }
+
+    [Fact]
+    public void EvaluateCheckResultRequiresAnExplicitOk()
+    {
+        Assert.False(WorldApplier.EvaluateCheckResult(["change", "state"], ["x", ""]).Ok);
+        Assert.False(WorldApplier.EvaluateCheckResult(["change"], ["x"]).Ok);
+        Assert.False(WorldApplier.EvaluateCheckResult([], []).Ok);
+        Assert.False(WorldApplier.EvaluateCheckResult(["change", "state"], ["x", null]).Ok);
+        Assert.True(WorldApplier.EvaluateCheckResult(["STATE", "CHANGE"], ["OK", "x"]).Ok);
+    }
+
+    [Fact]
     public void MergeStampsNewRowsWithNowAndBlankNotes()
     {
         var now = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);

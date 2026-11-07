@@ -126,34 +126,50 @@ public static class WorldApplier
         foreach (string check in checks)
         {
             await using var command = new MySqlCommand(check, connection);
-            object? result = await command.ExecuteScalarAsync(token).ConfigureAwait(false);
-            // Checks report 'ok' vs 'STALE' as the `state` column; a single-column scalar is the state.
-            // Some drivers return the first column instead, so accept any field containing ok.
-            string text = Convert.ToString(result) ?? "";
-            if (!text.Contains("ok", StringComparison.OrdinalIgnoreCase))
+            await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+            var names = new List<string>();
+            var values = new List<string?>();
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                // Re-read the full row for a named stale change when the scalar was the change label.
-                try
+                for (int i = 0; i < reader.FieldCount; i++)
                 {
-                    await using var readerCommand = new MySqlCommand(check, connection);
-                    await using var reader = await readerCommand.ExecuteReaderAsync(token).ConfigureAwait(false);
-                    if (await reader.ReadAsync(token).ConfigureAwait(false))
-                    {
-                        string row = string.Join(" | ", Enumerable.Range(0, reader.FieldCount).Select(i => Convert.ToString(reader.GetValue(i)) ?? ""));
-                        if (row.Contains("STALE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return $"A row changed since the edit was made, so nothing was applied ({row}). Refresh and re-stage the change.";
-                        }
-                    }
+                    names.Add(reader.GetName(i));
+                    values.Add(reader.IsDBNull(i) ? null : Convert.ToString(reader.GetValue(i)));
                 }
-                catch
-                {
-                }
+            }
 
-                return $"A preflight check did not read ok, so nothing was applied ({text}). Refresh and re-stage the change.";
+            var (label, ok) = EvaluateCheckResult(names, values);
+            if (!ok)
+            {
+                return string.IsNullOrEmpty(label)
+                    ? "A preflight check did not read ok, so nothing was applied. Refresh and re-stage the change."
+                    : $"A row changed since the edit was made, so nothing was applied ({label}). Refresh and re-stage the change.";
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether one preflight row reads ok. The scripts report the verdict in the `state` column and
+    /// the human-readable row in `change`; the label alone must never decide, because labels like
+    /// "creature 11800166: insert" contain neither "ok" nor "STALE".
+    /// </summary>
+    internal static (string Label, bool Ok) EvaluateCheckResult(IReadOnlyList<string> names, IReadOnlyList<string?> values)
+    {
+        string label = "", state = "";
+        for (int i = 0; i < names.Count && i < values.Count; i++)
+        {
+            if (names[i].Equals("state", StringComparison.OrdinalIgnoreCase))
+            {
+                state = values[i] ?? "";
+            }
+            else if (names[i].Equals("change", StringComparison.OrdinalIgnoreCase))
+            {
+                label = values[i] ?? "";
+            }
+        }
+
+        return (label, state.Equals("ok", StringComparison.OrdinalIgnoreCase));
     }
 }

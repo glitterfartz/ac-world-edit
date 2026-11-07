@@ -58,7 +58,7 @@ public static class SqlExport
         var text = new StringBuilder();
         text.Append("-- ACWorldEdit ").Append(kind).Append(" script · generated ").Append(stamp).Append('\n');
         text.Append("-- Source database: ").Append(Comment(source)).Append('\n');
-        text.Append("-- ").Append(steps.Count).Append(" change(s). Review before running; ACWorldEdit never applies this itself.\n");
+        text.Append("-- ").Append(steps.Count).Append(" change(s). Review before running; the history window applies this only when every preflight row reads ok.\n");
         text.Append(forward
             ? "-- Guards match the recorded source values: a row changed since the draft was made is left untouched.\n"
             : "-- Reverts only rows that still hold the draft values; run it on the same database the apply script ran on.\n");
