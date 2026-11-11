@@ -1,9 +1,15 @@
-<Project Sdk="Godot.NET.Sdk/4.7.1">
+<Project Sdk="Godot.NET.Sdk/4.7.2">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Native CascLib file Tools/setup.py builds for this host; it matches CascNative.FileName. -->
+    <AcwNativeFolder Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</AcwNativeFolder>
+    <AcwNativeFolder Condition="$([MSBuild]::IsOSPlatform('Linux')) and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">linux-arm64</AcwNativeFolder>
+    <AcwNativeFolder Condition="$([MSBuild]::IsOSPlatform('Linux')) and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">linux-x64</AcwNativeFolder>
+    <AcwCascLib Condition="'$(AcwNativeFolder)' == 'win-x64'">CascLib.dll</AcwCascLib>
+    <AcwCascLib Condition="'$(AcwNativeFolder)' == 'linux-x64' or '$(AcwNativeFolder)' == 'linux-arm64'">libCascLib.so</AcwCascLib>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
@@ -16,13 +22,13 @@
     <!-- Retail table layouts (WoWDBDefs, CC BY-SA 4.0) and the native CASC reader (CascLib, MIT). Both come from pinned submodules; python Tools/setup.py builds CascLib. -->
     <None Include="Data/WoWDBDefs/definitions/*.dbd" Link="definitions/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Data/WoWDBDefs/LICENSE.md" Link="definitions/LICENSE.md" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Data/WoWDBDefs/LICENSE.md')" />
-    <None Include="native/win-x64/CascLib.dll" Link="CascLib.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.dll')" />
-    <None Include="native/win-x64/CascLib.LICENSE.txt" Link="CascLib.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('native/win-x64/CascLib.LICENSE.txt')" />
+    <None Include="native/$(AcwNativeFolder)/$(AcwCascLib)" Link="$(AcwCascLib)" CopyToOutputDirectory="PreserveNewest" Condition="'$(AcwCascLib)' != '' and Exists('native/$(AcwNativeFolder)/$(AcwCascLib)')" />
+    <None Include="native/$(AcwNativeFolder)/CascLib.LICENSE.txt" Link="CascLib.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="'$(AcwCascLib)' != '' and Exists('native/$(AcwNativeFolder)/CascLib.LICENSE.txt')" />
     <None Include="LICENSE;THIRD-PARTY.md" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- The copies above are conditional so a build never fails on them; this says what is missing instead, in the build log CI reads. -->
   <Target Name="WarnMissingDependencies" BeforeTargets="BeforeBuild">
-    <Warning Condition="!Exists('$(MSBuildProjectDirectory)/native/win-x64/CascLib.dll')" Code="ACW001" Text="native/win-x64/CascLib.dll is missing, so the Retail profile cannot load. Run python Tools/setup.py." />
+    <Warning Condition="'$(AcwCascLib)' != '' and !Exists('$(MSBuildProjectDirectory)/native/$(AcwNativeFolder)/$(AcwCascLib)')" Code="ACW001" Text="native/$(AcwNativeFolder)/$(AcwCascLib) is missing, so the Retail profile cannot load. Run python Tools/setup.py." />
     <Warning Condition="!Exists('$(MSBuildProjectDirectory)/Data/WoWDBDefs/definitions/Map.dbd')" Code="ACW002" Text="Data/WoWDBDefs is not initialised, so Retail table definitions are missing. Run python Tools/setup.py." />
   </Target>
 </Project>

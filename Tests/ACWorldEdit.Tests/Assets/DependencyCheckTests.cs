@@ -29,11 +29,17 @@ public class DependencyCheckTests : IDisposable
     [Fact]
     public void RetailAcceptsOverridesThatExist()
     {
-        string dll = Path.Combine(root, "CascLib.dll");
+        string dll = Path.Combine(root, CascNative.FileName);
         string definitions = Path.Combine(root, "definitions");
         File.WriteAllBytes(dll, []);
         Directory.CreateDirectory(definitions);
 
         Assert.Empty(DependencyCheck.Missing(ClientKind.Retail, dll, definitions, root));
+    }
+
+    [Fact]
+    public void MissingCascLibMessageNamesThePlatformFile()
+    {
+        Assert.Contains(CascNative.FileName, DependencyCheck.CascLibMissing);
     }
 }

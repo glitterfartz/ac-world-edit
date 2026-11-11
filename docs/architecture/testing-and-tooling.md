@@ -78,14 +78,14 @@ The viewer writes machine-readable state that nothing used to compare. `Tests/go
 
 ### `Tests/run_stormlib_checks.py` (StormLib differential)
 
-Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/StormLib` submodule (v9.40, Unicode build because the oracle passes `LPWStr` paths) to `native/win-x64/StormLib.dll`. The script then runs `dotnet test Tests/ACWorldEdit.Tests` with `STORMLIB_DLL` set to that DLL and `ACWORLD_DATA_DIR` as the client data. The xUnit `WorldCorpusTests` use `Support/StormLibOracle.cs` to compare every asset read against StormLib. Only that test reads the variable. StormLib is a test-only dependency: the runtime MPQ reader is managed (`MpqArchive`).
+Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/StormLib` submodule (v9.40, Unicode build because the oracle passes `LPWStr` paths) to `native/win-x64/StormLib.dll` on Windows or `native/linux-x64/libStormLib.so` on Linux. The script then runs `dotnet test Tests/ACWorldEdit.Tests` with `STORMLIB_DLL` set to that library and `ACWORLD_DATA_DIR` as the client data. The xUnit `WorldCorpusTests` use `Support/StormLibOracle.cs` to compare every asset read against StormLib. Only that test reads the variable. StormLib is a test-only dependency: the runtime MPQ reader is managed (`MpqArchive`).
 
 ## Tooling
 
 | Tool | Purpose |
 |---|---|
 | `launch_viewer.py` | Builds `ACWorldEdit.csproj` and launches Godot; `--smoke` runs the terrain smoke headless, `--check-assets` runs the corpus tests |
-| `Tools/setup.py` | Syncs the pinned submodules and builds CascLib (and StormLib with `--with-tests`) into `native/win-x64/` |
+| `Tools/setup.py` | Syncs the pinned submodules and builds CascLib (and StormLib with `--with-tests`) into `native/win-x64/` on Windows or `native/linux-x64/` on Linux |
 | `Tools/package.py` | Builds, imports and exports the `Windows Desktop` preset to `build/win-x64/`, then validates the output |
 | `Tools/generate_smart_catalog.py` | Regenerates the SmartAI type arrays for both dialects |
 | `Tools/generate_condition_catalog.py` | Regenerates the condition type arrays for both dialects |
@@ -99,7 +99,7 @@ Needs `python Tools/setup.py --with-tests` first, which builds the `ThirdParty/S
 
 ### `Tools/setup.py`
 
-Builds `ThirdParty/CascLib` (and with `--with-tests` `ThirdParty/StormLib`) out of tree under `.build-env/cmake/`, then copies the DLLs and licences into `native/win-x64/`. A stamp (submodule commit plus CMake options) skips rebuilds; `--force` rebuilds and `--check` only reports. Builds use the static MSVC runtime, so the DLLs need no VC++ redistributable. `ACWORLD_CMAKE_GENERATOR` overrides the CMake generator. A checkout path long enough to push MSVC's `.tlog` files past 260 characters moves the build to a short temp folder (`ACWORLD_CMAKE_BUILD_DIR` overrides it).
+Builds `ThirdParty/CascLib` (and with `--with-tests` `ThirdParty/StormLib`) out of tree under `.build-env/cmake/`, then copies the library and licence into `native/win-x64/` on Windows or `native/linux-x64/` on Linux (`libCascLib.so`/`libStormLib.so` there). A stamp (platform plus submodule commit plus CMake options) skips rebuilds; `--force` rebuilds and `--check` only reports. Windows builds use the static MSVC runtime, so the DLLs need no VC++ redistributable; Linux builds define CascLib's Windows-only `LPDWORD` alias (`PDWORD`) because upstream does not. `ACWORLD_CMAKE_GENERATOR` overrides the CMake generator. A checkout path long enough to push MSVC's `.tlog` files past 260 characters moves the build to a short temp folder (`ACWORLD_CMAKE_BUILD_DIR` overrides it).
 
 ### `Tools/package.py`
 
@@ -113,8 +113,8 @@ Exports `export_presets.cfg`'s `Windows Desktop` preset and fails unless the bui
 
 Build configuration:
 
-- `global.json` pins the SDK (10.0.400, roll forward to latest feature). Projects target `net8.0`.
-- `ACWorldEdit.csproj` uses `Godot.NET.Sdk` 4.7.1 and references `SharpZipLib`, `DBCD` and `MySqlConnector` (versions in the project file).
+- `global.json` pins the SDK (10.0.114, roll forward to latest feature). Projects target `net8.0`.
+- `ACWorldEdit.csproj` uses `Godot.NET.Sdk` 4.7.2 and references `SharpZipLib`, `DBCD` and `MySqlConnector` (versions in the project file).
 - `Experiments/` holds no tracked source; it only contains leftover build output.
 - `artifacts/` and `Tests/artifacts/` hold only generated output, so each carries a `.gdignore` and Godot never imports it. `.gitignore` excludes their contents but re-includes the marker.
 
@@ -127,7 +127,7 @@ Workflows live in `.github/workflows`; the steps they share are composite action
 | `workflows/ci.yml` | push to `master` or `ci/**`, pull requests, manual | Job `test`: `setup-build`, `dotnet build ACWorldEdit.csproj -c Release`, `dotnet test Tests/ACWorldEdit.Tests` (`.trx` uploaded on failure). Job `viewer-tests`: `setup-build`, `setup-godot`, `dotnet test Tests/ACWorldEdit.GdTests`. Job `package` (not on pull requests): `setup-godot`, `package`, then uploads `ACWorldEdit-dev-<sha>-win-x64` with `retention-days: 7` |
 | `workflows/release.yml` | push of a `vMAJOR.MINOR.PATCH[-suffix]` tag | Checks the tag format and that the commit is on `master`, builds and tests, packages with the tag as the version, and runs `gh release create --draft --verify-tag` with the zip, its `.sha256`, a commit list since the previous tag and GitHub's generated notes (`--prerelease` when the tag has a hyphen) |
 | `actions/setup-build` | | `setup-dotnet` (`global.json` plus 8.0.x), `setup-python`, caches, then `python Tools/setup.py --no-godot`. The `native/win-x64` cache key is the CascLib submodule commit plus a hash of `Tools/setup.py`; `setup.py` skips the CMake build when its stamp matches the restored files. The NuGet cache key hashes the csproj files and `global.json` |
-| `actions/setup-godot` | | Downloads Godot 4.7.1 .NET and the export templates from `godotengine/godot-builds`, verifies SHA-512 against hashes pinned in the action, keeps only the Windows x86_64 templates (about 210 MB instead of the 1.2 GB archive), caches the result and sets `GODOT_BIN` |
+| `actions/setup-godot` | | Downloads Godot 4.7.2 .NET and the export templates from `godotengine/godot-builds`, verifies SHA-512 against hashes pinned in the action, keeps only the Windows x86_64 templates (about 210 MB instead of the 1.2 GB archive), caches the result and sets `GODOT_BIN` |
 | `actions/package` | | `python Tools/package.py --version`, a smoke run of the exported exe (`--headless --quit-after 30`, exit code 0, throwaway `APPDATA`), then the zip and its SHA-256 in `dist/`. A failed export uploads `build/dotnet.binlog` as `build-log` |
 | `dependabot.yml` | weekly | Updates for the workflow actions and NuGet packages. Submodule pins are bumped by hand |
 
@@ -163,7 +163,7 @@ Environment variables for tests and tools:
 - `ACWORLD_DB_INFO` = `host;port;user;password;database` (AzerothCore Db tests); `ACWORLD_TC_DB_INFO` = the same plus optional `;hotfixes` (TrinityCore Db tests, `TcDbFact`).
 - `ACWORLD_DATA_DIR` (3.3.5 client), `ACWORLD_RETAIL_DIR` (retail client), `ACWORLD_CLIENT_PROFILE`: `ClientData`/`Corpus` tests.
 - `ACWORLD_CLIENT_PRODUCT` selects a `.build.info` product in a shared install (`wow` by default, `wowf` for WoW: Forever); the `_forever_` folder also selects `wowf` on its own. It applies to the viewer and to retail tests.
-- `ACWORLD_CASCLIB` (`CascLib.dll`; `Tools/setup.py` builds it into `native/win-x64/`), `ACWORLD_DBD_DIR` (defaults to the `Data/WoWDBDefs` submodule, which `Tools/setup.py` initialises).
+- `ACWORLD_CASCLIB` (`CascLib.dll` on Windows, `libCascLib.so` on Linux; `Tools/setup.py` builds it into `native/<platform>/`), `ACWORLD_DBD_DIR` (defaults to the `Data/WoWDBDefs` submodule, which `Tools/setup.py` initialises).
 - `ACWORLD_RESET_SMOKE=1` lets `--reset-smoke` run (see `viewer-runtime.md`); it deletes the whole user data folder, so run it only with `APPDATA` pointing at a throwaway folder.
 - `ACWORLD_LISTFILE` overrides the community listfile path; `RetailListfileFact` tests skip without it.
 

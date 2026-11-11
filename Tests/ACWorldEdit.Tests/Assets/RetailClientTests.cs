@@ -67,6 +67,18 @@ public class RetailClientTests : IDisposable
     }
 
     [Fact]
+    public void LiveProductIsNamedInTheOpenPath()
+    {
+        // The install lists wowf first, so a bare root would make CascLib open WoW: Forever.
+        Write(Header, "us|1|wowf|1.60.1.70790|f", "us|1|wow|12.1.5.70448|y");
+        var install = RetailInstall.Detect(root);
+        Assert.Equal(RetailInstall.ProductWarcraft, install.Product);
+        Assert.Equal(root + "*wow", install.OpenPath);
+        Assert.Equal("RETAIL", install.DisplayName);
+        Assert.True(install.ProvidesWorldDatabase);
+    }
+
+    [Fact]
     public void DetectSelectsTheForeverProductFromItsFolder()
     {
         string? saved = Environment.GetEnvironmentVariable("ACWORLD_CLIENT_PRODUCT");
@@ -96,23 +108,14 @@ public class RetailClientTests : IDisposable
     }
 
     [Fact]
-    public void TheLiveProductOpensTheInstallRootWithoutAProductSuffix()
-    {
-        var install = new RetailInstall(root, "12.1.5.70448", "enUS");
-        Assert.Equal(root, install.OpenPath);
-        Assert.Equal("RETAIL", install.DisplayName);
-        Assert.True(install.ProvidesWorldDatabase);
-    }
-
-    [Fact]
     public void NativeCandidatesPreferTheOverrideThenTheBaseDirectory()
     {
-        string overridePath = Path.Combine(root, "custom", "CascLib.dll");
+        string overridePath = Path.Combine(root, "custom", CascNative.FileName);
         string[] found = CascNative.Candidates(overridePath, Path.Combine(root, "bin")).ToArray();
         Assert.Equal(overridePath, found[0]);
-        Assert.Equal(Path.Combine(root, "bin", "CascLib.dll"), found[1]);
-        Assert.Contains(Path.Combine(root, "bin", "native", "win-x64", "CascLib.dll"), found);
-        Assert.Contains(Path.Combine(root, "native", "win-x64", "CascLib.dll"), found);
+        Assert.Equal(Path.Combine(root, "bin", CascNative.FileName), found[1]);
+        Assert.Contains(Path.Combine(root, "bin", "native", CascNative.NativeFolder, CascNative.FileName), found);
+        Assert.Contains(Path.Combine(root, "native", CascNative.NativeFolder, CascNative.FileName), found);
     }
 
     [Fact]

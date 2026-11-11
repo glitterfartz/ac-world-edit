@@ -27,10 +27,11 @@ public sealed record RetailInstall(string Root, string Build, string Locale, str
     public const string ProductForever = "wowf";
 
     /// <summary>
-    /// The CascLib open path. The first active product is "wow"; another product is selected with
-    /// CascLib's documented "install_path*product" syntax.
+    /// The CascLib open path. The product is always named: CascLib otherwise picks the first
+    /// active row of .build.info, which is not necessarily the live one (an install with WoW:
+    /// Forever lists wowf first).
     /// </summary>
-    public string OpenPath => Product == ProductWarcraft ? Root : Root + "*" + Product;
+    public string OpenPath => Root + "*" + Product;
 
     /// <summary>Short label for status text: RETAIL for the live product, FOREVER for wowf.</summary>
     public string DisplayName => Product == ProductForever ? "FOREVER" : "RETAIL";
@@ -188,6 +189,17 @@ public sealed class CascFiles : IClientFiles
         if (!CascNative.CascOpenStorage(install.OpenPath, locale, out storage))
         {
             throw Error("Open the CASC storage", IntPtr.Zero);
+        }
+
+        // The path names the product, so CascLib must have selected the row .build.info promised.
+        // Without the product CascLib follows the first active row, which need not be the live one.
+        var (openedProduct, _) = CascNative.StorageProduct(storage);
+        if (openedProduct is { } opened && !opened.Equals(install.Product, StringComparison.OrdinalIgnoreCase))
+        {
+            CascNative.CascCloseStorage(storage);
+            storage = IntPtr.Zero;
+            throw new InvalidDataException(
+                $".build.info selected '{install.Product}' but CascLib opened '{opened}'; the product rows and the install's data do not match.");
         }
 
         // A shared install can open the live product beside a non-live one: the data pool is common
@@ -394,17 +406,32 @@ public sealed class CascFiles : IClientFiles
 }
 
 /// <summary>
-/// P/Invoke surface of CascLib.dll (MIT, built from the pinned ThirdParty/CascLib submodule by
-/// Tools/setup.py as an ANSI build, matching CharSet.Ansi below). The DLL is copied next to the game
-/// assembly or kept in native/win-x64; a missing DLL fails only the Retail profile.
+/// P/Invoke surface of CascLib (MIT, built from the pinned ThirdParty/CascLib submodule by
+/// Tools/setup.py as an ANSI build, matching CharSet.Ansi below). The library is copied next to the
+/// game assembly or kept in native/&lt;platform&gt; (win-x64, linux-x64); a missing library fails only
+/// the Retail profile.
 /// </summary>
 static class CascNative
 {
+    // Logical P/Invoke name; the resolver below loads the platform file instead.
     const string Library = "CascLib.dll";
     static int resolverInstalled;
 
+    /// <summary>The file name Tools/setup.py installs for the current OS.</summary>
+    public static string FileName { get; } =
+        OperatingSystem.IsWindows() ? "CascLib.dll" :
+        OperatingSystem.IsMacOS() ? "libCascLib.dylib" : "libCascLib.so";
+
+    /// <summary>The native/ subfolder with the build for the current OS and architecture.</summary>
+    public static string NativeFolder { get; } =
+        OperatingSystem.IsWindows() ? "win-x64" :
+        OperatingSystem.IsMacOS()
+            ? (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "osx-arm64" : "osx-x64")
+            : (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "linux-arm64" : "linux-x64");
+
     /// <summary>
-    /// Find CascLib.dll beside the assembly, in the repo's native/win-x64, or at ACWORLD_CASCLIB.
+    /// Find the native library beside the assembly, in the repo's native/&lt;platform&gt;, or at
+    /// ACWORLD_CASCLIB.
     /// </summary>
     public static void EnsureResolver()
     {
@@ -435,8 +462,8 @@ static class CascNative
     }
 
     /// <summary>
-    /// Candidate DLL paths in priority order: explicit override, then each base directory and the
-    /// nearest ancestor holding native/win-x64.
+    /// Candidate native library paths in priority order: explicit override, then each base directory
+    /// and the nearest ancestor holding native/&lt;platform&gt;.
     /// </summary>
     public static IEnumerable<string> Candidates(string? overridePath, params string?[] directories)
     {
@@ -452,13 +479,38 @@ static class CascNative
                 continue;
             }
 
-            yield return Path.Combine(directory, Library);
+            yield return Path.Combine(directory, FileName);
             for (var parent = new DirectoryInfo(directory); parent != null; parent = parent.Parent)
             {
-                yield return Path.Combine(parent.FullName, "native", "win-x64", Library);
+                yield return Path.Combine(parent.FullName, "native", NativeFolder, FileName);
             }
         }
     }
+
+    /// <summary>
+    /// The product and build CascLib actually opened (CascStorageProduct), or (null, 0) when the
+    /// storage does not report one. Used to confirm CascLib followed the product in the open path.
+    /// </summary>
+    public static (string? Product, uint BuildNumber) StorageProduct(IntPtr storage)
+    {
+        const uint CascStorageProduct = 4;
+        var info = new CascStorageProductInfo();
+        return CascGetStorageInfo(storage, CascStorageProduct, ref info, (nuint)Marshal.SizeOf<CascStorageProductInfo>(), out _)
+            ? (string.IsNullOrEmpty(info.CodeName) ? null : info.CodeName, info.BuildNumber)
+            : (null, 0);
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    struct CascStorageProductInfo
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x1C)]
+        public string CodeName;
+        public uint BuildNumber;
+    }
+
+    [DllImport(Library, EntryPoint = "CascGetStorageInfo", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    static extern bool CascGetStorageInfo(IntPtr storage, uint infoClass, ref CascStorageProductInfo info, nuint size, out nuint needed);
 
     [DllImport(Library)]
     public static extern uint GetCascError();

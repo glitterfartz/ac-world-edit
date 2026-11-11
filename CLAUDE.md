@@ -31,7 +31,7 @@ Shell is PowerShell on Windows. SDK is pinned in `global.json`; Godot is found v
 
 ```powershell
 git submodule update --init               # or clone with --recurse-submodules
-python Tools/setup.py                     # sync submodules, build CascLib into native/win-x64 (--with-tests adds StormLib)
+python Tools/setup.py                     # sync submodules, build CascLib into native/<platform> (win-x64 or linux-x64); --with-tests adds StormLib
 python launch_viewer.py                   # build, then launch the viewer
 python launch_viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
 dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite

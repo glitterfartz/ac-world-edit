@@ -55,12 +55,12 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for diagrams 
 
 | Requirement                                                                                        | Needed for                    | Notes                                                                              |
 | -------------------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------- |
-| Windows x64                                                                                        | everything                    | The native build and `native/win-x64` layout are Windows only for now              |
+| Windows x64 or Linux x64                                                                           | everything                    | Native builds and the `native/win-x64` / `native/linux-x64` layouts                |
 | Git                                                                                                | cloning, submodules           | Clone with `--recurse-submodules`, or run the setup script                         |
-| .NET SDK matching [`global.json`](global.json) (10.0.400, roll-forward to the latest feature band) | build, tests                  | Projects target `net8.0`                                                           |
-| Godot 4.7.1 **.NET (mono) edition**                                                                | running, packaging            | Found via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH |
+| .NET SDK matching [`global.json`](global.json) (10.0.114, roll-forward to the latest feature band) | build, tests                  | Projects target `net8.0`                                                           |
+| Godot 4.7.2 **.NET (mono) edition**                                                                | running, packaging            | Found via `--godot-path`, the `GODOT_BIN` environment variable, or `godot` on PATH |
 | Python 3                                                                                           | setup and launch scripts      | Standard library only                                                              |
-| CMake and Visual Studio Build Tools ("Desktop development with C++")                               | `Tools/setup.py`              | Builds CascLib (Retail profile) and StormLib (tests)                               |
+| CMake and a C++ toolchain (Visual Studio Build Tools on Windows, g++/clang++ plus Ninja or Make on Linux) | `Tools/setup.py`              | Builds CascLib (Retail profile) and StormLib (tests)                               |
 | A WoW client: 3.3.5 (MPQ) or retail (CASC)                                                         | viewing                       | Never modified                                                                     |
 | An AzerothCore (3.3.5) or TrinityCore master (retail) `world` database, plus optional `hotfixes`   | database overlays and editing | Read-only connection; a SELECT-only account is enough                              |
 
@@ -73,7 +73,7 @@ The Wrath profile needs none of the native libraries; only the Retail profile ne
 ```powershell
 git clone --recurse-submodules https://github.com/glitterfartz/ac-world-edit.git
 cd ac-world-edit
-python Tools/setup.py                     # sync submodules, build CascLib into native/win-x64/
+python Tools/setup.py                     # sync submodules, build CascLib into native/<platform>/
 python Tools/setup.py --with-tests        # also build StormLib, used only by the StormLib differential test
 python Tools/setup.py --check             # report what is present and change nothing
 ```
@@ -102,7 +102,7 @@ python Tools/package.py                   # build/win-x64/ACWorldEdit.exe plus i
 python Tools/package.py --pack-only       # just ACWorldEdit.pck; needs no export templates
 ```
 
-This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.1 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. CI runs `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed (`.github/workflows/`, described in [testing-and-tooling.md](docs/architecture/testing-and-tooling.md)). Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
+This uses the `Windows Desktop` preset in `export_presets.cfg`. It needs the Godot 4.7.2 .NET export templates (Editor → Manage Export Templates), and `Tools/setup.py` must have run first. The csproj publishes `CascLib.dll`, the retail `definitions/` and the licences into the build's `data_ACWorldEdit_windows_x86_64` folder, where the loader looks for them, and the script fails if the export is missing them or the game assembly. Godot's .NET export needs `ACWorldEdit.sln` at the project root (it exports an exe with no game assembly, and only a warning, without it), so keep that file and name the project in `dotnet` commands (`dotnet build ACWorldEdit.csproj`); a bare `dotnet build` in the repo root is ambiguous. Output goes to the git-ignored `build/`. CI runs `python Tools/setup.py` and then `python Tools/package.py` on a Windows runner with Godot and its templates installed (`.github/workflows/`, described in [testing-and-tooling.md](docs/architecture/testing-and-tooling.md)). Do not run the script from a shell with `APPDATA` redirected: Godot would look for the export templates under the redirected folder.
 
 ## Test
 
@@ -126,9 +126,9 @@ The default settings exclude the `Corpus` (needs client data) and `KnownBug` cat
 | `ACWORLD_DATA_DIR`        | 3.3.5 client data directory, for `ClientData`/`Corpus` tests                                                            |
 | `ACWORLD_RETAIL_DIR`      | Retail client directory, for `ClientData`/`Corpus` tests                                                                |
 | `ACWORLD_CLIENT_PROFILE`  | Client profile selection for `ClientData`/`Corpus` tests                                                                |
-| `ACWORLD_CASCLIB`         | Path to `CascLib.dll` (default: the one `python Tools/setup.py` builds into `native/win-x64/`)                          |
+| `ACWORLD_CASCLIB`         | Path to the CascLib library (default: the one `python Tools/setup.py` builds into `native/<platform>/`)                 |
 | `ACWORLD_DBD_DIR`         | WoWDBDefs directory; defaults to `Data/WoWDBDefs/definitions` (the submodule)                                           |
-| `ACWORLD_CMAKE_GENERATOR` | CMake generator for `Tools/setup.py` (default: CMake's Visual Studio generator)                                         |
+| `ACWORLD_CMAKE_GENERATOR` | CMake generator for `Tools/setup.py` (default: the platform's generator; Visual Studio on Windows)                    |
 | `ACWORLD_CMAKE_BUILD_DIR` | Folder for `Tools/setup.py`'s CMake builds (default `.build-env/cmake`, or a short temp folder for long checkout paths) |
 | `ACWORLD_RESET_SMOKE`     | `1` lets `--reset-smoke` run; it deletes the whole user data folder, so point `APPDATA` at a throwaway folder first     |
 | `ACWORLD_LISTFILE`        | Override for the community listfile location (default `user://community-listfile.csv`)                                  |

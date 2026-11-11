@@ -8,8 +8,8 @@ ACWorldEdit itself is MIT licensed (see `LICENSE`). It uses the components below
 
 | Component | Path | Licence | Used for |
 |---|---|---|---|
-| [CascLib](https://github.com/ladislav-zezula/CascLib) | `ThirdParty/CascLib` | MIT | Native CASC reader, built to `native/win-x64/CascLib.dll`; shipped with builds. Retail profile only |
-| [StormLib](https://github.com/ladislav-zezula/StormLib) | `ThirdParty/StormLib` | MIT | MPQ reference implementation for the differential test, built to `native/win-x64/StormLib.dll`. Tests only; never shipped |
+| [CascLib](https://github.com/ladislav-zezula/CascLib) | `ThirdParty/CascLib` | MIT | Native CASC reader, built to `native/win-x64/CascLib.dll` on Windows or `native/linux-x64/libCascLib.so` on Linux; shipped with builds. Retail profile only |
+| [StormLib](https://github.com/ladislav-zezula/StormLib) | `ThirdParty/StormLib` | MIT | MPQ reference implementation for the differential test, built to `native/win-x64/StormLib.dll` or `native/linux-x64/libStormLib.so`. Tests only; never shipped |
 | [WoWDBDefs](https://github.com/wowdev/WoWDBDefs) | `Data/WoWDBDefs` | Data (`definitions/`): CC BY-SA 4.0. Code: BSD-3-Clause | Retail table layouts; the `.dbd` files are copied into builds as `definitions/` together with the upstream `LICENSE.md` |
 
 ## NuGet packages

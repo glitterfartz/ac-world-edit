@@ -9,8 +9,11 @@
 
 Submodules (all pinned by their commit in this repository):
   Data/WoWDBDefs        retail table layouts, copied to the build output as definitions/
-  ThirdParty/CascLib    native CASC reader -> native/win-x64/CascLib.dll
-  ThirdParty/StormLib   MPQ reference implementation for tests -> native/win-x64/StormLib.dll
+  ThirdParty/CascLib    native CASC reader -> native/<platform>/CascLib.dll (Windows) or libCascLib.so
+  ThirdParty/StormLib   MPQ reference implementation for tests -> native/<platform>/StormLib.dll or libStormLib.so
+
+The native folder is native/win-x64 on Windows and native/linux-x64 (or linux-arm64) on Linux; it
+matches CascNative.NativeFolder and the file copies in ACWorldEdit.csproj.
 
 Builds happen out of tree under .build-env/cmake/ (a short temp folder when the checkout path is
 long) so the submodule working trees stay clean.
@@ -27,27 +30,50 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-NATIVE = ROOT / 'native' / 'win-x64'
+WINDOWS = platform.system() == 'Windows'
 BUILD = ROOT / '.build-env' / 'cmake'
 # MSVC's file tracker cannot write its .tlog files past the 260-character path limit, which a deep
 # checkout path reaches inside CMake's own folders. Longer build roots move to the temp folder.
 MAX_BUILD_ROOT = 80
 
-# name -> (submodule path, CMake options, built DLL name, installed DLL name)
+
+def native_folder():
+    """The native/<folder> this host loads: win-x64, or linux-x64 / linux-arm64."""
+    if WINDOWS:
+        return 'win-x64'
+    if platform.system() == 'Linux':
+        return 'linux-arm64' if platform.machine().lower() in ('aarch64', 'arm64') else 'linux-x64'
+    sys.exit(f'No native build is defined for {platform.system()}; Windows and Linux are supported.')
+
+
+NATIVE = ROOT / 'native' / native_folder()
+
+# CMake target output name -> installed file name, per platform. CascLib names its Linux target
+# "casc" (libcasc.so); StormLib keeps "storm" (libstorm.so). Installed names match
+# CascNative.FileName and the copies in ACWorldEdit.csproj.
+CASC_NAMES = ('CascLib.dll', 'CascLib.dll') if WINDOWS else ('libcasc.so', 'libCascLib.so')
+STORM_NAMES = ('StormLib.dll', 'StormLib.dll') if WINDOWS else ('libstorm.so', 'libStormLib.so')
+
+# name -> (submodule path, CMake options, built library name, installed library name)
 LIBRARIES = {
     'CascLib': ('ThirdParty/CascLib',
                 ['-DCASC_BUILD_SHARED_LIB=ON', '-DCASC_BUILD_STATIC_LIB=OFF', '-DCASC_BUILD_TESTS=OFF', '-DCASC_UNICODE=OFF',
-                '-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB=ON'],  # always use the bundled zlib; a system one would add a zlib1.dll import
-                'CascLib.dll', 'CascLib.dll'),
+                '-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB=ON',  # always use the bundled zlib; a system one would add a zlib1.dll import
+                # CascLib 38a3466 uses the Windows-only LPDWORD alias in CascFiles.cpp (windows.h defines
+                # it there). PDWORD is the same type in the non-Windows typedefs, so Linux builds define it.
+                *([] if WINDOWS else ['-DCMAKE_CXX_FLAGS=-DLPDWORD=PDWORD'])],
+                *CASC_NAMES),
     'StormLib': ('ThirdParty/StormLib',
                  ['-DBUILD_SHARED_LIBS=ON', '-DSTORM_BUILD_TESTS=OFF', '-DSTORM_SKIP_INSTALL=ON', '-DSTORM_UNICODE=ON',  # the test oracle passes LPWStr paths
                   '-DSTORM_USE_BUNDLED_LIBRARIES=ON', '-DCMAKE_DISABLE_FIND_PACKAGE_ZLIB=ON', '-DCMAKE_DISABLE_FIND_PACKAGE_BZip2=ON'],
-                 'StormLib.dll', 'StormLib.dll'),
+                 *STORM_NAMES),
 }
-# Common to every build: static MSVC runtime so the DLLs need no VC++ redistributable, and the CMake 4
-# compatibility switch (both projects declare a cmake_minimum_required older than CMake 4 accepts).
-COMMON_OPTIONS = ['-DCMAKE_POLICY_VERSION_MINIMUM=3.5', '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW',
-                  '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded']
+# Common to every build: the CMake 4 compatibility switch (both projects declare a
+# cmake_minimum_required older than CMake 4 accepts). MSVC gets the static runtime so the DLLs need
+# no VC++ redistributable; the MSVC-only options are left out on other platforms.
+COMMON_OPTIONS = ['-DCMAKE_POLICY_VERSION_MINIMUM=3.5']
+if WINDOWS:
+    COMMON_OPTIONS += ['-DCMAKE_POLICY_DEFAULT_CMP0091=NEW', '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded']
 
 
 def build_root():
@@ -90,7 +116,7 @@ def sync_submodules():
 
 def stamp_for(name, options):
     path, _, _, _ = LIBRARIES[name]
-    payload = '|'.join([submodule_commit(path), *COMMON_OPTIONS, *options])
+    payload = '|'.join([platform.system(), platform.machine(), submodule_commit(path), *COMMON_OPTIONS, *options])
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
@@ -107,10 +133,21 @@ def build_library(name, force):
         return
 
     build_dir = build_root() / name
-    configure = ['cmake', '-S', str(source), '-B', str(build_dir), '-A', 'x64', *COMMON_OPTIONS, *options]
+    # A checkout shared with another OS leaves a Windows cache (source path X:/...) that CMake refuses.
+    cache = build_dir / 'CMakeCache.txt'
+    if cache.is_file():
+        recorded = next((line.split('=', 1)[1] for line in cache.read_text(errors='ignore').splitlines()
+                         if line.startswith('CMAKE_HOME_DIRECTORY:')), '')
+        if recorded and Path(recorded).resolve() != source.resolve():
+            print(f'{name}: removing build cache generated for {recorded}')
+            shutil.rmtree(build_dir)
+    configure = ['cmake', '-S', str(source), '-B', str(build_dir)]
+    if WINDOWS:
+        configure += ['-A', 'x64']
     generator = os.environ.get('ACWORLD_CMAKE_GENERATOR')
     if generator:
-        configure = ['cmake', '-S', str(source), '-B', str(build_dir), '-G', generator, *COMMON_OPTIONS, *options]
+        configure = ['cmake', '-S', str(source), '-B', str(build_dir), '-G', generator]
+    configure += ['-DCMAKE_BUILD_TYPE=Release', *COMMON_OPTIONS, *options]
     run(configure)
     run(['cmake', '--build', str(build_dir), '--config', 'Release'])
 
@@ -150,10 +187,10 @@ def report(with_tests, need_godot=True):
         problems.append('.NET SDK')
     godot = find_godot()
     if need_godot:
-        if not line(bool(godot and Path(godot).exists()), 'Godot 4.7.1 .NET', godot or 'not found; set GODOT_BIN or put godot on PATH'):
+        if not line(bool(godot and Path(godot).exists()), 'Godot 4.7.2 .NET', godot or 'not found; set GODOT_BIN or put godot on PATH'):
             problems.append('Godot')
     else:
-        line(True, 'Godot 4.7.1 .NET', 'not required for this run')
+        line(True, 'Godot 4.7.2 .NET', 'not required for this run')
     line(shutil.which('git') is not None, 'git', shutil.which('git') or 'not found')
 
     print('Submodules')
@@ -164,12 +201,12 @@ def report(with_tests, need_godot=True):
         present = (ROOT / path / 'CMakeLists.txt').is_file()
         line(present, path, f'pinned {submodule_commit(path)[:12]}' if present else 'not initialised')
 
-    print('Native libraries (native/win-x64)')
-    casc = NATIVE / 'CascLib.dll'
-    if not line(casc.is_file(), 'CascLib.dll', 'present' if casc.is_file() else 'missing (Retail profile unavailable)'):
+    print(f'Native libraries ({NATIVE.relative_to(ROOT)})')
+    casc = NATIVE / LIBRARIES['CascLib'][3]
+    if not line(casc.is_file(), casc.name, 'present' if casc.is_file() else 'missing (Retail profile unavailable)'):
         problems.append('CascLib')
-    storm = NATIVE / 'StormLib.dll'
-    line(storm.is_file() or not with_tests, 'StormLib.dll', 'present' if storm.is_file() else 'not built (only the StormLib test needs it)')
+    storm = NATIVE / LIBRARIES['StormLib'][3]
+    line(storm.is_file() or not with_tests, storm.name, 'present' if storm.is_file() else 'not built (only the StormLib test needs it)')
 
     print('Native build tools')
     cmake = tool_version(['cmake', '--version'])
@@ -178,6 +215,10 @@ def report(with_tests, need_godot=True):
         vswhere = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Microsoft Visual Studio' / 'Installer' / 'vswhere.exe'
         vs = capture([str(vswhere), '-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath']) if vswhere.is_file() else ''
         line(bool(vs), 'MSVC C++ build tools', vs or 'not found (install "Desktop development with C++")')
+    else:
+        cxx = shutil.which('c++') or shutil.which('g++') or shutil.which('clang++')
+        line(bool(cxx), 'C++ compiler', cxx or 'not found (needed to build CascLib)')
+        line(shutil.which('ninja') is not None or shutil.which('make') is not None, 'CMake generator', 'ninja' if shutil.which('ninja') else 'make')
     return problems
 
 
@@ -194,9 +235,7 @@ def main():
         return 1 if problems else 0
 
     if platform.system() != 'Windows':
-        print('Native builds are Windows x64 only for now; syncing submodules and checking tools.')
-        sync_submodules()
-        return 1 if report(args.with_tests, not args.no_godot) else 0
+        print(f'Building native libraries for {platform.system()} {platform.machine()} into {NATIVE.relative_to(ROOT)}.')
 
     sync_submodules()
     build_library('CascLib', args.force)

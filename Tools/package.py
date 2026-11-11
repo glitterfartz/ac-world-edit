@@ -5,7 +5,7 @@
   python Tools/package.py --pack-only      # export only the .pck; needs no export templates
   python Tools/package.py --version 0.1.0  # stamp the exe's file/product version (the preset is restored afterwards)
 
-Run python Tools/setup.py first. Needs Godot 4.7.1 .NET with its export templates installed
+Run python Tools/setup.py first. Needs Godot 4.7.2 .NET with its export templates installed
 (Editor > Manage Export Templates; in CI, the matching templates archive). Output goes to the
 git-ignored build/ folder.
 

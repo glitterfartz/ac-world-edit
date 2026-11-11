@@ -10,7 +10,7 @@ public static class DependencyCheck
 {
     public const string SetupHint = "Run python Tools/setup.py.";
 
-    public const string CascLibMissing = "CascLib.dll was not found. " + SetupHint;
+    public static string CascLibMissing => $"{CascNative.FileName} was not found. {SetupHint}";
 
     public const string DefinitionsMissing = "Retail table definitions (Data/WoWDBDefs) were not found. " + SetupHint;
 

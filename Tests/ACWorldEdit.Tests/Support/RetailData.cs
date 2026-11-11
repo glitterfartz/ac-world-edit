@@ -31,7 +31,7 @@ public static class RetailEnvironment
 
         if (!CascLibPresent())
         {
-            return "CascLib.dll not found (run Tools/setup.py); skipping retail client test";
+            return $"{CascNative.FileName} not found (run Tools/setup.py); skipping retail client test";
         }
 
         return DefinitionsDirectory() == null ? "Data/WoWDBDefs not found (git submodule update --init); skipping retail client test" : null;
