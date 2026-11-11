@@ -171,20 +171,26 @@ public sealed class DbWriteFactAttribute : FactAttribute
         }
         catch (Exception error)
         {
-            return $"Database user '{config.User}' cannot create tables here ({ShortError(error)}); skipping database write test";
+            return $"Database user '{config.User}' cannot create databases here ({ShortError(error)}); skipping database write test";
         }
     }
 
+    /// <summary>
+    /// Mirrors AcworldStore.EnsureSchemaAsync: the history tests create a uniquely named database
+    /// and table, so the probe must prove CREATE DATABASE, not merely CREATE TABLE in the world
+    /// database. A user granted only `ALL ON acore_world.*` must skip instead of failing later.
+    /// </summary>
     static async Task ProbeAsync(DatabaseSettings config, string probe, CancellationToken token)
     {
-        await using var connection = new MySqlConnector.MySqlConnection(config.BuildConnectionString());
+        var builder = new MySqlConnector.MySqlConnectionStringBuilder(config.BuildConnectionString()) { Database = "" };
+        await using var connection = new MySqlConnector.MySqlConnection(builder.ConnectionString);
         await connection.OpenAsync(token);
-        await using (var create = new MySqlConnector.MySqlCommand($"CREATE TABLE `{probe}` (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB", connection))
+        await using (var create = new MySqlConnector.MySqlCommand($"CREATE DATABASE `{probe}`", connection))
         {
             await create.ExecuteNonQueryAsync(token);
         }
 
-        await using (var drop = new MySqlConnector.MySqlCommand($"DROP TABLE `{probe}`", connection))
+        await using (var drop = new MySqlConnector.MySqlCommand($"DROP DATABASE `{probe}`", connection))
         {
             await drop.ExecuteNonQueryAsync(token);
         }
