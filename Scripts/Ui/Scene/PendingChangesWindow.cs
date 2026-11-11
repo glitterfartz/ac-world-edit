@@ -36,6 +36,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
     readonly HashSet<string> checkedFingerprints = new(StringComparer.Ordinal);
     List<ChangeRecord>? shownRecords;
     string? shownError;
+    string? currentSourceKey;
 
     protected override Vector2 TargetSize => new(860, 560);
 
@@ -146,15 +147,18 @@ public partial class PendingChangesWindow : ContentEditorWindow
     /// with identical content are skipped, and rebuilds preserve the checked boxes, in-progress
     /// notes, focus and scroll position, so the periodic sync never disturbs the selection.
     /// </summary>
-    public void RefreshHistory(IReadOnlyList<ChangeRecord> records, string? historyError = null)
+    public void RefreshHistory(IReadOnlyList<ChangeRecord> records, string? historyError = null, string? currentSource = null)
     {
-        if (shownRecords != null && shownError == historyError && shownRecords.SequenceEqual(records))
+        if (shownRecords != null && shownError == historyError && currentSourceKey == currentSource && shownRecords.SequenceEqual(records))
         {
             return;
         }
 
         shownRecords = records.ToList();
         shownError = historyError;
+        currentSourceKey = currentSource;
+        // Rows that disappeared must not come back pre-checked if the same fingerprint is recreated.
+        checkedFingerprints.IntersectWith(records.Select(r => r.Fingerprint));
 
         // Capture what the user is doing before the rows are replaced.
         var notesText = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -197,8 +201,10 @@ public partial class PendingChangesWindow : ContentEditorWindow
         }
 
         bool any = records.Count > 0;
-        applySelected.Disabled = revertSelected.Disabled = previewSelected.Disabled = exportSelected.Disabled = !any;
-        discardAll.Disabled = staged == 0;
+        bool unavailable = !string.IsNullOrEmpty(historyError);
+        applySelected.Disabled = revertSelected.Disabled = !any || unavailable;
+        previewSelected.Disabled = exportSelected.Disabled = !any;
+        discardAll.Disabled = staged == 0 || unavailable;
 
         Control? focusTarget = null;
         foreach (var record in records)
@@ -223,6 +229,12 @@ public partial class PendingChangesWindow : ContentEditorWindow
                 }
             };
             top.AddChild(box);
+            bool foreign = currentSourceKey != null && record.SourceKey != currentSourceKey;
+            var source = ClientStyle.Text(SourceLabel(record.SourceKey), 11, ClientStyle.Faded);
+            source.TooltipText = foreign
+                ? "Another world database: " + record.SourceKey
+                : "World database: " + record.SourceKey;
+            top.AddChild(source);
             top.AddChild(ClientStyle.Tag(record.Status switch
             {
                 ChangeStatus.Staged => "STAGED",
@@ -244,12 +256,22 @@ public partial class PendingChangesWindow : ContentEditorWindow
             top.AddChild(text);
             if (record.Status == ChangeStatus.Staged)
             {
-                ButtonIn(top, "Apply", () => ApplyRequested?.Invoke([fp]));
-                ButtonIn(top, "Discard", () => DiscardStagedRequested?.Invoke([fp]));
+                var apply = ButtonIn(top, "Apply", () => ApplyRequested?.Invoke([fp]));
+                var discard = ButtonIn(top, "Discard", () => DiscardStagedRequested?.Invoke([fp]));
+                if (foreign)
+                {
+                    apply.Disabled = discard.Disabled = true;
+                    apply.TooltipText = discard.TooltipText = "This change belongs to another world; connect to that world to run it.";
+                }
             }
             else if (record.Status == ChangeStatus.Applied)
             {
-                ButtonIn(top, "Revert", () => RevertRequested?.Invoke([fp]));
+                var revert = ButtonIn(top, "Revert", () => RevertRequested?.Invoke([fp]));
+                if (foreign)
+                {
+                    revert.Disabled = true;
+                    revert.TooltipText = "This change belongs to another world; connect to that world to revert it.";
+                }
             }
 
             row.AddChild(top);
@@ -283,6 +305,9 @@ public partial class PendingChangesWindow : ContentEditorWindow
             focusTarget.GrabFocus();
         }
     }
+
+    static string SourceLabel(string sourceKey) =>
+        sourceKey.Length <= 8 ? sourceKey : sourceKey[..8];
 
     static string? FingerprintOf(Node row)
     {

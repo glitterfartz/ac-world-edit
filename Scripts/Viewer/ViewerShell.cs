@@ -119,7 +119,11 @@ public partial class ViewerShell : Node3D
         BuildUi();
         navigation.Configure(profile.Kind, null);
         WarnMissingDependencies(UserSettings.LoadProfile());
-        connection.Applied += () => _ = LoadTeleports();
+        connection.Applied += () =>
+        {
+            ConnectionChanged();
+            _ = LoadTeleports();
+        };
         _ = LoadTeleports();
         ConfigureSmokeChecks();
         _ = StartupPrompts();

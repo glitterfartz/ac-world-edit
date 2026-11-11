@@ -236,6 +236,61 @@ public class ChangeHistoryWindowInteractionTests
     }
 
     [TestCase]
+    public void ForeignSourceRowsShowTheirSourceAndHaveNoActiveActions()
+    {
+        var window = Spawn();
+        var current = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        var foreign = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        window.RefreshHistory(
+            [Record(Fingerprint('a'), ChangeStatus.Staged, "mine") with { SourceKey = current },
+             Record(Fingerprint('b'), ChangeStatus.Staged, "theirs") with { SourceKey = foreign },
+             Record(Fingerprint('c'), ChangeStatus.Applied, "theirs too") with { SourceKey = foreign }],
+            null, current);
+
+        AssertThat(All<Label>(window).Any(l => l.Text == "bbbbbbbb")).IsTrue();
+        AssertThat(Buttons(window, "Apply").Count(b => !b.Disabled)).IsEqual(1);
+        AssertThat(Buttons(window, "Apply").Count(b => b.Disabled)).IsEqual(1);
+        AssertThat(Buttons(window, "Discard").Count(b => b.Disabled)).IsEqual(1);
+        AssertThat(Buttons(window, "Revert").Single().Disabled).IsTrue();
+    }
+
+    [TestCase]
+    public void HistoryErrorDisablesApplyRevertAndDiscardAll()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "s")], "Some changes could not be staged.");
+        AssertThat(ButtonText(window, "Apply selected").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Revert selected").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Discard staged…").Disabled).IsTrue();
+    }
+
+    [TestCase]
+    public void DisappearedRowsDoNotComeBackChecked()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "first")], null);
+        CheckRow(window, 0);
+        window.RefreshHistory([], null);
+        window.RefreshHistory([Record(Fingerprint('a'), ChangeStatus.Staged, "first")], null);
+        List<string>? applied = null;
+        window.ApplyRequested += fps => applied = fps.ToList();
+        ButtonText(window, "Apply selected").EmitSignal(BaseButton.SignalName.Pressed);
+        AssertThat(applied).IsNotNull();
+        AssertThat(applied!.Count).IsEqual(0);
+    }
+
+    [TestCase]
+    public void IdenticalRefreshKeepsTheSameRowControls()
+    {
+        var window = Spawn();
+        var record = Record(Fingerprint('a'), ChangeStatus.Staged, "stable");
+        window.RefreshHistory([record], null);
+        var field = All<LineEdit>(window).First();
+        window.RefreshHistory([record], null);
+        AssertThat(All<LineEdit>(window).First().GetInstanceId()).IsEqual(field.GetInstanceId());
+    }
+
+    [TestCase]
     public void EmptyChecklistDisablesBulkActions()
     {
         var window = Spawn();

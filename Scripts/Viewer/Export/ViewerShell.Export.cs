@@ -21,6 +21,8 @@ public partial class ViewerShell
     bool historyLoading;
     bool historyShowAll;
     List<ChangeRecord> historyCache = [];
+    string? historyError;
+    string? historySourceKey;
     // Godot nodes may only be touched on the main thread, but `await`ed database calls resume on
     // worker threads. Async history work therefore posts its UI and draft updates here, and the
     // per-frame poll below runs them on the main thread.
@@ -41,17 +43,6 @@ public partial class ViewerShell
                 statusLog.Post("Change history: " + error.Message);
             }
         }
-    }
-
-    /// <summary>
-    /// Every net draft change that has not been applied, one entry per discardable unit.
-    /// </summary>
-    List<PendingChange> CollectPending()
-    {
-        pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
-        RememberSourceDialect();
-        var all = pendingStore.Collect(graveyards.NetEdits(), drafts.Draft?.NetEdits() ?? [], SourceDialects.SchemaFor);
-        return all;
     }
 
     /// <summary>
@@ -131,6 +122,25 @@ public partial class ViewerShell
     }
 
     /// <summary>
+    /// A newly applied connection invalidates the history cache and the schema check: records from
+    /// the previous world must never stay actionable, and the new database may need a schema check.
+    /// </summary>
+    void ConnectionChanged()
+    {
+        AcworldStore.InvalidateSchemaCache();
+        historyCache = [];
+        historyError = null;
+        historySourceKey = null;
+        historyLoading = false;
+        if (pendingWindow != null)
+        {
+            // The old rows belong to the previous connection; clear them so no stale Apply/Revert
+            // button stays visible even for the few seconds before the next reload.
+            pendingWindow.RefreshHistory([], "Connection changed. Refresh the history.", CurrentSourceKey());
+        }
+    }
+
+    /// <summary>
     /// Stage current drafts in acworld (preserving notes and applied/reverted status), then show the
     /// filtered history. Database work runs on worker threads; every node touch is posted back to
     /// the main thread. Failures land in the window summary, never in the poll loop.
@@ -150,7 +160,9 @@ public partial class ViewerShell
             PostToMainThread(() =>
             {
                 historyCache = [];
-                pendingWindow.RefreshHistory(historyCache, "Connect a world database to track changes.");
+                historyError = "Connect a world database to track changes.";
+                historySourceKey = null;
+                pendingWindow.RefreshHistory(historyCache, historyError, null);
             });
             historyLoading = false;
             return;
@@ -184,7 +196,9 @@ public partial class ViewerShell
                 PostToMainThread(() =>
                 {
                     historyCache = [];
-                    pendingWindow.RefreshHistory(historyCache, error);
+                    historyError = error;
+                    historySourceKey = sourceKey;
+                    pendingWindow.RefreshHistory(historyCache, error, sourceKey);
                 });
                 return;
             }
@@ -192,27 +206,67 @@ public partial class ViewerShell
             List<ChangeRecord> existing;
             try
             {
-                existing = await AcworldStore.ListAsync(acworld, sourceKey, showAll, CancellationToken.None).ConfigureAwait(false);
+                // Include every source so notes and timestamps are preserved for staged rows written
+                // from another open world, even while this window only shows the current source.
+                existing = await AcworldStore.ListAsync(acworld, sourceKey, includeAllSources: true, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception listError)
             {
                 error = "Change history is unreachable: " + CleanError(listError, acworld);
                 var cached = historyCache;
-                PostToMainThread(() => pendingWindow.RefreshHistory(cached, error));
+                PostToMainThread(() =>
+                {
+                    historyError = error;
+                    pendingWindow.RefreshHistory(cached, error, sourceKey);
+                });
                 return;
             }
 
-            var byFingerprint = existing.ToDictionary(r => r.Fingerprint, StringComparer.Ordinal);
-            var toStage = ChangeLogMerge.MergeStaged(staged, byFingerprint, SchemaFor, DialectFor, now);
-            foreach (var record in toStage)
+            var byChangeKey = new Dictionary<string, ChangeRecord>(StringComparer.Ordinal);
+            foreach (var record in existing)
+            {
+                byChangeKey.TryAdd(record.ChangeKey, record);
+                byChangeKey.TryAdd(record.Fingerprint, record);
+            }
+
+            var toStage = ChangeLogMerge.MergeStaged(staged, byChangeKey, SchemaFor, DialectFor, now);
+            var changed = toStage.Where(record =>
+            {
+                if (!byChangeKey.TryGetValue(record.ChangeKey, out var prior))
+                {
+                    return true;
+                }
+
+                // The script header is stable, so an unchanged draft produces identical SQL. Skip
+                // the write: the five-second poll must not rewrite every row and rebuild the window.
+                return prior.Label != record.Label || prior.ApplySql != record.ApplySql ||
+                    prior.RevertSql != record.RevertSql || prior.Dialect != record.Dialect;
+            }).ToList();
+
+            if (changed.Count > 0)
             {
                 try
                 {
-                    await AcworldStore.UpsertStagedAsync(acworld, record, CancellationToken.None).ConfigureAwait(false);
+                    await AcworldStore.UpsertStagedAsync(acworld, changed, CancellationToken.None).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception upsertError)
                 {
-                    // One bad row must not hide the rest; the summary below says the history is partial.
+                    error = "Some changes could not be staged. " + CleanError(upsertError, acworld);
+                }
+            }
+
+            if (sourceKey != null)
+            {
+                try
+                {
+                    // Remove staged rows for this source that no draft owns any more. Applied and
+                    // reverted history is never touched; another source is left alone.
+                    await AcworldStore.ReconcileStagedAsync(
+                        acworld, sourceKey, toStage.Select(r => r.ChangeKey).ToList(), CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception reconcileError)
+                {
+                    error ??= "Some old staged changes could not be cleaned up. " + CleanError(reconcileError, acworld);
                 }
             }
 
@@ -224,7 +278,11 @@ public partial class ViewerShell
             {
                 error = "Change history is unreachable: " + CleanError(listError, acworld);
                 var cached = historyCache;
-                PostToMainThread(() => pendingWindow.RefreshHistory(cached, error));
+                PostToMainThread(() =>
+                {
+                    historyError = error;
+                    pendingWindow.RefreshHistory(cached, error, sourceKey);
+                });
                 return;
             }
 
@@ -232,7 +290,9 @@ public partial class ViewerShell
             PostToMainThread(() =>
             {
                 historyCache = snapshot;
-                pendingWindow.RefreshHistory(historyCache);
+                historyError = error;
+                historySourceKey = sourceKey;
+                pendingWindow.RefreshHistory(historyCache, error, sourceKey);
                 sidebar.SetUnsaved(stagedCount);
             });
         }
@@ -248,16 +308,58 @@ public partial class ViewerShell
     {
         var set = new HashSet<string>(fingerprints);
         var selected = historyCache.Where(r => set.Contains(r.Fingerprint)).ToList();
-        selected.Sort((a, b) => revert
-            ? b.CreatedAt.CompareTo(a.CreatedAt)
-            : a.CreatedAt.CompareTo(b.CreatedAt));
+        // A stable secondary key keeps same-instant records in a defined order; the history promises
+        // chronological order and the database assigns one timestamp per refresh batch.
+        selected.Sort((a, b) =>
+        {
+            int byTime = revert ? b.CreatedAt.CompareTo(a.CreatedAt) : a.CreatedAt.CompareTo(b.CreatedAt);
+            return byTime != 0 ? byTime : string.CompareOrdinal(a.ChangeKey, b.ChangeKey);
+        });
         return selected;
+    }
+
+    /// <summary>
+    /// The checked records that may run against the open world. Rows from another source are
+    /// reported and never reach the applier, and a known history failure or a stale cache disables
+    /// the operation instead of running SQL from an unverified list.
+    /// </summary>
+    bool CanRunHistory(IReadOnlyList<ChangeRecord> requested, string? sourceKey, out List<ChangeRecord> runnable, out string? problem)
+    {
+        runnable = [];
+        problem = null;
+        if (sourceKey == null)
+        {
+            problem = "Connect a world database first.";
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(historyError))
+        {
+            problem = "Change history is unavailable: " + historyError;
+            return false;
+        }
+
+        if (historySourceKey != sourceKey)
+        {
+            problem = "Change history is out of date for this connection. Refresh before applying.";
+            return false;
+        }
+
+        var (allowed, foreign) = ChangeLogExport.ForSource(requested, sourceKey);
+        runnable = allowed.ToList();
+        if (foreign > 0)
+        {
+            problem = $"{foreign} selected change(s) belong to another world.";
+        }
+
+        return runnable.Count > 0;
     }
 
     /// <summary>
     /// Run the checked staged changes against the world in chronological order. Each success marks
     /// the row applied; the matching drafts are discarded on the main thread (the database now
-    /// holds the values). Stale rows fail without writing anything.
+    /// holds the values). Stale rows fail without writing anything. The locally generated script is
+    /// always preferred over the stored copy.
     /// </summary>
     async void ApplyHistoryAsync(IReadOnlyList<string> fingerprints)
     {
@@ -269,29 +371,65 @@ public partial class ViewerShell
             return;
         }
 
-        var ordered = SelectedRecords(fingerprints, revert: false).Where(r => r.Status == ChangeStatus.Staged).ToList();
-        if (ordered.Count == 0)
+        string? sourceKey = CurrentSourceKey();
+        var selected = SelectedRecords(fingerprints, revert: false).Where(r => r.Status == ChangeStatus.Staged).ToList();
+        if (!CanRunHistory(selected, sourceKey, out var ordered, out string? sourceProblem))
         {
-            pendingWindow.SetStatus("Nothing staged is checked.");
+            pendingWindow.SetStatus(sourceProblem ?? "Nothing staged is checked.");
             return;
         }
 
-        var staged = CollectStaged().ToDictionary(c => c.Id, StringComparer.Ordinal);
+        if (sourceProblem != null)
+        {
+            pendingWindow.SetStatus(sourceProblem);
+        }
+
+        var staged = CollectStaged().ToDictionary(c => c.ChangeKey, StringComparer.Ordinal);
+        var localScripts = new Dictionary<string, ChangeRecord>(StringComparer.Ordinal);
+        var schemas = staged.Values.Select(c => c.Source).Distinct(StringComparer.Ordinal)
+            .ToDictionary(s => s, SourceDialects.SchemaFor, StringComparer.Ordinal);
+        DateTime now = DateTime.UtcNow;
+        foreach (var change in staged.Values)
+        {
+            localScripts[change.ChangeKey] = ChangeLogMerge.BuildRecord(
+                change, "", now, now, s => schemas.TryGetValue(s, out var schema) ? schema : WorldSchemas.For(WorldDialect.AzerothCore),
+                SourceDialects.DialectOf);
+        }
+
         var world = connection.World;
         var acworld = connection.Acworld;
         int total = ordered.Count;
         PostToMainThread(() => pendingWindow.SetStatus($"Applying {total} change(s)…"));
 
         var applied = new List<string>();
-        string? firstError = null;
+        string? firstError = sourceProblem;
         foreach (var record in ordered)
         {
-            if (!staged.ContainsKey(record.Fingerprint))
+            if (!staged.ContainsKey(record.ChangeKey))
             {
+                firstError ??= $"The draft for \"{record.Label}\" is no longer open.";
                 continue;
             }
 
-            string? error = await WorldApplier.ExecuteAsync(world, record.ApplySql, CancellationToken.None).ConfigureAwait(false);
+            if (!ChangeIntegrity.FingerprintMatches(record))
+            {
+                firstError ??= $"The stored apply script for \"{record.Label}\" does not match its fingerprint, so it was not run.";
+                continue;
+            }
+
+            // Execute the script generated from the local draft, not the copy in the history
+            // database, so a tampered row cannot inject SQL even if it kept a matching hash. If the
+            // draft changed since the list was drawn, make the user refresh rather than run
+            // something other than the checked row.
+            var local = localScripts[record.ChangeKey];
+            if (local.Fingerprint != record.Fingerprint)
+            {
+                firstError ??= $"The draft for \"{record.Label}\" changed since the history was refreshed. Refresh and review it again.";
+                continue;
+            }
+
+            string script = local.ApplySql;
+            string? error = await WorldApplier.ExecuteAsync(world, script, CancellationToken.None).ConfigureAwait(false);
             if (error != null)
             {
                 firstError ??= error;
@@ -310,22 +448,26 @@ public partial class ViewerShell
             {
                 await AcworldStore.MarkAppliedAsync(acworld, record.Fingerprint, CancellationToken.None).ConfigureAwait(false);
             }
-            catch
+            catch (Exception markError)
             {
+                // The world changed, but the history did not. Keep the draft so the user can retry
+                // or inspect it rather than silently losing the only record of the change.
+                firstError ??= $"The world change ran, but the history could not mark it applied ({CleanError(markError, acworld)}). The draft was kept.";
+                continue;
             }
 
-            applied.Add(record.Fingerprint);
+            applied.Add(record.ChangeKey);
         }
 
         var done = applied;
         var failed = firstError;
         PostToMainThread(() =>
         {
-            var map = CollectStaged().ToDictionary(c => c.Id, StringComparer.Ordinal);
+            var map = CollectStaged().ToDictionary(c => c.ChangeKey, StringComparer.Ordinal);
             int ok = 0;
-            foreach (string fingerprint in done)
+            foreach (string changeKey in done)
             {
-                if (map.TryGetValue(fingerprint, out var change))
+                if (map.TryGetValue(changeKey, out var change))
                 {
                     DiscardPending(change);
                     ok++;
@@ -358,11 +500,17 @@ public partial class ViewerShell
             return;
         }
 
-        var ordered = SelectedRecords(fingerprints, revert: true).Where(r => r.Status == ChangeStatus.Applied).ToList();
-        if (ordered.Count == 0)
+        string? sourceKey = CurrentSourceKey();
+        var selected = SelectedRecords(fingerprints, revert: true).Where(r => r.Status == ChangeStatus.Applied).ToList();
+        if (!CanRunHistory(selected, sourceKey, out var ordered, out string? sourceProblem))
         {
-            pendingWindow.SetStatus("Nothing applied is checked.");
+            pendingWindow.SetStatus(sourceProblem ?? "Nothing applied is checked.");
             return;
+        }
+
+        if (sourceProblem != null)
+        {
+            pendingWindow.SetStatus(sourceProblem);
         }
 
         var world = connection.World;
@@ -371,9 +519,16 @@ public partial class ViewerShell
         PostToMainThread(() => pendingWindow.SetStatus($"Reverting {total} change(s)…"));
 
         int ok = 0;
-        string? firstError = null;
+        string? firstError = sourceProblem;
         foreach (var record in ordered)
         {
+            // A revert runs the stored script, so verify the seal before trusting it.
+            if (!ChangeIntegrity.ScriptsHashMatches(record))
+            {
+                firstError ??= $"The stored revert script for \"{record.Label}\" failed its integrity check, so it was not run.";
+                continue;
+            }
+
             string? error = await WorldApplier.ExecuteAsync(world, record.RevertSql, CancellationToken.None).ConfigureAwait(false);
             if (error != null)
             {
@@ -385,8 +540,10 @@ public partial class ViewerShell
             {
                 await AcworldStore.MarkRevertedAsync(acworld, record.Fingerprint, CancellationToken.None).ConfigureAwait(false);
             }
-            catch
+            catch (Exception markError)
             {
+                firstError ??= $"The world change was reverted, but the history could not mark it ({CleanError(markError, acworld)}).";
+                continue;
             }
 
             ok++;
@@ -436,24 +593,31 @@ public partial class ViewerShell
         }
 
         var acworld = DatabaseConnection().Acworld;
+        var deleted = new List<string>();
+        string? firstError = null;
         foreach (var change in changes)
         {
             try
             {
-                await AcworldStore.DeleteAsync(acworld, change.Id, CancellationToken.None).ConfigureAwait(false);
+                // Only a staged row may be deleted: an applied/reverted row with the same local
+                // draft is history and must survive the discard.
+                await AcworldStore.DeleteStagedAsync(acworld, change.Id, CancellationToken.None).ConfigureAwait(false);
+                deleted.Add(change.ChangeKey);
             }
-            catch
+            catch (Exception error)
             {
+                firstError ??= "Could not discard a staged change (" + CleanError(error, acworld) + "). The draft was kept.";
             }
         }
 
-        int count = changes.Count;
+        int count = deleted.Count;
+        string? failed = firstError;
         PostToMainThread(() =>
         {
-            var map = CollectStaged().ToDictionary(c => c.Id, StringComparer.Ordinal);
-            foreach (var change in changes)
+            var map = CollectStaged().ToDictionary(c => c.ChangeKey, StringComparer.Ordinal);
+            foreach (string changeKey in deleted)
             {
-                if (map.TryGetValue(change.Id, out var current))
+                if (map.TryGetValue(changeKey, out var current))
                 {
                     DiscardPending(current);
                 }
@@ -461,8 +625,9 @@ public partial class ViewerShell
 
             RefreshPending();
             LoadHistoryAsync();
-            pendingWindow.SetStatus("Discarded.");
-            statusLog.Post($"Discarded {count} staged change(s).");
+            string result = failed == null ? $"Discarded {count} staged change(s)." : failed;
+            pendingWindow.SetStatus(result);
+            statusLog.Post(failed == null ? $"Discarded {count} staged change(s)." : result);
         });
     }
 
@@ -495,24 +660,38 @@ public partial class ViewerShell
 
     async void ClearCacheAsync()
     {
-        // Main thread: snapshot the staged IDs, then clear drafts up front so no new edit can slip
-        // between the snapshot and the database deletes below.
+        // Main thread: snapshot the staged rows. Delete only staged rows; applied/reverted history
+        // stays even when a matching local draft exists.
         var stagedIds = CollectStaged().Select(c => c.Id).ToList();
         var acworld = DatabaseConnection().Acworld;
-        graveyards.ClearDraft();
-        drafts.Clear();
-        pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
-        pendingStore.ClearExported();
+        string? firstError = null;
         foreach (string id in stagedIds)
         {
             try
             {
-                await AcworldStore.DeleteAsync(acworld, id, CancellationToken.None).ConfigureAwait(false);
+                await AcworldStore.DeleteStagedAsync(acworld, id, CancellationToken.None).ConfigureAwait(false);
             }
-            catch
+            catch (Exception error)
             {
+                firstError ??= "Could not clear the staged history (" + CleanError(error, acworld) + "). Nothing was deleted.";
             }
         }
+
+        if (firstError != null)
+        {
+            string failure = firstError;
+            PostToMainThread(() =>
+            {
+                pendingWindow.SetStatus(failure);
+                statusLog.Post(failure);
+            });
+            return;
+        }
+
+        graveyards.ClearDraft();
+        drafts.Clear();
+        pendingStore ??= new PendingChanges(ContentDraftFiles.LocalPath("exported.json"));
+        pendingStore.ClearExported();
 
         PostToMainThread(() =>
         {
@@ -565,6 +744,14 @@ public partial class ViewerShell
         confirm.Confirmed += async () =>
         {
             confirm.QueueFree();
+            string? historyError = await DeleteStagedHistoryForResetAsync();
+            if (historyError != null)
+            {
+                statusLog.Post(historyError);
+                pendingWindow.SetStatus(historyError);
+                return;
+            }
+
             await BeginReset(folder);
         };
         confirm.Canceled += confirm.QueueFree;
@@ -575,6 +762,48 @@ public partial class ViewerShell
     /// <summary>Whether the folder is this app's own user folder and this platform can run the cleanup.</summary>
     static bool CanReset(string folder) =>
         OperatingSystem.IsWindows() && UserDataReset.IsSafeTarget(folder, (string)ProjectSettings.GetSetting("application/config/name"));
+
+    /// <summary>
+    /// Remove every staged history row for both client profiles before the drafts folder is deleted.
+    /// A failure aborts the reset: otherwise the viewer would leave permanent ghost rows behind.
+    /// </summary>
+    async Task<string?> DeleteStagedHistoryForResetAsync()
+    {
+        var targets = new List<DatabaseSettings>();
+        var current = DatabaseConnection();
+        if (current.World.IsComplete)
+        {
+            targets.Add(current.Acworld);
+        }
+
+        WorldDialect other = current.Dialect == WorldDialect.TrinityCore ? WorldDialect.AzerothCore : WorldDialect.TrinityCore;
+        try
+        {
+            var saved = UserSettings.LoadDatabase(other);
+            if (saved.World.IsComplete)
+            {
+                targets.Add(saved.Acworld);
+            }
+        }
+        catch
+        {
+            // A damaged other profile must not block resetting this one.
+        }
+
+        foreach (var acworld in targets.Distinct())
+        {
+            try
+            {
+                await AcworldStore.DeleteAllStagedAsync(acworld, null, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                return $"Reset stopped: could not remove staged change history from {acworld.Database} ({CleanError(error, acworld)}). Nothing was deleted.";
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Start the detached cleaner for this process, then quit so it can delete the folder. When the
@@ -612,11 +841,19 @@ public partial class ViewerShell
             return;
         }
 
-        sqlPreview.OpenText(ChangeLogExport.BuildCombined(selected, revert));
+        // Preview each source under its own header rather than presenting mixed databases as one
+        // runnable script.
+        var groups = ChangeLogExport.GroupBySource(selected);
+        string text = groups.Count == 1
+            ? ChangeLogExport.BuildCombined(groups[0].Records, revert)
+            : string.Join("\n\n", groups.Select(g =>
+                $"-- ===== Source {g.SourceKey} =====\n" + ChangeLogExport.BuildCombined(g.Records, revert)));
+        sqlPreview.OpenText(text);
     }
 
     /// <summary>
-    /// Save the checked changes into one SQL file for sharing (apply or revert scripts).
+    /// Save the checked changes as SQL. One source writes one file; a show-all selection writes one
+    /// file per source so a runnable script never mixes two databases.
     /// </summary>
     void ExportHistory(IReadOnlyList<string> fingerprints, bool revert)
     {
@@ -627,7 +864,7 @@ public partial class ViewerShell
             return;
         }
 
-        string combined = ChangeLogExport.BuildCombined(selected, revert);
+        var groups = ChangeLogExport.GroupBySource(selected);
         var dialog = new FileDialog
         {
             FileMode = FileDialog.FileModeEnum.SaveFile,
@@ -640,9 +877,23 @@ public partial class ViewerShell
         {
             try
             {
-                File.WriteAllText(path, combined, new UTF8Encoding(false));
-                pendingWindow.SetStatus($"Exported {selected.Count} change(s).");
-                statusLog.Post($"Exported {selected.Count} change(s) to {path}.");
+                var written = new List<string>();
+                foreach (var group in groups)
+                {
+                    string target = groups.Count == 1
+                        ? path
+                        : Path.Combine(
+                            Path.GetDirectoryName(path) ?? "",
+                            Path.GetFileNameWithoutExtension(path) + "-" + ChangeLogExport.FileSuffix(group.SourceKey) + ".sql");
+                    File.WriteAllText(target, ChangeLogExport.BuildCombined(group.Records, revert), new UTF8Encoding(false));
+                    written.Add(target);
+                }
+
+                string message = groups.Count == 1
+                    ? $"Exported {selected.Count} change(s) to {written[0]}."
+                    : $"Exported {selected.Count} change(s) from {groups.Count} worlds into separate files.";
+                pendingWindow.SetStatus(message);
+                statusLog.Post(message);
             }
             catch (Exception)
             {
