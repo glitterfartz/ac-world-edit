@@ -212,6 +212,7 @@ public sealed partial class ConnectionForm : VBoxContainer
         }
 
         UserSettings.SaveDatabase(connection);
+        AcworldStore.InvalidateSchemaCache();
         Show(historyWarning == null
             ? $"Connected to {connection.World}."
             : $"Connected to {connection.World}. Change history is unavailable: {historyWarning}", historyWarning == null);

@@ -174,6 +174,68 @@ public class SettingsResolverTests
     }
 
     [Fact]
+    public void SameServerHistoryOverrideIsSavedAsNameOnly()
+    {
+        var world = new DatabaseSettings("db.example", 3307, "reader", "pw", "acore_world");
+        Assert.True(SettingsResolver.AcworldNameOnly(world, world with { Database = "my_hist" }));
+        Assert.False(SettingsResolver.AcworldNameOnly(world, world with { Database = "my_hist", Host = "hist.example" }));
+        Assert.False(SettingsResolver.AcworldNameOnly(world, world with { Database = "my_hist", Password = "other" }));
+    }
+
+    [Fact]
+    public void NameOnlyHistoryOverrideFollowsTheCurrentWorldCredentials()
+    {
+        var world = SettingsResolver.Connection(WorldDialect.AzerothCore, "db.example;3307;reader;new-pw;acore_world", Nothing).World;
+        string Read(string section, string key, string fallback) =>
+            section == "acworld.wrath" && key == "name" ? "my_hist" : fallback;
+
+        var acworld = SettingsResolver.AcworldOverride(
+            WorldDialect.AzerothCore, null, Read, section => section == "acworld.wrath", world);
+
+        Assert.Equal(new DatabaseSettings("db.example", 3307, "reader", "new-pw", "my_hist"), acworld);
+    }
+
+    [Fact]
+    public void LegacyCopiedWorldCredentialsAreStillReadAsNameOnly()
+    {
+        var world = new DatabaseSettings("db.example", 3307, "reader", "new-pw", "acore_world");
+        var saved = new Dictionary<string, string>
+        {
+            ["host"] = "db.example",
+            ["port"] = "3307",
+            ["user"] = "reader",
+            ["password"] = "old-pw",
+            ["name"] = "my_hist"
+        };
+        string Read(string section, string key, string fallback) => saved.GetValueOrDefault(key, fallback);
+
+        var acworld = SettingsResolver.AcworldOverride(
+            WorldDialect.AzerothCore, null, Read, _ => true, world);
+
+        Assert.Equal(world with { Database = "my_hist" }, acworld);
+    }
+
+    [Fact]
+    public void DifferentServerHistoryOverrideIsKept()
+    {
+        var world = new DatabaseSettings("db.example", 3307, "reader", "pw", "acore_world");
+        var saved = new Dictionary<string, string>
+        {
+            ["host"] = "hist.example",
+            ["port"] = "3310",
+            ["user"] = "huser",
+            ["password"] = "hpw",
+            ["name"] = "hist_db"
+        };
+        string Read(string section, string key, string fallback) => saved.GetValueOrDefault(key, fallback);
+
+        var acworld = SettingsResolver.AcworldOverride(
+            WorldDialect.AzerothCore, null, Read, _ => true, world);
+
+        Assert.Equal(new DatabaseSettings("hist.example", 3310, "huser", "hpw", "hist_db"), acworld);
+    }
+
+    [Fact]
     public void VariableNamesMatchTheDocumentedOnes()
     {
         Assert.Equal("ACWORLD_DATA_DIR", SettingsResolver.DataVariable);

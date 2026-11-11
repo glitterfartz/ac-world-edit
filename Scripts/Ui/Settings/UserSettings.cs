@@ -45,7 +45,8 @@ public static class UserSettings
             dialect,
             System.Environment.GetEnvironmentVariable(SettingsResolver.AcworldVariableFor(dialect)),
             Read,
-            section => Open().HasSection(section));
+            section => Open().HasSection(section),
+            connection.World);
         return connection with { AcworldOverride = acworld };
     }
 
@@ -66,11 +67,18 @@ public static class UserSettings
         string acworldSection = SettingsResolver.AcworldSection(connection.Dialect);
         if (connection.AcworldOverride is { } acworld)
         {
-            file.SetValue(acworldSection, "host", acworld.Host);
-            file.SetValue(acworldSection, "port", acworld.Port.ToString());
-            file.SetValue(acworldSection, "user", acworld.User);
-            file.SetValue(acworldSection, "password", acworld.Password);
+            // "Same server, different database name" must not freeze a copy of the world
+            // credentials; save only the name and derive the server when loading.
+            bool nameOnly = SettingsResolver.AcworldNameOnly(connection.World, acworld);
+            file.EraseSection(acworldSection);
             file.SetValue(acworldSection, "name", acworld.Database);
+            if (!nameOnly)
+            {
+                file.SetValue(acworldSection, "host", acworld.Host);
+                file.SetValue(acworldSection, "port", acworld.Port.ToString());
+                file.SetValue(acworldSection, "user", acworld.User);
+                file.SetValue(acworldSection, "password", acworld.Password);
+            }
         }
         else if (file.HasSection(acworldSection))
         {

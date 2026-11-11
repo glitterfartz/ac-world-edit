@@ -105,7 +105,25 @@ public static class SettingsResolver
     /// read(section, key, fallback) returns a saved value or the fallback; hasSection reports whether
     /// the user ever saved an override.
     /// </summary>
-    public static DatabaseSettings? AcworldOverride(WorldDialect dialect, string? environmentValue, Func<string, string, string, string> read, Func<string, bool> hasSection)
+    public static DatabaseSettings? AcworldOverride(WorldDialect dialect, string? environmentValue, Func<string, string, string, string> read, Func<string, bool> hasSection) =>
+        AcworldOverride(dialect, environmentValue, read, hasSection, world: null);
+
+    /// <summary>Whether a history override means "same server, database name only", so only the name should be saved.</summary>
+    public static bool AcworldNameOnly(DatabaseSettings world, DatabaseSettings acworld) =>
+        acworld.Host == world.Host && acworld.Port == world.Port &&
+        acworld.User == world.User && acworld.Password == world.Password;
+
+    /// <summary>
+    /// As above, but resolves a name-only section against the current world settings. A section with
+    /// no server fields (or with the world's host/port/user) means "same server, this database
+    /// name", so it follows the world credentials instead of freezing a copy of them.
+    /// </summary>
+    public static DatabaseSettings? AcworldOverride(
+        WorldDialect dialect,
+        string? environmentValue,
+        Func<string, string, string, string> read,
+        Func<string, bool> hasSection,
+        DatabaseSettings? world)
     {
         if (!string.IsNullOrWhiteSpace(environmentValue))
         {
@@ -125,12 +143,26 @@ public static class SettingsResolver
         }
 
         string Read(string key, string fallback) => read(section, key, fallback);
-        var saved = new DatabaseSettings(
-            Read("host", ""),
-            uint.TryParse(Read("port", ""), out uint port) ? port : 3306,
-            Read("user", ""),
-            Read("password", ""),
-            Read("name", AcworldStore.DefaultDatabase));
-        return saved.Host.Length == 0 && saved.User.Length == 0 ? null : saved;
+        string host = Read("host", "");
+        string user = Read("user", "");
+        string name = Read("name", AcworldStore.DefaultDatabase);
+        bool hasServer = host.Length > 0 || user.Length > 0;
+        if (!hasServer)
+        {
+            // Name-only override: keep the database name, follow the current world server.
+            return world == null ? null : world with { Database = name };
+        }
+
+        uint port = uint.TryParse(Read("port", ""), out uint parsedPort) ? parsedPort : 3306;
+        string password = Read("password", "");
+        if (world != null && host == world.Host && port == world.Port && user == world.User)
+        {
+            // Older versions saved a full copy for a name-only override. Its server still matches
+            // the world, so treat it as name-only and pick up any changed world credentials.
+            return world with { Database = name };
+        }
+
+        string savedName = name.Length == 0 ? AcworldStore.DefaultDatabase : name;
+        return new DatabaseSettings(host, port, user, password, savedName);
     }
 }
