@@ -14,6 +14,7 @@ public static class WorldApplier
     public static async Task<string?> ExecuteAsync(DatabaseSettings world, string script, CancellationToken token)
     {
         var (checks, body, postChecks) = SplitScript(script);
+        bool committing = false;
         try
         {
             await using var connection = new MySqlConnection(world.BuildConnectionString());
@@ -23,7 +24,7 @@ public static class WorldApplier
                 await names.ExecuteNonQueryAsync(token).ConfigureAwait(false);
             }
 
-            string? stale = await RunChecksAsync(connection, checks, token).ConfigureAwait(false);
+            string? stale = await RunChecksAsync(connection, checks, null, token).ConfigureAwait(false);
             if (stale != null)
             {
                 return stale;
@@ -39,6 +40,17 @@ public static class WorldApplier
                     await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
                 }
 
+                // Post-checks run inside the transaction, through the transaction connection. A
+                // failing post-check rolls the body back, so the world never keeps an unverified
+                // change that the history would then record as failed.
+                string? post = await RunChecksAsync(connection, postChecks, transaction, token).ConfigureAwait(false);
+                if (post != null)
+                {
+                    await transaction.RollbackAsync(token).ConfigureAwait(false);
+                    return post + " The transaction rolled back, so nothing was applied.";
+                }
+
+                committing = true;
                 await transaction.CommitAsync(token).ConfigureAwait(false);
             }
             catch
@@ -54,12 +66,6 @@ public static class WorldApplier
                 throw;
             }
 
-            string? post = await RunChecksAsync(connection, postChecks, token).ConfigureAwait(false);
-            if (post != null)
-            {
-                return post + " The statements ran, but the post-check did not confirm them.";
-            }
-
             return null;
         }
         catch (MySqlException error)
@@ -68,12 +74,15 @@ public static class WorldApplier
             {
                 MySqlErrorCode.AccessDenied => $"Access denied for user '{world.User}'. The apply needs write access to the world database.",
                 MySqlErrorCode.DatabaseAccessDenied => $"User '{world.User}' may not write to database '{world.Database}'.",
+                _ when committing => $"MySQL error {error.Number} while committing. The commit outcome is unknown: check the affected rows before retrying.",
                 _ => $"MySQL error {error.Number} while applying. Nothing was partially applied (the transaction rolled back)."
             };
         }
         catch (OperationCanceledException)
         {
-            return "Timed out talking to the world database. Nothing was partially applied.";
+            return committing
+                ? "Timed out while committing to the world database. The commit outcome is unknown: check the affected rows before retrying."
+                : "Timed out talking to the world database. Nothing was partially applied (the transaction rolled back).";
         }
     }
 
@@ -121,11 +130,13 @@ public static class WorldApplier
         return (checks, body, post);
     }
 
-    static async Task<string?> RunChecksAsync(MySqlConnection connection, List<string> checks, CancellationToken token)
+    static async Task<string?> RunChecksAsync(MySqlConnection connection, List<string> checks, MySqlTransaction? transaction, CancellationToken token)
     {
         foreach (string check in checks)
         {
-            await using var command = new MySqlCommand(check, connection);
+            await using var command = transaction == null
+                ? new MySqlCommand(check, connection)
+                : new MySqlCommand(check, connection, transaction);
             await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
             var names = new List<string>();
             var values = new List<string?>();

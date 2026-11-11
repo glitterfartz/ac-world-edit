@@ -105,7 +105,31 @@ public class WorldApplierDbTests
             string stale = Script(Check(table, "`id` = 1", "ok"), $"INSERT INTO `{table}` (`id`, `v`) VALUES (1, 2);", Check(table, "`id` = 1", "ok"));
             string? error = await WorldApplier.ExecuteAsync(Config, stale, token);
             Assert.NotNull(error);
-            Assert.Contains("STALE", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("row changed", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, await CountRowsAsync(table, token));
+        }
+        finally
+        {
+            await DropTempTableAsync(table);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task FailedPostCheckRollsBackTheCommittedBody()
+    {
+        string table = TempTable();
+        var token = TestToken();
+        try
+        {
+            await CreateTempTableAsync(table, token);
+            // The body inserts, but the post-check deliberately expects the row to be absent.
+            string unverified = Script(
+                Check(table, "`id` = 1", "absent"),
+                $"INSERT INTO `{table}` (`id`, `v`) VALUES (1, 2);",
+                Check(table, "`id` = 1", "absent"));
+            string? error = await WorldApplier.ExecuteAsync(Config, unverified, token);
+            Assert.NotNull(error);
+            Assert.Contains("rolled back", error, StringComparison.OrdinalIgnoreCase);
             Assert.Equal(0, await CountRowsAsync(table, token));
         }
         finally
