@@ -9,9 +9,9 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "")
 {
-    /// <summary>The variant a creature display resolves to, playing <paramref name="animation"/>.</summary>
-    public static ModelKey ForCreature(CreatureAppearance appearance, ushort animation = 0) =>
-        new(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: animation, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "");
+	/// <summary>The variant a creature display resolves to, playing <paramref name="animation"/>.</summary>
+	public static ModelKey ForCreature(CreatureAppearance appearance, ushort animation = 0) =>
+		new(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: animation, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "");
 }
 
 /// <summary>
@@ -27,1090 +27,1090 @@ public sealed record SeatTrack(float[] Frames, int Count, float Duration, System
 /// </summary>
 public sealed class ModelLibrary
 {
-    internal sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
-    {
-        public ModelData Data = data;
-        /// <summary>The batch summary the diagnostic dump reads; set when the entry is published, since <see cref="Data"/> then drops it.</summary>
-        public ModelReport? Report;
-        public AnimationPalette Palette = palette;
-        /// <summary>Seat-bone world matrices per palette frame for riders glued to this mount's
-        /// seat (baked at decode; survives <see cref="ReleaseUploadData"/>).</summary>
-        public float[]? SeatFrames;
-        public MaterialPalette Materials = materials;
-        public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
-        public Dictionary<string, BlpTexture> Decoded = textures;
-        /// <summary>
-        /// The surfaces to upload: <see cref="Data"/> with opaque same-material batches merged
-        /// (<see cref="SurfaceMerge"/>), plus their appearance. Dropped once the entry is published.
-        /// </summary>
-        public ModelSurface[] Upload = data.Surfaces;
-        public SurfaceMaterial[] UploadMaterials = materials.Surfaces;
-        public readonly List<ArrayMesh> Meshes = [];
-        public ImageTexture? AnimationTexture;
-        public ImageTexture? MaterialTexture;
-        public int Surface;
-        public long LastUsed;
-        public double DecodeMilliseconds;
-        /// <summary>
-        /// While decoding, the CPU data waiting for upload. Once published, the retained CPU data
-        /// plus an estimate of the entry's own GPU memory (shared textures are not counted).
-        /// </summary>
-        public long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
-
-        /// <summary>
-        /// Drop what only the upload read (decoded pixels, palette pixels, vertex channels, bone
-        /// tracks) and keep what instances and ground probes still use (see
-        /// <see cref="ModelData.ForProbes"/>). Called when the entry is published.
-        /// </summary>
-        public void ReleaseUploadData(bool isWmo)
-        {
-            long gpu = Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length;
-            Report = ModelReport.From(Data);
-            Data = Data.ForProbes(isWmo);
-            Decoded = new(StringComparer.OrdinalIgnoreCase);
-            Palette = Palette with { Pixels = [] };
-            Materials = Materials with { Pixels = [], Surfaces = [] };
-            Bytes = gpu + Data.EstimatedBytes;
-        }
-
-        public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
-        public readonly HashSet<MaterialKey> MaterialKeys = [];
-        /// <summary>
-        /// Compute reference-pose bounds from distinct source arrays. Selection uses bounding boxes, not
-        /// animated triangles or terrain occlusion.
-        /// </summary>
-        static (System.Numerics.Vector3, System.Numerics.Vector3) FindBounds(ModelData data)
-        {
-            var min = new System.Numerics.Vector3(float.MaxValue);
-            var max = new System.Numerics.Vector3(float.MinValue);
-            bool any = false;
-            foreach (var positions in data.Surfaces.Select(s => s.Positions).Distinct())
-            {
-                foreach (var point in positions)
-                {
-                    min = System.Numerics.Vector3.Min(min, point);
-                    max = System.Numerics.Vector3.Max(max, point);
-                    any = true;
-                }
-            }
-
-            return any ? (min, max) : (System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero);
-        }
-    }
-
-    sealed class TextureEntry(ImageTexture texture)
-    {
-        public ImageTexture Texture = texture;
-        public int References;
-    }
-
-    /// <summary>
-    /// Identity of a material that reads nothing per model: unskinned, unanimated, non-sky,
-    /// non-liquid batches. Equal keys share one ShaderMaterial across all variants.
-    /// </summary>
-    internal readonly record struct MaterialKey(Shader Shader, string Texture, int Blend, int ColorMode, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1, string Layers);
-
-    sealed class MaterialEntry(ShaderMaterial material)
-    {
-        public ShaderMaterial Material = material;
-        public int References;
-    }
-
-    readonly Dictionary<MaterialKey, MaterialEntry> sharedMaterials = [];
-
-    readonly Dictionary<ModelKey, Entry> cache = [];
-    long cachedBytes;
-    readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
-    readonly HashSet<ModelKey> failed = [];
-    readonly List<ModelInstance> instances = [];
-    // Instances not yet bound to a cache entry, so the per-frame scans skip the (usually far larger)
-    // built population. Attach adds to it; Update rebuilds it while pruning freed nodes.
-    readonly List<ModelInstance> unbuilt = [];
-    // Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
-    readonly Dictionary<ModelKey, int> liveKeys = [];
-    readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model/model.gdshader");
-    readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
-    readonly ImageTexture fallback;
-    IClientFiles? store;
-    CancellationTokenSource cancellation = new();
-    // A variant progresses through a decode worker, a short queue of decoded entries, one upload
-    // slot, then the shared ready cache. Partial GPU resources are never bound to scene instances.
-    // Each worker decodes a few nearest variants back to back, and up to DecodeWorkers run while
-    // earlier results upload, so decoding never waits on frames. Only the main thread touches the list.
-    readonly List<Task<List<Decoded>>> workers = [];
-    readonly Queue<(ModelKey Key, Entry Entry)> decoded = [];
-    // Keys in the worker batch, the decoded queue or the upload slot, so scheduling skips them.
-    readonly HashSet<ModelKey> queued = [];
-    ModelKey? buildingKey;
-    Entry? building;
-    /// <summary>One worker result: the decoded entry, the error that marks the key failed, or neither
-    /// when the batch stopped before reaching the key.</summary>
-    readonly record struct Decoded(ModelKey Key, Entry? Entry, string? Error);
-    /// <summary>Variants per worker batch, and the decode time after which a batch stops early so a
-    /// camera turn re-prioritizes soon.</summary>
-    const int DecodeBatch = 4;
-    const double DecodeBatchMilliseconds = 100;
-    /// <summary>Concurrent decode workers. CASC reads share one lock, but parsing, BLP decode, palette
-    /// baking and surface merging do not.</summary>
-    const int DecodeWorkers = 3;
-    /// <summary>No worker starts while decoded entries waiting for upload hold this many bytes, which
-    /// bounds the memory a burst of large models can pile up.</summary>
-    const long DecodedByteLimit = 256L * 1024 * 1024;
-    long tick;
-    /// <summary>
-    /// Expose cached parsed WMO liquid surfaces for opt-in smoke placement without archive reads or
-    /// GPU readback.
-    /// </summary>
-    public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data.Surfaces.Where(s => s.LiquidType != null).ToArray() : [];
-    /// <summary>
-    /// Expose a ready variant's retained CPU data for on-demand ground probes: a WMO's batch
-    /// positions, indices and liquid types (an M2 keeps no surfaces), plus doodads and animation
-    /// IDs. Null means the variant is still decoding/uploading (or failed), not that it has no geometry.
-    /// </summary>
-    public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
-    /// <summary>
-    /// A mount variant's seat-bone track for riders glued to its seat: baked world matrices per
-    /// palette frame (row-major 4x4s, viewer space) plus the clip duration and the seat position
-    /// in bone space. Null while the variant decodes or when the model names no seat.
-    /// </summary>
-    public SeatTrack? SeatTrack(ModelKey key) => cache.TryGetValue(key, out var e) && e.Data.Seat is { } seat && e.SeatFrames != null
-        ? new(e.SeatFrames, e.SeatFrames.Length / 16, e.Palette.Duration, seat.Position)
-        : null;
-    /// <summary>The batches and warnings of a decoded variant (kept after upload), for the diagnostic dump; null while it decodes or after it failed.</summary>
-    public ModelReport? ReportFor(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Report ?? ModelReport.From(e.Data) : null;
-    public bool HasFailed(ModelKey key) => failed.Contains(key);
-    public int ReadyModels => cache.Count;
-    /// <summary>
-    /// Diagnostic hold for --reload-smoke: at most one surface uploads per frame and nothing is
-    /// published while set. Fast machines otherwise finish a model inside one frame, leaving no
-    /// partial upload to interrupt. Never set during normal viewing.
-    /// </summary>
-    public bool HoldPartialUploads { get; set; }
-    /// <summary>
-    /// An entry owns uploaded GPU surfaces but has not reached the ready cache.
-    /// </summary>
-    public bool HasPartialUpload => building != null && building.Surface > 0;
-    public int TextureCount => textures.Count;
-    public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
-    public long CachedBytes => cachedBytes;
-    public double UploadMilliseconds { get; private set; }
-    public bool Busy => workers.Count > 0 || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
-    public ICreatureCatalog? Catalog { get; private set; }
-    /// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
-    public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
-    public ModelStats Stats => stats;
-    ModelStats stats;
-    public void ResetStats() => stats = default;
-    public IGameObjectCatalog? GameObjects { get; private set; }
-
-    bool embeddedDoodadsVisible = true;
-    public ModelLibrary()
-    {
-        byte[] pink = [255, 0, 255, 255];
-        using var image = Image.CreateFromData(1, 1, false, Image.Format.Rgba8, pink);
-        fallback = ImageTexture.CreateFromImage(image);
-    }
-
-    /// <summary>
-    /// Cancel/await the old worker before releasing client resources and loading the next catalog.
-    /// The caller may dispose old MPQs only after this completes.
-    /// </summary>
-    public async Task SetStore(IClientFiles? next, ICreatureCatalog? creatures = null, IGameObjectCatalog? gameObjects = null)
-    {
-        cancellation.Cancel();
-        foreach (var worker in workers.ToArray())
-        {
-            try
-            {
-                await worker;
-            }
-            catch
-            {
-            }
-        }
-
-        workers.Clear();
-        // A reload can interrupt GPU upload before an entry reaches the ready cache.
-        // It still owns meshes, the palette and shared texture references at this point.
-        if (building != null)
-        {
-            DisposeEntry(building);
-        }
-
-        building = null;
-        buildingKey = null;
-        decoded.Clear();
-        queued.Clear();
-        cancellation.Dispose();
-        cancellation = new();
-        foreach (var i in instances)
-        {
-            if (GodotObject.IsInstanceValid(i))
-            {
-                i.QueueFree();
-            }
-        }
-
-        instances.Clear();
-        unbuilt.Clear();
-        liveKeys.Clear();
-        foreach (var e in cache.Values)
-        {
-            DisposeEntry(e);
-        }
-
-        cache.Clear();
-        cachedBytes = 0;
-        textures.Clear();
-        sharedMaterials.Clear();
-        failed.Clear();
-        store = next;
-        Catalog = creatures;
-        GameObjects = gameObjects;
-    }
-
-    /// <summary>
-    /// Register a scene binding immediately; Update resolves shared resources asynchronously. Null
-    /// transforms select a single mesh rather than a placement batch.
-    /// </summary>
-    public ModelInstance Attach(Node3D parent, ModelKey key, Transform3D[]? transforms = null)
-    {
-        var node = new ModelInstance
-        {
-            Key = key,
-            Transforms = transforms
-        };
-        parent.AddChild(node);
-        instances.Add(node);
-        unbuilt.Add(node);
-        liveKeys[key] = liveKeys.GetValueOrDefault(key) + 1;
-        return node;
-    }
-
-    /// <summary>
-    /// Compose Godot column-vector static rotations/scaling. Order and the extra half-turn match the
-    /// CPU transform and source MODF bounds checks.
-    /// </summary>
-    /// <summary>
-    /// Vertex, normal, UV, index and (when present) color arrays of one parsed surface, converted from
-    /// the engine-free numerics types. Shared with the terrain liquid meshes.
-    /// </summary>
-    public static Godot.Collections.Array SurfaceArrays(ModelSurface surface)
-    {
-        var arrays = new Godot.Collections.Array();
-        arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = Convert(surface.Positions, v => new Vector3(v.X, v.Y, v.Z));
-        arrays[(int)Mesh.ArrayType.Normal] = Convert(surface.Normals, v => new Vector3(v.X, v.Y, v.Z));
-        arrays[(int)Mesh.ArrayType.TexUV] = Convert(surface.Uv, v => new Vector2(v.X, v.Y));
-        arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
-        if (surface.Layers?.Uv2 is { } uv2)
-        {
-            arrays[(int)Mesh.ArrayType.TexUV2] = Convert(uv2, v => new Vector2(v.X, v.Y));
-        }
-
-        if (surface.Colors != null)
-        {
-            arrays[(int)Mesh.ArrayType.Color] = Convert(surface.Colors, v => new Color(v.X, v.Y, v.Z, v.W));
-        }
-
-        return arrays;
-    }
-
-    /// <summary>
-    /// Convert a numerics vertex array to its Godot counterpart. In single-precision builds the two
-    /// have identical layouts (X, Y, Z[, W] floats), so the array is block-copied; a double-precision
-    /// engine build falls back to converting element by element.
-    /// </summary>
-    public static TTo[] Convert<TFrom, TTo>(TFrom[] source, Func<TFrom, TTo> convert) where TFrom : unmanaged where TTo : unmanaged
-    {
-        if (System.Runtime.CompilerServices.Unsafe.SizeOf<TFrom>() == System.Runtime.CompilerServices.Unsafe.SizeOf<TTo>())
-        {
-            return System.Runtime.InteropServices.MemoryMarshal.Cast<TFrom, TTo>(source).ToArray();
-        }
-
-        var result = new TTo[source.Length];
-        for (int i = 0; i < result.Length; i++)
-        {
-            result[i] = convert(source[i]);
-        }
-
-        return result;
-    }
-
-    public static Transform3D Placement(WorldObject item)
-    {
-        // Client rotations are Z/Y/X in its Z-up model space. Convert that basis to Y-up.
-        float rad = Mathf.Pi / 180;
-        var basis = new Basis(Vector3.Up, item.Rotation.Y * rad) * new Basis(Vector3.Right, item.Rotation.X * rad) * new Basis(Vector3.Back, item.Rotation.Z * rad) * new Basis(Vector3.Up, Mathf.Pi);
-        return new(basis.Scaled(Vector3.One * item.Scale), new(item.Position.X, item.Position.Y, item.Position.Z));
-    }
-
-    /// <summary>
-    /// Consume worker results, upload one surface, bind bounded instances, schedule the nearest
-    /// missing variant and evict dormant entries. Soft budgets cannot preempt a GPU upload.
-    /// </summary>
-    public void Update(Camera3D camera)
-    {
-        var start = System.Diagnostics.Stopwatch.GetTimestamp();
-        tick++;
-        PruneInstances();
-        ConsumeDecodedModel();
-        UploadPendingModel();
-        BindReadyInstances(start);
-        ScheduleModelDecode(camera);
-        EvictDormantModels();
-        UploadMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
-    }
-
-    /// <summary>
-    /// One pass over every instance: drop freed nodes (keeping the per-key counts in step), refresh the
-    /// recency of built instances through their cached entry, and collect the ones still waiting.
-    /// </summary>
-    void PruneInstances()
-    {
-        unbuilt.Clear();
-        int kept = 0;
-        for (int n = 0; n < instances.Count; n++)
-        {
-            var i = instances[n];
-            if (!GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion())
-            {
-                if (liveKeys.TryGetValue(i.Key, out int count))
-                {
-                    if (count <= 1)
-                    {
-                        liveKeys.Remove(i.Key);
-                    }
-                    else
-                    {
-                        liveKeys[i.Key] = count - 1;
-                    }
-                }
-
-                continue;
-            }
-
-            if (i.Built)
-            {
-                if (i.Resolved != null)
-                {
-                    i.Resolved.LastUsed = tick;
-                }
-            }
-            else
-            {
-                unbuilt.Add(i);
-            }
-
-            instances[kept++] = i;
-        }
-
-        instances.RemoveRange(kept, instances.Count - kept);
-    }
-
-    /// <summary>
-    /// Bind shared meshes, publish selection bounds/clip IDs and batch embedded WMO doodads using
-    /// parent-composed transforms.
-    /// </summary>
-    void BuildInstance(ModelInstance node, Entry entry)
-    {
-        var min = entry.Bounds.Min;
-        var max = entry.Bounds.Max;
-        node.Bounds = new(new(min.X, min.Y, min.Z), new(max.X - min.X, max.Y - min.Y, max.Z - min.Z));
-        node.AvailableAnimations = entry.Data.AnimationIds ?? [];
-        foreach (var mesh in entry.Meshes)
-        {
-            if (node.Transforms != null)
-            {
-                var multi = new MultiMesh
-                {
-                    TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-                    Mesh = mesh,
-                    InstanceCount = node.Transforms.Length
-                };
-                for (int n = 0; n < node.Transforms.Length; n++)
-                {
-                    multi.SetInstanceTransform(n, node.Transforms[n]);
-                }
-
-                // A margin with the default (disabled) fade mode acts as hysteresis around the cutoff,
-                // not a visual fade: it stops small back-and-forth drift at the boundary from popping
-                // geometry in and out every frame while flying.
-                node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
-            }
-            else if (node.Key.Skybox)
-            {
-                // The sky shell is scaled far out around the camera: it must never be range-culled
-                // or cast a shadow over the whole scene.
-                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
-            }
-            else
-            {
-                node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
-            }
-        }
-
-        AttachDoodads(node, entry);
-        node.Resolved = entry;
-        node.Built = true;
-    }
-
-    /// <summary>Scenery toggles remove embedded requests as well as hiding their geometry.</summary>
-    public void SetDoodadsVisible(bool visible)
-    {
-        if (embeddedDoodadsVisible == visible)
-        {
-            return;
-        }
-
-        embeddedDoodadsVisible = visible;
-        foreach (var node in instances.ToArray().Where(i => GodotObject.IsInstanceValid(i) && i.Built))
-        {
-            if (!cache.TryGetValue(node.Key, out var entry) || entry.Data.Doodads.Length == 0)
-            {
-                continue;
-            }
-
-            if (visible)
-            {
-                AttachDoodads(node, entry);
-            }
-            else
-            {
-                foreach (var child in node.GetChildren().OfType<ModelInstance>())
-                {
-                    child.Visible = false;
-                    child.QueueFree();
-                }
-
-                node.DoodadsAttached = false;
-            }
-        }
-    }
-
-    void AttachDoodads(ModelInstance node, Entry entry)
-    {
-        if (!embeddedDoodadsVisible || node.DoodadsAttached)
-        {
-            return;
-        }
-
-        foreach (var group in entry.Data.Doodads.GroupBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
-        {
-            var local = group.Select(d => new Transform3D(new Basis(new Quaternion(d.Rotation.X, d.Rotation.Y, d.Rotation.Z, d.Rotation.W)).Scaled(Vector3.One * d.Scale), new(d.Position.X, d.Position.Y, d.Position.Z))).ToArray();
-            var transforms = node.Transforms == null ? local : node.Transforms.SelectMany(parent => local.Select(t => parent * t)).ToArray();
-            Attach(node, new(group.Key), transforms);
-        }
-
-        node.DoodadsAttached = true;
-    }
-
-    /// <summary>
-    /// The client draws LightSkybox models first around the eye, with the world always on top.
-    /// Native skyboxes are nested layers 100-600 yd across (inner rocks/clouds included), so plain
-    /// geometry hid any world farther than a layer. This variant projects every vertex along its
-    /// own view direction onto a sphere just inside the camera far plane (screen position unchanged,
-    /// independent of the renderer's depth convention), draws in the translucent pass after the
-    /// background sky without writing depth, and is unlit and fog-free. World pixels drawn earlier
-    /// always win the depth test; opaque sky batches become alpha 1 to join that pass.
-    /// </summary>
-    static string SkyboxShader(string code, ModelSurface surface)
-    {
-        string blend = surface.Blend is 3 or 4 ? "blend_add" : surface.Blend is 5 or 6 ? "blend_mul" : "blend_mix";
-        string cull = surface.TwoSided ? "cull_disabled" : "cull_back";
-        code = code.Replace("render_mode cull_disabled;", $"render_mode {cull}, {blend}, depth_draw_never, unshaded, fog_disabled;");
-        if (surface.Blend >= 2)
-        {
-            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
-        }
-        else
-        {
-            code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = batch_color.a; ROUGHNESS = 1.0;");
-        }
-
-        string distance = SkyLighting.ShellDistance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
-        return code.Replace(
-            "    // SKYBOX_VERTEX: ModelLibrary replaces this line for LightSkybox variants.",
-            "    vec3 sky_eye = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;\n    POSITION = PROJECTION_MATRIX * vec4(normalize(sky_eye) * " + distance + ", 1.0);");
-    }
-
-    /// <summary>
-    /// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
-    /// liquid-atlas mipmaps to prevent cross-frame bleeding.
-    /// </summary>
-    void AddSurface(Entry e, int index, bool skybox, bool animationHold = false)
-    {
-        var surface = e.Upload[index];
-        var appearance = e.UploadMaterials[index];
-        // Batches whose color/weight alpha is constantly zero (closed-door effects, unused burnt
-        // tree variants) are invisible in the client; never upload them.
-        if (surface.Indices.Length == 0 || appearance.Hidden || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
-        {
-            return;
-        }
-
-        var arrays = SurfaceArrays(surface);
-        Mesh.ArrayFormat flags = 0;
-        if (surface.Bones != null && surface.Weights != null)
-        {
-            arrays[(int)Mesh.ArrayType.Custom0] = surface.Bones.Select(b => (float)b).ToArray();
-            arrays[(int)Mesh.ArrayType.Custom1] = surface.Weights;
-            flags = (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom0Shift | (ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom1Shift);
-        }
-
-        if (surface.Layers?.Alpha2 is { } alpha2)
-        {
-            // A WMO's second vertex-color alpha rides in custom channel 2 (the skin channels are 0 and 1).
-            arrays[(int)Mesh.ArrayType.Custom2] = alpha2;
-            flags |= (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RFloat << (int)Mesh.ArrayFormat.FormatCustom2Shift);
-        }
-
-        if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
-        {
-            e.Meshes.Add(new ArrayMesh());
-        }
-
-        var mesh = e.Meshes[^1];
-        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
-        var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit, skybox);
-        if (!shaders.TryGetValue(shaderKey, out var shader))
-        {
-            string code = baseShader.Code;
-            if (skybox)
-            {
-                code = SkyboxShader(code, surface);
-            }
-            else if (surface.Blend >= 2)
-            {
-                code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never, fog_disabled;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never, fog_disabled;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
-                code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
-            }
-
-            if (!surface.TwoSided)
-            {
-                code = code.Replace("cull_disabled", "cull_back");
-            }
-
-            // The material is always unshaded: the shader does the client's lighting itself. Unlit and skybox
-            // variants skip that lighting (skybox variants are already unshaded).
-            if (!skybox)
-            {
-                code = code.Replace("render_mode ", "render_mode unshaded, ");
-            }
-
-            if (skybox || surface.Unlit)
-            {
-                code = code.Replace("const bool LIT = true;", "const bool LIT = false;");
-            }
-
-            shader = new Shader
-            {
-                Code = code
-            };
-            shaders[shaderKey] = shader;
-        }
-
-        // Decoded texture shared across entries and reference counted once per entry; a texture that
-        // failed to decode draws the fallback.
-        ImageTexture TextureOf(string path)
-        {
-            if (path.Length == 0 || !e.Decoded.TryGetValue(path, out var blp))
-            {
-                return fallback;
-            }
-
-            if (!textures.TryGetValue(path, out var t))
-            {
-                using var image = Image.CreateFromData(blp.Width, blp.Height, false, Image.Format.Rgba8, blp.Rgba);
-                if (surface.LiquidType == null)
-                {
-                    image.GenerateMipmaps();
-                }
-
-                t = new(ImageTexture.CreateFromImage(image));
-                textures[path] = t;
-            }
-
-            if (e.TexturePaths.Add(path))
-            {
-                t.References++;
-            }
-
-            return t.Texture;
-        }
-
-        ImageTexture texture = TextureOf(surface.Texture);
-        // Resolved before the shared-material early return below: every entry that draws a layer counts
-        // its reference, whether or not it builds the material.
-        ImageTexture[] layerTextures = surface.Layers == null ? [] : [.. surface.Layers.Textures.Select(TextureOf)];
-
-        var color = new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W);
-        var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
-        var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
-        MaterialKey? key = !skybox && surface.LiquidType == null && surface.Bones == null && appearance.Column < 0
-            ? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1, surface.Layers?.Signature ?? "")
-            : null;
-        if (key is { } shared && sharedMaterials.TryGetValue(shared, out var known))
-        {
-            if (e.MaterialKeys.Add(shared))
-            {
-                known.References++;
-            }
-
-            mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, known.Material);
-            mesh.CustomAabb = mesh.GetAabb().Grow(5);
-            return;
-        }
-
-        var material = new ShaderMaterial
-        {
-            Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader,
-            // Sky layers keep native batch order and draw before translucent world surfaces such
-            // as water.
-            RenderPriority = skybox ? Math.Min((int)Material.RenderPriorityMin + e.Meshes.Sum(m => m.GetSurfaceCount()), -1) : 0
-        };
-        if (surface.LiquidType != null)
-        {
-            LiquidRendering.Configure(material, texture, surface.LiquidKind, surface.LiquidStyle);
-            mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
-            return;
-        }
-
-        material.SetShaderParameter("albedo_tex", texture);
-        if (surface.Layers is { } layers)
-        {
-            material.SetShaderParameter("combiner", (int)layers.Combiner);
-            material.SetShaderParameter("edge_fade", layers.EdgeFade);
-            for (int i = 0; i < layers.Textures.Length; i++)
-            {
-                material.SetShaderParameter("layer_tex" + (i + 2), layerTextures[i]);
-            }
-
-            int[] sources = [.. layers.Coords.Select(c => (int)c), 0, 0, 0, 0];
-            material.SetShaderParameter("layer_coords", new Vector4I(sources[0], sources[1], sources[2], sources[3]));
-        }
-
-        // A shared material never samples the palettes; leaving them unset keeps it from holding
-        // one variant's textures alive.
-        if (key == null)
-        {
-            material.SetShaderParameter("animation_palette", e.AnimationTexture!);
-            material.SetShaderParameter("material_palette", e.MaterialTexture!);
-        }
-
-        material.SetShaderParameter("skinned", surface.Bones != null);
-        material.SetShaderParameter("animation_frames", e.Palette.Height);
-        material.SetShaderParameter("animation_duration", e.Palette.Duration);
-        // Animation 1 is Death (SpawnAppearance.AnimDeath): the client plays it once and holds
-        // the corpse's last frame instead of looping it.
-        material.SetShaderParameter("animation_hold", animationHold);
-        material.SetShaderParameter("blend_mode", surface.Blend);
-        material.SetShaderParameter("vertex_color", (int)surface.ColorMode);
-        material.SetShaderParameter("material_column", appearance.Column);
-        material.SetShaderParameter("color_frames", appearance.ColorFrames);
-        material.SetShaderParameter("color_period", appearance.ColorPeriod);
-        material.SetShaderParameter("uv_frames", appearance.UvFrames);
-        material.SetShaderParameter("uv_period", appearance.UvPeriod);
-        material.SetShaderParameter("surface_color", color);
-        material.SetShaderParameter("uv_row0", row0);
-        material.SetShaderParameter("uv_row1", row1);
-        if (key is { } added)
-        {
-            sharedMaterials[added] = new(material)
-            {
-                References = 1
-            };
-            e.MaterialKeys.Add(added);
-        }
-
-        mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
-        // Include sampled animated bounds, rather than culling to only the unanimated pose.
-        mesh.CustomAabb = mesh.GetAabb().Grow(5);
-    }
-
-    /// <summary>
-    /// Release entry meshes/palette and decrement shared texture references. Dormant eviction calls
-    /// this only for entries without live scene bindings.
-    /// </summary>
-    void DisposeEntry(Entry e)
-    {
-        foreach (var key in e.MaterialKeys)
-        {
-            if (sharedMaterials.TryGetValue(key, out var shared) && --shared.References == 0)
-            {
-                sharedMaterials.Remove(key);
-                shared.Material.Dispose();
-            }
-        }
-
-        foreach (var path in e.TexturePaths)
-        {
-            if (textures.TryGetValue(path, out var texture) && --texture.References == 0)
-            {
-                textures.Remove(path);
-                texture.Texture.Dispose();
-            }
-        }
-
-        foreach (var mesh in e.Meshes)
-        {
-            mesh.Dispose();
-        }
-
-        e.AnimationTexture?.Dispose();
-        e.MaterialTexture?.Dispose();
-    }
-
-    /// <summary>
-    /// Cancel scheduling and return the active task so shutdown can await archive reads before
-    /// closing the store.
-    /// </summary>
-    public Task Stop()
-    {
-        cancellation.Cancel();
-        return Task.WhenAll(workers.ToArray());
-    }
-
-    /// <summary>
-    /// Queue every completed worker batch for upload, in the order the workers started. Canceled
-    /// batches are dropped; failed variants are remembered (and warned about once) to prevent
-    /// per-frame retries.
-    /// </summary>
-    void ConsumeDecodedModel()
-    {
-        for (int w = 0; w < workers.Count;)
-        {
-            var worker = workers[w];
-            if (!worker.IsCompleted)
-            {
-                w++;
-                continue;
-            }
-
-            workers.RemoveAt(w);
-            try
-            {
-                foreach (var result in worker.GetAwaiter().GetResult())
-                {
-                    if (result.Entry != null)
-                    {
-                        decoded.Enqueue((result.Key, result.Entry));
-                        stats.Decodes++;
-                        stats.DecodeMilliseconds += result.Entry.DecodeMilliseconds;
-                        continue;
-                    }
-
-                    queued.Remove(result.Key);
-                    if (result.Error != null && failed.Add(result.Key))
-                    {
-                        GD.PushWarning($"Model unavailable: {result.Key.Path}: {result.Error}");
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // The store changed; SetStore already cleared the queue.
-            }
-        }
-    }
-
-    /// <summary>
-    /// Upload within a soft per-frame budget (8 surfaces, 1.5 ms) shared by the queued entries, and
-    /// publish each cache entry only after all its surfaces are ready. Drop work whose requesting
-    /// instances have disappeared. A multi-surface model (complex creatures, WMOs) that trickled in at
-    /// one surface per frame held the decode worker idle for several extra frames per model, which
-    /// visibly prolonged the fallback-marker period while flying through new areas.
-    /// </summary>
-    void UploadPendingModel()
-    {
-        // HoldPartialUploads (diagnostics only) narrows uploads to one surface per frame and keeps
-        // the entry unpublished, so a reload can be timed against a guaranteed partial upload.
-        var started = System.Diagnostics.Stopwatch.GetTimestamp();
-        int maxSurfaces = HoldPartialUploads ? 1 : 8;
-        int budget = 0;
-        while (budget < maxSurfaces && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5))
-        {
-            if (building == null || buildingKey == null)
-            {
-                if (!decoded.TryDequeue(out var next))
-                {
-                    return;
-                }
-
-                building = next.Entry;
-                buildingKey = next.Key;
-            }
-
-            if (!liveKeys.ContainsKey(buildingKey))
-            {
-                queued.Remove(buildingKey);
-                DisposeEntry(building);
-                building = null;
-                buildingKey = null;
-                continue;
-            }
-
-            if (building.AnimationTexture == null)
-            {
-                using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
-                building.AnimationTexture = ImageTexture.CreateFromImage(image);
-            }
-
-            if (building.MaterialTexture == null)
-            {
-                using var image = Image.CreateFromData(building.Materials.Width, building.Materials.Height, false, Image.Format.Rgbaf, building.Materials.Pixels);
-                building.MaterialTexture = ImageTexture.CreateFromImage(image);
-            }
-
-            // Leave headroom within the soft 2 ms upload target; a single indivisible surface
-            // upload can still exceed the deadline.
-            for (; budget < maxSurfaces && building.Surface < building.Upload.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
-            {
-                AddSurface(building, building.Surface++, buildingKey.Skybox, buildingKey.Animation == 1);
-                stats.Uploads++;
-            }
-
-            if (building.Surface < building.Upload.Length || HoldPartialUploads)
-            {
-                return;
-            }
-
-            foreach (string warning in building.Data.Warnings)
-            {
-                GD.PushWarning(buildingKey.Path + ": " + warning);
-            }
-
-            // The merged copies and the decoded pixels are only needed for the upload.
-            building.Upload = [];
-            building.UploadMaterials = [];
-            building.ReleaseUploadData(AssetRef.IsWmo(buildingKey.Path));
-
-            cache[buildingKey] = building;
-            cachedBytes += building.Bytes;
-            building.LastUsed = tick;
-
-            queued.Remove(buildingKey);
-            building = null;
-            buildingKey = null;
-        }
-    }
-
-    /// <summary>
-    /// Attach at most eight ready bindings within the remaining soft two-millisecond budget. Access
-    /// refreshes cache recency even for already-built instances.
-    /// </summary>
-    void BindReadyInstances(long start)
-    {
-        // WMO attachment can enqueue embedded doodads. Iterate a snapshot so those
-        // new requests enter the next frame rather than mutating this enumeration.
-        int attached = 0;
-        // Only unbuilt instances can need binding (built ones were refreshed in PruneInstances). Embedded
-        // doodads attached while binding land in `unbuilt` too, so cap the walk at the count on entry.
-        for (int n = 0, count = unbuilt.Count; n < count; n++)
-        {
-            var i = unbuilt[n];
-            if (!GodotObject.IsInstanceValid(i) || i.Built)
-            {
-                continue;
-            }
-
-            if (cache.TryGetValue(i.Key, out var e))
-            {
-                e.LastUsed = tick;
-                if (!i.Built && attached < 8 && System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds < 2)
-                {
-                    BuildInstance(i, e);
-                    attached++;
-                    stats.Binds++;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Choose the nearest unbuilt variants and capture the store and cancellation token before
-    /// topping the decode workers up to <see cref="DecodeWorkers"/>, each on the next nearest slice.
-    /// They run while earlier results upload; none starts while fewer than that many decoded entries
-    /// are waiting and their size stays under <see cref="DecodedByteLimit"/>, which bounds decoded memory.
-    /// </summary>
-    void ScheduleModelDecode(Camera3D camera)
-    {
-        if (store == null || workers.Count >= DecodeWorkers || decoded.Count >= DecodeWorkers)
-        {
-            return;
-        }
-
-        long waiting = building?.Bytes ?? 0;
-        foreach (var (_, entry) in decoded)
-        {
-            waiting += entry.Bytes;
-        }
-
-        if (waiting >= DecodedByteLimit)
-        {
-            return;
-        }
-
-        var eye = camera.GlobalPosition;
-        Dictionary<ModelKey, float> nearest = [];
-        foreach (var i in unbuilt)
-        {
-            if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key) || queued.Contains(i.Key))
-            {
-                continue;
-            }
-
-            float distance = i.GlobalPosition.DistanceSquaredTo(eye);
-            if (!nearest.TryGetValue(i.Key, out float known) || distance < known)
-            {
-                nearest[i.Key] = distance;
-            }
-        }
-
-        if (nearest.Count == 0)
-        {
-            return;
-        }
-
-        var ordered = nearest.OrderBy(p => p.Value).Select(p => p.Key).ToArray();
-        var source = store;
-        var token = cancellation.Token;
-        for (int start = 0; start < ordered.Length && workers.Count < DecodeWorkers; start += DecodeBatch)
-        {
-            var keys = ordered[start..Math.Min(start + DecodeBatch, ordered.Length)];
-            queued.UnionWith(keys);
-            workers.Add(Task.Run(() => DecodeBatchOf(keys, source, token), token));
-        }
-    }
-
-    /// <summary>
-    /// Worker: decode the keys in order, nearest first, stopping early once the batch has taken
-    /// <see cref="DecodeBatchMilliseconds"/>; keys not reached are handed back for the next schedule.
-    /// </summary>
-    List<Decoded> DecodeBatchOf(ModelKey[] keys, IClientFiles source, CancellationToken token)
-    {
-        var started = System.Diagnostics.Stopwatch.GetTimestamp();
-        List<Decoded> results = [];
-        foreach (var key in keys)
-        {
-            if (results.Count > 0 && System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds > DecodeBatchMilliseconds)
-            {
-                results.Add(new(key, null, null));
-                continue;
-            }
-
-            token.ThrowIfCancellationRequested();
-            try
-            {
-                results.Add(new(key, DecodeModel(key, source, token), null));
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                results.Add(new(key, null, e.Message));
-            }
-        }
-
-        return results;
-    }
-
-    const long DormantLimit = 256L * 1024 * 1024;
-
-    /// <summary>Estimated bytes of the ready entries no instance currently uses.</summary>
-    public long DormantBytes
-    {
-        get
-        {
-            long bytes = 0;
-            foreach (var pair in cache)
-            {
-                if (!liveKeys.ContainsKey(pair.Key))
-                {
-                    bytes += pair.Value.Bytes;
-                }
-            }
-
-            return bytes;
-        }
-    }
-
-    /// <summary>
-    /// Reclaim least-recently-used dormant entries until they fit the soft 256 MiB estimate. Entries
-    /// a current instance uses are not counted and never evicted, so a busy scene can hold more.
-    /// </summary>
-    void EvictDormantModels()
-    {
-        long dormant = DormantBytes;
-        if (dormant <= DormantLimit)
-        {
-            return;
-        }
-
-        foreach (var pair in cache.Where(p => !liveKeys.ContainsKey(p.Key)).OrderBy(p => p.Value.LastUsed).ToArray())
-        {
-            if (dormant <= DormantLimit)
-            {
-                break;
-            }
-
-            dormant -= pair.Value.Bytes;
-            cachedBytes -= pair.Value.Bytes;
-            cache.Remove(pair.Key);
-            DisposeEntry(pair.Value);
-            stats.Evictions++;
-        }
-    }
-
-    /// <summary>
-    /// Worker-only native parse, texture/atlas decode and animation sampling. Texture failures
-    /// retain warnings/fallbacks; all Godot resource creation is deferred to Update.
-    /// </summary>
-    Entry DecodeModel(ModelKey key, IClientFiles source, CancellationToken token)
-    {
-        long started = System.Diagnostics.Stopwatch.GetTimestamp();
-        token.ThrowIfCancellationRequested();
-        var data = AssetRef.IsWmo(key.Path)
-            ? WmoModel.Read(source, key.Path, key.DoodadSet, token)
-            : M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3],
-                key.Baked.Length == 0 ? null : key.Baked, token, key.Animation, key.Hair.Length == 0 ? null : key.Hair, key.Fur.Length == 0 ? null : key.Fur, key.HairGeoset,
-                key.Eyes.Length == 0 ? null : key.Eyes, key.Geosets, key.Extra.Length == 0 ? null : key.Extra);
-        Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in data.Surfaces.SelectMany(s => s.Layers == null ? [s.Texture] : s.Layers.Textures.Prepend(s.Texture)).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            token.ThrowIfCancellationRequested();
-            try
-            {
-                decoded[path] = path.StartsWith("@liquid/") ? LiquidTextures.For(source).Decode(uint.Parse(path[8..])) : BlpTexture.Decode(source.Read(path), 0);
-            }
-            catch (Exception e)
-            {
-                GD.PushWarning($"Model texture unavailable: {path}: {e.Message}");
-            }
-        }
-
-        var materials = MaterialPalette.Bake(data, token);
-        var entry = new Entry(data, AnimationPalette.Bake(data, token), materials, decoded);
-        if (data.Seat is { } seat && seat.Bone >= 0 && seat.Bone < data.Bones.Length)
-        {
-            try
-            {
-                entry.SeatFrames = AnimationPalette.SampleBoneFrames(data, seat.Bone, entry.Palette.Height, entry.Palette.Duration, token);
-            }
-            catch (Exception)
-            {
-                entry.SeatFrames = null;
-            }
-        }
-        // Sky batches keep one surface each: their render priority encodes the native draw order.
-        if (!key.Skybox)
-        {
-            (entry.Upload, entry.UploadMaterials) = SurfaceMerge.Merge(data.Surfaces, materials.Surfaces);
-        }
-
-        entry.DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-        return entry;
-    }
+	internal sealed class Entry(ModelData data, AnimationPalette palette, MaterialPalette materials, Dictionary<string, BlpTexture> textures)
+	{
+		public ModelData Data = data;
+		/// <summary>The batch summary the diagnostic dump reads; set when the entry is published, since <see cref="Data"/> then drops it.</summary>
+		public ModelReport? Report;
+		public AnimationPalette Palette = palette;
+		/// <summary>Seat-bone world matrices per palette frame for riders glued to this mount's
+		/// seat (baked at decode; survives <see cref="ReleaseUploadData"/>).</summary>
+		public float[]? SeatFrames;
+		public MaterialPalette Materials = materials;
+		public readonly (System.Numerics.Vector3 Min, System.Numerics.Vector3 Max) Bounds = FindBounds(data);
+		public Dictionary<string, BlpTexture> Decoded = textures;
+		/// <summary>
+		/// The surfaces to upload: <see cref="Data"/> with opaque same-material batches merged
+		/// (<see cref="SurfaceMerge"/>), plus their appearance. Dropped once the entry is published.
+		/// </summary>
+		public ModelSurface[] Upload = data.Surfaces;
+		public SurfaceMaterial[] UploadMaterials = materials.Surfaces;
+		public readonly List<ArrayMesh> Meshes = [];
+		public ImageTexture? AnimationTexture;
+		public ImageTexture? MaterialTexture;
+		public int Surface;
+		public long LastUsed;
+		public double DecodeMilliseconds;
+		/// <summary>
+		/// While decoding, the CPU data waiting for upload. Once published, the retained CPU data
+		/// plus an estimate of the entry's own GPU memory (shared textures are not counted).
+		/// </summary>
+		public long Bytes = data.EstimatedBytes + palette.Pixels.Length + materials.Pixels.Length + textures.Values.Sum(t => (long)t.Rgba.Length);
+
+		/// <summary>
+		/// Drop what only the upload read (decoded pixels, palette pixels, vertex channels, bone
+		/// tracks) and keep what instances and ground probes still use (see
+		/// <see cref="ModelData.ForProbes"/>). Called when the entry is published.
+		/// </summary>
+		public void ReleaseUploadData(bool isWmo)
+		{
+			long gpu = Data.EstimatedBytes + Palette.Pixels.Length + Materials.Pixels.Length;
+			Report = ModelReport.From(Data);
+			Data = Data.ForProbes(isWmo);
+			Decoded = new(StringComparer.OrdinalIgnoreCase);
+			Palette = Palette with { Pixels = [] };
+			Materials = Materials with { Pixels = [], Surfaces = [] };
+			Bytes = gpu + Data.EstimatedBytes;
+		}
+
+		public readonly HashSet<string> TexturePaths = new(StringComparer.OrdinalIgnoreCase);
+		public readonly HashSet<MaterialKey> MaterialKeys = [];
+		/// <summary>
+		/// Compute reference-pose bounds from distinct source arrays. Selection uses bounding boxes, not
+		/// animated triangles or terrain occlusion.
+		/// </summary>
+		static (System.Numerics.Vector3, System.Numerics.Vector3) FindBounds(ModelData data)
+		{
+			var min = new System.Numerics.Vector3(float.MaxValue);
+			var max = new System.Numerics.Vector3(float.MinValue);
+			bool any = false;
+			foreach (var positions in data.Surfaces.Select(s => s.Positions).Distinct())
+			{
+				foreach (var point in positions)
+				{
+					min = System.Numerics.Vector3.Min(min, point);
+					max = System.Numerics.Vector3.Max(max, point);
+					any = true;
+				}
+			}
+
+			return any ? (min, max) : (System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero);
+		}
+	}
+
+	sealed class TextureEntry(ImageTexture texture)
+	{
+		public ImageTexture Texture = texture;
+		public int References;
+	}
+
+	/// <summary>
+	/// Identity of a material that reads nothing per model: unskinned, unanimated, non-sky,
+	/// non-liquid batches. Equal keys share one ShaderMaterial across all variants.
+	/// </summary>
+	internal readonly record struct MaterialKey(Shader Shader, string Texture, int Blend, int ColorMode, Vector4 Color, Vector3 UvRow0, Vector3 UvRow1, string Layers);
+
+	sealed class MaterialEntry(ShaderMaterial material)
+	{
+		public ShaderMaterial Material = material;
+		public int References;
+	}
+
+	readonly Dictionary<MaterialKey, MaterialEntry> sharedMaterials = [];
+
+	readonly Dictionary<ModelKey, Entry> cache = [];
+	long cachedBytes;
+	readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
+	readonly HashSet<ModelKey> failed = [];
+	readonly List<ModelInstance> instances = [];
+	// Instances not yet bound to a cache entry, so the per-frame scans skip the (usually far larger)
+	// built population. Attach adds to it; Update rebuilds it while pruning freed nodes.
+	readonly List<ModelInstance> unbuilt = [];
+	// Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
+	readonly Dictionary<ModelKey, int> liveKeys = [];
+	readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model/model.gdshader");
+	readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
+	readonly ImageTexture fallback;
+	IClientFiles? store;
+	CancellationTokenSource cancellation = new();
+	// A variant progresses through a decode worker, a short queue of decoded entries, one upload
+	// slot, then the shared ready cache. Partial GPU resources are never bound to scene instances.
+	// Each worker decodes a few nearest variants back to back, and up to DecodeWorkers run while
+	// earlier results upload, so decoding never waits on frames. Only the main thread touches the list.
+	readonly List<Task<List<Decoded>>> workers = [];
+	readonly Queue<(ModelKey Key, Entry Entry)> decoded = [];
+	// Keys in the worker batch, the decoded queue or the upload slot, so scheduling skips them.
+	readonly HashSet<ModelKey> queued = [];
+	ModelKey? buildingKey;
+	Entry? building;
+	/// <summary>One worker result: the decoded entry, the error that marks the key failed, or neither
+	/// when the batch stopped before reaching the key.</summary>
+	readonly record struct Decoded(ModelKey Key, Entry? Entry, string? Error);
+	/// <summary>Variants per worker batch, and the decode time after which a batch stops early so a
+	/// camera turn re-prioritizes soon.</summary>
+	const int DecodeBatch = 4;
+	const double DecodeBatchMilliseconds = 100;
+	/// <summary>Concurrent decode workers. CASC reads share one lock, but parsing, BLP decode, palette
+	/// baking and surface merging do not.</summary>
+	const int DecodeWorkers = 3;
+	/// <summary>No worker starts while decoded entries waiting for upload hold this many bytes, which
+	/// bounds the memory a burst of large models can pile up.</summary>
+	const long DecodedByteLimit = 256L * 1024 * 1024;
+	long tick;
+	/// <summary>
+	/// Expose cached parsed WMO liquid surfaces for opt-in smoke placement without archive reads or
+	/// GPU readback.
+	/// </summary>
+	public ModelSurface[] LiquidSurfaces(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data.Surfaces.Where(s => s.LiquidType != null).ToArray() : [];
+	/// <summary>
+	/// Expose a ready variant's retained CPU data for on-demand ground probes: a WMO's batch
+	/// positions, indices and liquid types (an M2 keeps no surfaces), plus doodads and animation
+	/// IDs. Null means the variant is still decoding/uploading (or failed), not that it has no geometry.
+	/// </summary>
+	public ModelData? ReadyData(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Data : null;
+	/// <summary>
+	/// A mount variant's seat-bone track for riders glued to its seat: baked world matrices per
+	/// palette frame (row-major 4x4s, viewer space) plus the clip duration and the seat position
+	/// in bone space. Null while the variant decodes or when the model names no seat.
+	/// </summary>
+	public SeatTrack? SeatTrack(ModelKey key) => cache.TryGetValue(key, out var e) && e.Data.Seat is { } seat && e.SeatFrames != null
+		? new(e.SeatFrames, e.SeatFrames.Length / 16, e.Palette.Duration, seat.Position)
+		: null;
+	/// <summary>The batches and warnings of a decoded variant (kept after upload), for the diagnostic dump; null while it decodes or after it failed.</summary>
+	public ModelReport? ReportFor(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Report ?? ModelReport.From(e.Data) : null;
+	public bool HasFailed(ModelKey key) => failed.Contains(key);
+	public int ReadyModels => cache.Count;
+	/// <summary>
+	/// Diagnostic hold for --reload-smoke: at most one surface uploads per frame and nothing is
+	/// published while set. Fast machines otherwise finish a model inside one frame, leaving no
+	/// partial upload to interrupt. Never set during normal viewing.
+	/// </summary>
+	public bool HoldPartialUploads { get; set; }
+	/// <summary>
+	/// An entry owns uploaded GPU surfaces but has not reached the ready cache.
+	/// </summary>
+	public bool HasPartialUpload => building != null && building.Surface > 0;
+	public int TextureCount => textures.Count;
+	public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
+	public long CachedBytes => cachedBytes;
+	public double UploadMilliseconds { get; private set; }
+	public bool Busy => workers.Count > 0 || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
+	public ICreatureCatalog? Catalog { get; private set; }
+	/// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
+	public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
+	public ModelStats Stats => stats;
+	ModelStats stats;
+	public void ResetStats() => stats = default;
+	public IGameObjectCatalog? GameObjects { get; private set; }
+
+	bool embeddedDoodadsVisible = true;
+	public ModelLibrary()
+	{
+		byte[] pink = [255, 0, 255, 255];
+		using var image = Image.CreateFromData(1, 1, false, Image.Format.Rgba8, pink);
+		fallback = ImageTexture.CreateFromImage(image);
+	}
+
+	/// <summary>
+	/// Cancel/await the old worker before releasing client resources and loading the next catalog.
+	/// The caller may dispose old MPQs only after this completes.
+	/// </summary>
+	public async Task SetStore(IClientFiles? next, ICreatureCatalog? creatures = null, IGameObjectCatalog? gameObjects = null)
+	{
+		cancellation.Cancel();
+		foreach (var worker in workers.ToArray())
+		{
+			try
+			{
+				await worker;
+			}
+			catch
+			{
+			}
+		}
+
+		workers.Clear();
+		// A reload can interrupt GPU upload before an entry reaches the ready cache.
+		// It still owns meshes, the palette and shared texture references at this point.
+		if (building != null)
+		{
+			DisposeEntry(building);
+		}
+
+		building = null;
+		buildingKey = null;
+		decoded.Clear();
+		queued.Clear();
+		cancellation.Dispose();
+		cancellation = new();
+		foreach (var i in instances)
+		{
+			if (GodotObject.IsInstanceValid(i))
+			{
+				i.QueueFree();
+			}
+		}
+
+		instances.Clear();
+		unbuilt.Clear();
+		liveKeys.Clear();
+		foreach (var e in cache.Values)
+		{
+			DisposeEntry(e);
+		}
+
+		cache.Clear();
+		cachedBytes = 0;
+		textures.Clear();
+		sharedMaterials.Clear();
+		failed.Clear();
+		store = next;
+		Catalog = creatures;
+		GameObjects = gameObjects;
+	}
+
+	/// <summary>
+	/// Register a scene binding immediately; Update resolves shared resources asynchronously. Null
+	/// transforms select a single mesh rather than a placement batch.
+	/// </summary>
+	public ModelInstance Attach(Node3D parent, ModelKey key, Transform3D[]? transforms = null)
+	{
+		var node = new ModelInstance
+		{
+			Key = key,
+			Transforms = transforms
+		};
+		parent.AddChild(node);
+		instances.Add(node);
+		unbuilt.Add(node);
+		liveKeys[key] = liveKeys.GetValueOrDefault(key) + 1;
+		return node;
+	}
+
+	/// <summary>
+	/// Compose Godot column-vector static rotations/scaling. Order and the extra half-turn match the
+	/// CPU transform and source MODF bounds checks.
+	/// </summary>
+	/// <summary>
+	/// Vertex, normal, UV, index and (when present) color arrays of one parsed surface, converted from
+	/// the engine-free numerics types. Shared with the terrain liquid meshes.
+	/// </summary>
+	public static Godot.Collections.Array SurfaceArrays(ModelSurface surface)
+	{
+		var arrays = new Godot.Collections.Array();
+		arrays.Resize((int)Mesh.ArrayType.Max);
+		arrays[(int)Mesh.ArrayType.Vertex] = Convert(surface.Positions, v => new Vector3(v.X, v.Y, v.Z));
+		arrays[(int)Mesh.ArrayType.Normal] = Convert(surface.Normals, v => new Vector3(v.X, v.Y, v.Z));
+		arrays[(int)Mesh.ArrayType.TexUV] = Convert(surface.Uv, v => new Vector2(v.X, v.Y));
+		arrays[(int)Mesh.ArrayType.Index] = surface.Indices;
+		if (surface.Layers?.Uv2 is { } uv2)
+		{
+			arrays[(int)Mesh.ArrayType.TexUV2] = Convert(uv2, v => new Vector2(v.X, v.Y));
+		}
+
+		if (surface.Colors != null)
+		{
+			arrays[(int)Mesh.ArrayType.Color] = Convert(surface.Colors, v => new Color(v.X, v.Y, v.Z, v.W));
+		}
+
+		return arrays;
+	}
+
+	/// <summary>
+	/// Convert a numerics vertex array to its Godot counterpart. In single-precision builds the two
+	/// have identical layouts (X, Y, Z[, W] floats), so the array is block-copied; a double-precision
+	/// engine build falls back to converting element by element.
+	/// </summary>
+	public static TTo[] Convert<TFrom, TTo>(TFrom[] source, Func<TFrom, TTo> convert) where TFrom : unmanaged where TTo : unmanaged
+	{
+		if (System.Runtime.CompilerServices.Unsafe.SizeOf<TFrom>() == System.Runtime.CompilerServices.Unsafe.SizeOf<TTo>())
+		{
+			return System.Runtime.InteropServices.MemoryMarshal.Cast<TFrom, TTo>(source).ToArray();
+		}
+
+		var result = new TTo[source.Length];
+		for (int i = 0; i < result.Length; i++)
+		{
+			result[i] = convert(source[i]);
+		}
+
+		return result;
+	}
+
+	public static Transform3D Placement(WorldObject item)
+	{
+		// Client rotations are Z/Y/X in its Z-up model space. Convert that basis to Y-up.
+		float rad = Mathf.Pi / 180;
+		var basis = new Basis(Vector3.Up, item.Rotation.Y * rad) * new Basis(Vector3.Right, item.Rotation.X * rad) * new Basis(Vector3.Back, item.Rotation.Z * rad) * new Basis(Vector3.Up, Mathf.Pi);
+		return new(basis.Scaled(Vector3.One * item.Scale), new(item.Position.X, item.Position.Y, item.Position.Z));
+	}
+
+	/// <summary>
+	/// Consume worker results, upload one surface, bind bounded instances, schedule the nearest
+	/// missing variant and evict dormant entries. Soft budgets cannot preempt a GPU upload.
+	/// </summary>
+	public void Update(Camera3D camera)
+	{
+		var start = System.Diagnostics.Stopwatch.GetTimestamp();
+		tick++;
+		PruneInstances();
+		ConsumeDecodedModel();
+		UploadPendingModel();
+		BindReadyInstances(start);
+		ScheduleModelDecode(camera);
+		EvictDormantModels();
+		UploadMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+	}
+
+	/// <summary>
+	/// One pass over every instance: drop freed nodes (keeping the per-key counts in step), refresh the
+	/// recency of built instances through their cached entry, and collect the ones still waiting.
+	/// </summary>
+	void PruneInstances()
+	{
+		unbuilt.Clear();
+		int kept = 0;
+		for (int n = 0; n < instances.Count; n++)
+		{
+			var i = instances[n];
+			if (!GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion())
+			{
+				if (liveKeys.TryGetValue(i.Key, out int count))
+				{
+					if (count <= 1)
+					{
+						liveKeys.Remove(i.Key);
+					}
+					else
+					{
+						liveKeys[i.Key] = count - 1;
+					}
+				}
+
+				continue;
+			}
+
+			if (i.Built)
+			{
+				if (i.Resolved != null)
+				{
+					i.Resolved.LastUsed = tick;
+				}
+			}
+			else
+			{
+				unbuilt.Add(i);
+			}
+
+			instances[kept++] = i;
+		}
+
+		instances.RemoveRange(kept, instances.Count - kept);
+	}
+
+	/// <summary>
+	/// Bind shared meshes, publish selection bounds/clip IDs and batch embedded WMO doodads using
+	/// parent-composed transforms.
+	/// </summary>
+	void BuildInstance(ModelInstance node, Entry entry)
+	{
+		var min = entry.Bounds.Min;
+		var max = entry.Bounds.Max;
+		node.Bounds = new(new(min.X, min.Y, min.Z), new(max.X - min.X, max.Y - min.Y, max.Z - min.Z));
+		node.AvailableAnimations = entry.Data.AnimationIds ?? [];
+		foreach (var mesh in entry.Meshes)
+		{
+			if (node.Transforms != null)
+			{
+				var multi = new MultiMesh
+				{
+					TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+					Mesh = mesh,
+					InstanceCount = node.Transforms.Length
+				};
+				for (int n = 0; n < node.Transforms.Length; n++)
+				{
+					multi.SetInstanceTransform(n, node.Transforms[n]);
+				}
+
+				// A margin with the default (disabled) fade mode acts as hysteresis around the cutoff,
+				// not a visual fade: it stops small back-and-forth drift at the boundary from popping
+				// geometry in and out every frame while flying.
+				node.AddChild(new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 });
+			}
+			else if (node.Key.Skybox)
+			{
+				// The sky shell is scaled far out around the camera: it must never be range-culled
+				// or cast a shadow over the whole scene.
+				node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+			}
+			else
+			{
+				node.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 });
+			}
+		}
+
+		AttachDoodads(node, entry);
+		node.Resolved = entry;
+		node.Built = true;
+	}
+
+	/// <summary>Scenery toggles remove embedded requests as well as hiding their geometry.</summary>
+	public void SetDoodadsVisible(bool visible)
+	{
+		if (embeddedDoodadsVisible == visible)
+		{
+			return;
+		}
+
+		embeddedDoodadsVisible = visible;
+		foreach (var node in instances.ToArray().Where(i => GodotObject.IsInstanceValid(i) && i.Built))
+		{
+			if (!cache.TryGetValue(node.Key, out var entry) || entry.Data.Doodads.Length == 0)
+			{
+				continue;
+			}
+
+			if (visible)
+			{
+				AttachDoodads(node, entry);
+			}
+			else
+			{
+				foreach (var child in node.GetChildren().OfType<ModelInstance>())
+				{
+					child.Visible = false;
+					child.QueueFree();
+				}
+
+				node.DoodadsAttached = false;
+			}
+		}
+	}
+
+	void AttachDoodads(ModelInstance node, Entry entry)
+	{
+		if (!embeddedDoodadsVisible || node.DoodadsAttached)
+		{
+			return;
+		}
+
+		foreach (var group in entry.Data.Doodads.GroupBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
+		{
+			var local = group.Select(d => new Transform3D(new Basis(new Quaternion(d.Rotation.X, d.Rotation.Y, d.Rotation.Z, d.Rotation.W)).Scaled(Vector3.One * d.Scale), new(d.Position.X, d.Position.Y, d.Position.Z))).ToArray();
+			var transforms = node.Transforms == null ? local : node.Transforms.SelectMany(parent => local.Select(t => parent * t)).ToArray();
+			Attach(node, new(group.Key), transforms);
+		}
+
+		node.DoodadsAttached = true;
+	}
+
+	/// <summary>
+	/// The client draws LightSkybox models first around the eye, with the world always on top.
+	/// Native skyboxes are nested layers 100-600 yd across (inner rocks/clouds included), so plain
+	/// geometry hid any world farther than a layer. This variant projects every vertex along its
+	/// own view direction onto a sphere just inside the camera far plane (screen position unchanged,
+	/// independent of the renderer's depth convention), draws in the translucent pass after the
+	/// background sky without writing depth, and is unlit and fog-free. World pixels drawn earlier
+	/// always win the depth test; opaque sky batches become alpha 1 to join that pass.
+	/// </summary>
+	static string SkyboxShader(string code, ModelSurface surface)
+	{
+		string blend = surface.Blend is 3 or 4 ? "blend_add" : surface.Blend is 5 or 6 ? "blend_mul" : "blend_mix";
+		string cull = surface.TwoSided ? "cull_disabled" : "cull_back";
+		code = code.Replace("render_mode cull_disabled;", $"render_mode {cull}, {blend}, depth_draw_never, unshaded, fog_disabled;");
+		if (surface.Blend >= 2)
+		{
+			code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
+		}
+		else
+		{
+			code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = batch_color.a; ROUGHNESS = 1.0;");
+		}
+
+		string distance = SkyLighting.ShellDistance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+		return code.Replace(
+			"    // SKYBOX_VERTEX: ModelLibrary replaces this line for LightSkybox variants.",
+			"    vec3 sky_eye = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;\n    POSITION = PROJECTION_MATRIX * vec4(normalize(sky_eye) * " + distance + ", 1.0);");
+	}
+
+	/// <summary>
+	/// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
+	/// liquid-atlas mipmaps to prevent cross-frame bleeding.
+	/// </summary>
+	void AddSurface(Entry e, int index, bool skybox, bool animationHold = false)
+	{
+		var surface = e.Upload[index];
+		var appearance = e.UploadMaterials[index];
+		// Batches whose color/weight alpha is constantly zero (closed-door effects, unused burnt
+		// tree variants) are invisible in the client; never upload them.
+		if (surface.Indices.Length == 0 || appearance.Hidden || (surface.LiquidType != null && !e.Decoded.ContainsKey(surface.Texture)))
+		{
+			return;
+		}
+
+		var arrays = SurfaceArrays(surface);
+		Mesh.ArrayFormat flags = 0;
+		if (surface.Bones != null && surface.Weights != null)
+		{
+			arrays[(int)Mesh.ArrayType.Custom0] = surface.Bones.Select(b => (float)b).ToArray();
+			arrays[(int)Mesh.ArrayType.Custom1] = surface.Weights;
+			flags = (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom0Shift | (ulong)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom1Shift);
+		}
+
+		if (surface.Layers?.Alpha2 is { } alpha2)
+		{
+			// A WMO's second vertex-color alpha rides in custom channel 2 (the skin channels are 0 and 1).
+			arrays[(int)Mesh.ArrayType.Custom2] = alpha2;
+			flags |= (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RFloat << (int)Mesh.ArrayFormat.FormatCustom2Shift);
+		}
+
+		if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
+		{
+			e.Meshes.Add(new ArrayMesh());
+		}
+
+		var mesh = e.Meshes[^1];
+		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
+		var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit, skybox);
+		if (!shaders.TryGetValue(shaderKey, out var shader))
+		{
+			string code = baseShader.Code;
+			if (skybox)
+			{
+				code = SkyboxShader(code, surface);
+			}
+			else if (surface.Blend >= 2)
+			{
+				code = code.Replace("render_mode cull_disabled;", surface.Blend is 3 or 4 ? "render_mode cull_disabled, blend_add, depth_draw_never, fog_disabled;" : surface.Blend is 5 or 6 ? "render_mode cull_disabled, blend_mul, depth_draw_never, fog_disabled;" : "render_mode cull_disabled, blend_mix, depth_prepass_alpha;");
+				code = code.Replace("ROUGHNESS = 1.0;", "ALPHA = tex.a * batch_color.a; ROUGHNESS = 1.0;");
+			}
+
+			if (!surface.TwoSided)
+			{
+				code = code.Replace("cull_disabled", "cull_back");
+			}
+
+			// The material is always unshaded: the shader does the client's lighting itself. Unlit and skybox
+			// variants skip that lighting (skybox variants are already unshaded).
+			if (!skybox)
+			{
+				code = code.Replace("render_mode ", "render_mode unshaded, ");
+			}
+
+			if (skybox || surface.Unlit)
+			{
+				code = code.Replace("const bool LIT = true;", "const bool LIT = false;");
+			}
+
+			shader = new Shader
+			{
+				Code = code
+			};
+			shaders[shaderKey] = shader;
+		}
+
+		// Decoded texture shared across entries and reference counted once per entry; a texture that
+		// failed to decode draws the fallback.
+		ImageTexture TextureOf(string path)
+		{
+			if (path.Length == 0 || !e.Decoded.TryGetValue(path, out var blp))
+			{
+				return fallback;
+			}
+
+			if (!textures.TryGetValue(path, out var t))
+			{
+				using var image = Image.CreateFromData(blp.Width, blp.Height, false, Image.Format.Rgba8, blp.Rgba);
+				if (surface.LiquidType == null)
+				{
+					image.GenerateMipmaps();
+				}
+
+				t = new(ImageTexture.CreateFromImage(image));
+				textures[path] = t;
+			}
+
+			if (e.TexturePaths.Add(path))
+			{
+				t.References++;
+			}
+
+			return t.Texture;
+		}
+
+		ImageTexture texture = TextureOf(surface.Texture);
+		// Resolved before the shared-material early return below: every entry that draws a layer counts
+		// its reference, whether or not it builds the material.
+		ImageTexture[] layerTextures = surface.Layers == null ? [] : [.. surface.Layers.Textures.Select(TextureOf)];
+
+		var color = new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W);
+		var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
+		var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
+		MaterialKey? key = !skybox && surface.LiquidType == null && surface.Bones == null && appearance.Column < 0
+			? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1, surface.Layers?.Signature ?? "")
+			: null;
+		if (key is { } shared && sharedMaterials.TryGetValue(shared, out var known))
+		{
+			if (e.MaterialKeys.Add(shared))
+			{
+				known.References++;
+			}
+
+			mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, known.Material);
+			mesh.CustomAabb = mesh.GetAabb().Grow(5);
+			return;
+		}
+
+		var material = new ShaderMaterial
+		{
+			Shader = surface.LiquidType != null ? LiquidRendering.Shader : shader,
+			// Sky layers keep native batch order and draw before translucent world surfaces such
+			// as water.
+			RenderPriority = skybox ? Math.Min((int)Material.RenderPriorityMin + e.Meshes.Sum(m => m.GetSurfaceCount()), -1) : 0
+		};
+		if (surface.LiquidType != null)
+		{
+			LiquidRendering.Configure(material, texture, surface.LiquidKind, surface.LiquidStyle);
+			mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
+			return;
+		}
+
+		material.SetShaderParameter("albedo_tex", texture);
+		if (surface.Layers is { } layers)
+		{
+			material.SetShaderParameter("combiner", (int)layers.Combiner);
+			material.SetShaderParameter("edge_fade", layers.EdgeFade);
+			for (int i = 0; i < layers.Textures.Length; i++)
+			{
+				material.SetShaderParameter("layer_tex" + (i + 2), layerTextures[i]);
+			}
+
+			int[] sources = [.. layers.Coords.Select(c => (int)c), 0, 0, 0, 0];
+			material.SetShaderParameter("layer_coords", new Vector4I(sources[0], sources[1], sources[2], sources[3]));
+		}
+
+		// A shared material never samples the palettes; leaving them unset keeps it from holding
+		// one variant's textures alive.
+		if (key == null)
+		{
+			material.SetShaderParameter("animation_palette", e.AnimationTexture!);
+			material.SetShaderParameter("material_palette", e.MaterialTexture!);
+		}
+
+		material.SetShaderParameter("skinned", surface.Bones != null);
+		material.SetShaderParameter("animation_frames", e.Palette.Height);
+		material.SetShaderParameter("animation_duration", e.Palette.Duration);
+		// Animation 1 is Death (SpawnAppearance.AnimDeath): the client plays it once and holds
+		// the corpse's last frame instead of looping it.
+		material.SetShaderParameter("animation_hold", animationHold);
+		material.SetShaderParameter("blend_mode", surface.Blend);
+		material.SetShaderParameter("vertex_color", (int)surface.ColorMode);
+		material.SetShaderParameter("material_column", appearance.Column);
+		material.SetShaderParameter("color_frames", appearance.ColorFrames);
+		material.SetShaderParameter("color_period", appearance.ColorPeriod);
+		material.SetShaderParameter("uv_frames", appearance.UvFrames);
+		material.SetShaderParameter("uv_period", appearance.UvPeriod);
+		material.SetShaderParameter("surface_color", color);
+		material.SetShaderParameter("uv_row0", row0);
+		material.SetShaderParameter("uv_row1", row1);
+		if (key is { } added)
+		{
+			sharedMaterials[added] = new(material)
+			{
+				References = 1
+			};
+			e.MaterialKeys.Add(added);
+		}
+
+		mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, material);
+		// Include sampled animated bounds, rather than culling to only the unanimated pose.
+		mesh.CustomAabb = mesh.GetAabb().Grow(5);
+	}
+
+	/// <summary>
+	/// Release entry meshes/palette and decrement shared texture references. Dormant eviction calls
+	/// this only for entries without live scene bindings.
+	/// </summary>
+	void DisposeEntry(Entry e)
+	{
+		foreach (var key in e.MaterialKeys)
+		{
+			if (sharedMaterials.TryGetValue(key, out var shared) && --shared.References == 0)
+			{
+				sharedMaterials.Remove(key);
+				shared.Material.Dispose();
+			}
+		}
+
+		foreach (var path in e.TexturePaths)
+		{
+			if (textures.TryGetValue(path, out var texture) && --texture.References == 0)
+			{
+				textures.Remove(path);
+				texture.Texture.Dispose();
+			}
+		}
+
+		foreach (var mesh in e.Meshes)
+		{
+			mesh.Dispose();
+		}
+
+		e.AnimationTexture?.Dispose();
+		e.MaterialTexture?.Dispose();
+	}
+
+	/// <summary>
+	/// Cancel scheduling and return the active task so shutdown can await archive reads before
+	/// closing the store.
+	/// </summary>
+	public Task Stop()
+	{
+		cancellation.Cancel();
+		return Task.WhenAll(workers.ToArray());
+	}
+
+	/// <summary>
+	/// Queue every completed worker batch for upload, in the order the workers started. Canceled
+	/// batches are dropped; failed variants are remembered (and warned about once) to prevent
+	/// per-frame retries.
+	/// </summary>
+	void ConsumeDecodedModel()
+	{
+		for (int w = 0; w < workers.Count;)
+		{
+			var worker = workers[w];
+			if (!worker.IsCompleted)
+			{
+				w++;
+				continue;
+			}
+
+			workers.RemoveAt(w);
+			try
+			{
+				foreach (var result in worker.GetAwaiter().GetResult())
+				{
+					if (result.Entry != null)
+					{
+						decoded.Enqueue((result.Key, result.Entry));
+						stats.Decodes++;
+						stats.DecodeMilliseconds += result.Entry.DecodeMilliseconds;
+						continue;
+					}
+
+					queued.Remove(result.Key);
+					if (result.Error != null && failed.Add(result.Key))
+					{
+						GD.PushWarning($"Model unavailable: {result.Key.Path}: {result.Error}");
+					}
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				// The store changed; SetStore already cleared the queue.
+			}
+		}
+	}
+
+	/// <summary>
+	/// Upload within a soft per-frame budget (8 surfaces, 1.5 ms) shared by the queued entries, and
+	/// publish each cache entry only after all its surfaces are ready. Drop work whose requesting
+	/// instances have disappeared. A multi-surface model (complex creatures, WMOs) that trickled in at
+	/// one surface per frame held the decode worker idle for several extra frames per model, which
+	/// visibly prolonged the fallback-marker period while flying through new areas.
+	/// </summary>
+	void UploadPendingModel()
+	{
+		// HoldPartialUploads (diagnostics only) narrows uploads to one surface per frame and keeps
+		// the entry unpublished, so a reload can be timed against a guaranteed partial upload.
+		var started = System.Diagnostics.Stopwatch.GetTimestamp();
+		int maxSurfaces = HoldPartialUploads ? 1 : 8;
+		int budget = 0;
+		while (budget < maxSurfaces && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5))
+		{
+			if (building == null || buildingKey == null)
+			{
+				if (!decoded.TryDequeue(out var next))
+				{
+					return;
+				}
+
+				building = next.Entry;
+				buildingKey = next.Key;
+			}
+
+			if (!liveKeys.ContainsKey(buildingKey))
+			{
+				queued.Remove(buildingKey);
+				DisposeEntry(building);
+				building = null;
+				buildingKey = null;
+				continue;
+			}
+
+			if (building.AnimationTexture == null)
+			{
+				using var image = Image.CreateFromData(building.Palette.Width, building.Palette.Height, false, Image.Format.Rgbaf, building.Palette.Pixels);
+				building.AnimationTexture = ImageTexture.CreateFromImage(image);
+			}
+
+			if (building.MaterialTexture == null)
+			{
+				using var image = Image.CreateFromData(building.Materials.Width, building.Materials.Height, false, Image.Format.Rgbaf, building.Materials.Pixels);
+				building.MaterialTexture = ImageTexture.CreateFromImage(image);
+			}
+
+			// Leave headroom within the soft 2 ms upload target; a single indivisible surface
+			// upload can still exceed the deadline.
+			for (; budget < maxSurfaces && building.Surface < building.Upload.Length && (budget == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds < 1.5); budget++)
+			{
+				AddSurface(building, building.Surface++, buildingKey.Skybox, buildingKey.Animation == 1);
+				stats.Uploads++;
+			}
+
+			if (building.Surface < building.Upload.Length || HoldPartialUploads)
+			{
+				return;
+			}
+
+			foreach (string warning in building.Data.Warnings)
+			{
+				GD.PushWarning(buildingKey.Path + ": " + warning);
+			}
+
+			// The merged copies and the decoded pixels are only needed for the upload.
+			building.Upload = [];
+			building.UploadMaterials = [];
+			building.ReleaseUploadData(AssetRef.IsWmo(buildingKey.Path));
+
+			cache[buildingKey] = building;
+			cachedBytes += building.Bytes;
+			building.LastUsed = tick;
+
+			queued.Remove(buildingKey);
+			building = null;
+			buildingKey = null;
+		}
+	}
+
+	/// <summary>
+	/// Attach at most eight ready bindings within the remaining soft two-millisecond budget. Access
+	/// refreshes cache recency even for already-built instances.
+	/// </summary>
+	void BindReadyInstances(long start)
+	{
+		// WMO attachment can enqueue embedded doodads. Iterate a snapshot so those
+		// new requests enter the next frame rather than mutating this enumeration.
+		int attached = 0;
+		// Only unbuilt instances can need binding (built ones were refreshed in PruneInstances). Embedded
+		// doodads attached while binding land in `unbuilt` too, so cap the walk at the count on entry.
+		for (int n = 0, count = unbuilt.Count; n < count; n++)
+		{
+			var i = unbuilt[n];
+			if (!GodotObject.IsInstanceValid(i) || i.Built)
+			{
+				continue;
+			}
+
+			if (cache.TryGetValue(i.Key, out var e))
+			{
+				e.LastUsed = tick;
+				if (!i.Built && attached < 8 && System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds < 2)
+				{
+					BuildInstance(i, e);
+					attached++;
+					stats.Binds++;
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// Choose the nearest unbuilt variants and capture the store and cancellation token before
+	/// topping the decode workers up to <see cref="DecodeWorkers"/>, each on the next nearest slice.
+	/// They run while earlier results upload; none starts while fewer than that many decoded entries
+	/// are waiting and their size stays under <see cref="DecodedByteLimit"/>, which bounds decoded memory.
+	/// </summary>
+	void ScheduleModelDecode(Camera3D camera)
+	{
+		if (store == null || workers.Count >= DecodeWorkers || decoded.Count >= DecodeWorkers)
+		{
+			return;
+		}
+
+		long waiting = building?.Bytes ?? 0;
+		foreach (var (_, entry) in decoded)
+		{
+			waiting += entry.Bytes;
+		}
+
+		if (waiting >= DecodedByteLimit)
+		{
+			return;
+		}
+
+		var eye = camera.GlobalPosition;
+		Dictionary<ModelKey, float> nearest = [];
+		foreach (var i in unbuilt)
+		{
+			if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key) || queued.Contains(i.Key))
+			{
+				continue;
+			}
+
+			float distance = i.GlobalPosition.DistanceSquaredTo(eye);
+			if (!nearest.TryGetValue(i.Key, out float known) || distance < known)
+			{
+				nearest[i.Key] = distance;
+			}
+		}
+
+		if (nearest.Count == 0)
+		{
+			return;
+		}
+
+		var ordered = nearest.OrderBy(p => p.Value).Select(p => p.Key).ToArray();
+		var source = store;
+		var token = cancellation.Token;
+		for (int start = 0; start < ordered.Length && workers.Count < DecodeWorkers; start += DecodeBatch)
+		{
+			var keys = ordered[start..Math.Min(start + DecodeBatch, ordered.Length)];
+			queued.UnionWith(keys);
+			workers.Add(Task.Run(() => DecodeBatchOf(keys, source, token), token));
+		}
+	}
+
+	/// <summary>
+	/// Worker: decode the keys in order, nearest first, stopping early once the batch has taken
+	/// <see cref="DecodeBatchMilliseconds"/>; keys not reached are handed back for the next schedule.
+	/// </summary>
+	List<Decoded> DecodeBatchOf(ModelKey[] keys, IClientFiles source, CancellationToken token)
+	{
+		var started = System.Diagnostics.Stopwatch.GetTimestamp();
+		List<Decoded> results = [];
+		foreach (var key in keys)
+		{
+			if (results.Count > 0 && System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds > DecodeBatchMilliseconds)
+			{
+				results.Add(new(key, null, null));
+				continue;
+			}
+
+			token.ThrowIfCancellationRequested();
+			try
+			{
+				results.Add(new(key, DecodeModel(key, source, token), null));
+			}
+			catch (OperationCanceledException)
+			{
+				throw;
+			}
+			catch (Exception e)
+			{
+				results.Add(new(key, null, e.Message));
+			}
+		}
+
+		return results;
+	}
+
+	const long DormantLimit = 256L * 1024 * 1024;
+
+	/// <summary>Estimated bytes of the ready entries no instance currently uses.</summary>
+	public long DormantBytes
+	{
+		get
+		{
+			long bytes = 0;
+			foreach (var pair in cache)
+			{
+				if (!liveKeys.ContainsKey(pair.Key))
+				{
+					bytes += pair.Value.Bytes;
+				}
+			}
+
+			return bytes;
+		}
+	}
+
+	/// <summary>
+	/// Reclaim least-recently-used dormant entries until they fit the soft 256 MiB estimate. Entries
+	/// a current instance uses are not counted and never evicted, so a busy scene can hold more.
+	/// </summary>
+	void EvictDormantModels()
+	{
+		long dormant = DormantBytes;
+		if (dormant <= DormantLimit)
+		{
+			return;
+		}
+
+		foreach (var pair in cache.Where(p => !liveKeys.ContainsKey(p.Key)).OrderBy(p => p.Value.LastUsed).ToArray())
+		{
+			if (dormant <= DormantLimit)
+			{
+				break;
+			}
+
+			dormant -= pair.Value.Bytes;
+			cachedBytes -= pair.Value.Bytes;
+			cache.Remove(pair.Key);
+			DisposeEntry(pair.Value);
+			stats.Evictions++;
+		}
+	}
+
+	/// <summary>
+	/// Worker-only native parse, texture/atlas decode and animation sampling. Texture failures
+	/// retain warnings/fallbacks; all Godot resource creation is deferred to Update.
+	/// </summary>
+	Entry DecodeModel(ModelKey key, IClientFiles source, CancellationToken token)
+	{
+		long started = System.Diagnostics.Stopwatch.GetTimestamp();
+		token.ThrowIfCancellationRequested();
+		var data = AssetRef.IsWmo(key.Path)
+			? WmoModel.Read(source, key.Path, key.DoodadSet, token)
+			: M2Model.Read(source, key.Path, [key.Texture1, key.Texture2, key.Texture3],
+				key.Baked.Length == 0 ? null : key.Baked, token, key.Animation, key.Hair.Length == 0 ? null : key.Hair, key.Fur.Length == 0 ? null : key.Fur, key.HairGeoset,
+				key.Eyes.Length == 0 ? null : key.Eyes, key.Geosets, key.Extra.Length == 0 ? null : key.Extra);
+		Dictionary<string, BlpTexture> decoded = new(StringComparer.OrdinalIgnoreCase);
+		foreach (string path in data.Surfaces.SelectMany(s => s.Layers == null ? [s.Texture] : s.Layers.Textures.Prepend(s.Texture)).Where(s => s.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+		{
+			token.ThrowIfCancellationRequested();
+			try
+			{
+				decoded[path] = path.StartsWith("@liquid/") ? LiquidTextures.For(source).Decode(uint.Parse(path[8..])) : BlpTexture.Decode(source.Read(path), 0);
+			}
+			catch (Exception e)
+			{
+				GD.PushWarning($"Model texture unavailable: {path}: {e.Message}");
+			}
+		}
+
+		var materials = MaterialPalette.Bake(data, token);
+		var entry = new Entry(data, AnimationPalette.Bake(data, token), materials, decoded);
+		if (data.Seat is { } seat && seat.Bone >= 0 && seat.Bone < data.Bones.Length)
+		{
+			try
+			{
+				entry.SeatFrames = AnimationPalette.SampleBoneFrames(data, seat.Bone, entry.Palette.Height, entry.Palette.Duration, token);
+			}
+			catch (Exception)
+			{
+				entry.SeatFrames = null;
+			}
+		}
+		// Sky batches keep one surface each: their render priority encodes the native draw order.
+		if (!key.Skybox)
+		{
+			(entry.Upload, entry.UploadMaterials) = SurfaceMerge.Merge(data.Surfaces, materials.Surfaces);
+		}
+
+		entry.DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+		return entry;
+	}
 }
