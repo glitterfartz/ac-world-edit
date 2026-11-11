@@ -183,6 +183,37 @@ public class SettingsResolverTests
     }
 
     [Fact]
+    public void NameOnlyHistorySaveRoundTripsThroughLoad()
+    {
+        var world = new DatabaseSettings("db.example", 3307, "reader", "pw", "acore_world");
+        var overrideSettings = world with { Database = "my_hist" };
+        var saved = SettingsResolver.AcworldSectionValues(world, overrideSettings).ToDictionary(pair => pair.Key, pair => pair.Value);
+        Assert.Equal(["name"], saved.Keys);
+
+        string Read(string section, string key, string fallback) => saved.GetValueOrDefault(key, fallback);
+        var loaded = SettingsResolver.AcworldOverride(
+            WorldDialect.AzerothCore, null, Read, section => section == "acworld.wrath",
+            world with { Password = "changed-through-env" });
+
+        Assert.Equal(world with { Password = "changed-through-env", Database = "my_hist" }, loaded);
+    }
+
+    [Fact]
+    public void FullServerHistorySaveRoundTripsThroughLoad()
+    {
+        var world = new DatabaseSettings("db.example", 3307, "reader", "pw", "acore_world");
+        var overrideSettings = new DatabaseSettings("hist.example", 3310, "huser", "hpw", "hist_db");
+        var saved = SettingsResolver.AcworldSectionValues(world, overrideSettings).ToDictionary(pair => pair.Key, pair => pair.Value);
+        Assert.Equal(["host", "port", "user", "password", "name"], saved.Keys);
+
+        string Read(string section, string key, string fallback) => saved.GetValueOrDefault(key, fallback);
+        var loaded = SettingsResolver.AcworldOverride(
+            WorldDialect.AzerothCore, null, Read, section => section == "acworld.wrath", world);
+
+        Assert.Equal(overrideSettings, loaded);
+    }
+
+    [Fact]
     public void NameOnlyHistoryOverrideFollowsTheCurrentWorldCredentials()
     {
         var world = SettingsResolver.Connection(WorldDialect.AzerothCore, "db.example;3307;reader;new-pw;acore_world", Nothing).World;

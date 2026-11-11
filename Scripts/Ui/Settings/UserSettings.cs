@@ -38,6 +38,23 @@ public static class UserSettings
 
     public static void SaveProfile(ClientKind kind) => Write("client", "profile", SettingsResolver.ProfileName(kind));
 
+    /// <summary>
+    /// Stable identifier of this installed profile, stored beside the settings. History rows record
+    /// it when applied, and only that client may revert them.
+    /// </summary>
+    public static string ClientId()
+    {
+        string id = Read("client", "id", "");
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            return id;
+        }
+
+        id = Guid.NewGuid().ToString("N");
+        Write("client", "id", id);
+        return id;
+    }
+
     public static WorldConnection LoadDatabase(WorldDialect dialect = WorldDialect.AzerothCore)
     {
         var connection = SettingsResolver.Connection(dialect, System.Environment.GetEnvironmentVariable(SettingsResolver.DatabaseVariableFor(dialect)), Read);
@@ -69,15 +86,10 @@ public static class UserSettings
         {
             // "Same server, different database name" must not freeze a copy of the world
             // credentials; save only the name and derive the server when loading.
-            bool nameOnly = SettingsResolver.AcworldNameOnly(connection.World, acworld);
             file.EraseSection(acworldSection);
-            file.SetValue(acworldSection, "name", acworld.Database);
-            if (!nameOnly)
+            foreach (var (key, value) in SettingsResolver.AcworldSectionValues(connection.World, acworld))
             {
-                file.SetValue(acworldSection, "host", acworld.Host);
-                file.SetValue(acworldSection, "port", acworld.Port.ToString());
-                file.SetValue(acworldSection, "user", acworld.User);
-                file.SetValue(acworldSection, "password", acworld.Password);
+                file.SetValue(acworldSection, key, value);
             }
         }
         else if (file.HasSection(acworldSection))

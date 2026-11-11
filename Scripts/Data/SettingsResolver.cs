@@ -114,6 +114,27 @@ public static class SettingsResolver
         acworld.User == world.User && acworld.Password == world.Password;
 
     /// <summary>
+    /// The [acworld.*] keys to persist. A same-server override stores only `name`, so the history
+    /// follows later changes to the world credentials instead of keeping a stale copy.
+    /// </summary>
+    public static IReadOnlyList<(string Key, string Value)> AcworldSectionValues(DatabaseSettings world, DatabaseSettings acworld)
+    {
+        if (AcworldNameOnly(world, acworld))
+        {
+            return [("name", acworld.Database)];
+        }
+
+        return
+        [
+            ("host", acworld.Host),
+            ("port", acworld.Port.ToString()),
+            ("user", acworld.User),
+            ("password", acworld.Password),
+            ("name", acworld.Database),
+        ];
+    }
+
+    /// <summary>
     /// As above, but resolves a name-only section against the current world settings. A section with
     /// no server fields (or with the world's host/port/user) means "same server, this database
     /// name", so it follows the world credentials instead of freezing a copy of them.
