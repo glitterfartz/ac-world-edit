@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 
 namespace ACWorldEdit.Foundation;
@@ -18,7 +17,17 @@ public enum PendingKind
 /// fingerprints the generated apply statements (not the timestamp), so the same net change keeps
 /// its Id across sessions and a changed one gets a new Id.
 /// </summary>
-public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, GraveyardEdit? Graveyard, RowEdit? Row);
+public sealed record PendingChange(string Id, PendingKind Kind, string Source, string Label, GraveyardEdit? Graveyard, RowEdit? Row)
+{
+    /// <summary>
+    /// Stable identity of the object being edited, independent of its net value. Edits to the same
+    /// graveyard or the same row key keep one history row even when the apply script (and therefore
+    /// <see cref="Id"/>) changes.
+    /// </summary>
+    public string ChangeKey => ChangeIntegrity.Fingerprint(
+        Source,
+        Kind + "\n" + (Kind == PendingKind.Graveyard ? Graveyard!.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) : Row!.Table + "\n" + Row.Key));
+}
 
 /// <summary>
 /// Lists the net draft changes as individual pending changes and remembers which were exported.
@@ -27,7 +36,11 @@ public sealed record PendingChange(string Id, PendingKind Kind, string Source, s
 /// </summary>
 public sealed class PendingChanges
 {
-    static readonly DateTime FixedStamp = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    /// <summary>
+    /// Informational script header stamp for local drafts and tracked rows. A stored script must not
+    /// change just because the history refreshed, so the history uses this instead of "now".
+    /// </summary>
+    public static readonly DateTime FixedStamp = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     readonly string path;
     readonly HashSet<string> exported = [];
 
@@ -74,7 +87,7 @@ public sealed class PendingChanges
         return all.Where(c => !exported.Contains(c.Id)).ToList();
     }
 
-    static string Fingerprint(string source, SqlScripts scripts) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source + "\n" + scripts.Apply)));
+    static string Fingerprint(string source, SqlScripts scripts) => ChangeIntegrity.Fingerprint(source, scripts.Apply);
 
     /// <summary>
     /// Every net change regardless of the exported set: the change-history flow stages these in the

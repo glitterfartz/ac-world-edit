@@ -6,7 +6,7 @@ namespace ACWorldEdit.Tests.Data;
 /// <summary>
 /// Pins the change_log DDL so it stays runnable on hosted servers: no TEXT/BLOB DEFAULT
 /// (MySQL before 8.0.13 and MariaDB reject those with error 1101), every column the store
-/// reads and writes present, writes always binding their own values.
+/// reads and writes present, and only genuinely missing columns migrated.
 /// </summary>
 public class AcworldStoreSchemaTests
 {
@@ -18,38 +18,47 @@ public class AcworldStoreSchemaTests
         string ddl = AcworldStore.CreateTableStatement(Acworld());
         foreach (string column in new[]
                  {
-                     "`fingerprint`", "`source_key`", "`dialect`", "`label`", "`apply_sql`",
-                     "`revert_sql`", "`status`", "`notes`", "`created_at`", "`applied_at`", "`reverted_at`",
+                     "`fingerprint`", "`change_key`", "`source_key`", "`dialect`", "`label`", "`apply_sql`",
+                     "`revert_sql`", "`scripts_hash`", "`status`", "`notes`", "`created_at`", "`applied_at`", "`reverted_at`",
                  })
         {
             Assert.Contains(column, ddl);
         }
 
         Assert.Contains("`acworld`.`change_log`", ddl);
+        Assert.Contains("UNIQUE KEY `uq_source_change` (`source_key`, `change_key`)", ddl);
         Assert.Contains("ENGINE=InnoDB", ddl);
     }
 
     [Fact]
     public void NoTextOrBlobColumnCarriesADefault()
     {
-        foreach (string statement in new[] { AcworldStore.CreateTableStatement(Acworld()) }.Concat(AcworldStore.MigrationStatements(Acworld())))
+        foreach (string line in AcworldStore.CreateTableStatement(Acworld()).Split('\n'))
         {
-            foreach (string line in statement.Split('\n'))
-            {
-                string trimmed = line.Trim();
-                bool isText = trimmed.Contains("TEXT", StringComparison.OrdinalIgnoreCase);
-                Assert.False(isText && trimmed.Contains("DEFAULT", StringComparison.OrdinalIgnoreCase),
-                    $"TEXT/BLOB columns must not declare DEFAULT (error 1101 on older servers): {trimmed}");
-            }
+            string trimmed = line.Trim();
+            bool isText = trimmed.Contains("TEXT", StringComparison.OrdinalIgnoreCase);
+            Assert.False(isText && trimmed.Contains("DEFAULT", StringComparison.OrdinalIgnoreCase),
+                $"TEXT/BLOB columns must not declare DEFAULT (error 1101 on older servers): {trimmed}");
         }
     }
 
     [Fact]
-    public void MigrationsCoverEarlierShapes()
+    public void CompleteTableNeedsNoMigrationStatements()
     {
-        var migrations = AcworldStore.MigrationStatements(Acworld());
-        Assert.Equal(3, migrations.Count);
+        var columns = AcworldStore.RequiredColumns.Select(c => c.Column).ToList();
+        Assert.Empty(AcworldStore.AddColumnStatements(Acworld(), columns));
+    }
+
+    [Fact]
+    public void OlderTableGetsOnlyTheMissingColumns()
+    {
+        var migrations = AcworldStore.AddColumnStatements(Acworld(), ["notes", "applied_at", "reverted_at"]);
+        Assert.Equal(2, migrations.Count);
+        Assert.Contains(migrations, s => s.Contains("`change_key`"));
+        Assert.Contains(migrations, s => s.Contains("`scripts_hash`"));
+        Assert.DoesNotContain(migrations, s => s.Contains("`notes`"));
         Assert.All(migrations, statement => Assert.Contains("`acworld`.`change_log`", statement));
+        Assert.All(migrations, statement => Assert.DoesNotContain("IF NOT EXISTS", statement));
     }
 
     [Fact]

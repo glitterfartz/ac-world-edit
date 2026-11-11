@@ -17,10 +17,16 @@ public static class ChangeLogMerge
         Func<string, WorldDialect> dialectFor)
     {
         var schema = schemaFor(change.Source);
+        // The stored script carries an informational header. Stamp it with the draft's fixed stamp,
+        // not the refresh time, so an unchanged change produces byte-identical SQL and its
+        // fingerprint stays reproducible from source_key + apply_sql.
         SqlScripts scripts = change.Kind == PendingKind.Graveyard
-            ? SqlExport.Build(change.Source, [change.Graveyard!], [], now, schema)
-            : SqlExport.Build(change.Source, [], [change.Row!], now, schema);
-        return new ChangeRecord(change.Id, change.Source, dialectFor(change.Source), change.Label, scripts.Apply, scripts.Revert, ChangeStatus.Staged, createdAt, null, null, notes);
+            ? SqlExport.Build(change.Source, [change.Graveyard!], [], PendingChanges.FixedStamp, schema)
+            : SqlExport.Build(change.Source, [], [change.Row!], PendingChanges.FixedStamp, schema);
+        return new ChangeRecord(change.Id, change.Source, dialectFor(change.Source), change.Label, scripts.Apply, scripts.Revert, ChangeStatus.Staged, createdAt, null, null, notes)
+        {
+            ChangeKey = change.ChangeKey
+        };
     }
 
     /// <summary>
@@ -37,7 +43,14 @@ public static class ChangeLogMerge
         var records = new List<ChangeRecord>();
         foreach (var change in staged)
         {
-            existing.TryGetValue(change.Id, out var prior);
+            // New rows are keyed by the stable logical key. The fingerprint fallback keeps notes and
+            // timestamps for rows written before change_key existed and for callers that still key
+            // their dictionary by fingerprint.
+            if (!existing.TryGetValue(change.ChangeKey, out var prior) && !existing.TryGetValue(change.Id, out prior))
+            {
+                prior = null;
+            }
+
             records.Add(BuildRecord(change, prior?.Notes ?? "", prior?.CreatedAt ?? now, now, schemaFor, dialectFor));
         }
 

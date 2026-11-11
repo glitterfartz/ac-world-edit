@@ -104,6 +104,34 @@ public class AcworldStoreDbTests
     }
 
     [DbWriteFact]
+    public async Task SuccessfulSchemaCheckIsNotRepeated()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            await using (var connection = new MySqlConnection(acworld.BuildConnectionString()))
+            {
+                await connection.OpenAsync(TestToken());
+                await using var drop = new MySqlCommand($"DROP TABLE `{AcworldStore.Table}`", connection);
+                await drop.ExecuteNonQueryAsync(TestToken());
+            }
+
+            // The cached success means the poll does not run DDL again, so the table stays absent.
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            await using var check = new MySqlConnection(acworld.BuildConnectionString());
+            await check.OpenAsync(TestToken());
+            await using var count = new MySqlCommand(
+                "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_log'", check);
+            Assert.Equal(0L, Convert.ToInt64(await count.ExecuteScalarAsync(TestToken())));
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
     public async Task StagedRoundTripPreservesEveryField()
     {
         var acworld = HistorySettings();
@@ -186,6 +214,211 @@ public class AcworldStoreDbTests
         {
             await DropDatabaseAsync(acworld);
         }
+    }
+
+    [DbWriteFact]
+    public async Task EditingTheSameLogicalChangeReplacesItsStagedRow()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            string changeKey = new string('e', 64);
+            var first = Staged("aa") with { ChangeKey = changeKey, Notes = "near the tree" };
+            await AcworldStore.UpsertStagedAsync(acworld, first, TestToken());
+
+            var edited = Staged("bb") with { ChangeKey = changeKey, Label = "moved again" };
+            await AcworldStore.UpsertStagedAsync(acworld, edited, TestToken());
+
+            var back = Assert.Single(await AcworldStore.ListAsync(acworld, "test-source", false, TestToken()));
+            Assert.Equal(changeKey, back.ChangeKey);
+            Assert.Equal(edited.Fingerprint, back.Fingerprint);
+            Assert.Equal("moved again", back.Label);
+            Assert.Equal("near the tree", back.Notes);
+            Assert.Equal(first.CreatedAt, back.CreatedAt);
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task RestagingAnAppliedChangeKeepsOneAppliedRow()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            string changeKey = new string('f', 64);
+            var first = Staged("11") with { ChangeKey = changeKey };
+            await AcworldStore.UpsertStagedAsync(acworld, first, TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, first.Fingerprint, TestToken());
+
+            var restaged = Staged("12") with { ChangeKey = changeKey, Label = "same object, new draft" };
+            await AcworldStore.UpsertStagedAsync(acworld, restaged, TestToken());
+
+            var back = Assert.Single(await AcworldStore.ListAsync(acworld, "test-source", false, TestToken()));
+            Assert.Equal(ChangeStatus.Applied, back.Status);
+            Assert.Equal(changeKey, back.ChangeKey);
+            Assert.Equal(restaged.Fingerprint, back.Fingerprint);
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task ReconcileRemovesGhostStagedRowsAndKeepsAppliedHistory()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            string keep = new string('1', 64);
+            await AcworldStore.UpsertStagedAsync(acworld, Staged("21") with { ChangeKey = keep }, TestToken());
+            await AcworldStore.UpsertStagedAsync(acworld, Staged("22") with { ChangeKey = new string('2', 64) }, TestToken());
+            await AcworldStore.UpsertStagedAsync(acworld, Staged("23", "other-source") with { ChangeKey = new string('3', 64) }, TestToken());
+            var applied = Staged("24") with { ChangeKey = new string('4', 64) };
+            await AcworldStore.UpsertStagedAsync(acworld, applied, TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, applied.Fingerprint, TestToken());
+
+            await AcworldStore.ReconcileStagedAsync(acworld, "test-source", [keep], TestToken());
+
+            var rows = await AcworldStore.ListAsync(acworld, "test-source", false, TestToken());
+            Assert.Equal(2, rows.Count);
+            Assert.Contains(rows, r => r.ChangeKey == keep && r.Status == ChangeStatus.Staged);
+            Assert.Contains(rows, r => r.ChangeKey == applied.ChangeKey && r.Status == ChangeStatus.Applied);
+            Assert.Single(await AcworldStore.ListAsync(acworld, "other-source", false, TestToken()));
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task DeleteStagedNeverDeletesAppliedOrRevertedHistory()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            var applied = Staged("31");
+            var staged = Staged("32");
+            await AcworldStore.UpsertStagedAsync(acworld, applied, TestToken());
+            await AcworldStore.UpsertStagedAsync(acworld, staged, TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, applied.Fingerprint, TestToken());
+
+            await AcworldStore.DeleteStagedAsync(acworld, applied.Fingerprint, TestToken());
+            await AcworldStore.DeleteStagedAsync(acworld, staged.Fingerprint, TestToken());
+
+            var back = Assert.Single(await AcworldStore.ListAsync(acworld, "test-source", false, TestToken()));
+            Assert.Equal(applied.Fingerprint, back.Fingerprint);
+            Assert.Equal(ChangeStatus.Applied, back.Status);
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task BatchUpsertWritesEveryRecordAndSkipsUnchangedScripts()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            var first = Staged("41");
+            var second = Staged("42");
+            await AcworldStore.UpsertStagedAsync(acworld, [first, second], TestToken());
+
+            var before = await AcworldStore.ListAsync(acworld, "test-source", false, TestToken());
+            await AcworldStore.UpsertStagedAsync(acworld, before, TestToken());
+            var after = await AcworldStore.ListAsync(acworld, "test-source", false, TestToken());
+            Assert.Equal(before.Select(r => r.ApplySql), after.Select(r => r.ApplySql));
+            Assert.Equal(2, after.Count);
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task EnsureSchemaUpgradesAnOldTableShape()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await CreateOldTableAsync(acworld);
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+
+            await using var connection = new MySqlConnection(acworld.BuildConnectionString());
+            await connection.OpenAsync(TestToken());
+            await using var columns = new MySqlCommand(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_log'", connection);
+            var names = new List<string>();
+            await using (var reader = await columns.ExecuteReaderAsync(TestToken()))
+            {
+                while (await reader.ReadAsync(TestToken()))
+                {
+                    names.Add(reader.GetString(0));
+                }
+            }
+
+            Assert.Contains("change_key", names);
+            Assert.Contains("scripts_hash", names);
+            Assert.Contains("notes", names);
+
+            // The old row becomes its own change key and gets a valid-looking script seal.
+            var old = Assert.Single(await AcworldStore.ListAsync(acworld, "old-source", false, TestToken()));
+            Assert.Equal(old.Fingerprint, old.ChangeKey);
+            Assert.False(string.IsNullOrEmpty(old.ScriptsHash));
+            Assert.True(ChangeIntegrity.ScriptsHashMatches(old));
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    static async Task CreateOldTableAsync(DatabaseSettings settings)
+    {
+        var builder = new MySqlConnectionStringBuilder(settings.BuildConnectionString()) { Database = "" };
+        await using var server = new MySqlConnection(builder.ConnectionString);
+        await server.OpenAsync(CancellationToken.None);
+        await using (var createDb = new MySqlCommand($"CREATE DATABASE `{settings.Database}` CHARACTER SET utf8mb4", server))
+        {
+            await createDb.ExecuteNonQueryAsync(CancellationToken.None);
+        }
+
+        await using var connection = new MySqlConnection(settings.BuildConnectionString());
+        await connection.OpenAsync(CancellationToken.None);
+        await using (var create = new MySqlCommand($"""
+            CREATE TABLE `change_log` (
+              `fingerprint` CHAR(64) NOT NULL PRIMARY KEY,
+              `source_key` VARCHAR(128) NOT NULL,
+              `dialect` VARCHAR(16) NOT NULL DEFAULT 'AzerothCore',
+              `label` TEXT NOT NULL,
+              `apply_sql` MEDIUMTEXT NOT NULL,
+              `revert_sql` MEDIUMTEXT NOT NULL,
+              `status` VARCHAR(16) NOT NULL DEFAULT 'staged',
+              `created_at` DATETIME(3) NOT NULL,
+              INDEX `idx_source_status` (`source_key`, `status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """, connection))
+        {
+            await create.ExecuteNonQueryAsync(CancellationToken.None);
+        }
+
+        await using var insert = new MySqlCommand($"""
+            INSERT INTO `change_log` (`fingerprint`, `source_key`, `label`, `apply_sql`, `revert_sql`, `status`, `created_at`)
+            VALUES ('{new string('a', 64)}', 'old-source', 'old row', '-- apply', '-- revert', 'staged', UTC_TIMESTAMP(3))
+            """, connection);
+        await insert.ExecuteNonQueryAsync(CancellationToken.None);
     }
 
     [DbWriteFact]
