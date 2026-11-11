@@ -36,6 +36,7 @@ public static class AcworldStore
           `revert_sql` MEDIUMTEXT NOT NULL,
           `scripts_hash` CHAR(64) NOT NULL DEFAULT '',
           `status` VARCHAR(16) NOT NULL DEFAULT 'staged',
+          `applied_by` VARCHAR(64) NOT NULL DEFAULT '',
           `notes` TEXT NOT NULL,
           `created_at` DATETIME(3) NOT NULL,
           `applied_at` DATETIME(3) NULL,
@@ -54,6 +55,7 @@ public static class AcworldStore
         ("reverted_at", "`reverted_at` DATETIME(3) NULL"),
         ("change_key", "`change_key` CHAR(64) NOT NULL DEFAULT ''"),
         ("scripts_hash", "`scripts_hash` CHAR(64) NOT NULL DEFAULT ''"),
+        ("applied_by", "`applied_by` VARCHAR(64) NOT NULL DEFAULT ''"),
     ];
 
     /// <summary>
@@ -332,7 +334,7 @@ public static class AcworldStore
     }
 
     static string SelectColumns =>
-        "`fingerprint`, `change_key`, `source_key`, `dialect`, `label`, `apply_sql`, `revert_sql`, `scripts_hash`, `status`, `notes`, `created_at`, `applied_at`, `reverted_at`";
+        "`fingerprint`, `change_key`, `source_key`, `dialect`, `label`, `apply_sql`, `revert_sql`, `scripts_hash`, `status`, `applied_by`, `notes`, `created_at`, `applied_at`, `reverted_at`";
 
     public static async Task<List<ChangeRecord>> ListAsync(DatabaseSettings acworld, string? sourceKey, bool includeAllSources, CancellationToken token)
     {
@@ -359,24 +361,30 @@ public static class AcworldStore
                 reader.GetString(5),
                 reader.GetString(6),
                 Enum.TryParse<ChangeStatus>(reader.GetString(8), true, out var status) ? status : ChangeStatus.Staged,
-                reader.GetDateTime(10),
-                reader.IsDBNull(11) ? null : reader.GetDateTime(11),
+                reader.GetDateTime(11),
                 reader.IsDBNull(12) ? null : reader.GetDateTime(12),
-                reader.IsDBNull(9) ? "" : reader.GetString(9))
+                reader.IsDBNull(13) ? null : reader.GetDateTime(13),
+                reader.IsDBNull(10) ? "" : reader.GetString(10))
             {
                 ChangeKey = reader.IsDBNull(1) || reader.GetString(1).Length == 0 ? reader.GetString(0) : reader.GetString(1),
-                ScriptsHash = reader.IsDBNull(7) ? "" : reader.GetString(7)
+                ScriptsHash = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                AppliedBy = reader.IsDBNull(9) ? "" : reader.GetString(9)
             });
         }
 
         return records;
     }
 
-    public static async Task MarkAppliedAsync(DatabaseSettings acworld, string fingerprint, CancellationToken token)
+    public static async Task MarkAppliedAsync(DatabaseSettings acworld, string fingerprint, CancellationToken token) =>
+        await MarkAppliedAsync(acworld, fingerprint, "", token).ConfigureAwait(false);
+
+    /// <summary>Mark a row applied and record the client profile that ran it, so another client cannot revert it.</summary>
+    public static async Task MarkAppliedAsync(DatabaseSettings acworld, string fingerprint, string appliedBy, CancellationToken token)
     {
         await using var connection = new MySqlConnection(acworld.BuildConnectionString());
         await connection.OpenAsync(token).ConfigureAwait(false);
-        await using var command = new MySqlCommand($"UPDATE {QualifiedTable(acworld)} SET `status`='applied', `applied_at`=UTC_TIMESTAMP(3) WHERE `fingerprint`=@fp", connection);
+        await using var command = new MySqlCommand($"UPDATE {QualifiedTable(acworld)} SET `status`='applied', `applied_by`=@by, `applied_at`=UTC_TIMESTAMP(3) WHERE `fingerprint`=@fp", connection);
+        command.Parameters.AddWithValue("@by", appliedBy ?? "");
         command.Parameters.AddWithValue("@fp", fingerprint);
         await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
     }

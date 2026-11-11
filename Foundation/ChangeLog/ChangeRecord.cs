@@ -45,6 +45,12 @@ public sealed record ChangeRecord(
 
     /// <summary>SHA-256 seal over source + apply + revert SQL, so a stored row can be verified before revert.</summary>
     public string ScriptsHash { get; init; } = ChangeIntegrity.ScriptsHash(SourceKey, ApplySql, RevertSql);
+
+    /// <summary>
+    /// The client profile that marked this row applied. Empty for rows written before provenance
+    /// existed; those are treated as belonging to another client, not as trusted.
+    /// </summary>
+    public string AppliedBy { get; init; } = "";
 }
 
 /// <summary>

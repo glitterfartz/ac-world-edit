@@ -245,14 +245,8 @@ public partial class ViewerShell
 
             if (changed.Count > 0)
             {
-                try
-                {
-                    await AcworldStore.UpsertStagedAsync(acworld, changed, CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception upsertError)
-                {
-                    error = "Some changes could not be staged. " + CleanError(upsertError, acworld);
-                }
+                error = await ChangeHistoryOperations.StageAsync(
+                    AcworldHistoryStore.Instance, acworld, changed, e => CleanError(e, acworld), CancellationToken.None).ConfigureAwait(false);
             }
 
             if (sourceKey != null)
@@ -401,66 +395,20 @@ public partial class ViewerShell
         int total = ordered.Count;
         PostToMainThread(() => pendingWindow.SetStatus($"Applying {total} change(s)…"));
 
-        var applied = new List<string>();
-        string? firstError = sourceProblem;
-        foreach (var record in ordered)
-        {
-            if (!staged.ContainsKey(record.ChangeKey))
-            {
-                firstError ??= $"The draft for \"{record.Label}\" is no longer open.";
-                continue;
-            }
+        var outcome = await ChangeHistoryOperations.ApplyAsync(
+            ordered,
+            localScripts,
+            script => WorldApplier.ExecuteAsync(world, script, CancellationToken.None),
+            AcworldHistoryStore.Instance,
+            acworld,
+            UserSettings.ClientId(),
+            e => CleanError(e, acworld),
+            CancellationToken.None).ConfigureAwait(false);
 
-            if (!ChangeIntegrity.FingerprintMatches(record))
-            {
-                firstError ??= $"The stored apply script for \"{record.Label}\" does not match its fingerprint, so it was not run.";
-                continue;
-            }
-
-            // Execute the script generated from the local draft, not the copy in the history
-            // database, so a tampered row cannot inject SQL even if it kept a matching hash. If the
-            // draft changed since the list was drawn, make the user refresh rather than run
-            // something other than the checked row.
-            var local = localScripts[record.ChangeKey];
-            if (local.Fingerprint != record.Fingerprint)
-            {
-                firstError ??= $"The draft for \"{record.Label}\" changed since the history was refreshed. Refresh and review it again.";
-                continue;
-            }
-
-            string script = local.ApplySql;
-            string? error = await WorldApplier.ExecuteAsync(world, script, CancellationToken.None).ConfigureAwait(false);
-            if (error != null)
-            {
-                firstError ??= error;
-                try
-                {
-                    await AcworldStore.MarkFailedAsync(acworld, record.Fingerprint, CancellationToken.None).ConfigureAwait(false);
-                }
-                catch
-                {
-                }
-
-                continue;
-            }
-
-            try
-            {
-                await AcworldStore.MarkAppliedAsync(acworld, record.Fingerprint, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception markError)
-            {
-                // The world changed, but the history did not. Keep the draft so the user can retry
-                // or inspect it rather than silently losing the only record of the change.
-                firstError ??= $"The world change ran, but the history could not mark it applied ({CleanError(markError, acworld)}). The draft was kept.";
-                continue;
-            }
-
-            applied.Add(record.ChangeKey);
-        }
-
-        var done = applied;
-        var failed = firstError;
+        var done = outcome.CompletedChangeKeys;
+        string? failed = sourceProblem == null ? outcome.Error
+            : outcome.Error == null ? sourceProblem
+            : sourceProblem + " " + outcome.Error;
         PostToMainThread(() =>
         {
             var map = CollectStaged().ToDictionary(c => c.ChangeKey, StringComparer.Ordinal);
@@ -518,39 +466,19 @@ public partial class ViewerShell
         int total = ordered.Count;
         PostToMainThread(() => pendingWindow.SetStatus($"Reverting {total} change(s)…"));
 
-        int ok = 0;
-        string? firstError = sourceProblem;
-        foreach (var record in ordered)
-        {
-            // A revert runs the stored script, so verify the seal before trusting it.
-            if (!ChangeIntegrity.ScriptsHashMatches(record))
-            {
-                firstError ??= $"The stored revert script for \"{record.Label}\" failed its integrity check, so it was not run.";
-                continue;
-            }
+        var outcome = await ChangeHistoryOperations.RevertAsync(
+            ordered,
+            UserSettings.ClientId(),
+            script => WorldApplier.ExecuteAsync(world, script, CancellationToken.None),
+            AcworldHistoryStore.Instance,
+            acworld,
+            e => CleanError(e, acworld),
+            CancellationToken.None).ConfigureAwait(false);
 
-            string? error = await WorldApplier.ExecuteAsync(world, record.RevertSql, CancellationToken.None).ConfigureAwait(false);
-            if (error != null)
-            {
-                firstError ??= error;
-                continue;
-            }
-
-            try
-            {
-                await AcworldStore.MarkRevertedAsync(acworld, record.Fingerprint, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception markError)
-            {
-                firstError ??= $"The world change was reverted, but the history could not mark it ({CleanError(markError, acworld)}).";
-                continue;
-            }
-
-            ok++;
-        }
-
-        int done = ok;
-        string? failed = firstError;
+        int done = outcome.CompletedChangeKeys.Count;
+        string? failed = sourceProblem == null ? outcome.Error
+            : outcome.Error == null ? sourceProblem
+            : sourceProblem + " " + outcome.Error;
         PostToMainThread(() =>
         {
             LoadHistoryAsync();
@@ -593,29 +521,17 @@ public partial class ViewerShell
         }
 
         var acworld = DatabaseConnection().Acworld;
-        var deleted = new List<string>();
-        string? firstError = null;
-        foreach (var change in changes)
-        {
-            try
-            {
-                // Only a staged row may be deleted: an applied/reverted row with the same local
-                // draft is history and must survive the discard.
-                await AcworldStore.DeleteStagedAsync(acworld, change.Id, CancellationToken.None).ConfigureAwait(false);
-                deleted.Add(change.ChangeKey);
-            }
-            catch (Exception error)
-            {
-                firstError ??= "Could not discard a staged change (" + CleanError(error, acworld) + "). The draft was kept.";
-            }
-        }
+        // Only a staged row may be deleted: an applied/reverted row with the same local draft is
+        // history and must survive the discard.
+        var outcome = await ChangeHistoryOperations.DiscardAsync(
+            changes, AcworldHistoryStore.Instance, acworld, e => CleanError(e, acworld), CancellationToken.None).ConfigureAwait(false);
 
-        int count = deleted.Count;
-        string? failed = firstError;
+        int count = outcome.DeletedChangeKeys.Count;
+        string? failed = outcome.Error;
         PostToMainThread(() =>
         {
             var map = CollectStaged().ToDictionary(c => c.ChangeKey, StringComparer.Ordinal);
-            foreach (string changeKey in deleted)
+            foreach (string changeKey in outcome.DeletedChangeKeys)
             {
                 if (map.TryGetValue(changeKey, out var current))
                 {
@@ -790,19 +706,8 @@ public partial class ViewerShell
             // A damaged other profile must not block resetting this one.
         }
 
-        foreach (var acworld in targets.Distinct())
-        {
-            try
-            {
-                await AcworldStore.DeleteAllStagedAsync(acworld, null, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception error)
-            {
-                return $"Reset stopped: could not remove staged change history from {acworld.Database} ({CleanError(error, acworld)}). Nothing was deleted.";
-            }
-        }
-
-        return null;
+        return await ChangeHistoryOperations.ResetAsync(
+            targets.Distinct(), AcworldHistoryStore.Instance, (settings, error) => CleanError(error, settings), CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>

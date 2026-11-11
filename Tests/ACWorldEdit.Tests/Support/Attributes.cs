@@ -129,9 +129,13 @@ public sealed class DbWriteFactAttribute : FactAttribute
         Skip = Environments.DatabaseSkip() ?? ProbeWriteAccess();
     }
 
-    static string? ProbeWriteAccess()
+    /// <summary>Runs the same probe the attribute uses, so a live test can prove a restricted user skips.</summary>
+    public static string? ProbeWriteAccessForTests(string info) => ProbeWriteAccess(info);
+
+    static string? ProbeWriteAccess() => ProbeWriteAccess(Environment.GetEnvironmentVariable(Environments.DbVariable));
+
+    static string? ProbeWriteAccess(string? info)
     {
-        string? info = Environment.GetEnvironmentVariable(Environments.DbVariable);
         if (string.IsNullOrWhiteSpace(info))
         {
             return "ACWORLD_DB_INFO not set; skipping database write test";

@@ -172,10 +172,11 @@ public class AcworldStoreDbTests
             await AcworldStore.UpsertStagedAsync(acworld, Staged("bb"), TestToken());
 
             await AcworldStore.UpdateNotesAsync(acworld, Staged("bb").Fingerprint, "edited note", TestToken());
-            await AcworldStore.MarkAppliedAsync(acworld, Staged("bb").Fingerprint, TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, Staged("bb").Fingerprint, "client-a", TestToken());
             var applied = Assert.Single(await AcworldStore.ListAsync(acworld, "test-source", false, TestToken()));
             Assert.Equal(ChangeStatus.Applied, applied.Status);
             Assert.Equal("edited note", applied.Notes);
+            Assert.Equal("client-a", applied.AppliedBy);
             Assert.NotNull(applied.AppliedAt);
 
             await AcworldStore.MarkRevertedAsync(acworld, Staged("bb").Fingerprint, TestToken());
@@ -371,6 +372,7 @@ public class AcworldStoreDbTests
 
             Assert.Contains("change_key", names);
             Assert.Contains("scripts_hash", names);
+            Assert.Contains("applied_by", names);
             Assert.Contains("notes", names);
 
             // The old row becomes its own change key and gets a valid-looking script seal.
@@ -419,6 +421,128 @@ public class AcworldStoreDbTests
             VALUES ('{new string('a', 64)}', 'old-source', 'old row', '-- apply', '-- revert', 'staged', UTC_TIMESTAMP(3))
             """, connection);
         await insert.ExecuteNonQueryAsync(CancellationToken.None);
+    }
+
+    [DbWriteFact]
+    public async Task DmlOnlyUserLoadsAndWritesAPrecreatedHistory()
+    {
+        var acworld = HistorySettings();
+        string? user = null;
+        try
+        {
+            // The DBA provisions the schema once.
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            var login = await TryCreateRestrictedUserAsync(acworld, "SELECT, INSERT, UPDATE, DELETE", TestToken());
+            if (login == null)
+            {
+                return; // This server does not let the configured user create accounts.
+            }
+
+            user = login.Value.User;
+            var restricted = acworld with { User = login.Value.User, Password = login.Value.Password };
+            AcworldStore.InvalidateSchemaCache();
+
+            // No CREATE/ALTER grant: EnsureSchema must use information_schema and issue no DDL.
+            await AcworldStore.EnsureSchemaAsync(restricted, TestToken());
+            var record = Staged("71");
+            await AcworldStore.UpsertStagedAsync(restricted, [record], TestToken());
+            var listed = Assert.Single(await AcworldStore.ListAsync(restricted, "test-source", false, TestToken()));
+            Assert.Equal(record.Fingerprint, listed.Fingerprint);
+
+            await AcworldStore.MarkAppliedAsync(restricted, record.Fingerprint, "restricted-client", TestToken());
+            var applied = Assert.Single(await AcworldStore.ListAsync(restricted, "test-source", false, TestToken()));
+            Assert.Equal(ChangeStatus.Applied, applied.Status);
+            Assert.Equal("restricted-client", applied.AppliedBy);
+        }
+        finally
+        {
+            if (user != null)
+            {
+                await DropRestrictedUserAsync(user);
+            }
+
+            AcworldStore.InvalidateSchemaCache();
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    [DbWriteFact]
+    public async Task WriteProbeSkipsAUserWithoutCreateDatabase()
+    {
+        string? user = null;
+        try
+        {
+            var login = await TryCreateRestrictedUserAsync(Config, "SELECT", TestToken());
+            if (login == null)
+            {
+                return;
+            }
+
+            user = login.Value.User;
+            string info = $"{Config.Host};{Config.Port};{login.Value.User};{login.Value.Password};{Config.Database}";
+            string? skip = DbWriteFactAttribute.ProbeWriteAccessForTests(info);
+
+            Assert.NotNull(skip);
+            Assert.Contains("cannot create databases", skip);
+        }
+        finally
+        {
+            if (user != null)
+            {
+                await DropRestrictedUserAsync(user);
+            }
+        }
+    }
+
+    static async Task<(string User, string Password)?> TryCreateRestrictedUserAsync(
+        DatabaseSettings grantOn, string privileges, CancellationToken token)
+    {
+        string user = "acwe_u_" + Guid.NewGuid().ToString("N")[..12];
+        string password = Guid.NewGuid().ToString("N");
+        try
+        {
+            var builder = new MySqlConnectionStringBuilder(grantOn.BuildConnectionString()) { Database = "" };
+            await using var connection = new MySqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(token);
+            foreach (string host in new[] { "localhost", "%" })
+            {
+                await using var create = new MySqlCommand($"CREATE USER `{user}`@`{host}` IDENTIFIED BY '{password}'", connection);
+                await create.ExecuteNonQueryAsync(token);
+                await using var grant = new MySqlCommand(
+                    $"GRANT {privileges} ON `{grantOn.Database.Replace("`", "``")}`.* TO `{user}`@`{host}`", connection);
+                await grant.ExecuteNonQueryAsync(token);
+            }
+
+            return (user, password);
+        }
+        catch (MySqlException error) when (error.Number is 1044 or 1045 or 1142 or 1227)
+        {
+            return null;
+        }
+        catch
+        {
+            await DropRestrictedUserAsync(user);
+            return null;
+        }
+    }
+
+    static async Task DropRestrictedUserAsync(string user)
+    {
+        try
+        {
+            var builder = new MySqlConnectionStringBuilder(Config.BuildConnectionString()) { Database = "" };
+            await using var connection = new MySqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(CancellationToken.None);
+            foreach (string host in new[] { "localhost", "%" })
+            {
+                await using var drop = new MySqlCommand($"DROP USER IF EXISTS `{user}`@`{host}`", connection);
+                await drop.ExecuteNonQueryAsync(CancellationToken.None);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only.
+        }
     }
 
     [DbWriteFact]

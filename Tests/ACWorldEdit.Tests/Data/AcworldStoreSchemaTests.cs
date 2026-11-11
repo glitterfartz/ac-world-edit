@@ -19,7 +19,7 @@ public class AcworldStoreSchemaTests
         foreach (string column in new[]
                  {
                      "`fingerprint`", "`change_key`", "`source_key`", "`dialect`", "`label`", "`apply_sql`",
-                     "`revert_sql`", "`scripts_hash`", "`status`", "`notes`", "`created_at`", "`applied_at`", "`reverted_at`",
+                     "`revert_sql`", "`scripts_hash`", "`status`", "`applied_by`", "`notes`", "`created_at`", "`applied_at`", "`reverted_at`",
                  })
         {
             Assert.Contains(column, ddl);
@@ -53,9 +53,10 @@ public class AcworldStoreSchemaTests
     public void OlderTableGetsOnlyTheMissingColumns()
     {
         var migrations = AcworldStore.AddColumnStatements(Acworld(), ["notes", "applied_at", "reverted_at"]);
-        Assert.Equal(2, migrations.Count);
+        Assert.Equal(3, migrations.Count);
         Assert.Contains(migrations, s => s.Contains("`change_key`"));
         Assert.Contains(migrations, s => s.Contains("`scripts_hash`"));
+        Assert.Contains(migrations, s => s.Contains("`applied_by`"));
         Assert.DoesNotContain(migrations, s => s.Contains("`notes`"));
         Assert.All(migrations, statement => Assert.Contains("`acworld`.`change_log`", statement));
         Assert.All(migrations, statement => Assert.DoesNotContain("IF NOT EXISTS", statement));
