@@ -452,4 +452,24 @@ public static class AcworldStore
 
         await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Delete finished history for one source whose last lifecycle timestamp is older than
+    /// <paramref name="olderThanUtc"/>. Only applied and reverted rows are touched: staged drafts are
+    /// still open edits and failed attempts stay for review, and another source is left alone.
+    /// Returns the number of rows removed.
+    /// </summary>
+    public static async Task<int> DeleteOldAsync(DatabaseSettings acworld, string sourceKey, DateTime olderThanUtc, CancellationToken token)
+    {
+        await using var connection = new MySqlConnection(acworld.BuildConnectionString());
+        await connection.OpenAsync(token).ConfigureAwait(false);
+        await using var command = new MySqlCommand($"""
+            DELETE FROM {QualifiedTable(acworld)}
+            WHERE `source_key`=@source AND `status` IN ('applied','reverted')
+              AND CASE `status` WHEN 'reverted' THEN COALESCE(`reverted_at`, `created_at`) ELSE COALESCE(`applied_at`, `created_at`) END < @before
+            """, connection);
+        command.Parameters.AddWithValue("@source", sourceKey);
+        command.Parameters.AddWithValue("@before", olderThanUtc);
+        return await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+    }
 }

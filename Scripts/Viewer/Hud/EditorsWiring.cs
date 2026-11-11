@@ -188,6 +188,7 @@ public partial class ViewerShell
         pendingWindow.RevertRequested += fingerprints => RevertHistoryAsync(fingerprints);
         pendingWindow.DiscardStagedRequested += fingerprints => DiscardStagedAsync(fingerprints);
         pendingWindow.DiscardAllStagedRequested += DiscardAllPending;
+        pendingWindow.DeleteOldRequested += days => DeleteOldHistoryAsync(days);
         pendingWindow.PreviewRequested += (fingerprints, revert) => PreviewHistory(fingerprints, revert);
         pendingWindow.ExportRequested += (fingerprints, revert) => ExportHistory(fingerprints, revert);
         pendingWindow.NotesChanged += (fingerprint, notes) => SaveNotesAsync(fingerprint, notes);

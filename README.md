@@ -6,7 +6,7 @@ It reads the WoW client's data to render terrain, models and liquids. On top of 
 
 A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a TrinityCore master `world` and `hotfixes`.
 
-The game files are never modified. Edits stage in local drafts, sync to the `acworld` change log, and reach the world database only when you apply them from Change History; checked rows can also be exported as one SQL file per world for review or sharing. Reads stay in read-only transactions, and applying needs write access to the world database.
+The game files are never modified. Edits stage in local drafts, sync to the `acworld` change log, and reach the world database only when you apply them from Change History; checked rows can also be exported as one SQL file per world for review or sharing, and finished history can be deleted by age. Reads stay in read-only transactions, and applying needs write access to the world database.
 
 ## Screenshots
 

@@ -562,6 +562,36 @@ public partial class ViewerShell
     }
 
     /// <summary>
+    /// Remove finished history older than the chosen age for the open world. Applied and reverted
+    /// rows are deleted; staged drafts and failed attempts stay, and other worlds are left alone.
+    /// </summary>
+    async void DeleteOldHistoryAsync(int days)
+    {
+        var connection = DatabaseConnection();
+        string? sourceKey = connection.World.IsComplete ? CurrentSourceKey() : null;
+        if (sourceKey == null)
+        {
+            pendingWindow.SetStatus("Connect a world database first.");
+            return;
+        }
+
+        var acworld = connection.Acworld;
+        DateTime olderThan = days <= 0 ? DateTime.UtcNow : DateTime.UtcNow.AddDays(-days);
+        pendingWindow.SetStatus("Deleting old changes…");
+        var outcome = await ChangeHistoryOperations.DeleteOldAsync(
+            AcworldHistoryStore.Instance, acworld, sourceKey, olderThan,
+            e => CleanError(e, acworld), CancellationToken.None).ConfigureAwait(false);
+
+        PostToMainThread(() =>
+        {
+            LoadHistoryAsync();
+            string result = outcome.Error ?? $"Deleted {outcome.Deleted} old change(s).";
+            pendingWindow.SetStatus(result);
+            statusLog.Post(result);
+        });
+    }
+
+    /// <summary>
     /// Wipe the saved editing state (every draft change with its undo history) and the model
     /// thumbnails of both client profiles. Applied change history stays in acworld; staged rows for
     /// the current drafts are removed. The listfile and the engine's shader caches are left alone.

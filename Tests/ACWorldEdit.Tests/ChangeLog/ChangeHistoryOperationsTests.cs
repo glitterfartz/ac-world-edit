@@ -40,8 +40,11 @@ public class ChangeHistoryOperationsTests
 
     sealed class FakeStore : IChangeHistoryStore
     {
-        public bool FailStage, FailApplyMark, FailRevertMark, FailDelete, FailDeleteAll;
+        public bool FailStage, FailApplyMark, FailRevertMark, FailDelete, FailDeleteAll, FailDeleteOld;
         public int SecondDeleteAll;
+        public int DeleteOldCount;
+        public string? LastOldSource;
+        public DateTime LastOldCutoff;
         public readonly List<string> Applied = [];
         public readonly List<string> Reverted = [];
         public readonly List<string> Failed = [];
@@ -106,6 +109,18 @@ public class ChangeHistoryOperationsTests
             }
 
             return Task.CompletedTask;
+        }
+
+        public Task<int> DeleteOldAsync(DatabaseSettings acworld, string sourceKey, DateTime olderThanUtc, CancellationToken token)
+        {
+            if (FailDeleteOld)
+            {
+                throw new InvalidOperationException("old delete failed");
+            }
+
+            LastOldSource = sourceKey;
+            LastOldCutoff = olderThanUtc;
+            return Task.FromResult(DeleteOldCount);
         }
     }
 
@@ -229,5 +244,31 @@ public class ChangeHistoryOperationsTests
         Assert.StartsWith("Reset stopped:", error);
         Assert.Contains("acworld_retail", error);
         Assert.Equal(["acworld", "acworld_retail"], store.DeletedAll);
+    }
+
+    [Fact]
+    public async Task DeleteOldPassesTheSourceAndCutoffAndReportsTheCount()
+    {
+        var store = new FakeStore { DeleteOldCount = 4 };
+        var cutoff = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        var outcome = await ChangeHistoryOperations.DeleteOldAsync(
+            store, Acworld, "world-source", cutoff, Describe, CancellationToken.None);
+
+        Assert.Null(outcome.Error);
+        Assert.Equal(4, outcome.Deleted);
+        Assert.Equal("world-source", store.LastOldSource);
+        Assert.Equal(cutoff, store.LastOldCutoff);
+    }
+
+    [Fact]
+    public async Task DeleteOldFailureKeepsTheRowsAndReportsIt()
+    {
+        var store = new FakeStore { FailDeleteOld = true };
+        var outcome = await ChangeHistoryOperations.DeleteOldAsync(
+            store, Acworld, "world-source", DateTime.UtcNow.AddDays(-30), Describe, CancellationToken.None);
+
+        Assert.Equal(0, outcome.Deleted);
+        Assert.NotNull(outcome.Error);
+        Assert.StartsWith("Could not delete old changes.", outcome.Error);
     }
 }

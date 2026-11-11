@@ -326,6 +326,61 @@ public class AcworldStoreDbTests
     }
 
     [DbWriteFact]
+    public async Task DeleteOldRemovesOnlyFinishedRowsOlderThanTheCutoffForThatSource()
+    {
+        var acworld = HistorySettings();
+        try
+        {
+            await AcworldStore.EnsureSchemaAsync(acworld, TestToken());
+            var oldApplied = Staged("a1");
+            var oldReverted = Staged("a2");
+            var recentApplied = Staged("a3");
+            var oldStaged = Staged("a4");
+            var otherSource = Staged("a5", "other-source");
+            await AcworldStore.UpsertStagedAsync(acworld, [oldApplied, oldReverted, recentApplied, oldStaged, otherSource], TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, oldApplied.Fingerprint, "client", TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, oldReverted.Fingerprint, "client", TestToken());
+            await AcworldStore.MarkRevertedAsync(acworld, oldReverted.Fingerprint, TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, recentApplied.Fingerprint, "client", TestToken());
+            await AcworldStore.MarkAppliedAsync(acworld, otherSource.Fingerprint, "client", TestToken());
+
+            var old = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            await SetLifecycleAsync(acworld, oldApplied.Fingerprint, old, null);
+            await SetLifecycleAsync(acworld, oldReverted.Fingerprint, old, old);
+            // A stale reverted_at on an applied row must not make it look old.
+            await SetLifecycleAsync(acworld, recentApplied.Fingerprint, DateTime.UtcNow, old);
+            await SetLifecycleAsync(acworld, otherSource.Fingerprint, old, null);
+
+            int deleted = await AcworldStore.DeleteOldAsync(
+                acworld, "test-source", new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc), TestToken());
+
+            Assert.Equal(2, deleted);
+            var rows = await AcworldStore.ListAsync(acworld, "test-source", false, TestToken());
+            Assert.Equal(2, rows.Count);
+            Assert.Contains(rows, r => r.Fingerprint == recentApplied.Fingerprint && r.Status == ChangeStatus.Applied);
+            Assert.Contains(rows, r => r.Fingerprint == oldStaged.Fingerprint && r.Status == ChangeStatus.Staged);
+            Assert.Single(await AcworldStore.ListAsync(acworld, "other-source", false, TestToken()));
+        }
+        finally
+        {
+            await DropDatabaseAsync(acworld);
+        }
+    }
+
+    static async Task SetLifecycleAsync(DatabaseSettings acworld, string fingerprint, DateTime? appliedAt, DateTime? revertedAt)
+    {
+        await using var connection = new MySqlConnection(acworld.BuildConnectionString());
+        await connection.OpenAsync(TestToken());
+        await using var command = new MySqlCommand(
+            $"UPDATE {AcworldStore.QualifiedTable(acworld)} SET `applied_at`=@applied, `reverted_at`=@reverted WHERE `fingerprint`=@fp",
+            connection);
+        command.Parameters.AddWithValue("@applied", (object?)appliedAt ?? DBNull.Value);
+        command.Parameters.AddWithValue("@reverted", (object?)revertedAt ?? DBNull.Value);
+        command.Parameters.AddWithValue("@fp", fingerprint);
+        await command.ExecuteNonQueryAsync(TestToken());
+    }
+
+    [DbWriteFact]
     public async Task BatchUpsertWritesEveryRecordAndSkipsUnchangedScripts()
     {
         var acworld = HistorySettings();

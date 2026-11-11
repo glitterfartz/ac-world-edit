@@ -19,6 +19,8 @@ public interface IChangeHistoryStore
     Task DeleteStagedAsync(DatabaseSettings acworld, string fingerprint, CancellationToken token);
 
     Task DeleteAllStagedAsync(DatabaseSettings acworld, string? sourceKey, CancellationToken token);
+
+    Task<int> DeleteOldAsync(DatabaseSettings acworld, string sourceKey, DateTime olderThanUtc, CancellationToken token);
 }
 
 /// <summary>The production store: the static <see cref="AcworldStore"/> routines.</summary>
@@ -47,6 +49,9 @@ public sealed class AcworldHistoryStore : IChangeHistoryStore
 
     public Task DeleteAllStagedAsync(DatabaseSettings acworld, string? sourceKey, CancellationToken token) =>
         AcworldStore.DeleteAllStagedAsync(acworld, sourceKey, token);
+
+    public Task<int> DeleteOldAsync(DatabaseSettings acworld, string sourceKey, DateTime olderThanUtc, CancellationToken token) =>
+        AcworldStore.DeleteOldAsync(acworld, sourceKey, olderThanUtc, token);
 }
 
 /// <summary>What an apply or revert run completed, and the first failure worth reporting.</summary>
@@ -55,10 +60,13 @@ public sealed record HistoryRunOutcome(IReadOnlyList<string> CompletedChangeKeys
 /// <summary>What a discard or reset removed, and the first failure worth reporting.</summary>
 public sealed record HistoryDeleteOutcome(IReadOnlyList<string> DeletedChangeKeys, string? Error);
 
+/// <summary>How many finished rows a cleanup removed, and the first failure worth reporting.</summary>
+public sealed record HistoryPruneOutcome(int Deleted, string? Error);
+
 /// <summary>
-/// Orchestrates the history side of an apply, revert, discard, stage or reset. Every write is part of
-/// the operation: a failed mark or delete keeps the draft/row and returns the error, so the viewer
-/// never reports success while the history disagrees.
+/// Orchestrates the history side of an apply, revert, discard, stage, reset or cleanup. Every write
+/// is part of the operation: a failed mark or delete keeps the draft/row and returns the error, so
+/// the viewer never reports success while the history disagrees.
 /// </summary>
 public static class ChangeHistoryOperations
 {
@@ -241,5 +249,28 @@ public static class ChangeHistoryOperations
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Remove finished history older than a cutoff for one source. The failure keeps the rows and is
+    /// reported instead of claiming a cleanup that did not happen.
+    /// </summary>
+    public static async Task<HistoryPruneOutcome> DeleteOldAsync(
+        IChangeHistoryStore store,
+        DatabaseSettings acworld,
+        string sourceKey,
+        DateTime olderThanUtc,
+        Func<Exception, string> describe,
+        CancellationToken token)
+    {
+        try
+        {
+            int deleted = await store.DeleteOldAsync(acworld, sourceKey, olderThanUtc, token).ConfigureAwait(false);
+            return new HistoryPruneOutcome(deleted, null);
+        }
+        catch (Exception error)
+        {
+            return new HistoryPruneOutcome(0, "Could not delete old changes. " + describe(error));
+        }
     }
 }

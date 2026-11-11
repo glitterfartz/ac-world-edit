@@ -178,6 +178,28 @@ public class ChangeHistoryWindowInteractionTests
     }
 
     [TestCase]
+    public void DeleteOldDialogOffersAnAgeAndForwardsTheChoice()
+    {
+        var window = Spawn();
+        var old = DateTime.UtcNow.AddDays(-100);
+        window.RefreshHistory(
+            [Record(Fingerprint('a'), ChangeStatus.Applied, "done") with { CreatedAt = old, AppliedAt = old },
+             Record(Fingerprint('b'), ChangeStatus.Reverted, "undone") with { CreatedAt = old, AppliedAt = old, RevertedAt = old }],
+            null, "source");
+        int? days = null;
+        window.DeleteOldRequested += value => days = value;
+
+        ButtonText(window, "Delete old…").EmitSignal(BaseButton.SignalName.Pressed);
+        var dialog = All<DeleteOldChangesDialog>(window).Single();
+        var age = All<OptionButton>(dialog).Single();
+        AssertThat(age.ItemCount).IsEqual(4);
+        AssertThat(All<Label>(dialog).Any(l => l.Text == "2 changes match.")).IsTrue();
+        age.Selected = 3;
+        dialog.EmitSignal(AcceptDialog.SignalName.Confirmed);
+        AssertThat(days.HasValue && days.Value == 0).IsTrue();
+    }
+
+    [TestCase]
     public void NotesSaveOnEnterAndOnFocusLoss()
     {
         var window = Spawn();

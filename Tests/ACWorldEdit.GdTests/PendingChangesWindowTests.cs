@@ -97,6 +97,20 @@ public class PendingChangesWindowTests
     }
 
     [TestCase]
+    public void DeleteOldNeedsFinishedHistoryFromTheOpenWorld()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record("a", ChangeStatus.Staged)], null, "source");
+        AssertThat(ButtonText(window, "Delete old…").Disabled).IsTrue();
+
+        window.RefreshHistory([Record("a", ChangeStatus.Applied)], null, "source");
+        AssertThat(ButtonText(window, "Delete old…").Disabled).IsFalse();
+
+        window.RefreshHistory([Record("b", ChangeStatus.Applied)], null, "other-source");
+        AssertThat(ButtonText(window, "Delete old…").Disabled).IsTrue();
+    }
+
+    [TestCase]
     public void ButtonsRaiseRequestsWithoutActingThemselves()
     {
         var window = Spawn();

@@ -7,8 +7,9 @@ namespace ACWorldEdit;
 /// Change history: every staged and applied world change with its timestamp, status and optional
 /// note. Staged rows come from local drafts; applying runs their SQL against the world database and
 /// marks them applied in acworld. Applied rows revert by running their stored revert SQL. Any
-/// checked rows export into one SQL file for sharing. The window only presents the list and raises
-/// requests; the viewer owns the drafts and the database, so this window never touches them.
+/// checked rows export into one SQL file for sharing, and finished history can be trimmed by age.
+/// The window only presents the list and raises requests; the viewer owns the drafts and the
+/// database, so this window never touches them.
 /// </summary>
 public partial class PendingChangesWindow : ContentEditorWindow
 {
@@ -16,6 +17,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
     public event Action<IReadOnlyList<string>>? RevertRequested;
     public event Action<IReadOnlyList<string>>? DiscardStagedRequested;
     public event Action? DiscardAllStagedRequested;
+    public event Action<int>? DeleteOldRequested;
     public event Action<IReadOnlyList<string>, bool>? ExportRequested;
     public event Action<IReadOnlyList<string>, bool>? PreviewRequested;
     public event Action<string, string>? NotesChanged;
@@ -25,7 +27,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
     VBoxContainer list = null!;
     ScrollContainer scroll = null!;
     Label summary = null!, status = null!;
-    Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!;
+    Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!, deleteOld = null!;
     CheckButton showAll = null!;
     OptionButton exportKind = null!;
 
@@ -83,6 +85,10 @@ public partial class PendingChangesWindow : ContentEditorWindow
         refreshButton.TooltipText = "Re-read drafts and the change history.";
         refreshButton.Pressed += () => HistoryRefreshRequested?.Invoke();
         options.AddChild(refreshButton);
+        deleteOld = new Button { Text = "Delete old…" };
+        deleteOld.TooltipText = "Delete applied and reverted changes of the open world from the history. Staged edits stay.";
+        deleteOld.Pressed += OpenDeleteOldDialog;
+        options.AddChild(deleteOld);
 
         var footer = new HBoxContainer();
         footer.AddThemeConstantOverride("separation", 6);
@@ -205,6 +211,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
         applySelected.Disabled = revertSelected.Disabled = !any || unavailable;
         previewSelected.Disabled = exportSelected.Disabled = !any;
         discardAll.Disabled = staged == 0 || unavailable;
+        deleteOld.Disabled = CountOld(0) == 0 || unavailable;
 
         Control? focusTarget = null;
         foreach (var record in records)
@@ -308,6 +315,39 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
     static string SourceLabel(string sourceKey) =>
         sourceKey.Length <= 8 ? sourceKey : sourceKey[..8];
+
+    /// <summary>
+    /// Ask for an age and raise the cleanup request. Only finished rows of the open world count, so
+    /// "Show all worlds" never widens what a delete would remove.
+    /// </summary>
+    void OpenDeleteOldDialog()
+    {
+        var dialog = new DeleteOldChangesDialog(CountOld);
+        dialog.DeleteRequested += days => DeleteOldRequested?.Invoke(days);
+        AddChild(dialog);
+        dialog.PopupCentered();
+    }
+
+    /// <summary>Applied and reverted rows of the open world older than the given age; 0 days means all.</summary>
+    int CountOld(int days)
+    {
+        if (shownRecords == null || currentSourceKey == null)
+        {
+            return 0;
+        }
+
+        DateTime cutoff = days <= 0 ? DateTime.UtcNow : DateTime.UtcNow.AddDays(-days);
+        return shownRecords.Count(r =>
+        {
+            if (r.SourceKey != currentSourceKey || r.Status is not (ChangeStatus.Applied or ChangeStatus.Reverted))
+            {
+                return false;
+            }
+
+            DateTime when = r.Status == ChangeStatus.Reverted ? r.RevertedAt ?? r.CreatedAt : r.AppliedAt ?? r.CreatedAt;
+            return when < cutoff;
+        });
+    }
 
     static string? FingerprintOf(Node row)
     {
