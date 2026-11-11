@@ -32,6 +32,9 @@ public sealed partial class DeleteOldChangesDialog : ConfirmationDialog
         OkButtonText = "Delete";
         CancelButtonText = "Keep";
         Exclusive = true;
+        // The built-in label wraps and sizes itself; a wrapped Label added as custom content
+        // reports a stale full-height minimum before it is laid out and stretches the dialog.
+        DialogText = "Delete applied and reverted changes for the open world. Staged edits and failed attempts are kept.";
         foreach (var (_, text) in Ages)
         {
             age.AddItem(text);
@@ -40,13 +43,8 @@ public sealed partial class DeleteOldChangesDialog : ConfirmationDialog
         age.Select(1);
         var box = new VBoxContainer { CustomMinimumSize = new Vector2(460, 0) };
         box.AddThemeConstantOverride("separation", 8);
-        box.AddChild(new Label
-        {
-            Text = "Delete applied and reverted changes for the open world. Staged edits and failed attempts are kept.",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        });
         box.AddChild(age);
-        matching = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        matching = new Label();
         box.AddChild(matching);
         AddChild(box);
 

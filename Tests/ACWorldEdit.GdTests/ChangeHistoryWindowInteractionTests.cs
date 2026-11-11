@@ -192,6 +192,9 @@ public class ChangeHistoryWindowInteractionTests
         ButtonText(window, "Delete old…").EmitSignal(BaseButton.SignalName.Pressed);
         var dialog = All<DeleteOldChangesDialog>(window).Single();
         var age = All<OptionButton>(dialog).Single();
+        // A wrapped custom label used to report a full-height minimum before layout and stretch the
+        // dialog; the prompt now uses the dialog's own text label.
+        AssertThat(dialog.Size.Y < 400f).IsTrue();
         AssertThat(age.ItemCount).IsEqual(4);
         AssertThat(All<Label>(dialog).Any(l => l.Text == "2 changes match.")).IsTrue();
         age.Selected = 3;
