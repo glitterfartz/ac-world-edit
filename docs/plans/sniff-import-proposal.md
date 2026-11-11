@@ -23,7 +23,7 @@ WPP's **UniversalProto** output (`DumpFormat` 14 or 15, `.dat`) is a typed packe
                                                               InteractionDraft RowEdits ──► SqlExport (unchanged)
 ```
 
-Sniffs are evidence, not edits. Drafts stay the only source of SQL, so the read-only guarantee in `../architecture/editing-and-export.md` holds.
+Sniffs are evidence, not edits. Drafts stay the only source of SQL, and a sniff never writes to the world database; the staged-apply rules in `../architecture/editing-and-export.md` still hold.
 
 1. **Reader** (Godot-free, e.g. `Scripts/Data/Sniff/`). C# generated from `structures.proto` (Google.Protobuf). It groups packets into per-object observations:
    - from `CreateObject`: position, CreateObject1 vs 2, entry, display, faction, flags, auras, emote, stand state, mount, visible items

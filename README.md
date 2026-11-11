@@ -6,7 +6,7 @@ It reads the WoW client's data to render terrain, models and liquids. On top of 
 
 A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a TrinityCore master `world` and `hotfixes`.
 
-The database connection is read-only, and the game files are never modified. Edits are staged as local drafts and leave the app only as SQL scripts for you to review and run.
+The game files are never modified. Edits stage in local drafts, sync to the `acworld` change log, and reach the world database only when you apply them from Change History; checked rows can also be exported as one SQL file per world for review or sharing. Reads stay in read-only transactions, and applying needs write access to the world database.
 
 ## Screenshots
 
@@ -62,7 +62,7 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for diagrams 
 | Python 3                                                                                           | setup and launch scripts      | Standard library only                                                              |
 | CMake and a C++ toolchain (Visual Studio Build Tools on Windows, g++/clang++ plus Ninja or Make on Linux) | `Tools/setup.py`              | Builds CascLib (Retail profile) and StormLib (tests)                               |
 | A WoW client: 3.3.5 (MPQ) or retail (CASC)                                                         | viewing                       | Never modified                                                                     |
-| An AzerothCore (3.3.5) or TrinityCore master (retail) `world` database, plus optional `hotfixes`   | database overlays and editing | Read-only connection; a SELECT-only account is enough                              |
+| An AzerothCore (3.3.5) or TrinityCore master (retail) `world` database, plus optional `hotfixes`   | database overlays and editing | Reads need SELECT; applying needs INSERT/UPDATE/DELETE. History lives in `acworld` |
 
 Third-party code comes from pinned git submodules: `ThirdParty/CascLib` and `ThirdParty/StormLib` (both MIT) and `Data/WoWDBDefs` (retail table layouts, CC BY-SA 4.0). NuGet packages (SharpZipLib, MySqlConnector, DBCD) are pinned by version in `ACWorldEdit.csproj` and restored by `dotnet`, so they are not submodules. See [THIRD-PARTY.md](THIRD-PARTY.md).
 
