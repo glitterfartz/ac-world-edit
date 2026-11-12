@@ -37,12 +37,17 @@ public class ReferenceCleanupDbTests
         int eventRows = references.Rows.All("game_event_creature").Count;
         Assert.Equal(references.Counts.Where(c => c.Reference.Table == "game_event_creature").Sum(c => c.Count), eventRows);
 
-        // Everything read can be deleted by the same catalog the draft validates against.
+        // Everything read can be deleted by the same catalog the draft validates against, and each
+        // row survives that schema's validation (the real proof that no column kind is wrong).
         var catalog = connection.Dialect == WorldDialect.TrinityCore ? (ITableCatalog)TcTables.Instance : AcTables.Instance;
         foreach (string name in references.Rows.Names)
         {
-            Assert.Contains(catalog.All, table => table.Name == name);
+            var table = Assert.Single(catalog.All, candidate => candidate.Name == name);
             Assert.NotEmpty(references.Rows.All(name));
+            foreach (var row in references.Rows.All(name))
+            {
+                row.Validate(table);
+            }
         }
 
         var none = await source.ReadSpawnReferencesAsync(SpawnKind.Creature, [4_000_000_000UL], default);
