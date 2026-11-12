@@ -12,7 +12,7 @@ public sealed partial class AcTables : ITableCatalog
 
     static AcTables()
     {
-        Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, CreatureTemplateModel, CreatureEquipTemplate, CreatureImmunities, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon, WaypointData, CreatureFormations, Conditions, GameObjectTemplate, GameObjectTemplateAddon, GameObjectQuestStarter, GameObjectQuestEnder, GameObjectQuestItem];
+        Tables = [CreatureTemplate, GossipMenu, NpcText, GossipOption, QuestStarter, QuestEnder, Vendor, DefaultTrainer, Trainer, TrainerSpell, SpellClick, CreatureAI, CreatureStats, CreatureDetails, CreatureTemplateModel, CreatureEquipTemplate, CreatureImmunities, QuestTemplate, QuestAddon, QuestRequestItems, QuestOfferReward, SmartScripts, CreatureText, AreaTriggerScripts, SpawnCreature, SpawnGameObject, SpawnCreatureAddon, SpawnGameObjectAddon, CreatureTemplateAddon, WaypointData, CreatureFormations, Conditions, GameObjectTemplate, GameObjectTemplateAddon, GameObjectQuestStarter, GameObjectQuestEnder, GameObjectQuestItem, PoolCreature, PoolGameObject, SpawnGroup, GameEventCreature, GameEventGameObject, GameEventModelEquip, LinkedRespawn];
     }
 
     IReadOnlyList<TableSchema> ITableCatalog.All => Tables;

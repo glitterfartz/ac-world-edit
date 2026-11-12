@@ -51,7 +51,14 @@ public class CatalogManifestTests
         ("gameobject_template_addon", "d730ff897bfc2539"),
         ("gameobject_queststarter", "56f537e804fa821b"),
         ("gameobject_questender", "c84f45775121cebc"),
-        ("gameobject_questitem", "c80f524d1a46551b")
+        ("gameobject_questitem", "c80f524d1a46551b"),
+        ("pool_creature", "79fde639adfb76cc"),
+        ("pool_gameobject", "3bf9dcf67c9aa164"),
+        ("spawn_group", "7792b45ba275e00b"),
+        ("game_event_creature", "64fc20bb7bc80887"),
+        ("game_event_gameobject", "0a48414d063cbeba"),
+        ("game_event_model_equip", "fa1d1c918a57b7df"),
+        ("linked_respawn", "7acfab59bffbde4f")
     ];
 
     /// <summary>The TrinityCore master catalog in order, with a digest of each table's keys, columns and defaults.</summary>
@@ -98,7 +105,13 @@ public class CatalogManifestTests
         ("gameobject_template_addon", "a7fb1228f8103fa6"),
         ("gameobject_queststarter", "56f537e804fa821b"),
         ("gameobject_questender", "c84f45775121cebc"),
-        ("gameobject_questitem", "c80f524d1a46551b")
+        ("gameobject_questitem", "c80f524d1a46551b"),
+        ("pool_members", "1a97afa9aa5c9b90"),
+        ("spawn_group", "4fc728f124863c30"),
+        ("game_event_creature", "6fe5375aa79c78bc"),
+        ("game_event_gameobject", "2cc8201cdf684011"),
+        ("game_event_model_equip", "1a4551ac8a1d9ca6"),
+        ("linked_respawn", "dafa4bc1e58ed732")
     ];
 
     /// <summary>Everything a table means to the editors: identity, keys, every column with its kind and text limit, the defaults and the nullable set.</summary>
