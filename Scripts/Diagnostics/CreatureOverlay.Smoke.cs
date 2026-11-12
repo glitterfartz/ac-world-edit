@@ -376,6 +376,8 @@ public partial class CreatureOverlay
 
     public bool SmokeAnswerDelete(bool delete) => SpawnSmoke.Answer(deleteDialog, delete);
 
+    public bool SmokeAnswerRemoveToo() => SpawnSmoke.AnswerRemoveToo(deleteDialog);
+
     /// <summary>A creature on screen whose waypoint path nothing else uses.</summary>
     public SpawnPathUse? SmokeOrphanPath()
     {

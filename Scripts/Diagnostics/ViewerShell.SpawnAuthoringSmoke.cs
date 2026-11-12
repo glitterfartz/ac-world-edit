@@ -890,6 +890,30 @@ public partial class ViewerShell
             Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
             return true;
         }),
+        ("referenced-creature-cleanup-select", () =>
+        {
+            creatures.Select(authoringReferenced);
+            creatures.SmokePressDelete();
+            return true;
+        }),
+        ("referenced-creature-cleanup-offered", () =>
+        {
+            if (creatures.SmokeDeleteDialog == null)
+            {
+                return false;
+            }
+
+            Require(creatures.SmokeAnswerRemoveToo(), "the dialog did not offer \"Remove these too\"");
+            Require(drafts.Draft!.NetEdits().Count > 1, "the cleanup staged only the spawn");
+            Require(AuthoringScript(creatures.SmokeSourceKey).Contains("DELETE FROM `creature` WHERE", StringComparison.Ordinal), "the export lacks the spawn DELETE");
+            return true;
+        }),
+        ("referenced-creature-cleanup-undone", () =>
+        {
+            creatures.SmokeHistory(false);
+            Require(drafts.Draft!.NetEdits().Count == 0, "undo left a net change");
+            return true;
+        }),
         ("pathed-creature-select", () =>
         {
             if (authoringPath == null && !authoringSkipPath)

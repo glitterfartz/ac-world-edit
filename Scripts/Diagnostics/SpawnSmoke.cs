@@ -44,6 +44,26 @@ internal static class SpawnSmoke
         return true;
     }
 
+    /// <summary>Press the delete dialog's "Remove these too" button; false when it is not offered.</summary>
+    public static bool AnswerRemoveToo(Godot.ConfirmationDialog? dialog)
+    {
+        if (dialog == null || !Godot.GodotObject.IsInstanceValid(dialog) || dialog.IsQueuedForDeletion())
+        {
+            return false;
+        }
+
+        foreach (var node in dialog.FindChildren("*", "Button", true, false))
+        {
+            if (node is Godot.Button { Text: "Remove these too" } button)
+            {
+                button.EmitSignal(Godot.BaseButton.SignalName.Pressed);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static string? Text(Godot.ConfirmationDialog? dialog) =>
         dialog != null && Godot.GodotObject.IsInstanceValid(dialog) && !dialog.IsQueuedForDeletion() ? dialog.DialogText : null;
 
