@@ -49,7 +49,8 @@ public sealed class TcDBSource : IDBSource
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchCreatureDisplaysAsync(string term, CancellationToken token) => DbCreatureDisplays.SearchAsync(database, term, token);
     public Task<IReadOnlyList<(uint Id, uint First, uint Second, uint Third)>> ReadEquipmentSetsAsync(uint entry, CancellationToken token) => DbCreatureEquipment.ReadAsync(database, entry, token);
     public Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => DbGameObjectLooks.ReadAsync(database, entries, token);
-    public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnImpact.CountAsync(database, WorldDialect.TrinityCore, kind, guids, token);
+    public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbReferences.CountAsync(database, WorldDialect.TrinityCore, kind, guids, token);
+    public Task<SpawnReferences> ReadSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => DbReferences.ReadAsync(database, TcTables.Instance, WorldDialect.TrinityCore, kind, guids, token);
     public Task<IReadOnlyList<SpawnImpactItem>> CountTemplateReferencesAsync(SpawnKind kind, uint entry, CancellationToken token) => DbTemplateReferences.CountAsync(database, WorldDialect.TrinityCore, kind, entry, token);
     public Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => DbSpawnPaths.ReadAsync(database, WorldDialect.TrinityCore, guids, token);
     public Task<IReadOnlyList<PathUsers>> ReadPathUsersAsync(IReadOnlyList<uint> pathIds, CancellationToken token) => DbPathUsers.ReadAsync(database, WorldDialect.TrinityCore, pathIds, token);

@@ -39,6 +39,13 @@ public interface IDBSource
     /// <summary>The rows in other tables that still name these spawn GUIDs (pools, groups, events, links, formations, SmartAI); tables with no match are left out.</summary>
     Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>
+    /// What still names these spawn GUIDs, as rows: the per-table counts of distinct rows and the rows
+    /// themselves, so a delete can remove them in the same command. Bounded; a table the database lacks
+    /// is skipped. Unlike <see cref="CountSpawnReferencesAsync"/> this counts each row once.
+    /// </summary>
+    Task<SpawnReferences> ReadSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
+
     /// <summary>How many rows of each other table name a creature or GameObject template, for the page's "Used by" card.</summary>
     Task<IReadOnlyList<SpawnImpactItem>> CountTemplateReferencesAsync(SpawnKind kind, uint entry, CancellationToken token);
 
