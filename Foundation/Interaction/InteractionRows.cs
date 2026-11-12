@@ -184,6 +184,29 @@ public sealed class RowSet
         }
     }
 
+    /// <summary>Every table name the set holds rows of, so a caller can walk it without knowing them.</summary>
+    public IReadOnlyCollection<string> Names => tables.Keys;
+
+    /// <summary>The rows of a logical table name (empty when it holds none).</summary>
+    public IReadOnlyCollection<Row> All(string table) => tables.TryGetValue(table, out var rows) ? rows.Values : [];
+
+    /// <summary>Add another set's rows: a row of the same table and key is replaced.</summary>
+    public void Merge(RowSet other)
+    {
+        foreach (var (name, rows) in other.tables)
+        {
+            if (!tables.TryGetValue(name, out var mine))
+            {
+                tables[name] = mine = [];
+            }
+
+            foreach (var (key, row) in rows)
+            {
+                mine[key] = row;
+            }
+        }
+    }
+
     public RowSet Clone()
     {
         var copy = new RowSet();
