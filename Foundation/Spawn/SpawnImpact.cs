@@ -4,6 +4,20 @@ namespace ACWorldEdit.Foundation;
 public sealed record SpawnImpactItem(SpawnReference Reference, int Count);
 
 /// <summary>
+/// What still names some spawns: the per-table counts the dialog shows, and the rows a cleanup would
+/// delete. Both come from one read, so the numbers and the deletion cannot disagree.
+/// </summary>
+public sealed record SpawnReferences(IReadOnlyList<SpawnImpactItem> Counts, RowSet Rows)
+{
+    public static SpawnReferences Empty { get; } = new([], new RowSet());
+
+    public int Total => SpawnImpact.Total(Counts);
+
+    /// <summary>True when there is at least one row the editor can delete with the spawns.</summary>
+    public bool CanRemove => Rows.Names.Count > 0;
+}
+
+/// <summary>
 /// The waypoint path a creature walks (its addon's path ID): how many nodes it has and how many other
 /// creatures and templates use it. Deleting the creature removes its addon row, the only link to a path
 /// nothing else uses, so that path is left behind.
@@ -36,8 +50,11 @@ public static class SpawnImpact
     public static bool Any(IEnumerable<SpawnImpactItem> items, IEnumerable<SpawnPathUse>? paths = null) => Total(items) > 0 || Orphaned(paths).Count > 0;
 
     /// <summary>The question a delete asks when something still references the spawns.</summary>
-    public static string Prompt(string subject, IEnumerable<SpawnImpactItem> items, IEnumerable<SpawnPathUse>? paths = null) =>
-        $"{subject} is still referenced:\n\n{string.Join('\n', Lines(items, paths).Select(l => "• " + l))}\n\nDeleting it leaves these rows behind. Delete anyway?";
+    public static string Prompt(string subject, IEnumerable<SpawnImpactItem> items, IEnumerable<SpawnPathUse>? paths = null, bool offersCleanup = false) =>
+        $"{subject} is still referenced:\n\n{string.Join('\n', Lines(items, paths).Select(l => "• " + l))}\n\n" +
+        (offersCleanup
+            ? "Remove the spawn alone, or remove the rows that name it too?"
+            : "Deleting it leaves these rows behind. Delete anyway?");
 }
 
 /// <summary>
