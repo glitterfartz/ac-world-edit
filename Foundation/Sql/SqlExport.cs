@@ -190,7 +190,15 @@ public static class SqlExport
 
     internal static string Ident(string name) => "`" + name.Replace("`", "``", StringComparison.Ordinal) + "`";
 
-    internal static string Near(string column, double value) => $"ABS({Ident(column)} - ({Num(value)})) < {Tolerance}";
+    /// <summary>
+    /// Guard for a FLOAT column. MySQL stores a 4-byte float, so a double literal from a click is not
+    /// what the column holds: 4709.97 stores as 4709.97021484375, 0.000215 away and outside the
+    /// 0.0001 window, so a post-check after the INSERT would miss the row this very change wrote.
+    /// Emit the float32 value the column stores, so the guard compares like with like; the window
+    /// still catches a real edit. (A value exactly halfway between two float32 values could round
+    /// differently in MySQL and .NET, one ulp apart — unreachable for hand-placed coordinates.)
+    /// </summary>
+    internal static string Near(string column, double value) => $"ABS({Ident(column)} - ({Num((double)(float)value)})) < {Tolerance}";
 
     // NULL text reads as empty so rows with NULL and '' compare alike; BINARY keeps the comparison
     // case- and accent-sensitive despite the column's case-insensitive collation.

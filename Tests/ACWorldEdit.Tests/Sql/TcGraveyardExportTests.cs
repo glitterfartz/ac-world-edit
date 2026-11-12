@@ -27,7 +27,7 @@ public class TcGraveyardExportTests
         var scripts = Export(Goldshire with { X = -9330, Comment = "Goldshire" });
         var apply = Assert.Single(Statements(scripts.Apply));
         Assert.StartsWith("UPDATE `world_safe_locs` SET `LocX` = -9330, `LocY` = 170.2, `LocZ` = 67.8, `Comment` = 'Goldshire' WHERE `ID` = 106", apply);
-        Assert.Contains("ABS(`LocX` - (-9339.72)) < 0.0001", apply);
+        Assert.Contains("ABS(`LocX` - (-9339.7197265625)) < 0.0001", apply);
         Assert.StartsWith("UPDATE `world_safe_locs` SET `LocX` = -9339.72", Assert.Single(Statements(scripts.Revert)));
         Assert.DoesNotContain("game_graveyard", scripts.Apply);
     }

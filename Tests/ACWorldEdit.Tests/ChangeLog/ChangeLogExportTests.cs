@@ -167,11 +167,24 @@ public class ChangeLogExportTests
     [Fact]
     public void EvaluateCheckResultRequiresAnExplicitOk()
     {
+        Assert.False(WorldApplier.EvaluateCheckResult([""], [""]).Ok);
         Assert.False(WorldApplier.EvaluateCheckResult(["change", "state"], ["x", ""]).Ok);
         Assert.False(WorldApplier.EvaluateCheckResult(["change"], ["x"]).Ok);
         Assert.False(WorldApplier.EvaluateCheckResult([], []).Ok);
         Assert.False(WorldApplier.EvaluateCheckResult(["change", "state"], ["x", null]).Ok);
         Assert.True(WorldApplier.EvaluateCheckResult(["STATE", "CHANGE"], ["OK", "x"]).Ok);
+    }
+
+    [Fact]
+    public void StaleMessagesSayWhetherTheRowWasReadOrWritten()
+    {
+        string preflight = WorldApplier.StaleMessage("waypoint_data 1/2: insert", afterWrite: false);
+        Assert.Contains("row changed since the edit was made", preflight);
+
+        string post = WorldApplier.StaleMessage("waypoint_data 1/2: insert", afterWrite: true);
+        Assert.Contains("did not read back as its post-check expected", post);
+        Assert.DoesNotContain("row changed since the edit was made", post);
+        Assert.Contains("waypoint_data 1/2: insert", post);
     }
 
     [Fact]

@@ -62,7 +62,7 @@ public class SqlExportScriptTests
         var after = before.With("Probability0", "0.7");
         var scripts = Rows(Update(AcTables.NpcText, before, after));
         string update = Statements(scripts.Apply, "UPDATE").Single();
-        Assert.Contains("ABS(`Probability0` - (0.1)) < 0.0001", update);
+        Assert.Contains("ABS(`Probability0` - (0.10000000149011612)) < 0.0001", update);
         Assert.DoesNotContain("`Probability0` = 0.1", update);
         Assert.Contains("SET `Probability0` = 0.7", update);
     }
@@ -75,7 +75,7 @@ public class SqlExportScriptTests
         var after = SpawnEdits.WithPose(before, new WorldPose(0, 1234.5678901234567, -2.5, 3, 0.25));
         var scripts = Rows(Update(AcTables.SpawnCreature, before, after));
         string apply = Statements(scripts.Apply, "UPDATE").Single();
-        Assert.Contains("ABS(`position_x` - (1E-05)) < 0.0001", apply);
+        Assert.Contains("ABS(`position_x` - (9.999999747378752E-06)) < 0.0001", apply);
         Assert.Contains("`position_x` = 1234.5679", apply);
         Assert.DoesNotContain("NaN", apply);
     }

@@ -74,7 +74,7 @@ public class SqlExportTests
         string revert = scripts.Revert;
 
         // Only the changed columns are set and guarded (the heading changed too, the Y position did not).
-        Check(apply.Contains("UPDATE `creature` SET `position_x` = -9400, `orientation` = 1.5 WHERE `guid` = 86251 AND ABS(`position_x` - (-9425.82)) < 0.0001", StringComparison.Ordinal), "Creature update and freshness guard");
+        Check(apply.Contains("UPDATE `creature` SET `position_x` = -9400, `orientation` = 1.5 WHERE `guid` = 86251 AND ABS(`position_x` - (-9425.8203125)) < 0.0001", StringComparison.Ordinal), "Creature update and freshness guard");
         Check(!apply.Contains("`position_y` =", StringComparison.Ordinal), "An unchanged column must stay out of the update");
         Check(revert.Contains("WHERE `guid` = 86251 AND ABS(`position_x` - (-9400)) < 0.0001", StringComparison.Ordinal), "Creature revert guard");
         Check(apply.Contains("UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE `entry` = 100 AND BINARY COALESCE(`AIName`, '') = BINARY ''", StringComparison.Ordinal), "creature_ai must target creature_template with only its column group");

@@ -24,7 +24,7 @@ public static class WorldApplier
                 await names.ExecuteNonQueryAsync(token).ConfigureAwait(false);
             }
 
-            string? stale = await RunChecksAsync(connection, checks, null, token).ConfigureAwait(false);
+            string? stale = await RunChecksAsync(connection, checks, null, afterWrite: false, token).ConfigureAwait(false);
             if (stale != null)
             {
                 return stale;
@@ -43,7 +43,7 @@ public static class WorldApplier
                 // Post-checks run inside the transaction, through the transaction connection. A
                 // failing post-check rolls the body back, so the world never keeps an unverified
                 // change that the history would then record as failed.
-                string? post = await RunChecksAsync(connection, postChecks, transaction, token).ConfigureAwait(false);
+                string? post = await RunChecksAsync(connection, postChecks, transaction, afterWrite: true, token).ConfigureAwait(false);
                 if (post != null)
                 {
                     await transaction.RollbackAsync(token).ConfigureAwait(false);
@@ -130,7 +130,7 @@ public static class WorldApplier
         return (checks, body, post);
     }
 
-    static async Task<string?> RunChecksAsync(MySqlConnection connection, List<string> checks, MySqlTransaction? transaction, CancellationToken token)
+    static async Task<string?> RunChecksAsync(MySqlConnection connection, List<string> checks, MySqlTransaction? transaction, bool afterWrite, CancellationToken token)
     {
         foreach (string check in checks)
         {
@@ -152,14 +152,26 @@ public static class WorldApplier
             var (label, ok) = EvaluateCheckResult(names, values);
             if (!ok)
             {
-                return string.IsNullOrEmpty(label)
-                    ? "A preflight check did not read ok, so nothing was applied. Refresh and re-stage the change."
-                    : $"A row changed since the edit was made, so nothing was applied ({label}). Refresh and re-stage the change.";
+                return StaleMessage(label, afterWrite);
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// Why a check did not read ok. A preflight failure means the source row changed since staging; a
+    /// post-check failure means the write did not land as expected (a trigger, or a column that stores
+    /// something other than the value written), which is a different problem and must not be reported
+    /// as "the row changed since the edit was made".
+    /// </summary>
+    internal static string StaleMessage(string label, bool afterWrite) => (afterWrite, string.IsNullOrEmpty(label)) switch
+    {
+        (true, true) => "The change did not read back as its post-check expected.",
+        (true, false) => $"The change did not read back as its post-check expected ({label}).",
+        (false, true) => "A preflight check did not read ok, so nothing was applied. Refresh and re-stage the change.",
+        _ => $"A row changed since the edit was made, so nothing was applied ({label}). Refresh and re-stage the change."
+    };
 
     /// <summary>
     /// Whether one preflight row reads ok. The scripts report the verdict in the `state` column and
