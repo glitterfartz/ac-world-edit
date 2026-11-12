@@ -52,12 +52,12 @@ public partial class SceneSidebar : PanelContainer
         OffsetRight = -20;
         OffsetTop = 20;
         OffsetBottom = -82;
-        Name = "SceneExplorer";
+        Name = "Inspector";
         Theme = InspectorUi.ExplorerTheme();
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 12);
         AddChild(root);
-        root.AddChild(InspectorUi.Text("Scene explorer", 23));
+        root.AddChild(InspectorUi.Text("Inspector", 23));
         root.AddChild(InspectorUi.Text("VISIBILITY  /  SELECTION", 10, true));
         tabs = new TabContainer
         {

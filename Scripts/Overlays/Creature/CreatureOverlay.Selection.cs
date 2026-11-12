@@ -29,6 +29,7 @@ public partial class CreatureOverlay
 
     public void Deselect()
     {
+        CancelPickLeader();
         // Cancel while the selected identity still exists so an unfinished move restores its pose.
         gizmo.Finish(false);
         if (selectedGuid.HasValue && markers.ContainsKey(selectedGuid.Value))
@@ -60,6 +61,7 @@ public partial class CreatureOverlay
 
         if (selectedGuid != guid)
         {
+            CancelPickLeader();
             group.Clear();
         }
 

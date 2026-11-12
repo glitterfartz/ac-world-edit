@@ -152,14 +152,73 @@ public partial class CreatureOverlay
 
     async void SetFormationLeader()
     {
-        if (poses == null || !selectedGuid.HasValue)
-        {
-            return;
-        }
-
         if (!ulong.TryParse(formationLeader.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out ulong leader) || leader == 0)
         {
             Say("Type the leader's GUID first.");
+            return;
+        }
+
+        SetFormationLeaderTo(leader);
+    }
+
+    /// <summary>Arm or disarm clicking the leader in the world instead of typing its GUID.</summary>
+    void TogglePickLeader()
+    {
+        if (PickingLeader)
+        {
+            CancelPickLeader();
+            return;
+        }
+
+        if (poses == null || !selectedGuid.HasValue)
+        {
+            Say("Select a creature first.");
+            return;
+        }
+
+        PickingLeader = true;
+        formationPickLeader.Text = "Picking…";
+        Say("Click the leader in the world (Esc cancels).");
+    }
+
+    /// <summary>Leave pick mode, restoring the button. Silent when it was never armed.</summary>
+    public void CancelPickLeader()
+    {
+        PickingLeader = false;
+        if (formationPickLeader != null)
+        {
+            formationPickLeader.Text = "Pick…";
+        }
+    }
+
+    /// <summary>
+    /// Viewport click while pick mode is armed: the clicked creature becomes the typed leader and is
+    /// committed, without changing the selection. Returns true when armed (the click was used).
+    /// </summary>
+    public bool TryPickLeader(Camera3D camera, Vector2 screen)
+    {
+        if (!PickingLeader)
+        {
+            return false;
+        }
+
+        var hit = FindHit(camera, screen);
+        if (!hit.HasValue)
+        {
+            Say("Click a creature in the world (Esc cancels).");
+            return true;
+        }
+
+        formationLeader.Text = hit.Value.Guid.ToString(CultureInfo.InvariantCulture);
+        CancelPickLeader();
+        SetFormationLeaderTo(hit.Value.Guid);
+        return true;
+    }
+
+    async void SetFormationLeaderTo(ulong leader)
+    {
+        if (poses == null || !selectedGuid.HasValue)
+        {
             return;
         }
 

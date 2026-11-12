@@ -21,7 +21,7 @@ GOLDEN = ROOT / "Tests" / "golden"
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 TAG = re.compile(r"^[A-Z][A-Z0-9_]{2,}")
 STAMP = re.compile(r"generated \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC")
-# The Scene explorer reports how many rows the world database returned near the camera. That is
+# The Inspector reports how many rows the world database returned near the camera. That is
 # live data, not UI structure, and it changes when someone edits the server.
 DB_COUNT = re.compile(r"\d+ SQL matches")
 # Client/build messages carry a live status string and a non-ASCII separator; neither is a control.

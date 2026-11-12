@@ -200,7 +200,7 @@ Design and per-phase status are in [plans/editor-gap-plan.md](../plans/editor-ga
 | --- | --- | --- |
 | 12 GameObject editor | mostly | The per-dialect `GameObjectData` catalogs, `gameobject_template`/addon/quest tables, read source, rule checks, Template/Type/Quests/Spawns pages, content-browser and right-click entry points and thumbnails are built. Open: the Behavior page (SmartAI `source_type = 1`) and a dedicated edit/undo smoke. |
 | 13 Conditions builder | not started | Catalog and sentence model are built; no strip, builder, tester or `ReadConditionsAsync`. Only menu copy (types 14/15), graveyard teams (27) and quest counts (19) read conditions today. |
-| 14 Movement authoring | mostly | Node move/facing/delay, add/insert/delete/renumber, new paths, path-level properties, spawn and template link/unlink, SmartAI path users and formations (membership, offsets, group AI, turn-around points, leader lines, polar drag, duplicate remap). Missing: the unused-paths list, convoys/transports, and cascading formation deletes. |
+| 14 Movement authoring | mostly | Node move/facing/delay, add/insert/delete/renumber, new paths, path-level properties, spawn and template link/unlink, SmartAI path users and formations (membership, offsets, group AI, turn-around points, leader lines, polar drag, duplicate remap, leader picked by GUID or viewport click). Missing: the unused-paths list, convoys/transports, and cascading formation deletes. |
 | 15 Loot editor | not started | Loot IDs are shown only. |
 | 16 Population control | not started | Pools filter the preview and count for delete impact; no editor. |
 | 17 Events and phases | not started | Preview filters by event and phase; no timeline or phase authoring. |

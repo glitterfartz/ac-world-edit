@@ -82,6 +82,13 @@ public sealed class ViewerInput
 
         if (input is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
         {
+            if (host.Creatures.PickingLeader)
+            {
+                host.Creatures.CancelPickLeader();
+                host.Report("Stopped picking a leader.");
+                return;
+            }
+
             if (host.Waypoints.AddingPoints)
             {
                 host.Waypoints.AddingPoints = false;
@@ -140,6 +147,12 @@ public sealed class ViewerInput
     {
         if (mouse.Pressed && mouse.ButtonIndex == MouseButton.Left && !Capture)
         {
+            // Formation "Pick leader" consumes the click so the follower stays selected.
+            if (host.Creatures.TryPickLeader(host.Camera, mouse.Position))
+            {
+                return;
+            }
+
             // Waypoint add mode consumes ground clicks (Alt inserts after the nearest segment);
             // clicks on existing points still select them.
             if (host.Waypoints.AddPointAt(host.Camera, mouse.Position, mouse.AltPressed))
