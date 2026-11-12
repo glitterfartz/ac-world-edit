@@ -125,14 +125,14 @@ public partial class CreatureOverlay
         var guids = Group.ToArray();
         string subject = SubjectOf(guids);
         var existing = guids.Where(g => !IsStaged(g)).ToArray();
-        IReadOnlyList<SpawnImpactItem> items = [];
+        var references = SpawnReferences.Empty;
         IReadOnlyList<SpawnPathUse> paths = [];
         if (existing.Length > 0)
         {
             try
             {
                 var source = DBSource.Open(Connection());
-                items = await source.CountSpawnReferencesAsync(SpawnKind.Creature, existing, default);
+                references = await source.ReadSpawnReferencesAsync(SpawnKind.Creature, existing, default);
                 paths = await source.ReadSpawnPathsAsync(existing, default);
             }
             catch (Exception)
@@ -142,19 +142,26 @@ public partial class CreatureOverlay
             }
         }
 
-        if (!SpawnImpact.Any(items, paths))
+        if (!SpawnImpact.Any(references.Counts, paths))
         {
             DeleteNow(guids, subject);
             return;
         }
 
-        deleteDialog = SpawnDeleteDialog.Ask(this, subject, items, () => DeleteNow(guids, subject), paths);
+        deleteDialog = SpawnDeleteDialog.Ask(this, subject, references.Counts, () => DeleteNow(guids, subject), paths,
+            references.CanRemove ? () => DeleteNow(guids, subject, references) : null);
     }
 
-    void DeleteNow(IReadOnlyList<ulong> guids, string subject)
+    void DeleteNow(IReadOnlyList<ulong> guids, string subject, SpawnReferences? references = null)
     {
-        var (ok, message) = poses!.DeleteMany(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guids, guids.Count == 1 ? "Delete" : $"Delete {guids.Count} creatures");
-        Say(ok ? $"Deleted {subject}." : message);
+        if (references != null)
+        {
+            poses!.LoadRelated(sourceKey, references.Rows);
+        }
+
+        var (ok, message) = poses!.DeleteMany(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guids,
+            guids.Count == 1 ? "Delete" : $"Delete {guids.Count} creatures", references?.Rows);
+        Say(ok ? references == null ? $"Deleted {subject}." : $"Deleted {subject} and the rows that named it." : message);
     }
 
     /// <summary>Copy the selected creatures two yards ahead of themselves, on the ground, and select the copies.</summary>
