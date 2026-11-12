@@ -248,6 +248,10 @@ public class SpawnPosesTests
         var (ok, message) = poses.DeleteMany(null, Tc, Source, [5], "Delete", related);
         Assert.True(ok, message);
         Assert.Equal(2, drafts.Draft!.NetEdits().Count);
+        // Both rows are deletes in the same export, guarded by the row the read returned.
+        string apply = SqlExport.Build(Source, [], drafts.Draft.NetEdits().Select(e => e.Edit), null, Tc).Apply;
+        Assert.Contains("DELETE FROM `creature` WHERE", apply);
+        Assert.Contains("DELETE FROM `creature_formations` WHERE", apply);
 
         poses.Undo(null);
         Assert.Empty(drafts.Draft.NetEdits());
