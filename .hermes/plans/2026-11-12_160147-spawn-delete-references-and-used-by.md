@@ -10,7 +10,7 @@ Two independently shippable slices. Do not put them in one PR.
 
 - **Slice A — Used by card (Stage 7)**: read-only, no catalog change, no risk to export or undo. Ship it first if the user wants a quick win.
 - **Slice B — Remove these too (Stages 1–6)**: widens the editable catalog by eight tables, which then appear in Pending Changes and SQL export. Every stage below is ordered so the tree builds and the suite is green after each commit.
-- **Stage 6 (orphaned waypoint paths) is deferred by default.** It goes beyond the request and touches a fourth table family. Implement it only if the user asks; until then the dialog keeps its honest warning that a path "stays in the database unused", and Stage 5 leaves `removeToo` gated on `references.CanRemove` alone.
+- **Stage 6 (orphaned waypoint paths) was taken up on request.** It now ships with the rest: an unused path is removed with the spawn in the same undoable command, and the dialog says so instead of warning that the path stays behind.
 
 ## Execution notes (updated while carrying this out)
 
@@ -1132,7 +1132,7 @@ Commit: `test(smoke): press remove-these-too and undo it`
 
 ---
 
-## Stage 6 — Orphaned waypoint paths (deferred; only if asked)
+## Stage 6 — Orphaned waypoint paths (taken up) — done
 
 `IDBSource.ReadWaypointPathRowsAsync(pathId)` already exists (`Scripts/Data/IDBSource.cs:49`, both sources), and `SpawnPoses.LoadPathRows` already writes path rows into the baseline, so this is a small addition — but it widens the scope to a fourth table family.
 
@@ -1169,6 +1169,13 @@ Add the method; `DeleteNow` stays as written in Task 5.1:
 Extend `SpawnPosesTests` with a merged path-row case (single undo restores spawn, formation and path nodes); run the same filtered commands as Task 3.2. Confirm the path tables are in both catalogs (`WaypointData` on AC; `WaypointPath` + `WaypointPathNode` on TC) before relying on `LoadRelated` — `ReferenceCatalogTests` does not cover them.
 
 Commit: `feat(creature): remove an unused waypoint path with its last creature`
+
+What actually differed from the sketch above:
+
+- `SpawnImpact.Lines` gained `offersCleanup`, so an unused path reads "… that nothing else uses" when the button will remove it and keeps the "stays in the database unused" warning when it will not. The question became "Remove the spawn alone, or remove what depends on it too?" because a path does not "name" the spawn. `SpawnImpactTests` covers both wordings.
+- The third action is `() => DeleteWithPathsAsync(...)`, not a direct `DeleteNow` call, so it also runs when only a path is orphaned (`references.CanRemove` false). `DeleteWithPathsAsync` catches a failed path read and says "Could not read the waypoint path of {subject}; not deleted." instead of throwing.
+- `SpawnPathUse.PathId` is `ulong` and the reader takes `uint`, so the call casts.
+- `SpawnPosesTests.RemovingAnOrphanedPathWithItsSpawnIsOneCommandAndOneUndo` covers four edits (spawn, TC header, two nodes), the exported deletes, and a second run after undo proving the baseline survived.
 
 ---
 

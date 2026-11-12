@@ -69,6 +69,20 @@ public class SpawnImpactDbTests
         Assert.Equal((alone, 0), (use.Guid, use.OtherUsers));
         Assert.True(use.Nodes > 0 && use.PathId > 0 && use.WouldBeOrphaned);
 
+        // The rows a cleanup would delete are this path's own, and they validate in the catalog, so
+        // an unused path can go in the same command as the creature that walked it.
+        var pathRows = await source.ReadWaypointPathRowsAsync((uint)use.PathId, default);
+        var nodeTable = MovementEdits.NodeTable(source.Schema);
+        Assert.Equal(use.Nodes, pathRows.All(nodeTable).Count);
+        foreach (var row in pathRows.All(nodeTable))
+        {
+            row.Validate(nodeTable);
+        }
+
+        var deletes = SpawnEdits.DeleteReferences(source.Schema, pathRows);
+        Assert.Equal(use.Nodes, deletes.Count(e => e.Table == nodeTable.Name));
+        Assert.All(deletes, edit => Assert.Null(edit.After));
+
         ulong shared = await Find(connection, $"SELECT a.guid {from} AND {others}>0 LIMIT 1") ?? throw new InvalidOperationException("No creature on a shared path to test with.");
         var common = Assert.Single(await source.ReadSpawnPathsAsync([shared], default));
         Assert.True(common.OtherUsers > 0 && !common.WouldBeOrphaned);

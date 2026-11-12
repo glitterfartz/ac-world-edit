@@ -149,7 +149,9 @@ public partial class CreatureOverlay
         }
 
         deleteDialog = SpawnDeleteDialog.Ask(this, subject, references.Counts, () => DeleteNow(guids, subject), paths,
-            references.CanRemove ? () => DeleteNow(guids, subject, references) : null);
+            references.CanRemove || SpawnImpact.Orphaned(paths).Count > 0
+                ? () => DeleteWithPathsAsync(guids, subject, references, paths)
+                : null);
     }
 
     void DeleteNow(IReadOnlyList<ulong> guids, string subject, SpawnReferences? references = null)
@@ -162,6 +164,30 @@ public partial class CreatureOverlay
         var (ok, message) = poses!.DeleteMany(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guids,
             guids.Count == 1 ? "Delete" : $"Delete {guids.Count} creatures", references?.Rows);
         Say(ok ? references == null ? $"Deleted {subject}." : $"Deleted {subject} and the rows that named it." : message);
+    }
+
+    /// <summary>Delete the spawns, the rows that name them and any path nothing else walks, as one command.</summary>
+    async Task DeleteWithPathsAsync(IReadOnlyList<ulong> guids, string subject, SpawnReferences references, IReadOnlyList<SpawnPathUse> paths)
+    {
+        var related = references.Rows.Clone();
+        try
+        {
+            var source = DBSource.Open(Connection());
+            foreach (var path in SpawnImpact.Orphaned(paths))
+            {
+                related.Merge(await source.ReadWaypointPathRowsAsync((uint)path.PathId, default));
+            }
+        }
+        catch (Exception)
+        {
+            Say($"Could not read the waypoint path of {subject}; not deleted.");
+            return;
+        }
+
+        poses!.LoadRelated(sourceKey, related);
+        var (ok, message) = poses.DeleteMany(this, ContentDraftFiles.Sources.SchemaFor(sourceKey), sourceKey, guids,
+            guids.Count == 1 ? "Delete" : $"Delete {guids.Count} creatures", related);
+        Say(ok ? $"Deleted {subject} and what depended on it." : message);
     }
 
     /// <summary>Copy the selected creatures two yards ahead of themselves, on the ground, and select the copies.</summary>

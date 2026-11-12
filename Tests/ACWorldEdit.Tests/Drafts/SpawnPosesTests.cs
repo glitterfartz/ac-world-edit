@@ -237,6 +237,32 @@ public class SpawnPosesTests
     }
 
     [Fact]
+    public void RemovingAnOrphanedPathWithItsSpawnIsOneCommandAndOneUndo()
+    {
+        var (drafts, poses, _) = Creature();
+        var pathRows = PathRows(9, 1, 2);
+        poses.LoadRelated(Source, pathRows);
+
+        var (ok, message) = poses.DeleteMany(null, Tc, Source, [5], "Delete", pathRows);
+        Assert.True(ok, message);
+        var net = drafts.Draft!.NetEdits();
+        Assert.Equal(4, net.Count);
+        Assert.Contains(net, e => e.Edit.Table == "waypoint_path" && e.Edit.After == null);
+        Assert.Equal(2, net.Count(e => e.Edit.Table == "waypoint_path_node" && e.Edit.After == null));
+        string apply = SqlExport.Build(Source, [], net.Select(e => e.Edit), null, Tc).Apply;
+        Assert.Contains("DELETE FROM `creature` WHERE", apply);
+        Assert.Contains("DELETE FROM `waypoint_path` WHERE", apply);
+        Assert.Contains("DELETE FROM `waypoint_path_node` WHERE", apply);
+
+        // Undo restores the spawn and the path, so the same command can run again from the baseline.
+        poses.Undo(null);
+        Assert.Empty(drafts.Draft.NetEdits());
+        var (again, why) = poses.DeleteMany(null, Tc, Source, [5], "Delete", pathRows);
+        Assert.True(again, why);
+        Assert.Equal(4, drafts.Draft.NetEdits().Count);
+    }
+
+    [Fact]
     public void RemovingDependentsIsOneCommandAndOneUndo()
     {
         var (drafts, poses, _) = Creature();
