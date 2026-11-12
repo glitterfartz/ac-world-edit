@@ -176,7 +176,9 @@ public partial class WaypointOverlay
         var rows = EffectiveNodeRows(path);
         if (rows.Count == 0)
         {
-            return path.Nodes;
+            // A loaded path with no effective rows was deleted in the draft; falling back to the
+            // stale region record would keep its points visible and selectable.
+            return [];
         }
 
         return rows.Select(r => NodeFromRow(path, r)).ToArray();
@@ -252,7 +254,11 @@ public partial class WaypointOverlay
             Say(ok ? $"Deleted point {node.Point}." : message);
             if (ok)
             {
-                Select(path.Id, Math.Min(node.Point, (uint)rows.Count - 1));
+                // Select the follower: nodes above the deleted one shifted down by one. Gaps mean
+                // rows.Count is not a point number, so use the first remaining point above it.
+                var points = rows.Select(r => PointOf(path, r)).OrderBy(p => p).ToArray();
+                uint? follower = points.Where(p => p > node.Point).Select(p => (uint?)p).FirstOrDefault();
+                Select(path.Id, follower is uint above ? above - 1 : points.Where(p => p < node.Point).DefaultIfEmpty(node.Point).Max());
             }
         }
         catch (InvalidDataException error)

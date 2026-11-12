@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ACWorldEdit.Foundation;
 
 /// <summary>One waypoint node to create: server coordinates plus the columns of its dialect.</summary>
@@ -37,6 +39,15 @@ public static class MovementEdits
     };
 
     public static uint GroupAI(uint assist, bool follow) => (assist & 3) | (follow ? GroupFollow : 0);
+
+    /// <summary>
+    /// Rewrite only the assist and follow bits of an existing groupAI value. AzerothCore also defines
+    /// functional bits the card does not expose (evade together 0x4, respawn on evade 0x8, do not
+    /// respawn the leader 0x10, acquire a new target on evade 0x20), so replacing the whole column
+    /// would silently clear them.
+    /// </summary>
+    public static uint GroupAI(uint current, uint assist, bool follow) =>
+        (current & ~(GroupAssistLeader | GroupAssistMember | GroupFollow)) | GroupAI(assist, follow);
 
     public static (uint Assist, bool Follow) SplitGroupAI(uint groupAI) => (groupAI & 3, (groupAI & GroupFollow) != 0);
 
@@ -138,7 +149,7 @@ public static class MovementEdits
         return edits.ToArray();
     }
 
-    /// <summary>Delete a path: its node rows, then its header row. Deletes come first so numbered keys never collide.</summary>
+    /// <summary>Delete a path: its node rows, then its header row.</summary>
     public static RowEdit[] DeletePath(IWorldSchema schema, IReadOnlyList<Row> nodes, Row? header)
     {
         var table = NodeTable(schema);
@@ -149,6 +160,65 @@ public static class MovementEdits
         }
 
         return edits.ToArray();
+    }
+
+    /// <summary>
+    /// A path's node rows with the draft's net edits applied: the database rows keyed by point, with
+    /// an edit's Before point removed and its After point stored. Net deletions therefore disappear
+    /// instead of lingering as the raw database row, which matters because a renumber leaves its
+    /// highest key net-deleted (delete 3, delete 2, insert 2(old 3)).
+    /// </summary>
+    public static IReadOnlyList<Row> EffectivePathRows(IWorldSchema schema, uint pathId, IEnumerable<Row> dbRows, IEnumerable<RowEdit> net)
+    {
+        var table = NodeTable(schema);
+        string id = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
+        string point = PointColumn(schema.Dialect);
+        var byPoint = new Dictionary<uint, Row>();
+        foreach (var row in dbRows)
+        {
+            byPoint[row.U(point)] = row;
+        }
+
+        foreach (var edit in net)
+        {
+            if (edit.Table != table.Name)
+            {
+                continue;
+            }
+
+            if (edit.Before != null && edit.Before.U(id) == pathId)
+            {
+                byPoint.Remove(edit.Before.U(point));
+            }
+
+            if (edit.After != null && edit.After.U(id) == pathId)
+            {
+                byPoint[edit.After.U(point)] = edit.After;
+            }
+        }
+
+        return byPoint.Values.OrderBy(r => r.U(point)).ToArray();
+    }
+
+    /// <summary>A path's header row with the draft's net edits applied (TrinityCore only).</summary>
+    public static Row? EffectiveHeaderRow(IWorldSchema schema, uint pathId, Row? dbHeader, IEnumerable<RowEdit> net)
+    {
+        if (HeaderTable(schema) is not { } table)
+        {
+            return dbHeader;
+        }
+
+        string key = pathId.ToString(CultureInfo.InvariantCulture);
+        var row = dbHeader;
+        foreach (var edit in net)
+        {
+            if (edit.Table == table.Name && edit.Key == key)
+            {
+                row = edit.After;
+            }
+        }
+
+        return row;
     }
 
     // ---- node insert / delete ----------------------------------------------
@@ -288,17 +358,36 @@ public static class MovementEdits
             ("dist", dist), ("angle", angle), ("groupAI", groupAI), ("point_1", point1), ("point_2", point2));
     }
 
-    /// <summary>Polar offset of a member from its leader: yards plus the bearing from the member to
-    /// the leader in degrees. Verified against the server: CreatureGroup::LeaderStartedMoving adds
-    /// π to the stored angle before placing the member, so the column holds the member-to-leader
-    /// bearing, not the leader-to-member offset the member visibly stands at.</summary>
-    public static (float Dist, float Angle) FormationOffset(double leaderX, double leaderY, double memberX, double memberY)
+    /// <summary>
+    /// Offset of a member from its leader: yards plus the angle the server stores. Both servers add
+    /// the leader's heading when placing the member, and TrinityCore's loader also adds π to the
+    /// stored angle (<c>CreatureGroup::LeaderStartedMoving</c>), so the row holds
+    /// <c>bearing − heading − 180°</c> on TrinityCore and <c>bearing − heading</c> on AzerothCore,
+    /// where bearing is the world bearing from the leader to the member.
+    /// </summary>
+    public static (float Dist, float Angle) FormationOffset(WorldDialect dialect, WorldPose leader, WorldPose member)
     {
-        float dx = (float)(memberX - leaderX), dy = (float)(memberY - leaderY);
+        float dx = (float)(member.X - leader.X), dy = (float)(member.Y - leader.Y);
         float dist = MathF.Sqrt(dx * dx + dy * dy);
-        float angle = dist < 0.001f ? 0 : (MathF.Atan2(dy, dx) * 180 / MathF.PI - 180 + 720) % 360;
-        return (dist, angle);
+        if (dist < 0.001f)
+        {
+            return (dist, 0);
+        }
+
+        double bearing = Math.Atan2(dy, dx) * 180 / Math.PI;
+        double heading = leader.Heading * 180 / Math.PI;
+        double turn = dialect == WorldDialect.TrinityCore ? 180 : 0;
+        double angle = (bearing - heading - turn) % 360;
+        return (dist, (float)(angle < 0 ? angle + 360 : angle));
     }
+
+    /// <summary>
+    /// The same offset for a leader with heading 0 and the TrinityCore convention (where the number
+    /// is the member-to-leader bearing). Kept for tests and callers without a pose; editors pass the
+    /// leader's pose and the source dialect instead.
+    /// </summary>
+    public static (float Dist, float Angle) FormationOffset(double leaderX, double leaderY, double memberX, double memberY) =>
+        FormationOffset(WorldDialect.TrinityCore, new WorldPose(0, leaderX, leaderY, 0, 0), new WorldPose(0, memberX, memberY, 0, 0));
 
     /// <summary>Join or move a formation member: insert, update, or nothing when unchanged.</summary>
     public static RowEdit? JoinFormation(IWorldSchema schema, Row? existing, ulong member, ulong leader, float dist, float angle, uint groupAI, uint point1, uint point2)
@@ -313,17 +402,19 @@ public static class MovementEdits
         return existing == null ? InteractionEdits.Insert(table, after) : InteractionEdits.Update(table, existing, after);
     }
 
-    /// <summary>Make a creature lead its own formation (the self-row the loader expects).</summary>
-    public static RowEdit? MakeLeader(IWorldSchema schema, Row? existingSelf, ulong guid, uint groupAI)
+    /// <summary>Make a creature lead its own formation (the self-row the loader expects). Pass the
+    /// creature's existing row in any role: creature_formations is keyed by memberGUID, so a member
+    /// row and the self-row share the same key and the member row is the update baseline.</summary>
+    public static RowEdit? MakeLeader(IWorldSchema schema, Row? existing, ulong guid, uint groupAI)
     {
         var table = FormationTable(schema);
         var after = FormationRow(schema, guid, guid, 0, 0, groupAI, 0, 0);
-        if (after == existingSelf)
+        if (after == existing)
         {
             return null;
         }
 
-        return existingSelf == null ? InteractionEdits.Insert(table, after) : InteractionEdits.Update(table, existingSelf, after);
+        return existing == null ? InteractionEdits.Insert(table, after) : InteractionEdits.Update(table, existing, after);
     }
 
     /// <summary>Remove a member (or a leader's self-row) from its formation.</summary>

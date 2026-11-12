@@ -100,6 +100,30 @@ public sealed partial class SpawnPoses
         }
     }
 
+    /// <summary>Remember one path's node rows (and its TrinityCore header) as the baseline of later edits.</summary>
+    public void LoadPathRows(string source, IWorldSchema schema, RowSet rows)
+    {
+        if (!Available)
+        {
+            return;
+        }
+
+        var snapshot = Snapshot(source);
+        var node = MovementEdits.NodeTable(schema);
+        foreach (var row in rows.All(node))
+        {
+            snapshot.Set(node, row);
+        }
+
+        if (MovementEdits.HeaderTable(schema) is { } header)
+        {
+            foreach (var row in rows.All(header))
+            {
+                snapshot.Set(header, row);
+            }
+        }
+    }
+
     /// <summary>All formation rows with the draft applied (loaded formations only).</summary>
     public IReadOnlyList<Row> FormationRows(string source, IWorldSchema schema)
     {
@@ -114,12 +138,26 @@ public sealed partial class SpawnPoses
     /// <summary>The GUID for a new spawn: past every database row and every spawn the draft has staged, undone ones included.</summary>
     public ulong NextGuid(string source, ulong databaseMax) => IdAllocator.Next(databaseMax, drafts.Draft?.MaxStaged(source, Table(source), "guid") ?? 0);
 
-    /// <summary>The ID for a new waypoint path: past every database path and every path the draft has staged.</summary>
-    public ulong NextPathId(string source, IWorldSchema schema, ulong databaseMax)
+    /// <summary>
+    /// The ID for a new waypoint path: past every node and TrinityCore header row the database read
+    /// reports and every path the draft has staged. TrinityCore keeps the header id apart from the
+    /// node ids, so both maxima matter.
+    /// </summary>
+    public ulong NextPathId(string source, IWorldSchema schema, ulong nodeMax, ulong headerMax)
     {
-        var table = MovementEdits.NodeTable(schema);
-        string column = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
-        return IdAllocator.Next(databaseMax, drafts.Draft?.MaxStaged(source, table, column) ?? 0);
+        ulong staged = 0;
+        if (drafts.Draft is { } draft)
+        {
+            var table = MovementEdits.NodeTable(schema);
+            string column = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
+            staged = draft.MaxStaged(source, table, column);
+            if (MovementEdits.HeaderTable(schema) is { } header)
+            {
+                staged = Math.Max(staged, draft.MaxStaged(source, header, "PathId"));
+            }
+        }
+
+        return IdAllocator.Next(Math.Max(nodeMax, headerMax), staged);
     }
 
     /// <summary>Whether the database row of a spawn is loaded, so it can be edited.</summary>

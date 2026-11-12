@@ -114,4 +114,140 @@ public class SpawnPosesTests
         Assert.Contains("`rotation2`", apply);
         Assert.DoesNotContain("`position_x`", apply);
     }
+
+    static (ContentDrafts Drafts, SpawnPoses Poses, Row Spawn) CreatureOnPath(uint path)
+    {
+        var drafts = Open();
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature, _ => WorldDialect.TrinityCore);
+        var spawn = SpawnEdits.NewCreature(Tc, 5, 1234, Here, 0, 0).With("MovementType", 2u);
+        var addon = SpawnEdits.NewAddon(Tc, SpawnKind.Creature, 5).With("PathId", path);
+        var rows = new RowSet();
+        rows.Set(Tc.Tables.Find("creature"), spawn);
+        rows.Set(Tc.Tables.Find("creature_addon"), addon);
+        poses.Load(Source, rows);
+        return (drafts, poses, spawn);
+    }
+
+    static RowSet PathRows(uint path, params uint[] points)
+    {
+        var rows = new RowSet();
+        var nodes = MovementEdits.NodeTable(Tc);
+        foreach (uint point in points)
+        {
+            rows.Set(nodes, MovementEdits.NodeRow(Tc, path, point, new WaypointSeed(point, point + 1, 3, null, 0)));
+        }
+
+        rows.Set(Tc.Tables.Find("waypoint_path"), MovementEdits.HeaderRow(Tc, path, 1, 0, null, ""));
+        return rows;
+    }
+
+    static RowEdit[] DeletePathEdits(RowSet pathRows, uint path, Row spawn, SpawnPoses poses, ContentDrafts drafts)
+    {
+        var schema = Tc;
+        var net = drafts.Draft!.NetFor(Source).Select(e => e.Edit);
+        var nodes = MovementEdits.EffectivePathRows(schema, path, pathRows.All(MovementEdits.NodeTable(schema)), net);
+        var header = MovementEdits.EffectiveHeaderRow(schema, path,
+            pathRows.Get(MovementEdits.HeaderTable(schema)!, path.ToString(System.Globalization.CultureInfo.InvariantCulture)), net);
+        var baseline = SpawnEdits.AddonBaseline(schema, SpawnKind.Creature, null, 5);
+        return MovementEdits.DeletePath(schema, nodes, header)
+            .Concat(MovementEdits.Unlink(schema, spawn, poses.AddonOf(Source, 5), baseline, 5)).ToArray();
+    }
+
+    [Fact]
+    public void DeletingADatabasePathUsesItsReadRowsAsTheBaseline()
+    {
+        var (drafts, poses, spawn) = CreatureOnPath(9);
+        var pathRows = PathRows(9, 1, 2);
+        poses.LoadPathRows(Source, Tc, pathRows);
+
+        var (ok, message) = poses.Commit(null, Source, "Delete path 9", DeletePathEdits(pathRows, 9, spawn, poses, drafts));
+        Assert.True(ok, message);
+        var net = drafts.Draft!.NetEdits();
+        Assert.Equal(2, net.Count(e => e.Edit.Table == "waypoint_path_node" && e.Edit.After == null));
+        Assert.Contains(net, e => e.Edit.Table == "waypoint_path" && e.Edit.After == null);
+        string apply = SqlExport.Build(Source, [], net.Select(e => e.Edit), null, Tc).Apply;
+        Assert.Contains("DELETE FROM `waypoint_path_node`", apply);
+        Assert.Contains("DELETE FROM `waypoint_path`", apply);
+    }
+
+    [Fact]
+    public void DeletingAPathAfterADeletedNodeLeavesNoDuplicateDelete()
+    {
+        var (drafts, poses, spawn) = CreatureOnPath(9);
+        var pathRows = PathRows(9, 1, 2, 3);
+        poses.LoadPathRows(Source, Tc, pathRows);
+
+        var schema = Tc;
+        var nodeTable = MovementEdits.NodeTable(schema);
+        var nodeRows = pathRows.All(nodeTable).ToList();
+        var snapshot = new RowSet();
+        foreach (var row in nodeRows)
+        {
+            snapshot.Set(nodeTable, row);
+        }
+
+        var effective = drafts.Draft!.Effective(Source, snapshot);
+        var (nodeOk, nodeMessage) = drafts.Commit(null, Source, snapshot, effective, "Delete node",
+            MovementEdits.DeleteNode(schema, 9, nodeRows, 2), _ => []);
+        Assert.True(nodeOk, nodeMessage);
+
+        // The renumber left point 3 net-deleted; the effective list must not still hold it.
+        var afterNode = MovementEdits.EffectivePathRows(schema, 9, nodeRows, drafts.Draft.NetFor(Source).Select(e => e.Edit));
+        Assert.Equal([1u, 2u], afterNode.Select(r => r.U("NodeId")).ToArray());
+        string renumber = SqlExport.Build(Source, [], drafts.Draft.NetFor(Source).Select(e => e.Edit), null, Tc).Apply;
+        Assert.DoesNotContain("INSERT INTO `waypoint_path_node`", renumber);
+        Assert.Contains("UPDATE `waypoint_path_node` SET", renumber);
+        Assert.Contains("DELETE FROM `waypoint_path_node`", renumber);
+
+        var (ok, message) = poses.Commit(null, Source, "Delete path 9", DeletePathEdits(pathRows, 9, spawn, poses, drafts));
+        Assert.True(ok, message);
+        var deletes = drafts.Draft.NetFor(Source).Where(e => e.Edit.Table == nodeTable.Name && e.Edit.After == null).Select(e => e.Edit.Key).ToList();
+        Assert.Equal(3, deletes.Count);
+        Assert.Equal(deletes.Count, deletes.Distinct().Count());
+    }
+
+    [Fact]
+    public void AStagedAppendSurvivesAReopenAndStillSeesTheDatabaseRows()
+    {
+        string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"), "content.json"));
+        var nodes = MovementEdits.NodeTable(Tc);
+        var database = PathRows(9, 1, 2, 3);
+        using (var drafts = new ContentDrafts(path, _ => TcTables.Instance))
+        {
+            var snapshot = new RowSet();
+            foreach (var row in database.All(nodes))
+            {
+                snapshot.Set(nodes, row);
+            }
+
+            var effective = drafts.Draft!.Effective(Source, snapshot);
+            var (ok, message) = drafts.Commit(null, Source, snapshot, effective, "Append",
+                MovementEdits.InsertNode(Tc, 9, effective.All(nodes).ToList(), 3, new WaypointSeed(9, 9, 9, null, 0)), _ => []);
+            Assert.True(ok, message);
+        }
+
+        using (var reopened = new ContentDrafts(path, _ => TcTables.Instance))
+        {
+            // A restarted overlay has no snapshot: the draft alone holds only the appended point.
+            Assert.Single(reopened.Draft!.Effective(Source, new RowSet()).All(nodes));
+            // Reading the database rows and layering the draft on top restores the whole path.
+            var merged = MovementEdits.EffectivePathRows(Tc, 9, database.All(nodes), reopened.Draft.NetFor(Source).Select(e => e.Edit));
+            Assert.Equal([1u, 2u, 3u, 4u], merged.Select(r => r.U("NodeId")).ToArray());
+        }
+    }
+
+    [Fact]
+    public void TheNextPathIdClearsTheNodeAndHeaderTables()
+    {
+        var drafts = Open();
+        var poses = new SpawnPoses(drafts, SpawnKind.Creature);
+        Assert.Equal(61ul, poses.NextPathId(Source, Tc, 60, 50));
+        Assert.Equal(51ul, poses.NextPathId(Source, Tc, 10, 50));
+
+        var header = MovementEdits.HeaderRow(Tc, 90, 0, 0, null, "");
+        var (ok, message) = drafts.Commit(null, Source, new RowSet(), new RowSet(), "header",
+            [InteractionEdits.Insert(Tc.Tables.Find("waypoint_path"), header)], _ => []);
+        Assert.True(ok, message);
+        Assert.Equal(91ul, poses.NextPathId(Source, Tc, 60, 50));
+    }
 }

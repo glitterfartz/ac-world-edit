@@ -52,15 +52,24 @@ public partial class WaypointOverlay
         // Drop fully-deleted staged paths: their views and selection go with them.
         foreach (uint gone in stagedPaths.Where(s => !staged.ContainsKey(s)).ToArray())
         {
-            stagedPaths.Remove(gone);
-            lookup.Remove(gone);
-            paths.Remove(gone);
-            if (selected?.Path == gone)
+            DropPath(gone);
+            added = true;
+        }
+
+        // A database path whose nodes the draft removes is gone too: leaving the stale region
+        // record in the lookup would keep drawing and selecting it until the next region query.
+        foreach (uint id2 in lookup.Keys.ToArray())
+        {
+            if (stagedPaths.Contains(id2) || !IsLoaded(sourceKey, id2))
             {
-                Deselect();
+                continue;
             }
 
-            added = true;
+            if (EffectiveNodeRows(lookup[id2]).Count == 0 && HasNodeDeletion(id2))
+            {
+                DropPath(id2);
+                added = true;
+            }
         }
 
         foreach (var (pid, ordered) in staged)
@@ -78,7 +87,7 @@ public partial class WaypointOverlay
                 continue;
             }
 
-            lookup[pid] = new WaypointPath(pid, map, nodes, StagedUsers(), dialect,
+            lookup[pid] = new WaypointPath(pid, map, nodes, StagedUsers(pid), dialect,
                 header != null ? (int)header.U("Flags") : 0,
                 header != null && !header.IsNull("Comment") ? header.T("Comment") : "");
             stagedPaths.Add(pid);
@@ -98,6 +107,55 @@ public partial class WaypointOverlay
         }
     }
 
+    /// <summary>Remove a path's record, view and selection (its rows are gone from the draft).</summary>
+    void DropPath(uint pathId)
+    {
+        if (selected?.Path == pathId)
+        {
+            selected = null;
+            if (handle != null)
+            {
+                handle.Visible = false;
+            }
+
+            list?.DeselectAll();
+        }
+
+        if (emphasized == pathId)
+        {
+            emphasized = null;
+        }
+
+        if (focusedPath == pathId)
+        {
+            focusedPath = null;
+        }
+
+        if (loaded.TryGetValue(sourceKey, out var set))
+        {
+            set.Remove(pathId);
+        }
+
+        lookup.Remove(pathId);
+        stagedPaths.Remove(pathId);
+        paths.Remove(pathId);
+    }
+
+    /// <summary>True when the draft removes at least one node row of this path.</summary>
+    bool HasNodeDeletion(uint pathId)
+    {
+        if (shared?.Draft == null || string.IsNullOrEmpty(sourceKey))
+        {
+            return false;
+        }
+
+        var schema = ContentDraftFiles.Sources.SchemaFor(sourceKey);
+        var table = MovementEdits.NodeTable(schema);
+        string id = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
+        return shared.Draft.NetFor(sourceKey).Any(e =>
+            e.Edit.Table == table.Name && e.Edit.After == null && e.Edit.Before != null && e.Edit.Before.U(id) == pathId);
+    }
+
     /// <summary>One region record from a draft-staged node row (no database record to fall back to).</summary>
     static WaypointNode StagedNodeFromRow(WorldDialect dialect, Row row, Row? header)
     {
@@ -113,47 +171,55 @@ public partial class WaypointOverlay
             tc ? 0 : row.I("action_chance"));
     }
 
-    /// <summary>The creating creature follows its staged path; the database read cannot know that yet.</summary>
-    WaypointUser[] StagedUsers() =>
-        FocusedCreature() is ulong guid ? [new WaypointUser(guid, 0, "Selected creature", true)] : [];
-
-    /// <summary>True when the draft already touches a row: its baseline is the net's Before (or absence for inserts).</summary>
-    bool HasNetEdit(TableSchema table, string key)
+    /// <summary>
+    /// The creatures whose effective addon rows name this path. A staged path has no database
+    /// record, so this is derived from the draft instead of claiming whichever creature is focused.
+    /// </summary>
+    WaypointUser[] StagedUsers(uint pathId)
     {
-        if (shared?.Draft == null)
+        if (effective == null || string.IsNullOrEmpty(sourceKey))
         {
-            return false;
+            return [];
         }
 
-        return shared.Draft.NetEdits().Any(e => e.Source == sourceKey && e.Edit.Table == table.Name && e.Edit.Key == key);
+        var schema = ContentDraftFiles.Sources.SchemaFor(sourceKey);
+        var addon = schema.Tables.Find("creature_addon");
+        string column = MovementEdits.AddonPathColumn(schema.Dialect);
+        ulong? focused = FocusedCreature();
+        return effective.All(addon)
+            .Where(r => r.U(column) == pathId)
+            .Select(r => r.UL("guid"))
+            .Distinct()
+            .Select(guid => new WaypointUser(guid, 0, guid == focused ? "Selected creature" : $"Creature #{guid}", true))
+            .ToArray();
     }
 
+    /// <summary>True when the draft already touches a row: its baseline is the net's Before (or absence for inserts).</summary>
+    bool HasNetEdit(TableSchema table, string key) => shared?.Draft?.Touches(sourceKey, table.Name, key) == true;
+
     /// <summary>
-    /// Drop snapshot baselines for staged inserts (net Before null): an insert has no database
-    /// row, so any snapshot entry for its key is a stale seed that reads as a conflict and blocks
-    /// later moves of the point. Heals drafts seeded before the Commit guard below existed.
+    /// Drop a snapshot baseline this editor seeded from a display record for a key the draft now
+    /// inserts. A row the database read loaded for the same key is never in the seeded set, so a
+    /// genuine row that appeared later stays and reports its conflict instead of being hidden.
     /// </summary>
     void PruneStagedBaselines()
     {
-        if (shared?.Draft == null)
+        if (shared?.Draft == null || seededBaselines.Count == 0)
         {
             return;
         }
 
         var snapshot = Snapshot(sourceKey);
         var schema = ContentDraftFiles.Sources.SchemaFor(sourceKey);
-        foreach (var (source, edit) in shared.Draft.NetEdits())
+        foreach (var (_, edit) in shared.Draft.NetFor(sourceKey))
         {
-            if (source != sourceKey || edit.Before != null || edit.After == null)
+            if (edit.Before != null || edit.After == null || !seededBaselines.Contains((edit.Table, edit.Key)))
             {
                 continue;
             }
 
-            var table = schema.Tables.Find(edit.Table);
-            if (snapshot.Get(table, edit.Key) != null)
-            {
-                snapshot.Remove(table, edit.Key);
-            }
+            snapshot.Remove(schema.Tables.Find(edit.Table), edit.Key);
+            seededBaselines.Remove((edit.Table, edit.Key));
         }
     }
 }

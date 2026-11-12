@@ -100,6 +100,66 @@ public class FormationTests
     }
 
     [Fact]
+    public void FormationOffsetsFollowTheLeaderHeadingAndDialect()
+    {
+        // Leader faces north, member stands due east: the stored angle is relative to the leader.
+        var leader = new WorldPose(0, 0, 0, 0, Math.PI / 2);
+        var member = new WorldPose(0, 10, 0, 0, 0);
+        Assert.Equal(270f, MovementEdits.FormationOffset(WorldDialect.AzerothCore, leader, member).Angle, 3);
+        Assert.Equal(90f, MovementEdits.FormationOffset(WorldDialect.TrinityCore, leader, member).Angle, 3);
+
+        // At heading 0 the two conventions differ by exactly 180 degrees.
+        var level = leader with { Heading = 0 };
+        Assert.Equal(0f, MovementEdits.FormationOffset(WorldDialect.AzerothCore, level, member).Angle, 3);
+        Assert.Equal(180f, MovementEdits.FormationOffset(WorldDialect.TrinityCore, level, member).Angle, 3);
+    }
+
+    [Theory]
+    [InlineData(true, 0.0)]
+    [InlineData(true, 0.9)]
+    [InlineData(false, 0.0)]
+    [InlineData(false, 0.9)]
+    public void FormationOffsetsRoundTripThroughTheServerPlacement(bool trinity, double heading)
+    {
+        var dialect = trinity ? WorldDialect.TrinityCore : WorldDialect.AzerothCore;
+        var leader = new WorldPose(0, 100, 200, 5, heading);
+        double bearing = 35 * Math.PI / 180;
+        var member = new WorldPose(0, 100 + 8 * Math.Cos(bearing), 200 + 8 * Math.Sin(bearing), 5, 0);
+        var (dist, angle) = MovementEdits.FormationOffset(dialect, leader, member);
+        Assert.Equal(8f, dist, 2);
+        // Both servers place with orientation + angle; TrinityCore adds 180 degrees at load.
+        double placed = heading * 180 / Math.PI + angle + (trinity ? 180 : 0);
+        Assert.Equal(35, (placed % 360 + 360) % 360, 2);
+    }
+
+    [Fact]
+    public void MakingAMemberTheLeaderRewritesItsMemberRow()
+    {
+        var (_, poses) = Two();
+        var member = poses.FormationRows(Source, Tc).Single(r => r.UL("memberGUID") == 8);
+        var edit = MovementEdits.MakeLeader(Tc, member, 8, MovementEdits.GroupAI(member.U("groupAI"), 3, true));
+        Assert.NotNull(edit);
+        Assert.Equal(member, edit!.Before);
+        Assert.Equal(8ul, edit.After!.UL("leaderGUID"));
+        var (ok, message) = poses.Commit(null, Source, "Lead formation", [edit]);
+        Assert.True(ok, message);
+        var rows = poses.FormationRows(Source, Tc);
+        Assert.Equal(8ul, rows.Single(r => r.UL("memberGUID") == 8).UL("leaderGUID"));
+        Assert.DoesNotContain(rows, r => r.UL("leaderGUID") == 7 && r.UL("memberGUID") == 8);
+    }
+
+    [Fact]
+    public void GroupAiKeepsFlagsTheCardDoesNotModel()
+    {
+        uint current = 0x200 | MovementEdits.GroupAssistLeader | 0x4;
+        uint after = MovementEdits.GroupAI(current, MovementEdits.GroupAssistMember, true);
+        Assert.Equal(0x200u | 0x4u | MovementEdits.GroupAssistMember | MovementEdits.GroupFollow, after);
+        var member = Row.Of(("leaderGUID", 7ul), ("memberGUID", 8ul), ("dist", 2f), ("angle", 90f), ("groupAI", current), ("point_1", 0u), ("point_2", 0u));
+        var edit = MovementEdits.MakeLeader(Tc, member, 8, MovementEdits.GroupAI(member.U("groupAI"), MovementEdits.GroupAssistMember, true));
+        Assert.True((edit!.After!.U("groupAI") & 4u) != 0);
+    }
+
+    [Fact]
     public void GroupAiSplitsIntoAssistAndFollow()
     {
         Assert.Equal((0u, false), MovementEdits.SplitGroupAI(0));

@@ -17,6 +17,8 @@ public partial class WaypointOverlay : IPlacementEditor
     ContentDrafts? shared;
     readonly Dictionary<string, RowSet> snapshots = [];
     readonly Dictionary<string, HashSet<uint>> loaded = [];
+    /// <summary>Baselines this editor seeded itself from a display record, not read from the database.</summary>
+    readonly HashSet<(string Table, string Key)> seededBaselines = [];
     RowSet? effective;
     HashSet<(string Table, string Key)> conflicts = [];
     TransformGizmo gizmo = null!;
@@ -58,8 +60,7 @@ public partial class WaypointOverlay : IPlacementEditor
         {
             if (IsInsideTree())
             {
-                RefreshEffective();
-                RefreshStagedPaths();
+                // RebuildAll refreshes the effective view, the staged paths and every view.
                 RebuildAll();
             }
         };
@@ -88,6 +89,9 @@ public partial class WaypointOverlay : IPlacementEditor
     /// <summary>
     /// Read one path's node rows (plus the TrinityCore header) as the baseline of later edits.
     /// Selections and commands wait for this; the region read only carries the display records.
+    /// A path the draft created returns no database rows and stays staged; a path that exists in
+    /// the database is always read, even when the draft already holds an appended point, or the
+    /// effective view would show only the staged rows.
     /// </summary>
     async void EnsurePathLoaded(uint pathId)
     {
@@ -102,34 +106,35 @@ public partial class WaypointOverlay : IPlacementEditor
             return;
         }
 
-        if (HasStagedRows(pathId) && lookup.TryGetValue(pathId, out var staged))
+        bool synthesized = stagedPaths.Contains(pathId);
+        RowSet? rows = null;
+        try
         {
-            // Created this session: the draft already holds every row, so there is no
-            // database baseline to load for conflict checks.
-            if (!loaded.TryGetValue(key, out var have))
+            rows = await DBSource.Open(Connection()).ReadWaypointPathRowsAsync(pathId, default);
+        }
+        catch (Exception)
+        {
+            if (!synthesized)
             {
-                loaded[key] = have = [];
+                Say("Could not read the path's rows; point editing stays unavailable.");
+                return;
             }
+        }
 
-            have.Add(pathId);
-            BuildPath(staged);
-            ShowSelection();
+        if (!IsInsideTree() || key != sourceKey || IsLoaded(key, pathId))
+        {
             return;
         }
 
-        try
+        var schema = ContentDraftFiles.Sources.SchemaFor(key);
+        var snapshot = Snapshot(key);
+        if (rows != null)
         {
-            var schema = ContentDraftFiles.Sources.SchemaFor(key);
-            var rows = await DBSource.Open(Connection()).ReadWaypointPathRowsAsync(pathId, default);
-            if (!IsInsideTree() || key != sourceKey || IsLoaded(key, pathId))
+            var nodeTable = MovementEdits.NodeTable(schema);
+            foreach (var row in rows.All(nodeTable))
             {
-                return;
-            }
-
-            var snapshot = Snapshot(key);
-            foreach (var row in rows.All(MovementEdits.NodeTable(schema)))
-            {
-                snapshot.Set(MovementEdits.NodeTable(schema), row);
+                snapshot.Set(nodeTable, row);
+                seededBaselines.Remove((nodeTable.Name, nodeTable.KeyOf(row)));
             }
 
             if (MovementEdits.HeaderTable(schema) is { } header)
@@ -137,27 +142,26 @@ public partial class WaypointOverlay : IPlacementEditor
                 foreach (var row in rows.All(header))
                 {
                     snapshot.Set(header, row);
+                    seededBaselines.Remove((header.Name, header.KeyOf(row)));
                 }
             }
-
-            if (!loaded.TryGetValue(key, out var set))
-            {
-                loaded[key] = set = [];
-            }
-
-            set.Add(pathId);
-            RefreshEffective();
-            if (lookup.TryGetValue(pathId, out var path))
-            {
-                BuildPath(path);
-            }
-
-            ShowSelection();
         }
-        catch (Exception)
+
+        if (!loaded.TryGetValue(key, out var set))
         {
-            Say("Could not read the path's rows; point editing stays unavailable.");
+            loaded[key] = set = [];
         }
+
+        set.Add(pathId);
+        RefreshEffective();
+        // A path the draft deleted reads no effective rows; drop its stale region record now.
+        RefreshStagedPaths();
+        if (lookup.TryGetValue(pathId, out var path))
+        {
+            BuildPath(path);
+        }
+
+        ShowSelection();
     }
 
     (WaypointPath Path, WaypointNode Node)? SelectedNode()
@@ -254,6 +258,7 @@ public partial class WaypointOverlay : IPlacementEditor
         if (Snapshot(sourceKey).Get(table, table.KeyOf(before)) == null && !HasNetEdit(table, table.KeyOf(before)))
         {
             Snapshot(sourceKey).Set(table, before);
+            seededBaselines.Add((table.Name, table.KeyOf(before)));
             RefreshEffective();
         }
 
@@ -374,6 +379,18 @@ public partial class WaypointOverlay : IPlacementEditor
         }
     }
 
+    void RebuildAll()
+    {
+        RefreshEffective();
+        RefreshStagedPaths();
+        foreach (var path in lookup.Values)
+        {
+            BuildPath(path);
+        }
+
+        ShowSelection();
+    }
+
     void History(bool redo)
     {
         gizmo.Finish(false);
@@ -389,44 +406,6 @@ public partial class WaypointOverlay : IPlacementEditor
 
     public void Undo() => History(false);
     public void Redo() => History(true);
-
-    /// <summary>
-    /// Discard every waypoint row change as normal undoable commands (the pending-changes window
-    /// discards them one by one through the shared draft).
-    /// </summary>
-    public void ClearDraft()
-    {
-        gizmo.Finish(false);
-        if (shared?.Draft == null)
-        {
-            Say("Editing is disabled.");
-            return;
-        }
-
-        int count = 0;
-        foreach (var (source, edit) in shared.Draft.NetEdits())
-        {
-            if (edit.Table is "waypoint_data" or "waypoint_path" or "waypoint_path_node" && shared.Revert(source, edit))
-            {
-                count++;
-            }
-        }
-
-        Say(count == 0 ? "No waypoint changes to discard." : $"Discarded {count} waypoint change(s).");
-        RebuildAll();
-    }
-
-    void RebuildAll()
-    {
-        RefreshEffective();
-        RefreshStagedPaths();
-        foreach (var path in lookup.Values)
-        {
-            BuildPath(path);
-        }
-
-        ShowSelection();
-    }
 
     /// <summary>
     /// GM teleport for checking the effective position in the client: `.go xyz X Y Z MAP`.

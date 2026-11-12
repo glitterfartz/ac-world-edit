@@ -21,6 +21,9 @@ public sealed class InteractionDraft : IDisposable
 {
     readonly DraftHistory<InteractionCommand> history;
     readonly Func<string, ITableCatalog> catalogFor;
+    IReadOnlyList<(string Source, RowEdit Edit)>? netCache;
+    Dictionary<string, List<(string Source, RowEdit Edit)>>? netBySource;
+    Dictionary<(string Source, string Table, string Key), RowEdit>? netIndex;
     DraftSnapshot<InteractionCommand> state => history.State;
     public bool CanUndo => history.CanUndo;
     public bool CanRedo => history.CanRedo;
@@ -197,6 +200,7 @@ public sealed class InteractionDraft : IDisposable
         }
 
         history.Append(new InteractionCommand(source, label, kept.ToArray()));
+        InvalidateNetCache();
     }
 
     /// <summary>
@@ -209,26 +213,66 @@ public sealed class InteractionDraft : IDisposable
     /// <summary>
     /// Net row change per (source, table, key) over the applied history, in first-touched order: the
     /// first edit's Before and the last edit's After. Rows that end where they began are omitted.
+    /// Cached until the history changes, so per-row lookups do not re-group the whole draft.
     /// </summary>
-    public IReadOnlyList<(string Source, RowEdit Edit)> NetEdits() => state.AppliedEntries()
+    public IReadOnlyList<(string Source, RowEdit Edit)> NetEdits() => netCache ??= state.AppliedEntries()
         .SelectMany(c => c.Edits.Select(e => (c.Source, Edit: e)))
         .GroupBy(x => (x.Source, x.Edit.Table, x.Edit.Key))
         .Select(g => (g.Key.Source, Collapse(g.Select(x => x.Edit))))
         .Where(x => x.Item2.Before != x.Item2.After)
         .ToList();
 
+    Dictionary<(string Source, string Table, string Key), RowEdit> NetIndex() => netIndex ??=
+        NetEdits().ToDictionary(x => (x.Source, x.Edit.Table, x.Edit.Key), x => x.Edit);
+
+    Dictionary<string, List<(string Source, RowEdit Edit)>> NetBySource() => netBySource ??=
+        NetEdits().GroupBy(x => x.Source).ToDictionary(g => g.Key, g => g.ToList());
+
+    /// <summary>The draft's net change for one row, or null when it leaves the row as it was.</summary>
+    public RowEdit? Net(string source, string table, string key) => NetIndex().GetValueOrDefault((source, table, key));
+
+    /// <summary>True when the draft's net change touches this row.</summary>
+    public bool Touches(string source, string table, string key) => NetIndex().ContainsKey((source, table, key));
+
+    /// <summary>The draft's net changes for one source, in first-touched order.</summary>
+    public IReadOnlyList<(string Source, RowEdit Edit)> NetFor(string source) =>
+        NetBySource().GetValueOrDefault(source) ?? (IReadOnlyList<(string, RowEdit)>)[];
+
     /// <summary>
     /// Discard one net row change as a normal undoable command that restores the row's baseline (its
     /// absence for an insert). It bypasses Execute's freshness checks on purpose: a stale or
     /// conflicting row must still be discardable.
     /// </summary>
-    public void Clear() => history.Clear();
+    public void Clear()
+    {
+        history.Clear();
+        InvalidateNetCache();
+    }
 
-    public void Revert(string source, RowEdit net) => history.Append(new InteractionCommand(source, $"Discard {net.Table} {net.Key}", [new RowEdit(net.Table, net.Key, net.After, net.Before)]));
+    public void Revert(string source, RowEdit net)
+    {
+        history.Append(new InteractionCommand(source, $"Discard {net.Table} {net.Key}", [new RowEdit(net.Table, net.Key, net.After, net.Before)]));
+        InvalidateNetCache();
+    }
 
-    public void Undo() => history.Undo();
+    public void Undo()
+    {
+        history.Undo();
+        InvalidateNetCache();
+    }
 
-    public void Redo() => history.Redo();
+    public void Redo()
+    {
+        history.Redo();
+        InvalidateNetCache();
+    }
+
+    void InvalidateNetCache()
+    {
+        netCache = null;
+        netBySource = null;
+        netIndex = null;
+    }
 
     public void Dispose() => history.Dispose();
 }

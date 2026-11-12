@@ -145,7 +145,7 @@ public partial class CreatureOverlay
             }
 
             var schema = ContentDraftFiles.Sources.SchemaFor(key);
-            int nodes = DraftNodeTotal(key, schema, path, rows.All(MovementEdits.NodeTable(schema)).Count);
+            int nodes = DraftNodeTotal(key, schema, path, rows.All(MovementEdits.NodeTable(schema)));
             string walkers = users == null || users.Creatures.Length == 0
                 ? own != 0 ? "linked in this session (not exported yet)" : "no creature in this database uses it"
                 : string.Join(", ", users.Creatures.Take(3).Select(u => $"{u.Name} #{u.Guid}{(u.Walks ? "" : " (not following)")}"))
@@ -208,7 +208,7 @@ public partial class CreatureOverlay
                 return;
             }
 
-            int nodes = DraftNodeTotal(key, schema, path, rows.All(MovementEdits.NodeTable(schema)).Count);
+            int nodes = DraftNodeTotal(key, schema, path, rows.All(MovementEdits.NodeTable(schema)));
             if (nodes == 0)
             {
                 Say($"Path {path} has no points; add points before linking it.");
@@ -263,7 +263,10 @@ public partial class CreatureOverlay
             var database = DBSource.Open(config);
             var table = MovementEdits.NodeTable(schema);
             string column = schema.Dialect == WorldDialect.TrinityCore ? "PathId" : "id";
-            ulong fresh = poses.NextPathId(key, schema, await database.MaxIdAsync(table, column, default));
+            ulong nodeMax = await database.MaxIdAsync(table, column, default);
+            ulong headerMax = MovementEdits.HeaderTable(schema) is { } headerTable
+                ? await database.MaxIdAsync(headerTable, "PathId", default) : 0;
+            ulong fresh = poses.NextPathId(key, schema, nodeMax, headerMax);
             if (!IsInsideTree() || selectedGuid != guid)
             {
                 return;
@@ -317,10 +320,34 @@ public partial class CreatureOverlay
                 return;
             }
 
-            var others = (users?.Creatures.Where(u => u.Guid != guid).Select(u => $"{u.Name} #{u.Guid}").ToList() ?? [])
-                .Concat(users?.Smart.Select(s => $"SmartAI {(s.Owner < 0 ? "spawn" : "entry")} {Math.Abs(s.Owner)} action {s.Action}") ?? [])
-                .Concat(users?.Creatures.Where(u => u.Guid == guid && u.FromTemplate).Select(u => $"{u.Name} #{u.Guid} (template)") ?? [])
-                .ToList();
+            // The node and header rows are the baseline the delete commits against; without them
+            // Draft.Execute sees the rows as absent and refuses the first delete.
+            poses.LoadPathRows(key, schema, rows);
+            string addonName = SpawnEdits.AddonTable(schema, SpawnKind.Creature).Name;
+            var others = new List<string>();
+            var known = new HashSet<ulong>();
+            foreach (var user in users?.Creatures ?? [])
+            {
+                if (user.Guid == guid)
+                {
+                    if (user.FromTemplate)
+                    {
+                        others.Add($"{user.Name} #{user.Guid} (template)");
+                    }
+
+                    continue;
+                }
+
+                known.Add(user.Guid);
+                // A spawn the draft deletes, or points at another path, no longer uses this one.
+                if (!DraftDeletes(user.Guid) && (DraftAddonPath(key, schema, addonName, user.Guid) ?? own) == own)
+                {
+                    others.Add($"{user.Name} #{user.Guid}");
+                }
+            }
+
+            others.AddRange(users?.Smart.Select(s => $"SmartAI {(s.Owner < 0 ? "spawn" : "entry")} {Math.Abs(s.Owner)} action {s.Action}") ?? []);
+            others.AddRange(DraftPathUsers(key, schema, own, guid, known));
             if (others.Count > 0)
             {
                 Say($"Path {own} is still used by {string.Join(", ", others.Take(3))}; unlink them first.");
@@ -329,8 +356,8 @@ public partial class CreatureOverlay
 
             var nodes = DraftPathRows(key, schema, own, rows.All(MovementEdits.NodeTable(schema)));
             var baseline = SpawnEdits.AddonBaseline(schema, SpawnKind.Creature, templateAddons?.RowOf(key, entry), guid);
-            var headerTable = MovementEdits.HeaderTable(schema);
-            var header = headerTable is { } headerTable2 ? DraftHeaderRow(key, headerTable2, own, rows.Get(headerTable2, own.ToString(CultureInfo.InvariantCulture))) : null;
+            var header = DraftHeaderRow(key, schema, own, MovementEdits.HeaderTable(schema) is { } headerTable
+                ? rows.Get(headerTable, own.ToString(CultureInfo.InvariantCulture)) : null);
             var edits = MovementEdits.DeletePath(schema, nodes, header)
                 .Concat(MovementEdits.Unlink(schema, spawn, poses.AddonOf(key, guid), baseline, guid)).ToArray();
             var (ok, message) = poses.Commit(this, key, $"Delete path {own}", edits);

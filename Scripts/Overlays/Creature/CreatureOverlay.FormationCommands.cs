@@ -70,16 +70,15 @@ public partial class CreatureOverlay
             return;
         }
 
-        var (dist, angle) = FormationOffset(PoseOf(leaderMarker.Spawn), PoseOf(member.Spawn));
+        var (dist, angle) = FormationOffset(schema.Dialect, PoseOf(leaderMarker.Spawn), PoseOf(member.Spawn));
         var edit = MovementEdits.JoinFormation(schema, row, guid, leader, dist, angle, row.U("groupAI"), row.U("point_1"), row.U("point_2"));
         CommitFormation("Set formation offset", edit == null ? [] : [edit], $"Offset is now {dist:0.#} yd at {angle:0.#}°.");
     }
 
-    /// <summary>Polar offset of a member from its leader: yards plus the bearing from the member to
-    /// the leader in degrees (the server adds π before placing the member, so the column is the
-    /// member-to-leader bearing).</summary>
-    public static (float Dist, float Angle) FormationOffset(WorldPose leader, WorldPose member) =>
-        MovementEdits.FormationOffset(leader.X, leader.Y, member.X, member.Y);
+    /// <summary>Offset of a member from its leader in the source server's convention (see
+    /// <see cref="MovementEdits.FormationOffset(WorldDialect, WorldPose, WorldPose)"/>).</summary>
+    public static (float Dist, float Angle) FormationOffset(WorldDialect dialect, WorldPose leader, WorldPose member) =>
+        MovementEdits.FormationOffset(dialect, leader, member);
 
     void SubmitFormationAi()
     {
@@ -93,7 +92,7 @@ public partial class CreatureOverlay
             return;
         }
 
-        uint groupAI = MovementEdits.GroupAI((uint)formationAssist.GetSelected(), formationFollow.ButtonPressed);
+        uint groupAI = MovementEdits.GroupAI(row.U("groupAI"), (uint)formationAssist.GetSelected(), formationFollow.ButtonPressed);
         var edit = formationRow != null && formationRow.UL("leaderGUID") == guid && formationRow.UL("memberGUID") == guid
             ? MovementEdits.MakeLeader(schema, formationRow, guid, groupAI)
             : MovementEdits.JoinFormation(schema, row, guid, row.UL("leaderGUID"), row.F("dist"), row.F("angle"), groupAI, row.U("point_1"), row.U("point_2"));
@@ -190,7 +189,7 @@ public partial class CreatureOverlay
 
             poses.LoadFormationRows(key, await DBSource.Open(Connection()).ReadFormationsAsync([guid, leader], default));
             var existing = poses.FormationRows(key, schema).FirstOrDefault(r => r.UL("memberGUID") == guid);
-            var edit = MovementEdits.JoinFormation(schema, existing, guid, leader, 2, 0, MovementEdits.GroupAI(3, true), 0, 0);
+            var edit = MovementEdits.JoinFormation(schema, existing, guid, leader, 2, 0, MovementEdits.GroupAI(existing?.U("groupAI") ?? 0, 3, true), 0, 0);
             CommitFormation("Join formation", edit == null ? [] : [edit], $"Follows #{leader} now.");
         }
         catch (Exception)
@@ -206,11 +205,13 @@ public partial class CreatureOverlay
             return;
         }
 
-        // The controls already show the self-row's values when there is one, so an unchanged
-        // click records nothing; a new leader starts from the shown behavior.
+        // The controls already show the row's values when there is one, so an unchanged click
+        // records nothing; a new leader starts from the shown behavior. The row is keyed by
+        // memberGUID, so a member row is the update baseline when this creature follows someone.
         int selected = formationAssist.GetSelected();
-        var existing = poses!.FormationRows(sourceKey, schema).FirstOrDefault(r => r.UL("memberGUID") == guid && r.UL("leaderGUID") == guid);
-        var edit = MovementEdits.MakeLeader(schema, existing, guid, MovementEdits.GroupAI((uint)Math.Max(0, selected), formationFollow.ButtonPressed));
+        var existing = poses!.FormationRows(sourceKey, schema).FirstOrDefault(r => r.UL("memberGUID") == guid);
+        var edit = MovementEdits.MakeLeader(schema, existing, guid,
+            MovementEdits.GroupAI(existing?.U("groupAI") ?? 0, (uint)Math.Max(0, selected), formationFollow.ButtonPressed));
         CommitFormation("Lead formation", edit == null ? [] : [edit], "Leads a formation now; members join with Set leader.");
     }
 
@@ -320,7 +321,7 @@ public partial class CreatureOverlay
             return true;
         }
 
-        var (dist, angle) = FormationOffset(PoseOf(leaderMarker.Spawn), drop);
+        var (dist, angle) = FormationOffset(schema.Dialect, PoseOf(leaderMarker.Spawn), drop);
         var edit = MovementEdits.JoinFormation(schema, row, guid, row.UL("leaderGUID"), dist, angle, row.U("groupAI"), row.U("point_1"), row.U("point_2"));
         CommitFormation("Drag formation offset", edit == null ? [] : [edit], $"Offset is now {dist:0.#} yd at {angle:0.#}°.");
         Select(guid);

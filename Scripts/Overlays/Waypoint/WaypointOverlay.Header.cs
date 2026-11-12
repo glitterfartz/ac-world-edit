@@ -114,7 +114,7 @@ public partial class WaypointOverlay
         try
         {
             var users = (await DBSource.Open(Connection()).ReadPathUsersAsync([path.Id], default)).FirstOrDefault();
-            if (!IsInsideTree() || generation != headerGeneration || emphasized != path.Id)
+            if (!IsInsideTree() || key != sourceKey || generation != headerGeneration || emphasized != path.Id)
             {
                 return;
             }
@@ -126,7 +126,7 @@ public partial class WaypointOverlay
         }
         catch (Exception)
         {
-            if (IsInsideTree() && generation == headerGeneration)
+            if (IsInsideTree() && key == sourceKey && generation == headerGeneration)
             {
                 headerUsers.Text = "Could not read who uses this path.";
             }
@@ -276,6 +276,7 @@ public partial class WaypointOverlay
             if (Snapshot(key).Get(table, table.KeyOf(recordRow)) == null && !HasNetEdit(table, table.KeyOf(recordRow)))
             {
                 Snapshot(key).Set(table, recordRow);
+                seededBaselines.Add((table.Name, table.KeyOf(recordRow)));
             }
 
             var (edit, conflict) = LegacyWaypointImport.ToUpdate(schema, recordRow, move);

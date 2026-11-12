@@ -18,7 +18,7 @@ public partial class CreatureOverlay
     OptionButton formationAssist = null!;
     CheckBox formationFollow = null!, formationDrag = null!;
     Button formationApplyOffset = null!, formationFromPositions = null!, formationSetLeader = null!, formationMakeLeader = null!, formationLeave = null!, formationDelete = null!, formationPoint1Pick = null!, formationPoint2Pick = null!;
-    int formationGeneration;
+    int formationCardGeneration, formationRegionGeneration;
     string formationKey = "";
     ulong formationGuid;
     Row? formationRow;
@@ -40,7 +40,7 @@ public partial class CreatureOverlay
         var offset = new HBoxContainer();
         card.AddChild(offset);
         formationDist = FormationNumber(offset, "Dist (yd)", "Follow distance in yards.", SubmitFormationOffset);
-        formationAngle = FormationNumber(offset, "Angle (°)", "Bearing from the member to the leader, 0 to 360. The line in the viewport shows the result.", SubmitFormationOffset);
+        formationAngle = FormationNumber(offset, "Angle (°)", "Angle stored for the member: relative to the leader's facing; TrinityCore counts member-to-leader (the loader adds 180°), AzerothCore leader-to-member.", SubmitFormationOffset);
         formationApplyOffset = InspectorUi.Button("Set offset", SubmitFormationOffset);
         formationApplyOffset.TooltipText = "Move this member to the typed offset.";
         offset.AddChild(formationApplyOffset);
@@ -144,7 +144,7 @@ public partial class CreatureOverlay
 
         ulong guid = selectedGuid.Value;
         string key = sourceKey;
-        int generation = ++formationGeneration;
+        int generation = ++formationCardGeneration;
         formationGuid = guid;
         formationKey = key;
         SetFormationActions(poses.Has(key, guid), false, false);
@@ -152,7 +152,7 @@ public partial class CreatureOverlay
         try
         {
             var rows = await DBSource.Open(Connection()).ReadFormationsAsync([guid], default);
-            if (!IsInsideTree() || generation != formationGeneration || selectedGuid != guid)
+            if (!IsInsideTree() || generation != formationCardGeneration || key != sourceKey || selectedGuid != guid)
             {
                 return;
             }
@@ -162,7 +162,7 @@ public partial class CreatureOverlay
         }
         catch (Exception)
         {
-            if (IsInsideTree() && generation == formationGeneration && selectedGuid == guid)
+            if (IsInsideTree() && generation == formationCardGeneration && key == sourceKey && selectedGuid == guid)
             {
                 formationStatus.Text = "Could not read the formation; try again.";
             }
@@ -172,7 +172,7 @@ public partial class CreatureOverlay
     /// <summary>Draw the card from the effective formation rows (loaded by <see cref="RefreshFormationCard"/>).</summary>
     void ShowFormationCard()
     {
-        if (formationStatus == null || poses == null || selectedGuid != formationGuid)
+        if (formationStatus == null || poses == null || formationKey != sourceKey || selectedGuid != formationGuid)
         {
             return;
         }
@@ -236,11 +236,11 @@ public partial class CreatureOverlay
         }
 
         string key = formationKey;
-        int generation = formationGeneration;
+        int generation = formationCardGeneration;
         try
         {
             var use = (await DBSource.Open(Connection()).ReadSpawnPathsAsync([leader], default)).FirstOrDefault();
-            if (!IsInsideTree() || generation != formationGeneration)
+            if (!IsInsideTree() || generation != formationCardGeneration || key != sourceKey)
             {
                 return;
             }
@@ -303,11 +303,11 @@ public partial class CreatureOverlay
         }
 
         string key = sourceKey;
-        int generation = ++formationGeneration;
+        int generation = ++formationRegionGeneration;
         try
         {
             var rows = await DBSource.Open(Connection()).ReadFormationsAsync(records.Select(s => s.Guid).ToList(), default);
-            if (!IsInsideTree() || generation != formationGeneration || key != sourceKey)
+            if (!IsInsideTree() || generation != formationRegionGeneration || key != sourceKey)
             {
                 return;
             }

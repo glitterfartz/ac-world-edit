@@ -77,6 +77,7 @@ public partial class WaypointOverlay : RegionOverlay
             stagedPaths.Clear();
             snapshots.Clear();
             loaded.Clear();
+            seededBaselines.Clear();
             effective = null;
             conflicts = [];
             emphasized = focusedPath = null;
