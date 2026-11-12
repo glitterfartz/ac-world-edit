@@ -1156,7 +1156,23 @@ Commit: `feat(creature): remove an unused waypoint path with its last creature`
 
 ---
 
-## Stage 7 — The "Used by" card (Slice A; safe to ship alone)
+## Stage 7 — The "Used by" card (Slice A; safe to ship alone) — done
+
+**Status: done.** Tasks 7.1–7.4 are built and verified in the working tree (nothing committed; no `spawn-delete-references` branch was created, so Stage 0's baseline commands were run on `master`).
+
+- Built: `Foundation/Spawn/TemplateReferences.cs`, `Scripts/Data/DbTemplateReferences.cs`, `IDBSource.CountTemplateReferencesAsync` (both sources), `Scripts/Ui/Framework/ReferenceCountCard.cs`, `UsedBySection`, `GameObjectUsedBySection`, both registries. Docs: `viewer-runtime.md` (both windows), `editing-and-export.md` (helper), `open-work.md` (done row).
+- Tests: `TemplateReferencesTests` (2, including the schema-allowlist invariant), `TemplateReferencesDbTests` (2 live, zero skips), `UsedBySectionTests` (6 GdTests), plus the picker expectations in `CreaturePropertiesWindowTests` / `GameObjectPropertiesWindowTests`.
+- Verified: build 0 errors; default xUnit **1384 passed / 63 skipped / 0 failed** with `ACWORLD_*` set, so the live and client-data suites really ran; GdTests **73/73**; the two live template-reference tests **4/4** across `acore_world` and `world`.
+- Goldens: `ui-creature-15192-gossip-wrath.json` refreshed (the diff is exactly one new `UsedBySection` node, nothing else) and `ui-creature-15192-usedby-wrath.json` added from real AC data; `ui-behavior-295-wrath.json` still checks clean. The `usedby` dump pins the page's structure only: it captures the card before its read returns, so its labels are empty. The counts themselves are proven by `TemplateReferencesDbTests` (equal to `COUNT(*)` in both databases) and by `UsedBySectionTests` (rendering with a stub source); counts have **not** been eyeballed in the windowed viewer.
+
+Deviations from the snippets below, kept deliberately:
+
+- `GameObjectUsedBySection` calls `card.Bind(...)` in its constructor; the snippet omitted it, which leaves that card on its loading line forever. `UsedBySectionTests.BothPagesReadWithTheirOwnSource` guards it.
+- `ReferenceCountCard` renders itself when a read lands (`Render()` is called from `Load` as well as `Show`), so the counts appear even when the page redraw path is missed; the redraw still refreshes the picker badge.
+- The four `*_loot_template` tables were absent from `WorldReadSession.SchemaTables`, so `session.Has` would have skipped them and the card would have reported zero loot users. They are listed for both dialects now, and `TemplateReferencesTests.EveryTemplateReferenceTableIsReadByTheSessionSchema` fails if a reference table is added without the allowlist.
+- The `creature.id1` probe is scoped to AzerothCore (`acore_world` currently has `creature.id`, so it falls back to it); TrinityCore's `creature` has only `id`.
+
+Open, and **not** caused by this slice: `ui-wrath.json` and `ui-retail.json` do not check clean — their diff is ~2600 lines of auto-name renumbering and they contain no "Discard staged", "Spawns" or "Used by" text at all, so they predate the current UI. Left for a separate refresh rather than folded into this change.
 
 ### Task 7.1 The template reference list
 
