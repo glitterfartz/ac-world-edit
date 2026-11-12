@@ -47,6 +47,7 @@ public class UsedBySectionTests
         public Task<IReadOnlyList<(uint Id, uint First, uint Second, uint Third)>> ReadEquipmentSetsAsync(uint entry, CancellationToken token) => throw new NotSupportedException();
         public Task<IReadOnlyDictionary<uint, GameObjectLook>> ReadGameObjectLooksAsync(IReadOnlyList<uint> entries, CancellationToken token) => throw new NotSupportedException();
         public Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => throw new NotSupportedException();
+        public Task<SpawnReferences> ReadSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token) => throw new NotSupportedException();
         public Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token) => throw new NotSupportedException();
         public Task<IReadOnlyList<PathUsers>> ReadPathUsersAsync(IReadOnlyList<uint> pathIds, CancellationToken token) => throw new NotSupportedException();
         public Task<RowSet> ReadWaypointPathRowsAsync(uint pathId, CancellationToken token) => throw new NotSupportedException();

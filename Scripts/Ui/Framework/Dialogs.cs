@@ -34,11 +34,11 @@ public static class Dialogs
     }
 
     /// <summary>
-    /// A confirm/cancel question. <paramref name="confirmed"/> runs only on the affirmative answer;
-    /// the dialog frees itself either way.
+    /// A confirm/cancel question with an optional third answer. <paramref name="extra"/> is a button label
+    /// and the action it runs; the dialog frees itself on any answer.
     /// </summary>
     public static ConfirmationDialog Confirm(Node owner, string title, string text, Action confirmed,
-        string ok = "OK", string cancel = "Cancel", Vector2I? size = null)
+        string ok = "OK", string cancel = "Cancel", Vector2I? size = null, (string Label, Action Acted)? extra = null)
     {
         var dialog = new ConfirmationDialog
         {
@@ -47,6 +47,21 @@ public static class Dialogs
             OkButtonText = ok,
             CancelButtonText = cancel
         };
+        if (extra is { } third)
+        {
+            dialog.AddButton(third.Label, false, "extra");
+            dialog.CustomAction += action =>
+            {
+                if (action.ToString() != "extra")
+                {
+                    return;
+                }
+
+                third.Acted();
+                dialog.QueueFree();
+            };
+        }
+
         dialog.Confirmed += () =>
         {
             confirmed();
