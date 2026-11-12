@@ -55,7 +55,7 @@ Four kinds of page, kept separate so a reader knows what they are holding:
 
 One page owns each fact. When the same fact appears in two places, move it to its owner and link from
 the other. Code names in backticks must match the code: rename them in the same change as the code
-(see the rules in [`CLAUDE.md`](../CLAUDE.md)).
+(see the rules in [`AGENTS.md`](../AGENTS.md)).
 
 Links are relative and point at the new filenames; don't reintroduce the old `ARCHITECTURE.md`,
 `tc-status.md`, `DB-DIFFERENCES.md`, `NEEDED-TESTS.md`, `gap-plan.md`, `sniff-proposal.md`,

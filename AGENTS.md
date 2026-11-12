@@ -1,9 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
 ACWorldEdit is a Godot 4.7 (.NET / C#, `net8.0`) 3D world viewer and editor. It renders WoW client data (3.3.5 MPQ or retail CASC) and overlays world-database content: AzerothCore for the 3.3.5 client, TrinityCore master (`world` plus `hotfixes`) for retail. Edits stage in local drafts, sync to the `acworld` change log, and reach the world only when applied from Change History; checked rows also export as SQL. World reads are read-only, and applying needs write access.
 
-> **TrinityCore backend** (merged into `master`; plan, phase status and open work in `docs/status/open-work.md`).
-> - New database code goes through one interface: reads through `DBSource.Open(...)` → `IDBSource`, schema knowledge through `IDBSource.Schema` (`IWorldSchema`; Foundation code uses `WorldSchemas.For(dialect)`). Don't construct `Ac*Source`/`Tc*Source` outside `Scripts/Data` or use the AzerothCore statics (`AcTables`, `AcQuestModel`, `AcNpcFlags`) from shared or TrinityCore code; add missing descriptors to `IWorldSchema`.
+Nested instructions: `Foundation/AGENTS.md`, `Scripts/AGENTS.md` and `Tests/AGENTS.md`. Read the one covering a folder before editing in it; this file stays the repo-wide set.
 
 ## Docs
 
@@ -27,28 +26,32 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 
 ## Commands
 
-Shell is PowerShell on Windows. SDK is pinned in `global.json`; Godot is found via `--godot-path`, `GODOT_BIN` or `godot` on PATH.
+Shell is PowerShell on Windows and bash on Linux x64; both are supported (`native/win-x64`, `native/linux-x64`). SDK is pinned in `global.json` and the projects target `net8.0`; Godot is found via `--godot-path`, `GODOT_BIN` or `godot` on PATH.
 
-```powershell
+```bash
 git submodule update --init               # or clone with --recurse-submodules
 python Tools/setup.py                     # sync submodules, build CascLib into native/<platform> (win-x64 or linux-x64); --with-tests adds StormLib
+python Tools/setup.py --check             # report what is present, change nothing
+dotnet build ACWorldEdit.csproj -p:NuGetAudit=false       # ~10 s; ACW001/ACW002 mean native/ or Data/WoWDBDefs is missing
 python launch_viewer.py                   # build, then launch the viewer
 python launch_viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
-dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite
+dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite, ~7 s, ~1440 tests
 ```
+
+The test project needs a .NET 8 runtime: on a host that has only a newer runtime, prefix `DOTNET_ROLL_FORWARD=LatestMajor` or the run aborts with "You must install .NET 8". A command-line `--filter` is ANDed with `default.runsettings`, so `--filter "Category=Corpus"` matches nothing; pair it with `--settings corpus.runsettings` (or `all.runsettings`).
 
 Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke flags are in `testing-and-tooling.md` and `viewer-runtime.md`.
 
 ## Notes
 
-- `ACWorldEdit.sln` exists for Godot's .NET export; pass `ACWorldEdit.csproj` explicitly to `dotnet` commands, since a bare `dotnet build` in the root sees two candidates.
+- `ACWorldEdit.sln` exists for Godot's .NET export (without it the export produces no game assembly and only a warning); name `ACWorldEdit.csproj` explicitly in `dotnet` commands, as the scripts and CI do, so a build is not routed through the solution.
 - Third-party code lives in pinned submodules (`ThirdParty/CascLib`, `ThirdParty/StormLib`, `Data/WoWDBDefs`); change a pin by checking out the new commit inside the submodule and `git add`-ing it, and keep `THIRD-PARTY.md` current. `Tools/package.py` makes a release build. CI and releases are in `.github/` (workflows and shared composite actions); a release is a pushed `vX.Y.Z` tag on `master`, which creates a draft GitHub Release; the steps are under "Continuous integration" in `docs/architecture/testing-and-tooling.md`.
 - `artifacts/`, `native/`, `build/`, `.build-env/`, `wow-data/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
-- Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added.
+- Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added. Never hand-edit a `.cs.uid` or anything under `.godot/`.
 - The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/`; use `-p:NuGetAudit=false` for dotnet commands.
 - `--client-shot*` runs write PNGs into `artifacts/`. Read them back (the Read tool displays images) to inspect a rendering change; do not guess from logs alone. Prefer the same map, tile, hour and eye for before/after captures so they compare directly.
 - Aim the shot camera deliberately: `--client-shot-sky` takes `HOUR[,YAW[,LIFT[,PITCH]]]`, and a pitch near 0 or one that grew from repeated edits can end up pointing at the sky. For liquid or ground inspections use a downward pitch (e.g. `-8` for a level view, `-45` to `-89` for terrain), pass an eye above the surface only as far as needed, and check the saved PNG actually shows the surface before drawing conclusions from it. Never compare two shots taken with different pitch, yaw or eye.
-- A PostToolUse hook runs `dotnet format whitespace` on each edited `.cs` file.
+- Under Claude Code the `.claude/hooks` run `dotnet format whitespace` on each edited `.cs` and a build when a turn ends with uncommitted `.cs` changes. Agents without those hooks must do both themselves (`.editorconfig`: 4 spaces, LF, file-scoped namespaces).
 - Do not run `Tools/refactor_gate.py` (or its structural/golden checks) unless the user explicitly asks; build and the relevant test project are enough for a normal change. The only time it is permissible to run the gate without the user asking is when running the `refactor-module` skill.
 
 ## Rules

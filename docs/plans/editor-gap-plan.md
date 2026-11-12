@@ -65,7 +65,7 @@ States: **done**, **mostly**, **partial**, **not started**. The detailed gaps ar
 3. **Plain language over columns.** Show "Respawns after 5 min", not `spawntimesecs`. Show "Drops one of these (40%)" instead of `GroupId`. Show "Only when the player has quest X complete" instead of `ConditionTypeOrReference=8`. Column names appear only in tooltips.
 4. **Reference safety.** Every ID field is a search picker with name and icon. Every entity page has a "Used by" panel (reverse references), and every delete shows its impact before it happens.
 5. **One draft, one export.** Everything is a `RowEdit` through `InteractionDraft` and leaves only through `SqlExport`, with undo, redo, freshness checks and stale preflights.
-6. **Descriptors, not per-dialect classes.** Each dialect fills one descriptor; one renderer draws it (the `EntityPage`, `ItemListSpec` and `PageRenderer` pattern). New reads go only through `IDBSource` / `IWorldSchema`. `Ac`/`Tc` prefixes and folders as in CLAUDE.md. Foundation, Data and Assets stay Godot-free.
+6. **Descriptors, not per-dialect classes.** Each dialect fills one descriptor; one renderer draws it (the `EntityPage`, `ItemListSpec` and `PageRenderer` pattern). New reads go only through `IDBSource` / `IWorldSchema`. `Ac`/`Tc` prefixes and folders as in AGENTS.md. Foundation, Data and Assets stay Godot-free.
 7. **Status text says what happened** ("Placed Stormwind Guard.", "Deleted 3 spawns."), and it goes to the `StatusBar`.
 
 ---

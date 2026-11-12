@@ -11,7 +11,7 @@ working example of that: the viewer refactor (R0–R7) moved ~4,000 lines, split
 lines, extracted a lighting sampler, and kept six byte-identical goldens the whole way. Use the same
 philosophy here.
 
-Read `CLAUDE.md` first for the repository rules; architecture and test details live in `docs/`.
+Read `AGENTS.md` first for the repository rules; architecture and test details live in `docs/`.
 The worked example behind this skill, with exact milestones, measurements and gate output, is in
 `references/viewer-case-study.md`.
 
