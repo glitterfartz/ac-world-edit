@@ -336,12 +336,14 @@ public class AcworldStoreDbTests
             var oldReverted = Staged("a2");
             var recentApplied = Staged("a3");
             var oldStaged = Staged("a4");
+            var oldFailed = Staged("a6");
             var otherSource = Staged("a5", "other-source");
-            await AcworldStore.UpsertStagedAsync(acworld, [oldApplied, oldReverted, recentApplied, oldStaged, otherSource], TestToken());
+            await AcworldStore.UpsertStagedAsync(acworld, [oldApplied, oldReverted, recentApplied, oldStaged, oldFailed, otherSource], TestToken());
             await AcworldStore.MarkAppliedAsync(acworld, oldApplied.Fingerprint, "client", TestToken());
             await AcworldStore.MarkAppliedAsync(acworld, oldReverted.Fingerprint, "client", TestToken());
             await AcworldStore.MarkRevertedAsync(acworld, oldReverted.Fingerprint, TestToken());
             await AcworldStore.MarkAppliedAsync(acworld, recentApplied.Fingerprint, "client", TestToken());
+            await AcworldStore.MarkFailedAsync(acworld, oldFailed.Fingerprint, TestToken());
             await AcworldStore.MarkAppliedAsync(acworld, otherSource.Fingerprint, "client", TestToken());
 
             var old = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -354,11 +356,13 @@ public class AcworldStoreDbTests
             int deleted = await AcworldStore.DeleteOldAsync(
                 acworld, "test-source", new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc), TestToken());
 
-            Assert.Equal(2, deleted);
+            // Applied, reverted and failed are all finished; the failed row's staged-at time decides.
+            Assert.Equal(3, deleted);
             var rows = await AcworldStore.ListAsync(acworld, "test-source", false, TestToken());
             Assert.Equal(2, rows.Count);
             Assert.Contains(rows, r => r.Fingerprint == recentApplied.Fingerprint && r.Status == ChangeStatus.Applied);
             Assert.Contains(rows, r => r.Fingerprint == oldStaged.Fingerprint && r.Status == ChangeStatus.Staged);
+            Assert.DoesNotContain(rows, r => r.Fingerprint == oldFailed.Fingerprint);
             Assert.Single(await AcworldStore.ListAsync(acworld, "other-source", false, TestToken()));
         }
         finally

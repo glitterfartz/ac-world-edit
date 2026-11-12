@@ -562,8 +562,8 @@ public partial class ViewerShell
     }
 
     /// <summary>
-    /// Remove finished history older than the chosen age for the open world. Applied and reverted
-    /// rows are deleted; staged drafts and failed attempts stay, and other worlds are left alone.
+    /// Remove finished history older than the chosen age for the open world. Applied, reverted and
+    /// failed rows are deleted; staged drafts stay, and other worlds are left alone.
     /// </summary>
     async void DeleteOldHistoryAsync(int days)
     {
@@ -577,7 +577,7 @@ public partial class ViewerShell
 
         var acworld = connection.Acworld;
         DateTime olderThan = days <= 0 ? DateTime.UtcNow : DateTime.UtcNow.AddDays(-days);
-        pendingWindow.SetStatus("Deleting old changes…");
+        pendingWindow.SetStatus("Deleting changes…");
         var outcome = await ChangeHistoryOperations.DeleteOldAsync(
             AcworldHistoryStore.Instance, acworld, sourceKey, olderThan,
             e => CleanError(e, acworld), CancellationToken.None).ConfigureAwait(false);
@@ -585,7 +585,7 @@ public partial class ViewerShell
         PostToMainThread(() =>
         {
             LoadHistoryAsync();
-            string result = outcome.Error ?? $"Deleted {outcome.Deleted} old change(s).";
+            string result = outcome.Error ?? $"Deleted {outcome.Deleted} change(s).";
             pendingWindow.SetStatus(result);
             statusLog.Post(result);
         });

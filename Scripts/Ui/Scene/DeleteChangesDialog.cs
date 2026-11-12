@@ -3,11 +3,11 @@ using Godot;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Asks how much finished history to keep. Applied and reverted changes older than the chosen age
-/// are deleted from the open world's change log; staged edits and failed attempts are never touched.
-/// The caller supplies the count so the dialog can say what the answer would remove.
+/// Asks how much of the history to delete: applied, reverted and failed changes older than an age, or
+/// every finished change. Staged drafts are never offered, and only the open world is counted. The
+/// dialog only asks; the viewer runs the delete and reloads the list.
 /// </summary>
-public sealed partial class DeleteOldChangesDialog : ConfirmationDialog
+public sealed partial class DeleteChangesDialog : ConfirmationDialog
 {
     /// <summary>Choices in the order the picker shows them; 0 days means every finished change.</summary>
     static readonly (int Days, string Text)[] Ages =
@@ -25,16 +25,16 @@ public sealed partial class DeleteOldChangesDialog : ConfirmationDialog
     /// <summary>Raised on Delete with the chosen age in days; 0 means every finished change.</summary>
     public event Action<int>? DeleteRequested;
 
-    public DeleteOldChangesDialog(Func<int, int> countFor)
+    public DeleteChangesDialog(Func<int, int> countFor)
     {
         this.countFor = countFor;
-        Title = "Delete old changes";
+        Title = "Delete changes";
         OkButtonText = "Delete";
         CancelButtonText = "Keep";
         Exclusive = true;
         // The built-in label wraps and sizes itself; a wrapped Label added as custom content
         // reports a stale full-height minimum before it is laid out and stretches the dialog.
-        DialogText = "Delete applied and reverted changes for the open world. Staged edits and failed attempts are kept.";
+        DialogText = "Delete applied, reverted and failed changes for the open world. Staged edits are kept.";
         foreach (var (_, text) in Ages)
         {
             age.AddItem(text);

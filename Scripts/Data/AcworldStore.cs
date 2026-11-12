@@ -454,10 +454,9 @@ public static class AcworldStore
     }
 
     /// <summary>
-    /// Delete finished history for one source whose last lifecycle timestamp is older than
-    /// <paramref name="olderThanUtc"/>. Only applied and reverted rows are touched: staged drafts are
-    /// still open edits and failed attempts stay for review, and another source is left alone.
-    /// Returns the number of rows removed.
+    /// Delete the finished rows of one source that are older than the cutoff: applied and reverted by
+    /// their lifecycle time, failed attempts by when they were staged. Staged drafts are never touched,
+    /// and another source is left alone. Returns the number of rows removed.
     /// </summary>
     public static async Task<int> DeleteOldAsync(DatabaseSettings acworld, string sourceKey, DateTime olderThanUtc, CancellationToken token)
     {
@@ -465,8 +464,12 @@ public static class AcworldStore
         await connection.OpenAsync(token).ConfigureAwait(false);
         await using var command = new MySqlCommand($"""
             DELETE FROM {QualifiedTable(acworld)}
-            WHERE `source_key`=@source AND `status` IN ('applied','reverted')
-              AND CASE `status` WHEN 'reverted' THEN COALESCE(`reverted_at`, `created_at`) ELSE COALESCE(`applied_at`, `created_at`) END < @before
+            WHERE `source_key`=@source AND `status` IN ('applied','reverted','failed')
+              AND CASE `status`
+                    WHEN 'reverted' THEN COALESCE(`reverted_at`, `created_at`)
+                    WHEN 'applied' THEN COALESCE(`applied_at`, `created_at`)
+                    ELSE `created_at`
+                  END < @before
             """, connection);
         command.Parameters.AddWithValue("@source", sourceKey);
         command.Parameters.AddWithValue("@before", olderThanUtc);

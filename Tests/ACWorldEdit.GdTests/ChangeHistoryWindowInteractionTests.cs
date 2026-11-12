@@ -148,7 +148,7 @@ public class ChangeHistoryWindowInteractionTests
         window.RefreshHistory(
             [Record(Fingerprint('a'), ChangeStatus.Staged, "s"), Record(Fingerprint('b'), ChangeStatus.Applied, "a"),
              Record(Fingerprint('c'), ChangeStatus.Reverted, "r"), Record(Fingerprint('d'), ChangeStatus.Failed, "f")], null);
-        AssertThat(All<Label>(window).Any(l => l.Text.Contains("4 change(s): 1 staged, 1 applied."))).IsTrue();
+        AssertThat(All<Label>(window).Any(l => l.Text.Contains("4 change(s): 1 staged, 1 applied, 1 failed."))).IsTrue();
         AssertThat(All<Label>(window).Any(l => l.Text.Contains("staged 2026-01-01"))).IsTrue();
         AssertThat(All<Label>(window).Any(l => l.Text.Contains("applied 2026-01-02"))).IsTrue();
         AssertThat(All<Label>(window).Any(l => l.Text.Contains("reverted 2026-01-03"))).IsTrue();
@@ -178,25 +178,28 @@ public class ChangeHistoryWindowInteractionTests
     }
 
     [TestCase]
-    public void DeleteOldDialogOffersAnAgeAndForwardsTheChoice()
+    public void DeleteDialogOffersAnAgeAndForwardsTheChoice()
     {
         var window = Spawn();
         var old = DateTime.UtcNow.AddDays(-100);
         window.RefreshHistory(
             [Record(Fingerprint('a'), ChangeStatus.Applied, "done") with { CreatedAt = old, AppliedAt = old },
-             Record(Fingerprint('b'), ChangeStatus.Reverted, "undone") with { CreatedAt = old, AppliedAt = old, RevertedAt = old }],
+             Record(Fingerprint('b'), ChangeStatus.Reverted, "undone") with { CreatedAt = old, AppliedAt = old, RevertedAt = old },
+             Record(Fingerprint('c'), ChangeStatus.Failed, "broken") with { CreatedAt = old }],
             null, "source");
         int? days = null;
         window.DeleteOldRequested += value => days = value;
 
-        ButtonText(window, "Delete old…").EmitSignal(BaseButton.SignalName.Pressed);
-        var dialog = All<DeleteOldChangesDialog>(window).Single();
+        ButtonText(window, "Delete").EmitSignal(BaseButton.SignalName.Pressed);
+        var dialog = All<DeleteChangesDialog>(window).Single();
         var age = All<OptionButton>(dialog).Single();
         // A wrapped custom label used to report a full-height minimum before layout and stretch the
         // dialog; the prompt now uses the dialog's own text label.
         AssertThat(dialog.Size.Y < 400f).IsTrue();
         AssertThat(age.ItemCount).IsEqual(4);
-        AssertThat(All<Label>(dialog).Any(l => l.Text == "2 changes match.")).IsTrue();
+        // Failed attempts are finished history now, so they are counted and named in the prompt.
+        AssertThat(All<Label>(dialog).Any(l => l.Text == "3 changes match.")).IsTrue();
+        AssertThat(dialog.DialogText.Contains("failed")).IsTrue();
         age.Selected = 3;
         dialog.EmitSignal(AcceptDialog.SignalName.Confirmed);
         AssertThat(days.HasValue && days.Value == 0).IsTrue();

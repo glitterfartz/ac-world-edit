@@ -97,17 +97,45 @@ public class PendingChangesWindowTests
     }
 
     [TestCase]
-    public void DeleteOldNeedsFinishedHistoryFromTheOpenWorld()
+    public void DeleteNeedsFinishedHistoryFromTheOpenWorld()
     {
         var window = Spawn();
         window.RefreshHistory([Record("a", ChangeStatus.Staged)], null, "source");
-        AssertThat(ButtonText(window, "Delete old…").Disabled).IsTrue();
+        AssertThat(ButtonText(window, "Delete").Disabled).IsTrue();
 
         window.RefreshHistory([Record("a", ChangeStatus.Applied)], null, "source");
-        AssertThat(ButtonText(window, "Delete old…").Disabled).IsFalse();
+        AssertThat(ButtonText(window, "Delete").Disabled).IsFalse();
 
-        window.RefreshHistory([Record("b", ChangeStatus.Applied)], null, "other-source");
-        AssertThat(ButtonText(window, "Delete old…").Disabled).IsTrue();
+        // A failed attempt is finished history too, so the button can clear it.
+        window.RefreshHistory([Record("b", ChangeStatus.Failed)], null, "source");
+        AssertThat(ButtonText(window, "Delete").Disabled).IsFalse();
+        AssertThat(All<Label>(window).Any(l => l.Text.Contains("1 failed"))).IsTrue();
+
+        window.RefreshHistory([Record("c", ChangeStatus.Applied)], null, "other-source");
+        AssertThat(ButtonText(window, "Delete").Disabled).IsTrue();
+    }
+
+    [TestCase]
+    public void SelectAllChecksEveryRowAndEachRowMirrorsBack()
+    {
+        var window = Spawn();
+        window.RefreshHistory([Record("a", ChangeStatus.Staged), Record("b", ChangeStatus.Applied)], null);
+        var selectAll = All<CheckBox>(window).Single(b => !b.HasMeta("fingerprint"));
+        var rows = All<CheckBox>(window).Where(b => b.HasMeta("fingerprint")).ToList();
+        AssertThat(rows.Count).IsEqual(2);
+        AssertThat(selectAll.ButtonPressed).IsFalse();
+
+        selectAll.ButtonPressed = true;
+        AssertThat(rows.All(b => b.ButtonPressed)).IsTrue();
+        AssertThat(selectAll.ButtonPressed).IsTrue();
+
+        // Clearing one row leaves the header unchecked, so it says "not all" rather than lying.
+        rows[0].ButtonPressed = false;
+        AssertThat(selectAll.ButtonPressed).IsFalse();
+
+        selectAll.ButtonPressed = true;
+        selectAll.ButtonPressed = false;
+        AssertThat(rows.Any(b => b.ButtonPressed)).IsFalse();
     }
 
     [TestCase]
@@ -123,7 +151,7 @@ public class PendingChangesWindowTests
         window.ExportRequested += (_, _) => exports++;
         window.HistoryRefreshRequested += () => refreshes++;
         // Check the row so bulk actions have a selection.
-        All<CheckBox>(window).First().ButtonPressed = true;
+        All<CheckBox>(window).First(b => b.HasMeta("fingerprint")).ButtonPressed = true;
         ButtonText(window, "Apply").EmitSignal(BaseButton.SignalName.Pressed);
         ButtonText(window, "Apply selected").EmitSignal(BaseButton.SignalName.Pressed);
         ButtonText(window, "Revert selected").EmitSignal(BaseButton.SignalName.Pressed);

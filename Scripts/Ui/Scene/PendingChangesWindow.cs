@@ -27,8 +27,9 @@ public partial class PendingChangesWindow : ContentEditorWindow
     VBoxContainer list = null!;
     ScrollContainer scroll = null!;
     Label summary = null!, status = null!;
-    Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!, deleteOld = null!;
+    Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!, deleteHistory = null!;
     CheckButton showAll = null!;
+    CheckBox selectAll = null!;
     OptionButton exportKind = null!;
 
     /// <summary>
@@ -39,6 +40,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
     List<ChangeRecord>? shownRecords;
     string? shownError;
     string? currentSourceKey;
+    bool syncingSelectAll;
 
     protected override Vector2 TargetSize => new(860, 560);
 
@@ -56,6 +58,12 @@ public partial class PendingChangesWindow : ContentEditorWindow
         ButtonIn(header.Row, "✕", () => Visible = false);
         summary = ClientStyle.Text("", 12, ClientStyle.Faded);
         root.AddChild(summary);
+        var selectBar = new HBoxContainer();
+        root.AddChild(selectBar);
+        selectAll = new CheckBox { Text = "Select all", Disabled = true };
+        selectAll.TooltipText = "Check or clear every change in the list.";
+        selectAll.Toggled += pressed => SetAllChecked(pressed);
+        selectBar.AddChild(selectAll);
         scroll = new ScrollContainer
         {
             SizeFlagsVertical = SizeFlags.ExpandFill,
@@ -85,10 +93,10 @@ public partial class PendingChangesWindow : ContentEditorWindow
         refreshButton.TooltipText = "Re-read drafts and the change history.";
         refreshButton.Pressed += () => HistoryRefreshRequested?.Invoke();
         options.AddChild(refreshButton);
-        deleteOld = new Button { Text = "Delete old…" };
-        deleteOld.TooltipText = "Delete applied and reverted changes of the open world from the history. Staged edits stay.";
-        deleteOld.Pressed += OpenDeleteOldDialog;
-        options.AddChild(deleteOld);
+        deleteHistory = new Button { Text = "Delete" };
+        deleteHistory.TooltipText = "Delete applied, reverted and failed changes of the open world from the history. Staged edits stay.";
+        deleteHistory.Pressed += OpenDeleteDialog;
+        options.AddChild(deleteHistory);
 
         var footer = new HBoxContainer();
         footer.AddThemeConstantOverride("separation", 6);
@@ -198,9 +206,10 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
         int staged = records.Count(r => r.Status == ChangeStatus.Staged);
         int applied = records.Count(r => r.Status == ChangeStatus.Applied);
+        int failed = records.Count(r => r.Status == ChangeStatus.Failed);
         summary.Text = records.Count == 0
             ? "No tracked changes yet. Edit something and it stages here."
-            : $"{records.Count} change(s): {staged} staged, {applied} applied.";
+            : $"{records.Count} change(s): {staged} staged, {applied} applied" + (failed > 0 ? $", {failed} failed." : ".");
         if (!string.IsNullOrEmpty(historyError))
         {
             summary.Text += " " + historyError;
@@ -211,7 +220,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
         applySelected.Disabled = revertSelected.Disabled = !any || unavailable;
         previewSelected.Disabled = exportSelected.Disabled = !any;
         discardAll.Disabled = staged == 0 || unavailable;
-        deleteOld.Disabled = CountOld(0) == 0 || unavailable;
+        deleteHistory.Disabled = CountFinished(0) == 0 || unavailable;
 
         Control? focusTarget = null;
         foreach (var record in records)
@@ -234,6 +243,8 @@ public partial class PendingChangesWindow : ContentEditorWindow
                 {
                     checkedFingerprints.Remove(fp);
                 }
+
+                UpdateSelectAllState();
             };
             top.AddChild(box);
             bool foreign = currentSourceKey != null && record.SourceKey != currentSourceKey;
@@ -307,10 +318,60 @@ public partial class PendingChangesWindow : ContentEditorWindow
             scroll.ScrollVertical = scrollPos;
         }
 
+        UpdateSelectAllState();
+
         if (focusTarget != null)
         {
             focusTarget.GrabFocus();
         }
+    }
+
+    /// <summary>Check or clear every row in the list, then mirror the header box.</summary>
+    void SetAllChecked(bool selected)
+    {
+        if (syncingSelectAll || shownRecords == null)
+        {
+            return;
+        }
+
+        if (selected)
+        {
+            foreach (var record in shownRecords)
+            {
+                checkedFingerprints.Add(record.Fingerprint);
+            }
+        }
+        else
+        {
+            checkedFingerprints.Clear();
+        }
+
+        syncingSelectAll = true;
+        foreach (var row in list.GetChildren())
+        {
+            if (FindFirst<CheckBox>(row) is { } box && box.HasMeta("fingerprint"))
+            {
+                box.SetPressedNoSignal(selected);
+            }
+        }
+
+        syncingSelectAll = false;
+        UpdateSelectAllState();
+    }
+
+    /// <summary>The header box reads checked only when every visible row is checked.</summary>
+    void UpdateSelectAllState()
+    {
+        if (selectAll == null || shownRecords == null)
+        {
+            return;
+        }
+
+        bool all = shownRecords.Count > 0 && shownRecords.All(r => checkedFingerprints.Contains(r.Fingerprint));
+        syncingSelectAll = true;
+        selectAll.Disabled = shownRecords.Count == 0;
+        selectAll.SetPressedNoSignal(all);
+        syncingSelectAll = false;
     }
 
     static string SourceLabel(string sourceKey) =>
@@ -320,16 +381,16 @@ public partial class PendingChangesWindow : ContentEditorWindow
     /// Ask for an age and raise the cleanup request. Only finished rows of the open world count, so
     /// "Show all worlds" never widens what a delete would remove.
     /// </summary>
-    void OpenDeleteOldDialog()
+    void OpenDeleteDialog()
     {
-        var dialog = new DeleteOldChangesDialog(CountOld);
+        var dialog = new DeleteChangesDialog(CountFinished);
         dialog.DeleteRequested += days => DeleteOldRequested?.Invoke(days);
         AddChild(dialog);
         dialog.PopupCentered();
     }
 
-    /// <summary>Applied and reverted rows of the open world older than the given age; 0 days means all.</summary>
-    int CountOld(int days)
+    /// <summary>Applied, reverted and failed rows of the open world older than the given age; 0 days means all.</summary>
+    int CountFinished(int days)
     {
         if (shownRecords == null || currentSourceKey == null)
         {
@@ -339,12 +400,17 @@ public partial class PendingChangesWindow : ContentEditorWindow
         DateTime cutoff = days <= 0 ? DateTime.UtcNow : DateTime.UtcNow.AddDays(-days);
         return shownRecords.Count(r =>
         {
-            if (r.SourceKey != currentSourceKey || r.Status is not (ChangeStatus.Applied or ChangeStatus.Reverted))
+            if (r.SourceKey != currentSourceKey || r.Status is not (ChangeStatus.Applied or ChangeStatus.Reverted or ChangeStatus.Failed))
             {
                 return false;
             }
 
-            DateTime when = r.Status == ChangeStatus.Reverted ? r.RevertedAt ?? r.CreatedAt : r.AppliedAt ?? r.CreatedAt;
+            DateTime when = r.Status switch
+            {
+                ChangeStatus.Reverted => r.RevertedAt ?? r.CreatedAt,
+                ChangeStatus.Applied => r.AppliedAt ?? r.CreatedAt,
+                _ => r.CreatedAt
+            };
             return when < cutoff;
         });
     }
