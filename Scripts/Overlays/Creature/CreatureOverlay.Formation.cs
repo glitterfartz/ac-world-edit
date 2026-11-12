@@ -17,7 +17,7 @@ public partial class CreatureOverlay
     LineEdit formationDist = null!, formationAngle = null!, formationPoint1 = null!, formationPoint2 = null!, formationLeader = null!;
     OptionButton formationAssist = null!;
     CheckBox formationFollow = null!, formationDrag = null!;
-    Button formationApplyOffset = null!, formationFromPositions = null!, formationSetLeader = null!, formationMakeLeader = null!, formationLeave = null!, formationDelete = null!, formationPoint1Pick = null!, formationPoint2Pick = null!;
+    Button formationApplyOffset = null!, formationFromPositions = null!, formationSetLeader = null!, formationPickLeader = null!, formationMakeLeader = null!, formationLeave = null!, formationDelete = null!, formationPoint1Pick = null!, formationPoint2Pick = null!;
     int formationCardGeneration, formationRegionGeneration;
     string formationKey = "";
     ulong formationGuid;
@@ -25,6 +25,12 @@ public partial class CreatureOverlay
     ulong formationLeaderGuid;
     ulong leaderPathId;
     int formationMembers;
+
+    /// <summary>
+    /// When armed, the next viewport click on a creature uses it as the formation leader instead of
+    /// selecting it, so the leader can be picked in the world rather than typed.
+    /// </summary>
+    public bool PickingLeader { get; private set; }
 
     /// <summary>The waypoint tab's selected point, for turn-around pickers (wired by the shell).</summary>
     public Func<(uint Path, uint Point)?>? WaypointPointSelection { get; set; }
@@ -73,6 +79,9 @@ public partial class CreatureOverlay
         formationSetLeader = InspectorUi.Button("Set leader", () => SetFormationLeader());
         formationSetLeader.TooltipText = "Follow the typed creature.";
         leaders.AddChild(formationSetLeader);
+        formationPickLeader = InspectorUi.Button("Pick…", TogglePickLeader);
+        formationPickLeader.TooltipText = "Click the leader in the world instead of typing its GUID.";
+        leaders.AddChild(formationPickLeader);
         formationMakeLeader = InspectorUi.Button("Make leader", () => MakeFormationLeader());
         formationMakeLeader.TooltipText = "Lead a new formation (warns followers nothing yet).";
         leaders.AddChild(formationMakeLeader);
@@ -114,6 +123,7 @@ public partial class CreatureOverlay
         formationPoint2Pick.Disabled = !formationPoint2.Editable;
         formationLeader.Editable = editable;
         formationSetLeader.Disabled = !editable;
+        formationPickLeader.Disabled = !editable;
         formationMakeLeader.Disabled = !editable;
         formationLeave.Disabled = !editable || (!member && !leader);
         formationDelete.Disabled = !editable || !leader;
@@ -138,6 +148,7 @@ public partial class CreatureOverlay
             formationStatus.Text = "Select a creature to see its formation.";
             formationLeaderPath.Text = "";
             formationRow = null;
+            CancelPickLeader();
             SetFormationActions(false, false, false);
             return;
         }

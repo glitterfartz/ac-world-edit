@@ -8,7 +8,7 @@ namespace ACWorldEdit;
 public partial class ViewerShell
 {
     /// <summary>
-    /// Build the menu/tool strip above a body holding the navigation panel, Scene explorer and
+    /// Build the menu/tool strip above a body holding the navigation panel, Inspector and
     /// telemetry. The strip sits in a VBox so panels never overlap it. Actions only reload sources,
     /// change previews or record local drafts.
     /// </summary>

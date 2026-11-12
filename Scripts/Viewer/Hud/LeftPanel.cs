@@ -4,7 +4,7 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// The left navigation panel: world settings, teleports, the day-night scrubber, the status line
-/// and the terrain minimap, then the Scene explorer and the selection box.
+/// and the terrain minimap, then the Inspector and the selection box.
 /// </summary>
 public partial class ViewerShell
 {
@@ -12,7 +12,7 @@ public partial class ViewerShell
 
     void BuildLeftPanel(Control ui)
     {
-        // Anchored to the window bottom (matching the telemetry bar and Scene explorer below) and
+        // Anchored to the window bottom (matching the telemetry bar and Inspector below) and
         // scrollable so added controls never clip off-screen on a shorter window.
         var panel = leftPanel = new PanelContainer
         {

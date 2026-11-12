@@ -21,7 +21,7 @@ Two files under `Viewer/` keep `namespace ACWorldEdit.Assets` on purpose: `Sessi
 
 ## Ui
 
-- Status and feedback go to `StatusBar` via `StatusLog`; overlays raise their `Report` (`Action<string>`) callback. Never print into a Scene Explorer window or an inspector.
+- Status and feedback go to `StatusBar` via `StatusLog`; overlays raise their `Report` (`Action<string>`) callback. Never print into the Inspector panel.
 - Windows are built in code through `Ui/Framework` (`UiForm`, `MenuSheet`, dialogs, inspector card parts). Control creation order is pinned by `Tests/golden/ui-*.json`, so a builder that reorders nodes breaks a golden: rewrite one only with `python Tools/ui_golden.py --update`, and only when the change is intended.
 - `Tests/ACWorldEdit.GdTests` must cover new UI flows (see `Tests/AGENTS.md`).
 

@@ -79,7 +79,7 @@ public partial class ViewerShell
                 new MenuCommand("Fly to selection", FlyToSelection, () => HasSelection, Key.F),
                 new MenuCommand("Quest editor", () => questEditor.Open(0), () => databaseEnabled),
                 new MenuCommand("Creature behavior (selected)", OpenBehaviorEditor, () => BehaviorEditors),
-                new MenuCommand("Scene explorer", () =>
+                new MenuCommand("Inspector", () =>
                 {
                     sidebar.Visible = true;
                     sidebar.ShowSceneTab();
@@ -91,7 +91,7 @@ public partial class ViewerShell
                     renderer.SetGrid(showCellBorders);
                 }, () => showCellBorders),
                 new MenuCheck("Navigation panel", () => leftPanel.Visible = !leftPanel.Visible, () => leftPanel.Visible),
-                new MenuCheck("Scene explorer panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible),
+                new MenuCheck("Inspector panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible),
                 new MenuCheck("Content browser", ToggleContentBrowser, () => contentBrowser.Visible, ctrl | Key.B),
                 new MenuSubmenu("UI scale", UiScalePercents
                     .Select(percent => (MenuEntry)new MenuCheck($"{percent}%", () => SetUiScale(percent, true), () => uiScalePercent == percent))

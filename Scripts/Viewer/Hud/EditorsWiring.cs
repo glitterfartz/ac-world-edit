@@ -43,7 +43,7 @@ public partial class ViewerShell
     }
 
     /// <summary>
-    /// Keep the content browser between the navigation panel and the Scene explorer, which size to
+    /// Keep the content browser between the navigation panel and the Inspector, which size to
     /// their content; it takes the freed width when either is hidden.
     /// </summary>
     void FitContentBrowser()

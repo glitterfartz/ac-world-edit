@@ -75,7 +75,7 @@ public partial class NavigationOverlay : Node3D
         LayerEnabled = value;
         if (enabled != null) enabled.SetPressedNoSignal(value);
         Reset();
-        if (value && directory.Length == 0) Report("Choose an MMaps folder in Scene explorer → MMaps.");
+        if (value && directory.Length == 0) Report("Choose an MMaps folder in Inspector → MMaps.");
     }
     public void Reset()
     {
