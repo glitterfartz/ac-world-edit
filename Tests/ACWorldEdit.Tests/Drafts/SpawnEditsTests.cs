@@ -170,6 +170,21 @@ public class SpawnEditsTests
     }
 
     [Fact]
+    public void ReferenceRowsBecomeOneDeleteEachInTableOrder()
+    {
+        var rows = new RowSet();
+        rows.Set(AcTables.CreatureFormations, Row.Of(("leaderGUID", 5u), ("memberGUID", 9u), ("dist", 1f), ("angle", 0f), ("groupAI", 0u), ("point_1", 0u), ("point_2", 0u)));
+        rows.Set(AcTables.LinkedRespawn, Row.Of(("guid", 5u), ("linkedGuid", 6u), ("linkType", 0u)));
+
+        var edits = SpawnEdits.DeleteReferences(AcSchema.Instance, rows);
+
+        Assert.Equal(["creature_formations", "linked_respawn"], edits.Select(e => e.Table));
+        Assert.All(edits, e => Assert.Null(e.After));
+        Assert.Equal("9", edits[0].Key);
+        Assert.Equal("5|0", edits[1].Key);
+    }
+
+    [Fact]
     public void ImpactLinesNameTheRowsAndTheTablesThatHoldThem()
     {
         var items = new SpawnImpactItem[]

@@ -143,6 +143,21 @@ public static class SpawnEdits
     }
 
     /// <summary>
+    /// Deletes for the rows that name the spawns (<see cref="References"/>), so one command can remove the
+    /// spawn and everything that pointed at it. Every row must be one the caller read for this delete.
+    /// </summary>
+    public static RowEdit[] DeleteReferences(IWorldSchema schema, RowSet rows) => rows.Names
+        .OrderBy(name => name, StringComparer.Ordinal)
+        .SelectMany(name =>
+        {
+            var table = schema.Tables.Find(name);
+            return rows.All(name)
+                .OrderBy(row => table.KeyOf(row), StringComparer.Ordinal)
+                .Select(row => InteractionEdits.Delete(table, row));
+        })
+        .ToArray();
+
+    /// <summary>
     /// Tables outside the spawn editors that name a spawn by GUID, so a delete can say what it would
     /// orphan. The server's own delete (<c>Creature::DeleteFromDB</c>) removes only some of them.
     /// </summary>
