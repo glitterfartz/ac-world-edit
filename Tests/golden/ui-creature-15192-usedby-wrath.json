@@ -1,0 +1,478 @@
+{
+  "target": "creature:15192,usedby",
+  "nodes": [
+    {
+      "path": "CreatureProperties",
+      "type": "CreaturePropertiesWindow",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": true,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": true,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Esc)"
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/SectionPicker",
+      "type": "ItemList",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "TcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "AppearanceSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "SpawnsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "UsedBySection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "ReferenceCountCard",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "BehaviorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "QuestsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "◂ Back to quests",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Return to the list of quests linked to this NPC."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Open in Quest window",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Open this quest in its own editor window."
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "SpeechSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "CreatureProperties/@<auto>/@<auto>",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    }
+  ]
+}

@@ -5843,6 +5843,17 @@
       "tooltip": ""
     },
     {
+      "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>/@<auto>",
+      "type": "UsedBySection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
       "path": "CreatureProperties/@<auto>/@<auto>/@<auto>/@<auto>",
       "type": "VBoxContainer",
       "Name": {

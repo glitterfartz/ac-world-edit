@@ -39,6 +39,9 @@ public interface IDBSource
     /// <summary>The rows in other tables that still name these spawn GUIDs (pools, groups, events, links, formations, SmartAI); tables with no match are left out.</summary>
     Task<IReadOnlyList<SpawnImpactItem>> CountSpawnReferencesAsync(SpawnKind kind, IReadOnlyList<ulong> guids, CancellationToken token);
 
+    /// <summary>How many rows of each other table name a creature or GameObject template, for the page's "Used by" card.</summary>
+    Task<IReadOnlyList<SpawnImpactItem>> CountTemplateReferencesAsync(SpawnKind kind, uint entry, CancellationToken token);
+
     /// <summary>The waypoint paths these creatures walk, with node counts and how many others use each path; creatures without a path are left out.</summary>
     Task<IReadOnlyList<SpawnPathUse>> ReadSpawnPathsAsync(IReadOnlyList<ulong> guids, CancellationToken token);
 

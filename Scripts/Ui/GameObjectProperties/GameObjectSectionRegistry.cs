@@ -11,7 +11,8 @@ public static class GameObjectSectionRegistry
         ctx => new GameObjectTemplateSection(ctx),
         ctx => new GameObjectTypeSection(ctx),
         ctx => new GameObjectQuestsSection(ctx),
-        ctx => new GameObjectSpawnsSection(ctx)
+        ctx => new GameObjectSpawnsSection(ctx),
+        ctx => new GameObjectUsedBySection(ctx)
     ];
 
     public static List<GameObjectSection> Create(GameObjectContext ctx) => Factories.Select(factory => factory(ctx)).ToList();

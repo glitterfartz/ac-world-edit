@@ -32,13 +32,13 @@ public class CreaturePropertiesWindowTests
     public void PickerListsEachDialectsSectionsInRegistryOrder()
     {
         AssertSections(WorldDialect.AzerothCore,
-            "behavior,stats,gossip,quests,speech,template,trainer,vendor,appearance,spawns",
+            "behavior,stats,gossip,quests,speech,template,trainer,vendor,appearance,spawns,usedby",
             typeof(TcStatsSection),
-            typeof(AcStatsSection), typeof(AcGossipSection), typeof(AcTemplateSection), typeof(AcTrainerSection), typeof(AcVendorSection), typeof(SpawnsSection));
+            typeof(AcStatsSection), typeof(AcGossipSection), typeof(AcTemplateSection), typeof(AcTrainerSection), typeof(AcVendorSection), typeof(SpawnsSection), typeof(UsedBySection));
         AssertSections(WorldDialect.TrinityCore,
-            "behavior,quests,speech,stats,gossip,template,trainer,vendor,appearance,spawns",
+            "behavior,quests,speech,stats,gossip,template,trainer,vendor,appearance,spawns,usedby",
             typeof(AcStatsSection),
-            typeof(TcStatsSection), typeof(TcGossipSection), typeof(TcTemplateSection), typeof(TcTrainerSection), typeof(TcVendorSection), typeof(SpawnsSection));
+            typeof(TcStatsSection), typeof(TcGossipSection), typeof(TcTemplateSection), typeof(TcTrainerSection), typeof(TcVendorSection), typeof(SpawnsSection), typeof(UsedBySection));
     }
 
     static void AssertSections(WorldDialect dialect, string expected, Type absent, params Type[] pages)

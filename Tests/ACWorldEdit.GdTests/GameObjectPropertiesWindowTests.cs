@@ -38,7 +38,7 @@ public class GameObjectPropertiesWindowTests
             AssertThat(window.Sections.Count).IsEqual(GameObjectSectionRegistry.Factories.Count);
             var listed = window.Sections.Where(s => s.Supports(dialect)).ToArray();
             AssertThat(picker.ItemCount).IsEqual(listed.Length);
-            AssertThat(string.Join(",", listed.Select(s => s.Id))).IsEqual("template,type,quests,spawns");
+            AssertThat(string.Join(",", listed.Select(s => s.Id))).IsEqual("template,type,quests,spawns,usedby");
             AssertThat(window.ActiveSection).IsEqual(GameObjectPropertiesWindow.DefaultSectionId);
             AssertThat(listed.All(s => s is GameObjectSection)).IsTrue();
         }
