@@ -26,6 +26,7 @@ Two independently shippable slices. Do not put them in one PR.
 - **Smoke steps** are `referenced-creature-cleanup-select`, `-offered`, `-undone` (pressing delete in the same step that waits for the dialog can open two).
 - **Catalog manifest:** `CatalogManifestTests` pins both catalogs; the eight new tables and their digests were added there.
 - **Tests:** `SpawnEditsTests` expects key `5|0` for the linked-respawn row (PK `guid,linkType`), not `5|6`.
+- **Smoke blocker (pre-existing):** `--spawn-authoring-smoke` aborts at `appearance-bad-auras-refused` ("Saved." instead of a refusal) on `master` as well as on this branch, so the run never reaches the later cleanup steps and `Tests/golden/spawn-authoring-smoke-wrath.txt` was left untouched. The three cleanup steps were verified by temporarily running them early in the smoke (all printed and passed, including the third button and the single undo), then the temporary reordering was reverted. The aura failure is its own bug, not this slice.
 
 ## Current context / assumptions
 
