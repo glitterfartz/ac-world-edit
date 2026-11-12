@@ -5,12 +5,18 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// The question a spawn delete asks when other tables still name the spawn: it lists them, because the
-/// exported delete removes only the spawn and its addon row and would leave those rows dangling.
+/// spawn and its addon row are all a plain delete removes. With <c>removeToo</c> it also offers to remove
+/// those rows in the same undoable command.
 /// </summary>
 public static class SpawnDeleteDialog
 {
-    /// <summary>Open the dialog on <paramref name="host"/>; <paramref name="confirmed"/> runs only on "Delete anyway".</summary>
-    public static ConfirmationDialog Ask(Node host, string subject, IReadOnlyList<SpawnImpactItem> items, Action confirmed, IReadOnlyList<SpawnPathUse>? paths = null) =>
-        Dialogs.Confirm(host, "Delete " + subject, SpawnImpact.Prompt(subject, items, paths), confirmed,
-            ok: "Delete anyway", cancel: "Keep");
+    /// <summary>
+    /// Open the dialog on <paramref name="host"/>. <paramref name="confirmed"/> runs on "Delete only this";
+    /// <paramref name="removeToo"/> runs on "Remove these too" and is offered only when it is not null.
+    /// </summary>
+    public static ConfirmationDialog Ask(Node host, string subject, IReadOnlyList<SpawnImpactItem> items, Action confirmed, IReadOnlyList<SpawnPathUse>? paths = null, Action? removeToo = null) =>
+        Dialogs.Confirm(host, "Delete " + subject, SpawnImpact.Prompt(subject, items, paths, removeToo != null), confirmed,
+            ok: removeToo == null ? "Delete anyway" : "Delete only this",
+            cancel: "Keep",
+            extra: removeToo == null ? null : ("Remove these too", removeToo));
 }
