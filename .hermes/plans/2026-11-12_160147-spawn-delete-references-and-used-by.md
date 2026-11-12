@@ -12,9 +12,24 @@ Two independently shippable slices. Do not put them in one PR.
 - **Slice B — Remove these too (Stages 1–6)**: widens the editable catalog by eight tables, which then appear in Pending Changes and SQL export. Every stage below is ordered so the tree builds and the suite is green after each commit.
 - **Stage 6 (orphaned waypoint paths) is deferred by default.** It goes beyond the request and touches a fourth table family. Implement it only if the user asks; until then the dialog keeps its honest warning that a path "stays in the database unused", and Stage 5 leaves `removeToo` gated on `references.CanRemove` alone.
 
+## Execution notes (updated while carrying this out)
+
+- **Base:** Slice A was already committed (`64511ca`, `250b074`) and the tree was clean, so Slice B started from `250b074` on branch `spawn-delete-references`. Stage 7 below is history, not a pending task.
+- **Live schema beats the snippets.** The shapes in Stage 2.1 were placeholders. Read `information_schema` against both servers first; the actual shapes are:
+  - `spawn_group`: key `(groupId,spawnType,spawnId)`; **no `comment` column** on either server; `spawnId` is bigint on TC.
+  - `game_event_creature` / `game_event_gameobject`: key `(eventEntry,guid)`, not `(guid,eventEntry)`.
+  - `game_event_model_equip`: key `guid` only; it exists on **TC master too** (so it is in both catalogs and `SpawnEdits.References` already lists it for both).
+  - `linked_respawn`: key `(guid,linkType)`; `linkedGuid` is not a key column.
+  - `pool_*` / `pool_members`.description is nullable; mark it `Nullable` so a NULL round-trips.
+  - Recorded in `docs/reference/database-differences.md`.
+- **`SpawnPoses.Snapshot` is private**, not public as the Stage 3.2 snippet assumed; that test asserts the baseline survives undo by issuing the same cleanup a second time instead.
+- **Smoke steps** are `referenced-creature-cleanup-select`, `-offered`, `-undone` (pressing delete in the same step that waits for the dialog can open two).
+- **Catalog manifest:** `CatalogManifestTests` pins both catalogs; the eight new tables and their digests were added there.
+- **Tests:** `SpawnEditsTests` expects key `5|0` for the linked-respawn row (PK `guid,linkType`), not `5|6`.
+
 ## Current context / assumptions
 
-Read from the working tree at commit `9ca5dfd` (clean). Re-check with `git log --oneline -1` before starting. Root `AGENTS.md` and the nested `Foundation/`, `Scripts/` and `Tests/` files were read; the constraints that bind this plan are called out in Stage 8.
+Read from the working tree at commit `9ca5dfd` (clean when this plan was written; execution started from `250b074`, with Slice A committed). Re-check with `git log --oneline -1` before starting. Root `AGENTS.md` and the nested `Foundation/`, `Scripts/` and `Tests/` files were read; the constraints that bind this plan are called out in Stage 8.
 
 **How a delete works today**
 
@@ -1158,7 +1173,7 @@ Commit: `feat(creature): remove an unused waypoint path with its last creature`
 
 ## Stage 7 — The "Used by" card (Slice A; safe to ship alone) — done
 
-**Status: done.** Tasks 7.1–7.4 are built and verified in the working tree (nothing committed; no `spawn-delete-references` branch was created, so Stage 0's baseline commands were run on `master`).
+**Status: done and committed.** Tasks 7.1–7.4 were built, verified and committed as `64511ca` (feature) and `250b074` (plan status); the baseline commands ran on `master`. Slice B then branched from there as `spawn-delete-references`.
 
 - Built: `Foundation/Spawn/TemplateReferences.cs`, `Scripts/Data/DbTemplateReferences.cs`, `IDBSource.CountTemplateReferencesAsync` (both sources), `Scripts/Ui/Framework/ReferenceCountCard.cs`, `UsedBySection`, `GameObjectUsedBySection`, both registries. Docs: `viewer-runtime.md` (both windows), `editing-and-export.md` (helper), `open-work.md` (done row).
 - Tests: `TemplateReferencesTests` (2, including the schema-allowlist invariant), `TemplateReferencesDbTests` (2 live, zero skips), `UsedBySectionTests` (6 GdTests), plus the picker expectations in `CreaturePropertiesWindowTests` / `GameObjectPropertiesWindowTests`.
