@@ -100,6 +100,33 @@ public sealed partial class SpawnPoses
         }
     }
 
+    /// <summary>
+    /// Remember the rows a delete also removes (pools, groups, events, links, formations, per-spawn SmartAI)
+    /// as its baseline, so they can be deleted in the same command.
+    /// </summary>
+    public void LoadRelated(string source, RowSet rows)
+    {
+        if (!Available)
+        {
+            return;
+        }
+
+        var snapshot = Snapshot(source);
+        var catalog = drafts.Draft!.Tables(source);
+        foreach (string name in rows.Names)
+        {
+            if (catalog.All.FirstOrDefault(t => t.Name == name) is not { } table)
+            {
+                continue;
+            }
+
+            foreach (var row in rows.All(name))
+            {
+                snapshot.Set(table, row);
+            }
+        }
+    }
+
     /// <summary>Remember one path's node rows (and its TrinityCore header) as the baseline of later edits.</summary>
     public void LoadPathRows(string source, IWorldSchema schema, RowSet rows)
     {

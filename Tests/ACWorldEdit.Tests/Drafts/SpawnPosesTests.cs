@@ -237,6 +237,27 @@ public class SpawnPosesTests
     }
 
     [Fact]
+    public void RemovingDependentsIsOneCommandAndOneUndo()
+    {
+        var (drafts, poses, _) = Creature();
+        var formation = TcSchema.Instance.Tables.Find("creature_formations");
+        var related = new RowSet();
+        related.Set(formation, Row.Of(("leaderGUID", 5u), ("memberGUID", 5u), ("dist", 0f), ("angle", 0f), ("groupAI", 0u), ("point_1", 0u), ("point_2", 0u)));
+
+        poses.LoadRelated(Source, related);
+        var (ok, message) = poses.DeleteMany(null, Tc, Source, [5], "Delete", related);
+        Assert.True(ok, message);
+        Assert.Equal(2, drafts.Draft!.NetEdits().Count);
+
+        poses.Undo(null);
+        Assert.Empty(drafts.Draft.NetEdits());
+        // The baseline still holds the formation row, so the same cleanup can be issued again.
+        var (again, againMessage) = poses.DeleteMany(null, Tc, Source, [5], "Delete", related);
+        Assert.True(again, againMessage);
+        Assert.Equal(2, drafts.Draft.NetEdits().Count);
+    }
+
+    [Fact]
     public void TheNextPathIdClearsTheNodeAndHeaderTables()
     {
         var drafts = Open();

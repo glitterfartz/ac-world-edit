@@ -42,8 +42,8 @@ public sealed partial class SpawnPoses
         return edits.Count == 0 ? (true, "") : Commit(sender, source, label, edits);
     }
 
-    /// <summary>Delete several spawns, each with its addon row, as one undoable command.</summary>
-    public (bool Ok, string Message) DeleteMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<ulong> guids, string label = "Delete")
+    /// <summary>Delete several spawns, each with its addon row, and the rows that name them, as one undoable command.</summary>
+    public (bool Ok, string Message) DeleteMany(object? sender, IWorldSchema schema, string source, IReadOnlyList<ulong> guids, string label = "Delete", RowSet? related = null)
     {
         if (drafts.Draft == null)
         {
@@ -62,7 +62,12 @@ public sealed partial class SpawnPoses
             edits.AddRange(SpawnEdits.Delete(schema, kind, effective, row));
         }
 
-        return Commit(sender, source, label, edits);
+        if (related != null)
+        {
+            edits.AddRange(SpawnEdits.DeleteReferences(schema, related));
+        }
+
+        return edits.Count == 0 ? (true, "") : Commit(sender, source, label, edits);
     }
 
     /// <summary>Copy several spawns, each to its own pose under the matching new GUID, as one undoable command. Extra edits (formation remaps) join the same command.</summary>
