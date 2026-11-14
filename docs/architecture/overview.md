@@ -5,7 +5,8 @@ liquids, lighting and skyboxes from a 3.3.5 MPQ client or a retail CASC client, 
 world-database content on top: creature and GameObject spawns, graveyards, area triggers, NPC
 interactions, quests and SmartAI scripts. A 3.3.5 client uses AzerothCore; a retail client uses
 TrinityCore master (`world` plus `hotfixes`). Read
-[status/open-work.md](../status/open-work.md) for what is built and what is open.
+[status/completed-work.md](../status/completed-work.md) for what is built and
+[the editor plan](../plans/editor-plan.md) for what is open.
 
 The application never writes to the game files. Edits stage as local drafts, sync into the
 `acworld` change history, and reach the world database only when the user applies them from the
@@ -21,8 +22,8 @@ Detail pages:
 - [Testing and tooling](testing-and-tooling.md): `Tests`, `Tools`, `launch_viewer.py`, CI
 - [Database differences](../reference/database-differences.md): AzerothCore vs TrinityCore schema
 - [Performance](../status/performance.md): the `--perf-smoke` and `--perf-breakdown` benchmarks and open work
-- [Status and open work](../status/open-work.md), [deferred tests](../status/needed-tests.md),
-  and the [editor gap plan](../plans/editor-gap-plan.md)
+- [Status and completed work](../status/completed-work.md), [deferred tests](../status/needed-tests.md),
+  and the [editor plan](../plans/editor-plan.md)
 
 ## System context
 

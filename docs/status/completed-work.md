@@ -1,0 +1,129 @@
+# Completed work
+
+What is built, per phase and area, with the tests and smokes that prove it. Only finished work is here;
+everything still open is in [editor-plan.md](../plans/editor-plan.md), and how the built parts work is in
+[architecture/](../architecture/overview.md). Schema differences are in
+[reference/database-differences.md](../reference/database-differences.md).
+
+Target: TrinityCore `master` `world` (TDB 1210.26091) plus `hotfixes`; retail client 12.1.5.70575.
+
+## Phases 1–9
+
+- **Phase 1: interface extraction.** `IDBSource`, `IWorldSchema`, dialect selection and the shared read
+  session. See [editing-and-export.md](../architecture/editing-and-export.md).
+- **Phase 2: connection and hotfixes.** World connection with write access, a second hotfixes database on
+  the same connection, falling back to client DB2.
+- **Phase 3: retail catalogs.** TrinityCore table catalogs, DB2 table mapping, difficulty, area and content
+  tuning reads.
+- **Phase 4: read-only overlays and spawn moves.** Creature, GameObject, graveyard, area-trigger and
+  teleport overlays; spawns could be moved through a draft and exported.
+- **Phase 5: graveyard editing.** Graveyard links, safe locations and healer lookups, with validation and
+  `--graveyard-smoke`.
+- **Phase 6: creature properties (TrinityCore).** Template, stats, vendor, gossip, trainer and quest-link
+  pages edit and export, with reference checks against client and database.
+- **Phase 7: quests (TrinityCore).** The quest editor edits and exports the five quest tables.
+- **Phase 8: SmartAI and speech (TrinityCore).** A shared behavior panel edits a creature's
+  `smart_scripts` rules, timed action lists, AIName and `creature_text` lines and exports them; AreaTrigger
+  rules edit client triggers (source type 2) and server-spawned trigger templates (11, 12).
+- **Phase 9: waypoints (TrinityCore).** The waypoint layer reads `waypoint_path` and `waypoint_path_node`;
+  a node's position, facing and delay edit and export.
+
+## Phase 6: creature properties
+
+| Item | What landed |
+| --- | --- |
+| Schema-driven section registry and field groups | Both dialects' Template and Stats pages take their groups and fields from the schema (`IWorldSchema.TemplatePage` / `StatsPage`, drawn by one `PageRenderer`), so a field is added in one descriptor; AC's stats page lost its hand-built pickers and its level and multiplier checks became `AcStatsPage.Check`. Gossip, Trainer, Vendor, Quests and Behavior stay per-dialect (their editors differ in kind); `CreatureSectionRegistry` lists the section classes and the `Supports(dialect)` filter picks them. Tests: `StatsPageTests`, `CreaturePageTests`. |
+| Gossip | Menus and broadcast texts are searched and picked. New greeting, option, confirmation text or greeting slot stages a `hotfixes.broadcast_text` row (VerifiedBuild -1, numbered above the hotfixes database, the client's BroadcastText table and the draft) plus its `hotfix_data` row (TableHash 35137211), exported with `hotfixes.`-qualified names. `OverrideIconID` is checked as a FileDataID against the client's files. Removing a TC option removes the open creature's `creature_trainer` binding (`ItemListSpec.Dependents`). Copying a menu copies its texts' and options' `conditions` rows (sources 14/15) and re-points the creature's own `GOSSIP_SELECT` rules. The TC page mirrors AC's flow (greeting box, variants behind a button, option cards with service, submenu, confirmation and Advanced). Tests: `PhaseSixRealDataTests` (Anachronos 15192, menu 6539, 43 AC / 51 TC conditions and 16 gossip-select rules against both live databases). |
+| Stats calculator | Ported from `Creature::ApplyLevelScaling`, `UpdateLevelDependantStats`, `CalculateMinMaxDamage` and `DB2Manager::EvaluateExpectedStat` in TrinityCore master: content tuning from map difficulty then area (walking `ParentAreaID`, except critters), the server's Mythic+ milestone season 0, `Rate.Creature.*.HP` from `settings.cfg` typed in the stats page, melee and ranged hit lines with attack power and swing time. `creature_template` gained `BaseAttackTime`, `RangeAttackTime`, `BaseVariance` and `RangeVariance`; `MythicPlusSeason` and `MapDifficulty` are in `Db2Tables` and loaded by `RetailCorpusTests`. |
+| AC gaps | `gossip_menu_option.BoxBroadcastTextID` and `trainer_spell.ReqAbility1-3` are in `AcTables`, the editor pages, new-row defaults, the confirmation text lookup and the loader's column check. `VerifiedBuild` is deliberately left out of every catalog. |
+| Headless smokes | `--interaction-smoke` and `--behavior-smoke` pass headless against AzerothCore, sending clicks through `GetViewport().GetFinalTransform()` (run with `ACWORLD_CLIENT_PROFILE=wrath`). |
+
+## Phase 7: quests
+
+| Item | What landed |
+| --- | --- |
+| Names on the quest pages | `RecordPicker` names and illustrates items, spells, currencies, skills, factions, mail templates, titles and zones, with client icons and WoW-style tooltips. |
+| Race picker | Everyone, Alliance, Horde or per-race checkboxes; TC's 64-bit mask uses `ChrRaces` names when the retail client is open and a shared fallback list otherwise. |
+| Quest givers | Creatures and GameObjects share one two-tab picker with model thumbnails; either kind can offer or complete. |
+
+## Phase 8: SmartAI and speech
+
+- Shared behavior panel over `smart_scripts`, the timed action lists they run, AIName and `creature_text`,
+  taking `SmartCatalog` from the connection's dialect.
+- AreaTrigger rules for TrinityCore: client triggers (type 2, `areatrigger_scripts` SmartTrigger) and
+  spawned trigger templates (11, or 12 when custom, edited through the `areatrigger_ai` column group) read,
+  validate against TC's per-type event masks and export.
+- TC client smoke stages 70–72: Hogger's behavior and speech, a new rule, validation, `Difficulties`, undo.
+- `--areatrigger-smoke` runs in both dialects (TrinityCore: Stormwind spawn 290 and its template's rule).
+
+## Phase 9: waypoints
+
+| Item | What landed |
+| --- | --- |
+| Path-level properties | TrinityCore's `MoveType`, `Velocity` and `Flags` on `waypoint_path` edit on the path card (empty velocity means each creature's own speed), with a warning counting the spawns and SmartAI rules that share the path. |
+| Add, delete and reorder nodes | Nodes append (click the ground), insert (Alt-click the nearest segment) and delete (followers renumber) as shared-draft row edits; new paths start at the selected creature and a path deletes with its header. Waypoints moved from `WaypointDraft` onto `RowEdit` with a one-time import of the old draft. |
+| Path links | "Link to path…" (spawn and template, re-attaching an orphan), "New path", "Unlink" and "Delete path" (blocked while anything else uses it, unlinking the spawn in the same command). The creature delete dialog warns when the creature's path would be left unused. |
+| Smokes | TC client smoke stages 80–82: select a Goldshire path point, check editable fields, move, delay, undo, redo, revert and the TC export. |
+
+## Phase 10: editor foundation
+
+| Item | What landed |
+| --- | --- |
+| Nullable columns (`TableSchema.Nullable`, `Row.NullValue`) | Row, loader and export; TC spawn overrides inherit with NULL. |
+| Spawn and addon tables in `AcTables` / `TcTables` | `creature`, `gameobject`, `creature_addon`, `gameobject_addon`. |
+| `IdAllocator`, `IDBSource.MaxIdAsync`, `InteractionDraft.MaxStaged` | Next free ID per (table, key column) above the database max and staged inserts. |
+| `SpawnEdits` | Place, duplicate, move and delete as row edits, with `References`. Tests: `SpawnEditsTests`, including move-then-delete. |
+| `SpawnPoses` and `IDBSource.ReadSpawnRowsAsync` | Spawn poses as `creature` / `gameobject` row edits on the shared content draft; the old `creature-positions.json` / `gameobject-positions.json` drafts are abandoned, not migrated. Tests: `SpawnPosesTests`, `SpawnRowDbTests` (live, both databases). |
+| Overlays on `SpawnPoses` | `CreatureOverlay` and `GameObjectOverlay` (`Attach(drafts)`, row loaded on select) move through `SpawnPoses`; `CreatureDraft`, `GameObjectDraft`, `CreatureMove`, `GameObjectMove` and the dialects' move statements are gone; `PendingChanges.Collect` and `SqlExport.Build` lost their move parameters. |
+| `ConditionCatalog` | 56 AzerothCore and 61 TrinityCore condition types with sentences and parameter kinds, and 31 / 36 source types with key-column labels, generated from each server's `ConditionMgr.h` by `Tools/generate_condition_catalog.py`. Tests: `ConditionCatalogTests`. |
+| Entity page shell | `EntityPage` plus `PropertiesWindow` (frame, section picker, Undo/Redo, status), `EntitySection`, `IEntityContext` and `PageRenderer` in `Scripts/Ui/Properties`. Creature and GameObject windows are its first two clients, each one context, one section base and one window. |
+| Content browser | `ContentBrowser` (View → Content browser, Ctrl+B): bottom panel with Creatures and Game objects tabs, name/entry search and a type filter over `IDBSource.SearchTemplatesAsync`. Double-click opens the matching properties window; dragging a hit into the world places a spawn. Each hit shows a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Tests: `TemplateSearchDbTests`, `--content-browser-smoke`. |
+
+## Phase 11: spawn authoring
+
+| Item | What landed |
+| --- | --- |
+| Placed and deleted spawns draw | `CreatureOverlay.PlaceAsync` reads the template (name, model, equipment, movement) and the next GUID, places the spawn as one draft command and selects it once drawn; undo, redo and Pending Changes discards redraw. Staged spawns skip the preview filters. Tests: `StagedSpawnTests`, `SpawnRowDbTests`, `--spawn-authoring-smoke` on both dialects. |
+| Duplicate and delete | Edit menu (Ctrl+D, Del), toolbar and inspector buttons; `SpawnPoses.Delete` / `Duplicate`; the spawn read includes the addon row. |
+| Spawn rules (`SpawnRules`) | Row-level rules run on every spawn command in both dialects: template, map, difficulty per map, phase, movement type vs wander radius, equipment set. |
+| Spawn inspector | `SpawnInspector` (Scripts/Ui) in both inspectors from `SpawnFields`: respawn, wander radius (with a viewport ring), movement, visibility, difficulty, emote, flags and template overrides, with inherited values faded, a "Use template" button and a refusal that says why and snaps back. Named controls replaced the raw fields (spinner, boxed flag checkboxes with per-flag tooltips, dropdowns and pickers). Tests: `SpawnFieldsTests`, `SpawnRowDbTests`, `--spawn-authoring-smoke`. |
+| Spawn addon (Appearance) | Creature: mount model and creature, stance, drawn weapons, emote, auras; GameObject: invisibility. The row is inserted on first edit and updated afterwards; AC's stance and weapons are the low bytes of `bytes1` / `bytes2`, written without touching the other bytes. The loader refuses a stance above 9, weapons above 2 and repeated or non-numeric auras. |
+| Template vs spawn scope | The creature window edits the template and says so in its title and subtitle; the right-hand inspector edits one spawn. The template's **Appearance** tab edits `creature_template_addon` and counts the spawns that follow it and those with their own row. A spawn's `creature_addon` replaces the template's completely: fields start from the template, stay read-only until the addon is read, show inherited values faded, and "Use the template's appearance" keeps a row that holds a waypoint path. Markers play stance and emote and ride their mount, glued to the animated `MountMain` seat bone (shared `creature_clock`), each mount at its own scale, flapping when airborne if the model has a flight clip. Tests: `SpawnAppearanceTests`, `TemplateAddonTests`, `ScopeTextTests`, `--spawn-authoring-smoke`, screenshots `spawn-authoring-template-window.png` and `-appearance.png`. |
+| Place from a template by dragging | Dragging a content browser row into the world arms `PlacementTool` (`TemplateList` carries the template, `ViewportDropSurface` receives the drop): a ghost follows the cursor over the ground, dropping places the spawn facing the camera, Shift keeps placing, Esc stops. The ground is the terrain height map falling back to the building-floor probe, then lifted onto a floor within a few yards. |
+| Multi-select | `SpawnGroupSelection` (a ring under each extra member), `SpawnPoses.EditMany` / `DeleteMany` / `DuplicateMany` / `NextGuids`; Ctrl-click, Shift-drag box, group copy, delete and move as one undoable command, one kind at a time. Ctrl-clicking the other kind switches the selection; a gizmo handle press wins over Ctrl and Shift. Tests: `StagedSpawnTests`, `--spawn-authoring-smoke`. |
+| Delete impact and cleanup | `IDBSource.CountSpawnReferencesAsync` / `ReadSpawnReferencesAsync` (`DbReferences`) count the rows that name a spawn (pools, spawn groups, events, equipment swaps, linked respawns, formations, per-GUID SmartAI), counting distinct rows so the dialog's numbers equal what cleanup deletes. The dialog offers **Remove these too**: those rows plus a waypoint path nothing else walks delete in the same undoable command. A read bounded at 500 rows offers no cleanup rather than a partial one. Tests: `SpawnImpactDbTests`, `ReferenceCleanupDbTests` (both dialects), `SpawnImpactTests`, `DeleteImpactDialogTests`, `--spawn-authoring-smoke`. |
+| Template "Used by" page | `UsedBySection` (creature) and `GameObjectUsedBySection` list what names a template through `TemplateReferences` and `DbTemplateReferences` (one `COUNT(*)` per reference table, missing tables skipped): spawns, per-template SmartAI, loot, pickpocketing and skinning loot, vendor lists and quest links. One `ReferenceCountCard` renders them and says so when the read failed. Tests: `TemplateReferencesTests`, `TemplateReferencesDbTests`, `UsedBySectionTests`. |
+| Retail graveyard duplicate links | Duplicate ghost-zone links are refused (unknown-area check still missing, see the plan). |
+
+## Phase 12: GameObjects (built parts)
+
+Generated per-dialect `AcGameObjectTypes` / `TcGameObjectTypes` catalogues (`Tools/generate_gameobject_catalog.py`),
+`gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter` / `questender` / `questitem` in
+both table catalogs, `DbGameObjectTemplate` and `DbGameObjectSpawns`, and `GameObjectPropertiesWindow` with
+Template, Type properties, Quests and Spawns pages. The content browser, the inspector's Properties button
+and a short right-click open the window.
+
+## Phase 14: movement (built parts)
+
+Node move/facing/delay, add/insert/delete/renumber, new paths, path-level properties, spawn and template
+link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
+polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
+
+## Data, overlays and rendering
+
+| Item | What landed |
+| --- | --- |
+| Draw calls | Terrain draws one mesh per layer list per tile over a splat atlas; opaque same-material model batches merge at decode; static materials are shared. Render CPU and GPU roughly halved (one run; see [performance.md](../status/performance.md)). |
+| Parallel model decode | Three decode workers (`ModelLibrary.DecodeWorkers`); Stormwind arrival (1416 models) 30.3 s → 19.1–19.3 s, flight frame times unchanged. |
+| Model memory | A published model keeps only its doodads, animation IDs and (WMOs) probe geometry; the 256 MiB limit applies to models no instance uses. Stormwind cache 1903 → 318 MiB after arrival; flight evictions about 390 → about 205. |
+| Terrain height blending | Layers weight by `height * scale + offset` from the `_h` alpha and MTXP with the client's suppression of layers far below the tallest; MTXP texture scale applies. Test: `SplitTerrainTests` (parameters read); the blend is checked by eye in Khaz Algar (`--tele-name=TheDawnbreaker --tele-tile=33,29`). |
+| Generated navigation inspection | AzerothCore MMap 20 and TrinityCore MMap 16 readers, detail surfaces, polygon edges, tile bounds, off-mesh lines, opacity/X-ray, terrain filters and polygon picking. See [viewer-runtime.md](../architecture/viewer-runtime.md#navigation-overlay). |
+| WoW: Forever client data | The `wowf` product opens from the shared retail install (`_forever_` folder or `ACWORLD_CLIENT_PRODUCT=wowf`); map list, terrain, lighting, liquids, M2/WMO models, creature displays and GameObjects load through the retail readers. `--client-smoke` opens build 1.60.1.70790 with 69 maps and streams an Azeroth tile; `ForeverCorpusTests` checks every known table, the WDT/tile and a creature model. |
+| Shared install assets | `CascFiles` opens the live product beside a non-live one and reads shared BLP payloads by the same FileDataID; DB2 files, WDT/ADT structure and M2/WMO geometry stay product-local. `LiveProductFiles` records the IDs served by the shared storage. |
+| CI | GitHub Actions: every push and pull request builds and runs the xUnit suite, gdUnit4 runs in its own `viewer-tests` job, `master` pushes export, smoke-run and upload a 7-day Windows build, and a `vX.Y.Z` tag creates a draft release. |
+
+## Notes
+
+Assigning or creating a TrinityCore gossip menu also sets the gossip bit in `creature_template.npcflag` when
+it is missing (a template edit affecting every spawn of the entry; the export shows it as a separate
+`UPDATE`).

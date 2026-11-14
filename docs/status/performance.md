@@ -4,7 +4,7 @@ How the renderer and the database streaming perform now, and how to measure them
 was taken windowed on one machine; treat it as a reference point, not a promise. Older runs, the changes
 each one bought, and experiments that were reverted are in
 [performance-history.md](performance-history.md). Open items also appear in
-[open-work.md](open-work.md#performance).
+[editor-plan.md](../plans/editor-plan.md#performance).
 
 ## How to measure
 

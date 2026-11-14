@@ -2,7 +2,7 @@
 
 Tests deferred while retail loading and rendering were built. Add one once the feature it covers works,
 and remove the entry when the test exists. The current feature status is in
-[open-work.md](open-work.md); the perf and model-decode coverage lives in the test projects themselves.
+[editor-plan.md](../plans/editor-plan.md); the perf and model-decode coverage lives in the test projects themselves.
 `GeosetVariantsTests`, `AssetRefTests` and `RetailLiquidTests` already cover the cases they were listed
 for; what is left is below.
 

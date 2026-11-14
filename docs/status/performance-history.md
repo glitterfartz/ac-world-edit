@@ -2,7 +2,7 @@
 
 Measured runs, what each change bought, and experiments that were reverted. The current method, frame
 budget and open items are in [performance.md](performance.md); open work also appears in
-[open-work.md](open-work.md#performance).
+[editor-plan.md](../plans/editor-plan.md#performance).
 
 Every number here was taken windowed under the conditions named in its section. Compare rows within one
 table, not across tables: the renderer, the renderer mode (Compatibility then Forward+) and the benchmark

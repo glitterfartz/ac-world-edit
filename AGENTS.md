@@ -18,10 +18,10 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
   - AzerothCore world database: https://www.azerothcore.org/wiki/database-world
   - TrinityCore world database (master): https://trinitycore.info/database/master/world/home
 - `docs/reference/shader-inspection-locations.md`: a map/tile/XYZ for inspecting each implemented liquid shader.
-- `docs/status/open-work.md`: what is built, partial and open, per area and per gap-plan phase.
+- `docs/status/completed-work.md`: what is built, per phase and area, with the tests and smokes that prove it.
 - `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.
 - `docs/status/needed-tests.md`: tests deferred until their feature works.
-- `docs/plans/editor-gap-plan.md`: the design of editor phases 10 onward, with a status line per phase.
+- `docs/plans/editor-plan.md`: all pending work (phase refinements, the design of editor phases 10 onward, cross-cutting gaps).
 - `docs/plans/sniff-import-proposal.md`: research only; do not implement it unless asked.
 
 ## Commands
@@ -57,7 +57,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 ## Rules
 
 - This file holds only commands, workflow notes and rules. Architecture goes in `docs/architecture/overview.md` or the matching `docs/architecture/*.md` page.
-- Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/status/open-work.md` when work lands or a gap is found, `docs/status/needed-tests.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
+- Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/status/completed-work.md` and `docs/plans/editor-plan.md` when work lands or a gap is found, `docs/status/needed-tests.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
 - `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
 - For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/reference/database-differences.md`.
   - AzerothCore: https://www.azerothcore.org/wiki/database-world (live database `acore_world`)

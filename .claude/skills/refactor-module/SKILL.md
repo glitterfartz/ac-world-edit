@@ -33,7 +33,7 @@ The worked example behind this skill, with exact milestones, measurements and ga
 
 ## Phase 0 — Understand the module
 
-- Read the docs page for the area (`docs/architecture/*.md`, `docs/status/open-work.md`).
+- Read the docs page for the area (`docs/architecture/*.md`, `docs/plans/editor-plan.md`).
 - List the files, their sizes, the public surface and the call sites. Use
   `Select-String`/`rg` for type and method references; do not assume a member is unused.
 - Identify the invariants the code relies on: ordering, threading, precision, ownership, teardown

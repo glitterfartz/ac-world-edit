@@ -49,7 +49,8 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for diagrams 
 - [Rendering and the retail shader port](docs/architecture/rendering.md)
 - [Editing, data access and SQL export](docs/architecture/editing-and-export.md)
 - [Testing and tooling](docs/architecture/testing-and-tooling.md)
-- [Status and open work](docs/status/open-work.md)
+- [Editor plan](docs/plans/editor-plan.md)
+- [Completed work](docs/status/completed-work.md)
 
 ## Prerequisites
 
