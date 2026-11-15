@@ -159,7 +159,11 @@ cleared on the main camera) are visible to those cameras, and each map is cleare
 `dot(world, client_sun_dir)` with the geometry normal offset applied (so a receiver biased the same way
 does not self-shadow) and packs 24 bits over the fixed range `[-32768, 32768]`
 (`ShadowDepthPacking`; the white clear is the far end, which reads as lit). Depth is global rather than
-per-cascade, so one caster material serves every map.
+per-cascade, so one caster material serves every map. `--shadow-caster-smoke` probes a known terrain
+point: it reads the packed depth back from cascade 0 and compares it with the CPU expectation (within
+about 0.2 yd), which also settled the map's V axis. Godot textures put v = 0 at the top, so the
+vertical UV row runs the opposite way from the light's up axis; the earlier version sampled a
+vertically mirrored map and the probe caught it.
 
 The maps and a 16×1 RGBA-float **cascade data texture** (four texels per cascade: the two world-to-UV
 rows, split/texel/resolution/index, and the fade bounds) are published through the `client_shadow_*`
