@@ -78,3 +78,28 @@ Deterministic parser coverage lives in `NavigationTests`; full-folder checks are
 `ACWORLD_AC_MMAP_DIR` / `ACWORLD_TC_MMAP_DIR`. The `--navigation-smoke` workflow covers upload, picking,
 X-ray and the reset/disable lifecycle. Manual landmark comparisons across every generated map and
 live-server obstacle parity are not automated.
+
+## Dynamic sun shadows
+
+The cascade frame, depth packing and caster policy have xUnit coverage (`ShadowCascadesTests`,
+`ShadowDepthPackingTests`, `ShadowCasterPolicyTests`, `ShadowQualityTests`). These need the caster pass
+and receiver to exist first.
+
+- [ ] Windowed `--shadow-smoke` at the fixed Trade District pose: off/low/medium/high images differ on
+  the ground, hour 23 shows no difference, and the `SHADOW_CASCADE` lines are stable enough for a
+  `Tests/golden/shadow-smoke-retail.txt` golden.
+- [ ] MultiMesh caster transforms: an ADT doodad's packed depth matches the CPU expectation (a
+  `MODEL_MATRIX` that misses the instance transform would draw nothing or the wrong place).
+- [ ] Flight alignment: move the camera for a few seconds and confirm the cascades stay snapped and
+  shadows do not swim or lag the geometry.
+- [ ] Night and interior maps turn shadows off (`SunShadowStrength` at zero), and ambient, hemisphere,
+  point lights and baked MCSH stay unchanged.
+- [x] Compatibility renderer: `--shadow-caster-smoke --rendering-method gl_compatibility` passes with
+  the same map sizes, packed depths and probe values as Forward+, so no fallback is needed.
+- [ ] Per-cascade cull masks: far cascades skip ADT doodads (then WMO doodads) and the main camera
+  never draws a proxy.
+- [ ] Terrain far LOD (the baked `terrainlow` path) still receives shadows.
+- [ ] Alpha-tested foliage does not cast an opaque card (v1 policy skips it).
+- [ ] Performance thresholds from the milestone E measurement, recorded in
+  [performance.md](performance.md).
+- [ ] WMO interior modes 1 and 3 keep visibility 1.0 (a building interior is not darkened).
