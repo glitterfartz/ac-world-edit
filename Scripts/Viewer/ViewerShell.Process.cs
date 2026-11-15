@@ -33,6 +33,8 @@ public partial class ViewerShell
         PerfMark(2);
         UpdateOverlays();
         models.Update(camera);
+        // After the sky (sun direction/strength) and the models (new caster registrations).
+        shadows.Update(camera, sky);
         PerfMark(6);
         sidebar.UpdateCounts();
         PollPending(delta);

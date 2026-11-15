@@ -141,3 +141,47 @@ creature_clock={
 "type": "float",
 "value": -1.0
 }
+client_shadow_map0={
+"type": "sampler2D",
+"value": ""
+}
+client_shadow_map1={
+"type": "sampler2D",
+"value": ""
+}
+client_shadow_map2={
+"type": "sampler2D",
+"value": ""
+}
+client_shadow_map3={
+"type": "sampler2D",
+"value": ""
+}
+client_shadow_cascades={
+"type": "sampler2D",
+"value": ""
+}
+client_shadow_cascade_count={
+"type": "float",
+"value": 0.0
+}
+client_shadow_strength={
+"type": "float",
+"value": 0.0
+}
+client_shadow_depth_range={
+"type": "vec4",
+"value": Vector4(-32768, 32768, 0, 0)
+}
+client_shadow_bias={
+"type": "float",
+"value": 0.05
+}
+client_shadow_normal_offset={
+"type": "float",
+"value": 0.5
+}
+client_shadow_taps={
+"type": "float",
+"value": 1.0
+}

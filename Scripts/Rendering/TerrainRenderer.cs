@@ -43,6 +43,11 @@ public sealed class TerrainRenderer
     /// the ground). The shell sets this from the open client profile before any tile is built.
     /// </summary>
     public bool WrathLighting { get; set; }
+    /// <summary>
+    /// The shadow caster registry, assigned by the shell. Every group surface registers as terrain
+    /// while it exists, and unregisters before its mesh is disposed in <see cref="Release"/>.
+    /// </summary>
+    public ShadowCasterScene? Shadows { get; set; }
 
     public TerrainRenderer()
     {
@@ -340,8 +345,8 @@ public sealed class TerrainRenderer
         var instance = new MeshInstance3D
         {
             Mesh = mesh,
-            // Shadowless like everything else: all world materials are unshaded, so no
-            // shader samples the shadowmap this would render into.
+            // The engine's own shadow pass stays off (no shaded material reads it); the custom
+            // cascade pass draws a proxy child instead (ShadowCasterScene).
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
         };
         instance.SetMeta("full", material);
@@ -350,6 +355,7 @@ public sealed class TerrainRenderer
         instance.SetMeta("chunks", group.Chunks);
         CellCount += group.Chunks;
         tile.AddChild(instance);
+        Shadows?.Register(instance, ShadowCasterCategory.Terrain);
     }
 
     /// <summary>
@@ -456,6 +462,8 @@ public sealed class TerrainRenderer
             }
 
             CellCount -= child.GetMeta("chunks").AsInt32();
+            // The proxy shares this mesh; free it before the mesh goes away.
+            Shadows?.Unregister(child);
             child.Mesh.Dispose();
 
             foreach (string name in child.GetMeta("textures").AsStringArray())

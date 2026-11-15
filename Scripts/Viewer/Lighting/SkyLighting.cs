@@ -43,6 +43,22 @@ public sealed partial class SkyLighting : Node3D
     public bool Playing { get; set; } = false;
     public float Speed { get; set; } = 1;
 
+    /// <summary>
+    /// The direction the sun's light travels (world space), as published to every world shader. The
+    /// shadow pass fits its cascades along it.
+    /// </summary>
+    public Vector3 SunDirection { get; private set; } = Vector3.Down;
+
+    /// <summary>The diffuse band the sun lights the world with (gamma space).</summary>
+    public Vector3 SunDiffuse { get; private set; } = Vector3.One;
+
+    /// <summary>
+    /// How much of the sun's diffuse and specular survives a fully shadowed fragment (0 = no shadows,
+    /// 1 = fully dark), following the sun's elevation and brightness. Zero at night, inside and on a
+    /// map without a light table.
+    /// </summary>
+    public float SunShadowStrength { get; private set; }
+
     public string? SkyboxPath => skyboxPath;
     public bool SkyboxReady => skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance) && skyboxInstance.ModelReady;
     public Aabb? SkyboxBounds => SkyboxReady ? skyboxInstance!.Bounds : null;
@@ -90,9 +106,9 @@ public sealed partial class SkyLighting : Node3D
         {
             RotationDegrees = new Vector3(-50, -30, 0),
             LightEnergy = 1.25f,
-            // No world material reads Godot lights or shadowmaps: terrain, models and
-            // liquids are all unshaded and do the client's own lighting in-shader, so
-            // the shadow pass rendered depth nobody sampled (about 30 % of the frame).
+            // The engine's own light and shadowmap stay unused: world materials are unshaded and
+            // compute the client's lighting, while the custom cascade pass (SunShadows) renders
+            // and samples its own maps. This light only feeds the sky.
             ShadowEnabled = false,
             DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits,
             DirectionalShadowMaxDistance = 400,
@@ -236,12 +252,14 @@ public sealed partial class SkyLighting : Node3D
 
         if (interior || table == null || mapId == null)
         {
+            SunShadowStrength = 0f;
             return;
         }
 
         var sample = LightingSampler.Sample(new(TimeOfDayHours, camera.Position.X, camera.Position.Y, camera.Position.Z, mapRegions, table.Profile));
         if (sample is not { } light)
         {
+            SunShadowStrength = 0f;
             return;
         }
 
@@ -251,6 +269,8 @@ public sealed partial class SkyLighting : Node3D
         // The client lights everything along one direction (DayNight::SetDirection) with the diffuse and ambient bands at
         // full strength; it has no exposure curve, so the light's energy stays 1 (the tonemapper is linear).
         var sunDirection = new Vector3(light.SunDirection.X, light.SunDirection.Y, light.SunDirection.Z);
+        SunDirection = sunDirection;
+        SunDiffuse = new Vector3(diffuse.R, diffuse.G, diffuse.B);
         sun.Basis = Basis.LookingAt(sunDirection, Vector3.Up);
         sun.LightColor = diffuse;
         sun.LightEnergy = 1f;
@@ -262,6 +282,11 @@ public sealed partial class SkyLighting : Node3D
             SkyMaterial = skyMaterial
         };
         var detail = LightingBlend.Describe(light, Retail, ViewDistance);
+        // The sun's disc elevation (client Z is up) gates the dynamic shadows; the light direction
+        // itself stays fixed all day. The blended diffuse sets how deep a shadow can go.
+        SunShadowStrength = ShadowSunStrength.Compute(
+            detail.Celestials.SunZ,
+            new System.Numerics.Vector3(SunDiffuse.X, SunDiffuse.Y, SunDiffuse.Z));
         PublishSky(detail.Sky, detail.Glow);
         PublishClouds(detail.Clouds, camera);
         PublishCelestials(detail, camera);

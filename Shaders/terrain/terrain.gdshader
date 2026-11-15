@@ -58,9 +58,12 @@ void fragment() {
     }
     // The vertex tint (already doubled, as the client does) scales the layers; the baked shadow bits darken the lit result.
     vec3 lit = layered.rgb * COLOR.rgb;
+    vec3 world_pos = client_world_pos(VERTEX, INV_VIEW_MATRIX);
+    vec3 world_normal = client_world_normal(NORMAL, VIEW_MATRIX);
+    float sun_visibility = client_shadow_visibility(world_pos, world_normal, -VERTEX.z);
     vec3 color = wrath_lighting
-        ? client_wrath_surface_light(lit, 1.0 - splat.a, NORMAL, VIEW_MATRIX)
-        : client_surface_light(lit, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX, client_world_pos(VERTEX, INV_VIEW_MATRIX), client_world_normal(NORMAL, VIEW_MATRIX));
+        ? client_wrath_surface_light(lit, 1.0 - splat.a, NORMAL, VIEW_MATRIX, sun_visibility)
+        : client_surface_light(lit, layered.a, 1.0 - splat.a, VERTEX, NORMAL, VIEW_MATRIX, world_pos, world_normal, sun_visibility);
     if (grid) {
         vec2 edge = min(UV, 1.0 - UV);
         float line = 1.0 - smoothstep(0.0, 0.006, min(edge.x, edge.y));

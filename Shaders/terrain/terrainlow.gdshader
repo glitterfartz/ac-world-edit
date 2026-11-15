@@ -24,9 +24,12 @@ void fragment() {
     vec3 normal = normalize((VIEW_MATRIX * vec4(normal_object, 0.0)).xyz);
     float shadow = texture(splat_map, tile_uv).a;
     vec3 lit = albedo * COLOR.rgb;
+    vec3 world_pos = client_world_pos(VERTEX, INV_VIEW_MATRIX);
+    vec3 world_normal = client_world_normal(normal, VIEW_MATRIX);
+    float sun_visibility = client_shadow_visibility(world_pos, world_normal, -VERTEX.z);
     vec3 color = wrath_lighting
-        ? client_wrath_surface_light(lit, 1.0 - shadow, normal, VIEW_MATRIX)
-        : client_surface_light(lit, 0.0, 1.0 - shadow, VERTEX, normal, VIEW_MATRIX, client_world_pos(VERTEX, INV_VIEW_MATRIX), client_world_normal(normal, VIEW_MATRIX));
+        ? client_wrath_surface_light(lit, 1.0 - shadow, normal, VIEW_MATRIX, sun_visibility)
+        : client_surface_light(lit, 0.0, 1.0 - shadow, VERTEX, normal, VIEW_MATRIX, world_pos, world_normal, sun_visibility);
     if (grid) {
         vec2 edge = min(UV, 1.0 - UV);
         float line = 1.0 - smoothstep(0.0, 0.006, min(edge.x, edge.y));

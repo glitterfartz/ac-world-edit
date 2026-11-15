@@ -88,6 +88,41 @@ public static class ClientShaderGlobals
     /// negative value means "not set yet": shaders fall back to TIME.
     /// </summary>
     public const string CreatureClock = "creature_clock";
+    /// <summary>
+    /// The cascade maps, nearest first, written by <c>SunShadows</c>. Each is an RGBA8 square the
+    /// caster pass clears to white and fills with packed sun-space depth (see
+    /// <c>ShadowDepthPacking</c> and <c>shadow_caster.gdshader</c>).
+    /// </summary>
+    public const string ShadowMap0 = "client_shadow_map0";
+    public const string ShadowMap1 = "client_shadow_map1";
+    public const string ShadowMap2 = "client_shadow_map2";
+    public const string ShadowMap3 = "client_shadow_map3";
+    /// <summary>
+    /// Four RGBA-float texels per cascade: the world-to-UV row for X, the row for Y, the
+    /// (split, texel world size, resolution, index) texel and the fade bounds. Written when the
+    /// camera or sun moves; read with texelFetch.
+    /// </summary>
+    public const string ShadowCascades = "client_shadow_cascades";
+    public const string ShadowCascadeCount = "client_shadow_cascade_count";
+    /// <summary>How much of the sun's diffuse and specular a fully shadowed fragment keeps (0 to 1).</summary>
+    public const string ShadowStrength = "client_shadow_strength";
+    /// <summary>The global sun-space depth range the caster packs: x minimum, y maximum.</summary>
+    public const string ShadowDepthRange = "client_shadow_depth_range";
+    /// <summary>Yards added to the receiver depth before comparison, and the normal offset scale.</summary>
+    public const string ShadowBias = "client_shadow_bias";
+    public const string ShadowNormalOffset = "client_shadow_normal_offset";
+    /// <summary>Depth comparisons the receiver averages: 1, 5 or 9.</summary>
+    public const string ShadowTaps = "client_shadow_taps";
+    public const int MaxShadowCascades = 4;
+    /// <summary>RGBA-float texels per cascade in <see cref="ShadowCascades"/>.</summary>
+    public const int ShadowCascadeTexels = 4;
+    public static string ShadowMap(int cascade) => cascade switch
+    {
+        0 => ShadowMap0,
+        1 => ShadowMap1,
+        2 => ShadowMap2,
+        _ => ShadowMap3,
+    };
     static bool registered;
 
     /// <summary>

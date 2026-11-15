@@ -91,6 +91,12 @@ public partial class ViewerShell
     {
         foreach (var child in node.GetChildren())
         {
+            // Shadow proxies are ours, not scene content: they never belong in a category's cost.
+            if (child.HasMeta("shadow_proxy"))
+            {
+                continue;
+            }
+
             yield return child;
             foreach (var deeper in Descendants(child))
             {
@@ -213,45 +219,62 @@ public partial class ViewerShell
             GD.Print($"PERFB_WMO {pose} {t.Path} placements={t.Placements} shellSurfaces={t.Surfaces} embeddedDoodadCopies={t.Doodads}");
         }
 
-        var configs = new List<(string Name, Action Apply, Action Revert)>
+        var initialQuality = shadowQuality;
+        var configs = new List<(string Name, Action Apply, Action Revert, Action? Frame)>
         {
-            ("all", () => { }, () => { }),
-            ("none", () => SetVisible(categories.SelectMany(c => c.Nodes), false), () => SetVisible(categories.SelectMany(c => c.Nodes), true)),
+            ("all", () => { }, () => { }, null),
+            ("none", () => SetVisible(categories.SelectMany(c => c.Nodes), false), () => SetVisible(categories.SelectMany(c => c.Nodes), true), null),
         };
         foreach (var c in categories)
         {
-            configs.Add(($"hide:{c.Name}", () => SetVisible(c.Nodes, false), () => SetVisible(c.Nodes, true)));
+            configs.Add(($"hide:{c.Name}", () => SetVisible(c.Nodes, false), () => SetVisible(c.Nodes, true), null));
         }
 
         foreach (string name in new[] { "terrain", "wmoShell", "wmoDoodads", "adtDoodads" })
         {
             var geometry = Geometry(byName[name].Nodes);
-            configs.Add(($"noShadow:{name}", () => SetShadows(geometry, false), () => SetShadows(geometry, true)));
+            configs.Add(($"noShadow:{name}", () => SetShadows(geometry, false), () => SetShadows(geometry, true), null));
         }
 
         if (sun != null)
         {
-            configs.Add(("sunShadowsOff", () => sun.ShadowEnabled = false, () => sun.ShadowEnabled = true));
+            configs.Add(("sunShadowsOff", () => sun.ShadowEnabled = false, () => sun.ShadowEnabled = true, null));
         }
 
-        configs.Add(("all(again)", () => { }, () => { }));
+        // The custom cascade pass: the static rows pay only the receiver; the (caster) rows force a
+        // map render every frame, which is the cost while the camera moves.
+        foreach (var quality in new[] { ShadowQuality.Off, ShadowQuality.Low, ShadowQuality.Medium, ShadowQuality.High })
+        {
+            var value = quality;
+            configs.Add(($"shadow:{ShadowQualityPresets.Name(value)}", () => SetShadowQuality(value, false, false), () => SetShadowQuality(initialQuality, false, false), null));
+        }
 
-        foreach (var (name, apply, revert) in configs)
+        foreach (var quality in new[] { ShadowQuality.Low, ShadowQuality.Medium, ShadowQuality.High })
+        {
+            var value = quality;
+            configs.Add(($"shadow:{ShadowQualityPresets.Name(value)}(caster)", () => SetShadowQuality(value, false, false), () => SetShadowQuality(initialQuality, false, false), () => shadows.RenderNow(camera, sky)));
+        }
+
+        configs.Add(("all(again)", () => { }, () => { }, null));
+
+        foreach (var (name, apply, revert, frame) in configs)
         {
             apply();
             for (int i = 0; i < BreakdownWarmup; i++)
             {
                 await NextFrame();
+                frame?.Invoke();
             }
 
-            List<double> frame = [], cpu = [], gpu = [];
+            List<double> frameMs = [], cpu = [], gpu = [];
             List<double> visDraws = [], shadowDraws = [], visPrims = [], shadowPrims = [], visObjects = [], shadowObjects = [];
             long last = Stopwatch.GetTimestamp();
             for (int i = 0; i < BreakdownFrames; i++)
             {
                 await NextFrame();
+                frame?.Invoke();
                 long now = Stopwatch.GetTimestamp();
-                frame.Add(Stopwatch.GetElapsedTime(last, now).TotalMilliseconds);
+                frameMs.Add(Stopwatch.GetElapsedTime(last, now).TotalMilliseconds);
                 last = now;
                 cpu.Add(RenderingServer.ViewportGetMeasuredRenderTimeCpu(viewport) + RenderingServer.GetFrameSetupTimeCpu());
                 gpu.Add(RenderingServer.ViewportGetMeasuredRenderTimeGpu(viewport));
@@ -263,10 +286,33 @@ public partial class ViewerShell
                 shadowObjects.Add(RenderingServer.ViewportGetRenderInfo(viewport, RenderingServer.ViewportRenderInfoType.Shadow, RenderingServer.ViewportRenderInfo.ObjectsInFrame));
             }
 
-            revert();
-            GD.Print($"PERFB {pose} {name} frameMs={Median(frame):F2} cpuMs={Median(cpu):F2} gpuMs={Median(gpu):F2} " +
+            GD.Print($"PERFB {pose} {name} frameMs={Median(frameMs):F2} cpuMs={Median(cpu):F2} gpuMs={Median(gpu):F2} " +
                 $"drawsVis={Median(visDraws):F0} drawsShadow={Median(shadowDraws):F0} primsVis={Median(visPrims):F0} primsShadow={Median(shadowPrims):F0} " +
                 $"objectsVis={Median(visObjects):F0} objectsShadow={Median(shadowObjects):F0}");
+            if (name.StartsWith("shadow:", StringComparison.Ordinal))
+            {
+                ReportShadowCascades(pose);
+            }
+
+            revert();
+        }
+    }
+
+    /// <summary>Per-cascade caster draw counts and render time, for the row just measured.</summary>
+    void ReportShadowCascades(string pose)
+    {
+        if (shadows.Quality == ShadowQuality.Off)
+        {
+            return;
+        }
+
+        for (int i = 0; i < shadows.RenderedCascades; i++)
+        {
+            var rid = shadows.CascadeViewportRid(i);
+            GD.Print($"PERFB_SHADOW {pose} cascade={i} " +
+                $"draws={RenderingServer.ViewportGetRenderInfo(rid, RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.DrawCallsInFrame)} " +
+                $"prims={RenderingServer.ViewportGetRenderInfo(rid, RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.PrimitivesInFrame)} " +
+                $"cpuMs={RenderingServer.ViewportGetMeasuredRenderTimeCpu(rid):F2} gpuMs={RenderingServer.ViewportGetMeasuredRenderTimeGpu(rid):F2}");
         }
     }
 }

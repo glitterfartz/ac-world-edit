@@ -20,6 +20,8 @@ public partial class ViewerShell : Node3D
     WorldObjectScene objects = null!;
     Camera3D camera = null!;
     SkyLighting sky = null!;
+    ShadowCasterScene casters = null!;
+    SunShadows shadows = null!;
     ClientLighting? lighting;
     AreaLookup? areas;
     // Terrain ownership (wanted/loaded/failed/building) lives in the streamer; these forward for the
@@ -61,6 +63,31 @@ public partial class ViewerShell : Node3D
     // False when the open client cannot be described by the world database (Retail): database layers,
     // teleports and the content editors stay off instead of querying a mismatched server.
     bool databaseEnabled = true;
+    /// <summary>
+    /// Sun-shadow quality for this run: the saved setting, overridden by the command line. Off until
+    /// the user enables it in View → Sun shadows.
+    /// </summary>
+    ShadowQuality shadowQuality = ShadowQuality.Off;
+
+    /// <summary>Apply a quality change, optionally save it and post the status line.</summary>
+    internal void SetShadowQuality(ShadowQuality quality, bool save, bool report)
+    {
+        shadowQuality = quality;
+        if (shadows != null)
+        {
+            shadows.SetQuality(quality);
+        }
+
+        if (save)
+        {
+            UserSettings.SaveShadowQuality(quality);
+        }
+
+        if (report)
+        {
+            statusLog.Post(ShadowQualityPresets.StatusMessage(quality));
+        }
+    }
     IClientLookup? clientLookup;
     string dataDirectory
     {
@@ -115,6 +142,7 @@ public partial class ViewerShell : Node3D
     public override async void _Ready()
     {
         ContentDraftFiles.UseProfile(UserSettings.LoadProfile());
+        shadowQuality = UserSettings.LoadShadowQuality();
         BuildSceneSystems();
         BuildUi();
         navigation.Configure(profile.Kind, null);
@@ -163,6 +191,15 @@ public partial class ViewerShell : Node3D
         sky = new SkyLighting(models);
         sky.LightPlacements = () => objects.Placements();
         AddChild(sky);
+        // The cascade pass owns its own casters and viewports; both scenery owners register there.
+        casters = new ShadowCasterScene();
+        renderer.Shadows = casters;
+        models.Shadows = casters;
+        shadows = new SunShadows(casters, GetViewport().World3D);
+        AddChild(shadows);
+        shadows.SetQuality(shadowQuality);
+        // Proxies live on their own layers; the normal view must never draw one.
+        camera.CullMask = ShadowCasterScene.MainCameraMask;
     }
 
     /// <summary>The five database-backed layers, in draw order.</summary>

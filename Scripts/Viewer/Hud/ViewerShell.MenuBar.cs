@@ -1,4 +1,5 @@
 using Godot;
+using ACWorldEdit.Assets;
 
 namespace ACWorldEdit;
 
@@ -93,6 +94,7 @@ public partial class ViewerShell
                 new MenuCheck("Navigation panel", () => leftPanel.Visible = !leftPanel.Visible, () => leftPanel.Visible),
                 new MenuCheck("Inspector panel", () => sidebar.Visible = !sidebar.Visible, () => sidebar.Visible),
                 new MenuCheck("Content browser", ToggleContentBrowser, () => contentBrowser.Visible, ctrl | Key.B),
+                SunShadowsMenu(q => SetShadowQuality(q, true, true), () => shadowQuality),
                 new MenuSubmenu("UI scale", UiScalePercents
                     .Select(percent => (MenuEntry)new MenuCheck($"{percent}%", () => SetUiScale(percent, true), () => uiScalePercent == percent))
                     .ToArray())
@@ -102,6 +104,17 @@ public partial class ViewerShell
                 new MenuCommand("About", () => ShowInfo("About AC World Edit", "AC World Edit · world viewer and local placement drafts for AzerothCore. Clients: Wrath 3.3.5a (with the world database) and Retail (viewing only, no database yet).\n\nClient archives and the world database are read-only. Moves save to a local draft file; nothing is written to the server."))
             ])));
     }
+
+    /// <summary>
+    /// The View → Sun shadows entries. The gdUnit4 test builds this same submenu, so the labels and
+    /// callbacks it drives are the ones the viewer shows.
+    /// </summary>
+    public static MenuSubmenu SunShadowsMenu(Action<ShadowQuality> select, Func<ShadowQuality> current) => new("Sun shadows", [
+        new MenuCheck("Off", () => select(ShadowQuality.Off), () => current() == ShadowQuality.Off),
+        new MenuCheck("Low", () => select(ShadowQuality.Low), () => current() == ShadowQuality.Low),
+        new MenuCheck("Medium", () => select(ShadowQuality.Medium), () => current() == ShadowQuality.Medium),
+        new MenuCheck("High", () => select(ShadowQuality.High), () => current() == ShadowQuality.High),
+    ]);
 
     /// <summary>
     /// Scale the whole interface (menus, panels and dialogs) without touching the 3D view.

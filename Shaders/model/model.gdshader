@@ -8,7 +8,8 @@ const bool LIT = true;
 // statements explicit because that material setup replaces those statements.
 // Like the client, everything is computed on the 8-bit (gamma-space) values: textures are sampled raw, the lighting
 // is the client's (client_model_light), and only the finished color is converted to the linear space Godot expects.
-// The material is unshaded; Godot's lights and shadows do not touch it.
+// The material is unshaded; Godot's lights and engine shadows do not touch it. Lighting is the
+// client's own, and the custom cascade pass attenuates only the sun's diffuse term.
 uniform sampler2D albedo_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 // Four RGBA-float texels per bone matrix, one row per sampled native animation frame.
 uniform sampler2D animation_palette : filter_nearest, repeat_disable;
@@ -237,7 +238,11 @@ void fragment() {
     // emissive term, doubled like mode 1. Mode 2 (exterior WMO) adds its colors on top of the sun lighting.
     vec3 surface = vertex_color == 3 ? base * COLOR.a : base;
     vec3 emission = (vertex_color == 2 ? base * COLOR.rgb : vertex_color == 3 ? base * COLOR.rgb * 2.0 : vec3(0.0)) + layer_add;
-    vec3 light = LIT && vertex_color != 1 ? client_model_light(NORMAL, VIEW_MATRIX) + client_point_light(client_world_pos(VERTEX, INV_VIEW_MATRIX), client_world_normal(NORMAL, VIEW_MATRIX)) : vec3(1.0);
+    vec3 world_pos = client_world_pos(VERTEX, INV_VIEW_MATRIX);
+    vec3 world_normal = client_world_normal(NORMAL, VIEW_MATRIX);
+    // Baked WMO interiors (1) and retail interiors (3) light themselves and take no world shadows.
+    float sun_visibility = vertex_color == 1 || vertex_color == 3 ? 1.0 : client_shadow_visibility(world_pos, world_normal, -VERTEX.z);
+    vec3 light = LIT && vertex_color != 1 ? client_model_light(NORMAL, VIEW_MATRIX, sun_visibility) + client_point_light(world_pos, world_normal) : vec3(1.0);
     ALBEDO = client_gamma_to_linear(vertex_color == 1 ? base * COLOR.rgb * 2.0 + emission : surface * light + emission);
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;

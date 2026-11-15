@@ -104,6 +104,15 @@ public static class UserSettings
     public static int LoadUiScale() => int.TryParse(Read("ui", "scale_percent", "100"), out int percent) && percent is >= 50 and <= 300 ? percent : 100;
 
     /// <summary>
+    /// Saved sun-shadow quality. Unset means Low, the shipped default (the measured moving cost fits
+    /// the frame budget; Medium and High cost about twice and three times as much); an unreadable
+    /// value is Off. The command line may override it for one run.
+    /// </summary>
+    public static ShadowQuality LoadShadowQuality() => ShadowQualityPresets.Parse(Read("video", "shadow_quality", "low"));
+
+    public static void SaveShadowQuality(ShadowQuality quality) => Write("video", "shadow_quality", ShadowQualityPresets.Name(quality).ToLowerInvariant());
+
+    /// <summary>
     /// The server's Rate.Creature.*.HP settings in [creature_rates] (hp_0 to hp_6 by classification, as in
     /// worldserver.conf); 1 where unset or unreadable. The viewer cannot read the server's file, so they are typed in once.
     /// </summary>

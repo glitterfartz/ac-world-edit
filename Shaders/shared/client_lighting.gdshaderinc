@@ -31,6 +31,9 @@ global uniform vec3 client_sky_top;
 global uniform vec3 client_sky_ground;
 global uniform float client_glow;
 
+// Dynamic sun shadow receiver (client_shadow_visibility); included after client_sun_dir exists.
+#include "res://Shaders/shared/client_shadow.gdshaderinc"
+
 // Band colors are 8-bit values the client shows without a linear pipeline; Godot lights and tone maps in
 // linear space, so fog (and the sky it meets at the horizon) are converted on the way out.
 vec3 client_gamma_to_linear(vec3 c) {
@@ -294,11 +297,18 @@ vec3 client_point_light(vec3 world_pos, vec3 world_normal) {
 // The client's light on a model or WMO batch (the retail combiners shaders), in gamma space: ambient, widened a little
 // toward the sun side by a wrap term, plus diffuse N.L. It multiplies the surface color; there is no specular.
 // Hemisphere steers the ambient hue by orientation; glow lifts everything a little in bright places (estimate).
-vec3 client_model_light(vec3 normal, mat4 view_matrix) {
+// sun_visibility scales only the sun's diffuse term (see client_shadow_visibility).
+vec3 client_model_light(vec3 normal, mat4 view_matrix, float sun_visibility) {
     vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
     float facing = dot(normal, -sun);
     vec3 ambient = client_sun_ambient * client_hemi_tint(normal, view_matrix);
-    return ambient * (0.7 + 0.4 * (0.5 * facing + 0.5)) + client_sun_diffuse * max(facing, 0.0) + client_glow * vec3(0.03);
+    return ambient * (0.7 + 0.4 * (0.5 * facing + 0.5)) + client_sun_diffuse * max(facing, 0.0) * sun_visibility + client_glow * vec3(0.03);
+}
+
+// Ordinary (lit, non-interior) models keep the full sun visibility; callers that cannot sample the
+// cascade maps use this overload.
+vec3 client_model_light(vec3 normal, mat4 view_matrix) {
+    return client_model_light(normal, view_matrix, 1.0);
 }
 
 // The client's surface lighting (the retail terrain pixel shader), in gamma space like the client: ambient plus
@@ -312,15 +322,15 @@ const float CLIENT_SPECULAR_EXPONENT = 32.0;
 const float CLIENT_SPECULAR_STRENGTH = 0.3;
 const float CLIENT_SHADOW_STRENGTH = 0.3;
 const float CLIENT_DIFFUSE_WRAP = 0.3;
-vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 view_position, vec3 normal, mat4 view_matrix, vec3 world_pos, vec3 world_normal) {
+vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 view_position, vec3 normal, mat4 view_matrix, vec3 world_pos, vec3 world_normal, float sun_visibility) {
     vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
     float facing = dot(-sun, normal);
     float wrapped = clamp((facing + CLIENT_DIFFUSE_WRAP) / (1.0 + CLIENT_DIFFUSE_WRAP), 0.0, 1.0);
-    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped, 0.0, 1.0)
+    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped * sun_visibility, 0.0, 1.0)
         + client_point_light(world_pos, world_normal);
     vec3 half_vector = normalize(normalize(view_position) + sun);
     float highlight = pow(max(dot(-half_vector, normal), 0.0), CLIENT_SPECULAR_EXPONENT);
-    vec3 specular = clamp(client_sun_specular * highlight * shadow * specular_mask * CLIENT_SPECULAR_STRENGTH, 0.0, 1.0);
+    vec3 specular = clamp(client_sun_specular * highlight * shadow * specular_mask * CLIENT_SPECULAR_STRENGTH * sun_visibility, 0.0, 1.0);
     vec3 color = albedo * lit + specular + albedo * client_glow * 0.03;
     return color * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
 }
@@ -328,11 +338,11 @@ vec3 client_surface_light(vec3 albedo, float specular_mask, float shadow, vec3 v
 // The 3.3.5a terrain pixel shader: the same ambient plus wrapped diffuse N.L scales the layers, and the baked
 // shadow takes 30 % off, but that terrain has no specular term at all. Its layer textures' alpha is not
 // a highlight mask (Wrath tiles are usually opaque DXT1, so alpha is 1 over the whole ground).
-vec3 client_wrath_surface_light(vec3 albedo, float shadow, vec3 normal, mat4 view_matrix) {
+vec3 client_wrath_surface_light(vec3 albedo, float shadow, vec3 normal, mat4 view_matrix, float sun_visibility) {
     vec3 sun = normalize((view_matrix * vec4(client_sun_dir, 0.0)).xyz);
     float facing = dot(-sun, normal);
     float wrapped = clamp((facing + CLIENT_DIFFUSE_WRAP) / (1.0 + CLIENT_DIFFUSE_WRAP), 0.0, 1.0);
-    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped, 0.0, 1.0);
+    vec3 lit = clamp(client_sun_ambient * client_hemi_tint(normal, view_matrix) + client_sun_diffuse * wrapped * sun_visibility, 0.0, 1.0);
     return albedo * (lit + client_glow * 0.03) * (1.0 - CLIENT_SHADOW_STRENGTH + CLIENT_SHADOW_STRENGTH * shadow);
 }
 

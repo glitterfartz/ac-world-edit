@@ -22,7 +22,7 @@ State: **done**, **partial**, **todo**, **skip**.
 | 2 | Liquid effects | `magma`, `fel`, `leyline`, `mercury`, `azerite`, `proc*`, `mediumwaterbelow` | **partial** |
 | 3 | Terrain | `terrain` (40 permutations), `terrainlow`, `terrainblendbake`, `terraintexture`, `terrainlightmap*` | **partial** |
 | 4 | Model and WMO materials | `combiners_*`, `uber`, `skin`, `decal`, `illum`, `litsphere`, `proj_*`, `diffuse_*`, `color_*` | **partial** |
-| 5 | Lighting and shadows | sun shadow pass off (no reader), baked static shadow ported; `lightbufferomni`, spot lights, `shadowmask`, AO passes | **partial** |
+| 5 | Lighting and shadows | dynamic sun shadows (custom cascades and per-fragment mask, v1), baked static shadow; `lightbufferomni`, spot lights, external masks, alpha-tested caster shadows, ray-traced shadows | **partial** |
 | 6 | Particles and weather | `particle_*`, `ribbon`, `gpuribbon`, rain, snow, sand, lightning | **todo** |
 | 7 | Post effects | `ffx*` glow, color grading, depth of field, spectral sight, death, underwater | **todo** |
 | — | Skipped | AA (`fxaa`, `cmaa2`, `fsr`), `clustered*`, particle compute, UI, debug draws | **skip** |
@@ -129,8 +129,8 @@ is decided by CPU constants, so it is left unported.
 ### Model and WMO materials (`combiners_*`, `uber`, `skin`, …)
 
 Lighting is in (`client_model_light`: ambient with wrap + diffuse N.L in gamma space, hemisphere hue
-from the dome bands, LightParams glow lift, shared by M2 and WMO batches; Godot lights and shadows no
-longer apply). Not done: the light buffer's point lights, `skin`, `uber`, `litsphere`, `proj_*`, and
+from the dome bands, LightParams glow lift, shared by M2 and WMO batches; Godot lights and the engine
+shadow pass do not apply, and the custom cascade pass attenuates only the sun's diffuse). Not done: the light buffer's point lights, `skin`, `uber`, `litsphere`, `proj_*`, and
 the combiner math itself (still the wowdev combiner table).
 
 Uber/decal survey (no data-verified target): 14 Khaz Algar plus 28 Azeroth WMO models decode with
@@ -145,23 +145,66 @@ speculation without a RenderDoc capture or a failing routing test to check it ag
 
 ### Lighting and shadows
 
-Done for the sun path the viewer can host: the client's static shadow is the baked
-shadow the shaders already apply (terrain MCNK bits at 30 % in `client_surface_light`,
-WMO baked vertex colors), and every world material is unshaded with the client's own
-lighting, so no shader samples a Godot light or shadowmap. The sun's 4-split shadow
-pass and all world shadow casters are therefore off: that pass rendered depth nobody
-read (about 30 % of the settled frame in `performance.md`) and disabling it changes no
-pixel. Dynamic cascades versus the client's approach is settled as "neither": a Godot
-shadowmap has no reader until a shaded material exists. The retail WMO point/spot
-lights (MNLD, Shadowlands 9.1+, 184 bytes each) are parsed from the root chunk and the
-nearest eight to the camera feed the terrain and model shaders every frame (linear
-falloff to the attenuation end, spot cone by the inner/outer angles, no flicker, no
-cookies, no spot-cookie projection, ranges unscaled by placement scale, doodad-set 0 or
-the placement's own set). What stays open: the CB5 per-light medium loop (which needs
-the same buffer plus the volume fog light in-scatter), shadowed volumes and shafts (see
-[Fog](#fog-volumefog-liquidfog-ffx-fog)). What stays open: the CB5 per-light medium loop
-(which needs the same buffer), volume fog light in-scatter, and shadowed volumes and
-shafts; the per-frame nearest-eight cap is a performance estimate, not a client value.
+Every world material is unshaded and computes the client's own lighting, so no shader samples a
+Godot light or the engine shadowmap (the engine's 4-split pass stays off: it rendered depth nobody
+read, about 30 % of the settled frame in [performance.md](../status/performance.md)). The client's
+**static** shadow is still the baked one: terrain MCNK bits at 30 % in `client_surface_light` and the
+WMO baked vertex colours.
+
+Dynamic sun shadows are a **custom pass**. `SunShadows` runs 1, 3 or 4 orthographic cascade maps, one
+`SubViewport` each sharing the main `World3D`; only the shadow-proxy layers (user layers 17 to 20,
+cleared on the main camera) are visible to those cameras, and each map is cleared to white.
+`ShadowCasterScene` keeps one proxy per caster as a child of the source geometry, sharing its mesh or
+`MultiMesh` and carrying `shadow_caster.gdshader`, which writes the fragment's **sun-space depth**
+`dot(world, client_sun_dir)` with the geometry normal offset applied (so a receiver biased the same way
+does not self-shadow) and packs 24 bits over the fixed range `[-32768, 32768]`
+(`ShadowDepthPacking`; the white clear is the far end, which reads as lit). Depth is global rather than
+per-cascade, so one caster material serves every map.
+
+The maps and a 16×1 RGBA-float **cascade data texture** (four texels per cascade: the two world-to-UV
+rows, split/texel/resolution/index, and the fade bounds) are published through the `client_shadow_*`
+globals. The terrain and model shaders include `Shaders/shared/client_shadow.gdshaderinc` and evaluate
+the retail `shadowmask` math **per fragment**, same frame: pick the first cascade whose split covers the
+view depth, project with the UV rows, unpack the 24-bit depth, average 1, 5 or 9 taps (nearest), fade
+the outer 5 % of each map to lit, blend the next cascade over the last 5 % of a split, and scale by
+`client_shadow_strength`. GLSL cannot index an array of samplers, so the four maps are four branches.
+The result attenuates the **sun's diffuse and specular only**; ambient, hemisphere, the WMO point
+lights, glow and fog are unchanged, the baked 30 % term is separate, and liquids never call it.
+
+`SkyLighting` publishes `client_shadow_strength` from the **sun disc's** elevation and the blended
+diffuse luminance (`ShadowSunStrength`), zeroed on interiors and maps without a light table. The gate
+uses the disc, not the light direction: the client's `DayNight::SetDirection` keeps the light's travel
+direction fixed and always below the horizontal, so only the disc actually rises and sets. At night the
+strength is zero, the cascade count is zero and the receiver returns fully lit.
+
+Casters (v1): terrain always; a WMO shell when any of its surfaces is opaque (transparent windows cast
+as part of the building); WMO-embedded and ADT doodads only when **every** surface is opaque, which
+skips alpha-tested foliage, liquids, unlit and skinned batches. Creatures, GameObjects, skyboxes,
+markers and the placement gizmos never register. The maps redraw only when the camera, the sun or the
+caster set changes, so a still frame pays only receiver sampling; the proxies never draw in the main
+view. Per-cascade cull masks drop ADT doodads from the third cascade and WMO doodads from the fourth,
+where the texel is already coarse enough to hide them.
+
+**Same-frame caveat.** Direct sampling is same-frame when the cascade `SubViewport`s render before the
+main viewport (the expected order; `--shadow-smoke` exercises it). If a renderer reverses that order,
+the fits can be kept one frame behind the maps so both agree, or one frame of caster lag accepted; the
+plan does not call `RenderingServer.ForceDraw` in normal frames. The pass works in both Forward+ and
+Compatibility: `--shadow-caster-smoke --rendering-method gl_compatibility` reads back the same map
+sizes, packed depths and probe values as Forward+. A literal screen-space `shadowmask`
+resolve stays the documented later option (a Forward+ `CompositorEffect`, one frame of latency) for
+when external masks or a post-process consumer exist; the caster pass, cascade maps, proxies and
+quality presets are identical either way. Not ported: external masks (`shadowmaskexternal`),
+alpha-tested character shadows (`shadowmonk`), creatures/GameObjects as casters, point/spot light
+shadows and ray-traced shadows.
+
+The retail WMO point/spot lights (MNLD, Shadowlands 9.1+, 184 bytes each) are parsed from the root
+chunk and the nearest eight to the camera feed the terrain and model shaders every frame (linear
+falloff to the attenuation end, spot cone by the inner/outer angles, no flicker, no cookies, no
+spot-cookie projection, ranges unscaled by placement scale, doodad-set 0 or the placement's own set).
+What stays open: the CB5 per-light medium loop (which needs the same buffer plus the volume fog light
+in-scatter), volume fog light in-scatter, and shadowed volumes and shafts (see
+[Fog](#fog-volumefog-liquidfog-ffx-fog)); the per-frame nearest-eight cap is a performance estimate,
+not a client value.
 
 ### Particles, weather and post effects
 

@@ -85,6 +85,20 @@ public partial class ViewerShell
         clientShot |= clientShotOverlays;
         clientShot |= clientShotWater;
         clientSmoke = flags.Contains("--client-smoke") || clientShot;
+        // The quality flags only change the setting; --shadow-quality wins over the saved value and
+        // --client-shot-shadow lets a shot pick a quality without touching the saved one.
+        if (flags.FirstOrDefault(f => f.StartsWith("--shadow-quality=", StringComparison.Ordinal)) is { } qualityFlag)
+        {
+            SetShadowQuality(ShadowQualityPresets.Parse(qualityFlag["--shadow-quality=".Length..]), save: false, report: false);
+        }
+
+        if (flags.FirstOrDefault(f => f.StartsWith("--client-shot-shadow=", StringComparison.Ordinal)) is { } shotShadowFlag)
+        {
+            SetShadowQuality(ShadowQualityPresets.Parse(shotShadowFlag["--client-shot-shadow=".Length..]), save: false, report: false);
+        }
+
+        ConfigureShadowSmoke(flags);
+
         if (flags.Contains("--reset-smoke"))
         {
             _ = ResetSmoke();
@@ -209,6 +223,16 @@ public partial class ViewerShell
         if (perfBreakdown)
         {
             PerfBreakdownTick();
+        }
+
+        if (shadowCasterSmoke)
+        {
+            ShadowCasterSmoke(delta);
+        }
+
+        if (shadowSmoke)
+        {
+            ShadowSmoke(delta);
         }
 
         ExecuteDumpTick(delta);

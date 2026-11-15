@@ -14,6 +14,11 @@ public partial class ModelInstance : Node3D
     internal bool Built;
     internal ModelLibrary.Entry? Resolved;
     internal bool DoodadsAttached;
+    /// <summary>
+    /// What this instance is for shadow casting; <see cref="ShadowCasterCategory.None"/> for
+    /// creatures, GameObjects and skyboxes.
+    /// </summary>
+    internal ShadowCasterCategory ShadowCategory;
     public Aabb Bounds { get; internal set; }
     public ushort[] AvailableAnimations { get; internal set; } = [];
     public bool ModelReady => Built;

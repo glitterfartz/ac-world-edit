@@ -115,6 +115,35 @@ Findings:
 5. **Limits of this run.** One cold-cache run, 90 frames per configuration, a fixed pitch, one time of
    day. The skybox row measured nothing (no sky model was loaded at these poses).
 
+## Dynamic sun shadows
+
+The custom cascade pass (see [rendering.md](../architecture/rendering.md#lighting-and-shadows))
+adds `shadow:<quality>` rows (receiver only; the camera is still, so the maps are already rendered)
+and `shadow:<quality>(caster)` rows that force a map redraw every frame. The second is the
+moving-camera cost; the first is what a settled frame pays. Measured with the retail client on Godot
+4.7.2 / Vulkan / RTX 5080, windowed, cold shader cache, same five poses and 90 measured frames:
+
+| Pose | Off | Low (caster) | Medium (caster) | High (caster) |
+|---|---|---|---|---|
+| Trade District | 5.96 | 7.28 (+1.32) | 8.62 (+2.66) | 9.31 (+3.35) |
+| Cathedral Square | 4.48 | 5.53 (+1.05) | 6.78 (+2.30) | 7.61 (+3.13) |
+| Keep | 7.07 | 7.85 (+0.78) | 9.03 (+1.96) | 9.73 (+2.66) |
+| Main gate | 8.27 | 9.86 (+1.59) | 10.65 (+2.38) | 11.92 (+3.65) |
+| Overview | 5.41 | 6.53 (+1.12) | 7.57 (+2.16) | 8.31 (+2.90) |
+
+The still rows stay within noise (the largest difference is 0.55 ms at the Keep's Medium row), so the
+per-fragment receiver is effectively free. Per-cascade caster CPU is 0.3-0.6 ms and GPU 0.1-1.0 ms;
+the frame delta above is mostly the four viewports' culling and submission. The first version set
+`SubViewport.Size` and rebound the map global on every redraw and cost about 25 ms per forced frame;
+guarding those assignments (the size changes only on a quality change, the `ViewportTexture` binding
+once per viewport) brought it down to the numbers above.
+
+**Shipped default: Low.** It adds 0.8-1.6 ms while moving, about 9-14 % of the recorded 8.5-13 ms
+retail frame, and its single 1024 map over 100 yards is enough for nearby buildings. Medium adds about
+2-2.7 ms (18-27 %) and High about 2.7-3.7 ms (24-37 %), so both stay menu choices; Off is the other
+extreme. The throughput lever, if a future default wants more coverage without more redraws, is to
+redraw one cascade per frame in round-robin while moving.
+
 ## Open items
 
 - **Re-baseline `--perf-smoke` on Forward+.** The streaming tables in the history page were measured on
@@ -130,8 +159,10 @@ Findings:
   (400) or the four splits; stop WMO shells casting shadows beyond the nearest cascade; cull per
   building part, since a whole WMO (shell plus every embedded doodad) is drawn whenever any part is
   visible. Each changes pixels and needs the user's decision.
-- **Shadow cost.** Measure with shadows off for small doodads and far terrain; any change alters pixels
-  and needs the user's decision.
+- **Sun-shadow tuning.** The custom pass costs what the table above shows. Open levers: redraw one
+  cascade per frame while moving, tighten the caster distance per cascade, and measure `shadow:Low`
+  and `shadow:Medium` in an ordinary flight rather than the forced-single-view loop. Each changes
+  pixels or smoothness and needs the user's decision.
 - **Spawn table indexes.** `creature` (map index only) and `gameobject` (no map index) are scanned for
   every region query (150 ms of about 200 ms). The app cannot add indexes; the SQL is below for the
   operator to run.

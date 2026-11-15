@@ -135,7 +135,7 @@ public class WmoLightTests
         // model call site (world position is only in scope there, like fog's inv_view);
         // the wrath path (no MNLD data) and the fog volumes do not.
         Assert.Equal(2, Count(inc, "client_point_light("));
-        Assert.Contains("client_point_light(client_world_pos(VERTEX, INV_VIEW_MATRIX)", Shader("model/model.gdshader"));
+        Assert.Contains("client_point_light(world_pos, world_normal)", Shader("model/model.gdshader"));
         Assert.DoesNotContain("client_point_light", Shader("terrain/terrainlow.gdshader").Replace("client_surface_light", ""));
     }
 

@@ -125,7 +125,9 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
             var items = ownership.Items(batch);
             if (items.Length > 0)
             {
-                batches[key] = (library.Attach(root, key.Item2, items.Select(ModelLibrary.Placement).ToArray()), items);
+                // A WMO placement casts as a building shell; anything else is an ADT doodad.
+                var category = AssetRef.IsWmo(key.Item2.Path) ? ShadowCasterCategory.WmoShell : ShadowCasterCategory.AdtDoodad;
+                batches[key] = (library.Attach(root, key.Item2, items.Select(ModelLibrary.Placement).ToArray(), category), items);
             }
         }
     }
