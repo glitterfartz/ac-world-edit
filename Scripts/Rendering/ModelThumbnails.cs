@@ -96,7 +96,7 @@ public sealed partial class ModelThumbnails : Node, IThumbnailSource
     public Texture2D? GameObject(uint displayId, Action<Texture2D> ready)
     {
         // World models (buildings, transports) are slow to decode and frame badly at this size.
-        var key = KeyOf(objectKeys, displayId, () => Models()?.GameObjects?.Resolve(displayId) is { } path && !path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase) ? new ModelKey(path) : null);
+        var key = KeyOf(objectKeys, displayId, () => Models()?.GameObjects?.Resolve(displayId) is { } path && !path.EndsWith(".wmo", StringComparison.OrdinalIgnoreCase) ? new ModelKey(path, ShadowDetail: true) : null);
         return key == null ? null : Request(key, ready);
     }
 

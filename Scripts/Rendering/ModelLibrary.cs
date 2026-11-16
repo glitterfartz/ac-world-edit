@@ -7,11 +7,11 @@ namespace ACWorldEdit;
 /// requested animation ID. Equal keys reuse decoded and GPU resources. Skybox variants get
 /// unlit, fog-free, first-drawn materials and unculled, shadowless instances (see SkyLighting).
 /// </summary>
-public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "")
+public sealed record ModelKey(string Path, string Texture1 = "", string Texture2 = "", string Texture3 = "", string Baked = "", ushort DoodadSet = 0, ushort Animation = 0, bool Skybox = false, string Hair = "", string Fur = "", int HairGeoset = 1, string Eyes = "", GeosetVariants? Geosets = null, string Extra = "", bool ShadowDetail = false)
 {
 	/// <summary>The variant a creature display resolves to, playing <paramref name="animation"/>.</summary>
 	public static ModelKey ForCreature(CreatureAppearance appearance, ushort animation = 0) =>
-		new(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: animation, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "");
+		new(appearance.Path, appearance.Textures[0], appearance.Textures[1], appearance.Textures[2], appearance.BakedTexture ?? "", Animation: animation, Hair: appearance.HairTexture ?? "", Fur: appearance.FurTexture ?? "", HairGeoset: appearance.HairGeoset, Eyes: appearance.EyeTexture ?? "", Geosets: appearance.Geosets, Extra: appearance.ExtraTexture ?? "", ShadowDetail: true);
 }
 
 /// <summary>
@@ -57,6 +57,25 @@ public sealed class ModelLibrary
 		/// </summary>
 		public bool AnyOpaque = true;
 		public bool AllOpaque = true;
+		/// <summary>
+		/// Whether this variant is split into caster-material buckets: creatures and M2 GameObjects.
+		/// Static scenery keeps the old single-chain grouping.
+		/// </summary>
+		public bool Detailed;
+		/// <summary>Parallel to <see cref="Upload"/>: the surface uploads and the caster pass can draw it.</summary>
+		public bool[] UploadCasts = [];
+		/// <summary>Whether any upload surface can cast; feeds <see cref="ShadowCasterPolicy.Allows"/>.</summary>
+		public bool AnyCasting;
+		/// <summary>Whether the entry has a multi-frame skinned palette and should refresh animated.</summary>
+		public bool Animated;
+		/// <summary>Parallel to <see cref="Meshes"/>: the caster material and registration each mesh uses.</summary>
+		public readonly List<ShadowCasterScene.ShadowCasterMaterial> CasterMaterials = [];
+		/// <summary>Caster-only materials owned by this entry; disposed before the shared textures.</summary>
+		internal readonly List<ShaderMaterial> CasterOwnedMaterials = [];
+		internal readonly Dictionary<ShadowCasterScene.CasterBucketKey, (ArrayMesh Mesh, int Index)> BucketSlots = [];
+		internal readonly Dictionary<ShadowCasterScene.CasterBucketKey, ShadowCasterScene.ShadowCasterMaterial> BucketMaterials = [];
+		internal ArrayMesh? ResidualMesh;
+		internal int ResidualIndex;
 		/// <summary>
 		/// While decoding, the CPU data waiting for upload. Once published, the retained CPU data
 		/// plus an estimate of the entry's own GPU memory (shared textures are not counted).
@@ -135,6 +154,7 @@ public sealed class ModelLibrary
 	// Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
 	readonly Dictionary<ModelKey, int> liveKeys = [];
 	readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model/model.gdshader");
+	readonly Shader casterShader = ClientShaderGlobals.Load("res://Shaders/shadow/shadow_caster.gdshader");
 	readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
 	readonly ImageTexture fallback;
 	IClientFiles? store;
@@ -186,8 +206,9 @@ public sealed class ModelLibrary
 	public ModelReport? ReportFor(ModelKey key) => cache.TryGetValue(key, out var e) ? e.Report ?? ModelReport.From(e.Data) : null;
 	public bool HasFailed(ModelKey key) => failed.Contains(key);
 	/// <summary>
-	/// The shadow caster registry, assigned by the shell. When set, every built scenery instance
-	/// registers its geometry nodes and embedded doodads; creatures, GameObjects and skyboxes never do.
+	/// The shadow caster registry, assigned by the shell. When set, every built instance registers its
+	/// casting geometry nodes — static scenery by its category, and creatures / M2 GameObjects through
+	/// their per-bucket caster materials. Skyboxes never register.
 	/// </summary>
 	public ShadowCasterScene? Shadows { get; set; }
 	public int ReadyModels => cache.Count;
@@ -438,9 +459,13 @@ public sealed class ModelLibrary
 		var max = entry.Bounds.Max;
 		node.Bounds = new(new(min.X, min.Y, min.Z), new(max.X - min.X, max.Y - min.Y, max.Z - min.Z));
 		node.AvailableAnimations = entry.Data.AnimationIds ?? [];
-		bool casts = Shadows != null && ShadowCasterPolicy.Allows(node.ShadowCategory, entry.AnyOpaque, entry.AllOpaque);
-		foreach (var mesh in entry.Meshes)
+		bool casts = Shadows != null && ShadowCasterPolicy.Allows(node.ShadowCategory, entry.AnyOpaque, entry.AllOpaque, entry.AnyCasting);
+		bool registered = false;
+		for (int m = 0; m < entry.Meshes.Count; m++)
 		{
+			var mesh = entry.Meshes[m];
+			// Detailed entries carry one mesh per caster-material bucket; static entries use the shared material.
+			var caster = entry.Detailed && m < entry.CasterMaterials.Count ? entry.CasterMaterials[m] : default;
 			GeometryInstance3D geometry;
 			if (node.Transforms != null)
 			{
@@ -472,10 +497,16 @@ public sealed class ModelLibrary
 			}
 
 			node.AddChild(geometry);
-			if (casts)
+			if (casts && !caster.Suppressed)
 			{
-				Shadows!.Register(geometry, node.ShadowCategory);
+				Shadows!.Register(geometry, node.ShadowCategory, caster, entry.Animated);
+				registered = true;
 			}
+		}
+
+		if (registered)
+		{
+			node.Shadows = Shadows;
 		}
 
 		AttachDoodads(node, entry);
@@ -562,6 +593,101 @@ public sealed class ModelLibrary
 			"    vec3 sky_eye = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;\n    POSITION = PROJECTION_MATRIX * vec4(normalize(sky_eye) * " + distance + ", 1.0);");
 	}
 
+	/// <summary>The destination mesh index for a non-detailed entry: the same 64-surface chain as before.</summary>
+	int TailSlot(Entry e)
+	{
+		if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
+		{
+			e.Meshes.Add(new ArrayMesh());
+			e.CasterMaterials.Add(default);
+		}
+
+		return e.Meshes.Count - 1;
+	}
+
+	/// <summary>The destination mesh index for one caster-material bucket, adding a new mesh when full.</summary>
+	int CastingSlot(Entry e, ShadowCasterScene.CasterBucketKey key)
+	{
+		if (!e.BucketSlots.TryGetValue(key, out var slot) || slot.Mesh.GetSurfaceCount() >= 64)
+		{
+			var mesh = new ArrayMesh();
+			e.Meshes.Add(mesh);
+			e.CasterMaterials.Add(e.BucketMaterials.GetValueOrDefault(key));
+			slot = (mesh, e.Meshes.Count - 1);
+			e.BucketSlots[key] = slot;
+		}
+
+		return slot.Index;
+	}
+
+	/// <summary>The residual mesh holds detailed surfaces that must not cast; it never registers.</summary>
+	int ResidualSlot(Entry e)
+	{
+		if (e.ResidualMesh == null || e.ResidualMesh.GetSurfaceCount() >= 64)
+		{
+			e.ResidualMesh = new ArrayMesh();
+			e.Meshes.Add(e.ResidualMesh);
+			e.ResidualIndex = e.Meshes.Count - 1;
+			e.CasterMaterials.Add(ShadowCasterScene.ShadowCasterMaterial.NotCasting);
+		}
+
+		return e.ResidualIndex;
+	}
+
+	/// <summary>The caster bucket a castable detailed surface belongs to.</summary>
+	static ShadowCasterScene.CasterBucketKey BucketFor(ModelSurface surface, Vector3 row0, Vector3 row1)
+	{
+		bool skinned = surface.Bones != null;
+		if (surface.Blend == 1)
+		{
+			return new(ShadowCasterScene.CasterBucketKind.AlphaTest, skinned, surface.Texture, row0, row1);
+		}
+
+		return skinned
+			? new(ShadowCasterScene.CasterBucketKind.OpaqueSkinned, true, "", default, default)
+			: new(ShadowCasterScene.CasterBucketKind.OpaqueShared, false, "", default, default);
+	}
+
+	/// <summary>
+	/// The caster material for one bucket, shared across every mesh of that bucket in the entry.
+	/// Opaque unskinned surfaces use the shared material; skinned and alpha-tested ones need their
+	/// own palette (and the alpha test also the albedo and static UV rows).
+	/// </summary>
+	ShadowCasterScene.ShadowCasterMaterial CasterMaterialFor(Entry e, ShadowCasterScene.CasterBucketKey key, ImageTexture texture, Vector3 row0, Vector3 row1, bool animationHold)
+	{
+		if (key.Kind == ShadowCasterScene.CasterBucketKind.OpaqueShared)
+		{
+			return default;
+		}
+
+		if (e.BucketMaterials.TryGetValue(key, out var known))
+		{
+			return known;
+		}
+
+		var material = new ShaderMaterial
+		{
+			Shader = casterShader
+		};
+		material.SetShaderParameter("skinned", key.Skinned);
+		material.SetShaderParameter("animation_palette", e.AnimationTexture!);
+		material.SetShaderParameter("animation_frames", e.Palette.Height);
+		material.SetShaderParameter("animation_duration", e.Palette.Duration);
+		material.SetShaderParameter("animation_hold", animationHold);
+		if (key.Kind == ShadowCasterScene.CasterBucketKind.AlphaTest)
+		{
+			material.SetShaderParameter("albedo_tex", texture);
+			material.SetShaderParameter("blend_mode", 1);
+			material.SetShaderParameter("uv_row0", row0);
+			material.SetShaderParameter("uv_row1", row1);
+		}
+
+		e.CasterOwnedMaterials.Add(material);
+		var caster = new ShadowCasterScene.ShadowCasterMaterial(material);
+		e.BucketMaterials[key] = caster;
+		return caster;
+	}
+
 	/// <summary>
 	/// Upload a batch including optional GPU skin channels. Respect blend/culling metadata; skip
 	/// liquid-atlas mipmaps to prevent cross-frame bleeding.
@@ -593,12 +719,19 @@ public sealed class ModelLibrary
 			flags |= (Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RFloat << (int)Mesh.ArrayFormat.FormatCustom2Shift);
 		}
 
-		if (e.Meshes.Count == 0 || e.Meshes[^1].GetSurfaceCount() >= 64)
-		{
-			e.Meshes.Add(new ArrayMesh());
-		}
+		var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
+		var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
 
-		var mesh = e.Meshes[^1];
+		// Detailed entries (creatures and M2 GameObjects) split surfaces by the caster material they
+		// need, because a MultiMesh cannot take per-surface material overrides. Non-casting surfaces
+		// land in a residual mesh that never registers. Static entries keep the old single chain.
+		ShadowCasterScene.CasterBucketKey? bucket = e.Detailed && index < e.UploadCasts.Length && e.UploadCasts[index]
+			? BucketFor(surface, row0, row1)
+			: null;
+		int slot = !e.Detailed
+			? TailSlot(e)
+			: bucket is { } castingBucket ? CastingSlot(e, castingBucket) : ResidualSlot(e);
+		var mesh = e.Meshes[slot];
 		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
 		var shaderKey = (surface.Blend, surface.TwoSided, surface.Unlit, skybox);
 		if (!shaders.TryGetValue(shaderKey, out var shader))
@@ -672,9 +805,14 @@ public sealed class ModelLibrary
 		// its reference, whether or not it builds the material.
 		ImageTexture[] layerTextures = surface.Layers == null ? [] : [.. surface.Layers.Textures.Select(TextureOf)];
 
+		if (e.Detailed && Shadows != null && bucket is { } castBucket)
+		{
+			// Created before the visible-material early return: the caster proxy needs its own
+			// material whether or not the visible batches share one.
+			e.CasterMaterials[slot] = CasterMaterialFor(e, castBucket, texture, row0, row1, animationHold);
+		}
+
 		var color = new Vector4(appearance.Color.X, appearance.Color.Y, appearance.Color.Z, appearance.Color.W);
-		var row0 = new Vector3(appearance.UvRow0.X, appearance.UvRow0.Y, appearance.UvRow0.Z);
-		var row1 = new Vector3(appearance.UvRow1.X, appearance.UvRow1.Y, appearance.UvRow1.Z);
 		MaterialKey? key = !skybox && surface.LiquidType == null && surface.Bones == null && appearance.Column < 0
 			? new(shader, surface.Texture.ToLowerInvariant(), surface.Blend, (int)surface.ColorMode, color, row0, row1, surface.Layers?.Signature ?? "")
 			: null;
@@ -762,6 +900,14 @@ public sealed class ModelLibrary
 	/// </summary>
 	void DisposeEntry(Entry e)
 	{
+		// Caster materials reference the animation palette and shared albedo textures, so release
+		// them before either.
+		foreach (var material in e.CasterOwnedMaterials)
+		{
+			material.Dispose();
+		}
+
+		e.CasterOwnedMaterials.Clear();
 		foreach (var key in e.MaterialKeys)
 		{
 			if (sharedMaterials.TryGetValue(key, out var shared) && --shared.References == 0)
@@ -1140,6 +1286,29 @@ public sealed class ModelLibrary
 		{
 			(entry.Upload, entry.UploadMaterials) = SurfaceMerge.Merge(data.Surfaces, materials.Surfaces);
 		}
+
+		// Castability and animation are decided before the upload consumes the merged surfaces, so
+		// the main thread only reads plain data it does not have to recompute.
+		entry.Detailed = key.ShadowDetail;
+		entry.UploadCasts = new bool[entry.Upload.Length];
+		for (int i = 0; i < entry.Upload.Length; i++)
+		{
+			var surface = entry.Upload[i];
+			bool present = surface.Indices.Length > 0 && !entry.UploadMaterials[i].Hidden
+				&& (surface.LiquidType == null || decoded.ContainsKey(surface.Texture));
+			if (present && ShadowCasterPolicy.IsCastingSurface(surface))
+			{
+				entry.UploadCasts[i] = true;
+				entry.AnyCasting = true;
+			}
+
+			if (entry.Detailed && present && ShadowCasterPolicy.IsSkinned(surface))
+			{
+				entry.Animated = true;
+			}
+		}
+
+		entry.Animated &= entry.Palette.Height > 1 && key.Animation != 1;
 
 		entry.DecodeMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
 		return entry;

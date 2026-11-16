@@ -387,7 +387,7 @@ internal sealed class CreatureModelView(Node3D owner)
             if (!batches.ContainsKey(group.Key))
             {
                 bool mount = group.Key.Extra == "mount";
-                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(markers[guid], mount ? mountScales.GetValueOrDefault(guid, DisplayScale(markers[guid].Spawn)) : DisplayScale(markers[guid].Spawn), mount ? Vector3.Zero : elevations.GetValueOrDefault(guid))).ToArray()), group.Value.ToArray());
+                batches[group.Key] = (library.Attach(owner, group.Key, group.Value.Select(guid => ModelTransform(markers[guid], mount ? mountScales.GetValueOrDefault(guid, DisplayScale(markers[guid].Spawn)) : DisplayScale(markers[guid].Spawn), mount ? Vector3.Zero : elevations.GetValueOrDefault(guid))).ToArray(), ShadowCasterCategory.Creature), group.Value.ToArray());
             }
         }
     }

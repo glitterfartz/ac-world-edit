@@ -4,7 +4,7 @@ using ACWorldEdit.Assets;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Owns the shadow-caster proxies and the one caster material. A proxy is a child of the geometry it
+/// Owns the shadow-caster proxies and their materials. A proxy is a child of the geometry it
 /// duplicates, so it inherits the source's transform and visibility; it shares the source's mesh (or
 /// MultiMesh) and is drawn only on the cascade camera whose cull mask includes its category layer.
 /// The main camera clears those layers, so a proxy never appears in the normal view.
@@ -16,7 +16,11 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class ShadowCasterScene
 {
-    /// <summary>User layers 17 to 20, one per caster category. 1 is layer 1.</summary>
+    /// <summary>
+    /// User layers 17 to 20: the four static scenery categories use one each, and
+    /// <see cref="ShadowCasterCategory.Creature"/> / <see cref="ShadowCasterCategory.GameObject"/>
+    /// share layers 19 and 20 because Godot exposes only 20 user layers. 1 is layer 1.
+    /// </summary>
     public const int TerrainLayer = 17;
     public const int WmoShellLayer = 18;
     public const int WmoDoodadLayer = 19;
@@ -28,15 +32,46 @@ public sealed class ShadowCasterScene
     /// <summary>Every layer except the four shadow-proxy layers.</summary>
     public const uint MainCameraMask = 0xFFFFFu & ~ShadowLayerMask;
 
-    sealed class Caster(GeometryInstance3D source, ShadowCasterCategory category)
+    /// <summary>The caster-material buckets a detailed (creature/GameObject) entry is split into.</summary>
+    public enum CasterBucketKind
+    {
+        /// <summary>Opaque and unskinned: the shared caster material draws it.</summary>
+        OpaqueShared,
+        /// <summary>Opaque and skinned: per-entry material with the animation palette.</summary>
+        OpaqueSkinned,
+        /// <summary>Alpha-blended: per-entry material with the albedo, static UV rows and an alpha test.</summary>
+        AlphaTest,
+    }
+
+    /// <summary>
+    /// Identity of one caster material within an entry. Texture and UV rows only matter for
+    /// alpha-tested surfaces; a MultiMesh cannot take per-surface overrides, so one material is
+    /// chosen per mesh bucket.
+    /// </summary>
+    public readonly record struct CasterBucketKey(CasterBucketKind Kind, bool Skinned, string Texture, Vector3 UvRow0, Vector3 UvRow1);
+
+    /// <summary>
+    /// The material a proxy uses. <c>default</c> means the shared opaque caster and casts;
+    /// <see cref="NotCasting"/> suppresses registration because the mesh cannot cast.
+    /// </summary>
+    public readonly record struct ShadowCasterMaterial(Material? Override, bool Suppressed = false)
+    {
+        public static ShadowCasterMaterial NotCasting { get; } = new(null, true);
+    }
+
+    sealed class Caster(GeometryInstance3D source, ShadowCasterCategory category, ShadowCasterMaterial material, bool animated)
     {
         public readonly GeometryInstance3D Source = source;
         public readonly ShadowCasterCategory Category = category;
+        public readonly ShadowCasterMaterial Material = material;
+        public readonly bool Animated = animated;
         public GeometryInstance3D? Proxy;
     }
 
     readonly Dictionary<GeometryInstance3D, Caster> casters = [];
-    readonly ShaderMaterial material;
+    /// <summary>The animated registrations, so the throttle scan stays bounded.</summary>
+    readonly List<Caster> animatedCasters = [];
+    readonly ShaderMaterial sharedMaterial;
     bool enabled;
 
     /// <summary>
@@ -50,7 +85,7 @@ public sealed class ShadowCasterScene
 
     public ShadowCasterScene()
     {
-        material = new ShaderMaterial
+        sharedMaterial = new ShaderMaterial
         {
             Shader = ClientShaderGlobals.Load("res://Shaders/shadow/shadow_caster.gdshader")
         };
@@ -63,6 +98,9 @@ public sealed class ShadowCasterScene
         ShadowCasterCategory.WmoShell => 1u << (WmoShellLayer - 1),
         ShadowCasterCategory.WmoDoodad => 1u << (WmoDoodadLayer - 1),
         ShadowCasterCategory.AdtDoodad => 1u << (AdtDoodadLayer - 1),
+        // Shared with the doodads so the layer budget stays within Godot's 20 user layers.
+        ShadowCasterCategory.Creature => 1u << (WmoDoodadLayer - 1),
+        ShadowCasterCategory.GameObject => 1u << (AdtDoodadLayer - 1),
         _ => 0u,
     };
 
@@ -70,15 +108,20 @@ public sealed class ShadowCasterScene
     /// Remember a geometry node as a caster and, when the pass is on, create its proxy now. The
     /// caller must call <see cref="Unregister"/> before disposing the source's mesh.
     /// </summary>
-    public void Register(GeometryInstance3D source, ShadowCasterCategory category)
+    public void Register(GeometryInstance3D source, ShadowCasterCategory category, ShadowCasterMaterial material = default, bool animated = false)
     {
         if (category == ShadowCasterCategory.None || !GodotObject.IsInstanceValid(source) || casters.ContainsKey(source))
         {
             return;
         }
 
-        var caster = new Caster(source, category);
+        var caster = new Caster(source, category, material, animated);
         casters[source] = caster;
+        if (animated)
+        {
+            animatedCasters.Add(caster);
+        }
+
         // The signal fires while the source is still valid, so the proxy can be freed before the
         // source's mesh (owned by the model cache or TerrainRenderer) is disposed.
         source.TreeExiting += () => Unregister(source);
@@ -101,6 +144,7 @@ public sealed class ShadowCasterScene
             return;
         }
 
+        animatedCasters.Remove(caster);
         FreeProxy(caster);
         Version++;
     }
@@ -125,6 +169,7 @@ public sealed class ShadowCasterScene
         }
 
         casters.Clear();
+        animatedCasters.Clear();
         Version++;
     }
 
@@ -155,6 +200,22 @@ public sealed class ShadowCasterScene
         Version++;
     }
 
+    /// <summary>Proxies currently drawn for one category (diagnostics and the perf breakdown).</summary>
+    public int CategoryProxyCount(ShadowCasterCategory category) =>
+        casters.Values.Count(c => c.Category == category && c.Proxy != null);
+
+    /// <summary>Show or hide one category's proxies without unregistering them (diagnostics).</summary>
+    public void SetCategoryProxiesVisible(ShadowCasterCategory category, bool visible)
+    {
+        foreach (var caster in casters.Values)
+        {
+            if (caster.Category == category && caster.Proxy != null)
+            {
+                caster.Proxy.Visible = visible;
+            }
+        }
+    }
+
     void CreateProxy(Caster caster)
     {
         if (caster.Proxy != null || !GodotObject.IsInstanceValid(caster.Source))
@@ -174,7 +235,9 @@ public sealed class ShadowCasterScene
         }
 
         proxy.Name = "ShadowProxy";
-        proxy.MaterialOverride = material;
+        // A MultiMesh cannot take per-surface overrides, so the whole mesh uses one bucket material.
+        // Never combine this override with surface overrides on the same proxy.
+        proxy.MaterialOverride = caster.Material.Override ?? sharedMaterial;
         proxy.Layers = LayerFor(caster.Category);
         proxy.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
         // Diagnostics and the perf breakdown skip proxies by this marker.

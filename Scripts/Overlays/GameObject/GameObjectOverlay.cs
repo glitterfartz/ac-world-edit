@@ -218,7 +218,7 @@ public partial class GameObjectOverlay : RegionOverlay
                 continue;
             }
 
-            var key = new ModelKey(path, Animation: StateAnimation(spawn));
+            var key = new ModelKey(path, Animation: StateAnimation(spawn), ShadowDetail: !AssetRef.IsWmo(path));
             if (!groups.TryGetValue(key, out var guids))
             {
                 groups[key] = guids = [];
@@ -250,7 +250,9 @@ public partial class GameObjectOverlay : RegionOverlay
         {
             if (!batches.ContainsKey(pair.Key))
             {
-                batches[pair.Key] = (Models.Attach(this, pair.Key, pair.Value.Select(guid => ModelTransform(Effective(lookup[guid]))).ToArray()), pair.Value.ToArray());
+                // A WMO GameObject casts as a building shell; an M2 casts through the detail buckets.
+                var category = AssetRef.IsWmo(pair.Key.Path) ? ShadowCasterCategory.WmoShell : ShadowCasterCategory.GameObject;
+                batches[pair.Key] = (Models.Attach(this, pair.Key, pair.Value.Select(guid => ModelTransform(Effective(lookup[guid]))).ToArray(), category), pair.Value.ToArray());
             }
 
             if (!batches[pair.Key].Node.ModelReady)
