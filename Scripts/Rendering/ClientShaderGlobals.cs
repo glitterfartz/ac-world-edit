@@ -111,6 +111,8 @@ public static class ClientShaderGlobals
     /// <summary>Yards added to the receiver depth before comparison, and the normal offset scale.</summary>
     public const string ShadowBias = "client_shadow_bias";
     public const string ShadowNormalOffset = "client_shadow_normal_offset";
+    /// <summary>Scale of the slope term texel_world * tan(acos(N.L)); 1 is the standard bias.</summary>
+    public const string ShadowSlopeBias = "client_shadow_slope_bias";
     /// <summary>Depth comparisons the receiver averages: 1, 5 or 9.</summary>
     public const string ShadowTaps = "client_shadow_taps";
     public const int MaxShadowCascades = 4;

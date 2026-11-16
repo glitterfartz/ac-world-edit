@@ -172,6 +172,11 @@ the retail `shadowmask` math **per fragment**, same frame: pick the first cascad
 view depth, project with the UV rows, unpack the 24-bit depth, average 1, 5 or 9 taps (nearest), fade
 the outer 5 % of each map to lit, blend the next cascade over the last 5 % of a split, and scale by
 `client_shadow_strength`. GLSL cannot index an array of samplers, so the four maps are four branches.
+The depth comparison adds a fixed bias, a normal-offset term and a slope-scaled term (the cascade's
+texel world size times `tan(acos(N.L))`, scaled by `client_shadow_slope_bias`). The slope term is what
+keeps a grazing sun from terracing sloped ground with self-shadow contour bands: at a low sun one
+texel spans many yards of depth across a slope, and a constant bias is far too small for it (this was
+visible at 07:51 in Azshara on Low, whose single map has one tap and no filter).
 The result attenuates the **sun's diffuse and specular only**; ambient, hemisphere, the WMO point
 lights, glow and fog are unchanged, the baked 30 % term is separate, and liquids never call it.
 

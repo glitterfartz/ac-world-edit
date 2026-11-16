@@ -251,6 +251,20 @@ public static class ShadowCascades
     }
 
     /// <summary>
+    /// Receiver depth bias for one fragment: a fixed term, the slope-scaled term
+    /// (<paramref name="texelWorldSize"/> * tan(acos(N.L)) * <paramref name="slopeScale"/>) and a
+    /// normal-offset term for surfaces turned away from the sun. At a grazing sun one texel spans
+    /// many yards of depth on sloped ground, which is what makes self-shadow contour bands; the
+    /// slope term scales with that span. The receiver shader mirrors this formula.
+    /// </summary>
+    public static float DepthBias(float nDotL, float texelWorldSize, float fixedBias, float normalOffset, float slopeScale)
+    {
+        float facing = Math.Clamp(nDotL, 0f, 1f);
+        float slope = MathF.Sqrt(MathF.Max(1f - facing * facing, 0f)) / MathF.Max(facing, 0.05f);
+        return fixedBias + slopeScale * texelWorldSize * MathF.Min(slope, 8f) + normalOffset * (1f - facing);
+    }
+
+    /// <summary>
     /// The retail edge fade: the smallest distance to any faded UV edge, times 10, clamped to 1. A
     /// fragment in the middle of the map stays lit; one outside the square is fully lit (no shadow)
     /// rather than shadowed by a cascade that does not cover it.

@@ -181,6 +181,10 @@ client_shadow_normal_offset={
 "type": "float",
 "value": 0.5
 }
+client_shadow_slope_bias={
+"type": "float",
+"value": 1.0
+}
 client_shadow_taps={
 "type": "float",
 "value": 1.0

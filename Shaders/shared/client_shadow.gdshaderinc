@@ -19,6 +19,9 @@ global uniform float client_shadow_strength;
 global uniform vec4 client_shadow_depth_range;
 global uniform float client_shadow_bias;
 global uniform float client_shadow_normal_offset;
+// Scale for the slope-scaled depth bias: texel world size * tan(acos(N.L)) * this. One is the
+// standard term; 0 disables it (acne on grazing slopes returns).
+global uniform float client_shadow_slope_bias;
 // Depth comparisons per fragment: 1, 5 or 9 (ShadowQualityPresets.PcfTaps).
 global uniform float client_shadow_taps;
 
@@ -93,9 +96,15 @@ float client_shadow_cascade(int cascade, vec3 world_pos, vec3 world_normal, floa
         return 1.0;
     }
     // Push the receiver toward the sun by the bias: the caster offset the normal, and a surface
-    // facing away from the sun needs more. Idle shadow-edge crawling is avoided by snapping in C#.
+    // facing away from the sun needs more. The slope term is tan(acos(N.L)) in texel units: at a
+    // grazing sun one shadow texel spans many yards of depth on sloped ground, which otherwise
+    // shows as contour bands of self-shadow (worst on Low, which has one tap and no filter).
     float facing = clamp(dot(world_normal, -client_sun_dir), 0.0, 1.0);
-    float receiver = dot(world_pos, client_sun_dir) - client_shadow_bias - client_shadow_normal_offset * (1.0 - facing);
+    float slope = sqrt(max(1.0 - facing * facing, 0.0)) / max(facing, 0.05);
+    float texel_world = max(split_texel.y, 0.001);
+    float bias = client_shadow_bias + client_shadow_slope_bias * texel_world * min(slope, 8.0)
+        + client_shadow_normal_offset * (1.0 - facing);
+    float receiver = dot(world_pos, client_sun_dir) - bias;
     float texel_uv = 1.0 / max(split_texel.z, 1.0);
     return mix(1.0, client_shadow_filter(cascade, uv, receiver, texel_uv), edge);
 }

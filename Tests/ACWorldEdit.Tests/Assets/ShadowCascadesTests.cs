@@ -196,4 +196,17 @@ public class ShadowCascadesTests
         Assert.Equal(0f, ShadowCascades.EdgeFade(new Vector2(1.2f, 0.5f), bounds));
         Assert.Equal(0.5f, ShadowCascades.EdgeFade(new Vector2(0.1f, 0.5f), bounds), 3);
     }
+
+    [Fact]
+    public void TheSlopeBiasGrowsAsTheSunGrazesASlope()
+    {
+        // Facing the sun: only the fixed term.
+        Assert.Equal(0.05f, ShadowCascades.DepthBias(1f, 0.8f, 0.05f, 0.5f, 1f), 3);
+        // Grazing: tan(acos(0.2)) * texel plus the normal-offset term.
+        Assert.Equal(4.369f, ShadowCascades.DepthBias(0.2f, 0.8f, 0.05f, 0.5f, 1f), 2);
+        // The scale can turn the term off for tight contacts.
+        Assert.Equal(0.45f, ShadowCascades.DepthBias(0.2f, 0.8f, 0.05f, 0.5f, 0f), 3);
+        // The slope is capped so a nearly back-facing surface cannot ask for an unbounded bias.
+        Assert.Equal(6.925f, ShadowCascades.DepthBias(0.05f, 0.8f, 0.05f, 0.5f, 1f), 2);
+    }
 }

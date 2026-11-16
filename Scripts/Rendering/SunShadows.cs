@@ -23,6 +23,12 @@ public sealed partial class SunShadows : Node3D
     /// <summary>Receiver depth bias in yards, and the normal-offset distance in yards.</summary>
     const float ReceiverBias = 0.05f, NormalOffset = 0.5f;
 
+    /// <summary>
+    /// Scale of the slope-scaled receiver bias (texel world size * tan(acos(N.L))). 1 is the standard
+    /// term; raise it for more acne protection at grazing sun, lower it to keep contacts tight.
+    /// </summary>
+    const float SlopeBiasScale = 1f;
+
     /// <summary>Sun directions closer than this (about 0.05 degrees) do not need a redraw.</summary>
     const float SunAngleCosine = 0.9999996f;
 
@@ -276,6 +282,7 @@ public sealed partial class SunShadows : Node3D
         ClientShaderGlobals.Set(ClientShaderGlobals.ShadowTaps, (float)preset.PcfTaps);
         ClientShaderGlobals.Set(ClientShaderGlobals.ShadowBias, ReceiverBias);
         ClientShaderGlobals.Set(ClientShaderGlobals.ShadowNormalOffset, NormalOffset);
+        ClientShaderGlobals.Set(ClientShaderGlobals.ShadowSlopeBias, SlopeBiasScale);
         Publish(allocated);
         PublishStrength(sky.SunShadowStrength);
 
