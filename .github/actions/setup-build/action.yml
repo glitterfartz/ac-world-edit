@@ -22,13 +22,13 @@ runs:
     # Tools/setup.py stamps its output with the submodule commit and CMake options, so a restored
     # native/win-x64 makes the setup step below skip the CMake build.
     - name: Cache native libraries
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: native/win-x64
         key: native-${{ runner.os }}-${{ steps.pins.outputs.casclib }}-${{ hashFiles('Tools/setup.py') }}
 
     - name: Cache NuGet packages
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.nuget/packages
         key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json') }}
