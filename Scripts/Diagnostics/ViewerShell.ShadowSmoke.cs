@@ -5,8 +5,10 @@ namespace ACWorldEdit;
 
 /// <summary>
 /// Opt-in checks for the dynamic sun shadows: <c>--shadow-caster-smoke</c> dumps the cascade maps
-/// without enabling the receiver, and <c>--shadow-smoke</c> compares off/low/medium/high frames at a
-/// fixed pose. Both need a window (the headless renderer produces no viewport textures).
+/// without enabling the receiver, <c>--shadow-smoke</c> compares off/low/medium/high frames at a
+/// fixed pose, and <c>--shadow-creature-smoke</c> proves creature/GameObject detail casters write
+/// depth and refresh animation at the bounded rate. All need a window (the headless renderer
+/// produces no viewport textures); the creature smoke also needs the world database.
 /// </summary>
 public partial class ViewerShell
 {
@@ -16,15 +18,23 @@ public partial class ViewerShell
     bool shadowSmoke;
     int shadowSmokeStage, shadowSmokeFrames;
     double shadowSmokeTime;
+    bool shadowCreatureSmoke;
+    int shadowCreatureStage, shadowCreatureFrames;
+    double shadowCreatureTime, shadowAnimatedSince;
+    int shadowAnimatedBaseline;
+    int shadowCreatureVisibleDepth, shadowCreatureHiddenDepth, shadowCreatureChanged;
+    Image?[] shadowCreatureVisibleImages = [];
+    bool shadowCreatureDatabaseChecked;
     readonly Dictionary<ShadowQuality, double> shadowLuminance = [];
     double shadowNightOff, shadowNightHigh;
 
-    /// <summary>Read the caster-smoke flag after the quality flags, so an Off default still renders maps.</summary>
+    /// <summary>Read the caster-smoke flags after the quality flags, so an Off default still renders maps.</summary>
     void ConfigureShadowSmoke(HashSet<string> flags)
     {
         shadowCasterSmoke = flags.Contains("--shadow-caster-smoke");
         shadowSmoke = flags.Contains("--shadow-smoke");
-        if (shadowCasterSmoke)
+        shadowCreatureSmoke = flags.Contains("--shadow-creature-smoke");
+        if (shadowCasterSmoke || shadowCreatureSmoke)
         {
             // Exercise every cascade and the per-cascade caster masks, whatever the saved default is.
             SetShadowQuality(ShadowQuality.High, save: false, report: false);
@@ -345,5 +355,247 @@ public partial class ViewerShell
         }
 
         return count == 0 ? 0 : sum / count;
+    }
+
+    /// <summary>
+    /// <c>--shadow-creature-smoke</c>: open Goldshire with the creature and GameObject layers, force
+    /// a High render, then hide the detail models and prove their proxies wrote depth by comparing
+    /// the cascade maps. Finally hold the camera and sun still and check the animated refresh runs,
+    /// but only at the preset's bounded rate.
+    /// </summary>
+    void ShadowCreatureSmoke(double delta)
+    {
+        shadowCreatureTime += delta;
+        if (shadowCreatureTime > 180)
+        {
+            SmokeFail($"SHADOW_CREATURE_SMOKE_TIMEOUT stage={shadowCreatureStage} {message}");
+            return;
+        }
+
+        if (DisplayServer.GetName() == "headless" || busy || world == null)
+        {
+            return;
+        }
+
+        if (shadowCreatureStage == 0)
+        {
+            // The poses below are Eastern Kingdoms coordinates; open that map first if another is showing.
+            if (currentMapId != 0)
+            {
+                int azeroth = mapList.FindIndex(m => m.Directory == "Azeroth");
+                if (azeroth >= 0 && maps.Selected != azeroth)
+                {
+                    maps.Select(azeroth);
+                    tileX.Value = 31;
+                    tileY.Value = 49;
+                    _ = OpenMap();
+                }
+
+                return;
+            }
+
+            creatures.SetLayerEnabled(true);
+            gameObjects.SetLayerEnabled(true);
+            sky.SetTimeOfDay(9);
+            FocusPose(new(0, -9465.5, 74, 56.8, 0));
+            shadowCreatureStage = 1;
+            return;
+        }
+
+        if (shadowCreatureStage == 1)
+        {
+            if (!TerrainSettled || models.Busy || creatures.IsLoading || gameObjects.IsLoading)
+            {
+                return;
+            }
+
+            if (!shadowCreatureDatabaseChecked)
+            {
+                if (creatures.Records.Count == 0)
+                {
+                    SmokeFail($"SHADOW_CREATURE_SMOKE_NO_DATABASE status={creatures.QueryStatus}");
+                    return;
+                }
+
+                shadowCreatureDatabaseChecked = true;
+            }
+
+            // A redraw enables the caster pass and creates every registered proxy.
+            shadows.RenderNow(camera, sky);
+            if (creatures.ModelCreatureCount == 0 || casters.CategoryProxyCount(ShadowCasterCategory.Creature) == 0)
+            {
+                return;
+            }
+
+            GD.Print($"SHADOW_CREATURE_SMOKE_START proxies={casters.ProxyCount} " +
+                $"creature={casters.CategoryProxyCount(ShadowCasterCategory.Creature)} " +
+                $"gameObject={casters.CategoryProxyCount(ShadowCasterCategory.GameObject)} " +
+                $"animated={casters.AnimatedCasterCount} quality={ShadowQualityPresets.Name(shadowQuality)}");
+            shadowCreatureFrames = 0;
+            shadowCreatureStage = 2;
+            return;
+        }
+
+        if (shadowCreatureStage == 2)
+        {
+            // Let the SubViewports' Once update and the readback land after the forced render.
+            if (++shadowCreatureFrames < 5)
+            {
+                return;
+            }
+
+            shadowCreatureVisibleImages = CaptureShadowCreatureCascades("visible");
+            shadowCreatureVisibleDepth = TotalDepthPixels(shadowCreatureVisibleImages);
+            if (shadowCreatureVisibleDepth <= 0)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_EMPTY visible={shadowCreatureVisibleDepth}");
+                return;
+            }
+
+            SetShadowCreatureModelsVisible(false);
+            shadows.RenderNow(camera, sky);
+            shadowCreatureFrames = 0;
+            shadowCreatureStage = 3;
+            return;
+        }
+
+        if (shadowCreatureStage == 3)
+        {
+            if (++shadowCreatureFrames < 5)
+            {
+                return;
+            }
+
+            var hidden = CaptureShadowCreatureCascades("hidden");
+            shadowCreatureHiddenDepth = TotalDepthPixels(hidden);
+            shadowCreatureChanged = 0;
+            for (int cascade = 0; cascade < hidden.Length; cascade++)
+            {
+                shadowCreatureChanged += ChangedPixels(
+                    cascade < shadowCreatureVisibleImages.Length ? shadowCreatureVisibleImages[cascade] : null,
+                    hidden[cascade]);
+            }
+
+            SetShadowCreatureModelsVisible(true);
+            shadows.RenderNow(camera, sky);
+            if (shadowCreatureChanged == 0 || shadowCreatureVisibleDepth <= shadowCreatureHiddenDepth)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_NO_DELTA changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
+                return;
+            }
+
+            GD.Print($"SHADOW_CREATURE_SMOKE_DEPTH changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
+            shadowAnimatedBaseline = shadows.AnimatedRedraws;
+            shadowAnimatedSince = shadowCreatureTime;
+            shadowCreatureStage = 4;
+            return;
+        }
+
+        if (shadowCreatureStage == 4)
+        {
+            if (shadowCreatureTime - shadowAnimatedSince < 1.5)
+            {
+                return;
+            }
+
+            int redraws = shadows.AnimatedRedraws - shadowAnimatedBaseline;
+            int animated = casters.AnimatedCasterCount;
+            int hz = ShadowQualityPresets.For(shadowQuality).AnimatedRefreshHz;
+            int limit = (int)Math.Ceiling(hz * 1.5) + 3;
+            GD.Print($"SHADOW_CREATURE_SMOKE_ANIMATED redraws={redraws} animatedCasters={animated} hz={hz}");
+            if (animated == 0 || redraws <= 0 || redraws > limit)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_ANIMATED_FAILED redraws={redraws} animatedCasters={animated} hz={hz} limit={limit}");
+                return;
+            }
+
+            GD.Print($"SHADOW_CREATURE_SMOKE_PASSED proxies={casters.ProxyCount} depthChanged={shadowCreatureChanged}");
+            GetTree().Quit();
+        }
+    }
+
+    /// <summary>Save every cascade map for one visibility state and return the images for comparison.</summary>
+    Image?[] CaptureShadowCreatureCascades(string tag)
+    {
+        System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://artifacts"));
+        string quality = ShadowQualityPresets.Name(shadowQuality).ToLowerInvariant();
+        int count = shadows.CascadeCount;
+        var images = new Image?[count];
+        for (int cascade = 0; cascade < count; cascade++)
+        {
+            var image = shadows.CascadeImage(cascade);
+            if (image == null)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_IMAGE cascade={cascade}");
+                return images;
+            }
+
+            images[cascade] = image;
+            string suffix = tag == "visible" ? "" : "-" + tag;
+            image.SavePng(ProjectSettings.GlobalizePath($"res://artifacts/shadow-creature-{quality}-{cascade}{suffix}.png"));
+            GD.Print($"SHADOW_CREATURE cascade={cascade} tag={tag} depthPixels={CountDepthPixels(image)}");
+        }
+
+        return images;
+    }
+
+    static int CountDepthPixels(Image image)
+    {
+        var size = image.GetSize();
+        int depth = 0;
+        for (int y = 0; y < size.Y; y += 8)
+        {
+            for (int x = 0; x < size.X; x += 8)
+            {
+                var pixel = image.GetPixel(x, y);
+                if (pixel.R < 0.999f || pixel.G < 0.999f || pixel.B < 0.999f)
+                {
+                    depth++;
+                }
+            }
+        }
+
+        return depth;
+    }
+
+    static int TotalDepthPixels(Image?[] images) => images.Sum(image => image == null ? 0 : CountDepthPixels(image));
+
+    /// <summary>Pixels whose packed depth differs between the visible and hidden maps.</summary>
+    static int ChangedPixels(Image? before, Image? after)
+    {
+        if (before == null || after == null || before.GetSize() != after.GetSize())
+        {
+            return 0;
+        }
+
+        var size = before.GetSize();
+        int changed = 0;
+        for (int y = 0; y < size.Y; y += 2)
+        {
+            for (int x = 0; x < size.X; x += 2)
+            {
+                var a = before.GetPixel(x, y);
+                var b = after.GetPixel(x, y);
+                if (Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B) > 0.002f)
+                {
+                    changed++;
+                }
+            }
+        }
+
+        return changed;
+    }
+
+    void SetShadowCreatureModelsVisible(bool visible)
+    {
+        foreach (var model in creatures.GetChildren().OfType<ModelInstance>())
+        {
+            model.Visible = visible;
+        }
+
+        foreach (var model in gameObjects.GetChildren().OfType<ModelInstance>())
+        {
+            model.Visible = visible;
+        }
     }
 }

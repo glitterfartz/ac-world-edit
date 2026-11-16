@@ -302,6 +302,7 @@ Smoke workflows run inside the real app. They are opt-in CLI flags passed after 
 | `--shadow-quality=off\|low\|medium\|high` | One run's sun-shadow quality, overriding the saved `[video] shadow_quality` without saving it. View → Sun shadows saves the setting. |
 | `--shadow-caster-smoke` | Waits for the world to settle, forces a High render, reads every cascade map back and saves `artifacts/shadow-caster-high-<cascade>.png`; each map must be the quality's size and hold packed-depth pixels. Needs a window. |
 | `--shadow-smoke` | Fixed Trade District pose at hour 9. Captures `artifacts/shadow-smoke-{off,low,medium,high}.png`, asserts at least one quality darkens the lower two thirds (the sun only), then repeats off vs high at hour 23, which must not differ, and prints the `SHADOW_CASCADE` fits and `SHADOW_SMOKE_PASSED`. Needs a window. |
+| `--shadow-creature-smoke` | Goldshire pose at hour 9 with the creature and GameObject layers, forcing High. Saves `artifacts/shadow-creature-<quality>-<cascade>[-hidden].png`, asserts hiding the detail models changes the cascade depth, then holds the camera and sun still and asserts the animated refresh ran at about the preset's rate. Needs a window and the world database. |
 
 Side effects of any flag ending in `-smoke`: startup database and client prompts are skipped, drafts go to `res://artifacts/drafts/<guid>/` instead of `user://drafts/<profile>/`, and model thumbnails to `res://artifacts/thumbs/<guid>/` instead of `user://thumbs/<profile>/`. Success prints `*_PASSED` and quits; failure pushes an error and quits with code 1.
 
@@ -311,7 +312,7 @@ Side effects of any flag ending in `-smoke`: startup database and client prompts
 
 Client shader globals and their neutral preview defaults are declared in `project.godot` under `shader_globals`, so shaders compile in Godot's shader editor before the viewer runs. `ClientShaderGlobals.Ensure` allocates the runtime fog-volume texture; `SkyLighting` updates the globals from client data.
 
-Smoke workflows are opt-in flags passed after `--` to Godot (`--terrain-smoke`, `--creature-smoke`, `--client-smoke`, ...). `--client-shot` / `--client-shot-tile=X,Y` (windowed) saves `artifacts/client-shot.png` framed on the largest nearby building with the UI hidden; `--client-shot-water` frames the largest liquid. `--shadow-caster-smoke` and `--shadow-smoke` cover the custom cascade pass (see the flag table).
+Smoke workflows are opt-in flags passed after `--` to Godot (`--terrain-smoke`, `--creature-smoke`, `--client-smoke`, ...). `--client-shot` / `--client-shot-tile=X,Y` (windowed) saves `artifacts/client-shot.png` framed on the largest nearby building with the UI hidden; `--client-shot-water` frames the largest liquid. `--shadow-caster-smoke`, `--shadow-smoke` and `--shadow-creature-smoke` cover the custom cascade pass (see the flag table).
 
 Test retail with pre-Cataclysm areas such as Goldshire/Elwynn Forest: the database's spawns come from 3.3.5, so later zones often have no creatures.
 

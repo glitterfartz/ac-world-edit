@@ -202,8 +202,13 @@ public partial class ViewerShell
         }
 
         GD.Print($"PERFB_POSE {pose} tiles={loaded.Count} models={models.ReadyModels}");
+        GD.Print($"PERFB_PROXIES {pose} proxies={casters.ProxyCount} animated={casters.AnimatedCasterCount} " +
+            $"creature={casters.CategoryProxyCount(ShadowCasterCategory.Creature)} " +
+            $"gameObject={casters.CategoryProxyCount(ShadowCasterCategory.GameObject)}");
         foreach (var c in categories)
         {
+            // Per-bucket meshes raise these detail-mesh counts: creatures and M2 GameObjects now
+            // upload separate opaque, skinned and alpha-tested meshes, each with its own surfaces.
             GD.Print($"PERFB_COUNT {pose} {c.Name} {Counts(c)}");
         }
 
@@ -236,6 +241,17 @@ public partial class ViewerShell
             configs.Add(($"noShadow:{name}", () => SetShadows(geometry, false), () => SetShadows(geometry, true), null));
         }
 
+        // Detail casters live on the creature/GameObject overlays rather than in a scene category, so
+        // measure their shadow cost by hiding the category's proxies and forcing a cascade redraw.
+        configs.Add(("noShadow:creatureModels",
+            () => casters.SetCategoryProxiesVisible(ShadowCasterCategory.Creature, false),
+            () => casters.SetCategoryProxiesVisible(ShadowCasterCategory.Creature, true),
+            () => shadows.RenderNow(camera, sky)));
+        configs.Add(("noShadow:gameObjectModels",
+            () => casters.SetCategoryProxiesVisible(ShadowCasterCategory.GameObject, false),
+            () => casters.SetCategoryProxiesVisible(ShadowCasterCategory.GameObject, true),
+            () => shadows.RenderNow(camera, sky)));
+
         if (sun != null)
         {
             configs.Add(("sunShadowsOff", () => sun.ShadowEnabled = false, () => sun.ShadowEnabled = true, null));
@@ -253,6 +269,17 @@ public partial class ViewerShell
         {
             var value = quality;
             configs.Add(($"shadow:{ShadowQualityPresets.Name(value)}(caster)", () => SetShadowQuality(value, false, false), () => SetShadowQuality(initialQuality, false, false), () => shadows.RenderNow(camera, sky)));
+        }
+
+        // The detail animation path only exists while creature/GameObject proxies do.
+        if (casters.CategoryProxyCount(ShadowCasterCategory.Creature) > 0
+            || casters.CategoryProxyCount(ShadowCasterCategory.GameObject) > 0)
+        {
+            configs.Add(("shadow:Low(creature)", () => SetShadowQuality(ShadowQuality.Low, false, false), () => SetShadowQuality(initialQuality, false, false), () => shadows.RenderNow(camera, sky)));
+        }
+        else
+        {
+            GD.Print($"PERFB_SKIP {pose} shadow:Low(creature) no creature/GameObject proxies");
         }
 
         configs.Add(("all(again)", () => { }, () => { }, null));

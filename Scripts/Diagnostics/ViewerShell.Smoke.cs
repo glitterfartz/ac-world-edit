@@ -235,6 +235,11 @@ public partial class ViewerShell
             ShadowSmoke(delta);
         }
 
+        if (shadowCreatureSmoke)
+        {
+            ShadowCreatureSmoke(delta);
+        }
+
         ExecuteDumpTick(delta);
     }
 
