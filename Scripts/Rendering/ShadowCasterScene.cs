@@ -83,6 +83,40 @@ public sealed class ShadowCasterScene
     /// <summary>Proxies currently in the scene tree (zero while shadows are off).</summary>
     public int ProxyCount => casters.Values.Count(c => c.Proxy != null);
 
+    /// <summary>Animated registrations whose proxy is currently drawn.</summary>
+    public int AnimatedCasterCount => animatedCasters.Count(c => c.Proxy != null);
+
+    /// <summary>
+    /// Bumped when a caster's instance transform changes, and only then. Kept separate from
+    /// <see cref="Version"/> so a rider's per-frame seat follow asks for a throttled animated redraw
+    /// instead of an unthrottled one.
+    /// </summary>
+    public int TransformVersion { get; private set; }
+
+    /// <summary>Note that caster instance transforms moved.</summary>
+    public void Touch() => TransformVersion++;
+
+    /// <summary>
+    /// Whether any animated caster has a live, visible proxy and a visible source. This is an
+    /// in-tree check, not a frustum or distance test: an animated caster behind the camera can still
+    /// trigger a redraw. The scan is bounded to <see cref="animatedCasters"/>.
+    /// </summary>
+    public bool HasVisibleAnimated()
+    {
+        foreach (var caster in animatedCasters)
+        {
+            if (caster.Proxy is { } proxy
+                && proxy.Visible
+                && GodotObject.IsInstanceValid(caster.Source)
+                && caster.Source.IsVisibleInTree())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public ShadowCasterScene()
     {
         sharedMaterial = new ShaderMaterial

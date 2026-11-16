@@ -52,6 +52,8 @@ public sealed partial class SunShadows : Node3D
     bool castersOn;
     float lastStrength = -1f;
     int lastVersion = -1;
+    int lastTransformVersion = -1;
+    double lastAnimatedRenderMs;
     Vector3 lastSun = new(float.NaN, float.NaN, float.NaN);
     Vector3 lastEye;
     Quaternion lastRotation;
@@ -67,6 +69,12 @@ public sealed partial class SunShadows : Node3D
 
     /// <summary>False in headless runs, where no viewport produces a texture.</summary>
     public bool Supported => supported;
+
+    /// <summary>Redraws since construction, for diagnostics and the perf breakdown.</summary>
+    public int Redraws { get; private set; }
+
+    /// <summary>Redraws forced by the throttled animated refresh, not by camera, sun or registration.</summary>
+    public int AnimatedRedraws { get; private set; }
 
     public SunShadows(ShadowCasterScene casters, World3D world)
     {
@@ -157,8 +165,27 @@ public sealed partial class SunShadows : Node3D
         bool castersChanged = casters.Version != lastVersion || published != allocated;
         if (cameraMoved || sunMoved || castersChanged)
         {
+            // Camera, sun and registration stay immediate: they change what the maps must contain.
             Render(camera, sky);
             return;
+        }
+
+        // Moving and animating casters only change the depth inside the same maps, so refresh them
+        // at the preset's bounded rate. A transform-only change must keep retrying until the
+        // deadline, so lastTransformVersion advances only when Render actually runs.
+        bool transformMoved = casters.TransformVersion != lastTransformVersion;
+        int refreshHz = ShadowQualityPresets.For(quality).AnimatedRefreshHz;
+        if (refreshHz > 0 && (transformMoved || casters.AnimatedCasterCount > 0))
+        {
+            double now = Time.GetTicksMsec();
+            bool due = now - lastAnimatedRenderMs >= 1000.0 / refreshHz;
+            // The continuous animation case also stops while no animated caster is visible; a moved
+            // caster still redraws because its own visibility is not the only thing that changed.
+            if (due && (transformMoved || casters.HasVisibleAnimated()))
+            {
+                Render(camera, sky, animated: true);
+                return;
+            }
         }
 
         if (!Mathf.IsEqualApprox(strength, lastStrength))
@@ -213,8 +240,17 @@ public sealed partial class SunShadows : Node3D
         allocated = 0;
     }
 
-    void Render(Camera3D camera, SkyLighting sky)
+    void Render(Camera3D camera, SkyLighting sky, bool animated = false)
     {
+        Redraws++;
+        if (animated)
+        {
+            AnimatedRedraws++;
+        }
+
+        // A redraw of any kind refreshes the maps, so the animated throttle measures time since the
+        // last real render rather than time since the last animated one.
+        lastAnimatedRenderMs = Time.GetTicksMsec();
         if (!castersOn)
         {
             casters.SetEnabled(true);
@@ -290,12 +326,15 @@ public sealed partial class SunShadows : Node3D
         lastRotation = rotation;
         lastSun = sun;
         lastVersion = casters.Version;
+        lastTransformVersion = casters.TransformVersion;
         initialized = true;
     }
 
     /// <summary>
     /// Which proxy layers a cascade draws. The nearest cascades include every caster; far ones drop
     /// small ADT doodads first, then WMO doodads, where the texel is already too coarse to show them.
+    /// Cascade 2 drops layer 20 (ADT doodads and M2 GameObjects); cascade 3 and later also drop
+    /// layer 19 (WMO doodads and creatures).
     /// </summary>
     static uint MaskFor(int cascade) => cascade switch
     {

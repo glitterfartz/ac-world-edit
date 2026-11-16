@@ -33,10 +33,21 @@ public partial class ModelInstance : Node3D
             return;
         }
 
+        // A rider's seat follow writes the same transform every frame; an exact no-op must not ask
+        // for a redraw.
+        if (Transforms[index] == transform)
+        {
+            return;
+        }
+
         Transforms[index] = transform;
         foreach (var child in GetChildren().OfType<MultiMeshInstance3D>())
         {
             child.Multimesh.SetInstanceTransform(index, transform);
         }
+
+        // The proxies share the source MultiMesh, so moving it moves them too. Touch asks for a
+        // throttled animated redraw, never an immediate one.
+        Shadows?.Touch();
     }
 }
