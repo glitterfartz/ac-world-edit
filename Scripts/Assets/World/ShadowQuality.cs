@@ -2,7 +2,7 @@ namespace ACWorldEdit.Assets;
 
 /// <summary>
 /// Dynamic sun-shadow quality. Off renders no cascade maps; Low, Medium and High differ in cascade
-/// count, distance, map resolution and filter taps.
+/// count, distance, map resolution, filter taps and animated-caster refresh rate.
 /// </summary>
 public enum ShadowQuality
 {
@@ -16,11 +16,13 @@ public enum ShadowQuality
 /// One quality's cascade settings. <see cref="Cascades"/> is how many orthographic maps the caster
 /// pass renders (and the receiver samples); <see cref="MaxDistance"/> is the farthest view depth the
 /// maps cover in yards; <see cref="Resolution"/> is the square map size; <see cref="PcfTaps"/> is how
-/// many depth comparisons the receiver averages per fragment.
+/// many depth comparisons the receiver averages per fragment; <see cref="AnimatedRefreshHz"/> is how
+/// often per second the maps are redrawn for moving or animating creature/GameObject casters (0
+/// disables that refresh).
 /// </summary>
-public readonly record struct ShadowPreset(int Cascades, float MaxDistance, int Resolution, int PcfTaps)
+public readonly record struct ShadowPreset(int Cascades, float MaxDistance, int Resolution, int PcfTaps, int AnimatedRefreshHz)
 {
-    public static ShadowPreset Off { get; } = new(0, 0, 0, 1);
+    public static ShadowPreset Off { get; } = new(0, 0, 0, 1, 0);
 }
 
 /// <summary>
@@ -30,15 +32,18 @@ public readonly record struct ShadowPreset(int Cascades, float MaxDistance, int 
 public static class ShadowQualityPresets
 {
     /// <summary>
-    /// Low keeps one near cascade and no filtering; Medium covers the combat range with 5 taps; High
-    /// reaches out to the settled view distance with a 2048 map and 9 taps. The costs are measured in
+    /// Low keeps one near cascade and no filtering but refreshes animated casters at 20 Hz; Medium
+    /// covers the combat range with 5 taps and High reaches out to the settled view distance with a
+    /// 2048 map and 9 taps, both refreshing at 15 Hz. The animated rate is throttled below the render
+    /// frame rate because a full caster redraw is the expensive part; High may drop to 10 Hz if
+    /// measurement shows it is still too costly. The costs are measured in
     /// <c>docs/status/performance.md</c>.
     /// </summary>
     public static ShadowPreset For(ShadowQuality quality) => quality switch
     {
-        ShadowQuality.Low => new(1, 100, 1024, 1),
-        ShadowQuality.Medium => new(3, 180, 1024, 5),
-        ShadowQuality.High => new(4, 300, 2048, 9),
+        ShadowQuality.Low => new(1, 100, 1024, 1, 20),
+        ShadowQuality.Medium => new(3, 180, 1024, 5, 15),
+        ShadowQuality.High => new(4, 300, 2048, 9, 15),
         _ => ShadowPreset.Off,
     };
 

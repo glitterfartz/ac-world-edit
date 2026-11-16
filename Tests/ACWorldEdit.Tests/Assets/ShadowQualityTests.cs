@@ -28,17 +28,29 @@ public class ShadowQualityTests
     }
 
     [Theory]
-    [InlineData(ShadowQuality.Off, 0, 0, 1)]
-    [InlineData(ShadowQuality.Low, 1, 1024, 1)]
-    [InlineData(ShadowQuality.Medium, 3, 1024, 5)]
-    [InlineData(ShadowQuality.High, 4, 2048, 9)]
-    public void PresetsSelectTheCascadeCountResolutionAndTaps(ShadowQuality quality, int cascades, int resolution, int taps)
+    [InlineData(ShadowQuality.Off, 0, 0, 1, 0)]
+    [InlineData(ShadowQuality.Low, 1, 1024, 1, 20)]
+    [InlineData(ShadowQuality.Medium, 3, 1024, 5, 15)]
+    [InlineData(ShadowQuality.High, 4, 2048, 9, 15)]
+    public void PresetsSelectTheCascadeCountResolutionTapsAndRefreshRate(ShadowQuality quality, int cascades, int resolution, int taps, int refreshHz)
     {
         var preset = ShadowQualityPresets.For(quality);
 
         Assert.Equal(cascades, preset.Cascades);
         Assert.Equal(resolution, preset.Resolution);
         Assert.Equal(taps, preset.PcfTaps);
+        Assert.Equal(refreshHz, preset.AnimatedRefreshHz);
+    }
+
+    [Fact]
+    public void AnimatedRefreshStaysWithinTheMeasuredBound()
+    {
+        Assert.Equal(0, ShadowQualityPresets.For(ShadowQuality.Off).AnimatedRefreshHz);
+
+        foreach (var quality in new[] { ShadowQuality.Low, ShadowQuality.Medium, ShadowQuality.High })
+        {
+            Assert.InRange(ShadowQualityPresets.For(quality).AnimatedRefreshHz, 10, 20);
+        }
     }
 
     [Fact]
