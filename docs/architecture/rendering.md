@@ -22,7 +22,7 @@ State: **done**, **partial**, **todo**, **skip**.
 | 2 | Liquid effects | `magma`, `fel`, `leyline`, `mercury`, `azerite`, `proc*`, `mediumwaterbelow` | **partial** |
 | 3 | Terrain | `terrain` (40 permutations), `terrainlow`, `terrainblendbake`, `terraintexture`, `terrainlightmap*` | **partial** |
 | 4 | Model and WMO materials | `combiners_*`, `uber`, `skin`, `decal`, `illum`, `litsphere`, `proj_*`, `diffuse_*`, `color_*` | **partial** |
-| 5 | Lighting and shadows | dynamic sun shadows (custom cascades and per-fragment mask, v1), baked static shadow; `lightbufferomni`, spot lights, external masks, alpha-tested caster shadows, ray-traced shadows | **partial** |
+| 5 | Lighting and shadows | dynamic sun shadows (custom cascades, per-fragment mask, animated creature/GameObject casters, alpha-tested hair/cape), baked static shadow; `lightbufferomni`, spot lights, external masks, retail `shadowmonk` animated-UV silhouettes, ray-traced shadows | **partial** |
 | 6 | Particles and weather | `particle_*`, `ribbon`, `gpuribbon`, rain, snow, sand, lightning | **todo** |
 | 7 | Post effects | `ffx*` glow, color grading, depth of field, spectral sight, death, underwater | **todo** |
 | — | Skipped | AA (`fxaa`, `cmaa2`, `fsr`), `clustered*`, particle compute, UI, debug draws | **skip** |
@@ -159,7 +159,7 @@ cleared on the main camera) are visible to those cameras, and each map is cleare
 `dot(world, client_sun_dir)` with the geometry normal offset applied (so a receiver biased the same way
 does not self-shadow) and packs 24 bits over the fixed range `[-32768, 32768]`
 (`ShadowDepthPacking`; the white clear is the far end, which reads as lit). Depth is global rather than
-per-cascade, so one caster material serves every map. `--shadow-caster-smoke` probes a known terrain
+per-cascade, so a bucket's caster material serves every map. `--shadow-caster-smoke` probes a known terrain
 point: it reads the packed depth back from cascade 0 and compares it with the CPU expectation (within
 about 0.2 yd), which also settled the map's V axis. Godot textures put v = 0 at the top, so the
 vertical UV row runs the opposite way from the light's up axis; the earlier version sampled a
@@ -186,13 +186,34 @@ uses the disc, not the light direction: the client's `DayNight::SetDirection` ke
 direction fixed and always below the horizontal, so only the disc actually rises and sets. At night the
 strength is zero, the cascade count is zero and the receiver returns fully lit.
 
-Casters (v1): terrain always; a WMO shell when any of its surfaces is opaque (transparent windows cast
-as part of the building); WMO-embedded and ADT doodads only when **every** surface is opaque, which
-skips alpha-tested foliage, liquids, unlit and skinned batches. Creatures, GameObjects, skyboxes,
-markers and the placement gizmos never register. The maps redraw only when the camera, the sun or the
-caster set changes, so a still frame pays only receiver sampling; the proxies never draw in the main
-view. Per-cascade cull masks drop ADT doodads from the third cascade and WMO doodads from the fourth,
-where the texel is already coarse enough to hide them.
+Casters: terrain always; a WMO shell when any of its surfaces is opaque (transparent windows cast as
+part of the building); WMO-embedded and ADT doodads only when **every** surface is opaque, which skips
+alpha-tested foliage, liquids, unlit and skinned batches. Database creatures (riders and mounts) and
+M2 GameObjects cast when any surface is opaque or alpha-blended: skinned surfaces are allowed and
+blend-mode-1 surfaces (hair, capes) are alpha-tested in the depth pass. GameObjects whose model is a
+WMO keep the static shell policy. Skyboxes, markers, liquids, fallbacks and the placement gizmos never
+register.
+
+Creature and GameObject batches are `MultiMeshInstance3D`s, and RenderingServer cannot apply per-surface
+material overrides to a multimesh. `ModelLibrary` therefore uploads a detailed entry as one `ArrayMesh`
+per caster-material bucket — opaque unskinned (the shared material), opaque skinned (per-entry palette
+material), alpha-tested (per-entry albedo, static UV rows and `discard`) — plus a residual non-casting
+mesh. Each proxy keeps sharing the source `MultiMesh` and sets a single `MaterialOverride`. The caster
+shader skins through the same `Shaders/shared/client_skinning.gdshaderinc` as the visible model shader,
+so the depth silhouette follows the rendered pose. Only the static UV rows are sampled: an animated
+material/UV silhouette is not reproduced (`shadowmonk` remains unported).
+
+Creatures and M2 GameObjects share layers 19 and 20 with WMO and ADT doodads (Godot exposes 20 user
+layers); `SunShadows.MaskFor` drops layer 20 from the third cascade and layer 19 from the fourth, so far
+cascades skip GameObjects then creatures along with the doodads that share their layers.
+`CreatureModelView` and `GameObjectOverlay` set the category.
+
+The maps redraw immediately when the camera, the sun or the caster registration changes. Animated and
+moving detail casters would otherwise cost a full redraw every frame, so they refresh at the preset's
+`AnimatedRefreshHz` (Low 20, Medium 15, High 15; Off 0) and only while an animated caster's proxy and
+source are visible in the tree. A per-instance `TransformVersion` asks for that throttled redraw; the
+registration `Version` keeps camera, sun and registration changes immediate. The proxies never draw in
+the main view; a still frame pays only receiver sampling.
 
 **Same-frame caveat.** Direct sampling is same-frame when the cascade `SubViewport`s render before the
 main viewport (the expected order; `--shadow-smoke` exercises it). If a renderer reverses that order,
@@ -202,9 +223,9 @@ Compatibility: `--shadow-caster-smoke --rendering-method gl_compatibility` reads
 sizes, packed depths and probe values as Forward+. A literal screen-space `shadowmask`
 resolve stays the documented later option (a Forward+ `CompositorEffect`, one frame of latency) for
 when external masks or a post-process consumer exist; the caster pass, cascade maps, proxies and
-quality presets are identical either way. Not ported: external masks (`shadowmaskexternal`),
-alpha-tested character shadows (`shadowmonk`), creatures/GameObjects as casters, point/spot light
-shadows and ray-traced shadows.
+quality presets are identical either way. Not ported: external masks (`shadowmaskexternal`), the retail
+`shadowmonk` animated-UV character silhouette (static UV rows are sampled; hair and cape alpha is
+handled), point/spot light shadows and ray-traced shadows.
 
 The retail WMO point/spot lights (MNLD, Shadowlands 9.1+, 184 bytes each) are parsed from the root
 chunk and the nearest eight to the camera feed the terrain and model shaders every frame (linear

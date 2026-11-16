@@ -144,6 +144,31 @@ retail frame, and its single 1024 map over 100 yards is enough for nearby buildi
 extreme. The throughput lever, if a future default wants more coverage without more redraws, is to
 redraw one cascade per frame in round-robin while moving.
 
+**Detail casters (creatures and M2 GameObjects).** `--perf-breakdown` prints `PERFB_PROXIES` per pose
+(total, animated, creature and GameObject proxies) and adds `noShadow:creatureModels`,
+`noShadow:gameObjectModels` (hide that category's proxies and force a redraw) and `shadow:Low(creature)`
+(force a redraw every frame; skipped with `PERFB_SKIP` when no detail proxies exist). The
+`PERFB_COUNT` detail-mesh counts rise because a detailed entry uploads separate opaque, skinned and
+alpha-tested bucket meshes instead of one chain. Measured windowed on Godot 4.7.2 / Vulkan / RTX 5080
+with `--shadow-quality=High`; the main-viewport frame times are lower than the earlier table because the
+custom pass draws in the cascade `SubViewport`s, which the main viewport's render time does not include
+(the same reason the `noShadow:*` rows show little change: they measure the main viewport, not the
+cascade viewports):
+
+| Pose | Proxies (animated/creature/GameObject) | Low still | Low forced redraw | Δ per redraw | `shadow:Low(creature)` |
+|---|---|---|---|---|---|
+| Trade District | 473 (167/126/41) | 2.98 | 4.29 | +1.31 | 4.31 |
+| Cathedral Square | 398 (75/54/21) | 2.27 | 2.68 | +0.41 | 2.63 |
+| Keep | 486 (86/71/15) | 3.49 | 3.90 | +0.41 | 3.96 |
+| Main gate | 463 (24/22/2) | 3.19 | 3.68 | +0.49 | 3.67 |
+| Overview | 439 (0/0/0) | 2.69 | 3.03 | +0.34 | skipped |
+
+At Low's 20 Hz the animated refresh costs 20 × Δ, about 7-26 ms per second (0.7-2.6 % of a second); at
+Medium/High's 15 Hz it is about 5-20 ms per second. The `shadow:Low(creature)` row matches the
+forced-caster row within noise, so the detail casters add no separate redraw cost beyond the cascade
+pass at these poses. The animated rate is a cap, not a guarantee: when the frame rate is below
+`AnimatedRefreshHz`, the maps redraw every frame.
+
 ## Open items
 
 - **Re-baseline `--perf-smoke` on Forward+.** The streaming tables in the history page were measured on

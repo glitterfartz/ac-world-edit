@@ -81,9 +81,9 @@ live-server obstacle parity are not automated.
 
 ## Dynamic sun shadows
 
-The cascade frame, depth packing and caster policy have xUnit coverage (`ShadowCascadesTests`,
-`ShadowDepthPackingTests`, `ShadowCasterPolicyTests`, `ShadowQualityTests`). These need the caster pass
-and receiver to exist first.
+The cascade frame, depth packing, caster policy and shader source have xUnit coverage
+(`ShadowCascadesTests`, `ShadowDepthPackingTests`, `ShadowCasterPolicyTests`, `ShadowQualityTests`,
+`ShadowShaderTests`). These cover what those cannot: the windowed pass and the live scene.
 
 - [ ] Windowed `--shadow-smoke` at the fixed Trade District pose: off/low/medium/high images differ on
   the ground, hour 23 shows no difference, and the `SHADOW_CASCADE` lines are stable enough for a
@@ -96,10 +96,17 @@ and receiver to exist first.
   point lights and baked MCSH stay unchanged.
 - [x] Compatibility renderer: `--shadow-caster-smoke --rendering-method gl_compatibility` passes with
   the same map sizes, packed depths and probe values as Forward+, so no fallback is needed.
-- [ ] Per-cascade cull masks: far cascades skip ADT doodads (then WMO doodads) and the main camera
-  never draws a proxy.
+- [ ] Per-cascade cull masks: far cascades skip ADT doodads then WMO doodads, and GameObjects (layer
+  20) from the third cascade and creatures (layer 19) from the fourth, and the main camera never draws
+  a proxy.
 - [ ] Terrain far LOD (the baked `terrainlow` path) still receives shadows.
-- [ ] Alpha-tested foliage does not cast an opaque card (v1 policy skips it).
+- [ ] Alpha-tested static foliage does not cast an opaque card (the static doodad policy skips it);
+  character hair/cape uses the depth pass's alpha test instead.
+- [x] Creature/GameObject depth delta and throttled animation refresh (`--shadow-creature-smoke`:
+  hiding the detail models changed 18,601 sampled cascade pixels, and the animated refresh ran 19
+  redraws in 328 frames at 15 Hz).
+- [ ] Creature/GameObject detail casters on the Compatibility renderer match Forward+ (the static
+  caster probe already does; the creature smoke has only run on Vulkan).
 - [ ] Performance thresholds from the milestone E measurement, recorded in
   [performance.md](performance.md).
 - [ ] WMO interior modes 1 and 3 keep visibility 1.0 (a building interior is not darkened).
