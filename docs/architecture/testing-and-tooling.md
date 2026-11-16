@@ -46,7 +46,7 @@ Categories and runsettings:
 | Category | Trigger | Run with |
 |---|---|---|
 | unit (default) | none | `default.runsettings` (excludes Corpus and KnownBug) |
-| `Corpus` | needs `ACWORLD_DATA_DIR` or `wow-data` | `corpus.runsettings` |
+| `Corpus` | needs `ACWORLD_DATA_DIR` | `corpus.runsettings` |
 | `Db` | needs `ACWORLD_DB_INFO` (AzerothCore) or `ACWORLD_TC_DB_INFO` (TrinityCore) | the default suite; each test skips when its variable is unset |
 | `KnownBug` | `KnownBug` attribute, added by a custom discoverer | `knownbugs.runsettings` (also needs `ACWE_RUN_KNOWN_BUGS=1`) |
 

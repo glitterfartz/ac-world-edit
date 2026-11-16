@@ -210,8 +210,8 @@ into one SQL file for sharing.
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (`.dbd` layouts), pinned by the submodule commit |
 | `launch_viewer.py` | Build and launch helper, `--smoke` and `--check-assets` modes |
 
-Generated or local-only folders (`artifacts/`, `native/`, `build/`, `.build-env/`, `bin/`, `obj/`,
-`wow-data/`) are not part of the architecture.
+Generated or local-only folders (`artifacts/`, `native/`, `build/`, `.build-env/`, `bin/`, `obj/`)
+are not part of the architecture.
 
 ## Glossary
 

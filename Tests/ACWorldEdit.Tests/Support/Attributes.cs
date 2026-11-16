@@ -52,28 +52,14 @@ public static class Environments
         }
     }
 
-    /// <summary>The client data directory: ACWORLD_DATA_DIR, else the nearest wow-data folder above the test binaries.</summary>
+    /// <summary>The client data directory: ACWORLD_DATA_DIR.</summary>
     public static string? DataDirectory()
     {
         string? configured = Environment.GetEnvironmentVariable(DataVariable);
-        if (!string.IsNullOrWhiteSpace(configured))
-        {
-            return Directory.Exists(configured) ? configured : null;
-        }
-
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
-        {
-            string candidate = Path.Combine(dir.FullName, "wow-data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
+        return string.IsNullOrWhiteSpace(configured) || !Directory.Exists(configured) ? null : configured;
     }
 
-    public static string? DataSkip() => DataDirectory() == null ? "client data not found (set ACWORLD_DATA_DIR or place wow-data in the repo); skipping corpus test" : null;
+    public static string? DataSkip() => DataDirectory() == null ? "client data not found (set ACWORLD_DATA_DIR); skipping corpus test" : null;
 }
 
 /// <summary>Opened once and shared by all corpus tests.</summary>

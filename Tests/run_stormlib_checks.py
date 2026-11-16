@@ -22,8 +22,10 @@ def stormlib_path(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data-path', default=os.environ.get('ACWORLD_DATA_DIR', 'wow-data'))
+    parser.add_argument('--data-path', default=os.environ.get('ACWORLD_DATA_DIR'))
     args = parser.parse_args()
+    if not args.data_path:
+        sys.exit('set ACWORLD_DATA_DIR or pass --data-path')
 
     root = Path(__file__).resolve().parent.parent
     os.chdir(root)

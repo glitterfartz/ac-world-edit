@@ -3,7 +3,6 @@
 /android/
 
 # Local archives, build environment, and verification output
-wow-data/
 .build-env/
 native/
 artifacts/*
