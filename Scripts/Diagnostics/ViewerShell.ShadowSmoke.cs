@@ -21,7 +21,7 @@ public partial class ViewerShell
     bool shadowCreatureSmoke;
     int shadowCreatureStage, shadowCreatureFrames;
     double shadowCreatureTime, shadowAnimatedSince;
-    int shadowAnimatedBaseline;
+    int shadowAnimatedBaseline, shadowAnimatedFrames;
     int shadowCreatureVisibleDepth, shadowCreatureHiddenDepth, shadowCreatureChanged;
     Image?[] shadowCreatureVisibleImages = [];
     bool shadowCreatureDatabaseChecked;
@@ -478,7 +478,9 @@ public partial class ViewerShell
 
             SetShadowCreatureModelsVisible(true);
             shadows.RenderNow(camera, sky);
-            if (shadowCreatureChanged == 0 || shadowCreatureVisibleDepth <= shadowCreatureHiddenDepth)
+            // A creature over terrain that already wrote depth changes the packed value without
+            // changing the non-white count, so assert on the per-pixel depth delta instead.
+            if (shadowCreatureChanged == 0)
             {
                 SmokeFail($"SHADOW_CREATURE_SMOKE_NO_DELTA changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
                 return;
@@ -486,6 +488,7 @@ public partial class ViewerShell
 
             GD.Print($"SHADOW_CREATURE_SMOKE_DEPTH changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
             shadowAnimatedBaseline = shadows.AnimatedRedraws;
+            shadowAnimatedFrames = 0;
             shadowAnimatedSince = shadowCreatureTime;
             shadowCreatureStage = 4;
             return;
@@ -493,6 +496,7 @@ public partial class ViewerShell
 
         if (shadowCreatureStage == 4)
         {
+            shadowAnimatedFrames++;
             if (shadowCreatureTime - shadowAnimatedSince < 1.5)
             {
                 return;
@@ -502,11 +506,18 @@ public partial class ViewerShell
             int animated = casters.AnimatedCasterCount;
             int hz = ShadowQualityPresets.For(shadowQuality).AnimatedRefreshHz;
             int limit = (int)Math.Ceiling(hz * 1.5) + 3;
-            GD.Print($"SHADOW_CREATURE_SMOKE_ANIMATED redraws={redraws} animatedCasters={animated} hz={hz}");
+            GD.Print($"SHADOW_CREATURE_SMOKE_ANIMATED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz}");
             if (animated == 0 || redraws <= 0 || redraws > limit)
             {
-                SmokeFail($"SHADOW_CREATURE_SMOKE_ANIMATED_FAILED redraws={redraws} animatedCasters={animated} hz={hz} limit={limit}");
+                SmokeFail($"SHADOW_CREATURE_SMOKE_ANIMATED_FAILED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz} limit={limit}");
                 return;
+            }
+
+            if (redraws >= shadowAnimatedFrames)
+            {
+                // The frame rate was below the animated rate, so every frame redrew: the throttle
+                // held (no redraw exceeded its interval) but the cap did not bind.
+                GD.Print("SHADOW_CREATURE_SMOKE_ANIMATED_NOTE frame rate below the animated rate; the throttle held but did not bind");
             }
 
             GD.Print($"SHADOW_CREATURE_SMOKE_PASSED proxies={casters.ProxyCount} depthChanged={shadowCreatureChanged}");
