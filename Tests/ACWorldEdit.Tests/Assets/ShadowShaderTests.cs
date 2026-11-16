@@ -30,7 +30,42 @@ public class ShadowShaderTests
         Assert.Contains("render_mode unshaded", shader);
         Assert.Contains("depth_draw_opaque", shader);
         Assert.Contains("fog_disabled", shader);
-        Assert.DoesNotContain("blend_", shader);
+        // blend_mode is a uniform now, so name the actual blend render modes that must stay absent.
+        Assert.DoesNotContain("blend_add", shader);
+        Assert.DoesNotContain("blend_mix", shader);
+        Assert.DoesNotContain("blend_mul", shader);
+        Assert.DoesNotContain("depth_draw_never", shader);
+    }
+
+    [Fact]
+    public void CasterSkinsAndAlphaTestsFromTheSharedInclude()
+    {
+        string shader = RepoFile("Shaders", "shadow", "shadow_caster.gdshader");
+        string include = RepoFile("Shaders", "shared", "client_skinning.gdshaderinc");
+
+        Assert.Contains("client_skinning.gdshaderinc", shader);
+        Assert.Contains("client_skin(VERTEX, NORMAL)", shader);
+        Assert.Contains("albedo_tex", shader);
+        Assert.Contains("blend_mode", shader);
+        Assert.Contains("discard", shader);
+        Assert.Contains("caster_uv", shader);
+        Assert.Contains("uv_row0", shader);
+        Assert.Contains("uv_row1", shader);
+
+        Assert.Contains("animation_palette", include);
+        Assert.Contains("CUSTOM0", include);
+        Assert.Contains("CUSTOM1", include);
+        Assert.Contains("creature_clock", include);
+        Assert.Contains("bone_matrix", include);
+    }
+
+    [Fact]
+    public void ModelShaderUsesTheSharedSkinningInclude()
+    {
+        string model = RepoFile("Shaders", "model", "model.gdshader");
+
+        Assert.Contains("client_skinning.gdshaderinc", model);
+        Assert.Contains("client_skin(VERTEX, NORMAL)", model);
     }
 
     [Fact]
