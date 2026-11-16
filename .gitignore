@@ -24,3 +24,6 @@ __pycache__/
 # Packaged builds
 build/
 tmp/
+
+# Agent worktrees
+.claude/worktrees/
