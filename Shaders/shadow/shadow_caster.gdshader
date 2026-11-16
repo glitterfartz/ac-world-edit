@@ -29,7 +29,7 @@ varying vec2 caster_uv;
 
 void vertex() {
     // Match the visible GPU-skinned pose so the depth silhouette follows the animation.
-    client_skin(VERTEX, NORMAL);
+    client_skin(VERTEX, NORMAL, CUSTOM0, CUSTOM1);
     caster_uv = vec2(dot(uv_row0, vec3(UV, 1.0)), dot(uv_row1, vec3(UV, 1.0)));
     // MODEL_MATRIX carries the node transform and, for a MultiMesh, the instance transform.
     caster_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;

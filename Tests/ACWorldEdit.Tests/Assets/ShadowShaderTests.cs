@@ -44,7 +44,8 @@ public class ShadowShaderTests
         string include = RepoFile("Shaders", "shared", "client_skinning.gdshaderinc");
 
         Assert.Contains("client_skinning.gdshaderinc", shader);
-        Assert.Contains("client_skin(VERTEX, NORMAL)", shader);
+        // Godot scopes CUSTOM0/CUSTOM1 to vertex(); the stage function must pass them into the include.
+        Assert.Contains("client_skin(VERTEX, NORMAL, CUSTOM0, CUSTOM1)", shader);
         Assert.Contains("albedo_tex", shader);
         Assert.Contains("blend_mode", shader);
         Assert.Contains("discard", shader);
@@ -53,10 +54,9 @@ public class ShadowShaderTests
         Assert.Contains("uv_row1", shader);
 
         Assert.Contains("animation_palette", include);
-        Assert.Contains("CUSTOM0", include);
-        Assert.Contains("CUSTOM1", include);
         Assert.Contains("creature_clock", include);
         Assert.Contains("bone_matrix", include);
+        Assert.Contains("client_skin(inout vec3 vertex, inout vec3 normal, vec4 bone_ids, vec4 weights)", include);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ShadowShaderTests
         string model = RepoFile("Shaders", "model", "model.gdshader");
 
         Assert.Contains("client_skinning.gdshaderinc", model);
-        Assert.Contains("client_skin(VERTEX, NORMAL)", model);
+        Assert.Contains("client_skin(VERTEX, NORMAL, CUSTOM0, CUSTOM1)", model);
     }
 
     [Fact]

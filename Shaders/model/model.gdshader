@@ -56,7 +56,7 @@ vec4 material_sample(int column, int frames, float period, float time) {
 }
 
 void vertex() {
-    client_skin(VERTEX, NORMAL);
+    client_skin(VERTEX, NORMAL, CUSTOM0, CUSTOM1);
     batch_color = surface_color;
     vec3 row0 = uv_row0;
     vec3 row1 = uv_row1;

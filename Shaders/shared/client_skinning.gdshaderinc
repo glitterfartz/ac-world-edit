@@ -26,8 +26,9 @@ mat4 bone_matrix(int bone, int frame) {
 }
 
 // Skins a vertex and normal in place from the shared palette, interpolating between the two
-// sampled native frames. Does nothing when skinned is false.
-void client_skin(inout vec3 vertex, inout vec3 normal) {
+// sampled native frames. Does nothing when skinned is false. Godot scopes CUSTOM0/CUSTOM1 to the
+// vertex() body, so the caller passes the four bone IDs and native weights in.
+void client_skin(inout vec3 vertex, inout vec3 normal, vec4 bone_ids, vec4 weights) {
     if (!skinned) {
         return;
     }
@@ -48,9 +49,9 @@ void client_skin(inout vec3 vertex, inout vec3 normal) {
     vec3 n = vec3(0.0);
     float total = 0.0;
     for (int i = 0; i < 4; i++) {
-        // Custom vertex channels hold the four resolved bone IDs and native weights.
-        float w = CUSTOM1[i];
-        int bone = int(CUSTOM0[i]);
+        // The caller passes the custom vertex channels holding the four resolved bone IDs and weights.
+        float w = weights[i];
+        int bone = int(bone_ids[i]);
         if (w > 0.0) {
             mat4 ma = bone_matrix(bone, a);
             mat4 mb = bone_matrix(bone, b);
