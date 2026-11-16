@@ -397,6 +397,8 @@ public partial class ViewerShell
             creatures.SetLayerEnabled(true);
             gameObjects.SetLayerEnabled(true);
             sky.SetTimeOfDay(9);
+            // Freeze the clock: a moving sun redraws every cascade and would swamp the depth delta.
+            sky.Playing = false;
             FocusPose(new(0, -9465.5, 74, 56.8, 0));
             shadowCreatureStage = 1;
             return;
