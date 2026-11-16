@@ -103,8 +103,13 @@ The cascade frame, depth packing, caster policy and shader source have xUnit cov
 - [ ] Alpha-tested static foliage does not cast an opaque card (the static doodad policy skips it);
   character hair/cape uses the depth pass's alpha test instead.
 - [x] Creature/GameObject depth delta and throttled animation refresh (`--shadow-creature-smoke`:
-  hiding the detail models changed 18,601 sampled cascade pixels, and the animated refresh ran 19
-  redraws in 328 frames at 15 Hz).
+  hiding creatures dropped the per-cascade draw counts from `[524,547,580,908]` to `[445,468,501,908]`
+  and hiding M2 GameObjects to `[512,535,580,908]`, so the last cascade of each is unaffected as its
+  mask says, the depth maps changed in the cascades the mask admits, and the animated refresh ran 19
+  redraws in 324 frames at 15 Hz). The smoke asserts the draw counts; the saved images' depth deltas
+  outside the allowed cascades are printed but not asserted, because the excluded-cascade readback
+  changed even with a held camera, identical sun and identical draws (a viewport readback effect, not
+  a cull leak — a mask-0 probe emptied the cascade).
 - [ ] Creature/GameObject detail casters on the Compatibility renderer match Forward+ (the static
   caster probe already does; the creature smoke has only run on Vulkan).
 - [ ] Performance thresholds from the milestone E measurement, recorded in

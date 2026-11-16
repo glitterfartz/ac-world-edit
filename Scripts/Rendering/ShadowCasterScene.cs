@@ -238,6 +238,20 @@ public sealed class ShadowCasterScene
     public int CategoryProxyCount(ShadowCasterCategory category) =>
         casters.Values.Count(c => c.Category == category && c.Proxy != null);
 
+    /// <summary>Diagnostics: the render layers of one category's first live proxy (0 when none).</summary>
+    public uint SampleProxyLayers(ShadowCasterCategory category)
+    {
+        foreach (var caster in casters.Values)
+        {
+            if (caster.Category == category && caster.Proxy != null)
+            {
+                return caster.Proxy.Layers;
+            }
+        }
+
+        return 0;
+    }
+
     /// <summary>Show or hide one category's proxies without unregistering them (diagnostics).</summary>
     public void SetCategoryProxiesVisible(ShadowCasterCategory category, bool visible)
     {

@@ -1,6 +1,7 @@
 // Shared GPU skinning for M2 model surfaces. The visible model shader and the shadow caster both
 // sample the same native animation palette, so a creature's depth silhouette matches its lit pose.
-// Include this file from a spatial shader and call client_skin(VERTEX, NORMAL) in vertex().
+// Include this file from a spatial shader and call
+// client_skin(VERTEX, NORMAL, CUSTOM0, CUSTOM1) in vertex().
 
 // Four RGBA-float texels per bone matrix, one row per sampled native animation frame.
 uniform sampler2D animation_palette : filter_nearest, repeat_disable;

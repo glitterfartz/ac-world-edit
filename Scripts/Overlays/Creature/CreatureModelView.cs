@@ -232,7 +232,7 @@ internal sealed class CreatureModelView(Node3D owner)
         }
 
         // Identical value to the shader's creature_clock (float seconds): same frame, same phase.
-        double now = Time.GetTicksMsec() / 1000.0f;
+        double now = ClientShaderGlobals.CreatureClockSeconds;
         var riders = new Dictionary<ulong, (ModelInstance Node, int Index)>();
         foreach (var batch in batches)
         {

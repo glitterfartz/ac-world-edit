@@ -107,11 +107,22 @@ public sealed partial class TerrainStreamer
 	}
 
 	/// <summary>
+	/// Diagnostics: keep the terrain pass from lifting the camera, so the shadow smoke can hold one
+	/// pose while it compares cascade maps.
+	/// </summary>
+	public bool FreezeCamera { get; set; }
+
+	/// <summary>
 	/// Lift the camera above the nearest terrain sample after loading/teleport. Navigation
 	/// assistance is not collision or movement snapping.
 	/// </summary>
 	public void RaiseAboveTerrain(Node3D tile)
 	{
+		if (FreezeCamera)
+		{
+			return;
+		}
+
 		// Pick nearest mesh vertex to prevent spawning inside mountains.
 		float best = float.MaxValue, height = camera.Position.Y;
 		foreach (var mesh in tile.GetChildren().OfType<MeshInstance3D>())

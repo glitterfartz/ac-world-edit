@@ -330,6 +330,9 @@ public sealed partial class SunShadows : Node3D
         initialized = true;
     }
 
+    /// <summary>Diagnostics: the cull mask a cascade uses (the smoke prints the map).</summary>
+    public static uint CullMaskFor(int cascade) => MaskFor(cascade);
+
     /// <summary>
     /// Which proxy layers a cascade draws. The nearest cascades include every caster; far ones drop
     /// small ADT doodads first, then WMO doodads, where the texel is already too coarse to show them.

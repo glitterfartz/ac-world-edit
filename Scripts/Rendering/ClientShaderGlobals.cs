@@ -88,6 +88,15 @@ public static class ClientShaderGlobals
     /// negative value means "not set yet": shaders fall back to TIME.
     /// </summary>
     public const string CreatureClock = "creature_clock";
+
+    /// <summary>
+    /// Diagnostic hold for the shared animation clock: the shadow smoke freezes the skinned pose
+    /// while it compares cascade maps. Both the shader value and the CPU seat follow read this.
+    /// </summary>
+    public static bool FreezeCreatureClock { get; set; }
+
+    /// <summary>The shared animation clock in seconds, or a fixed pose while frozen.</summary>
+    public static float CreatureClockSeconds => FreezeCreatureClock ? 10f : Time.GetTicksMsec() / 1000f;
     /// <summary>
     /// The cascade maps, nearest first, written by <c>SunShadows</c>. Each is an RGBA8 square the
     /// caster pass clears to white and fills with packed sun-space depth (see

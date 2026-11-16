@@ -241,7 +241,7 @@ public sealed partial class SkyLighting : Node3D
     {
         // The shared bone-animation clock: shader TIME is renderer-private and offset from engine
         // ticks, so the model shader and the CPU seat follow read this one value to stay in phase.
-        ClientShaderGlobals.Set(ClientShaderGlobals.CreatureClock, Time.GetTicksMsec() / 1000.0f);
+        ClientShaderGlobals.Set(ClientShaderGlobals.CreatureClock, ClientShaderGlobals.CreatureClockSeconds);
         if (Playing)
         {
             TimeOfDayHours = LightingSampler.Advance(TimeOfDayHours, delta, Speed);

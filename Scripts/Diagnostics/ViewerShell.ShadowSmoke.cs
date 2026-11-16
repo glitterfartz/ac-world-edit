@@ -22,7 +22,12 @@ public partial class ViewerShell
     int shadowCreatureStage, shadowCreatureFrames;
     double shadowCreatureTime, shadowAnimatedSince;
     int shadowAnimatedBaseline, shadowAnimatedFrames;
-    int shadowCreatureVisibleDepth, shadowCreatureHiddenDepth, shadowCreatureChanged;
+    int shadowCreatureVisibleDepth, shadowCreatureStability;
+    Vector3 shadowCameraPosition;
+    Basis shadowCameraBasis;
+    bool shadowCameraRecorded;
+    int[] shadowCreatureCreatureChanges = [], shadowCreatureObjectChanges = [];
+    int[] shadowCreatureDrawsBefore = [], shadowCreatureCreatureDraws = [], shadowCreatureObjectDraws = [];
     Image?[] shadowCreatureVisibleImages = [];
     bool shadowCreatureDatabaseChecked;
     readonly Dictionary<ShadowQuality, double> shadowLuminance = [];
@@ -377,6 +382,9 @@ public partial class ViewerShell
             return;
         }
 
+        // The terrain pass may lift the camera after a tile loads; hold the pose for the captures.
+        streamer.FreezeCamera = true;
+
         if (shadowCreatureStage == 0)
         {
             // The poses below are Eastern Kingdoms coordinates; open that map first if another is showing.
@@ -397,8 +405,10 @@ public partial class ViewerShell
             creatures.SetLayerEnabled(true);
             gameObjects.SetLayerEnabled(true);
             sky.SetTimeOfDay(9);
-            // Freeze the clock: a moving sun redraws every cascade and would swamp the depth delta.
+            // Freeze the sun and the skinned pose: either moving between captures would swamp the
+            // category-isolated depth delta. The pose is released before the animated phase.
             sky.Playing = false;
+            ClientShaderGlobals.FreezeCreatureClock = true;
             FocusPose(new(0, -9465.5, 74, 56.8, 0));
             shadowCreatureStage = 1;
             return;
@@ -429,6 +439,9 @@ public partial class ViewerShell
                 return;
             }
 
+            shadowCameraPosition = camera.GlobalPosition;
+            shadowCameraBasis = camera.GlobalBasis;
+            shadowCameraRecorded = true;
             GD.Print($"SHADOW_CREATURE_SMOKE_START proxies={casters.ProxyCount} " +
                 $"creature={casters.CategoryProxyCount(ShadowCasterCategory.Creature)} " +
                 $"gameObject={casters.CategoryProxyCount(ShadowCasterCategory.GameObject)} " +
@@ -440,6 +453,11 @@ public partial class ViewerShell
 
         if (shadowCreatureStage == 2)
         {
+            if (models.Busy || creatures.IsLoading || gameObjects.IsLoading || !CameraHeld())
+            {
+                return;
+            }
+
             // Let the SubViewports' Once update and the readback land after the forced render.
             if (++shadowCreatureFrames < 5)
             {
@@ -448,13 +466,49 @@ public partial class ViewerShell
 
             shadowCreatureVisibleImages = CaptureShadowCreatureCascades("visible");
             shadowCreatureVisibleDepth = TotalDepthPixels(shadowCreatureVisibleImages);
+            shadowCreatureDrawsBefore = DrawsPerCascade();
             if (shadowCreatureVisibleDepth <= 0)
             {
                 SmokeFail($"SHADOW_CREATURE_SMOKE_EMPTY visible={shadowCreatureVisibleDepth}");
                 return;
             }
 
-            SetShadowCreatureModelsVisible(false);
+            // Prove the maps are stable before attributing a delta to the hidden category.
+            shadows.RenderNow(camera, sky);
+            shadowCreatureFrames = 0;
+            shadowCreatureStage = 6;
+            return;
+        }
+
+        if (shadowCreatureStage == 6)
+        {
+            if (models.Busy || creatures.IsLoading || gameObjects.IsLoading || !CameraHeld())
+            {
+                return;
+            }
+
+            if (++shadowCreatureFrames < 5)
+            {
+                return;
+            }
+
+            var stableImages = CaptureShadowCreatureCascades("visible-check");
+            shadowCreatureStability = ChangedPerCascade(shadowCreatureVisibleImages, stableImages).Sum();
+            GD.Print($"SHADOW_CREATURE_SMOKE_STABILITY changed={shadowCreatureStability}");
+            GD.Print($"SHADOW_CREATURE_LAYERS creature={casters.SampleProxyLayers(ShadowCasterCategory.Creature)} " +
+                $"gameObject={casters.SampleProxyLayers(ShadowCasterCategory.GameObject)} " +
+                $"masks={string.Join(",", Enumerable.Range(0, shadows.CascadeCount).Select(SunShadows.CullMaskFor))} " +
+                $"draws=[{string.Join(",", shadowCreatureDrawsBefore)}]");
+            if (shadowCreatureStability != 0)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_UNSTABLE changed={shadowCreatureStability}");
+                return;
+            }
+
+            // Hide only the Creature proxies. Creature is on layer 19, so cascade 3 (which drops
+            // layer 19) must not change, while cascades 0-2 must. Hiding the whole overlay would also
+            // hide WMO GameObjects, which are layer 18 and cast in every cascade.
+            casters.SetCategoryProxiesVisible(ShadowCasterCategory.Creature, false);
             shadows.RenderNow(camera, sky);
             shadowCreatureFrames = 0;
             shadowCreatureStage = 3;
@@ -463,40 +517,100 @@ public partial class ViewerShell
 
         if (shadowCreatureStage == 3)
         {
+            if (models.Busy || creatures.IsLoading || gameObjects.IsLoading || !CameraHeld())
+            {
+                return;
+            }
+
             if (++shadowCreatureFrames < 5)
             {
                 return;
             }
 
-            var hidden = CaptureShadowCreatureCascades("hidden");
-            shadowCreatureHiddenDepth = TotalDepthPixels(hidden);
-            shadowCreatureChanged = 0;
-            for (int cascade = 0; cascade < hidden.Length; cascade++)
-            {
-                shadowCreatureChanged += ChangedPixels(
-                    cascade < shadowCreatureVisibleImages.Length ? shadowCreatureVisibleImages[cascade] : null,
-                    hidden[cascade]);
-            }
+            var noCreature = CaptureShadowCreatureCascades("no-creature");
+            shadowCreatureCreatureChanges = ChangedPerCascade(shadowCreatureVisibleImages, noCreature);
+            shadowCreatureCreatureDraws = DrawsPerCascade();
+            casters.SetCategoryProxiesVisible(ShadowCasterCategory.Creature, true);
 
-            SetShadowCreatureModelsVisible(true);
+            // Restore, then isolate the M2 GameObject category on layer 20: cascades 2 and 3 drop
+            // layer 20, while cascades 0 and 1 still draw it.
+            casters.SetCategoryProxiesVisible(ShadowCasterCategory.GameObject, false);
             shadows.RenderNow(camera, sky);
-            // A creature over terrain that already wrote depth changes the packed value without
-            // changing the non-white count, so assert on the per-pixel depth delta instead.
-            if (shadowCreatureChanged == 0)
-            {
-                SmokeFail($"SHADOW_CREATURE_SMOKE_NO_DELTA changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
-                return;
-            }
-
-            GD.Print($"SHADOW_CREATURE_SMOKE_DEPTH changed={shadowCreatureChanged} visible={shadowCreatureVisibleDepth} hidden={shadowCreatureHiddenDepth}");
-            shadowAnimatedBaseline = shadows.AnimatedRedraws;
-            shadowAnimatedFrames = 0;
-            shadowAnimatedSince = shadowCreatureTime;
+            shadowCreatureFrames = 0;
             shadowCreatureStage = 4;
             return;
         }
 
         if (shadowCreatureStage == 4)
+        {
+            if (models.Busy || creatures.IsLoading || gameObjects.IsLoading || !CameraHeld())
+            {
+                return;
+            }
+
+            if (++shadowCreatureFrames < 5)
+            {
+                return;
+            }
+
+            var noObject = CaptureShadowCreatureCascades("no-gameobject");
+            shadowCreatureObjectChanges = ChangedPerCascade(shadowCreatureVisibleImages, noObject);
+            shadowCreatureObjectDraws = DrawsPerCascade();
+            casters.SetCategoryProxiesVisible(ShadowCasterCategory.GameObject, true);
+            // Let the skinned pose animate again for the throttle phase.
+            ClientShaderGlobals.FreezeCreatureClock = false;
+            shadows.RenderNow(camera, sky);
+
+            // The renderer's own per-cascade draw count is the deterministic proof of the mask:
+            // Creature (layer 19) is drawn by every cascade but the last, GameObject (layer 20) only
+            // by the first two. The depth delta then shows the category wrote depth where drawn.
+            int cascades = shadowCreatureDrawsBefore.Length;
+            bool creatureMask = true, objectMask = true;
+            for (int i = 0; i < cascades; i++)
+            {
+                if (i < cascades - 1)
+                {
+                    creatureMask &= shadowCreatureCreatureDraws[i] < shadowCreatureDrawsBefore[i];
+                }
+                else
+                {
+                    creatureMask &= shadowCreatureCreatureDraws[i] == shadowCreatureDrawsBefore[i];
+                }
+
+                if (i < 2)
+                {
+                    objectMask &= shadowCreatureObjectDraws[i] < shadowCreatureDrawsBefore[i];
+                }
+                else
+                {
+                    objectMask &= shadowCreatureObjectDraws[i] == shadowCreatureDrawsBefore[i];
+                }
+            }
+
+            bool creatureDepth = shadowCreatureCreatureChanges.Take(cascades - 1).Sum() > 0;
+            bool objectDepth = shadowCreatureObjectChanges.Take(Math.Min(2, cascades)).Sum() > 0;
+            if (!creatureMask || !creatureDepth || !objectMask || !objectDepth)
+            {
+                SmokeFail($"SHADOW_CREATURE_SMOKE_ISOLATION drawsBefore=[{string.Join(",", shadowCreatureDrawsBefore)}] " +
+                    $"creatureDraws=[{string.Join(",", shadowCreatureCreatureDraws)}] gameObjectDraws=[{string.Join(",", shadowCreatureObjectDraws)}] " +
+                    $"creatureDepth=[{string.Join(",", shadowCreatureCreatureChanges)}] gameObjectDepth=[{string.Join(",", shadowCreatureObjectChanges)}]");
+                return;
+            }
+
+            // Draw counts are the deterministic mask proof (and already passed above). The packed-depth
+            // readback also shows unexplained changes in mask-excluded cascades, so those pixel deltas
+            // are printed for observation, not asserted as category depth.
+            GD.Print($"SHADOW_CREATURE_SMOKE_DEPTH creatureDraws=[{string.Join(",", shadowCreatureCreatureDraws)}] " +
+                $"gameObjectDraws=[{string.Join(",", shadowCreatureObjectDraws)}] " +
+                $"creatureDepth=[{string.Join(",", shadowCreatureCreatureChanges)}] gameObjectDepth=[{string.Join(",", shadowCreatureObjectChanges)}]");
+            shadowAnimatedBaseline = shadows.AnimatedRedraws;
+            shadowAnimatedFrames = 0;
+            shadowAnimatedSince = shadowCreatureTime;
+            shadowCreatureStage = 5;
+            return;
+        }
+
+        if (shadowCreatureStage == 5)
         {
             shadowAnimatedFrames++;
             if (shadowCreatureTime - shadowAnimatedSince < 1.5)
@@ -507,11 +621,15 @@ public partial class ViewerShell
             int redraws = shadows.AnimatedRedraws - shadowAnimatedBaseline;
             int animated = casters.AnimatedCasterCount;
             int hz = ShadowQualityPresets.For(shadowQuality).AnimatedRefreshHz;
+            // The cap is Hz*1.5; a run below the frame rate cannot exceed it, so also require the
+            // refresh to actually happen at roughly the expected count.
+            int expected = Math.Min(shadowAnimatedFrames, (int)Math.Ceiling(hz * 1.5));
+            int floor = Math.Max(1, expected / 2);
             int limit = (int)Math.Ceiling(hz * 1.5) + 3;
-            GD.Print($"SHADOW_CREATURE_SMOKE_ANIMATED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz}");
-            if (animated == 0 || redraws <= 0 || redraws > limit)
+            GD.Print($"SHADOW_CREATURE_SMOKE_ANIMATED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz} expected={expected}");
+            if (animated == 0 || redraws < floor || redraws > limit)
             {
-                SmokeFail($"SHADOW_CREATURE_SMOKE_ANIMATED_FAILED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz} limit={limit}");
+                SmokeFail($"SHADOW_CREATURE_SMOKE_ANIMATED_FAILED redraws={redraws} frames={shadowAnimatedFrames} animatedCasters={animated} hz={hz} floor={floor} limit={limit}");
                 return;
             }
 
@@ -522,7 +640,9 @@ public partial class ViewerShell
                 GD.Print("SHADOW_CREATURE_SMOKE_ANIMATED_NOTE frame rate below the animated rate; the throttle held but did not bind");
             }
 
-            GD.Print($"SHADOW_CREATURE_SMOKE_PASSED proxies={casters.ProxyCount} depthChanged={shadowCreatureChanged}");
+            GD.Print($"SHADOW_CREATURE_SMOKE_PASSED proxies={casters.ProxyCount} " +
+                $"creatureDraws=[{string.Join(",", shadowCreatureCreatureDraws)}] " +
+                $"gameObjectDraws=[{string.Join(",", shadowCreatureObjectDraws)}]");
             GetTree().Quit();
         }
     }
@@ -599,16 +719,40 @@ public partial class ViewerShell
         return changed;
     }
 
-    void SetShadowCreatureModelsVisible(bool visible)
+    int[] DrawsPerCascade()
     {
-        foreach (var model in creatures.GetChildren().OfType<ModelInstance>())
+        var draws = new int[shadows.CascadeCount];
+        for (int i = 0; i < draws.Length; i++)
         {
-            model.Visible = visible;
+            draws[i] = (int)shadows.CascadeDrawCalls(i);
         }
 
-        foreach (var model in gameObjects.GetChildren().OfType<ModelInstance>())
-        {
-            model.Visible = visible;
-        }
+        return draws;
     }
+
+    /// <summary>Whether the camera still matches the pose recorded when the captures started.</summary>
+    bool CameraHeld()
+    {
+        bool held = !shadowCameraRecorded
+            || (camera.GlobalPosition == shadowCameraPosition && camera.GlobalBasis == shadowCameraBasis);
+        if (!held)
+        {
+            SmokeFail("SHADOW_CREATURE_SMOKE_CAMERA_MOVED");
+        }
+
+        return held;
+    }
+
+    /// <summary>Per-cascade sampled pixels whose packed depth differs.</summary>
+    static int[] ChangedPerCascade(Image?[] before, Image?[] after)
+    {
+        var changes = new int[after.Length];
+        for (int cascade = 0; cascade < after.Length; cascade++)
+        {
+            changes[cascade] = ChangedPixels(cascade < before.Length ? before[cascade] : null, after[cascade]);
+        }
+
+        return changes;
+    }
+
 }

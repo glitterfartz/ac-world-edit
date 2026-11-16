@@ -201,7 +201,9 @@ material), alpha-tested (per-entry albedo, static UV rows and `discard`) — plu
 mesh. Each proxy keeps sharing the source `MultiMesh` and sets a single `MaterialOverride`. The caster
 shader skins through the same `Shaders/shared/client_skinning.gdshaderinc` as the visible model shader,
 so the depth silhouette follows the rendered pose. Only the static UV rows are sampled: an animated
-material/UV silhouette is not reproduced (`shadowmonk` remains unported).
+material/UV silhouette is not reproduced (`shadowmonk` remains unported). A blend-mode-1 multi-texture
+surface's alpha is also not reconstructed through the combiner; the caster samples the base texture's
+alpha, which is exact for the single-texture hair and cape surfaces.
 
 Creatures and M2 GameObjects share layers 19 and 20 with WMO and ADT doodads (Godot exposes 20 user
 layers); `SunShadows.MaskFor` drops layer 20 from the third cascade and layer 19 from the fourth, so far
