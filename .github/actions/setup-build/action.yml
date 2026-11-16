@@ -4,7 +4,7 @@ description: .NET, Python and the native libraries ACWorldEdit needs (CascLib, f
 runs:
   using: composite
   steps:
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
         # The game and tests target net8.0; global.json pins the SDK.
