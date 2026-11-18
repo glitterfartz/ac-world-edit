@@ -11,6 +11,8 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
 {
     protected override Vector2 TargetSize => new(980, 720);
     public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
+    /// <summary>Raised when a rule names a conversation or scene and its Open button is pressed.</summary>
+    public Action<SmartParamKind, uint> CinematicsRequested { get; set; } = (_, _) => { };
     Label title = null!;
     Button undo = null!, redo = null!;
 
@@ -24,6 +26,7 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         Panel.Connection = () => Connection();
         Panel.Store = () => Store();
         Panel.Drafts = Drafts;
+        Panel.CinematicsRequested = (kind, id) => CinematicsRequested(kind, id);
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 6);
         AddChild(root);

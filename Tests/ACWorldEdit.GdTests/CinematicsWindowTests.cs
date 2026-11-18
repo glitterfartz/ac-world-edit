@@ -344,6 +344,197 @@ public class CinematicsWindowTests
     }
 
     [TestCase]
+    public async Task NewChoiceWorksFromTheEmptyTab()
+    {
+        var (window, panel) = Loaded();
+        window.ShowTab(CinematicsPanel.Tab.PlayerChoices);
+
+        var create = Named(panel, "NewChoice");
+        AssertThat(create.Disabled).IsFalse();
+        create.EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitFor(() => window.Drafts.Draft!.NetFor("test").Any(edit => edit.Edit.Table == "playerchoice"));
+
+        AssertThat(window.Drafts.Draft!.NetFor("test").Any(edit => edit.Edit.Table == "playerchoice" && edit.Edit.After!.I("ChoiceId") == 975)).IsTrue();
+    }
+
+    [TestCase]
+    public async Task NewConversationWorksFromTheEmptyTab()
+    {
+        var (window, panel) = ConversationLoaded();
+
+        Named(panel, "NewConversation").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitFor(() => window.Drafts.Draft!.NetFor("test").Any(edit => edit.Edit.Table == "conversation_template"));
+
+        var created = window.Drafts.Draft!.NetFor("test").Single(edit => edit.Edit.Table == "conversation_template");
+        AssertThat(created.Edit.After!.U("Id")).IsEqual(1101u);
+    }
+
+    [TestCase]
+    public async Task NewSceneWorksFromTheEmptyTab()
+    {
+        var (window, panel) = SceneLoaded();
+
+        Named(panel, "NewScene").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitFor(() => window.Drafts.Draft!.NetFor("test").Any(edit => edit.Edit.Table == "scene_template"));
+
+        AssertThat(window.Drafts.Draft!.NetFor("test").Single(edit => edit.Edit.Table == "scene_template").Edit.After!.U("SceneId")).IsEqual(576u);
+    }
+
+    [TestCase]
+    public async Task ASceneWarningIsListedUnderItsFields()
+    {
+        var (_, panel) = SceneLoaded();
+        panel.SceneReader = (_, _) => Task.FromResult(Scene() with
+        {
+            Rows = Rows((TcTables.SceneTemplate, TcSceneRules.NewScene(35).With("ScriptPackageID", 0u)))
+        });
+        await panel.Load(35);
+
+        AssertThat(panel.FindChild("Issue_0", true, false)).IsNotNull();
+    }
+
+    static RowSet Rows(params (TableSchema Table, Row Row)[] rows)
+    {
+        var set = new RowSet();
+        foreach (var (table, row) in rows)
+        {
+            set.Set(table, row);
+        }
+
+        return set;
+    }
+
+    [TestCase]
+    public async Task EditingTheQuestionStagesOneUpdate()
+    {
+        var (window, panel) = Loaded();
+        await panel.Load(240);
+
+        var question = (LineEdit)panel.FindChild("Question", true, false)!;
+        question.Text = "Which weapon shall we forge?";
+        question.EmitSignal(LineEdit.SignalName.TextSubmitted, "Which weapon shall we forge?");
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Count).IsEqual(1);
+        AssertThat(edits[0].Edit.Table).IsEqual("playerchoice");
+        AssertThat(edits[0].Edit.After!.T("Question")).IsEqual("Which weapon shall we forge?");
+    }
+
+    [TestCase]
+    public async Task ARewardConditionIsShownOnItsAnswer()
+    {
+        var (_, panel) = Loaded();
+        ((TcCinematicsPanel)panel).Reader = (_, _) => Task.FromResult(SnapshotWithACondition());
+        await panel.Load(240);
+        Named(panel, "Response_504").EmitSignal(BaseButton.SignalName.Pressed);
+
+        AssertThat(panel.FindChild("Condition_504_0", true, false)).IsNotNull();
+    }
+
+    static PlayerChoiceSnapshot SnapshotWithACondition()
+    {
+        var rows = Snapshot().Rows.Clone();
+        var condition = new Row(TcTables.Conditions.Columns.Select(column => new KeyValuePair<string, string>(column.Name, "0")))
+            .With("SourceTypeOrReferenceId", 36)
+            .With("SourceGroup", 240u)
+            .With("SourceEntry", 504)
+            .With("ConditionTypeOrReference", 23)
+            .With("ConditionValue1", 1519L);
+        rows.Set(TcTables.Conditions, condition);
+        return new PlayerChoiceSnapshot(rows, new ContentNames(null), "test", 974);
+    }
+
+    [TestCase]
+    public async Task AConversationWarningIsListedUnderItsCards()
+    {
+        var (window, panel) = ConversationLoaded();
+        var rows = Conversation().Rows.Clone();
+        rows.Set(TcTables.ConversationActors, TcConversationRules.NewActor(754, 3).With("CreatureId", 55555u));
+        var snapshot = Conversation() with { Rows = rows };
+        panel.ConversationReader = (_, _) => Task.FromResult(snapshot);
+        await panel.Load(754);
+
+        AssertThat(panel.FindChild("Issue_0", true, false)).IsNotNull();
+        AssertThat(window.Drafts.Draft!.NetFor("test")).IsEmpty();
+    }
+
+    [TestCase]
+    public async Task TheScenePackageNameIsShownReadOnly()
+    {
+        var (_, panel) = SceneLoaded();
+        await panel.Load(35);
+
+        AssertThat(panel.FindChild("PackageName", true, false)).IsInstanceOf<Label>();
+        AssertThat(panel.FindChild("package name", true, false)).IsNull();
+    }
+
+    [TestCase]
+    public async Task AnActorCreatureTypedAfterTheReadStillSaves()
+    {
+        var (window, panel) = ConversationLoaded();
+        panel.ConversationReader = (_, _) => Task.FromResult(Conversation());
+        await panel.Load(754);
+
+        var creature = (LineEdit)panel.FindChild("ActorCreature_0", true, false)!;
+        creature.Text = "55555";
+        creature.EmitSignal(LineEdit.SignalName.TextSubmitted, "55555");
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Count).IsEqual(1);
+        AssertThat(edits[0].Edit.After!.U("CreatureId")).IsEqual(55555u);
+    }
+
+    [TestCase]
+    public async Task ARewardQuestTypedAfterTheReadStillSaves()
+    {
+        var (window, panel) = Loaded();
+        await panel.Load(240);
+        Named(panel, "Response_504").EmitSignal(BaseButton.SignalName.Pressed);
+
+        var quest = (LineEdit)panel.FindChild("RewardQuest_504", true, false)!;
+        quest.Text = "12345";
+        quest.EmitSignal(LineEdit.SignalName.TextSubmitted, "12345");
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Count).IsEqual(1);
+        AssertThat(edits[0].Edit.After!.U("RewardQuestID")).IsEqual(12345u);
+    }
+
+    [TestCase]
+    public async Task ASmartAiLinkOpensTheMatchingTabAndRow()
+    {
+        var window = Window();
+        window.Open(0);
+        var panel = (TcCinematicsPanel)window.Panel;
+        panel.ConversationReader = (_, _) => Task.FromResult(Conversation());
+        panel.SceneReader = (_, _) => Task.FromResult(Scene());
+
+        window.Open(SmartParamKind.Scene, 35);
+        await WaitFor(() => panel.CurrentId == 35);
+        AssertThat(panel.CurrentTab).IsEqual(CinematicsPanel.Tab.Scenes);
+
+        window.Open(SmartParamKind.Conversation, 754);
+        await WaitFor(() => panel.CurrentId == 754);
+        AssertThat(panel.CurrentTab).IsEqual(CinematicsPanel.Tab.Conversations);
+    }
+
+    [TestCase]
+    public async Task DuplicatingAConversationStagesItsTemplateAndActors()
+    {
+        var (window, panel) = ConversationLoaded();
+        await panel.Load(754);
+
+        await panel.NewItem(754);
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Count).IsEqual(4);
+        AssertThat(edits.Count(edit => edit.Edit.Table == "conversation_template")).IsEqual(1);
+        AssertThat(edits.Count(edit => edit.Edit.Table == "conversation_actors")).IsEqual(3);
+        AssertThat(edits.Single(edit => edit.Edit.Table == "conversation_template").Edit.After!.U("Id")).IsEqual(1101u);
+        AssertThat(edits.Where(edit => edit.Edit.Table == "conversation_actors").Select(edit => edit.Edit.After!.U("ConversationId")).Distinct().Single()).IsEqual(1101u);
+    }
+
+    [TestCase]
     public async Task DuplicateStagesTheChoiceWithItsResponsesAndRewards()
     {
         var (window, panel) = Loaded();

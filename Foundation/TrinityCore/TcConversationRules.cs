@@ -47,17 +47,19 @@ public static class TcConversationRules
     }
 
     /// <summary>
-    /// An actor and every override that names its index: a line override cannot point at an actor
-    /// the conversation no longer has, so they leave together.
+    /// An actor and the overrides of this conversation's chain that name its index: a line override
+    /// cannot point at an actor the conversation no longer has, so they leave together. Overrides are
+    /// keyed by the shared client line and the snapshot also holds rows another conversation drafted,
+    /// so only lines in <paramref name="chainLines"/> may be deleted; null (no client chain) deletes none.
     /// </summary>
-    public static RowEdit[] RemoveActor(Row actor, RowSet rows)
+    public static RowEdit[] RemoveActor(Row actor, RowSet rows, IReadOnlyCollection<uint>? chainLines = null)
     {
         uint idx = actor.U("Idx");
         return
         [
             InteractionEdits.Delete(TcTables.ConversationActors, actor),
             .. rows.All(TcTables.ConversationLineTemplate)
-                .Where(line => line.U("ActorIdx") == idx)
+                .Where(line => line.U("ActorIdx") == idx && chainLines != null && chainLines.Contains(line.U("Id")))
                 .Select(line => InteractionEdits.Delete(TcTables.ConversationLineTemplate, line))
         ];
     }
@@ -122,7 +124,7 @@ public static class TcConversationRules
             switch (Kind(actor))
             {
                 case ActorKind.Spawn when names != null && !names.CreatureSpawnExists(actor.UL("ConversationActorGuid")):
-                    yield return new(true, $"Actor {idx}: spawn {actor.UL("ConversationActorGuid")} does not exist.");
+                    yield return new(false, $"Actor {idx}: spawn {actor.UL("ConversationActorGuid")} was not found in the open database; check the GUID.");
                     break;
                 case ActorKind.NoObject when actor.U("CreatureId") == 0:
                     yield return new(false, $"Actor {idx}: no creature chosen yet; a talking head needs one.");
@@ -134,7 +136,7 @@ public static class TcConversationRules
                     yield return new(false, $"Actor {idx}: no creature chosen yet.");
                     break;
                 case ActorKind.Creature when names?.Creature(actor.U("CreatureId")) == null:
-                    yield return new(true, $"Actor {idx}: creature {actor.U("CreatureId")} does not exist.");
+                    yield return new(false, $"Actor {idx}: creature {actor.U("CreatureId")} was not found in the open database; check the entry.");
                     break;
             }
         }
@@ -152,6 +154,17 @@ public static class TcConversationRules
             }
         }
     }
+
+    /// <summary>
+    /// The source-29 conditions of the chain's lines, grouped by line and ordered as the server
+    /// evaluates them. Rows outside the chain (another conversation's draft) are left out.
+    /// </summary>
+    public static IReadOnlyDictionary<uint, IReadOnlyList<Row>> Conditions(RowSet rows, IReadOnlyCollection<uint> chainLines) =>
+        rows.All(TcTables.Conditions)
+            .Where(row => row.I("SourceTypeOrReferenceId") == 29 && row.I("SourceGroup") == 0 && row.I("SourceEntry") > 0 && chainLines.Contains((uint)row.I("SourceEntry")))
+            .GroupBy(row => (uint)row.I("SourceEntry"))
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<Row>)group
+                .OrderBy(row => row.U("ElseGroup")).ThenBy(row => row.I("ConditionTypeOrReference")).ToList());
 
     static Row Defaults(TableSchema table) =>
         new(table.Columns.Select(c => new KeyValuePair<string, string>(c.Name, c.Kind == ColumnKind.Text ? "" : "0")));

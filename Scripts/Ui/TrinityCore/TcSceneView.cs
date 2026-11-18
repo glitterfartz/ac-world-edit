@@ -19,6 +19,7 @@ public partial class TcSceneView : VBoxContainer
 
     SceneSnapshot? snapshot;
     uint sceneId;
+    IReadOnlyList<InteractionIssue> lastIssues = [];
 
     static readonly string[] FlagNames = ["Flag 1", "Flag 2", "Flag 4", "Flag 8", "Flag 16", "Flag 32", "Flag 64", "Flag 128"];
 
@@ -27,9 +28,10 @@ public partial class TcSceneView : VBoxContainer
         AddThemeConstantOverride("separation", 8);
     }
 
-    public void Show(SceneSnapshot? view)
+    public void Show(SceneSnapshot? view, IReadOnlyList<InteractionIssue>? issues = null)
     {
         snapshot = view;
+        lastIssues = issues ?? [];
         foreach (var child in GetChildren())
         {
             child.QueueFree();
@@ -39,6 +41,7 @@ public partial class TcSceneView : VBoxContainer
         PackageName = "";
         if (view?.Rows.All(TcTables.SceneTemplate).FirstOrDefault() is not { } template)
         {
+            RenderActions();
             AddChild(ClientStyle.Text("No scene open.", 14, ClientStyle.Faded));
             return;
         }
@@ -52,9 +55,11 @@ public partial class TcSceneView : VBoxContainer
         box.AddChild(ClientStyle.Text($"Scene {sceneId}", 20, ClientStyle.Header));
 
         PackageName = view.Package?.Name ?? (template.U("ScriptPackageID") == 0 ? "No package" : $"Package {template.U("ScriptPackageID")}");
+        var packageName = ClientStyle.Text(PackageName, 11, ClientStyle.Faded);
+        packageName.Name = "PackageName";
         box.AddChild(EditorFields.Row("Script package", "The client SceneScriptPackage the scene plays.",
             EditorFields.Number(template.U("ScriptPackageID"), value => Set(template, "Change script package", ("ScriptPackageID", (uint)Math.Max(value, 0))), 90, "The client SceneScriptPackage the scene plays."),
-            EditorFields.Line(view.Package?.Name ?? "", _ => { }, "package name", 0, "The package's client name.")));
+            packageName));
 
         box.AddChild(ClientStyle.Text("Flags", 14, ClientStyle.Header));
         var flags = new HBoxContainer();
@@ -83,13 +88,8 @@ public partial class TcSceneView : VBoxContainer
         advanced.AddChild(EditorFields.Row("Script", "The server script that runs while the scene plays.",
             EditorFields.Line(template.T("ScriptName"), text => Set(template, "Change scene script", ("ScriptName", text.Trim())), "ScriptName", 64, "The server script for this scene.")));
 
-        var actions = new HBoxContainer();
-        actions.AddThemeConstantOverride("separation", 6);
-        AddChild(actions);
-        var create = ContentEditorWindow.ButtonIn(actions, "+ New scene", () => NewRequested());
-        create.Name = "NewScene";
-        create.TooltipText = "Create an empty scene with a new ID.";
-
+        RenderActions();
+        RenderIssues();
         AddChild(ClientStyle.Text("Script steps", 16, ClientStyle.Header));
         if (view.Package is not { Steps.Count: > 0 } package)
         {
@@ -104,6 +104,27 @@ public partial class TcSceneView : VBoxContainer
             text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             text.TooltipText = step.Script;
             AddChild(text);
+        }
+    }
+
+    void RenderActions()
+    {
+        var actions = new HBoxContainer();
+        actions.AddThemeConstantOverride("separation", 6);
+        AddChild(actions);
+        var create = ContentEditorWindow.ButtonIn(actions, "+ New scene", () => NewRequested());
+        create.Name = "NewScene";
+        create.TooltipText = "Create an empty scene with a new ID.";
+    }
+
+    void RenderIssues()
+    {
+        for (int i = 0; i < lastIssues.Count; i++)
+        {
+            var label = ClientStyle.Text(lastIssues[i].Message, 12, lastIssues[i].Error ? ClientStyle.Warning : ClientStyle.Faded);
+            label.Name = $"Issue_{i}";
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            AddChild(label);
         }
     }
 

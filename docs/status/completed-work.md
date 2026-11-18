@@ -114,14 +114,17 @@ polar drag, duplicate remap, leader picked by GUID or viewport click) and the pr
 ## Phase 22a: player choices
 
 TrinityCore-only player-choice editing in `CinematicsEditorWindow`: a search list and the
-`TcPlayerChoiceView` question card (question, pending text, timing, layout flags) with one card per
-answer, each showing its header, answer and reward summary, and an inline editor for the answer text,
-position, reward quest, answer art, gold, XP and one reward item. "+ New choice", "Duplicate",
-"+ Response" and "Remove response" stage one validated `ContentDrafts` command; undo/redo, SQL export
-and apply come from the shared path. Tables: `playerchoice`, `playerchoice_response`,
-`playerchoice_response_reward`, `playerchoice_response_reward_item` (`TcTables.Cinematics.cs`), rules
-and new-row factories in `TcCinematicsRules`, reads in `TcCinematicsSource`, conditions for source 36
-(`TcCinematicsSource.ReadCinematicConditionsAsync`). AzerothCore shows a not-applicable panel.
+`TcPlayerChoiceView` question card (editable question and pending text, timing, layout flags) with one
+card per answer, each showing its header, answer and reward summary, an inline editor for the answer
+text, position, reward quest, answer art, gold, XP and one reward item, and the read-only source-36
+conditions the server checks before offering that answer. "+ New choice", "Duplicate", "+ Response"
+and "Remove response" stage one validated `ContentDrafts` command, and "+ New choice" works from an
+empty tab; undo/redo, SQL export and apply come from the shared path. Tables: `playerchoice`,
+`playerchoice_response`, `playerchoice_response_reward`, `playerchoice_response_reward_item`
+(`TcTables.Cinematics.cs`), rules and new-row factories in `TcCinematicsRules`, reads in
+`TcCinematicsSource` (the conditions come with the choice). A creature, spawn, quest or item
+reference the open database did not resolve is a warning, not a refusal, so a newly typed ID can be
+saved. AzerothCore shows a not-applicable panel.
 Tests: `PlayerChoiceRulesTests`, `CinematicsDbTests` (`[TcDbFact]`), `CinematicsWindowTests` (gdUnit);
 `--cinematics-smoke` covers search, three cards, a reward, a staged header edit and undo against the
 live database.
@@ -129,29 +132,35 @@ live database.
 ## Phase 22b: conversations
 
 The Conversations tab: the template card (first line with the client-line text and a text search
-picker, texture kit, flags, script), one card per actor with its kind (creature, existing spawn,
-talking head, player), and the client line chain as a strip of cards (actor, text, duration, an
-override badge) with the server override editor below (actor, camera, flags, chat type) and a Play
-button that steps the cards. "+ New conversation" and "Duplicate" copy actors, not line overrides
-(an override belongs to the client line the copy shares). Tables: `conversation_template`,
+picker, texture kit with its client prefix, flags, script), one card per actor with its kind
+(creature, existing spawn, talking head, player), and the client line chain as a strip of cards
+(actor, text, duration, an override badge) with the server override editor below (actor, camera with
+its client name, flags, chat type, and the line's read-only source-29 conditions) and a Play button
+that steps the cards. The rule issues are listed under the cards, "+ New conversation" works from an
+empty tab, and "Duplicate" copies actors, not line overrides (an override belongs to the client line
+the copy shares). Removing an actor deletes only overrides of this conversation's chain, so a
+draft-loaded override from another conversation is left alone. Tables: `conversation_template`,
 `conversation_actors`, `conversation_line_template`; rules in `TcConversationRules`, reads in
-`TcCinematicsSource` (client chain with hotfix lines and broadcast text first, source-29 conditions
-per line). Client tables: `ConversationLine`, `UiCamera`, `UiTextureKit` (plus the scene tables for
-22c) through `IClientLookup`. Tests: `ConversationRulesTests`, `ConversationSnapshotReads…` in
-`CinematicsDbTests`, `CinematicsClientTests` (corpus), the conversation cases in
-`CinematicsWindowTests`.
+`TcCinematicsSource` (the client chain is walked from the effective `FirstLineId`, so a staged first
+line or a draft-only new conversation rebuilds the strip; hotfix lines and broadcast text first;
+source-29 conditions per line). Client tables: `ConversationLine`, `UiCamera`, `UiTextureKit` (plus
+the scene tables for 22c) through `IClientLookup`. Tests: `ConversationRulesTests`,
+`ConversationSnapshotReads…` and `AStagedFirstLineDrivesTheChainItWalks` in `CinematicsDbTests`,
+`CinematicsClientTests` (corpus), the conversation cases in `CinematicsWindowTests`.
 
 ## Phase 22c: scenes
 
-The Scenes tab: the template fields (client script package, eight flag bits, encryption, script) and
-the client package's ordered script steps read-only, with "+ New scene" allocating the next SceneId.
-Table `scene_template`, rules `TcSceneRules`, reads `TcCinematicsSource.ReadSceneAsync` /
-`SearchScenesAsync`, client `SceneScriptPackage`/`SceneScriptPackageMember`/`SceneScript` through
+The Scenes tab: the template fields (client script package with its name shown read-only, eight flag
+bits, encryption, script), the rule issues and the client package's ordered script steps read-only,
+with "+ New scene" allocating the next SceneId and working from an empty tab. Table `scene_template`,
+rules `TcSceneRules`, reads `TcCinematicsSource.ReadSceneAsync` / `SearchScenesAsync`, client
+`SceneScriptPackage`/`SceneScriptPackageMember`/`SceneScript` through
 `IClientLookup.SceneScriptPackage`. Tests: `SceneRulesTests`, the scene cases in `CinematicsDbTests`,
 `CinematicsClientTests` and `CinematicsWindowTests`. SmartAI actions 129/130 (`Scene`) and 143/154
 (`Conversation`) carry curated sentences and parameter kinds, and an **Open** button beside the ID
 takes the parameter's conversation or scene to the cinematics editor (`CinematicsRequested` from the
-behavior panel through the creature window to `ViewerShell`). Tests: `SmartCinematicsLinkTests`.
+behavior panel through the creature window or the AreaTrigger behavior window to `ViewerShell`).
+Tests: `SmartCinematicsLinkTests` and `ASmartAiLinkOpensTheMatchingTabAndRow`.
 
 ## Data, overlays and rendering
 

@@ -158,6 +158,7 @@ public partial class ViewerShell
             Store = () => store,
             Drafts = drafts
         };
+        areaBehavior.CinematicsRequested += (kind, id) => cinematicsEditor.Open(kind, id);
         questEditor = new QuestEditorWindow
         {
             Connection = () => DatabaseConnection(),

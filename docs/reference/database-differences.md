@@ -36,9 +36,11 @@ Schema references for column meanings, flags and enums:
 ## Cinematics tables (TrinityCore only)
 
 AzerothCore has no conversations, scenes or player choices. The editor reads and writes `playerchoice`,
-`playerchoice_response`, `playerchoice_response_reward` and `playerchoice_response_reward_item`;
-conversations (`conversation_template`, `_actors`, `_line_template`) and scenes (`scene_template`) follow in
-later stages.
+`playerchoice_response`, `playerchoice_response_reward`, `playerchoice_response_reward_item`,
+`conversation_template`, `conversation_actors`, `conversation_line_template` and `scene_template`. A
+reference the open database did not resolve (a creature, spawn, quest or item ID typed after the read)
+is reported as a warning rather than refused, because the name lookup is a snapshot and not an
+existence oracle.
 
 - Every `playerchoice_response_reward*` key is `(ChoiceId, ResponseId)` with no `Index`, exactly as
   TrinityCore publishes it, so a response has at most one reward row even though the loader orders by `Index`.

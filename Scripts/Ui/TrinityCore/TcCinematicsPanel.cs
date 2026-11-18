@@ -85,7 +85,9 @@ public partial class TcCinematicsPanel : CinematicsPanel
             Commit = Commit,
             NewRequested = () => _ = NewItem(null),
             DuplicateRequested = () => _ = NewItem(CurrentId),
-            FirstLinePick = PickFirstLine
+            FirstLinePick = PickFirstLine,
+            CameraName = id => Lookup()?.UiCameraName(id),
+            TextureKitPrefix = id => Lookup()?.UiTextureKitPrefix(id)
         };
         page.AddChild(conversationView);
         sceneView = new TcSceneView
@@ -158,7 +160,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
         var template = scene.Rows.Get(TcTables.SceneTemplate, id.ToString());
         title.Text = template == null ? $"Scene {id} does not exist" : $"Scene {id}";
         subtitle.Text = template == null ? "Create one with + New scene, or search for another." : $"Script package {template.U("ScriptPackageID")}";
-        sceneView.Show(scene with { Rows = effective });
+        sceneView.Show(scene with { Rows = effective }, issues);
         UpdateStatus();
         Updated();
     }
@@ -212,7 +214,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
             ? "Create one with + New conversation, or search for another."
             : $"{conversation.Chain.Count} lines · {effective.All(TcTables.ConversationActors).Count(actor => actor.U("ConversationId") == id)} actors"
                 + (conversation.ClientAvailable ? "" : " · client data unavailable");
-        conversationView.Show(conversation with { Rows = effective });
+        conversationView.Show(conversation with { Rows = effective }, issues);
         UpdateStatus();
         Updated();
     }

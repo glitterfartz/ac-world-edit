@@ -141,16 +141,19 @@ public class PlayerChoiceRulesTests
     }
 
     [Fact]
-    public void CheckRejectsUnknownRewardQuestsAndItems()
+    public void CheckWarnsAboutRewardReferencesThatWereNotRead()
     {
+        // The lookup only names the IDs the snapshot resolved. A quest or item typed after the read is
+        // absent from it without being absent from the database, so it must not block the save.
         var rows = Set(
             (TcTables.PlayerChoice, TcCinematicsRules.NewChoice(240).With("Question", "Which weapon?")),
             (TcTables.PlayerChoiceResponse, Response(504, 0).With("RewardQuestID", 99u)),
             (TcTables.PlayerChoiceResponseRewardItem, TcCinematicsRules.NewRewardItem(240, 504, 0, 999999, 1)));
 
         var issues = Check(rows);
-        Assert.Contains(issues, issue => issue.Error && issue.Message.Contains("reward quest 99"));
-        Assert.Contains(issues, issue => issue.Error && issue.Message.Contains("reward item 999999 does not exist"));
+        Assert.Contains(issues, issue => !issue.Error && issue.Message.Contains("reward quest 99"));
+        Assert.Contains(issues, issue => !issue.Error && issue.Message.Contains("reward item 999999"));
+        Assert.DoesNotContain(issues, issue => issue.Error);
     }
 
     [Fact]

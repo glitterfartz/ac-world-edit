@@ -15,6 +15,10 @@ public partial class TcConversationView : VBoxContainer
     public Action NewRequested { get; set; } = () => { };
     public Action DuplicateRequested { get; set; } = () => { };
     public Action FirstLinePick { get; set; } = () => { };
+    /// <summary>The client's camera name for an ID, shown beside the number when the client has one.</summary>
+    public Func<uint, string?> CameraName { get; set; } = _ => null;
+    /// <summary>The client's texture-kit prefix for an ID, shown beside the number when the client has one.</summary>
+    public Func<uint, string?> TextureKitPrefix { get; set; } = _ => null;
 
     public int ActorCount { get; private set; }
     public int LineCount { get; private set; }
@@ -41,16 +45,18 @@ public partial class TcConversationView : VBoxContainer
     RowSet? rows;
     uint conversationId;
     int playIndex = -1;
+    IReadOnlyList<InteractionIssue> lastIssues = [];
 
     public TcConversationView()
     {
         AddThemeConstantOverride("separation", 8);
     }
 
-    public void Show(ConversationSnapshot? view)
+    public void Show(ConversationSnapshot? view, IReadOnlyList<InteractionIssue>? issues = null)
     {
         snapshot = view;
         rows = view?.Rows;
+        lastIssues = issues ?? [];
         foreach (var child in GetChildren())
         {
             child.QueueFree();
@@ -62,6 +68,7 @@ public partial class TcConversationView : VBoxContainer
         {
             SelectedLineId = null;
             PlayingText = "";
+            RenderActions(card: false);
             AddChild(ClientStyle.Text("No conversation open.", 14, ClientStyle.Faded));
             return;
         }
@@ -73,8 +80,10 @@ public partial class TcConversationView : VBoxContainer
         }
 
         RenderTemplate(template, view);
+        RenderActions(card: true);
         RenderActors(view);
         RenderLines(view);
+        RenderIssues();
     }
 
     public string LineText(int index) => snapshot != null && index >= 0 && index < snapshot.Chain.Count ? snapshot.Chain[index].Text : "";
@@ -98,8 +107,10 @@ public partial class TcConversationView : VBoxContainer
         var meta = new HBoxContainer();
         meta.AddThemeConstantOverride("separation", 10);
         box.AddChild(meta);
+        var kit = template.U("TextureKitId");
         meta.AddChild(EditorFields.Row("Texture kit", "The client UI texture kit of the conversation frame.",
-            EditorFields.Number(template.U("TextureKitId"), value => SetTemplate(template, "Change texture kit", ("TextureKitId", (uint)Math.Max(value, 0))), 80, "The client UI texture kit.")));
+            EditorFields.Number(kit, value => SetTemplate(template, "Change texture kit", ("TextureKitId", (uint)Math.Max(value, 0))), 80, "The client UI texture kit."),
+            ClientStyle.Text(kit == 0 ? "" : TextureKitPrefix(kit) ?? "", 11, ClientStyle.Faded)));
         meta.AddChild(EditorFields.Row("Script", "The server script that runs while the conversation plays.",
             EditorFields.Line(template.T("ScriptName"), text => SetTemplate(template, "Change conversation script", ("ScriptName", text.Trim())), "ScriptName", 64, "The server script for this conversation.")));
 
@@ -128,6 +139,10 @@ public partial class TcConversationView : VBoxContainer
             box.AddChild(note);
         }
 
+    }
+
+    void RenderActions(bool card)
+    {
         var actions = new HBoxContainer();
         actions.AddThemeConstantOverride("separation", 6);
         AddChild(actions);
@@ -136,7 +151,20 @@ public partial class TcConversationView : VBoxContainer
         create.TooltipText = "Create an empty conversation with a new ID.";
         var duplicate = ContentEditorWindow.ButtonIn(actions, "Duplicate", () => DuplicateRequested());
         duplicate.Name = "DuplicateConversation";
+        duplicate.Disabled = !card;
         duplicate.TooltipText = "Copy this conversation and its actors under a new ID.";
+    }
+
+    /// <summary>The rule warnings and errors of the effective rows, as the commit check reports them.</summary>
+    void RenderIssues()
+    {
+        for (int i = 0; i < lastIssues.Count; i++)
+        {
+            var label = ClientStyle.Text(lastIssues[i].Message, 12, lastIssues[i].Error ? ClientStyle.Warning : ClientStyle.Faded);
+            label.Name = $"Issue_{i}";
+            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            AddChild(label);
+        }
     }
 
     void RenderActors(ConversationSnapshot view)
@@ -168,15 +196,17 @@ public partial class TcConversationView : VBoxContainer
             kind.ItemSelected += index => SetKind(beforeKind, (int)index);
             box.AddChild(kind);
 
+            var creature = EditorFields.Number(actor.U("CreatureId"), value => SetActor(actor, "Change actor creature", ("CreatureId", (uint)Math.Max(value, 0))), 80, "The creature template that stands on screen.");
+            creature.Name = $"ActorCreature_{idx}";
             box.AddChild(EditorFields.Row("Creature", "The creature template that stands on screen.",
-                EditorFields.Number(actor.U("CreatureId"), value => SetActor(actor, "Change actor creature", ("CreatureId", (uint)Math.Max(value, 0))), 80, "The creature template that stands on screen."),
-                ClientStyle.Text(view.Names.Creature(actor.U("CreatureId")) ?? "", 11, ClientStyle.Faded)));
+                creature, ClientStyle.Text(view.Names.Creature(actor.U("CreatureId")) ?? "", 11, ClientStyle.Faded)));
             box.AddChild(EditorFields.Row("Display", "A display override for a talking head; 0 uses the creature's model.",
                 EditorFields.Number(actor.U("CreatureDisplayInfoId"), value => SetActor(actor, "Change actor display", ("CreatureDisplayInfoId", (uint)Math.Max(value, 0))), 90, "A display override for a talking head.")));
             box.AddChild(EditorFields.Row("Spawn", "An existing creature spawn used as the actor; 0 uses the creature template.",
                 EditorFields.Number((long)actor.UL("ConversationActorGuid"), value => SetActor(actor, "Change actor spawn", ("ConversationActorGuid", (ulong)Math.Max(value, 0))), 110, "An existing creature spawn used as the actor."),
                 ClientStyle.Text(actor.UL("ConversationActorGuid") == 0 ? "" : view.Names.CreatureSpawnExists(actor.UL("ConversationActorGuid")) ? "exists" : "missing", 11, ClientStyle.Faded)));
-            var remove = ContentEditorWindow.ButtonIn(box, "Remove actor", () => Commit("Remove actor", TcConversationRules.RemoveActor(actor, rows!)));
+            var remove = ContentEditorWindow.ButtonIn(box, "Remove actor",
+                () => Commit("Remove actor", TcConversationRules.RemoveActor(actor, rows!, view.Chain.Select(line => line.Id).ToArray())));
             remove.Name = $"RemoveActor_{idx}";
             remove.TooltipText = "Remove this actor and the line overrides that name it.";
         }
@@ -250,15 +280,31 @@ public partial class TcConversationView : VBoxContainer
             box.AddChild(text);
         }
 
+        if (snapshot.Conditions.TryGetValue(lineId, out var conditions))
+        {
+            for (int i = 0; i < conditions.Count; i++)
+            {
+                var condition = conditions[i];
+                var label = ClientStyle.Text(ConditionCatalog.Trinity.Describe(condition.I("ConditionTypeOrReference"),
+                    condition.L("ConditionValue1"), condition.L("ConditionValue2"), condition.L("ConditionValue3"), condition.U("NegativeCondition") != 0), 12, ClientStyle.Faded);
+                label.Name = $"LineCondition_{lineId}_{i}";
+                label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                label.TooltipText = "A condition the server checks before playing this line. Conditions are read-only here.";
+                box.AddChild(label);
+            }
+        }
+
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 10);
         box.AddChild(row);
         var actor = existing ?? TcConversationRules.NewLineOverride(lineId);
         row.AddChild(EditorFields.Row("Actor", "Which actor says this line.",
             EditorFields.Number(actor.U("ActorIdx"), value => SetOverride(existing, actor, "Change line actor", ("ActorIdx", (uint)Math.Max(value, 0))), 60, "Which actor says this line.")));
+        uint camera = actor.U("UiCameraID");
         row.AddChild(EditorFields.Row("Camera", "The client camera this line is shown from; 0 keeps the client's.",
-            EditorFields.Number(actor.U("UiCameraID"), value => SetOverride(existing, actor, "Change line camera", ("UiCameraID", (uint)Math.Max(value, 0))), 90,
-                "The client camera this line is shown from; 0 keeps the client's.")));
+            EditorFields.Number(camera, value => SetOverride(existing, actor, "Change line camera", ("UiCameraID", (uint)Math.Max(value, 0))), 90,
+                "The client camera this line is shown from; 0 keeps the client's."),
+            ClientStyle.Text(camera == 0 ? "" : CameraName(camera) ?? "", 11, ClientStyle.Faded)));
         row.AddChild(EditorFields.Row("Flags", "The line's server flags.", EditorFields.Number(actor.U("Flags"), value => SetOverride(existing, actor, "Change line flags", ("Flags", (uint)Math.Max(value, 0))), 60, "The line's server flags.")));
         row.AddChild(EditorFields.Row("Chat", "The chat bubble type; 0 is the client default.",
             EditorFields.Number(actor.U("ChatType"), value => SetOverride(existing, actor, "Change line chat type", ("ChatType", (uint)Math.Max(value, 0))), 60, "The chat bubble type; 0 is the client default.")));
@@ -280,7 +326,7 @@ public partial class TcConversationView : VBoxContainer
     public void SelectLine(uint lineId)
     {
         SelectedLineId = lineId;
-        Show(snapshot);
+        Show(snapshot, lastIssues);
     }
 
     public void SetFirstLine(uint lineId)
@@ -336,7 +382,7 @@ public partial class TcConversationView : VBoxContainer
         playIndex = playIndex < 0 || playIndex + 1 >= snapshot.Chain.Count ? 0 : playIndex + 1;
         SelectedLineId = snapshot.Chain[playIndex].Id;
         PlayingText = $"Playing {playIndex + 1} of {snapshot.Chain.Count}";
-        Show(snapshot);
+        Show(snapshot, lastIssues);
     }
 
     void SetKind(Row actor, int kindIndex)

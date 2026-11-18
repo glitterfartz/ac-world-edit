@@ -28,6 +28,9 @@ public sealed class TcCinematicsSource(WorldDatabase database, IClientLookup? cl
             await AcInteractionSource.Load(session, rows, table, "ChoiceId=@k0", [choiceId], token);
         }
 
+        // The conditions that gate each answer are source 36 with the choice as the group.
+        await AcInteractionSource.Load(session, rows, TcTables.Conditions, "SourceTypeOrReferenceId=36 AND SourceGroup=@k0", [choiceId], token);
+
         // A staged response or reward still names its parent, so reload it by its own key.
         foreach (var (table, key) in draftKeys.Where(k => ChoiceTables.Contains(k.Table)))
         {
@@ -59,7 +62,9 @@ public sealed class TcCinematicsSource(WorldDatabase database, IClientLookup? cl
             await AcInteractionSource.Load(session, rows, table, string.Join(" AND ", table.Key.Select((k, i) => $"`{k}`=@k{i}")), parts.Cast<object>().ToArray(), token);
         }
 
-        uint firstLine = rows.Get(TcTables.ConversationTemplate, id.ToString())?.U("FirstLineId") ?? 0;
+        // The draft, not the stored row, decides what plays: a new conversation exists only in the
+        // draft, and changing an existing first line must rebuild the strip before it is applied.
+        uint firstLine = effective(rows).Get(TcTables.ConversationTemplate, id.ToString())?.U("FirstLineId") ?? 0;
         var (chain, clientAvailable) = await ReadChainAsync(firstLine, token);
         if (chain.Count > 0)
         {
@@ -72,10 +77,7 @@ public sealed class TcCinematicsSource(WorldDatabase database, IClientLookup? cl
         var view = effective(rows);
         var names = new ContentNames(catalog, client);
         await ResolveConversationNames(session, view, names, token);
-        var conditions = view.All(TcTables.Conditions)
-            .GroupBy(row => (uint)Math.Max(row.I("SourceEntry"), 0))
-            .ToDictionary(group => group.Key, group => (IReadOnlyList<Row>)group
-                .OrderBy(row => row.U("ElseGroup")).ThenBy(row => row.I("ConditionTypeOrReference")).ToList());
+        var conditions = TcConversationRules.Conditions(view, chain.Select(line => line.Id).ToArray());
         var resolved = chain.Select(line => line with { Override = view.Get(TcTables.ConversationLineTemplate, line.Id.ToString()) }).ToList();
         uint max = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(Id),0) FROM conversation_template", [], token), CultureInfo.InvariantCulture);
         return new ConversationSnapshot(rows, names, database.SourceKey, max, resolved, conditions, clientAvailable);
@@ -206,24 +208,6 @@ public sealed class TcCinematicsSource(WorldDatabase database, IClientLookup? cl
         {
             names.Spawns.Add(Convert.ToUInt64(reader.GetValue(0), CultureInfo.InvariantCulture));
         }
-    }
-
-    /// <summary>
-    /// The condition rows on one source. Player-choice responses use source 36 with the choice as
-    /// SourceGroup and a null entry (every response); conversation lines use source 29 with group 0
-    /// and the line as SourceEntry.
-    /// </summary>
-    public async Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token)
-    {
-        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
-        session.Require("conditions.SourceTypeOrReferenceId", "conditions.SourceGroup", "conditions.SourceEntry");
-        var rows = new RowSet();
-        string predicate = sourceEntry is null
-            ? "SourceTypeOrReferenceId=@k0 AND SourceGroup=@k1"
-            : "SourceTypeOrReferenceId=@k0 AND SourceGroup=@k1 AND SourceEntry=@k2";
-        object[] values = sourceEntry is null ? [sourceType, sourceGroup] : [sourceType, sourceGroup, sourceEntry.Value];
-        await AcInteractionSource.Load(session, rows, TcTables.Conditions, predicate, values, token);
-        return rows.All(TcTables.Conditions).OrderBy(r => r.U("ElseGroup")).ThenBy(r => r.I("ConditionTypeOrReference")).ThenBy(r => r.I("SourceEntry")).ToList();
     }
 
     /// <summary>Player choices by ID, question or pending-choice text (bounded). The name is the question shown to the player.</summary>

@@ -82,7 +82,6 @@ public sealed class TcDBSource : IDBSource
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => throw Unsupported("Item search");
     public Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token) => interaction.SearchQuestsAsync(term, token);
     public Task<PlayerChoiceSnapshot> ReadPlayerChoiceAsync(uint choiceId, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => cinematics.ReadPlayerChoiceAsync(choiceId, draftKeys, effective, catalog, token);
-    public Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token) => cinematics.ReadCinematicConditionsAsync(sourceType, sourceGroup, sourceEntry, token);
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token) => cinematics.SearchPlayerChoicesAsync(term, token);
     public Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => cinematics.ReadConversationAsync(id, draftKeys, effective, catalog, token);
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token) => cinematics.SearchConversationsAsync(term, token);

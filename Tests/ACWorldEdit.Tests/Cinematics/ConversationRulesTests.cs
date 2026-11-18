@@ -106,13 +106,33 @@ public class ConversationRulesTests
     }
 
     [Fact]
-    public void CheckRejectsASpawnActorThatDoesNotExist()
+    public void CheckWarnsAboutAnActorReferenceThatWasNotRead()
     {
+        // The lookup only holds the IDs the snapshot resolved, so an ID missing from it is not proof
+        // the row is absent: a just-typed creature or spawn must still be saveable.
         var rows = Set(
             (TcTables.ConversationTemplate, TcConversationRules.NewConversation(754, 1790)),
-            (TcTables.ConversationActors, TcConversationRules.NewActor(754, 0).With("ConversationActorGuid", 999999UL)));
+            (TcTables.ConversationActors, TcConversationRules.NewActor(754, 0).With("CreatureId", 55555u)),
+            (TcTables.ConversationActors, TcConversationRules.NewActor(754, 1).With("ConversationActorGuid", 999999UL)));
 
-        Assert.Contains(Check(rows), issue => issue.Error && issue.Message.Contains("spawn 999999"));
+        var issues = Check(rows);
+        Assert.Contains(issues, issue => !issue.Error && issue.Message.Contains("creature 55555"));
+        Assert.Contains(issues, issue => !issue.Error && issue.Message.Contains("spawn 999999"));
+        Assert.DoesNotContain(issues, issue => issue.Error);
+    }
+
+    [Fact]
+    public void RemoveActorKeepsAnOverrideForALineOutsideTheChain()
+    {
+        var actor = TcConversationRules.NewActor(754, 0).With("CreatureId", 99426u);
+        var inChain = TcConversationRules.NewLineOverride(1790).With("ActorIdx", 0u);
+        var otherLine = TcConversationRules.NewLineOverride(9000).With("ActorIdx", 0u);
+        var rows = Set((TcTables.ConversationActors, actor), (TcTables.ConversationLineTemplate, inChain), (TcTables.ConversationLineTemplate, otherLine));
+
+        var edits = TcConversationRules.RemoveActor(actor, rows, [1790, 1791]);
+
+        Assert.Contains(edits, edit => edit.Table == "conversation_line_template" && edit.Key == "1790");
+        Assert.DoesNotContain(edits, edit => edit.Key == "9000");
     }
 
     [Fact]
@@ -125,6 +145,29 @@ public class ConversationRulesTests
 
         Assert.Contains(Check(rows, [1790, 1791]), issue => !issue.Error && issue.Message.Contains("line 9999"));
     }
+
+    [Fact]
+    public void ConditionsGroupByLineInServerOrderAndOnlyForTheChain()
+    {
+        var rows = Set(
+            (TcTables.Conditions, Condition(29, 0, 1790, elseGroup: 0, type: 23)),
+            (TcTables.Conditions, Condition(29, 0, 1790, elseGroup: 1, type: 22)),
+            (TcTables.Conditions, Condition(29, 0, 9000, elseGroup: 0, type: 23)),
+            (TcTables.Conditions, Condition(36, 240, 504, elseGroup: 0, type: 23)));
+
+        var grouped = TcConversationRules.Conditions(rows, [1790, 1791]);
+
+        Assert.Equal([1790u], grouped.Keys.ToArray());
+        Assert.Equal([23, 22], grouped[1790].Select(row => row.I("ConditionTypeOrReference")).ToArray());
+    }
+
+    static Row Condition(int source, uint group, int entry, uint elseGroup, int type) =>
+        new Row(TcTables.Conditions.Columns.Select(column => new KeyValuePair<string, string>(column.Name, "0")))
+            .With("SourceTypeOrReferenceId", source)
+            .With("SourceGroup", group)
+            .With("SourceEntry", entry)
+            .With("ElseGroup", elseGroup)
+            .With("ConditionTypeOrReference", type);
 
     [Fact]
     public void NextActorIdxFollowsTheHighestIndex()

@@ -380,7 +380,10 @@ their create properties are read. Open:
 
 **State:** done. 22a player choices, 22b conversations and 22c scenes are built (editors, reads, rules,
 draft commands, `--cinematics-smoke`), and SmartAI actions 129/130/143/154 name their parameters and
-open the editors. Locale tables and hotfix-backed editing stay deferred (see
+open the editors. Open gaps: the client search pickers the phase proposed for actors, reward quests
+and items, cameras and answer art are not built (the ID fields accept numbers and show resolved
+names), and `ChoiceArtFileId` has no image preview; conditions are read-only until the builder lands
+with Phase 13. Locale tables and hotfix-backed editing stay deferred (see
 [needed-tests.md](../status/needed-tests.md)).
 
 **Why:** retail storytelling uses conversations (248 templates, 702 lines), scenes and player choices; AC has

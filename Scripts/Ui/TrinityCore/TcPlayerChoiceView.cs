@@ -61,6 +61,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
         if (view?.All(TcTables.PlayerChoice).FirstOrDefault() is not { } card)
         {
             SelectedResponseId = null;
+            RenderActions(card: false);
             AddChild(ClientStyle.Text("No player choice open.", 14, ClientStyle.Faded));
             return;
         }
@@ -72,7 +73,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
         }
 
         RenderCard(card);
-        RenderActions();
+        RenderActions(card: true);
         RenderStrip();
         RenderEditor();
     }
@@ -93,6 +94,20 @@ public partial class TcPlayerChoiceView : VBoxContainer
         {
             box.AddChild(ClientStyle.Text(card.T("PendingChoiceText"), 12, ClientStyle.Faded));
         }
+
+        var texts = new HBoxContainer();
+        texts.AddThemeConstantOverride("separation", 10);
+        box.AddChild(texts);
+        var questionEdit = EditorFields.Line(card.IsNull("Question") ? "" : card.T("Question"), text => SetRow(TcTables.PlayerChoice, card,
+            card.With("Question", text.Trim().Length == 0 ? (object?)null : text.Trim()), "Change question"), "Question", 255,
+            "The question the card asks; empty uses the pending choice text.");
+        questionEdit.Name = "Question";
+        texts.AddChild(EditorFields.Row("Question", "The question the card asks; empty uses the pending choice text.", questionEdit));
+        var pending = EditorFields.Line(card.T("PendingChoiceText"), text => SetRow(TcTables.PlayerChoice, card,
+            card.With("PendingChoiceText", text), "Change pending choice text"), "PendingChoiceText", 255,
+            "The text shown while the choice is pending.");
+        pending.Name = "PendingChoiceText";
+        texts.AddChild(EditorFields.Row("Pending text", "The text shown while the choice is pending.", pending));
 
         var meta = new HBoxContainer();
         meta.AddThemeConstantOverride("separation", 8);
@@ -128,7 +143,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
                 card.With("ScriptName", text.Trim().Length == 0 ? (object?)null : text.Trim()), "Change choice script"), "ScriptName", 64, "The server script for this choice.")));
     }
 
-    void RenderActions()
+    void RenderActions(bool card)
     {
         var actions = new HBoxContainer();
         actions.AddThemeConstantOverride("separation", 6);
@@ -138,13 +153,15 @@ public partial class TcPlayerChoiceView : VBoxContainer
         create.TooltipText = "Create an empty player choice with a new ID.";
         var duplicate = ContentEditorWindow.ButtonIn(actions, "Duplicate", () => DuplicateRequested());
         duplicate.Name = "DuplicateChoice";
+        duplicate.Disabled = !card;
         duplicate.TooltipText = "Copy this choice, its answers and their rewards under a new ID.";
         var add = ContentEditorWindow.ButtonIn(actions, "+ Response", AddResponse);
         add.Name = "AddResponse";
+        add.Disabled = !card;
         add.TooltipText = "Add another answer card at the end.";
         var remove = ContentEditorWindow.ButtonIn(actions, "Remove response", RemoveSelected);
         remove.Name = "RemoveResponse";
-        remove.Disabled = SelectedResponseId == null;
+        remove.Disabled = !card || SelectedResponseId == null;
         remove.TooltipText = "Remove the selected answer and its reward.";
     }
 
@@ -189,6 +206,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
         else if (TcCinematicsRules.Responses(rows!, choiceId).FirstOrDefault(r => r.U("ResponseId") == id) is { } response)
         {
             RenderResponseEditor(response);
+            RenderConditions(id);
         }
 
         if (lastIssues.Count > 0)
@@ -200,6 +218,21 @@ public partial class TcPlayerChoiceView : VBoxContainer
                 label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
                 AddChild(label);
             }
+        }
+    }
+
+    /// <summary>The source-36 conditions the server checks before offering this answer, read-only.</summary>
+    void RenderConditions(uint responseId)
+    {
+        int index = 0;
+        foreach (var row in TcCinematicsRules.Conditions(rows!, choiceId, responseId))
+        {
+            var condition = ClientStyle.Text(ConditionCatalog.Trinity.Describe(row.I("ConditionTypeOrReference"),
+                row.L("ConditionValue1"), row.L("ConditionValue2"), row.L("ConditionValue3"), row.U("NegativeCondition") != 0), 12, ClientStyle.Faded);
+            condition.Name = $"Condition_{responseId}_{index++}";
+            condition.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            condition.TooltipText = "A condition the server checks before offering this answer. Conditions are read-only here.";
+            AddChild(condition);
         }
     }
 
@@ -226,9 +259,10 @@ public partial class TcPlayerChoiceView : VBoxContainer
         box.AddChild(row);
         row.AddChild(EditorFields.Row("Position", "The order of the answer cards.",
             EditorFields.Number(response.U("Index"), value => SetRow(TcTables.PlayerChoiceResponse, response, response.With("Index", (uint)Math.Max(value, 0)), "Change response position"), 60, "The order of the answer cards.")));
-        row.AddChild(EditorFields.Row("Reward quest", "A quest this answer sends the player to; 0 for none.",
-            EditorFields.Number(response.IsNull("RewardQuestID") ? 0 : response.U("RewardQuestID"), value => SetRow(TcTables.PlayerChoiceResponse, response,
-                response.With("RewardQuestID", value <= 0 ? (object?)null : (uint)value), "Change reward quest"), 80, "A quest this answer sends the player to; 0 for none.")));
+        var quest = EditorFields.Number(response.IsNull("RewardQuestID") ? 0 : response.U("RewardQuestID"), value => SetRow(TcTables.PlayerChoiceResponse, response,
+            response.With("RewardQuestID", value <= 0 ? (object?)null : (uint)value), "Change reward quest"), 80, "A quest this answer sends the player to; 0 for none.");
+        quest.Name = $"RewardQuest_{id}";
+        row.AddChild(EditorFields.Row("Reward quest", "A quest this answer sends the player to; 0 for none.", quest));
         row.AddChild(EditorFields.Row("Answer art", "The client texture file shown on the answer card; 0 for none.",
             EditorFields.Number(response.I("ChoiceArtFileId"), value => SetRow(TcTables.PlayerChoiceResponse, response,
                 response.With("ChoiceArtFileId", (int)Math.Max(value, 0)), "Change answer art"), 90, "The client texture file shown on the answer card; 0 for none.")));

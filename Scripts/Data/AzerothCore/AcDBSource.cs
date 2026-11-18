@@ -71,7 +71,6 @@ public sealed class AcDBSource : IDBSource
     public Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token) => interaction.SearchItemDetailsAsync(term, token);
     public Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token) => interaction.SearchQuestsAsync(term, token);
     public Task<PlayerChoiceSnapshot> ReadPlayerChoiceAsync(uint choiceId, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw CinematicsUnsupported();
-    public Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token) => throw CinematicsUnsupported();
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token) => throw CinematicsUnsupported();
     public Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw CinematicsUnsupported();
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token) => throw CinematicsUnsupported();

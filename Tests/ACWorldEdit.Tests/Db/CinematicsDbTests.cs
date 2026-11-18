@@ -60,14 +60,16 @@ public class CinematicsDbTests
     }
 
     [TcDbFact]
-    public async Task SourceThirtySixConditionsListTheGatedResponsesOfTheChoice()
+    public async Task SourceThirtySixConditionsComeWithTheChoice()
     {
         var source = Open();
-        var conditions = await source.ReadCinematicConditionsAsync(36, 240, null, CancellationToken.None);
+        var snapshot = await source.ReadPlayerChoiceAsync(240, [], rows => rows, null, CancellationToken.None);
 
+        var conditions = snapshot.Rows.All(TcTables.Conditions).ToList();
         Assert.Equal(new[] { 504, 505, 506 }, conditions.Select(r => r.I("SourceEntry")).Order().ToArray());
         Assert.All(conditions, row => Assert.Equal(36, row.I("SourceTypeOrReferenceId")));
         Assert.All(conditions, row => Assert.Equal(240u, row.U("SourceGroup")));
+        Assert.Contains(504u, TcCinematicsRules.Conditions(snapshot.Rows, 240, 504).Select(row => (uint)row.I("SourceEntry")));
     }
 
     [TcDbFact]
@@ -111,6 +113,29 @@ public class CinematicsDbTests
     }
 
     [TcDbFact]
+    public async Task AStagedFirstLineDrivesTheChainItWalks()
+    {
+        var lookup = Retail();
+        var source = Open(lookup);
+
+        // The stored first line is 1790; a draft that changes it must rebuild the chain from 1791,
+        // otherwise a new conversation (whose template exists only in the draft) never has a chain.
+        var snapshot = await source.ReadConversationAsync(754, [], rows =>
+        {
+            var view = rows.Clone();
+            view.Set(TcTables.ConversationTemplate, view.Get(TcTables.ConversationTemplate, "754")!.With("FirstLineId", 1791u));
+            return view;
+        }, null, CancellationToken.None);
+
+        Assert.Equal(1790u, snapshot.Rows.Get(TcTables.ConversationTemplate, "754")!.U("FirstLineId"));
+        if (lookup != null)
+        {
+            Assert.True(snapshot.ClientAvailable);
+            Assert.Equal(1791u, snapshot.Chain[0].Id);
+        }
+    }
+
+    [TcDbFact]
     public async Task AStagedActorEditAppearsInTheEffectiveRows()
     {
         var source = Open();
@@ -125,16 +150,6 @@ public class CinematicsDbTests
         }, null, CancellationToken.None);
 
         Assert.Equal(99999u, edited.Rows.Get(TcTables.ConversationActors, draftKey.Key)!.U("CreatureId"));
-    }
-
-    [TcDbFact]
-    public async Task ConversationConditionsSourceTwentyNineGateOneLine()
-    {
-        var source = Open();
-        var conditions = await source.ReadCinematicConditionsAsync(29, 0, 33931, CancellationToken.None);
-
-        Assert.NotEmpty(conditions);
-        Assert.All(conditions, row => Assert.Equal(29, row.I("SourceTypeOrReferenceId")));
     }
 
     [TcDbFact]

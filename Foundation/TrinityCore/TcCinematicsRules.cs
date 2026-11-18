@@ -132,9 +132,11 @@ public static class TcCinematicsRules
                 yield return new(true, $"Response {id}: the header is empty.");
             }
 
+            // The names are a snapshot of the IDs it resolved; an ID typed after the read is absent
+            // without being absent from the database, so an unresolved reference is a warning.
             if (!response.IsNull("RewardQuestID") && response.U("RewardQuestID") != 0 && names?.Quest(response.U("RewardQuestID")) == null)
             {
-                yield return new(true, $"Response {id}: reward quest {response.U("RewardQuestID")} does not exist.");
+                yield return new(false, $"Response {id}: reward quest {response.U("RewardQuestID")} was not found in the open database; check the ID.");
             }
 
             foreach (var item in RewardItems(rows, choice, id))
@@ -157,7 +159,7 @@ public static class TcCinematicsRules
 
                 if (names != null && names.Item(itemId) == null)
                 {
-                    yield return new(true, $"Response {id}: reward item {itemId} does not exist.");
+                    yield return new(false, $"Response {id}: reward item {itemId} was not found in the open database; check the ID.");
                 }
             }
         }
@@ -179,6 +181,12 @@ public static class TcCinematicsRules
         rows.All(TcTables.PlayerChoiceResponse)
             .Where(r => r.U("ChoiceId") == choice)
             .OrderBy(r => r.U("Index")).ThenBy(r => r.U("ResponseId"));
+
+    /// <summary>The source-36 conditions on one response, ordered as the server evaluates them.</summary>
+    public static IEnumerable<Row> Conditions(RowSet rows, uint choice, uint responseId) =>
+        rows.All(TcTables.Conditions)
+            .Where(row => row.I("SourceTypeOrReferenceId") == 36 && row.U("SourceGroup") == choice && row.I("SourceEntry") == (int)responseId)
+            .OrderBy(row => row.U("ElseGroup")).ThenBy(row => row.I("ConditionTypeOrReference"));
 
     /// <summary>This response's reward items in their listed order.</summary>
     public static IEnumerable<Row> RewardItems(RowSet rows, uint choice, uint responseId) =>
