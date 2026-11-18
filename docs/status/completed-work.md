@@ -109,10 +109,11 @@ Node move/facing/delay, add/insert/delete/renumber, new paths, path-level proper
 link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
 polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
 
-## Visual scripting (Milestones 0–4)
+## Visual scripting (Milestones 0–5)
 
-The scripting pipeline, persistence layer, Godot editor MVP, authoring depth and the domain/catalog
-foundation are built; the Eluna multi-host proof starts at Milestone 5.
+The scripting pipeline, persistence layer, Godot editor MVP, authoring depth, the domain/catalog
+foundation and the multi-host proof are built; advanced runtime work (instance data, timers, lists)
+starts at Milestone 6.
 
 | Area | What landed |
 | --- | --- |
@@ -126,7 +127,8 @@ foundation are built; the Eluna multi-host proof starts at Milestone 5.
 | Editor (M2) | View → Script editor… opens a lazily built `ScriptEditorWindow` inside `ScriptWindowFrame`; `ScriptGraphCanvas`/`ScriptPortMap`/`ScriptNodeView` render typed nodes and enforce connection rules, while `ScriptDocumentSession` supplies a 100-entry undo/redo history and hash-based dirty state. Palette search, typed inspector fields, event scope fields, variables, problems with node centring, Lua preview, Ctrl+S/Z/Y/Enter/Shift+E/F/Home/0/Escape shortcuts, workspace save/load, export with the reload hint, and per-profile folder/auto-export settings. |
 | Authoring depth (M3) | `flow.for_range` lowering (`for i = from, to`), user-function graphs (parameter get, exec roots, Return slots, function signature editing), copy/paste/duplicate with id remap and multi-select deletion, comment frames (position/size persisted), and `spell-cast`/`quest-giver` templates with golden Lua. |
 | Domain foundation (M4) | `dungeon-encounter` and `world-event` templates with golden Lua; `ScriptReferenceResolver` (typed-id checks against a live source, confirmed misses block export) with `DbSource` over `IDBSource.SearchAsync`; catalog `--check` clean against the pinned mod-ale clone and a curated `script_catalog_overrides.json`; `docs/reference/cpp-to-graph-parity.md`. |
-| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests`, `ScriptReferenceResolverTests` (1687 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (11) and `ScriptEditorWindowTests` (13) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load, export, copy/paste/duplicate, comments and function graphs; the View menu change is pinned by the updated UI goldens. |
+| Multi-host (M5) | `eluna-trinitycore` proof profile (mirrored bindings, experimental), `TcScriptHosts.Profile` and `ScriptHostRegistry` wiring, a host selector that re-validates and recompiles, host-aware catalog hash, cross-host compile tests and `docs/reference/host-capabilities.md`. |
+| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests`, `ScriptReferenceResolverTests` (1690 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (11) and `ScriptEditorWindowTests` (14) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load, export, copy/paste/duplicate, comments and function graphs; the View menu change is pinned by the updated UI goldens. |
 
 ## Data, overlays and rendering
 

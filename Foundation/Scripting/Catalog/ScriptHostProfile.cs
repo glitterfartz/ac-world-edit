@@ -54,6 +54,10 @@ public static class ScriptHostRegistry
 {
     public static IReadOnlyList<ScriptHostInfo> Hosts { get; } = [AcScriptHosts.Info, TcScriptHosts.Info];
 
-    public static ScriptHostProfile? Profile(string host) =>
-        host == AcScriptHosts.Id ? AcScriptHosts.Profile : null;
+    public static ScriptHostProfile? Profile(string host) => host switch
+    {
+        AcScriptHosts.Id => AcScriptHosts.Profile,
+        TcScriptHosts.Id => TcScriptHosts.Profile,
+        _ => null
+    };
 }

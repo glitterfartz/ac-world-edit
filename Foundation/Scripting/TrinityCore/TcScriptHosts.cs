@@ -11,5 +11,7 @@ public static class TcScriptHosts
 
     public static ScriptHostInfo Info { get; } = new(Id, Label, Experimental: true);
 
-    public static ScriptHostProfile? Profile => null;
+    static readonly Lazy<ScriptHostProfile> LazyProfile = new(ScriptCatalogLoader.LoadElunaTrinityCore);
+
+    public static ScriptHostProfile Profile => LazyProfile.Value;
 }

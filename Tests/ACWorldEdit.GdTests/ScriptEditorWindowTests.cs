@@ -197,6 +197,20 @@ public class ScriptEditorWindowTests
     }
 
     [TestCase]
+    public void SwitchingHostRevalidatesAndCompiles()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("creature-death");
+
+        AssertThat(window.ChangeHost("eluna-trinitycore")).IsTrue();
+
+        AssertString(window.HostLabel.Text).Contains("Eluna");
+        AssertThat(window.Session.Document.Host).IsEqual("eluna-trinitycore");
+        AssertThat(window.Compile().Success).IsTrue();
+        AssertString(window.Preview.Text).Contains("RegisterCreatureEvent(1234, 4");
+    }
+
+    [TestCase]
     public void UndoAndRedoFollowCanvasEditsAndMarkTheTitle()
     {
         var window = Spawn(out _, out _);

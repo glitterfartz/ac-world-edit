@@ -1,0 +1,17 @@
+{
+  "host": "eluna-trinitycore",
+  "label": "Eluna (TrinityCore)",
+  "conventions": {
+    "luaVersion": "5.1-compatible",
+    "objectTimer": { "register": "RegisterEvent", "callbackArgs": ["eventId", "delay", "repeats", "object"] },
+    "globalTimer": { "register": "CreateLuaEvent", "callbackArgs": ["eventId", "delay", "repeats"] },
+    "asyncQuery": { "call": "WorldDBQueryAsync", "callbackArg": "query" },
+    "caveats": [
+      "Proof profile: the bindings mirror Eluna's Lua method names and registration order, but no live TrinityCore server was available to verify them.",
+      "Eluna's event ids follow its own HookMgr enum; treat any divergence as a catalog bug, not a document bug.",
+      "Object userdata is invalid after the handler returns; store GUIDs.",
+      "Timers die with the object; global timers must be cancelled explicitly."
+    ]
+  },
+  "enums": []
+}

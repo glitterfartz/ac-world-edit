@@ -20,6 +20,7 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
   - TrinityCore world database (master): https://trinitycore.info/database/master/world/home
 - `docs/reference/scripting-capabilities.md`: the scripting capability catalog, ALE bindings, event coverage, enums and host caveats.
 - `docs/reference/cpp-to-graph-parity.md`: ALE C++ events/functions versus the offered graph nodes, and what is deliberately not exposed.
+- `docs/reference/host-capabilities.md`: the ALE and Eluna host profiles, host switching, and the proof profile gaps.
 - `docs/reference/shader-inspection-locations.md`: a map/tile/XYZ for inspecting each implemented liquid shader.
 - `docs/status/completed-work.md`: what is built, per phase and area, with the tests and smokes that prove it.
 - `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.

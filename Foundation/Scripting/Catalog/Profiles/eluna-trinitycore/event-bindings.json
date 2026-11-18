@@ -1,0 +1,2006 @@
+{
+  "event.allcreature.on_add": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "ALL_CREATURE_EVENT_ON_ADD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_aura_apply": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "ALL_CREATURE_EVENT_ON_AURA_APPLY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_aura_remove": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 8,
+    "eventName": "ALL_CREATURE_EVENT_ON_AURA_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_before_select_level": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "ALL_CREATURE_EVENT_ON_BEFORE_SELECT_LEVEL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_damage": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 7,
+    "eventName": "ALL_CREATURE_EVENT_ON_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_deal_damage": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 13,
+    "eventName": "ALL_CREATURE_EVENT_ON_DEAL_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_heal": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "ALL_CREATURE_EVENT_ON_HEAL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_modify_heal_received": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 12,
+    "eventName": "ALL_CREATURE_EVENT_ON_MODIFY_HEAL_RECEIVED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_modify_melee_damage": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 10,
+    "eventName": "ALL_CREATURE_EVENT_ON_MODIFY_MELEE_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_modify_periodic_damage_auras_tick": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 9,
+    "eventName": "ALL_CREATURE_EVENT_ON_MODIFY_PERIODIC_DAMAGE_AURAS_TICK",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_modify_spell_damage_taken": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 11,
+    "eventName": "ALL_CREATURE_EVENT_ON_MODIFY_SPELL_DAMAGE_TAKEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_remove": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "ALL_CREATURE_EVENT_ON_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.allcreature.on_select_level": {
+    "register": "RegisterAllCreatureEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "ALL_CREATURE_EVENT_ON_SELECT_LEVEL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.battleground.on_create": {
+    "register": "RegisterBGEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "BG_EVENT_ON_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.battleground.on_end": {
+    "register": "RegisterBGEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "BG_EVENT_ON_END",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.battleground.on_pre_destroy": {
+    "register": "RegisterBGEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "BG_EVENT_ON_PRE_DESTROY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.battleground.on_start": {
+    "register": "RegisterBGEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "BG_EVENT_ON_START",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_add": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 36,
+    "eventName": "CREATURE_EVENT_ON_ADD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_aiupdate": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 7,
+    "eventName": "CREATURE_EVENT_ON_AIUPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_aura_apply": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 38,
+    "eventName": "CREATURE_EVENT_ON_AURA_APPLY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_aura_remove": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 41,
+    "eventName": "CREATURE_EVENT_ON_AURA_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_corpse_removed": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 26,
+    "eventName": "CREATURE_EVENT_ON_CORPSE_REMOVED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_damage": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 40,
+    "eventName": "CREATURE_EVENT_ON_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_damage_taken": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 9,
+    "eventName": "CREATURE_EVENT_ON_DAMAGE_TAKEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_deal_damage": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 46,
+    "eventName": "CREATURE_EVENT_ON_DEAL_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_dialog_status": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 35,
+    "eventName": "CREATURE_EVENT_ON_DIALOG_STATUS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_died": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 4,
+    "eventName": "CREATURE_EVENT_ON_DIED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_dummy_effect": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 30,
+    "eventName": "CREATURE_EVENT_ON_DUMMY_EFFECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_enter_combat": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "CREATURE_EVENT_ON_ENTER_COMBAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_heal": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 39,
+    "eventName": "CREATURE_EVENT_ON_HEAL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_hit_by_spell": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 14,
+    "eventName": "CREATURE_EVENT_ON_HIT_BY_SPELL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_just_summoned_creature": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 19,
+    "eventName": "CREATURE_EVENT_ON_JUST_SUMMONED_CREATURE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_leave_combat": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "CREATURE_EVENT_ON_LEAVE_COMBAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_modify_heal_received": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 45,
+    "eventName": "CREATURE_EVENT_ON_MODIFY_HEAL_RECEIVED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_modify_melee_damage": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 43,
+    "eventName": "CREATURE_EVENT_ON_MODIFY_MELEE_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_modify_periodic_damage_auras_tick": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 42,
+    "eventName": "CREATURE_EVENT_ON_MODIFY_PERIODIC_DAMAGE_AURAS_TICK",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_modify_spell_damage_taken": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 44,
+    "eventName": "CREATURE_EVENT_ON_MODIFY_SPELL_DAMAGE_TAKEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_move_in_los": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 27,
+    "eventName": "CREATURE_EVENT_ON_MOVE_IN_LOS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_owner_attacked": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 12,
+    "eventName": "CREATURE_EVENT_ON_OWNER_ATTACKED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_owner_attacked_at": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 13,
+    "eventName": "CREATURE_EVENT_ON_OWNER_ATTACKED_AT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_pre_combat": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 10,
+    "eventName": "CREATURE_EVENT_ON_PRE_COMBAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_quest_accept": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 31,
+    "eventName": "CREATURE_EVENT_ON_QUEST_ACCEPT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_quest_reward": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 34,
+    "eventName": "CREATURE_EVENT_ON_QUEST_REWARD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_reach_home": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 24,
+    "eventName": "CREATURE_EVENT_ON_REACH_HOME",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_reach_wp": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 6,
+    "eventName": "CREATURE_EVENT_ON_REACH_WP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_receive_emote": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 8,
+    "eventName": "CREATURE_EVENT_ON_RECEIVE_EMOTE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_remove": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 37,
+    "eventName": "CREATURE_EVENT_ON_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_reset": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 23,
+    "eventName": "CREATURE_EVENT_ON_RESET",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_spawn": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 5,
+    "eventName": "CREATURE_EVENT_ON_SPAWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_spell_hit_target": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 15,
+    "eventName": "CREATURE_EVENT_ON_SPELL_HIT_TARGET",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_summoned": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 22,
+    "eventName": "CREATURE_EVENT_ON_SUMMONED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_summoned_creature_despawn": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 20,
+    "eventName": "CREATURE_EVENT_ON_SUMMONED_CREATURE_DESPAWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_summoned_creature_died": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 21,
+    "eventName": "CREATURE_EVENT_ON_SUMMONED_CREATURE_DIED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature.on_target_died": {
+    "register": "RegisterCreatureEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 3,
+    "eventName": "CREATURE_EVENT_ON_TARGET_DIED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature_gossip.on_hello": {
+    "register": "RegisterCreatureGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "GOSSIP_EVENT_ON_HELLO",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.creature_gossip.on_select": {
+    "register": "RegisterCreatureGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "GOSSIP_EVENT_ON_SELECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_add": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 12,
+    "eventName": "GAMEOBJECT_EVENT_ON_ADD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_aiupdate": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "GAMEOBJECT_EVENT_ON_AIUPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_damaged": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 8,
+    "eventName": "GAMEOBJECT_EVENT_ON_DAMAGED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_destroyed": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 7,
+    "eventName": "GAMEOBJECT_EVENT_ON_DESTROYED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_dialog_status": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 6,
+    "eventName": "GAMEOBJECT_EVENT_ON_DIALOG_STATUS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_dummy_effect": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 3,
+    "eventName": "GAMEOBJECT_EVENT_ON_DUMMY_EFFECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_go_state_changed": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 10,
+    "eventName": "GAMEOBJECT_EVENT_ON_GO_STATE_CHANGED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_loot_state_change": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 9,
+    "eventName": "GAMEOBJECT_EVENT_ON_LOOT_STATE_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_quest_accept": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 4,
+    "eventName": "GAMEOBJECT_EVENT_ON_QUEST_ACCEPT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_quest_reward": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 5,
+    "eventName": "GAMEOBJECT_EVENT_ON_QUEST_REWARD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_remove": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 13,
+    "eventName": "GAMEOBJECT_EVENT_ON_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_spawn": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "GAMEOBJECT_EVENT_ON_SPAWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject.on_use": {
+    "register": "RegisterGameObjectEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 14,
+    "eventName": "GAMEOBJECT_EVENT_ON_USE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject_gossip.on_hello": {
+    "register": "RegisterGameObjectGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "GOSSIP_EVENT_ON_HELLO",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.gameobject_gossip.on_select": {
+    "register": "RegisterGameObjectGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "GOSSIP_EVENT_ON_SELECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_create": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "GROUP_EVENT_ON_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_disband": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "GROUP_EVENT_ON_DISBAND",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_leader_change": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "GROUP_EVENT_ON_LEADER_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_member_add": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "GROUP_EVENT_ON_MEMBER_ADD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_member_invite": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "GROUP_EVENT_ON_MEMBER_INVITE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.group.on_member_remove": {
+    "register": "RegisterGroupEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "GROUP_EVENT_ON_MEMBER_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_add_member": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "GUILD_EVENT_ON_ADD_MEMBER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_bank_event": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 11,
+    "eventName": "GUILD_EVENT_ON_BANK_EVENT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_create": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "GUILD_EVENT_ON_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_disband": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "GUILD_EVENT_ON_DISBAND",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_event": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 10,
+    "eventName": "GUILD_EVENT_ON_EVENT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_info_change": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "GUILD_EVENT_ON_INFO_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_item_move": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 9,
+    "eventName": "GUILD_EVENT_ON_ITEM_MOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_money_deposit": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 8,
+    "eventName": "GUILD_EVENT_ON_MONEY_DEPOSIT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_money_withdraw": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 7,
+    "eventName": "GUILD_EVENT_ON_MONEY_WITHDRAW",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_motd_change": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "GUILD_EVENT_ON_MOTD_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.guild.on_remove_member": {
+    "register": "RegisterGuildEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "GUILD_EVENT_ON_REMOVE_MEMBER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_check_encounter_in_progress": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 7,
+    "eventName": "INSTANCE_EVENT_ON_CHECK_ENCOUNTER_IN_PROGRESS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_creature_create": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 5,
+    "eventName": "INSTANCE_EVENT_ON_CREATURE_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_gameobject_create": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 6,
+    "eventName": "INSTANCE_EVENT_ON_GAMEOBJECT_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_initialize": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 1,
+    "eventName": "INSTANCE_EVENT_ON_INITIALIZE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_load": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 2,
+    "eventName": "INSTANCE_EVENT_ON_LOAD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_player_enter": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 4,
+    "eventName": "INSTANCE_EVENT_ON_PLAYER_ENTER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.instance.on_update": {
+    "register": "RegisterInstanceEvent",
+    "scopeArgs": [
+      "instanceId"
+    ],
+    "eventId": 3,
+    "eventName": "INSTANCE_EVENT_ON_UPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item.on_dummy_effect": {
+    "register": "RegisterItemEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "ITEM_EVENT_ON_DUMMY_EFFECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item.on_expire": {
+    "register": "RegisterItemEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 4,
+    "eventName": "ITEM_EVENT_ON_EXPIRE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item.on_quest_accept": {
+    "register": "RegisterItemEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 3,
+    "eventName": "ITEM_EVENT_ON_QUEST_ACCEPT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item.on_remove": {
+    "register": "RegisterItemEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 5,
+    "eventName": "ITEM_EVENT_ON_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item.on_use": {
+    "register": "RegisterItemEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "ITEM_EVENT_ON_USE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item_gossip.on_hello": {
+    "register": "RegisterItemGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "GOSSIP_EVENT_ON_HELLO",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.item_gossip.on_select": {
+    "register": "RegisterItemGossipEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "GOSSIP_EVENT_ON_SELECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_check_encounter_in_progress": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 7,
+    "eventName": "INSTANCE_EVENT_ON_CHECK_ENCOUNTER_IN_PROGRESS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_creature_create": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 5,
+    "eventName": "INSTANCE_EVENT_ON_CREATURE_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_gameobject_create": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 6,
+    "eventName": "INSTANCE_EVENT_ON_GAMEOBJECT_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_initialize": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 1,
+    "eventName": "INSTANCE_EVENT_ON_INITIALIZE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_load": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 2,
+    "eventName": "INSTANCE_EVENT_ON_LOAD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_player_enter": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 4,
+    "eventName": "INSTANCE_EVENT_ON_PLAYER_ENTER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.map.on_update": {
+    "register": "RegisterMapEvent",
+    "scopeArgs": [
+      "mapId"
+    ],
+    "eventId": 3,
+    "eventName": "INSTANCE_EVENT_ON_UPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.packet.on_packet_receive": {
+    "register": "RegisterPacketEvent",
+    "scopeArgs": [
+      "opcode"
+    ],
+    "eventId": 5,
+    "eventName": "PACKET_EVENT_ON_PACKET_RECEIVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.packet.on_packet_receive_unknown": {
+    "register": "RegisterPacketEvent",
+    "scopeArgs": [
+      "opcode"
+    ],
+    "eventId": 6,
+    "eventName": "PACKET_EVENT_ON_PACKET_RECEIVE_UNKNOWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.packet.on_packet_send": {
+    "register": "RegisterPacketEvent",
+    "scopeArgs": [
+      "opcode"
+    ],
+    "eventId": 7,
+    "eventName": "PACKET_EVENT_ON_PACKET_SEND",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_achievement_complete": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 45,
+    "eventName": "PLAYER_EVENT_ON_ACHIEVEMENT_COMPLETE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_aura_apply": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 64,
+    "eventName": "PLAYER_EVENT_ON_AURA_APPLY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_aura_remove": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 67,
+    "eventName": "PLAYER_EVENT_ON_AURA_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_before_update_skill": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 61,
+    "eventName": "PLAYER_EVENT_ON_BEFORE_UPDATE_SKILL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_bg_desertion": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 57,
+    "eventName": "PLAYER_EVENT_ON_BG_DESERTION",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_bind_to_instance": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 26,
+    "eventName": "PLAYER_EVENT_ON_BIND_TO_INSTANCE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_group_invite": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 55,
+    "eventName": "PLAYER_EVENT_ON_CAN_GROUP_INVITE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_init_trade": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 48,
+    "eventName": "PLAYER_EVENT_ON_CAN_INIT_TRADE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_join_lfg": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 50,
+    "eventName": "PLAYER_EVENT_ON_CAN_JOIN_LFG",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_resurrect": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 59,
+    "eventName": "PLAYER_EVENT_ON_CAN_RESURRECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_send_mail": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 49,
+    "eventName": "PLAYER_EVENT_ON_CAN_SEND_MAIL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_update_skill": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 60,
+    "eventName": "PLAYER_EVENT_ON_CAN_UPDATE_SKILL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_can_use_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 31,
+    "eventName": "PLAYER_EVENT_ON_CAN_USE_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_channel_chat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 22,
+    "eventName": "PLAYER_EVENT_ON_CHANNEL_CHAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_character_create": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "PLAYER_EVENT_ON_CHARACTER_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_character_delete": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "PLAYER_EVENT_ON_CHARACTER_DELETE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_chat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 18,
+    "eventName": "PLAYER_EVENT_ON_CHAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_command": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 42,
+    "eventName": "PLAYER_EVENT_ON_COMMAND",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_complete_quest": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 54,
+    "eventName": "PLAYER_EVENT_ON_COMPLETE_QUEST",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_create_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 52,
+    "eventName": "PLAYER_EVENT_ON_CREATE_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_damage": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 66,
+    "eventName": "PLAYER_EVENT_ON_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_deal_damage": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 72,
+    "eventName": "PLAYER_EVENT_ON_DEAL_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_duel_end": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 11,
+    "eventName": "PLAYER_EVENT_ON_DUEL_END",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_duel_request": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 9,
+    "eventName": "PLAYER_EVENT_ON_DUEL_REQUEST",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_duel_start": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 10,
+    "eventName": "PLAYER_EVENT_ON_DUEL_START",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_emote": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 23,
+    "eventName": "PLAYER_EVENT_ON_EMOTE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_enter_combat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 33,
+    "eventName": "PLAYER_EVENT_ON_ENTER_COMBAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_equip": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 29,
+    "eventName": "PLAYER_EVENT_ON_EQUIP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_ffapvp_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 46,
+    "eventName": "PLAYER_EVENT_ON_FFAPVP_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_first_login": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 30,
+    "eventName": "PLAYER_EVENT_ON_FIRST_LOGIN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_give_xp": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 12,
+    "eventName": "PLAYER_EVENT_ON_GIVE_XP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_group_chat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 20,
+    "eventName": "PLAYER_EVENT_ON_GROUP_CHAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_group_roll_reward_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 56,
+    "eventName": "PLAYER_EVENT_ON_GROUP_ROLL_REWARD_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_guild_chat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 21,
+    "eventName": "PLAYER_EVENT_ON_GUILD_CHAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_heal": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 65,
+    "eventName": "PLAYER_EVENT_ON_HEAL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_kill_creature": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 7,
+    "eventName": "PLAYER_EVENT_ON_KILL_CREATURE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_kill_player": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "PLAYER_EVENT_ON_KILL_PLAYER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_killed_by_creature": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 8,
+    "eventName": "PLAYER_EVENT_ON_KILLED_BY_CREATURE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_learn_spell": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 44,
+    "eventName": "PLAYER_EVENT_ON_LEARN_SPELL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_learn_talents": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 39,
+    "eventName": "PLAYER_EVENT_ON_LEARN_TALENTS",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_leave_combat": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 34,
+    "eventName": "PLAYER_EVENT_ON_LEAVE_COMBAT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_level_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 13,
+    "eventName": "PLAYER_EVENT_ON_LEVEL_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_login": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "PLAYER_EVENT_ON_LOGIN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_logout": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "PLAYER_EVENT_ON_LOGOUT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_loot_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 32,
+    "eventName": "PLAYER_EVENT_ON_LOOT_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_loot_money": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 37,
+    "eventName": "PLAYER_EVENT_ON_LOOT_MONEY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_map_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 28,
+    "eventName": "PLAYER_EVENT_ON_MAP_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_modify_heal_received": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 71,
+    "eventName": "PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_modify_melee_damage": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 69,
+    "eventName": "PLAYER_EVENT_ON_MODIFY_MELEE_DAMAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_modify_periodic_damage_auras_tick": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 68,
+    "eventName": "PLAYER_EVENT_ON_MODIFY_PERIODIC_DAMAGE_AURAS_TICK",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_modify_spell_damage_taken": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 70,
+    "eventName": "PLAYER_EVENT_ON_MODIFY_SPELL_DAMAGE_TAKEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_money_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 14,
+    "eventName": "PLAYER_EVENT_ON_MONEY_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_pet_added_to_world": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 43,
+    "eventName": "PLAYER_EVENT_ON_PET_ADDED_TO_WORLD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_pet_kill": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 58,
+    "eventName": "PLAYER_EVENT_ON_PET_KILL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_quest_abandon": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 38,
+    "eventName": "PLAYER_EVENT_ON_QUEST_ABANDON",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_quest_accept": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 63,
+    "eventName": "PLAYER_EVENT_ON_QUEST_ACCEPT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_quest_reward_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 51,
+    "eventName": "PLAYER_EVENT_ON_QUEST_REWARD_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_released_ghost": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 73,
+    "eventName": "PLAYER_EVENT_ON_RELEASED_GHOST",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_repop": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 35,
+    "eventName": "PLAYER_EVENT_ON_REPOP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_reputation_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 15,
+    "eventName": "PLAYER_EVENT_ON_REPUTATION_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_resurrect": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 36,
+    "eventName": "PLAYER_EVENT_ON_RESURRECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_save": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 25,
+    "eventName": "PLAYER_EVENT_ON_SAVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_spell_cast": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "PLAYER_EVENT_ON_SPELL_CAST",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_store_new_item": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 53,
+    "eventName": "PLAYER_EVENT_ON_STORE_NEW_ITEM",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_talents_change": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 16,
+    "eventName": "PLAYER_EVENT_ON_TALENTS_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_talents_reset": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 17,
+    "eventName": "PLAYER_EVENT_ON_TALENTS_RESET",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_text_emote": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 24,
+    "eventName": "PLAYER_EVENT_ON_TEXT_EMOTE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_update_area": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 47,
+    "eventName": "PLAYER_EVENT_ON_UPDATE_AREA",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_update_skill": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 62,
+    "eventName": "PLAYER_EVENT_ON_UPDATE_SKILL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_update_zone": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 27,
+    "eventName": "PLAYER_EVENT_ON_UPDATE_ZONE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player.on_whisper": {
+    "register": "RegisterPlayerEvent",
+    "scopeArgs": [],
+    "eventId": 19,
+    "eventName": "PLAYER_EVENT_ON_WHISPER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.player_gossip.on_select": {
+    "register": "RegisterPlayerGossipEvent",
+    "scopeArgs": [
+      "menuId"
+    ],
+    "eventId": 2,
+    "eventName": "GOSSIP_EVENT_ON_SELECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.map_on_update": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 23,
+    "eventName": "MAP_EVENT_ON_UPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_add": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 26,
+    "eventName": "AUCTION_EVENT_ON_ADD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_change": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 25,
+    "eventName": "WEATHER_EVENT_ON_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_config_load": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 9,
+    "eventName": "WORLD_EVENT_ON_CONFIG_LOAD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_create": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 17,
+    "eventName": "MAP_EVENT_ON_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_delete_creature": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 31,
+    "eventName": "WORLD_EVENT_ON_DELETE_CREATURE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_delete_gameobject": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 32,
+    "eventName": "WORLD_EVENT_ON_DELETE_GAMEOBJECT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_destroy": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 18,
+    "eventName": "MAP_EVENT_ON_DESTROY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_expire": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 29,
+    "eventName": "AUCTION_EVENT_ON_EXPIRE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_grid_load": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 19,
+    "eventName": "MAP_EVENT_ON_GRID_LOAD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_grid_unload": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 20,
+    "eventName": "MAP_EVENT_ON_GRID_UNLOAD",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_lua_state_close": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 16,
+    "eventName": "ALE_EVENT_ON_LUA_STATE_CLOSE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_lua_state_open": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 33,
+    "eventName": "ALE_EVENT_ON_LUA_STATE_OPEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_message": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 30,
+    "eventName": "ADDON_EVENT_ON_MESSAGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_network_start": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "SERVER_EVENT_ON_NETWORK_START",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_network_stop": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "SERVER_EVENT_ON_NETWORK_STOP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_open_state_change": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 8,
+    "eventName": "WORLD_EVENT_ON_OPEN_STATE_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_packet_receive": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "SERVER_EVENT_ON_PACKET_RECEIVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_packet_receive_unknown": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "SERVER_EVENT_ON_PACKET_RECEIVE_UNKNOWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_packet_send": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 7,
+    "eventName": "SERVER_EVENT_ON_PACKET_SEND",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_player_enter": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 21,
+    "eventName": "MAP_EVENT_ON_PLAYER_ENTER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_player_leave": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 22,
+    "eventName": "MAP_EVENT_ON_PLAYER_LEAVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_remove": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 27,
+    "eventName": "AUCTION_EVENT_ON_REMOVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_shutdown": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 15,
+    "eventName": "WORLD_EVENT_ON_SHUTDOWN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_shutdown_cancel": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 12,
+    "eventName": "WORLD_EVENT_ON_SHUTDOWN_CANCEL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_shutdown_init": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 11,
+    "eventName": "WORLD_EVENT_ON_SHUTDOWN_INIT",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_socket_close": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "SERVER_EVENT_ON_SOCKET_CLOSE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_socket_open": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "SERVER_EVENT_ON_SOCKET_OPEN",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_startup": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 14,
+    "eventName": "WORLD_EVENT_ON_STARTUP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_successful": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 28,
+    "eventName": "AUCTION_EVENT_ON_SUCCESSFUL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_trigger": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 24,
+    "eventName": "TRIGGER_EVENT_ON_TRIGGER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.on_update": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 13,
+    "eventName": "WORLD_EVENT_ON_UPDATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.start": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 34,
+    "eventName": "GAME_EVENT_START",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.server.stop": {
+    "register": "RegisterServerEvent",
+    "scopeArgs": [],
+    "eventId": 35,
+    "eventName": "GAME_EVENT_STOP",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.spell.on_cast": {
+    "register": "RegisterSpellEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 2,
+    "eventName": "SPELL_EVENT_ON_CAST",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.spell.on_cast_cancel": {
+    "register": "RegisterSpellEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 3,
+    "eventName": "SPELL_EVENT_ON_CAST_CANCEL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.spell.on_prepare": {
+    "register": "RegisterSpellEvent",
+    "scopeArgs": [
+      "entry"
+    ],
+    "eventId": 1,
+    "eventName": "SPELL_EVENT_ON_PREPARE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.ticket.on_close": {
+    "register": "RegisterTicketEvent",
+    "scopeArgs": [],
+    "eventId": 3,
+    "eventName": "TICKET_EVENT_ON_CLOSE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.ticket.on_create": {
+    "register": "RegisterTicketEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "TICKET_EVENT_ON_CREATE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.ticket.on_resolve": {
+    "register": "RegisterTicketEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "TICKET_EVENT_ON_RESOLVE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.ticket.update_last_change": {
+    "register": "RegisterTicketEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "TICKET_EVENT_UPDATE_LAST_CHANGE",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.vehicle.on_add_passenger": {
+    "register": "RegisterVehicleEvent",
+    "scopeArgs": [],
+    "eventId": 5,
+    "eventName": "VEHICLE_EVENT_ON_ADD_PASSENGER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.vehicle.on_install": {
+    "register": "RegisterVehicleEvent",
+    "scopeArgs": [],
+    "eventId": 1,
+    "eventName": "VEHICLE_EVENT_ON_INSTALL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.vehicle.on_install_accessory": {
+    "register": "RegisterVehicleEvent",
+    "scopeArgs": [],
+    "eventId": 4,
+    "eventName": "VEHICLE_EVENT_ON_INSTALL_ACCESSORY",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.vehicle.on_remove_passenger": {
+    "register": "RegisterVehicleEvent",
+    "scopeArgs": [],
+    "eventId": 6,
+    "eventName": "VEHICLE_EVENT_ON_REMOVE_PASSENGER",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  },
+  "event.vehicle.on_uninstall": {
+    "register": "RegisterVehicleEvent",
+    "scopeArgs": [],
+    "eventId": 2,
+    "eventName": "VEHICLE_EVENT_ON_UNINSTALL",
+    "handlerEventParam": "event",
+    "returnDefaults": []
+  }
+}

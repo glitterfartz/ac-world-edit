@@ -9,6 +9,7 @@ public static class ScriptCatalogHash
     public static string Compute(ScriptHostProfile host)
     {
         var builder = new StringBuilder();
+        builder.Append("H|").Append(host.Host).Append('|').Append(host.Label).Append('\n');
         foreach (var (id, capability) in host.Capabilities.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             builder.Append("C|").Append(id).Append('|').Append(capability.Effect).Append('|');

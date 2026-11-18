@@ -43,6 +43,20 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         toolbar.AddChild(ToolbarButton("Comment", AddComment, "Add a comment frame"));
         HostLabel = ClientStyle.Text("Host: " + Host.Label, 13, ClientStyle.Faded);
         toolbar.AddChild(HostLabel);
+        HostPicker = new OptionButton { TooltipText = "Compile for another host" };
+        foreach (var info in ScriptHostRegistry.Hosts)
+        {
+            int index = HostPicker.ItemCount;
+            HostPicker.AddItem(info.Experimental ? $"{info.Label} (experimental)" : info.Label);
+            HostPicker.SetItemMetadata(index, info.Id);
+            if (info.Id == Host.Host)
+            {
+                HostPicker.Selected = index;
+            }
+        }
+
+        HostPicker.ItemSelected += index => ChangeHost((string)HostPicker.GetItemMetadata((int)index));
+        toolbar.AddChild(HostPicker);
         StatusLabel = ClientStyle.Text("", 13, ClientStyle.Faded);
         StatusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         StatusLabel.HorizontalAlignment = HorizontalAlignment.Right;
@@ -174,6 +188,8 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     public CodeEdit Preview { get; }
 
     public Label HostLabel { get; }
+
+    public OptionButton HostPicker { get; }
 
     public Label StatusLabel { get; }
 
@@ -1027,6 +1043,27 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
                 RefreshAll();
             },
             ok: "Discard changes", cancel: "Keep editing");
+    }
+
+    /// <summary>Switch the compilation host; the document records the choice and is re-validated.</summary>
+    public bool ChangeHost(string hostId)
+    {
+        var profile = ScriptHostRegistry.Profile(hostId);
+        if (profile is null || profile.Host == Host.Host)
+        {
+            return false;
+        }
+
+        Host = profile;
+        Canvas.Host = profile;
+        HostLabel.Text = "Host: " + profile.Label;
+        Session.Edit(document => document.Host = profile.Host);
+        FillPalette(PaletteSearchField.Text);
+        Canvas.RebuildFromSession();
+        RefreshTitle();
+        Compile();
+        Status($"Compiling for {profile.Label}.");
+        return true;
     }
 
     public void Status(string message)

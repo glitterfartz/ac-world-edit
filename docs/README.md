@@ -17,6 +17,7 @@ introduction; this folder is for people changing the code.
 | [reference/database-differences.md](reference/database-differences.md) | AzerothCore vs TrinityCore schema differences that affect the editors | A table or column difference is found |
 | [reference/scripting-capabilities.md](reference/scripting-capabilities.md) | The scripting capability catalog, ALE bindings, event coverage, enums and host caveats | A capability, event, binding or enum changes |
 | [reference/cpp-to-graph-parity.md](reference/cpp-to-graph-parity.md) | ALE C++ events/functions versus the offered graph nodes, and what is deliberately not exposed yet | An event or capability family lands or is deferred |
+| [reference/host-capabilities.md](reference/host-capabilities.md) | The ALE and Eluna host profiles, what host switching does, and the proof profile gaps | A host profile or its status changes |
 | [reference/shader-inspection-locations.md](reference/shader-inspection-locations.md) | Map/tile/XYZ locations for inspecting each implemented liquid shader | A material is ported or a better location is found |
 | [status/completed-work.md](status/completed-work.md) | What is built, per phase and area, with the tests and smokes that prove it | A feature or refinement lands |
 | [status/performance.md](status/performance.md) | How to measure, the current frame budget and open performance work | A measurement changes the baseline or a fix lands |

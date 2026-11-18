@@ -153,6 +153,42 @@ public class ScriptCatalogTests
     }
 
     [Fact]
+    public void EmbeddedElunaProfileLoads()
+    {
+        var profile = TcScriptHosts.Profile;
+
+        Assert.Equal("eluna-trinitycore", profile.Host);
+        Assert.Equal("Eluna (TrinityCore)", profile.Label);
+        Assert.Equal(230, profile.Events.Count);
+        Assert.Equal(25, profile.Capabilities.Count);
+        Assert.True(TcScriptHosts.Info.Experimental);
+        Assert.Same(profile, TcScriptHosts.Profile);
+    }
+
+    [Fact]
+    public void TheSameGraphCompilesUnderBothHosts()
+    {
+        var document = ScriptTemplateLibrary.Load("creature-death");
+
+        var ale = new ScriptCompiler(AcScriptHosts.Profile).Compile(document, "creature-death.acwscript");
+        var eluna = new ScriptCompiler(TcScriptHosts.Profile).Compile(document, "creature-death.acwscript");
+
+        Assert.True(ale.Success, string.Join("; ", ale.Errors.Select(error => error.Message)));
+        Assert.True(eluna.Success, string.Join("; ", eluna.Errors.Select(error => error.Message)));
+        Assert.Contains("RegisterCreatureEvent(1234, 4", ale.LuaText);
+        Assert.Contains("RegisterCreatureEvent(1234, 4", eluna.LuaText);
+        Assert.NotEqual(ale.CatalogHash, eluna.CatalogHash);
+    }
+
+    [Fact]
+    public void BothHostsAreNamedByTheRegistry()
+    {
+        Assert.Same(AcScriptHosts.Profile, ScriptHostRegistry.Profile(AcScriptHosts.Id));
+        Assert.Same(TcScriptHosts.Profile, ScriptHostRegistry.Profile(TcScriptHosts.Id));
+        Assert.Null(ScriptHostRegistry.Profile("missing-host"));
+    }
+
+    [Fact]
     public void ProfileLoadIsDeterministic()
     {
         var first = AcScriptHosts.Profile;

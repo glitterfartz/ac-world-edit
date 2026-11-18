@@ -17,6 +17,18 @@ public static class ScriptCatalogLoader
         ReadResource("Profiles/ale-azerothcore/capability-bindings.json"),
         ReadResource("Profiles/ale-azerothcore/event-bindings.json"));
 
+    /// <summary>
+    /// The Eluna (TrinityCore) proof profile. Its bindings mirror Eluna's Lua API; the profile is
+    /// marked experimental until a live TrinityCore server verifies the registration ids.
+    /// </summary>
+    public static ScriptHostProfile LoadElunaTrinityCore() => Build(
+        ReadResource("Profiles/eluna-trinitycore/host.json"),
+        ReadResource("Profiles/core/capabilities.json"),
+        ReadResource("Profiles/core/events.json"),
+        ReadResource("Profiles/core/enums.json"),
+        ReadResource("Profiles/eluna-trinitycore/capability-bindings.json"),
+        ReadResource("Profiles/eluna-trinitycore/event-bindings.json"));
+
     /// <summary>Build a profile from JSON strings; the embedded loader and the integrity tests share it.</summary>
     public static ScriptHostProfile Build(
         string hostJson,

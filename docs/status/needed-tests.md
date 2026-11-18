@@ -85,6 +85,8 @@ Milestone 1 covers the document model, catalog, validator, compiler, workspace a
 Milestone 2 adds the gdUnit editor tests (`ScriptCanvasTests`, `ScriptEditorWindowTests`). These
 wait for the features or environment they exercise:
 
+- [ ] Live Eluna verification: the `eluna-trinitycore` profile compiles and is registry-wired, but its
+  event ids and registrations are mirrored from ALE and have not run against a TrinityCore server.
 - [ ] Live ALE load: the exported golden Lua was syntax-checked with the server's Lua 5.2 and sits
   in the live `lua_scripts/acworld` folder, but `.reload ale` has not yet been run — the running
   worldserver has no console input and restarting it needs the user. Confirm the reload prints no

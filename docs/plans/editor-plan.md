@@ -427,11 +427,10 @@ does not have this problem because `hotfix_data` sends the new rows to the clien
 
 ## Phase 25: Visual scripting
 
-**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–4 are
-built — the Foundation compiler and persistence services, the Godot editor MVP, authoring depth, and
-the domain foundation (dungeon/world templates, live reference resolver, catalog `--check` and
-overrides, parity reference). The Eluna multi-host proof starts at Milestone 5. The live
-`.reload ale` acceptance run is pending a server console reload.
+**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–5 are
+built — the Foundation compiler and persistence services, the Godot editor MVP, authoring depth, the
+domain foundation and the Eluna multi-host proof (experimental). Advanced runtime work starts at
+Milestone 6. The live `.reload ale` acceptance run is pending a server console reload.
 
 **Why:** complex server-side behavior (encounters, quests, scripted objects) is written today either as
 SmartAI rows or as hand-maintained ALE Lua files outside the app. A graph editor keeps the behavior
