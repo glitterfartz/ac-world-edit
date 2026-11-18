@@ -126,6 +126,21 @@ Tests: `PlayerChoiceRulesTests`, `CinematicsDbTests` (`[TcDbFact]`), `Cinematics
 `--cinematics-smoke` covers search, three cards, a reward, a staged header edit and undo against the
 live database.
 
+## Phase 22b: conversations
+
+The Conversations tab: the template card (first line with the client-line text and a text search
+picker, texture kit, flags, script), one card per actor with its kind (creature, existing spawn,
+talking head, player), and the client line chain as a strip of cards (actor, text, duration, an
+override badge) with the server override editor below (actor, camera, flags, chat type) and a Play
+button that steps the cards. "+ New conversation" and "Duplicate" copy actors, not line overrides
+(an override belongs to the client line the copy shares). Tables: `conversation_template`,
+`conversation_actors`, `conversation_line_template`; rules in `TcConversationRules`, reads in
+`TcCinematicsSource` (client chain with hotfix lines and broadcast text first, source-29 conditions
+per line). Client tables: `ConversationLine`, `UiCamera`, `UiTextureKit` (plus the scene tables for
+22c) through `IClientLookup`. Tests: `ConversationRulesTests`, `ConversationSnapshotReads…` in
+`CinematicsDbTests`, `CinematicsClientTests` (corpus), the conversation cases in
+`CinematicsWindowTests`.
+
 ## Data, overlays and rendering
 
 | Item | What landed |

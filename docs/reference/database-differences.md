@@ -48,8 +48,16 @@ later stages.
   loader converts `True`/`False` to `1`/`0`.
 - `Question`, `Duration`, `MaxResponses` and `ScriptName` are nullable. `RewardQuestID` is nullable but real
   rows store `0` for "no quest", so the editor treats 0 as none.
-- Conversation flags (22b): `ConversationDataStore.h` gives `AllowWithoutSpawnedActor` `0x04`, while the
-  wiki lists `0x03`; the server header wins.
+- `conversation_actors` is keyed by `(ConversationId, Idx)`, so one conversation cannot hold two actors
+  at one index; the actor kind comes from the columns (`NoActorObject`, then `ActivePlayerObject`, then
+  a non-zero `ConversationActorGuid`, otherwise the creature template in `CreatureId`).
+- `conversation_line_template` is keyed by the **client line ID**, not the conversation, so two
+  conversations that play the same chain share their overrides. The client `ConversationLine` row has
+  no camera column: `UiCameraID` exists only in the server override, alongside `ActorIdx`, `Flags` and
+  `ChatType`. `AdditionalDuration` (the pause after a line) is a client column.
+- Conversation flags: `ConversationDataStore.h` gives `AllowWithoutSpawnedActor` `0x04`, while the
+  wiki lists `0x03`; the server header wins. The other bits are `MultipleConversationType` `0x01` and
+  `IsTalkingHeadConversation` `0x02`.
 
 ## Column differences in shared tables (AC → TC)
 - `creature`:

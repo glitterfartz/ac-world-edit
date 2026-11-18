@@ -6,9 +6,9 @@ using ACWorldEdit.Foundation;
 namespace ACWorldEdit;
 
 /// <summary>
-/// TrinityCore cinematics editor: the player-choice cards, their single reward row and reward items,
-/// committed one validated command at a time through the shared local draft. Conversations and
-/// scenes fill their tabs in later stages; until then those tabs say so.
+/// TrinityCore cinematics editor: player choices and conversations, each committed one validated
+/// command at a time through the shared local draft. The tabs share the window's search list; scenes
+/// fill their tab in the last stage.
 /// </summary>
 public partial class TcCinematicsPanel : CinematicsPanel
 {
@@ -17,38 +17,48 @@ public partial class TcCinematicsPanel : CinematicsPanel
     /// <summary>The player-choice read; tests replace it with a fixed snapshot.</summary>
     public Func<uint, CancellationToken, Task<PlayerChoiceSnapshot>> Reader { get; set; }
 
-    /// <summary>The left-hand search for the current tab; tests can replace it.</summary>
+    /// <summary>The conversation read; tests replace it with a fixed snapshot.</summary>
+    public Func<uint, CancellationToken, Task<ConversationSnapshot>> ConversationReader { get; set; }
+
+    /// <summary>The search of the current tab; tests can replace either.</summary>
     public Func<string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> Searcher { get; set; }
+    public Func<string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> ConversationSearcher { get; set; }
 
     PlayerChoiceSnapshot? snapshot;
+    ConversationSnapshot? conversation;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
     string sourceKey = "";
     int generation;
     TcPlayerChoiceView? view;
+    TcConversationView? conversationView;
 
     public TcCinematicsPanel()
     {
-        Reader = (id, token) => DBSource.Open(Connection(), Lookup()).ReadPlayerChoiceAsync(id, DraftKeys(id), Apply, catalog, token);
+        Reader = (id, token) => DBSource.Open(Connection(), Lookup()).ReadPlayerChoiceAsync(id, DraftKeys(), Apply(), catalog, token);
+        ConversationReader = (id, token) => DBSource.Open(Connection(), Lookup()).ReadConversationAsync(id, DraftKeys(), Apply(), catalog, token);
         Searcher = (term, token) => DBSource.Open(Connection(), Lookup()).SearchPlayerChoicesAsync(term, token);
+        ConversationSearcher = (term, token) => DBSource.Open(Connection(), Lookup()).SearchConversationsAsync(term, token);
     }
 
     public override WorldDialect Dialect => WorldDialect.TrinityCore;
 
     /// <summary>The cards of the open choice, or null before the tab is built.</summary>
     public TcPlayerChoiceView? PlayerChoice => view;
+    /// <summary>The editor of the open conversation, or null before the tab is built.</summary>
+    public TcConversationView? Conversation => conversationView;
     /// <summary>The database source the open rows belong to, for the smoke's draft checks.</summary>
     public string SourceKey => sourceKey;
 
-    /// <summary>What the last read returned, for the smoke's failure message.</summary>
+    /// <summary>What the last choice read returned, for the smoke's failure message.</summary>
     public string SmokeDetail => snapshot == null
         ? "no snapshot"
         : $"read choices={snapshot.Rows.All(TcTables.PlayerChoice).Count} responses={snapshot.Rows.All(TcTables.PlayerChoiceResponse).Count} effective={TcCinematicsRules.Responses(effective, CurrentId ?? 0).Count()}";
 
-    IReadOnlyList<(TableSchema Table, string Key)> DraftKeys(uint id) =>
+    IReadOnlyList<(TableSchema Table, string Key)> DraftKeys() =>
         Drafts.Draft?.Keys(DBSource.Open(Connection(), Lookup()).SourceKey) ?? [];
 
-    Func<RowSet, RowSet> Apply => Drafts.Draft?.Frozen(DBSource.Open(Connection(), Lookup()).SourceKey) ?? (rows => rows);
+    Func<RowSet, RowSet> Apply() => Drafts.Draft?.Frozen(DBSource.Open(Connection(), Lookup()).SourceKey) ?? (rows => rows);
 
     protected override void Build()
     {
@@ -60,30 +70,57 @@ public partial class TcCinematicsPanel : CinematicsPanel
             DuplicateRequested = () => _ = NewItem(CurrentId)
         };
         page.AddChild(view);
+        conversationView = new TcConversationView
+        {
+            Commit = Commit,
+            NewRequested = () => _ = NewItem(null),
+            DuplicateRequested = () => _ = NewItem(CurrentId),
+            FirstLinePick = PickFirstLine
+        };
+        page.AddChild(conversationView);
         ReloadOnForeignChange(() => CurrentId.HasValue, () => _ = Load(CurrentId!.Value));
         RenderTab();
     }
 
+    public override void ShowTab(Tab tab)
+    {
+        if (CurrentTab == tab)
+        {
+            return;
+        }
+
+        CurrentId = null;
+        snapshot = null;
+        conversation = null;
+        effective = new RowSet();
+        issues = [];
+        base.ShowTab(tab);
+    }
+
     protected override void RenderTab()
     {
-        if (view == null)
+        if (view == null || conversationView == null)
         {
             return;
         }
 
         view.Visible = CurrentTab == Tab.PlayerChoices;
+        conversationView.Visible = CurrentTab == Tab.Conversations;
         if (CurrentTab == Tab.PlayerChoices)
         {
             RenderPlayerChoice();
-            return;
         }
-
-        title.Text = CurrentTab == Tab.Conversations ? "Conversations" : "Scenes";
-        subtitle.Text = CurrentTab == Tab.Conversations
-            ? "The conversation editor arrives with the next stage."
-            : "The scene editor arrives with the last stage.";
-        UpdateStatus();
-        Updated();
+        else if (CurrentTab == Tab.Conversations)
+        {
+            RenderConversation();
+        }
+        else
+        {
+            title.Text = "Scenes";
+            subtitle.Text = "The scene editor arrives with the last stage.";
+            UpdateStatus();
+            Updated();
+        }
     }
 
     void RenderPlayerChoice()
@@ -112,14 +149,41 @@ public partial class TcCinematicsPanel : CinematicsPanel
         Updated();
     }
 
+    void RenderConversation()
+    {
+        if (conversationView == null)
+        {
+            return;
+        }
+
+        if (conversation == null || CurrentId is not uint id)
+        {
+            title.Text = "Conversation";
+            subtitle.Text = "Search for a conversation on the left, or create one with + New conversation.";
+            conversationView.Show(null);
+            UpdateStatus();
+            Updated();
+            return;
+        }
+
+        var template = effective.Get(TcTables.ConversationTemplate, id.ToString());
+        title.Text = template == null ? $"Conversation {id} does not exist" : $"Conversation {id}";
+        subtitle.Text = template == null
+            ? "Create one with + New conversation, or search for another."
+            : $"{conversation.Chain.Count} lines · {effective.All(TcTables.ConversationActors).Count(actor => actor.U("ConversationId") == id)} actors"
+                + (conversation.ClientAvailable ? "" : " · client data unavailable");
+        conversationView.Show(conversation with { Rows = effective });
+        UpdateStatus();
+        Updated();
+    }
+
     public override void Open(uint id)
     {
-        CurrentTab = Tab.PlayerChoices;
-        RenderTab();
         if (id == 0)
         {
             CurrentId = null;
             snapshot = null;
+            conversation = null;
             Rebuild();
             return;
         }
@@ -127,8 +191,15 @@ public partial class TcCinematicsPanel : CinematicsPanel
         _ = Load(id);
     }
 
-    /// <summary>Read a choice (plus every draft-touched row) and redraw; stale results drop.</summary>
-    public override async Task Load(uint id)
+    /// <summary>Read the open tab's row (plus every draft-touched row) and redraw; stale results drop.</summary>
+    public override Task Load(uint id) => CurrentTab switch
+    {
+        Tab.Conversations => LoadConversation(id),
+        Tab.Scenes => Task.CompletedTask,
+        _ => LoadPlayerChoice(id)
+    };
+
+    async Task LoadPlayerChoice(uint id)
     {
         int current = ++generation;
         try
@@ -160,8 +231,54 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
     }
 
+    async Task LoadConversation(uint id)
+    {
+        int current = ++generation;
+        try
+        {
+            await EnsureCatalog();
+            var result = await ConversationReader(id, CancellationToken.None);
+            if (current != generation)
+            {
+                return;
+            }
+
+            sourceKey = result.SourceKey;
+            if (CurrentId != id)
+            {
+                status = "";
+            }
+
+            CurrentId = id;
+            conversation = result;
+            Rebuild();
+        }
+        catch (Exception error)
+        {
+            if (current == generation)
+            {
+                status = DbErrors.Safe(error);
+                UpdateStatus();
+            }
+        }
+    }
+
     protected override void Rebuild()
     {
+        if (CurrentTab == Tab.Conversations)
+        {
+            if (conversation == null)
+            {
+                RenderConversation();
+                return;
+            }
+
+            effective = Drafts.Draft?.Effective(sourceKey, conversation.Rows) ?? conversation.Rows;
+            issues = CurrentId is uint id ? TcConversationRules.Check(id, effective, conversation.Names, ChainLines()).ToArray() : [];
+            RenderConversation();
+            return;
+        }
+
         if (snapshot == null)
         {
             RenderPlayerChoice();
@@ -169,9 +286,11 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
 
         effective = Drafts.Draft?.Effective(sourceKey, snapshot.Rows) ?? snapshot.Rows;
-        issues = CurrentId is uint id ? TcCinematicsRules.Check(id, effective, snapshot.Names).ToArray() : [];
+        issues = CurrentId is uint choice ? TcCinematicsRules.Check(choice, effective, snapshot.Names).ToArray() : [];
         RenderPlayerChoice();
     }
+
+    uint[]? ChainLines() => conversation is { ClientAvailable: true } ? conversation.Chain.Select(line => line.Id).ToArray() : null;
 
     protected override void ReloadAfterHistory()
     {
@@ -182,10 +301,13 @@ public partial class TcCinematicsPanel : CinematicsPanel
     }
 
     /// <summary>
-    /// Create a choice above both the database maximum and every choice already reserved in the
-    /// draft, or copy the open one with its responses and rewards.
+    /// Create a row above both the database maximum and every one already reserved in the draft, or
+    /// copy the open one with its children. A copied conversation keeps its actors, not its line
+    /// overrides: an override belongs to the client line, which the copy shares.
     /// </summary>
-    public override async Task NewItem(uint? copyFrom)
+    public override Task NewItem(uint? copyFrom) => CurrentTab == Tab.Conversations ? NewConversation(copyFrom) : NewPlayerChoice(copyFrom);
+
+    async Task NewPlayerChoice(uint? copyFrom)
     {
         int current = ++generation;
         try
@@ -218,7 +340,62 @@ public partial class TcCinematicsPanel : CinematicsPanel
             status = ok ? (copyFrom == null ? $"Created player choice {id}. Write the question and its answers." : $"Copied as player choice {id}.") : message;
             if (ok)
             {
-                await Load(id);
+                await LoadPlayerChoice(id);
+            }
+            else
+            {
+                UpdateStatus();
+            }
+        }
+        catch (Exception error)
+        {
+            status = DbErrors.Safe(error);
+            UpdateStatus();
+        }
+    }
+
+    async Task NewConversation(uint? copyFrom)
+    {
+        int current = ++generation;
+        try
+        {
+            var draft = Drafts.Draft;
+            if (draft == null)
+            {
+                status = Drafts.Error ?? "Editing is disabled.";
+                UpdateStatus();
+                return;
+            }
+
+            var probe = await ConversationReader(copyFrom ?? 0, CancellationToken.None);
+            if (current != generation)
+            {
+                return;
+            }
+
+            sourceKey = probe.SourceKey;
+            uint id = Math.Max(probe.MaxConversationId, draft.MaxReserved(sourceKey, TcTables.ConversationTemplate, "Id")) + 1;
+            var probeView = draft.Effective(sourceKey, probe.Rows);
+            List<RowEdit> edits = [];
+            if (copyFrom is uint from && probeView.Get(TcTables.ConversationTemplate, from.ToString()) is { } original)
+            {
+                edits.Add(new RowEdit(TcTables.ConversationTemplate.Name, id.ToString(), null, new Row(original.Values).With("Id", id)));
+                edits.AddRange(probeView.All(TcTables.ConversationActors)
+                    .Where(actor => actor.U("ConversationId") == from)
+                    .OrderBy(actor => actor.U("Idx"))
+                    .Select(actor => new RowEdit(TcTables.ConversationActors.Name, $"{id}|{actor.U("Idx")}", null, actor.With("ConversationId", id))));
+            }
+            else
+            {
+                edits.Add(new RowEdit(TcTables.ConversationTemplate.Name, id.ToString(), null, TcConversationRules.NewConversation(id, 0)));
+            }
+
+            var (ok, message) = Drafts.Commit(this, sourceKey, probe.Rows, probeView,
+                copyFrom == null ? $"Create conversation {id}" : $"Copy conversation {copyFrom} as {id}", edits, _ => []);
+            status = ok ? (copyFrom == null ? $"Created conversation {id}. Choose its first line." : $"Copied as conversation {id}.") : message;
+            if (ok)
+            {
+                await LoadConversation(id);
             }
             else
             {
@@ -241,8 +418,6 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
 
         var copy = new Row(original.Values).With("ChoiceId", id);
-        // The question is what the list shows, so mark the copy; fall back to the pending text when
-        // the source leaves the question NULL.
         return original.IsNull("Question") || original.T("Question").Trim().Length == 0
             ? copy.With("PendingChoiceText", original.T("PendingChoiceText") + " (copy)")
             : copy.With("Question", original.T("Question") + " (copy)");
@@ -267,8 +442,22 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
     }
 
-    /// <summary>Record one validated command against the open choice; the check runs on the result.</summary>
-    bool Commit(string label, RowEdit[] edits)
+    /// <summary>
+    /// The first-line picker: the client's conversation lines by their spoken text. Picking one
+    /// changes FirstLineId; the chain redraws on the next read.
+    /// </summary>
+    void PickFirstLine()
+    {
+        RecordPicker.Show(this, "Choose the first conversation line",
+            term => Task.FromResult(Lookup()?.SearchConversationLines(term, DbLimits.MaxSearch) ?? []),
+            (lineId, _) => conversationView?.SetFirstLine(lineId), store: Store);
+    }
+
+    /// <summary>Record one validated command against the open row; the check runs on the result.</summary>
+    bool Commit(string label, RowEdit[] edits) =>
+        CurrentTab == Tab.Conversations ? CommitConversation(label, edits) : CommitPlayerChoice(label, edits);
+
+    bool CommitPlayerChoice(string label, RowEdit[] edits)
     {
         if (snapshot == null || CurrentId is not uint id)
         {
@@ -279,8 +468,22 @@ public partial class TcCinematicsPanel : CinematicsPanel
         return CommitEdits(sourceKey, snapshot.Rows, effective, label, edits, rows => TcCinematicsRules.Check(id, rows, names), Rebuild, UpdateStatus);
     }
 
-    public override Task<IReadOnlyList<(uint Id, string Name)>> Search(string term) =>
-        CurrentTab == Tab.PlayerChoices
-            ? Searcher(term, CancellationToken.None)
-            : Task.FromResult<IReadOnlyList<(uint Id, string Name)>>([]);
+    bool CommitConversation(string label, RowEdit[] edits)
+    {
+        if (conversation == null || CurrentId is not uint id)
+        {
+            return false;
+        }
+
+        var names = conversation.Names;
+        return CommitEdits(sourceKey, conversation.Rows, effective, label, edits,
+            rows => TcConversationRules.Check(id, rows, names, ChainLines()), Rebuild, UpdateStatus);
+    }
+
+    public override Task<IReadOnlyList<(uint Id, string Name)>> Search(string term) => CurrentTab switch
+    {
+        Tab.Conversations => ConversationSearcher(term, CancellationToken.None),
+        Tab.Scenes => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>([]),
+        _ => Searcher(term, CancellationToken.None)
+    };
 }

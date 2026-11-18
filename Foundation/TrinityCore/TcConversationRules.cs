@@ -46,6 +46,22 @@ public static class TcConversationRules
         return indices.Count == 0 ? 0u : indices.Max() + 1;
     }
 
+    /// <summary>
+    /// An actor and every override that names its index: a line override cannot point at an actor
+    /// the conversation no longer has, so they leave together.
+    /// </summary>
+    public static RowEdit[] RemoveActor(Row actor, RowSet rows)
+    {
+        uint idx = actor.U("Idx");
+        return
+        [
+            InteractionEdits.Delete(TcTables.ConversationActors, actor),
+            .. rows.All(TcTables.ConversationLineTemplate)
+                .Where(line => line.U("ActorIdx") == idx)
+                .Select(line => InteractionEdits.Delete(TcTables.ConversationLineTemplate, line))
+        ];
+    }
+
     /// <summary>Actor and override rows of one conversation, actors first in index order.</summary>
     public static IEnumerable<RowEdit> RemoveConversation(Row conversation, uint id, RowSet rows)
     {
@@ -109,13 +125,13 @@ public static class TcConversationRules
                     yield return new(true, $"Actor {idx}: spawn {actor.UL("ConversationActorGuid")} does not exist.");
                     break;
                 case ActorKind.NoObject when actor.U("CreatureId") == 0:
-                    yield return new(true, $"Actor {idx}: a talking head needs a creature.");
+                    yield return new(false, $"Actor {idx}: no creature chosen yet; a talking head needs one.");
                     break;
                 case ActorKind.NoObject when actor.U("CreatureDisplayInfoId") == 0:
                     yield return new(false, $"Actor {idx}: no display chosen; the creature template's model is used.");
                     break;
                 case ActorKind.Creature when actor.U("CreatureId") == 0:
-                    yield return new(true, $"Actor {idx}: no creature chosen.");
+                    yield return new(false, $"Actor {idx}: no creature chosen yet.");
                     break;
                 case ActorKind.Creature when names?.Creature(actor.U("CreatureId")) == null:
                     yield return new(true, $"Actor {idx}: creature {actor.U("CreatureId")} does not exist.");
