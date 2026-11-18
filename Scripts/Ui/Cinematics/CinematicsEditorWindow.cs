@@ -131,6 +131,16 @@ public partial class CinematicsEditorWindow : ContentEditorWindow
 
     public void ShowTab(CinematicsPanel.Tab tab) => Panel.ShowTab(tab);
 
+    /// <summary>Open a SmartAI parameter's conversation or scene on its tab.</summary>
+    public void Open(SmartParamKind kind, uint id)
+    {
+        Visible = true;
+        PlaceOnFirstOpen(0, 70);
+        MatchDialect();
+        Panel.ShowTab(kind == SmartParamKind.Scene ? CinematicsPanel.Tab.Scenes : CinematicsPanel.Tab.Conversations);
+        Panel.Open(id);
+    }
+
     public Task Load(uint id) => Panel.Load(id);
 
     public Task NewItem(uint? copyFrom) => Panel.NewItem(copyFrom);

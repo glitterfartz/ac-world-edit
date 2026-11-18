@@ -46,7 +46,8 @@ public sealed class CreatureContext : IEntityContext
         Store = () => Store(),
         Lookup = () => Lookup(),
         Drafts = Drafts,
-        SpeechInScopes = false
+        SpeechInScopes = false,
+        CinematicsRequested = (kind, id) => CinematicsRequested?.Invoke(kind, id)
     };
 
     /// <summary>
@@ -128,6 +129,8 @@ public sealed class CreatureContext : IEntityContext
     public event Action<string, object?>? SectionRequested;
     /// <summary>Open the standalone quest editor on a quest.</summary>
     public event Action<uint>? QuestEditorRequested;
+    /// <summary>Open a SmartAI conversation or scene parameter in the cinematics editor.</summary>
+    public event Action<SmartParamKind, uint>? CinematicsRequested;
 
     int generation;
     CancellationTokenSource cancellation = new();

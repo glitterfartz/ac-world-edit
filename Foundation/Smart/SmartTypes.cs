@@ -20,7 +20,9 @@ public enum SmartParamKind
     ActionList,
     Emote,
     TextEmote,
-    FactionTemplate
+    FactionTemplate,
+    Conversation,
+    Scene
 }
 
 public sealed record SmartParam(string Label, SmartParamKind Kind)
@@ -48,11 +50,14 @@ public sealed record SmartParam(string Label, SmartParamKind Kind)
             SmartParamKind.Emote => "The emote ID the creature plays.",
             SmartParamKind.TextEmote => "The text-emote ID a player must perform.",
             SmartParamKind.FactionTemplate => "The FactionTemplate ID used for the check.",
+            SmartParamKind.Conversation => "The conversation template ID; open it in the cinematics editor.",
+            SmartParamKind.Scene => "The scene template ID; open it in the cinematics editor.",
             _ => "A whole number; the type help under the rule explains what it means."
         };
         bool reference = Kind is SmartParamKind.Spell or SmartParamKind.Creature or SmartParamKind.GameObject
             or SmartParamKind.Quest or SmartParamKind.Item or SmartParamKind.TextGroup or SmartParamKind.ActionList
-            or SmartParamKind.Emote or SmartParamKind.TextEmote or SmartParamKind.FactionTemplate;
+            or SmartParamKind.Emote or SmartParamKind.TextEmote or SmartParamKind.FactionTemplate
+            or SmartParamKind.Conversation or SmartParamKind.Scene;
         string help = typeHelp.Length > 0 ? $" {typeName}: {typeHelp}." : "";
         return $"{Label}: {meaning}{help}{(reference ? " 0 often means none." : "")}";
     }

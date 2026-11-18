@@ -214,6 +214,7 @@ public partial class ViewerShell
         sidebar.ReviewPendingRequested += OpenPendingChanges;
         creatureProps.SummaryChanged += creatures.SetInteractionSummary;
         creatureProps.QuestEditorRequested += questEditor.Open;
+        creatureProps.CinematicsRequested += (kind, id) => cinematicsEditor.Open(kind, id);
     }
 
     /// <summary>Selection signals that open an editor window.</summary>

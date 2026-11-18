@@ -26,6 +26,8 @@ public sealed partial class SmartCatalog
             SmartParamKind.Emote => value == 0 ? "none" : Named(names.Emote(value), $"emote {value}"),
             SmartParamKind.TextEmote => value == 0 ? "any emote" : Named(names.TextEmote(value), $"emote {value}"),
             SmartParamKind.FactionTemplate => value == 0 ? "its default faction" : Named(names.FactionTemplate(value), $"faction {value}"),
+            SmartParamKind.Conversation => value == 0 ? "any conversation" : $"conversation {value}",
+            SmartParamKind.Scene => value == 0 ? "any scene" : $"scene {value}",
             _ => value.ToString(CultureInfo.InvariantCulture)
         };
     }

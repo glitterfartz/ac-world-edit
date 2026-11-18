@@ -23,6 +23,8 @@ namespace ACWorldEdit;
 public partial class BehaviorPanel : ContentPanel
 {
     public Action<uint> QuestEditorRequested { get; set; } = _ => { };
+    /// <summary>Open a conversation or scene rule parameter in the cinematics editor.</summary>
+    public Action<SmartParamKind, uint> CinematicsRequested { get; set; } = (_, _) => { };
 
     /// <summary>The retail client's tables for spell names and search (TrinityCore); AzerothCore uses the 3.3.5 catalog.</summary>
     public Func<IClientLookup?> Lookup { get; set; } = () => null;

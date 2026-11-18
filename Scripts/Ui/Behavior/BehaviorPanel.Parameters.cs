@@ -89,6 +89,14 @@ public partial class BehaviorPanel
                 return TextGroupChoice(value, Put);
             case SmartParamKind.ActionList:
                 return ActionListControl(rule, isNew, value, Put);
+            case SmartParamKind.Conversation or SmartParamKind.Scene:
+                var open = new HBoxContainer();
+                open.AddThemeConstantOverride("separation", 4);
+                open.AddChild(EditorFields.Number(value, v => Put((uint)Math.Clamp(v, 0, uint.MaxValue)), 70, param.Tip()));
+                var button = new Button { Name = $"Open{param.Kind}", Text = "Open", Disabled = value == 0, TooltipText = $"Open this {param.Kind.ToString().ToLowerInvariant()} in the cinematics editor." };
+                button.Pressed += () => CinematicsRequested(param.Kind, value);
+                open.AddChild(button);
+                return open;
             default:
                 return EditorFields.Number(value, v => Put((uint)Math.Clamp(v, 0, uint.MaxValue)), 70, param.Kind == SmartParamKind.Flags ? "Bit flags; 0x hex accepted" : "");
         }

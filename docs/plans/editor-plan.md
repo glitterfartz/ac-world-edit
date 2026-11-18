@@ -31,7 +31,7 @@ differently from the design), **open gap**, **unverified**, **in progress**.
 | 19 Quest completion | partial | POI, item starters, conditional text, greetings, pools, objective and reference gaps |
 | 20 Travel and instances | mostly not started | Destination editing, instances, access requirements, editable shared `game_tele` source |
 | 21 Areas and ambience | mostly not started | Weather, area auras, taverns, disables, spawned triggers |
-| 22 Cinematics | nearly done | Player-choice, conversation and scene editors; SmartAI open-links pending |
+| 22 Cinematics | done (locale tables deferred) | Player-choice, conversation and scene editors with SmartAI open-links |
 | 23 Text pipeline | partial | Hotfix script, speech and page text, editing existing text, AC path |
 | 24 Item editor | not started | Item source, editor, creation flow |
 | Foundation and overlays | partial | Reference lookups, hotfix overrides, preview filters, graveyard checks |
@@ -378,8 +378,10 @@ their create properties are read. Open:
 
 ## Phase 22: Cinematics: conversations, scenes, player choice (TrinityCore only)
 
-**State:** 22a player choices, 22b conversations and 22c scenes built (editors, reads, rules, draft
-commands, `--cinematics-smoke`); the SmartAI conversation/scene open-links are pending.
+**State:** done. 22a player choices, 22b conversations and 22c scenes are built (editors, reads, rules,
+draft commands, `--cinematics-smoke`), and SmartAI actions 129/130/143/154 name their parameters and
+open the editors. Locale tables and hotfix-backed editing stay deferred (see
+[needed-tests.md](../status/needed-tests.md)).
 
 **Why:** retail storytelling uses conversations (248 templates, 702 lines), scenes and player choices; AC has
 no such systems.

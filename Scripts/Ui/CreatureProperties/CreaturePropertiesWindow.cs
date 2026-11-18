@@ -35,6 +35,7 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
 
     public event Action<string>? SummaryChanged;
     public event Action<uint>? QuestEditorRequested;
+    public event Action<SmartParamKind, uint>? CinematicsRequested;
 
     protected override string DefaultSection => DefaultSectionId;
     protected override IEntityContext Shell => Context;
@@ -68,6 +69,7 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
         };
         Context.SummaryChanged += text => SummaryChanged?.Invoke(text);
         Context.QuestEditorRequested += quest => QuestEditorRequested?.Invoke(quest);
+        Context.CinematicsRequested += (kind, id) => CinematicsRequested?.Invoke(kind, id);
         Context.SectionRequested += ShowSection;
         BuildShell(CreatureSectionRegistry.Create(Context));
     }

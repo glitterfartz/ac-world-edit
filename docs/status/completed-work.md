@@ -148,7 +148,10 @@ the client package's ordered script steps read-only, with "+ New scene" allocati
 Table `scene_template`, rules `TcSceneRules`, reads `TcCinematicsSource.ReadSceneAsync` /
 `SearchScenesAsync`, client `SceneScriptPackage`/`SceneScriptPackageMember`/`SceneScript` through
 `IClientLookup.SceneScriptPackage`. Tests: `SceneRulesTests`, the scene cases in `CinematicsDbTests`,
-`CinematicsClientTests` and `CinematicsWindowTests`.
+`CinematicsClientTests` and `CinematicsWindowTests`. SmartAI actions 129/130 (`Scene`) and 143/154
+(`Conversation`) carry curated sentences and parameter kinds, and an **Open** button beside the ID
+takes the parameter's conversation or scene to the cinematics editor (`CinematicsRequested` from the
+behavior panel through the creature window to `ViewerShell`). Tests: `SmartCinematicsLinkTests`.
 
 ## Data, overlays and rendering
 

@@ -206,6 +206,10 @@ TC_ACTIONS = {
     111: ("Stop game event", "stop game event {1}", [("Game event", "Number")]),
     112: ("Start game event", "start game event {1}", [("Game event", "Number")]),
     142: ("Set health", "set its health to {1}", [("Percent", "Percent")]),
+    129: ("Play scene", "play scene {1}", [("Scene", "Scene")]),
+    130: ("Cancel scene", "cancel scene {1}", [("Scene", "Scene")]),
+    143: ("Create conversation", "create conversation {1}", [("Conversation", "Conversation")]),
+    154: ("Destroy conversation", "destroy conversation {1} (private: {2}, within {3} yd)", [("Conversation", "Conversation"), ("Private", "Bool"), ("Range", "Yards")]),
 }
 TC_TARGETS = {
     9: ("Creatures in range", "{1} within {2}–{3} yd", [("Creature (0 any)", "Creature"), ("Min distance", "Yards"), ("Max distance", "Yards"), ("Max count", "Number")]),
