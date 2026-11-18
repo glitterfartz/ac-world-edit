@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "id": "55555555555555555555555555555555",
+  "name": "Dungeon Encounter",
+  "description": "Announces an instance start and welcomes players who enter it.",
+  "host": "ale-azerothcore",
+  "runtimeMode": "compatibility",
+  "variables": [],
+  "functions": [],
+  "graph": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "event.instance.on_initialize",
+        "position": { "x": 0, "y": 0 },
+        "properties": { "instanceId": 1 }
+      },
+      {
+        "id": "n2",
+        "kind": "server.send_world_message",
+        "position": { "x": 380, "y": 0 },
+        "literals": { "message": "The instance has been initialized." }
+      },
+      {
+        "id": "n3",
+        "kind": "event.instance.on_player_enter",
+        "position": { "x": 0, "y": 220 },
+        "properties": { "instanceId": 1 }
+      },
+      {
+        "id": "n4",
+        "kind": "player.send_broadcast_message",
+        "position": { "x": 380, "y": 220 },
+        "literals": { "message": "Welcome to the instance!" }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "from": { "node": "n1", "pin": "exec" }, "to": { "node": "n2", "pin": "exec" } },
+      { "id": "e2", "from": { "node": "n3", "pin": "exec" }, "to": { "node": "n4", "pin": "exec" } },
+      { "id": "e3", "from": { "node": "n3", "pin": "player" }, "to": { "node": "n4", "pin": "self" } }
+    ],
+    "comments": []
+  }
+}

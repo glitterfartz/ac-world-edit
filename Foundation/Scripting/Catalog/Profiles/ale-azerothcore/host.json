@@ -1,0 +1,18 @@
+{
+  "host": "ale-azerothcore",
+  "label": "ALE (AzerothCore)",
+  "conventions": {
+    "luaVersion": "5.1-compatible",
+    "objectTimer": { "register": "RegisterEvent", "callbackArgs": ["eventId", "delay", "repeats", "object"] },
+    "globalTimer": { "register": "CreateLuaEvent", "callbackArgs": ["eventId", "delay", "repeats"] },
+    "asyncQuery": { "call": "WorldDBQueryAsync", "callbackArg": "query" },
+    "caveats": [
+      "Creature/GameObject timers tick only while in world; timers die with the object.",
+      "Map:GetInstanceData returns nil for C++-scripted instances.",
+      "Instance data restores from the last save on reload; save at checkpoints.",
+      "Core object userdata is invalid after the handler returns; store GUIDs.",
+      "RemoveEventById is a global function (no Global table) with an argument bug; prefer object-scoped timers."
+    ]
+  },
+  "enums": []
+}

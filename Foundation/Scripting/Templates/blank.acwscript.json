@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "id": "00000000000000000000000000000001",
+  "name": "Blank",
+  "description": "",
+  "host": "ale-azerothcore",
+  "runtimeMode": "compatibility",
+  "variables": [],
+  "functions": [],
+  "graph": {
+    "nodes": [],
+    "edges": [],
+    "comments": []
+  }
+}

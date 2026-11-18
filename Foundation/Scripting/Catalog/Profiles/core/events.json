@@ -1,0 +1,5619 @@
+[
+  {
+    "id": "event.allcreature.on_add",
+    "display": "All Creature · On Add",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_aura_apply",
+    "display": "All Creature · On Aura Apply",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_aura_remove",
+    "display": "All Creature · On Aura Remove",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_before_select_level",
+    "display": "All Creature · On Before Select Level",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_damage",
+    "display": "All Creature · On Damage",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_deal_damage",
+    "display": "All Creature · On Deal Damage",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_heal",
+    "display": "All Creature · On Heal",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_modify_heal_received",
+    "display": "All Creature · On Modify Heal Received",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "heal",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_modify_melee_damage",
+    "display": "All Creature · On Modify Melee Damage",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_modify_periodic_damage_auras_tick",
+    "display": "All Creature · On Modify Periodic Damage Auras Tick",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_modify_spell_damage_taken",
+    "display": "All Creature · On Modify Spell Damage Taken",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_remove",
+    "display": "All Creature · On Remove",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.allcreature.on_select_level",
+    "display": "All Creature · On Select Level",
+    "category": "All Creature",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.battleground.on_create",
+    "display": "BattleGround · On Create",
+    "category": "BattleGround",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.battleground.on_end",
+    "display": "BattleGround · On End",
+    "category": "BattleGround",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.battleground.on_pre_destroy",
+    "display": "BattleGround · On Pre Destroy",
+    "category": "BattleGround",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.battleground.on_start",
+    "display": "BattleGround · On Start",
+    "category": "BattleGround",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_add",
+    "display": "Creature · On Add",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_aiupdate",
+    "display": "Creature · On Aiupdate",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.creature.on_aura_apply",
+    "display": "Creature · On Aura Apply",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_aura_remove",
+    "display": "Creature · On Aura Remove",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_corpse_removed",
+    "display": "Creature · On Corpse Removed",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_damage",
+    "display": "Creature · On Damage",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_damage_taken",
+    "display": "Creature · On Damage Taken",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "attacker",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_deal_damage",
+    "display": "Creature · On Deal Damage",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_dialog_status",
+    "display": "Creature · On Dialog Status",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_died",
+    "display": "Creature · On Died",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "killer",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_dummy_effect",
+    "display": "Creature · On Dummy Effect",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      },
+      {
+        "name": "effIndex",
+        "type": "int"
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_enter_combat",
+    "display": "Creature · On Enter Combat",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_heal",
+    "display": "Creature · On Heal",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_hit_by_spell",
+    "display": "Creature · On Hit By Spell",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_just_summoned_creature",
+    "display": "Creature · On Just Summoned Creature",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "summon",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_leave_combat",
+    "display": "Creature · On Leave Combat",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_modify_heal_received",
+    "display": "Creature · On Modify Heal Received",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "heal",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_modify_melee_damage",
+    "display": "Creature · On Modify Melee Damage",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_modify_periodic_damage_auras_tick",
+    "display": "Creature · On Modify Periodic Damage Auras Tick",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_modify_spell_damage_taken",
+    "display": "Creature · On Modify Spell Damage Taken",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_move_in_los",
+    "display": "Creature · On Move In Los",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_owner_attacked",
+    "display": "Creature · On Owner Attacked",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_owner_attacked_at",
+    "display": "Creature · On Owner Attacked At",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "attacker",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_pre_combat",
+    "display": "Creature · On Pre Combat",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_quest_accept",
+    "display": "Creature · On Quest Accept",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_quest_reward",
+    "display": "Creature · On Quest Reward",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_reach_home",
+    "display": "Creature · On Reach Home",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_reach_wp",
+    "display": "Creature · On Reach Wp",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "id",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_receive_emote",
+    "display": "Creature · On Receive Emote",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_remove",
+    "display": "Creature · On Remove",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_reset",
+    "display": "Creature · On Reset",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_spawn",
+    "display": "Creature · On Spawn",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_spell_hit_target",
+    "display": "Creature · On Spell Hit Target",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_summoned",
+    "display": "Creature · On Summoned",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_summoned_creature_despawn",
+    "display": "Creature · On Summoned Creature Despawn",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "summon",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_summoned_creature_died",
+    "display": "Creature · On Summoned Creature Died",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "summon",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "killer",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature.on_target_died",
+    "display": "Creature · On Target Died",
+    "category": "Creature",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "victim",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature_gossip.on_hello",
+    "display": "Creature Gossip · On Hello",
+    "category": "Creature Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.creature_gossip.on_select",
+    "display": "Creature Gossip · On Select",
+    "category": "Creature Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "CreatureEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      },
+      {
+        "name": "sender",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_add",
+    "display": "GameObject · On Add",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_aiupdate",
+    "display": "GameObject · On Aiupdate",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.gameobject.on_damaged",
+    "display": "GameObject · On Damaged",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "attacker",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_destroyed",
+    "display": "GameObject · On Destroyed",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "attacker",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_dialog_status",
+    "display": "GameObject · On Dialog Status",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_dummy_effect",
+    "display": "GameObject · On Dummy Effect",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      },
+      {
+        "name": "effIndex",
+        "type": "int"
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_go_state_changed",
+    "display": "GameObject · On Go State Changed",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "state",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_loot_state_change",
+    "display": "GameObject · On Loot State Change",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "state",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_quest_accept",
+    "display": "GameObject · On Quest Accept",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_quest_reward",
+    "display": "GameObject · On Quest Reward",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_remove",
+    "display": "GameObject · On Remove",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_spawn",
+    "display": "GameObject · On Spawn",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject.on_use",
+    "display": "GameObject · On Use",
+    "category": "GameObject",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject_gossip.on_hello",
+    "display": "GameObject Gossip · On Hello",
+    "category": "GameObject Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.gameobject_gossip.on_select",
+    "display": "GameObject Gossip · On Select",
+    "category": "GameObject Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "GameObjectEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "gameObject",
+        "type": "GameObject",
+        "nullable": true
+      },
+      {
+        "name": "sender",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_create",
+    "display": "Group · On Create",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_disband",
+    "display": "Group · On Disband",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_leader_change",
+    "display": "Group · On Leader Change",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_member_add",
+    "display": "Group · On Member Add",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_member_invite",
+    "display": "Group · On Member Invite",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.group.on_member_remove",
+    "display": "Group · On Member Remove",
+    "category": "Group",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_add_member",
+    "display": "Guild · On Add Member",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_bank_event",
+    "display": "Guild · On Bank Event",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_create",
+    "display": "Guild · On Create",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_disband",
+    "display": "Guild · On Disband",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_event",
+    "display": "Guild · On Event",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_info_change",
+    "display": "Guild · On Info Change",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_item_move",
+    "display": "Guild · On Item Move",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      },
+      {
+        "name": "arg9",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_money_deposit",
+    "display": "Guild · On Money Deposit",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_money_withdraw",
+    "display": "Guild · On Money Withdraw",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_motd_change",
+    "display": "Guild · On Motd Change",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.guild.on_remove_member",
+    "display": "Guild · On Remove Member",
+    "category": "Guild",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_check_encounter_in_progress",
+    "display": "Instance · On Check Encounter In Progress",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_creature_create",
+    "display": "Instance · On Creature Create",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_gameobject_create",
+    "display": "Instance · On Gameobject Create",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameobject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_initialize",
+    "display": "Instance · On Initialize",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_load",
+    "display": "Instance · On Load",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_player_enter",
+    "display": "Instance · On Player Enter",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.instance.on_update",
+    "display": "Instance · On Update",
+    "category": "Instance",
+    "scopeParams": [
+      {
+        "name": "instanceId",
+        "type": "InstanceId"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.item.on_dummy_effect",
+    "display": "Item · On Dummy Effect",
+    "category": "Item",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      },
+      {
+        "name": "effIndex",
+        "type": "int"
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item.on_expire",
+    "display": "Item · On Expire",
+    "category": "Item",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item.on_quest_accept",
+    "display": "Item · On Quest Accept",
+    "category": "Item",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item.on_remove",
+    "display": "Item · On Remove",
+    "category": "Item",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item.on_use",
+    "display": "Item · On Use",
+    "category": "Item",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "target2",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "target3",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "target4",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "target5",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item_gossip.on_hello",
+    "display": "Item Gossip · On Hello",
+    "category": "Item Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.item_gossip.on_select",
+    "display": "Item Gossip · On Select",
+    "category": "Item Gossip",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "ItemEntry"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "sender",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "code",
+        "type": "int"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_check_encounter_in_progress",
+    "display": "Map · On Check Encounter In Progress",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_creature_create",
+    "display": "Map · On Creature Create",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_gameobject_create",
+    "display": "Map · On Gameobject Create",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [
+      {
+        "name": "gameobject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_initialize",
+    "display": "Map · On Initialize",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_load",
+    "display": "Map · On Load",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_player_enter",
+    "display": "Map · On Player Enter",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.map.on_update",
+    "display": "Map · On Update",
+    "category": "Map",
+    "scopeParams": [
+      {
+        "name": "mapId",
+        "type": "MapId"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.packet.on_packet_receive",
+    "display": "Packet · On Packet Receive",
+    "category": "Packet",
+    "scopeParams": [
+      {
+        "name": "opcode",
+        "type": "int"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      },
+      {
+        "name": "newPacket",
+        "type": "WorldPacket",
+        "nullable": true
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.packet.on_packet_receive_unknown",
+    "display": "Packet · On Packet Receive Unknown",
+    "category": "Packet",
+    "scopeParams": [
+      {
+        "name": "opcode",
+        "type": "int"
+      }
+    ],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.packet.on_packet_send",
+    "display": "Packet · On Packet Send",
+    "category": "Packet",
+    "scopeParams": [
+      {
+        "name": "opcode",
+        "type": "int"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      },
+      {
+        "name": "newPacket",
+        "type": "WorldPacket",
+        "nullable": true
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_achievement_complete",
+    "display": "Player · On Achievement Complete",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_aura_apply",
+    "display": "Player · On Aura Apply",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_aura_remove",
+    "display": "Player · On Aura Remove",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "aura",
+        "type": "Aura",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_before_update_skill",
+    "display": "Player · On Before Update Skill",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.player.on_bg_desertion",
+    "display": "Player · On Bg Desertion",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "type",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_bind_to_instance",
+    "display": "Player · On Bind To Instance",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "mapid",
+        "type": "MapId"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_group_invite",
+    "display": "Player · On Can Group Invite",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_init_trade",
+    "display": "Player · On Can Init Trade",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_join_lfg",
+    "display": "Player · On Can Join Lfg",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_resurrect",
+    "display": "Player · On Can Resurrect",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_send_mail",
+    "display": "Player · On Can Send Mail",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_can_update_skill",
+    "display": "Player · On Can Update Skill",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.player.on_can_use_item",
+    "display": "Player · On Can Use Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_channel_chat",
+    "display": "Player · On Channel Chat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_character_create",
+    "display": "Player · On Character Create",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_character_delete",
+    "display": "Player · On Character Delete",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_chat",
+    "display": "Player · On Chat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "suppress",
+        "type": "bool"
+      },
+      {
+        "name": "newMessage",
+        "type": "string"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_command",
+    "display": "Player · On Command",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "text",
+        "type": "string"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_complete_quest",
+    "display": "Player · On Complete Quest",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_create_item",
+    "display": "Player · On Create Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "count",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_damage",
+    "display": "Player · On Damage",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_deal_damage",
+    "display": "Player · On Deal Damage",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_duel_end",
+    "display": "Player · On Duel End",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_duel_request",
+    "display": "Player · On Duel Request",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_duel_start",
+    "display": "Player · On Duel Start",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_emote",
+    "display": "Player · On Emote",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_enter_combat",
+    "display": "Player · On Enter Combat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_equip",
+    "display": "Player · On Equip",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_ffapvp_change",
+    "display": "Player · On Ffapvp Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_first_login",
+    "display": "Player · On First Login",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_give_xp",
+    "display": "Player · On Give Xp",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      },
+      {
+        "name": "victim",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_group_chat",
+    "display": "Player · On Group Chat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_group_roll_reward_item",
+    "display": "Player · On Group Roll Reward Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "count",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_guild_chat",
+    "display": "Player · On Guild Chat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_heal",
+    "display": "Player · On Heal",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_kill_creature",
+    "display": "Player · On Kill Creature",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "killer",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_kill_player",
+    "display": "Player · On Kill Player",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "killer",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_killed_by_creature",
+    "display": "Player · On Killed By Creature",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "killer",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_learn_spell",
+    "display": "Player · On Learn Spell",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "spellId",
+        "type": "SpellId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_learn_talents",
+    "display": "Player · On Learn Talents",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "spellid",
+        "type": "SpellId"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_leave_combat",
+    "display": "Player · On Leave Combat",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_level_change",
+    "display": "Player · On Level Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_login",
+    "display": "Player · On Login",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_logout",
+    "display": "Player · On Logout",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_loot_item",
+    "display": "Player · On Loot Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "count",
+        "type": "int"
+      },
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_loot_money",
+    "display": "Player · On Loot Money",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_map_change",
+    "display": "Player · On Map Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_modify_heal_received",
+    "display": "Player · On Modify Heal Received",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "heal",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_modify_melee_damage",
+    "display": "Player · On Modify Melee Damage",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_modify_periodic_damage_auras_tick",
+    "display": "Player · On Modify Periodic Damage Auras Tick",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_modify_spell_damage_taken",
+    "display": "Player · On Modify Spell Damage Taken",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "target",
+        "type": "Unit",
+        "nullable": true
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "spellInfo",
+        "type": "SpellInfo",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_money_change",
+    "display": "Player · On Money Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_pet_added_to_world",
+    "display": "Player · On Pet Added To World",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_pet_kill",
+    "display": "Player · On Pet Kill",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_quest_abandon",
+    "display": "Player · On Quest Abandon",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_quest_accept",
+    "display": "Player · On Quest Accept",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "quest",
+        "type": "Quest",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_quest_reward_item",
+    "display": "Player · On Quest Reward Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "count",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_released_ghost",
+    "display": "Player · On Released Ghost",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_repop",
+    "display": "Player · On Repop",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_reputation_change",
+    "display": "Player · On Reputation Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_resurrect",
+    "display": "Player · On Resurrect",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_save",
+    "display": "Player · On Save",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_spell_cast",
+    "display": "Player · On Spell Cast",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "spell",
+        "type": "Spell",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_store_new_item",
+    "display": "Player · On Store New Item",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "count",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_talents_change",
+    "display": "Player · On Talents Change",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_talents_reset",
+    "display": "Player · On Talents Reset",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_text_emote",
+    "display": "Player · On Text Emote",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player.on_update_area",
+    "display": "Player · On Update Area",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.player.on_update_skill",
+    "display": "Player · On Update Skill",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.player.on_update_zone",
+    "display": "Player · On Update Zone",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.player.on_whisper",
+    "display": "Player · On Whisper",
+    "category": "Player",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "receiver",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.player_gossip.on_select",
+    "display": "Player Gossip · On Select",
+    "category": "Player Gossip",
+    "scopeParams": [
+      {
+        "name": "menuId",
+        "type": "int"
+      }
+    ],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "player2",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "sender",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "code",
+        "type": "int"
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.map_on_update",
+    "display": "Server · On Update",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "Map",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.server.on_add",
+    "display": "Server · On Add",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_change",
+    "display": "Server · On Change",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "state",
+        "type": "int"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_config_load",
+    "display": "Server · On Config Load",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "reload",
+        "type": "bool"
+      },
+      {
+        "name": "isBefore",
+        "type": "bool"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_create",
+    "display": "Server · On Create",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "Map",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_delete_creature",
+    "display": "Server · On Delete Creature",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "creature",
+        "type": "Creature",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_delete_gameobject",
+    "display": "Server · On Delete Gameobject",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "gameobject",
+        "type": "GameObject",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_destroy",
+    "display": "Server · On Destroy",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "Map",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_expire",
+    "display": "Server · On Expire",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_grid_load",
+    "display": "Server · On Grid Load",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_grid_unload",
+    "display": "Server · On Grid Unload",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_lua_state_close",
+    "display": "Server · On Lua State Close",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_lua_state_open",
+    "display": "Server · On Lua State Open",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_message",
+    "display": "Server · On Message",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "sender",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "type",
+        "type": "int"
+      },
+      {
+        "name": "msg",
+        "type": "string"
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "receiver",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "guild",
+        "type": "Guild",
+        "nullable": true
+      },
+      {
+        "name": "group",
+        "type": "Group",
+        "nullable": true
+      },
+      {
+        "name": "arg10",
+        "type": "Any"
+      },
+      {
+        "name": "arg11",
+        "type": "Any"
+      },
+      {
+        "name": "arg12",
+        "type": "Any"
+      },
+      {
+        "name": "arg13",
+        "type": "Any"
+      },
+      {
+        "name": "arg14",
+        "type": "Any"
+      },
+      {
+        "name": "arg15",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_network_start",
+    "display": "Server · On Network Start",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_network_stop",
+    "display": "Server · On Network Stop",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_open_state_change",
+    "display": "Server · On Open State Change",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "open",
+        "type": "bool"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_packet_receive",
+    "display": "Server · On Packet Receive",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      },
+      {
+        "name": "newPacket",
+        "type": "WorldPacket",
+        "nullable": true
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_packet_receive_unknown",
+    "display": "Server · On Packet Receive Unknown",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_packet_send",
+    "display": "Server · On Packet Send",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "handled",
+        "type": "bool"
+      },
+      {
+        "name": "newPacket",
+        "type": "WorldPacket",
+        "nullable": true
+      }
+    ],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_player_enter",
+    "display": "Server · On Player Enter",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "Map",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_player_leave",
+    "display": "Server · On Player Leave",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "Map",
+        "nullable": true
+      },
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_remove",
+    "display": "Server · On Remove",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_shutdown",
+    "display": "Server · On Shutdown",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_shutdown_cancel",
+    "display": "Server · On Shutdown Cancel",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_shutdown_init",
+    "display": "Server · On Shutdown Init",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "code",
+        "type": "int"
+      },
+      {
+        "name": "mask",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_socket_close",
+    "display": "Server · On Socket Close",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_socket_open",
+    "display": "Server · On Socket Open",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_startup",
+    "display": "Server · On Startup",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_successful",
+    "display": "Server · On Successful",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "item",
+        "type": "Item",
+        "nullable": true
+      },
+      {
+        "name": "arg4",
+        "type": "Any"
+      },
+      {
+        "name": "arg5",
+        "type": "Any"
+      },
+      {
+        "name": "arg6",
+        "type": "Any"
+      },
+      {
+        "name": "arg7",
+        "type": "Any"
+      },
+      {
+        "name": "arg8",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_trigger",
+    "display": "Server · On Trigger",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.on_update",
+    "display": "Server · On Update",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.server.start",
+    "display": "Server · Start",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "eventid",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.server.stop",
+    "display": "Server · Stop",
+    "category": "Server",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "eventid",
+        "type": "int"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.spell.on_cast",
+    "display": "Spell · On Cast",
+    "category": "Spell",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "SpellId"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spell",
+        "type": "Spell",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.spell.on_cast_cancel",
+    "display": "Spell · On Cast Cancel",
+    "category": "Spell",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "SpellId"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spell",
+        "type": "Spell",
+        "nullable": true
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.spell.on_prepare",
+    "display": "Spell · On Prepare",
+    "category": "Spell",
+    "scopeParams": [
+      {
+        "name": "entry",
+        "type": "SpellId"
+      }
+    ],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "spell",
+        "type": "Spell",
+        "nullable": true
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.ticket.on_close",
+    "display": "Ticket · On Close",
+    "category": "Ticket",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.ticket.on_create",
+    "display": "Ticket · On Create",
+    "category": "Ticket",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.ticket.on_resolve",
+    "display": "Ticket · On Resolve",
+    "category": "Ticket",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.ticket.update_last_change",
+    "display": "Ticket · Update Last Change",
+    "category": "Ticket",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "implemented",
+    "performance": "high-frequency"
+  },
+  {
+    "id": "event.vehicle.on_add_passenger",
+    "display": "Vehicle · On Add Passenger",
+    "category": "Vehicle",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      },
+      {
+        "name": "arg3",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.vehicle.on_install",
+    "display": "Vehicle · On Install",
+    "category": "Vehicle",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.vehicle.on_install_accessory",
+    "display": "Vehicle · On Install Accessory",
+    "category": "Vehicle",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.vehicle.on_remove_passenger",
+    "display": "Vehicle · On Remove Passenger",
+    "category": "Vehicle",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      },
+      {
+        "name": "arg2",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  },
+  {
+    "id": "event.vehicle.on_uninstall",
+    "display": "Vehicle · On Uninstall",
+    "category": "Vehicle",
+    "scopeParams": [],
+    "params": [
+      {
+        "name": "arg1",
+        "type": "Any"
+      }
+    ],
+    "returns": [],
+    "availability": "unimplemented",
+    "performance": "normal"
+  }
+]

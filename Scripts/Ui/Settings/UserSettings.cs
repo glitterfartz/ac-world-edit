@@ -100,14 +100,39 @@ public static class UserSettings
         file.Save(Path);
     }
 
-    /// <summary>Saved UI scale in percent (100 when unset or out of range).</summary>
-    public static int LoadUiScale() => int.TryParse(Read("ui", "scale_percent", "100"), out int percent) && percent is >= 50 and <= 300 ? percent : 100;
+    public static string LoadScriptingTargetHost() => Data.Scripting.ScriptingSettings.TargetHost(Read);
 
-    /// <summary>
-    /// Saved sun-shadow quality. Unset means Low, the shipped default (the measured moving cost fits
-    /// the frame budget; Medium and High cost about twice and three times as much); an unreadable
-    /// value is Off. The command line may override it for one run.
-    /// </summary>
+    public static void SaveScriptingTargetHost(string host) =>
+        Write(Data.Scripting.ScriptingSettings.Section, "target_host", host);
+
+    public static bool LoadScriptingAutoExport() => Data.Scripting.ScriptingSettings.AutoExport(Read);
+
+    public static void SaveScriptingAutoExport(bool enabled) =>
+        Write(Data.Scripting.ScriptingSettings.Section, "auto_export", enabled ? "1" : "0");
+
+    public static string LoadScriptingLastDocument() => Data.Scripting.ScriptingSettings.LastDocument(Read);
+
+    public static void SaveScriptingLastDocument(string documentId) =>
+        Write(Data.Scripting.ScriptingSettings.Section, "last_document", documentId);
+
+    public static string LoadScriptingWorkspace(ClientKind kind) =>
+        Data.Scripting.ScriptingSettings.Workspace(kind, Read);
+
+    public static void SaveScriptingWorkspace(ClientKind kind, string directory) =>
+        Write(Data.Scripting.ScriptingSettings.ProfileSection(kind), "workspace", directory);
+
+    public static string LoadScriptingExportDirectory(ClientKind kind) =>
+        Data.Scripting.ScriptingSettings.ExportDirectory(kind, Read);
+
+    public static void SaveScriptingExportDirectory(ClientKind kind, string directory) =>
+        Write(Data.Scripting.ScriptingSettings.ProfileSection(kind), "export_dir", directory);
+
+    /// <summary>Saved UI scale in percent (100 when unset or out of range).</summary>
+    public static int LoadUiScale() => int.TryParse(Read("ui", "scale_percent", "100"), out int percent) && percent is >= 50 and <= 300 ? percent : 100;    /// <summary>
+                                                                                                                                                            /// Saved sun-shadow quality. Unset means Low, the shipped default (the measured moving cost fits
+                                                                                                                                                            /// the frame budget; Medium and High cost about twice and three times as much); an unreadable
+                                                                                                                                                            /// value is Off. The command line may override it for one run.
+                                                                                                                                                            /// </summary>
     public static ShadowQuality LoadShadowQuality() => ShadowQualityPresets.Parse(Read("video", "shadow_quality", "low"));
 
     public static void SaveShadowQuality(ShadowQuality quality) => Write("video", "shadow_quality", ShadowQualityPresets.Name(quality).ToLowerInvariant());

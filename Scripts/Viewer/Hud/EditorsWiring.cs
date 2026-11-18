@@ -187,6 +187,7 @@ public partial class ViewerShell
         sqlPreview = new SqlPreviewWindow();
         layer.AddChild(sqlPreview);
         layer.AddChild(pendingWindow);
+        InitScripting(layer);
         WirePendingWindow();
         WireEditors();
     }

@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "id": "22222222222222222222222222222222",
+  "name": "Command",
+  "description": "A player command that announces itself to the world.",
+  "host": "ale-azerothcore",
+  "runtimeMode": "compatibility",
+  "variables": [],
+  "functions": [],
+  "graph": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "event.player.on_command",
+        "position": { "x": 0, "y": 0 },
+        "properties": { "shots": 0 }
+      },
+      {
+        "id": "n2",
+        "kind": "server.send_world_message",
+        "position": { "x": 360, "y": 0 },
+        "literals": { "message": "Command received." }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "from": { "node": "n1", "pin": "exec" }, "to": { "node": "n2", "pin": "exec" } }
+    ],
+    "comments": []
+  }
+}

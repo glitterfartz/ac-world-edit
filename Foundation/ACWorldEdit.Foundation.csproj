@@ -4,4 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripting/Catalog/Profiles/**/*.json" />
+    <EmbeddedResource Include="Scripting/Templates/**/*.json" />
+  </ItemGroup>
 </Project>

@@ -22,6 +22,12 @@ Two files under `Viewer/` keep `namespace ACWorldEdit.Assets` on purpose: `Sessi
 ## Ui
 
 - Status and feedback go to `StatusBar` via `StatusLog`; overlays raise their `Report` (`Action<string>`) callback. Never print into the Inspector panel.
+- An editor that should float as its own OS window is a `Window` subclass built like `Ui/Scripting/ScriptEditorWindow.cs`. That class is the template: [`docs/architecture/tool-windows.md`](../docs/architecture/tool-windows.md) has the full shape, the pitfalls and the regressions.
+  - The body lives in a `ScrollContainer` and needs `SizeFlagsVertical` **and** `SizeFlagsHorizontal` set to `ExpandFill`; the scroll container only stretches its child on axes the child expands on, so a horizontal-only body stays at its minimum and the canvas stops growing while the bottom pane floats mid-window.
+  - Keep the scroll mode `AUTO` and the body scrolled rather than letting content drive the size; set the window floor with `MinSize` and never let a content minimum raise it.
+  - Toolbar actions go in an `HFlowContainer`; labels stay `AutowrapMode.Off`; the status line gets its own row.
+  - A `Window` is a `Viewport`: key events never reach the `Window` node, so a full-rect `Control` child (`ScriptEditorShortcuts`) overrides `_UnhandledKeyInput`. Dialogs are children of the window (`GuiEmbedSubwindows = true`); a headless run refuses instead of prompting.
+  - Layout tests set `Size`, await two `ProcessFrame`s, and assert the canvas grew and the bottom pane stayed at the bottom.
 - Windows are built in code through `Ui/Framework` (`UiForm`, `MenuSheet`, dialogs, inspector card parts). Control creation order is pinned by `Tests/golden/ui-*.json`, so a builder that reorders nodes breaks a golden: rewrite one only with `python Tools/ui_golden.py --update`, and only when the change is intended.
 - `Tests/ACWorldEdit.GdTests` must cover new UI flows (see `Tests/AGENTS.md`).
 

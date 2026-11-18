@@ -87,6 +87,40 @@ Deterministic parser coverage lives in `NavigationTests`; full-folder checks are
 X-ray and the reset/disable lifecycle. Manual landmark comparisons across every generated map and
 live-server obstacle parity are not automated.
 
+## Visual scripting
+
+Milestone 1 covers the document model, catalog, validator, compiler, workspace and export in xUnit;
+Milestone 2 adds the gdUnit editor tests (`ScriptCanvasTests`, `ScriptEditorWindowTests`). These
+wait for the features or environment they exercise:
+
+- [ ] Live Eluna verification: the `eluna-trinitycore` profile compiles and is registry-wired, but its
+  event ids and registrations are mirrored from ALE and have not run against a TrinityCore server.
+- [ ] Live ALE load: the exported golden Lua was syntax-checked with the server's Lua 5.2 and sits
+  in the live `lua_scripts/acworld` folder, but `.reload ale` has not yet been run — the running
+  worldserver has no console input and restarting it needs the user. Confirm the reload prints no
+  AE/ALE errors and `RegisterCreatureEvent(1234, 4, …)` loads, then remove this entry.
+- [ ] Timer cancellation (`RemoveEventById`/object scoped) and nested timer scopes: lowering is
+  covered for one and two timers, but cancellation is not implemented and the callback-argument
+  binding has no runtime check.
+- [ ] Instance-data indexing (`table.get`/`table.set`) and async DB continuations: deferred until the
+  reviewed emitter ops exist.
+- [ ] Generated Lua runs in a real ALE state: scripted handler behavior (not just chunk load), a
+  `DbFact`-style opt-in suite, when the Milestone 6 runtime work lands.
+- [ ] Catalog drift: regenerate `events.json`/`event-bindings.json` from a pinned mod-ale checkout in CI
+  and diff them, so an upstream hook rename fails a build instead of an editor session (Milestone 4
+  catalog tool).
+- [ ] `ScriptReferenceResolver.DbSource` against a real database (`DbFact`, one file per dialect):
+  the resolver is covered with a fake source and an unsupported-kind test; live search behavior and
+  map-id lookups are not. Export now calls the shell's `ReferenceCheck` (blocking is covered with an
+  injected check), but a live end-to-end export against a connected database is not.
+- [ ] Editor external-change prompt and discard/overwrite choice: save/load/export in temp folders and
+  the dirty guard are covered, but the confirmation dialog's three answers are not driven headlessly
+  (`Dialogs.Confirm` needs a real window in the current harness).
+- [ ] `flow.foreach` and list/table sources: deferred to Milestone 6 (no list producer exists yet);
+  the palette deliberately omits ForEach until then.
+- [ ] The function signature and folder dialogs: the underlying APIs are covered, but the modal UI
+  paths are not driven headlessly in the current harness.
+
 ## Dynamic sun shadows
 
 The cascade frame, depth packing, caster policy and shader source have xUnit coverage

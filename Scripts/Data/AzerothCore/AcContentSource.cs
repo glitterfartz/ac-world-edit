@@ -324,6 +324,11 @@ public sealed class AcContentSource(WorldDatabase database)
     /// </summary>
     public async Task<IReadOnlyList<(uint Id, string Name)>> SearchAsync(SmartParamKind kind, string term, CancellationToken token)
     {
+        if (kind == SmartParamKind.Spell)
+        {
+            throw new NotSupportedException("Spell ids live in the client's Spell.dbc, not the world database.");
+        }
+
         (string table, string id, string name) = kind switch
         {
             SmartParamKind.Creature => ("creature_template", "entry", "name"),
