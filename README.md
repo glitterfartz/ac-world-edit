@@ -27,9 +27,21 @@ A viewer and an editor in one window: fly through the world, open any spawn, tem
       <p>Edit a creature template once and every spawn that uses it inherits the change, or open a single spawn to tune its health, masks, equipment, stance, weapons, emotes and auras without touching the rest.</p>
     </td>
     <td width="50%" valign="top">
+      <p><strong>SmartAI behavior</strong></p>
+      <a href="docs/img/smartai-editor.png"><img src="docs/img/smartai-editor.png" alt="The SmartAI behavior section of the Stormwind Guard template in Elwynn Forest, showing one in-combat cast rule with its timer, spell, cast flags, target, chance and phase settings." width="640"></a>
+      <p>Build SmartAI rules from events, actions and targets (or copy one from a template) and choose whether they apply to every spawn of a creature or only the one under the gizmo.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <p><strong>Vendor lists</strong></p>
       <a href="docs/img/vendor-editing.png"><img src="docs/img/vendor-editing.png" alt="The vendor page of the Kul Tiras Sailor template, listing items for sale with prices, stock limits and a search for additional items." width="640"></a>
       <p>Give a vendor its stock by searching for items by name and setting prices, stock and restock limits without hand-editing vendor tables.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>GameObject templates</strong></p>
+      <a href="docs/img/gameobject-template.png"><img src="docs/img/gameobject-template.png" alt="The GameObject template window for Heartswood, a chest in Ashenvale, with its display, size, type, interaction flags, money limits and spawn and quest sections." width="640"></a>
+      <p>Edit a GameObject template's display, size, type, interaction flags, money limits, quests and spawns in one window, the same way as a creature.</p>
     </td>
   </tr>
   <tr>
@@ -39,9 +51,9 @@ A viewer and an editor in one window: fly through the world, open any spawn, tem
       <p>Write an entire quest across its overview, story, objectives, rewards, chain and givers in one window, picking references by icon and name instead of typing IDs.</p>
     </td>
     <td width="50%" valign="top">
-      <p><strong>GameObject templates</strong></p>
-      <a href="docs/img/gameobject-template.png"><img src="docs/img/gameobject-template.png" alt="The GameObject template window for Heartswood, a chest in Ashenvale, with its display, size, type, interaction flags, money limits and spawn and quest sections." width="640"></a>
-      <p>Edit a GameObject template's display, size, type, interaction flags, money limits, quests and spawns in one window, the same way as a creature.</p>
+      <p><strong>Area triggers</strong></p>
+      <a href="docs/img/at-screen.png"><img src="docs/img/at-screen.png" alt="A spherical area trigger for quest 4811 The Red Crystal selected in Darkshore, drawn as a translucent sphere with its radius and quest link in the inspector." width="640"></a>
+      <p>See trigger volumes at their true size and open the behavior or server row each one runs, so you know what covers a spot without cross-checking coordinates.</p>
     </td>
   </tr>
   <tr>
@@ -58,20 +70,13 @@ A viewer and an editor in one window: fly through the world, open any spawn, tem
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <p><strong>Area triggers</strong></p>
-      <a href="docs/img/at-screen.png"><img src="docs/img/at-screen.png" alt="A spherical area trigger for quest 4811 The Red Crystal selected in Darkshore, drawn as a translucent sphere with its radius and quest link in the inspector." width="640"></a>
-      <p>See trigger volumes at their true size and open the behavior or server row each one runs, so you know what covers a spot without cross-checking coordinates.</p>
-    </td>
-    <td width="50%" valign="top">
       <p><strong>Change history</strong></p>
       <a href="docs/img/db-change-history.png"><img src="docs/img/db-change-history.png" alt="The change history window listing one applied creature position change, with its revert button, and the select, apply, preview, export and discard controls." width="640"></a>
       <p>Stage edits as you work, then apply, revert, export or discard them from one list, so the world database changes only when you choose.</p>
     </td>
-  </tr>
-  <tr>
-    <td colspan="2" valign="top">
+    <td width="50%" valign="top">
       <p><strong>Scripted changes</strong></p>
-      <a href="docs/img/db-revert-script.png"><img src="docs/img/db-revert-script.png" alt="The SQL preview of a revert script, showing the change-log header, the revert statement and a read-only preflight check." width="100%"></a>
+      <a href="docs/img/db-revert-script.png"><img src="docs/img/db-revert-script.png" alt="The SQL preview of a revert script, showing the change-log header, the revert statement and a read-only preflight check." width="640"></a>
       <p>Review the exact SQL a change will run, with a preflight that flags rows that have moved on, before applying it or handing it to someone else.</p>
     </td>
   </tr>
