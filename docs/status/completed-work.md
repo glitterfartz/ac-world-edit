@@ -109,11 +109,11 @@ Node move/facing/delay, add/insert/delete/renumber, new paths, path-level proper
 link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
 polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
 
-## Visual scripting (Milestones 0–5)
+## Visual scripting (Milestones 0–6)
 
 The scripting pipeline, persistence layer, Godot editor MVP, authoring depth, the domain/catalog
-foundation and the multi-host proof are built; advanced runtime work (instance data, timers, lists)
-starts at Milestone 6.
+foundation, the multi-host proof and the advanced runtime slice (timers, lists, map/instance data,
+debug print) are built; deployment polish starts at Milestone 7.
 
 | Area | What landed |
 | --- | --- |
@@ -128,7 +128,8 @@ starts at Milestone 6.
 | Authoring depth (M3) | `flow.for_range` lowering (`for i = from, to`), user-function graphs (parameter get, exec roots, Return slots, function signature editing), copy/paste/duplicate with id remap and multi-select deletion, comment frames (position/size persisted), and `spell-cast`/`quest-giver` templates with golden Lua. |
 | Domain foundation (M4) | `dungeon-encounter` and `world-event` templates with golden Lua; `ScriptReferenceResolver` (typed-id checks against a live source, confirmed misses block export) with `DbSource` over `IDBSource.SearchAsync`; catalog `--check` clean against the pinned mod-ale clone and a curated `script_catalog_overrides.json`; `docs/reference/cpp-to-graph-parity.md`. |
 | Multi-host (M5) | `eluna-trinitycore` proof profile (mirrored bindings, experimental), `TcScriptHosts.Profile` and `ScriptHostRegistry` wiring, a host selector that re-validates and recompiles, host-aware catalog hash, cross-host compile tests and `docs/reference/host-capabilities.md`. |
-| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests`, `ScriptReferenceResolverTests` (1690 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (11) and `ScriptEditorWindowTests` (14) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load, export, copy/paste/duplicate, comments and function graphs; the View menu change is pinned by the updated UI goldens. |
+| Advanced runtime (M6) | `timer.once`/`timer.repeat` lowered to a local callback plus `obj:RegisterEvent(fn, delayMs, repeats)` with `timer.event_id`/`timer.object`/`timer.repeats`; `list.create` + `flow.foreach` (`for _, item in ipairs(list)`); `map.get_by_id`, `instance.get_data`, `instance.save` and `debug.print` in both host profiles. Timer cancellation, instance-data indexing and async continuations remain deferred. |
+| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests`, `ScriptReferenceResolverTests` (1694 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (11) and `ScriptEditorWindowTests` (14) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load, export, copy/paste/duplicate, comments and function graphs; the View menu change is pinned by the updated UI goldens. |
 
 ## Data, overlays and rendering
 

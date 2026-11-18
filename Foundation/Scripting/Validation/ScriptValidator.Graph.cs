@@ -362,6 +362,11 @@ public sealed partial class ScriptValidator
             return false;
         }
 
+        if (info.Capability is null && pin.Nullable)
+        {
+            return false;
+        }
+
         if (info.Capability is { } capability)
         {
             var parameter = capability.Params.FirstOrDefault(item => item.Name == pin.Id);

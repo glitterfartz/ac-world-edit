@@ -3,9 +3,17 @@
     "id": "object.to_player",
     "display": "To Player",
     "category": "Object",
-    "receivers": ["Object"],
+    "receivers": [
+      "Object"
+    ],
     "params": [],
-    "returns": [{ "name": "player", "type": "Player", "nullable": true }],
+    "returns": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -15,9 +23,16 @@
     "id": "object.get_guid",
     "display": "Get GUID",
     "category": "Object",
-    "receivers": ["Object"],
+    "receivers": [
+      "Object"
+    ],
     "params": [],
-    "returns": [{ "name": "guid", "type": "ObjectGuid" }],
+    "returns": [
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -27,9 +42,16 @@
     "id": "object.get_guid_low",
     "display": "Get GUID Low",
     "category": "Object",
-    "receivers": ["Object"],
+    "receivers": [
+      "Object"
+    ],
     "params": [],
-    "returns": [{ "name": "guidLow", "type": "GuidLow" }],
+    "returns": [
+      {
+        "name": "guidLow",
+        "type": "GuidLow"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -39,9 +61,16 @@
     "id": "object.get_entry",
     "display": "Get Entry",
     "category": "Object",
-    "receivers": ["Object"],
+    "receivers": [
+      "Object"
+    ],
     "params": [],
-    "returns": [{ "name": "entry", "type": "int" }],
+    "returns": [
+      {
+        "name": "entry",
+        "type": "int"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -51,9 +80,16 @@
     "id": "unit.get_level",
     "display": "Get Level",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [],
-    "returns": [{ "name": "level", "type": "int" }],
+    "returns": [
+      {
+        "name": "level",
+        "type": "int"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -63,9 +99,16 @@
     "id": "unit.get_health",
     "display": "Get Health",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [],
-    "returns": [{ "name": "health", "type": "int" }],
+    "returns": [
+      {
+        "name": "health",
+        "type": "int"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -75,9 +118,21 @@
     "id": "unit.has_aura",
     "display": "Has Aura",
     "category": "Unit",
-    "receivers": ["Unit"],
-    "params": [{ "name": "spell", "type": "SpellId" }],
-    "returns": [{ "name": "hasAura", "type": "bool" }],
+    "receivers": [
+      "Unit"
+    ],
+    "params": [
+      {
+        "name": "spell",
+        "type": "SpellId"
+      }
+    ],
+    "returns": [
+      {
+        "name": "hasAura",
+        "type": "bool"
+      }
+    ],
     "effect": "read",
     "tier": "core",
     "availability": "implemented",
@@ -87,9 +142,21 @@
     "id": "unit.get_threat",
     "display": "Get Threat",
     "category": "Unit",
-    "receivers": ["Unit"],
-    "params": [{ "name": "target", "type": "Unit" }],
-    "returns": [{ "name": "threat", "type": "float" }],
+    "receivers": [
+      "Unit"
+    ],
+    "params": [
+      {
+        "name": "target",
+        "type": "Unit"
+      }
+    ],
+    "returns": [
+      {
+        "name": "threat",
+        "type": "float"
+      }
+    ],
     "effect": "read",
     "tier": "standard",
     "availability": "implemented",
@@ -99,10 +166,20 @@
     "id": "unit.send_unit_say",
     "display": "Say",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "message", "type": "string" },
-      { "name": "language", "type": "int", "optional": true, "default": "0" }
+      {
+        "name": "message",
+        "type": "string"
+      },
+      {
+        "name": "language",
+        "type": "int",
+        "optional": true,
+        "default": "0"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -114,10 +191,20 @@
     "id": "unit.send_unit_yell",
     "display": "Yell",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "message", "type": "string" },
-      { "name": "language", "type": "int", "optional": true, "default": "0" }
+      {
+        "name": "message",
+        "type": "string"
+      },
+      {
+        "name": "language",
+        "type": "int",
+        "optional": true,
+        "default": "0"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -129,11 +216,24 @@
     "id": "unit.cast_spell",
     "display": "Cast Spell",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "target", "type": "Unit" },
-      { "name": "spell", "type": "SpellId" },
-      { "name": "triggered", "type": "bool", "optional": true, "default": "false" }
+      {
+        "name": "target",
+        "type": "Unit"
+      },
+      {
+        "name": "spell",
+        "type": "SpellId"
+      },
+      {
+        "name": "triggered",
+        "type": "bool",
+        "optional": true,
+        "default": "false"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -145,10 +245,18 @@
     "id": "unit.add_aura",
     "display": "Add Aura",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "spell", "type": "SpellId" },
-      { "name": "target", "type": "Unit" }
+      {
+        "name": "spell",
+        "type": "SpellId"
+      },
+      {
+        "name": "target",
+        "type": "Unit"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -160,8 +268,15 @@
     "id": "unit.remove_aura",
     "display": "Remove Aura",
     "category": "Unit",
-    "receivers": ["Unit"],
-    "params": [{ "name": "spell", "type": "SpellId" }],
+    "receivers": [
+      "Unit"
+    ],
+    "params": [
+      {
+        "name": "spell",
+        "type": "SpellId"
+      }
+    ],
     "returns": [],
     "effect": "write",
     "tier": "core",
@@ -172,8 +287,15 @@
     "id": "unit.set_health",
     "display": "Set Health",
     "category": "Unit",
-    "receivers": ["Unit"],
-    "params": [{ "name": "health", "type": "int" }],
+    "receivers": [
+      "Unit"
+    ],
+    "params": [
+      {
+        "name": "health",
+        "type": "int"
+      }
+    ],
     "returns": [],
     "effect": "write",
     "tier": "core",
@@ -184,13 +306,36 @@
     "id": "unit.deal_damage",
     "display": "Deal Damage",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "target", "type": "Unit" },
-      { "name": "damage", "type": "int" },
-      { "name": "durabilityLoss", "type": "bool", "optional": true, "default": "true" },
-      { "name": "school", "type": "int", "optional": true, "default": "7" },
-      { "name": "spell", "type": "SpellId", "optional": true, "default": "0" }
+      {
+        "name": "target",
+        "type": "Unit"
+      },
+      {
+        "name": "damage",
+        "type": "int"
+      },
+      {
+        "name": "durabilityLoss",
+        "type": "bool",
+        "optional": true,
+        "default": "true"
+      },
+      {
+        "name": "school",
+        "type": "int",
+        "optional": true,
+        "default": "7"
+      },
+      {
+        "name": "spell",
+        "type": "SpellId",
+        "optional": true,
+        "default": "0"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -202,12 +347,28 @@
     "id": "unit.deal_heal",
     "display": "Deal Heal",
     "category": "Unit",
-    "receivers": ["Unit"],
+    "receivers": [
+      "Unit"
+    ],
     "params": [
-      { "name": "target", "type": "Unit" },
-      { "name": "spell", "type": "SpellId" },
-      { "name": "amount", "type": "int" },
-      { "name": "critical", "type": "bool", "optional": true, "default": "false" }
+      {
+        "name": "target",
+        "type": "Unit"
+      },
+      {
+        "name": "spell",
+        "type": "SpellId"
+      },
+      {
+        "name": "amount",
+        "type": "int"
+      },
+      {
+        "name": "critical",
+        "type": "bool",
+        "optional": true,
+        "default": "false"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -219,8 +380,15 @@
     "id": "player.send_broadcast_message",
     "display": "Send Message",
     "category": "Player",
-    "receivers": ["Player"],
-    "params": [{ "name": "message", "type": "string" }],
+    "receivers": [
+      "Player"
+    ],
+    "params": [
+      {
+        "name": "message",
+        "type": "string"
+      }
+    ],
     "returns": [],
     "effect": "write",
     "tier": "core",
@@ -231,10 +399,20 @@
     "id": "player.add_item",
     "display": "Add Item",
     "category": "Player",
-    "receivers": ["Player"],
+    "receivers": [
+      "Player"
+    ],
     "params": [
-      { "name": "item", "type": "ItemEntry" },
-      { "name": "count", "type": "int", "optional": true, "default": "1" }
+      {
+        "name": "item",
+        "type": "ItemEntry"
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "optional": true,
+        "default": "1"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -246,12 +424,27 @@
     "id": "player.get_item_count",
     "display": "Get Item Count",
     "category": "Player",
-    "receivers": ["Player"],
-    "params": [
-      { "name": "item", "type": "ItemEntry" },
-      { "name": "checkBank", "type": "bool", "optional": true, "default": "false" }
+    "receivers": [
+      "Player"
     ],
-    "returns": [{ "name": "count", "type": "int" }],
+    "params": [
+      {
+        "name": "item",
+        "type": "ItemEntry"
+      },
+      {
+        "name": "checkBank",
+        "type": "bool",
+        "optional": true,
+        "default": "false"
+      }
+    ],
+    "returns": [
+      {
+        "name": "count",
+        "type": "int"
+      }
+    ],
     "effect": "read",
     "tier": "standard",
     "availability": "implemented",
@@ -261,13 +454,30 @@
     "id": "player.teleport",
     "display": "Teleport",
     "category": "Player",
-    "receivers": ["Player"],
+    "receivers": [
+      "Player"
+    ],
     "params": [
-      { "name": "map", "type": "MapId" },
-      { "name": "x", "type": "float" },
-      { "name": "y", "type": "float" },
-      { "name": "z", "type": "float" },
-      { "name": "orientation", "type": "float" }
+      {
+        "name": "map",
+        "type": "MapId"
+      },
+      {
+        "name": "x",
+        "type": "float"
+      },
+      {
+        "name": "y",
+        "type": "float"
+      },
+      {
+        "name": "z",
+        "type": "float"
+      },
+      {
+        "name": "orientation",
+        "type": "float"
+      }
     ],
     "returns": [],
     "effect": "write",
@@ -279,7 +489,9 @@
     "id": "creature.respawn",
     "display": "Respawn",
     "category": "Creature",
-    "receivers": ["Creature"],
+    "receivers": [
+      "Creature"
+    ],
     "params": [],
     "returns": [],
     "effect": "write",
@@ -291,7 +503,9 @@
     "id": "gameobject.respawn",
     "display": "Respawn",
     "category": "GameObject",
-    "receivers": ["GameObject"],
+    "receivers": [
+      "GameObject"
+    ],
     "params": [],
     "returns": [],
     "effect": "write",
@@ -303,7 +517,9 @@
     "id": "gameobject.despawn",
     "display": "Despawn",
     "category": "GameObject",
-    "receivers": ["GameObject"],
+    "receivers": [
+      "GameObject"
+    ],
     "params": [],
     "returns": [],
     "effect": "write",
@@ -316,7 +532,12 @@
     "display": "Send World Message",
     "category": "Server",
     "receivers": [],
-    "params": [{ "name": "message", "type": "string" }],
+    "params": [
+      {
+        "name": "message",
+        "type": "string"
+      }
+    ],
     "returns": [],
     "effect": "write",
     "tier": "standard",
@@ -328,10 +549,95 @@
     "display": "Get Player by GUID",
     "category": "Player",
     "receivers": [],
-    "params": [{ "name": "guid", "type": "ObjectGuid" }],
-    "returns": [{ "name": "player", "type": "Player", "nullable": true }],
+    "params": [
+      {
+        "name": "guid",
+        "type": "ObjectGuid"
+      }
+    ],
+    "returns": [
+      {
+        "name": "player",
+        "type": "Player",
+        "nullable": true
+      }
+    ],
     "effect": "read",
     "tier": "standard",
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "map.get_by_id",
+    "display": "Get Map by ID",
+    "category": "Map",
+    "receivers": [],
+    "params": [
+      {
+        "name": "map",
+        "type": "MapId"
+      }
+    ],
+    "returns": [
+      {
+        "name": "result",
+        "type": "Map",
+        "nullable": true
+      }
+    ],
+    "effect": "read",
+    "tier": "core",
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "instance.get_data",
+    "display": "Get Instance Data",
+    "category": "Instance",
+    "receivers": [
+      "Map"
+    ],
+    "params": [],
+    "returns": [
+      {
+        "name": "data",
+        "type": "Table",
+        "nullable": true
+      }
+    ],
+    "effect": "read",
+    "tier": "core",
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "instance.save",
+    "display": "Save Instance Data",
+    "category": "Instance",
+    "receivers": [
+      "Map"
+    ],
+    "params": [],
+    "returns": [],
+    "effect": "write",
+    "tier": "core",
+    "availability": "implemented",
+    "performance": "normal"
+  },
+  {
+    "id": "debug.print",
+    "display": "Print",
+    "category": "Debug",
+    "receivers": [],
+    "params": [
+      {
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "returns": [],
+    "effect": "write",
+    "tier": "core",
     "availability": "implemented",
     "performance": "normal"
   }

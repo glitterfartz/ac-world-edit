@@ -217,6 +217,106 @@ public class ScriptCompilerTests
     }
 
     [Fact]
+    public void TimerOnceEmitsARegistrationAndContinuation()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "timer.once",
+            Literals = { ["delay_ms"] = Json(1000) }
+        }, new ScriptNode
+        {
+            Id = "n3",
+            Kind = "unit.send_unit_say",
+            Literals = { ["message"] = Json("tick"), ["language"] = Json(0) }
+        }, new ScriptNode { Id = "n4", Kind = "timer.object" });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "creature", "n2", "self"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "exec_out", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e4", "n4", "object", "n3", "self"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("creature:RegisterEvent(timer, 1000, 1)", result.LuaText);
+        Assert.Contains("timerObject:SendUnitSay(\"tick\"", result.LuaText);
+        Assert.Contains("local function timer(eventId, delay, repeats, timerObject)", result.LuaText);
+    }
+
+    [Fact]
+    public void TimerRepeatUsesTheLiteralRepeats()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "timer.repeat",
+            Literals = { ["delay_ms"] = Json(500), ["repeats"] = Json(5) }
+        });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "creature", "n2", "self"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("creature:RegisterEvent(timer, 500, 5)", result.LuaText);
+    }
+
+    [Fact]
+    public void MapLookupFeedsInstanceDataSaves()
+    {
+        var document = Document(new ScriptNode
+        {
+            Id = "n1",
+            Kind = "event.instance.on_initialize",
+            Properties = { ["instanceId"] = Json(1) }
+        }, new ScriptNode
+        {
+            Id = "n2",
+            Kind = "map.get_by_id",
+            Literals = { ["map"] = Json(1) }
+        }, new ScriptNode { Id = "n3", Kind = "instance.save" });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n2", "result", "n3", "self"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("GetMapById(1)", result.LuaText);
+        Assert.Contains(":SaveInstanceData()", result.LuaText);
+    }
+
+    [Fact]
+    public void AListLoopsWithForEach()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "list.create",
+            Literals = { ["a"] = Json("one"), ["b"] = Json("two") }
+        }, new ScriptNode
+        {
+            Id = "n3",
+            Kind = "flow.foreach"
+        }, new ScriptNode
+        {
+            Id = "n4",
+            Kind = "unit.send_unit_say",
+            Literals = { ["language"] = Json(0) }
+        });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n2", "result", "n3", "list"));
+        document.Graph.Edges.Add(Edge("e3", "n3", "exec_out", "n4", "exec"));
+        document.Graph.Edges.Add(Edge("e4", "n1", "creature", "n4", "self"));
+        document.Graph.Edges.Add(Edge("e5", "n3", "item", "n4", "message"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("for _, item in ipairs({\"one\", \"two\"}) do", result.LuaText);
+        Assert.Contains("creature:SendUnitSay(item, 0)", result.LuaText);
+    }
+
+    [Fact]
     public void OutputNameUsesTheSlugAndShortId()
     {
         var document = ScriptDocument.Create("Creature On Death");

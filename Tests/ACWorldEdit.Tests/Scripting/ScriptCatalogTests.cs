@@ -160,7 +160,7 @@ public class ScriptCatalogTests
         Assert.Equal("eluna-trinitycore", profile.Host);
         Assert.Equal("Eluna (TrinityCore)", profile.Label);
         Assert.Equal(230, profile.Events.Count);
-        Assert.Equal(25, profile.Capabilities.Count);
+        Assert.Equal(29, profile.Capabilities.Count);
         Assert.True(TcScriptHosts.Info.Experimental);
         Assert.Same(profile, TcScriptHosts.Profile);
     }

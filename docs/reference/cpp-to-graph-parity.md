@@ -54,7 +54,7 @@ run; the catalog marks the `handled` return slot on those events.
 
 ## Capability parity (first slice)
 
-The curated capability set is 25 host actions: object casts and GUID/entry reads, unit level,
+The curated capability set is 29 host actions: object casts and GUID/entry reads, unit level,
 health, aura, threat and speech, unit cast/aura/health/damage/heal, player message/item/teleport,
 creature and GameObject respawn/despawn, world message and player-by-GUID. Bindings carry the ALE
 argument order and host defaults (for example `CastSpell(target, spell, triggered = false)`).

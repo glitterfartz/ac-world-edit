@@ -69,10 +69,12 @@ registration. `AcScriptHosts.Id` is `ale-azerothcore`; the profile is built lazi
 `ScriptCatalogHash` for exported provenance.
 
 Language-level nodes are not host operations and live in `ScriptBuiltinCatalog` instead:
-`flow.branch`, `flow.sequence`, `flow.for_range`, variable get/set, parameter get, user-function
-call/return, comparisons (`flow.equal`, `not_equal`, `less`, `less_equal`, `greater`,
-`greater_equal`, `and`, `or`, `not`) and the numeric/string operators (`math.add`, `subtract`,
-`multiply`, `divide`, `modulo`, `min`, `max`, `string.concat`, `string.length`). The validator,
+`flow.branch`, `flow.sequence`, `flow.for_range`, `flow.foreach`, `list.create`, variable get/set,
+parameter get, user-function call/return, `timer.once`/`timer.repeat` with `timer.event_id`/
+`timer.object`/`timer.repeats` in the continuation, comparisons (`flow.equal`, `not_equal`, `less`,
+`less_equal`, `greater`, `greater_equal`, `and`, `or`, `not`) and the numeric/string operators
+(`math.add`, `subtract`, `multiply`, `divide`, `modulo`, `min`, `max`, `string.concat`,
+`string.length`). The validator,
 palette and IR builder share that one list, so a host pack cannot replace them.
 
 ### Validation
@@ -104,7 +106,10 @@ parameters become function parameters named after their semantic pins.
 `LuaEmitter` writes Lua 5.1-compatible text: a generated-file header, `local __vars` for module
 variables, `__fns` for user functions, one `__acw_<node>` function per event, and the
 registrations (`RegisterCreatureEvent(entry, event, handler)` etc.). `flow.for_range` lowers to an
-inclusive `for i = from, to do … end`; a function body is a set of roots (nodes with an unconnected
+inclusive `for i = from, to do … end` and `flow.foreach` to `for _, item in ipairs(list) do … end`;
+`timer.once`/`timer.repeat` emit a local callback function and `obj:RegisterEvent(fn, delayMs,
+repeats)` with the continuation inside it (the callback parameters are `eventId`, `delay`,
+`repeats`, `obj`); a function body is a set of roots (nodes with an unconnected
 exec input) plus a Return node, and `flow.parameter_get` resolves to the function parameter (the
 legacy expression-only Return shape still compiles). Output is deterministic: the same document
 compiles byte-identically, including ordering and hashes. `ScriptCompiler.OutputName` is

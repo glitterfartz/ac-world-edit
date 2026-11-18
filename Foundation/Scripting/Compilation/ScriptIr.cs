@@ -56,6 +56,7 @@ public sealed record IrReturn(IReadOnlyList<IrExpr?> Values) : IrStmt;
 public sealed record IrLatent(
     IrExpr Call,
     IReadOnlyList<IrParameter> CallbackParameters,
+    string CallbackName,
     string? TimerIdLocal,
     IReadOnlyList<IrStmt> Continuation) : IrStmt;
 
@@ -70,6 +71,9 @@ public sealed record IrForEach(string Name, IrExpr List, IReadOnlyList<IrStmt> B
 public abstract record IrExpr;
 
 public sealed record IrLiteral(ScriptValueType Type, object? Value) : IrExpr;
+
+/// <summary>A Lua table constructor used for list/table values.</summary>
+public sealed record IrList(IReadOnlyList<IrExpr> Items) : IrExpr;
 
 public sealed record IrVariableGet(string Name) : IrExpr;
 

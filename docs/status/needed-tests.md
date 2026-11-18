@@ -91,6 +91,11 @@ wait for the features or environment they exercise:
   in the live `lua_scripts/acworld` folder, but `.reload ale` has not yet been run — the running
   worldserver has no console input and restarting it needs the user. Confirm the reload prints no
   AE/ALE errors and `RegisterCreatureEvent(1234, 4, …)` loads, then remove this entry.
+- [ ] Timer cancellation (`RemoveEventById`/object scoped) and nested timer scopes: lowering is
+  covered for one and two timers, but cancellation is not implemented and the callback-argument
+  binding has no runtime check.
+- [ ] Instance-data indexing (`table.get`/`table.set`) and async DB continuations: deferred until the
+  reviewed emitter ops exist.
 - [ ] Generated Lua runs in a real ALE state: scripted handler behavior (not just chunk load), a
   `DbFact`-style opt-in suite, when the Milestone 6 runtime work lands.
 - [ ] Catalog drift: regenerate `events.json`/`event-bindings.json` from a pinned mod-ale checkout in CI

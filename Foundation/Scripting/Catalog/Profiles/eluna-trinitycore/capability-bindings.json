@@ -1,57 +1,160 @@
 {
-  "object.to_player": { "call": "ToPlayer", "receiver": "colon", "args": [], "returns": "single" },
-  "object.get_guid": { "call": "GetGUID", "receiver": "colon", "args": [], "returns": "single" },
-  "object.get_guid_low": { "call": "GetGUIDLow", "receiver": "colon", "args": [], "returns": "single" },
-  "object.get_entry": { "call": "GetEntry", "receiver": "colon", "args": [], "returns": "single" },
-  "unit.get_level": { "call": "GetLevel", "receiver": "colon", "args": [], "returns": "single" },
-  "unit.get_health": { "call": "GetHealth", "receiver": "colon", "args": [], "returns": "single" },
-  "unit.has_aura": { "call": "HasAura", "receiver": "colon", "args": [{ "param": "spell" }], "returns": "single" },
-  "unit.get_threat": { "call": "GetThreat", "receiver": "colon", "args": [{ "param": "target" }], "returns": "single" },
+  "object.to_player": {
+    "call": "ToPlayer",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "object.get_guid": {
+    "call": "GetGUID",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "object.get_guid_low": {
+    "call": "GetGUIDLow",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "object.get_entry": {
+    "call": "GetEntry",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "unit.get_level": {
+    "call": "GetLevel",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "unit.get_health": {
+    "call": "GetHealth",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "unit.has_aura": {
+    "call": "HasAura",
+    "receiver": "colon",
+    "args": [
+      {
+        "param": "spell"
+      }
+    ],
+    "returns": "single"
+  },
+  "unit.get_threat": {
+    "call": "GetThreat",
+    "receiver": "colon",
+    "args": [
+      {
+        "param": "target"
+      }
+    ],
+    "returns": "single"
+  },
   "unit.send_unit_say": {
     "call": "SendUnitSay",
     "receiver": "colon",
-    "args": [{ "param": "message" }, { "param": "language", "defaultLiteral": "0" }],
+    "args": [
+      {
+        "param": "message"
+      },
+      {
+        "param": "language",
+        "defaultLiteral": "0"
+      }
+    ],
     "returns": "none"
   },
   "unit.send_unit_yell": {
     "call": "SendUnitYell",
     "receiver": "colon",
-    "args": [{ "param": "message" }, { "param": "language", "defaultLiteral": "0" }],
+    "args": [
+      {
+        "param": "message"
+      },
+      {
+        "param": "language",
+        "defaultLiteral": "0"
+      }
+    ],
     "returns": "none"
   },
   "unit.cast_spell": {
     "call": "CastSpell",
     "receiver": "colon",
-    "args": [{ "param": "target" }, { "param": "spell" }, { "param": "triggered", "defaultLiteral": "false" }],
+    "args": [
+      {
+        "param": "target"
+      },
+      {
+        "param": "spell"
+      },
+      {
+        "param": "triggered",
+        "defaultLiteral": "false"
+      }
+    ],
     "returns": "none"
   },
   "unit.add_aura": {
     "call": "AddAura",
     "receiver": "colon",
-    "args": [{ "param": "spell" }, { "param": "target" }],
+    "args": [
+      {
+        "param": "spell"
+      },
+      {
+        "param": "target"
+      }
+    ],
     "returns": "none"
   },
   "unit.remove_aura": {
     "call": "RemoveAura",
     "receiver": "colon",
-    "args": [{ "param": "spell" }],
+    "args": [
+      {
+        "param": "spell"
+      }
+    ],
     "returns": "none"
   },
   "unit.set_health": {
     "call": "SetHealth",
     "receiver": "colon",
-    "args": [{ "param": "health" }],
+    "args": [
+      {
+        "param": "health"
+      }
+    ],
     "returns": "none"
   },
   "unit.deal_damage": {
     "call": "DealDamage",
     "receiver": "colon",
     "args": [
-      { "param": "target" },
-      { "param": "damage" },
-      { "param": "durabilityLoss", "defaultLiteral": "true" },
-      { "param": "school", "defaultLiteral": "7" },
-      { "param": "spell", "defaultLiteral": "0" }
+      {
+        "param": "target"
+      },
+      {
+        "param": "damage"
+      },
+      {
+        "param": "durabilityLoss",
+        "defaultLiteral": "true"
+      },
+      {
+        "param": "school",
+        "defaultLiteral": "7"
+      },
+      {
+        "param": "spell",
+        "defaultLiteral": "0"
+      }
     ],
     "returns": "none"
   },
@@ -59,50 +162,150 @@
     "call": "DealHeal",
     "receiver": "colon",
     "args": [
-      { "param": "target" },
-      { "param": "spell" },
-      { "param": "amount" },
-      { "param": "critical", "defaultLiteral": "false" }
+      {
+        "param": "target"
+      },
+      {
+        "param": "spell"
+      },
+      {
+        "param": "amount"
+      },
+      {
+        "param": "critical",
+        "defaultLiteral": "false"
+      }
     ],
     "returns": "none"
   },
   "player.send_broadcast_message": {
     "call": "SendBroadcastMessage",
     "receiver": "colon",
-    "args": [{ "param": "message" }],
+    "args": [
+      {
+        "param": "message"
+      }
+    ],
     "returns": "none"
   },
   "player.add_item": {
     "call": "AddItem",
     "receiver": "colon",
-    "args": [{ "param": "item" }, { "param": "count", "defaultLiteral": "1" }],
+    "args": [
+      {
+        "param": "item"
+      },
+      {
+        "param": "count",
+        "defaultLiteral": "1"
+      }
+    ],
     "returns": "none"
   },
   "player.get_item_count": {
     "call": "GetItemCount",
     "receiver": "colon",
-    "args": [{ "param": "item" }, { "param": "checkBank", "defaultLiteral": "false" }],
+    "args": [
+      {
+        "param": "item"
+      },
+      {
+        "param": "checkBank",
+        "defaultLiteral": "false"
+      }
+    ],
     "returns": "single"
   },
   "player.teleport": {
     "call": "Teleport",
     "receiver": "colon",
-    "args": [{ "param": "map" }, { "param": "x" }, { "param": "y" }, { "param": "z" }, { "param": "orientation" }],
+    "args": [
+      {
+        "param": "map"
+      },
+      {
+        "param": "x"
+      },
+      {
+        "param": "y"
+      },
+      {
+        "param": "z"
+      },
+      {
+        "param": "orientation"
+      }
+    ],
     "returns": "none"
   },
-  "creature.respawn": { "call": "Respawn", "receiver": "colon", "args": [], "returns": "none" },
-  "gameobject.respawn": { "call": "Respawn", "receiver": "colon", "args": [], "returns": "none" },
-  "gameobject.despawn": { "call": "Despawn", "receiver": "colon", "args": [], "returns": "none" },
+  "creature.respawn": {
+    "call": "Respawn",
+    "receiver": "colon",
+    "args": [],
+    "returns": "none"
+  },
+  "gameobject.respawn": {
+    "call": "Respawn",
+    "receiver": "colon",
+    "args": [],
+    "returns": "none"
+  },
+  "gameobject.despawn": {
+    "call": "Despawn",
+    "receiver": "colon",
+    "args": [],
+    "returns": "none"
+  },
   "server.send_world_message": {
     "call": "SendWorldMessage",
     "receiver": "global",
-    "args": [{ "param": "message" }],
+    "args": [
+      {
+        "param": "message"
+      }
+    ],
     "returns": "none"
   },
   "player.get_by_guid": {
     "call": "GetPlayerByGUID",
     "receiver": "global",
-    "args": [{ "param": "guid" }],
+    "args": [
+      {
+        "param": "guid"
+      }
+    ],
     "returns": "single"
+  },
+  "map.get_by_id": {
+    "call": "GetMapById",
+    "receiver": "global",
+    "args": [
+      {
+        "param": "map"
+      }
+    ],
+    "returns": "single"
+  },
+  "instance.get_data": {
+    "call": "GetInstanceData",
+    "receiver": "colon",
+    "args": [],
+    "returns": "single"
+  },
+  "instance.save": {
+    "call": "SaveInstanceData",
+    "receiver": "colon",
+    "args": [],
+    "returns": "none"
+  },
+  "debug.print": {
+    "call": "print",
+    "receiver": "global",
+    "args": [
+      {
+        "param": "message"
+      }
+    ],
+    "returns": "none"
   }
 }

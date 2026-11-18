@@ -32,7 +32,7 @@ python Tools/generate_script_catalog.py --source <mod-ale> --core <core-dir> --h
 Capabilities are curated by hand because names and parameter shapes are editor semantics, not a
 direct reflection of the Lua API.
 
-## Capabilities (25)
+## Capabilities (29)
 
 `effect` is `read`, `write` or `control`; writes are ordered relative to reads in a handler. The
 argument column is the ALE call as generated; `?` marks an optional semantic parameter, and a
@@ -65,6 +65,10 @@ binding default is shown as `=value`.
 | `gameobject.despawn` | Despawn | — | `Despawn()` | colon |
 | `server.send_world_message` | Send World Message | `message:string` | `SendWorldMessage(message)` | global |
 | `player.get_by_guid` | Get Player by GUID | `guid:ObjectGuid` | `GetPlayerByGUID(guid)` | global |
+| `map.get_by_id` | Get Map by ID | `map:MapId` | `GetMapById(map)` | global |
+| `instance.get_data` | Get Instance Data | — | `GetInstanceData()` | colon |
+| `instance.save` | Save Instance Data | — | `SaveInstanceData()` | colon |
+| `debug.print` | Print | `message:string` | `print(message)` | global |
 
 `receiver: colon` means the call is emitted on the wired `self` object; `global` means it is a
 free function. Optional arguments use the binding default when the pin is left empty; a trailing
@@ -72,9 +76,11 @@ argument with no default at all is omitted.
 
 Control flow, comparisons, numeric/string operators, variables and user functions are
 **language-level built-ins**, not host capabilities: `flow.branch`, `flow.sequence`,
-`flow.for_range`, `flow.equal`/`not_equal`/`less`/`less_equal`/`greater`/`greater_equal`/`and`/`or`/`not`,
+`flow.for_range`, `flow.foreach`, `list.create`, `flow.equal`/`not_equal`/`less`/`less_equal`/`greater`/`greater_equal`/`and`/`or`/`not`,
 `math.add`/`subtract`/`multiply`/`divide`/`modulo`/`min`/`max`, `string.concat`/`length`,
-`flow.variable_get`/`variable_set`, `flow.parameter_get`, `flow.call_function` and `flow.return`. They live in `ScriptBuiltinCatalog` and never appear in a host pack.
+`flow.variable_get`/`variable_set`, `flow.parameter_get`, `flow.call_function` and `flow.return`.
+`timer.once`/`timer.repeat` are builtins with a continuation (`timer.event_id`, `timer.object`,
+`timer.repeats` read the callback arguments). They live in `ScriptBuiltinCatalog` and never appear in a host pack.
 
 ## Events
 

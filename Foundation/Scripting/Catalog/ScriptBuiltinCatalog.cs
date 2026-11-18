@@ -20,6 +20,13 @@ public static class ScriptBuiltinCatalog
     public const string Return = "flow.return";
     public const string ForRange = "flow.for_range";
     public const string ParameterGet = "flow.parameter_get";
+    public const string TimerOnce = "timer.once";
+    public const string TimerRepeat = "timer.repeat";
+    public const string TimerEventId = "timer.event_id";
+    public const string TimerObject = "timer.object";
+    public const string TimerRepeats = "timer.repeats";
+    public const string ForEach = "flow.foreach";
+    public const string ListCreate = "list.create";
     public const string Equal = "flow.equal";
     public const string NotEqual = "flow.not_equal";
     public const string Less = "flow.less";
@@ -45,6 +52,20 @@ public static class ScriptBuiltinCatalog
             new("first", ScriptPinDirection.Out, ScriptValueType.Exec),
             new("second", ScriptPinDirection.Out, ScriptValueType.Exec)
         ]),
+        new(ForEach, "For Each", "Flow",
+        [
+            new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
+            new("list", ScriptPinDirection.In, ScriptValueType.List),
+            new("exec_out", ScriptPinDirection.Out, ScriptValueType.Exec),
+            new("item", ScriptPinDirection.Out, ScriptValueType.Any)
+        ]),
+        new(ListCreate, "Make List", "Lists",
+        [
+            new("a", ScriptPinDirection.In, ScriptValueType.Any),
+            new("b", ScriptPinDirection.In, ScriptValueType.Any, Nullable: true),
+            new("c", ScriptPinDirection.In, ScriptValueType.Any, Nullable: true),
+            new("result", ScriptPinDirection.Out, ScriptValueType.List)
+        ]),
         new(ForRange, "For Range", "Flow",
         [
             new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
@@ -56,6 +77,33 @@ public static class ScriptBuiltinCatalog
         new(ParameterGet, "Get Parameter", "Functions",
         [
             new("value", ScriptPinDirection.Out, ScriptValueType.Any)
+        ]),
+        new(TimerOnce, "Once (timer)", "Timers",
+        [
+            new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
+            new("self", ScriptPinDirection.In, ScriptValueType.Object),
+            new("delay_ms", ScriptPinDirection.In, ScriptValueType.Int),
+            new("exec_out", ScriptPinDirection.Out, ScriptValueType.Exec)
+        ]),
+        new(TimerRepeat, "Repeat (timer)", "Timers",
+        [
+            new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
+            new("self", ScriptPinDirection.In, ScriptValueType.Object),
+            new("delay_ms", ScriptPinDirection.In, ScriptValueType.Int),
+            new("repeats", ScriptPinDirection.In, ScriptValueType.Int),
+            new("exec_out", ScriptPinDirection.Out, ScriptValueType.Exec)
+        ]),
+        new(TimerEventId, "Timer Event Id", "Timers",
+        [
+            new("event_id", ScriptPinDirection.Out, ScriptValueType.Int)
+        ]),
+        new(TimerObject, "Timer Object", "Timers",
+        [
+            new("object", ScriptPinDirection.Out, ScriptValueType.Any)
+        ]),
+        new(TimerRepeats, "Timer Repeats", "Timers",
+        [
+            new("repeats", ScriptPinDirection.Out, ScriptValueType.Int)
         ]),
         new(VariableGet, "Get Variable", "Variables",
         [

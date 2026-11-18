@@ -158,8 +158,18 @@ public sealed class LuaEmitter : ScriptEmitter
             case IrComment comment:
                 writer.Line($"-- {OneLine(comment.Text)}");
                 break;
-            case IrLatent:
-                throw new NotSupportedException("Latent IR is reserved for the timer milestone.");
+            case IrLatent latent:
+            {
+                string parameters = string.Join(", ", latent.CallbackParameters.Select(parameter => parameter.Name));
+                writer.Line($"local function {latent.CallbackName}({parameters})");
+                writer.Indent();
+                EmitStatements(writer, latent.Continuation);
+                writer.Outdent();
+                writer.Line("end");
+                string call = Expression(latent.Call);
+                writer.Line(latent.TimerIdLocal is null ? call : $"local {latent.TimerIdLocal} = {call}");
+                break;
+            }
             case IrWhile loop:
                 writer.Line($"while {Expression(loop.Condition)} do");
                 writer.Indent();
@@ -189,6 +199,7 @@ public sealed class LuaEmitter : ScriptEmitter
     static string Expression(IrExpr expression) => expression switch
     {
         IrLiteral literal => LuaLiteral.FromValue(literal.Value),
+        IrList list => "{" + string.Join(", ", list.Items.Select(Expression)) + "}",
         IrVariableGet variable => variable.Name,
         IrCall call => CallText(call.Receiver, call.Call, call.Args, call.ReceiverStyle, call.NullableReceiver),
         IrBinary binary => $"{Operand(binary.Left)} {binary.Op} {Operand(binary.Right)}",

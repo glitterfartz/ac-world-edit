@@ -31,6 +31,7 @@ public sealed class ScriptIrBuilder
         readonly List<IrVariable> irVariables = [];
         readonly List<IrFunction> irFunctions = [];
         readonly List<IrFunction> irEvents = [];
+        readonly List<Dictionary<string, string>> timerScopes = [];
         readonly List<IrRegistration> registrations = [];
 
         public BuildState(ScriptDocument document, ScriptHostProfile host)
@@ -236,6 +237,54 @@ public sealed class ScriptIrBuilder
                         block.Statements.Add(new IrForRange(name, from, to, body.Statements));
                         return;
                     }
+                    case ScriptBuiltinCatalog.ForEach:
+                    {
+                        var list = ResolveInput(index, node.Id, "list", block);
+                        string name = UniqueName("item");
+                        var body = block.Fork();
+                        body.Bindings[(node.Id, "item")] = name;
+                        BuildExecBlock(index, node.Id, "exec_out", body, returns);
+                        block.Statements.Add(new IrForEach(name, list, body.Statements));
+                        return;
+                    }
+                    case ScriptBuiltinCatalog.TimerOnce:
+                    case ScriptBuiltinCatalog.TimerRepeat:
+                    {
+                        var receiver = ResolveInput(index, node.Id, "self", block);
+                        var delay = ResolveInput(index, node.Id, "delay_ms", block);
+                        var repeats = node.Kind == ScriptBuiltinCatalog.TimerOnce
+                            ? new IrLiteral(ScriptValueType.Int, 1L)
+                            : ResolveInput(index, node.Id, "repeats", block);
+                        string callback = UniqueName("timer");
+                        var names = new Dictionary<string, string>(StringComparer.Ordinal)
+                        {
+                            [ScriptBuiltinCatalog.TimerEventId] = UniqueName("eventId"),
+                            [ScriptBuiltinCatalog.TimerObject] = UniqueName("timerObject"),
+                            [ScriptBuiltinCatalog.TimerRepeats] = UniqueName("repeats"),
+                            ["delay"] = UniqueName("delay")
+                        };
+                        timerScopes.Add(names);
+                        var body = block.Fork();
+                        try
+                        {
+                            BuildExecBlock(index, node.Id, "exec_out", body, returns);
+                        }
+                        finally
+                        {
+                            timerScopes.RemoveAt(timerScopes.Count - 1);
+                        }
+
+                        var call = new IrCall(receiver, "RegisterEvent",
+                            [new IrVariableGet(callback), delay, repeats], ScriptReceiverStyle.Colon);
+                        block.Statements.Add(new IrLatent(call,
+                        [
+                            new IrParameter(names[ScriptBuiltinCatalog.TimerEventId], ScriptValueType.Int),
+                            new IrParameter(names["delay"], ScriptValueType.Int),
+                            new IrParameter(names[ScriptBuiltinCatalog.TimerRepeats], ScriptValueType.Int),
+                            new IrParameter(names[ScriptBuiltinCatalog.TimerObject], ScriptValueType.Any)
+                        ], callback, null, body.Statements));
+                        return;
+                    }
                     case ScriptBuiltinCatalog.VariableSet:
                     {
                         string? variableId = ScriptPins.PropertyString(node, "variable");
@@ -436,6 +485,16 @@ public sealed class ScriptIrBuilder
                 ScriptBuiltinCatalog.And => Binary("and", index, nodeId, block),
                 ScriptBuiltinCatalog.Or => Binary("or", index, nodeId, block),
                 ScriptBuiltinCatalog.Not => new IrUnary("not", ResolveInput(index, nodeId, "value", block)),
+                ScriptBuiltinCatalog.ListCreate => new IrList(new[] { "a", "b", "c" }
+                    .Where(pin => index.DataTo.ContainsKey((nodeId, pin)) || node.Literals.ContainsKey(pin))
+                    .Select(pin => ResolveInput(index, nodeId, pin, block))
+                    .ToList()),
+                ScriptBuiltinCatalog.TimerEventId => new IrVariableGet(
+                    timerScopes.Count > 0 ? timerScopes[^1][ScriptBuiltinCatalog.TimerEventId] : "nil"),
+                ScriptBuiltinCatalog.TimerObject => new IrVariableGet(
+                    timerScopes.Count > 0 ? timerScopes[^1][ScriptBuiltinCatalog.TimerObject] : "nil"),
+                ScriptBuiltinCatalog.TimerRepeats => new IrVariableGet(
+                    timerScopes.Count > 0 ? timerScopes[^1][ScriptBuiltinCatalog.TimerRepeats] : "nil"),
                 "math.add" => Binary("+", index, nodeId, block),
                 "math.subtract" => Binary("-", index, nodeId, block),
                 "math.multiply" => Binary("*", index, nodeId, block),
