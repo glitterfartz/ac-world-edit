@@ -12,6 +12,7 @@ introduction; this folder is for people changing the code.
 | [architecture/viewer-runtime.md](architecture/viewer-runtime.md) | `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags | A runtime system, window or smoke workflow changes |
 | [architecture/rendering.md](architecture/rendering.md) | The retail shader port: progress, per-material notes, inferred inputs | A shader, material route or lighting pass changes |
 | [architecture/editing-and-export.md](architecture/editing-and-export.md) | `Scripts/Data` and `Foundation`: drafts, rules, SQL export | A table read, draft type, rule or export statement changes |
+| [architecture/tool-windows.md](architecture/tool-windows.md) | The `Window`-based tool window template (`ScriptEditorWindow`), layout and toolbar rules, key routing, dialogs, testing and the regressions to avoid | A window pattern, layout rule or UI regression changes |
 | [architecture/scripting.md](architecture/scripting.md) | Visual scripting: semantic graph → host profile → IR → Lua, the Godot editor, and the confirmed GraphEdit/ALE runtime contracts | The scripting subsystem or a runtime contract changes |
 | [architecture/testing-and-tooling.md](architecture/testing-and-tooling.md) | Test projects and commands, environment variables, tooling, CI, commit rules | A test project, tool, setting or workflow changes |
 | [reference/database-differences.md](reference/database-differences.md) | AzerothCore vs TrinityCore schema differences that affect the editors | A table or column difference is found |
@@ -35,6 +36,9 @@ introduction; this folder is for people changing the code.
   `plans/editor-plan.md` rows.
 - **Change the viewer, an overlay or an editor window**: `architecture/viewer-runtime.md` and
   `architecture/editing-and-export.md`.
+- **Build or refactor an editor window**: `architecture/tool-windows.md` (the `ScriptEditorWindow`
+  template and its layout pitfalls), then `architecture/scripting.md` for the scripting editor's
+  contents.
 - **Change a shader or lighting**: `architecture/rendering.md` and
   `reference/shader-inspection-locations.md`.
 - **Add or change a database read, rule or export**: `architecture/editing-and-export.md`, plus
