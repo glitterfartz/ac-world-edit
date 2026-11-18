@@ -17,6 +17,8 @@ public partial class TcPlayerChoiceView : VBoxContainer
 
     /// <summary>How many response cards the last redraw made.</summary>
     public int CardCount { get; private set; }
+    /// <summary>The card positions the last redraw drew, in card order.</summary>
+    public int[] Positions { get; private set; } = [];
     /// <summary>The question shown on the top card (the pending text when the question is unset).</summary>
     public string QuestionText { get; private set; } = "";
     public uint? SelectedResponseId { get; private set; }
@@ -54,6 +56,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
         }
 
         CardCount = 0;
+        Positions = [];
         QuestionText = "";
         if (view?.All(TcTables.PlayerChoice).FirstOrDefault() is not { } card)
         {
@@ -173,6 +176,7 @@ public partial class TcPlayerChoiceView : VBoxContainer
             };
             strip.AddChild(button);
             CardCount++;
+            Positions = [.. Positions, response.I("Index")];
         }
     }
 

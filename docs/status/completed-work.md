@@ -111,6 +111,21 @@ Node move/facing/delay, add/insert/delete/renumber, new paths, path-level proper
 link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
 polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
 
+## Phase 22a: player choices
+
+TrinityCore-only player-choice editing in `CinematicsEditorWindow`: a search list and the
+`TcPlayerChoiceView` question card (question, pending text, timing, layout flags) with one card per
+answer, each showing its header, answer and reward summary, and an inline editor for the answer text,
+position, reward quest, answer art, gold, XP and one reward item. "+ New choice", "Duplicate",
+"+ Response" and "Remove response" stage one validated `ContentDrafts` command; undo/redo, SQL export
+and apply come from the shared path. Tables: `playerchoice`, `playerchoice_response`,
+`playerchoice_response_reward`, `playerchoice_response_reward_item` (`TcTables.Cinematics.cs`), rules
+and new-row factories in `TcCinematicsRules`, reads in `TcCinematicsSource`, conditions for source 36
+(`TcCinematicsSource.ReadCinematicConditionsAsync`). AzerothCore shows a not-applicable panel.
+Tests: `PlayerChoiceRulesTests`, `CinematicsDbTests` (`[TcDbFact]`), `CinematicsWindowTests` (gdUnit);
+`--cinematics-smoke` covers search, three cards, a reward, a staged header edit and undo against the
+live database.
+
 ## Data, overlays and rendering
 
 | Item | What landed |

@@ -33,6 +33,24 @@ Schema references for column meanings, flags and enums:
   - Views: `vw_*_with_labels`.
 - `hotfixes` DB: `broadcast_text` (237k rows), and sparse overrides `item`, `item_sparse`, `spell_name`, `creature_display_info`, `area_trigger` (0 rows), `content_tuning`, `player_condition`, `quest_v2`. Also `hotfix_data(Id,UniqueId,TableHash,RecordId,Status,VerifiedBuild)` and `hotfix_blob`.
 
+## Cinematics tables (TrinityCore only)
+
+AzerothCore has no conversations, scenes or player choices. The editor reads and writes `playerchoice`,
+`playerchoice_response`, `playerchoice_response_reward` and `playerchoice_response_reward_item`;
+conversations (`conversation_template`, `_actors`, `_line_template`) and scenes (`scene_template`) follow in
+later stages.
+
+- Every `playerchoice_response_reward*` key is `(ChoiceId, ResponseId)` with no `Index`, exactly as
+  TrinityCore publishes it, so a response has at most one reward row even though the loader orders by `Index`.
+- Condition source 36 gates a player choice: `SourceGroup` is the `ChoiceId` and `SourceEntry` the
+  `ResponseId`. Source 29 gates a conversation line by its `Id`, with `SourceGroup` 0.
+- Several `playerchoice` flags are `tinyint(1)`, which the MySQL provider reports as a bool; the shared row
+  loader converts `True`/`False` to `1`/`0`.
+- `Question`, `Duration`, `MaxResponses` and `ScriptName` are nullable. `RewardQuestID` is nullable but real
+  rows store `0` for "no quest", so the editor treats 0 as none.
+- Conversation flags (22b): `ConversationDataStore.h` gives `AllowWithoutSpawnedActor` `0x04`, while the
+  wiki lists `0x03`; the server header wins.
+
 ## Column differences in shared tables (AC → TC)
 - `creature`:
   - guid int → bigint.

@@ -37,6 +37,13 @@ public partial class TcCinematicsPanel : CinematicsPanel
 
     /// <summary>The cards of the open choice, or null before the tab is built.</summary>
     public TcPlayerChoiceView? PlayerChoice => view;
+    /// <summary>The database source the open rows belong to, for the smoke's draft checks.</summary>
+    public string SourceKey => sourceKey;
+
+    /// <summary>What the last read returned, for the smoke's failure message.</summary>
+    public string SmokeDetail => snapshot == null
+        ? "no snapshot"
+        : $"read choices={snapshot.Rows.All(TcTables.PlayerChoice).Count} responses={snapshot.Rows.All(TcTables.PlayerChoiceResponse).Count} effective={TcCinematicsRules.Responses(effective, CurrentId ?? 0).Count()}";
 
     IReadOnlyList<(TableSchema Table, string Key)> DraftKeys(uint id) =>
         Drafts.Draft?.Keys(DBSource.Open(Connection(), Lookup()).SourceKey) ?? [];

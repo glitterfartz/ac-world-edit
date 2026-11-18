@@ -42,6 +42,7 @@ public partial class ViewerShell
         waypointSmoke = flags.Contains("--waypoint-smoke");
         interactionSmoke = flags.Contains("--interaction-smoke");
         contentSmoke = flags.Contains("--content-smoke");
+        cinematicsSmoke = flags.Contains("--cinematics-smoke");
         spawnAuthoringSmoke = flags.Contains("--spawn-authoring-smoke");
         contentBrowserSmoke = flags.Contains("--content-browser-smoke");
         areaTriggerSmoke = flags.Contains("--areatrigger-smoke");
@@ -193,6 +194,11 @@ public partial class ViewerShell
         if (contentSmoke)
         {
             ContentSmoke(delta);
+        }
+
+        if (cinematicsSmoke)
+        {
+            CinematicsSmoke(delta);
         }
 
         if (areaTriggerSmoke)

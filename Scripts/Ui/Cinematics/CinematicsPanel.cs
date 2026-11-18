@@ -23,6 +23,8 @@ public abstract partial class CinematicsPanel : ContentPanel
     /// <summary>The choice, conversation or scene open, or null when nothing is.</summary>
     public uint? CurrentId { get; protected set; }
     public bool HasItem => CurrentId.HasValue;
+    /// <summary>The status line's text, for the smoke's failure message.</summary>
+    public string SmokeStatus => status;
     /// <summary>Raised after every redraw so a host can refresh its Duplicate/Undo/Redo state.</summary>
     public event Action? Rendered;
     /// <summary>Raised when the tab changes so the host clears results that belong to the old tab.</summary>

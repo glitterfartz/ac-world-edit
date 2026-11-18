@@ -6,6 +6,14 @@ and remove the entry when the test exists. The current feature status is in
 `GeosetVariantsTests`, `AssetRefTests` and `RetailLiquidTests` already cover the cases they were listed
 for; what is left is below.
 
+## Cinematics
+
+- [ ] Player-choice locale tables (`playerchoice_locale`, `playerchoice_response_locale`) and their text.
+- [ ] The empty reward child tables (`playerchoice_response_reward_currency`, `_faction`, `_item_choice`,
+  `_maw_power`) once a database has rows to prove the reads.
+- [ ] Hotfix-backed conversation and scene rows; editing them is Phase 23.
+- [ ] Conversation chains and scene script packages against the retail client (22b/22c).
+
 ## Known broken smokes
 
 - [x] `--client-shot-overlays` used to get stuck after opening the quest editor: switching to the Story tab threw `KeyNotFoundException` because retail `Emotes.db2` has `EmoteSlashCommand`, not `Name`. Fixed; the smoke now reaches `CLIENT_SHOT_QUEST_EDITOR_OK` and completes.
