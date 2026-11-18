@@ -39,6 +39,12 @@ public sealed record ClientMailTemplate(uint Id, string Name);
 /// creature scaling (<see cref="ITcStatData"/>). Null for Wrath, whose database carries these itself.
 /// Calls are safe from any thread; tables load on first use.
 /// </summary>
+/// <summary>
+/// One client ConversationLine row: which broadcast text it speaks, the line that follows it, and its
+/// animation kit. The camera is a server override in conversation_line_template, not a client column.
+/// </summary>
+public sealed record ClientConversationLine(uint Id, uint NextLineId, uint BroadcastTextId, uint AnimKitId);
+
 public interface IClientLookup : ITcStatData
 {
     IReadOnlyList<ClientAreaTrigger> AreaTriggers();
@@ -122,6 +128,24 @@ public interface IClientLookup : ITcStatData
 
     /// <summary>Whether the client's table for <paramref name="kind"/> has a row with this ID.</summary>
     bool Exists(ClientRecord kind, uint id);
+
+    /// <summary>One client conversation line, or null when the client has none (defaults keep test doubles compiling).</summary>
+    ClientConversationLine? ConversationLine(uint id) => null;
+
+    /// <summary>
+    /// The line chain from a first line: each line's NextConversationLineID, capped so a client cycle
+    /// cannot hang the editor. Empty without client data.
+    /// </summary>
+    IReadOnlyList<ClientConversationLine> ConversationLineChain(uint firstLineId) => [];
+
+    /// <summary>Conversation lines whose broadcast text contains the term, as (line ID, text).</summary>
+    IReadOnlyList<(uint Id, string Text)> SearchConversationLines(string term, int limit) => [];
+
+    /// <summary>The client camera's name, or null when the client has no such camera.</summary>
+    string? UiCameraName(uint id) => null;
+
+    /// <summary>The client texture kit's prefix (UiTextureKit.KitPrefix), or null for an unknown kit.</summary>
+    string? UiTextureKitPrefix(uint id) => null;
 }
 
 /// <summary>
@@ -300,6 +324,69 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
 
         return found;
     }
+
+    public ClientConversationLine? ConversationLine(uint id) =>
+        Table("ConversationLine").TryGetValue((int)id, out var line)
+            ? new((uint)line.ID, line.FieldAs<uint>("NextConversationLineID"), line.FieldAs<uint>("BroadcastTextID"), line.FieldAs<uint>("AnimKitID"))
+            : null;
+
+    public IReadOnlyList<ClientConversationLine> ConversationLineChain(uint firstLineId)
+    {
+        // The client's chain is a linked list; a bad client row could point back or round, so the
+        // visited set ends a cycle and the cap bounds an absurdly long chain.
+        const int MaxChain = 512;
+        List<ClientConversationLine> chain = [];
+        HashSet<uint> seen = [];
+        uint? next = firstLineId;
+        while (next is uint id && id != 0 && seen.Add(id) && chain.Count < MaxChain)
+        {
+            if (ConversationLine(id) is not { } line)
+            {
+                break;
+            }
+
+            chain.Add(line);
+            next = line.NextLineId == 0 ? null : line.NextLineId;
+        }
+
+        return chain;
+    }
+
+    public IReadOnlyList<(uint Id, string Text)> SearchConversationLines(string term, int limit)
+    {
+        if (term.Trim().Length == 0)
+        {
+            return [];
+        }
+
+        var texts = SearchBroadcastText(term, limit).ToDictionary(t => t.Id, t => t.Text);
+        if (texts.Count == 0)
+        {
+            return [];
+        }
+
+        List<(uint Id, string Text)> found = [];
+        foreach (var line in Table("ConversationLine").Values)
+        {
+            uint broadcast = line.FieldAs<uint>("BroadcastTextID");
+            if (broadcast != 0 && texts.TryGetValue(broadcast, out string? text))
+            {
+                found.Add(((uint)line.ID, text));
+                if (found.Count >= limit)
+                {
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
+
+    public string? UiCameraName(uint id) =>
+        Table("UiCamera").TryGetValue((int)id, out var camera) && camera.Field<string>("Name") is { Length: > 0 } name ? name : null;
+
+    public string? UiTextureKitPrefix(uint id) =>
+        Table("UiTextureKit").TryGetValue((int)id, out var kit) && kit.Field<string>("KitPrefix") is { Length: > 0 } prefix ? prefix : null;
 
     public ClientItem? Item(uint id) =>
         Table("ItemSparse").TryGetValue((int)id, out var sparse) ? Describe(sparse) : null;
