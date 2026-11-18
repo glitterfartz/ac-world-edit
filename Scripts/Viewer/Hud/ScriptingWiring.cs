@@ -1,4 +1,6 @@
 using Godot;
+using ACWorldEdit.Data;
+using ACWorldEdit.Data.Scripting;
 using ACWorldEdit.Foundation.Scripting;
 
 namespace ACWorldEdit;
@@ -25,7 +27,9 @@ public partial class ViewerShell
                 WorkspaceDirectory = ProjectSettings.GlobalizePath(UserSettings.LoadScriptingWorkspace(profile.Kind)),
                 ExportDirectory = GlobalizeScriptPath(UserSettings.LoadScriptingExportDirectory(profile.Kind)),
                 AutoExportOnSave = UserSettings.LoadScriptingAutoExport(),
-                Host = AcScriptHosts.Profile,
+                Host = ScriptHostRegistry.Profile(UserSettings.LoadScriptingTargetHost()) ?? AcScriptHosts.Profile,
+                SaveHost = UserSettings.SaveScriptingTargetHost,
+                ReferenceCheck = CheckScriptReferences,
                 Report = statusLog.Post,
                 SaveFolders = (workspace, export, autoExport) =>
                 {
@@ -38,6 +42,26 @@ public partial class ViewerShell
         }
 
         scriptEditor.OpenEditor();
+    }
+
+    /// <summary>
+    /// Confirm script ids against the connected world database before export. Without a usable
+    /// connection the check is skipped (the values stay unchecked, exactly as the docs say).
+    /// </summary>
+    IReadOnlyList<ScriptReferenceIssue> CheckScriptReferences(ScriptDocument document, ScriptHostProfile host)
+    {
+        try
+        {
+            var database = DBSource.Open(DatabaseConnection(), clientLookup);
+            var resolver = new ScriptReferenceResolver(new ScriptReferenceResolver.DbSource(database));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            return Task.Run(() => resolver.CheckAsync(document, host, timeout.Token), timeout.Token)
+                .GetAwaiter().GetResult();
+        }
+        catch (Exception error) when (error is DatabaseFeatureException or OperationCanceledException)
+        {
+            return [];
+        }
     }
 
     static string GlobalizeScriptPath(string path) =>

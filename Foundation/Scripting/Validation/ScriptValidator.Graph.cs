@@ -23,6 +23,7 @@ public sealed partial class ScriptValidator
         ScriptDocument document,
         ScriptGraph graph,
         IReadOnlyList<ScriptReturn>? returnContext,
+        IReadOnlyList<ScriptParameter>? parameterContext,
         IReadOnlyDictionary<string, ScriptVariable> variables,
         IReadOnlyDictionary<string, ScriptFunction> functions,
         List<ScriptDiagnostic> diagnostics)
@@ -46,6 +47,8 @@ public sealed partial class ScriptValidator
         ValidateScope(infos, diagnostics);
         ValidateReferences(infos, edges, variables, functions, diagnostics);
         ValidateReachability(infos, edges, returnContext, diagnostics);
+        ValidateParameters(infos, parameterContext, diagnostics);
+        ValidateCapturedObjects(infos, edges, diagnostics);
         ValidateLargeIntegers(infos, diagnostics);
     }
 
@@ -322,10 +325,10 @@ public sealed partial class ScriptValidator
 
                 if (pin.Type == ScriptValueType.Exec)
                 {
-                    // A function graph has no event edge to start it: an unconnected exec input is
-                    // an entry point (the compiler lowers roots and the legacy expression Return).
-                    bool functionRoot = functionContext;
-                    if (!exec.Contains(pin.Id) && !functionRoot)
+                    // A function graph has no event edge to start it, and a call node may be used as a
+                    // pure value producer without joining an exec chain.
+                    bool optionalExec = functionContext || info.Node.Kind == ScriptBuiltinCatalog.CallFunction;
+                    if (!exec.Contains(pin.Id) && !optionalExec)
                     {
                         diagnostics.Add(Error(ScriptDiagnosticCodes.MissingInput, $"Exec input '{pin.Id}' is not connected.", info.Node.Id, pin.Id));
                     }
@@ -520,6 +523,157 @@ public sealed partial class ScriptValidator
                     $"The exec output of '{info.Node.Id}' is not connected.", info.Node.Id, "exec_out"));
             }
         }
+    }
+
+    /// <summary>
+    /// A parameter getter must point at a parameter of the function graph it lives in. The
+    /// signature editor keeps ids stable, so a removed parameter surfaces here instead of
+    /// silently compiling to nil.
+    /// </summary>
+    static void ValidateParameters(
+        Dictionary<string, NodeInfo> infos,
+        IReadOnlyList<ScriptParameter>? parameters,
+        List<ScriptDiagnostic> diagnostics)
+    {
+        HashSet<string>? ids = parameters is null
+            ? null
+            : new HashSet<string>(parameters.Select(parameter => parameter.Id), StringComparer.Ordinal);
+        foreach (var info in infos.Values.Where(info => info.Node.Kind == ScriptBuiltinCatalog.ParameterGet))
+        {
+            string? id = ScriptPins.PropertyString(info.Node, "parameter");
+            if (ids is null)
+            {
+                diagnostics.Add(Error(ScriptDiagnosticCodes.UnknownParameter,
+                    "A parameter getter is only valid inside a function.", info.Node.Id));
+            }
+            else if (id is null || !ids.Contains(id))
+            {
+                diagnostics.Add(Error(ScriptDiagnosticCodes.UnknownParameter,
+                    $"Parameter getter references '{id}', which is not a parameter of this function.", info.Node.Id));
+            }
+        }
+    }
+
+    /// <summary>
+    /// A timer callback runs after the handler returns, so object userdata captured from the
+    /// handler is invalid by then. Only the callback's own object, values, and objects resolved
+    /// inside the callback may reach a continuation node.
+    /// </summary>
+    static void ValidateCapturedObjects(
+        Dictionary<string, NodeInfo> infos,
+        List<EdgeInfo> edges,
+        List<ScriptDiagnostic> diagnostics)
+    {
+        var exec = edges.Where(edge => edge.FromPin.Type == ScriptValueType.Exec).ToArray();
+        var data = edges.Where(edge => edge.FromPin.Type != ScriptValueType.Exec).ToArray();
+        foreach (var timer in infos.Values.Where(info =>
+                     info.Node.Kind is ScriptBuiltinCatalog.TimerOnce or ScriptBuiltinCatalog.TimerRepeat))
+        {
+            var continuation = Continuation(exec, timer.Node.Id);
+            if (continuation.Count == 0)
+            {
+                continue;
+            }
+
+            var reported = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var edge in data.Where(edge =>
+                         continuation.Contains(edge.To.Node.Id)
+                         && ScriptTypeRegistry.Default.IsObject(edge.ToPin.Type)))
+            {
+                if (AvailableInCallback(edge.From.Node.Id, edge.FromPin.Id, continuation, data, infos,
+                        new HashSet<(string Node, string Pin)>()))
+                {
+                    continue;
+                }
+
+                string key = $"{edge.To.Node.Id}/{edge.ToPin.Id}";
+                if (reported.Add(key))
+                {
+                    diagnostics.Add(Error(ScriptDiagnosticCodes.CapturedObject,
+                        $"'{edge.ToPin.Id}' inside a timer callback uses an object from the enclosing handler; that object is gone when the callback runs.",
+                        edge.To.Node.Id, edge.ToPin.Id));
+                }
+            }
+        }
+    }
+
+    static HashSet<string> Continuation(EdgeInfo[] exec, string timerId)
+    {
+        var continuation = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>();
+        foreach (var edge in exec.Where(edge => edge.From.Node.Id == timerId && edge.FromPin.Id == "exec_out"))
+        {
+            if (continuation.Add(edge.To.Node.Id))
+            {
+                queue.Enqueue(edge.To.Node.Id);
+            }
+        }
+
+        while (queue.Count > 0)
+        {
+            string current = queue.Dequeue();
+            foreach (var edge in exec.Where(edge => edge.From.Node.Id == current))
+            {
+                if (continuation.Add(edge.To.Node.Id))
+                {
+                    queue.Enqueue(edge.To.Node.Id);
+                }
+            }
+        }
+
+        return continuation;
+    }
+
+    static bool AvailableInCallback(
+        string nodeId,
+        string pinId,
+        HashSet<string> continuation,
+        EdgeInfo[] data,
+        Dictionary<string, NodeInfo> infos,
+        HashSet<(string Node, string Pin)> visited)
+    {
+        if (!infos.TryGetValue(nodeId, out var info))
+        {
+            return true;
+        }
+
+        if (info.IsEvent)
+        {
+            return false;
+        }
+
+        if (info.Node.Kind == ScriptBuiltinCatalog.TimerObject)
+        {
+            return true;
+        }
+
+        if (continuation.Contains(nodeId))
+        {
+            return true;
+        }
+
+        if (info.IsWrite || !visited.Add((nodeId, pinId)))
+        {
+            return false;
+        }
+
+        // A read used only inside the callback is evaluated there; one shared with the handler
+        // was hoisted into the handler and captured.
+        if (data.Any(edge => edge.From.Node.Id == nodeId && edge.FromPin.Id == pinId
+                             && !continuation.Contains(edge.To.Node.Id)))
+        {
+            return false;
+        }
+
+        foreach (var input in data.Where(edge => edge.To.Node.Id == nodeId))
+        {
+            if (!AvailableInCallback(input.From.Node.Id, input.FromPin.Id, continuation, data, infos, visited))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     static void ValidateLargeIntegers(Dictionary<string, NodeInfo> infos, List<ScriptDiagnostic> diagnostics)

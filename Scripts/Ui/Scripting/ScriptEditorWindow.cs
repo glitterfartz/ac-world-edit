@@ -149,6 +149,15 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
 
     public ScriptHostProfile Host { get; set; } = AcScriptHosts.Profile;
 
+    /// <summary>Persist the chosen host so the next editor session opens with it.</summary>
+    public Action<string>? SaveHost { get; set; }
+
+    /// <summary>
+    /// Live typed-id check supplied by the shell when a world database is available. A confirmed
+    /// miss blocks export; a null callback exports without checking.
+    /// </summary>
+    public Func<ScriptDocument, ScriptHostProfile, IReadOnlyList<ScriptReferenceIssue>>? ReferenceCheck { get; set; }
+
     /// <summary>Absolute workspace directory (the UI globalises the saved <c>user://</c> path).</summary>
     public string WorkspaceDirectory { get; set; } = "";
 
@@ -201,6 +210,8 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     /// <summary>Refresh the document list and palette, then show the window.</summary>
     public void OpenEditor()
     {
+        // The host may arrive through the object initializer, after the picker was built.
+        ApplyHostProfile(Host);
         RefreshDocuments();
         if (Session.Path is not null)
         {
@@ -210,16 +221,22 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         Open();
     }
 
-    public void NewDocument(string template)
-    {
-        var document = ScriptTemplateLibrary.Create(template);
-        Session.Load(document);
-        stamp = null;
-        RefreshAll();
-        Status($"New script '{document.Name}'. Drag from the palette to start.");
-    }
+    public void NewDocument(string template) =>
+        GuardDiscard("starting a new script", () =>
+        {
+            var document = ScriptTemplateLibrary.Create(template);
+            document.Host = Host.Host;
+            Session.Load(document);
+            stamp = null;
+            RefreshAll();
+            Status($"New script '{document.Name}'. Drag from the palette to start.");
+            return true;
+        });
 
-    public bool OpenDocument(string path)
+    public bool OpenDocument(string path) =>
+        GuardDiscard("opening another script", () => LoadDocument(path));
+
+    bool LoadDocument(string path)
     {
         try
         {
@@ -235,6 +252,29 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             Status(error.Message);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Loading another document replaces the current one, so unsaved edits must be confirmed
+    /// first. Headless runs (tests) never prompt; they refuse instead so a modal cannot hang.
+    /// </summary>
+    bool GuardDiscard(string action, Func<bool> load)
+    {
+        if (!Session.Dirty)
+        {
+            return load();
+        }
+
+        if (DisplayServer.GetName() == "headless")
+        {
+            Status("Save or discard the current script first.");
+            return false;
+        }
+
+        Dialogs.Confirm(this, "Unsaved script",
+            $"'{Session.Document.Name}' has unsaved changes. Discard them and continue with {action}?",
+            () => { load(); }, ok: "Discard changes", cancel: "Keep editing");
+        return false;
     }
 
     /// <summary>Save to the workspace; a new document gets a slug file, an existing one keeps its path.</summary>
@@ -289,6 +329,11 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             return false;
         }
 
+        if (!CheckReferences([Session.Document]))
+        {
+            return false;
+        }
+
         var result = Exporter.Export(Session.Document, ExportDirectory);
         if (!result.Success)
         {
@@ -328,6 +373,33 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
     }
 
+    /// <summary>
+    /// Confirm the typed ids against the live database before anything is written. Only a
+    /// confirmed miss blocks; an unconfigured or unsupported lookup leaves values unchecked.
+    /// </summary>
+    bool CheckReferences(IReadOnlyList<ScriptDocument> documents)
+    {
+        if (ReferenceCheck is null)
+        {
+            return true;
+        }
+
+        var issues = documents
+            .SelectMany(document => ReferenceCheck(document, ScriptHostRegistry.Profile(document.Host) ?? Host))
+            .Where(issue => issue.BlocksExport)
+            .ToList();
+        if (issues.Count == 0)
+        {
+            return true;
+        }
+
+        FillProblems(issues
+            .Select(issue => new ScriptDiagnostic(issue.Code, ScriptSeverity.Error, issue.Message))
+            .ToList());
+        Status(issues[0].Message);
+        return false;
+    }
+
     public bool ExportAllDocument()
     {
         if (string.IsNullOrWhiteSpace(ExportDirectory))
@@ -339,7 +411,13 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         try
         {
             var documents = Workspace.Scan().Files.Select(file => Workspace.Load(file.Path)).ToList();
-            var result = Exporter.ExportAll(documents, ExportDirectory);
+            if (!CheckReferences(documents))
+            {
+                return false;
+            }
+
+            var result = Exporter.ExportAll(documents, ExportDirectory,
+                document => ScriptHostRegistry.Profile(document.Host) ?? Host);
             if (!result.Success)
             {
                 FillProblems(result.Diagnostics);
@@ -445,7 +523,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             child.QueueFree();
         }
 
-        var node = nodeId is null ? null : Session.Document.Graph.Nodes.FirstOrDefault(item => item.Id == nodeId);
+        var node = nodeId is null ? null : Canvas.Graph.Nodes.FirstOrDefault(item => item.Id == nodeId);
         if (node is null || nodeId is null)
         {
             Inspector.AddChild(ClientStyle.Text("Select a node to edit its values.", 13, ClientStyle.Faded));
@@ -478,9 +556,14 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             AddParameterSelector(node);
         }
 
+        if (node.Kind == ScriptBuiltinCatalog.CallFunction)
+        {
+            AddFunctionSelector(node);
+        }
+
         foreach (var pin in ScriptPins.Build(Session.Document, Host, node).Where(pin => pin.Direction == ScriptPinDirection.In && pin.Type != ScriptValueType.Exec))
         {
-            bool connected = Session.Document.Graph.Edges.Any(edge => edge.To.Node == node.Id && edge.To.Pin == pin.Id);
+            bool connected = Canvas.Graph.Edges.Any(edge => edge.To.Node == node.Id && edge.To.Pin == pin.Id);
             if (connected)
             {
                 Inspector.AddChild(ClientStyle.Text($"{pin.Id}: connected", 12, ClientStyle.Faded));
@@ -613,6 +696,26 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         Inspector.AddChild(picker);
     }
 
+    void AddFunctionSelector(ScriptNode node)
+    {
+        var picker = new OptionButton { Name = "Function" };
+        string selected = ScriptPins.PropertyString(node, "function") ?? "";
+        for (int i = 0; i < Session.Document.Functions.Count; i++)
+        {
+            var function = Session.Document.Functions[i];
+            picker.AddItem(function.Name.Length == 0 ? function.Id : function.Name);
+            picker.SetItemMetadata(i, function.Id);
+            if (function.Id == selected)
+            {
+                picker.Selected = i;
+            }
+        }
+
+        picker.ItemSelected += index => Canvas.SetProperty(node.Id, "function", JsonSerializer.SerializeToElement((string)picker.GetItemMetadata((int)index)));
+        Inspector.AddChild(new Label { Text = "Function" });
+        Inspector.AddChild(picker);
+    }
+
     void AddParameterSelector(ScriptNode node)
     {
         var picker = new OptionButton { Name = "Parameter" };
@@ -726,15 +829,48 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
 
     void OnDocumentChanged()
     {
+        SyncHostFromDocument();
         RefreshTitle();
         Compile();
         ShowInspector(Canvas.SelectedNodeId);
+    }
+
+    /// <summary>
+    /// The document records the host it was written for, so opening a file or undoing a host
+    /// change must move the window and canvas with it, without recording another edit.
+    /// </summary>
+    void SyncHostFromDocument()
+    {
+        if (ScriptHostRegistry.Profile(Session.Document.Host) is not { } profile
+            || profile.Host == Host.Host)
+        {
+            return;
+        }
+
+        ApplyHostProfile(profile);
+    }
+
+    void ApplyHostProfile(ScriptHostProfile profile)
+    {
+        Host = profile;
+        Canvas.Host = profile;
+        HostLabel.Text = "Host: " + profile.Label;
+        for (int index = 0; index < HostPicker.ItemCount; index++)
+        {
+            if ((string)HostPicker.GetItemMetadata(index) == profile.Host)
+            {
+                HostPicker.Selected = index;
+            }
+        }
+
+        FillPalette(PaletteSearchField.Text);
     }
 
     void RefreshAll()
     {
         CurrentFunction = null;
         Canvas.Load(Session);
+        SyncHostFromDocument();
         RefreshDocuments();
         RefreshVariables();
         RefreshFunctions();
@@ -845,11 +981,31 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         {
             var function = document.Functions.First(item => item.Id == functionId);
             function.Name = name;
-            function.Parameters = parameters.Select((parameter, index) => new ScriptParameter
+            var previous = function.Parameters.ToList();
+            var claimed = new HashSet<string>(StringComparer.Ordinal);
+            var used = new HashSet<string>(previous.Select(parameter => parameter.Id), StringComparer.Ordinal);
+            int next = 1;
+            function.Parameters = parameters.Select(parameter =>
             {
-                Id = index < function.Parameters.Count ? function.Parameters[index].Id : $"p{index + 1}",
-                Name = parameter.Name,
-                Type = parameter.Type
+                // Match by name so removing a parameter never re-points the survivors' getters.
+                var match = previous.FirstOrDefault(old => old.Name == parameter.Name && claimed.Add(old.Id));
+                string id;
+                if (match is not null)
+                {
+                    id = match.Id;
+                }
+                else
+                {
+                    while (!used.Add($"p{next}"))
+                    {
+                        next++;
+                    }
+
+                    id = $"p{next}";
+                    claimed.Add(id);
+                }
+
+                return new ScriptParameter { Id = id, Name = parameter.Name, Type = parameter.Type };
             }).ToList();
             function.Returns = returns.Select(returnSlot => new ScriptReturn
             {
@@ -1066,6 +1222,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             () =>
             {
                 Close();
+                stamp = null;
                 Session.Load(ScriptDocument.Create("Untitled"));
                 RefreshAll();
             },
@@ -1081,11 +1238,9 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
             return false;
         }
 
-        Host = profile;
-        Canvas.Host = profile;
-        HostLabel.Text = "Host: " + profile.Label;
+        ApplyHostProfile(profile);
         Session.Edit(document => document.Host = profile.Host);
-        FillPalette(PaletteSearchField.Text);
+        SaveHost?.Invoke(profile.Host);
         Canvas.RebuildFromSession();
         RefreshTitle();
         Compile();
@@ -1102,6 +1257,12 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     /// <summary>Apply folder choices from the dialog (or a test) and persist them.</summary>
     public void ApplyFolders(string workspace, string export, bool autoExport)
     {
+        // The stamp names a file in the old workspace; saving into a new one starts fresh.
+        if (!string.Equals(workspace, WorkspaceDirectory, StringComparison.Ordinal))
+        {
+            stamp = null;
+        }
+
         WorkspaceDirectory = workspace;
         ExportDirectory = export;
         AutoExportOnSave = autoExport;

@@ -33,9 +33,13 @@ public static class ScriptDocumentJson
             throw new InvalidDataException("Invalid script document: the root must be an object.");
         }
 
-        int format = probe.RootElement.TryGetProperty("format", out var formatElement)
-            ? formatElement.GetInt32()
-            : CurrentFormat;
+        int format = CurrentFormat;
+        if (probe.RootElement.TryGetProperty("format", out var formatElement)
+            && (formatElement.ValueKind != JsonValueKind.Number || !formatElement.TryGetInt32(out format)))
+        {
+            throw new InvalidDataException("Invalid script document: 'format' must be an integer.");
+        }
+
         ScriptDocumentMigrations.EnsureSupported(format);
 
         var document = JsonSerializer.Deserialize<ScriptDocument>(json, Options)

@@ -128,9 +128,13 @@ public sealed class ScriptReferenceResolver
     /// <summary>A live source backed by the editor's <see cref="IDBSource"/> search.</summary>
     public sealed class DbSource : IScriptReferenceSource
     {
-        readonly IDBSource database;
+        readonly Func<SmartParamKind, string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> search;
 
-        public DbSource(IDBSource database) => this.database = database;
+        public DbSource(IDBSource database) => search = database.SearchAsync;
+
+        public DbSource(
+            Func<SmartParamKind, string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> search) =>
+            this.search = search;
 
         public async Task<ScriptReferenceLookup> LookupAsync(
             ScriptReferenceKind kind, long id, CancellationToken token = default)
@@ -143,7 +147,18 @@ public sealed class ScriptReferenceResolver
                 ScriptReferenceKind.Quest => SmartParamKind.Quest,
                 _ => SmartParamKind.Spell
             };
-            var hits = await database.SearchAsync(searchKind, id.ToString(CultureInfo.InvariantCulture), token);
+
+            IReadOnlyList<(uint Id, string Name)> hits;
+            try
+            {
+                hits = await search(searchKind, id.ToString(CultureInfo.InvariantCulture), token);
+            }
+            catch (Exception error) when (error is NotSupportedException or ArgumentOutOfRangeException)
+            {
+                // This database cannot answer for the kind (AzerothCore spells live in client data).
+                return new ScriptReferenceLookup(null);
+            }
+
             var hit = hits.FirstOrDefault(entry => entry.Id == id);
             return new ScriptReferenceLookup(hit.Id == id, string.IsNullOrWhiteSpace(hit.Name) ? null : hit.Name);
         }

@@ -52,6 +52,8 @@ public static class ScriptDiagnosticCodes
     public const string CallArity = "SC0313";
     public const string UnknownFunction = "SC0314";
     public const string DuplicateName = "SC0315";
+    public const string CapturedObject = "SC0316";
+    public const string UnknownParameter = "SC0317";
 
     public const string TooManyLocals = "SC0401";
     public const string LargeInteger = "SC0402";
@@ -60,6 +62,7 @@ public static class ScriptDiagnosticCodes
     public const string ExportForeignFile = "SC0502";
     public const string ExportCorruptManifest = "SC0503";
     public const string ExportAllBlocked = "SC0504";
+    public const string ExportOrphaned = "SC0505";
 
     public const string MissingEntry = "SC0601";
     public const string CatalogProfile = "SC0602";

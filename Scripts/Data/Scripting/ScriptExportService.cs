@@ -34,10 +34,21 @@ public sealed class ScriptExportService
     public ScriptExportResult Export(ScriptDocument document, string exportDirectory) =>
         ExportAll([document], exportDirectory);
 
-    public ScriptExportResult ExportAll(IEnumerable<ScriptDocument> documents, string exportDirectory)
+    /// <summary>
+    /// Compile and write a set of documents. A resolver may name a profile per document so a
+    /// workspace mixing hosts exports each script with the bindings its document records.
+    /// </summary>
+    public ScriptExportResult ExportAll(
+        IEnumerable<ScriptDocument> documents,
+        string exportDirectory,
+        Func<ScriptDocument, ScriptHostProfile>? profileFor = null)
     {
         var compiled = documents
-            .Select(document => (Document: document, Compilation: compiler.Compile(document)))
+            .Select(document =>
+            {
+                var active = profileFor is null ? compiler : new ScriptCompiler(profileFor(document));
+                return (Document: document, Compilation: active.Compile(document));
+            })
             .ToList();
 
         var errors = compiled.SelectMany(pair => pair.Compilation.Errors).ToList();
@@ -91,16 +102,26 @@ public sealed class ScriptExportService
             }
         }
 
+        var diagnostics = new List<ScriptDiagnostic>();
         var files = new List<ScriptExportFile>();
         foreach (var (pair, candidate) in compiled.Zip(candidates))
         {
             string path = Path.Combine(exportDirectory, candidate.OutputName);
             ScriptFileIo.WriteAtomic(path, pair.Compilation.LuaText!);
+            if (manifest.Find(candidate.DocumentId) is { } previous
+                && previous.OutputName != candidate.OutputName)
+            {
+                // The rename leaves the old generated file behind; it is reported, never deleted.
+                diagnostics.Add(new ScriptDiagnostic(ScriptDiagnosticCodes.ExportOrphaned,
+                    ScriptSeverity.Info,
+                    $"'{previous.OutputName}' was generated before the rename and is still in the export folder; delete it or ALE will load it too."));
+            }
+
             manifest.Record(candidate);
             files.Add(new ScriptExportFile(pair.Document.Id, path, candidate.Hash));
         }
 
         manifest.Save(exportDirectory);
-        return new ScriptExportResult(true, files, [], null);
+        return new ScriptExportResult(true, files, diagnostics, null);
     }
 }

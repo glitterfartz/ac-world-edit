@@ -174,6 +174,135 @@ public class ScriptEditorWindowTests
     }
 
     [TestCase]
+    public void RemovingAParameterKeepsTheSurvivingParameterIds()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        window.AddFunction();
+        var function = window.CurrentFunction!;
+        window.SetFunctionSignature(function.Id, "pair",
+            [("unit", ScriptValueType.Unit), ("amount", ScriptValueType.Int)], []);
+        string amountId = window.Session.Document.Functions[0].Parameters[1].Id;
+
+        window.SetFunctionSignature(function.Id, "pair", [("amount", ScriptValueType.Int)], []);
+
+        var parameters = window.Session.Document.Functions[0].Parameters;
+        AssertThat(parameters.Count).IsEqual(1);
+        AssertString(parameters[0].Id).IsEqual(amountId);
+    }
+
+    [TestCase]
+    public void TheInspectorEditsNodesInTheOpenFunctionGraph()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        window.AddFunction();
+        var function = window.CurrentFunction!;
+        window.SetFunctionSignature(function.Id, "heal", [("amount", ScriptValueType.Int)], []);
+        window.Canvas.AddNode("flow.parameter_get", new Vector2(0, 0));
+        string nodeId = window.Canvas.Graph.Nodes[^1].Id;
+
+        window.ShowInspector(nodeId);
+
+        var picker = window.Inspector.GetNodeOrNull<OptionButton>("Parameter");
+        AssertThat(picker).IsNotNull();
+        AssertString((string)picker!.GetItemMetadata(0)).IsEqual(function.Parameters[0].Id);
+    }
+
+    [TestCase]
+    public void TheInspectorBindsACallToAUserFunction()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        window.AddFunction();
+        var function = window.CurrentFunction!;
+        window.SetFunctionSignature(function.Id, "heal", [("amount", ScriptValueType.Int)], []);
+        window.ShowEventGraph();
+        window.Canvas.AddNode("flow.call_function", new Vector2(0, 0));
+        string nodeId = window.Canvas.Graph.Nodes[^1].Id;
+        window.ShowInspector(nodeId);
+
+        var picker = window.Inspector.GetNodeOrNull<OptionButton>("Function");
+        AssertThat(picker).IsNotNull();
+        AssertString((string)picker!.GetItemMetadata(0)).IsEqual(function.Id);
+        picker.Select(0);
+        picker.EmitSignal(OptionButton.SignalName.ItemSelected, 0);
+
+        var node = window.Session.Document.Graph.Nodes.First(item => item.Id == nodeId);
+        AssertString(ScriptPins.PropertyString(node, "function")).IsEqual(function.Id);
+    }
+
+    [TestCase]
+    public void UndoingAHostChangeRestoresTheCompilationHost()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        AssertThat(window.ChangeHost("eluna-trinitycore")).IsTrue();
+
+        window.Undo();
+
+        AssertString(window.Host.Host).IsEqual("ale-azerothcore");
+        AssertString(window.Session.Document.Host).IsEqual("ale-azerothcore");
+    }
+
+    [TestCase]
+    public void OpeningADocumentAdoptsItsHost()
+    {
+        var window = Spawn(out string workspace, out _);
+        var document = ScriptDocument.Create("Eluna script");
+        document.Host = "eluna-trinitycore";
+        string path = new ScriptWorkspace(workspace).Save(document, null);
+
+        AssertThat(window.OpenDocument(path)).IsTrue();
+
+        AssertString(window.Host.Host).IsEqual("eluna-trinitycore");
+    }
+
+    [TestCase]
+    public void SavingAfterChangingTheWorkspaceWritesAFreshFile()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        AssertThat(window.SaveDocument()).IsTrue();
+        string other = Path.Combine(Path.GetTempPath(), "acwe-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(other);
+
+        window.ApplyFolders(other, window.ExportDirectory, false);
+
+        AssertThat(window.SaveDocument()).IsTrue();
+        AssertThat(Directory.GetFiles(other, "*.acwscript").Length).IsEqual(1);
+    }
+
+    [TestCase]
+    public void OpeningAnotherScriptDoesNotDiscardUnsavedEdits()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("creature-death");
+        window.AddFromPalette("unit.send_unit_say");
+        string originalId = window.Session.Document.Id;
+
+        window.NewDocument("blank");
+
+        AssertString(window.Session.Document.Id).IsEqual(originalId);
+        AssertThat(window.Session.Dirty).IsTrue();
+    }
+
+    [TestCase]
+    public void AConfirmedMissingReferenceBlocksExport()
+    {
+        var window = Spawn(out _, out string export);
+        window.NewDocument("creature-death");
+        window.ReferenceCheck = (_, _) =>
+        [
+            new ScriptReferenceIssue(ScriptDiagnosticCodes.MissingEntry,
+                ScriptReferenceKind.Creature, 1234, "Creature 1234 does not exist.", BlocksExport: true)
+        ];
+
+        AssertThat(window.ExportCurrent()).IsFalse();
+        AssertThat(Directory.GetFiles(export, "*.lua").Length).IsEqual(0);
+    }
+
+    [TestCase]
     public void TheSpellCastTemplateCompiles()
     {
         var window = Spawn(out _, out _);

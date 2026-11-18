@@ -86,9 +86,9 @@ codes (`ScriptDiagnosticCodes`):
 |---|---|
 | `SC01xx` | unknown/duplicate node, pin or event, unavailable capability, duplicate node id |
 | `SC02xx` | missing input, wrong type, multiple data inputs on one pin, exec fan-out, exec/data mixing, exec/data cycles, bad edge |
-| `SC03xx` | missing event scope, duplicate registration, merged event chains, return context, unknown variable/function, variable default/storage, write dominance, unreachable node, unconnected write exec, high-frequency event, recursion, call arity, duplicate name |
+| `SC03xx` | missing event scope, duplicate registration, merged event chains, return context, unknown variable/function/parameter, variable default/storage, write dominance, unreachable node, unconnected write exec, high-frequency event, recursion, call arity, duplicate name, object captured by a timer callback |
 | `SC04xx` | too many locals, integer literal above 2^53 (Lua precision) |
-| `SC05xx` | export collision, foreign file, corrupt manifest, export-all blocked |
+| `SC05xx` | export collision, foreign file, corrupt manifest, export-all blocked, output left behind by a rename |
 | `SC06xx` | missing host binding/entry, catalog profile mismatch |
 
 Errors block compilation (`ScriptCompilation.LuaText` is null); warnings and infos stay in
@@ -139,6 +139,15 @@ All user file I/O lives in `Scripts/Data/Scripting`; the UI passes absolute path
 - **`ScriptExportService`** compiles first, then checks duplicate ids and output-name collisions,
   manifest ownership and file hashes, and only then writes each Lua file and the manifest. A failed
   run writes nothing; success reports each file's hash. Export errors carry `SC05xx` codes.
+  Export All resolves each document's own host profile, so a workspace that mixes ALE and Eluna
+  scripts exports each with the bindings its document records. When a document's output name
+  changes, the manifest entry is replaced and the old file is reported as orphaned (`SC0505`) but
+  never deleted.
+- **Reference confirmation.** Before writing, the editor asks the shell's `ReferenceCheck` to
+  confirm typed ids (event scope entries and literals) against the live world database; a
+  confirmed miss blocks export with `SC0601`. Without a usable connection, or for a kind the
+  database cannot answer (AzerothCore and TrinityCore spells live in the client), the value stays
+  unchecked.
 
 Scripts deliberately bypass the database draft/change-log path: a graph is a file, its generated
 Lua is a file, and nothing reaches the world database. The export directory is the ALE
@@ -172,8 +181,14 @@ with `.reload ale` unless `ALE.AutoReload` is on.
   name, kind or category; activating an entry adds it at the view centre and selects it.
 - **Inspector** builds typed editors from the node's input pins: checkboxes for bools, number
   fields for ints/floats/typed IDs, text fields for strings, raw-JSON fields for lists/tables/other
-  objects, plus event scope fields and a variable picker for get/set nodes. A connected input says
-  so instead of offering a literal. Editing commits a new snapshot and recompiles.
+  objects, plus event scope fields, a variable picker for get/set nodes, a parameter picker for
+  `flow.parameter_get` and a function picker for `flow.call_function`. It reads whichever graph
+  the canvas shows, so function literals are editable too. A connected input says so instead of
+  offering a literal. Editing commits a new snapshot and recompiles.
+- **Document switching.** New and Open ask before discarding unsaved edits. The window adopts a
+  document's recorded host on open (and again after undo), and the chosen host is persisted as the
+  `[scripting] target_host` default. Saving after changing the workspace starts a fresh file
+  instead of comparing against a stamp from the old folder.
 - **Problems** list diagnostics with severity colours; selecting one selects and centres its node.
   The Lua preview keeps the last successful text when compilation fails, and the header shows the
   error count.

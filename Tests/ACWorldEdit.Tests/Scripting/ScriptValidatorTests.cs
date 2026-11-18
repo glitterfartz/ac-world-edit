@@ -331,4 +331,94 @@ public class ScriptValidatorTests
         var diagnostics = Validate(Document(Event("dup"), Event("dup")));
         Assert.Contains(diagnostics, item => item.Code == ScriptDiagnosticCodes.DuplicateNode);
     }
+
+    [Fact]
+    public void ParameterGettersMustReferenceAParameterOfTheirFunction()
+    {
+        var document = Document();
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "twice",
+            Parameters = [new ScriptParameter { Id = "p1", Name = "value", Type = ScriptValueType.Float }],
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode
+                    {
+                        Id = "n1",
+                        Kind = ScriptBuiltinCatalog.ParameterGet,
+                        Properties = { ["parameter"] = Json("p2") }
+                    }
+                }
+            }
+        });
+
+        var diagnostics = Validate(document);
+
+        Assert.Contains(diagnostics, item => item.Code == ScriptDiagnosticCodes.UnknownParameter);
+    }
+
+    [Fact]
+    public void TimerContinuationsRejectCapturedEventObjects()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "timer.once",
+            Literals = { ["delay_ms"] = Json(1000) }
+        }, Say("n3"));
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "creature", "n2", "self"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "exec_out", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e4", "n1", "creature", "n3", "self"));
+
+        var diagnostics = Validate(document);
+
+        Assert.Contains(diagnostics, item => item.Code == ScriptDiagnosticCodes.CapturedObject);
+    }
+
+    [Fact]
+    public void TimerContinuationsAllowTheCallbackObject()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "timer.once",
+            Literals = { ["delay_ms"] = Json(1000) }
+        }, Say("n3"), Node("n4", "timer.object"));
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "creature", "n2", "self"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "exec_out", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e4", "n4", "object", "n3", "self"));
+
+        var diagnostics = Validate(document);
+
+        Assert.DoesNotContain(diagnostics, item => item.Code == ScriptDiagnosticCodes.CapturedObject);
+    }
+
+    [Fact]
+    public void TimerContinuationsMayResolveObjectsInsideTheCallback()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "timer.once",
+            Literals = { ["delay_ms"] = Json(1000) }
+        }, new ScriptNode
+        {
+            Id = "n3",
+            Kind = "player.get_by_guid",
+            Literals = { ["guid"] = Json(42) }
+        }, Say("n4"));
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "creature", "n2", "self"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "exec_out", "n4", "exec"));
+        document.Graph.Edges.Add(Edge("e4", "n3", "player", "n4", "self"));
+
+        var diagnostics = Validate(document);
+
+        Assert.DoesNotContain(diagnostics, item => item.Code == ScriptDiagnosticCodes.CapturedObject);
+    }
 }

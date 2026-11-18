@@ -102,8 +102,9 @@ wait for the features or environment they exercise:
   and diff them, so an upstream hook rename fails a build instead of an editor session (Milestone 4
   catalog tool).
 - [ ] `ScriptReferenceResolver.DbSource` against a real database (`DbFact`, one file per dialect):
-  the resolver is covered with a fake source; live search behavior and map-id lookups are not. The
-  editor does not yet call the resolver during export (the picker wiring is still pending).
+  the resolver is covered with a fake source and an unsupported-kind test; live search behavior and
+  map-id lookups are not. Export now calls the shell's `ReferenceCheck` (blocking is covered with an
+  injected check), but a live end-to-end export against a connected database is not.
 - [ ] Editor external-change prompt and discard/overwrite choice: save/load/export in temp folders and
   the dirty guard are covered, but the confirmation dialog's three answers are not driven headlessly
   (`Dialogs.Confirm` needs a real window in the current harness).

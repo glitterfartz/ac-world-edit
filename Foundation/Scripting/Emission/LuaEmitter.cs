@@ -124,7 +124,7 @@ public sealed class LuaEmitter : ScriptEmitter
         switch (statement)
         {
             case IrCallStmt call:
-                writer.Line(CallText(call.Receiver, call.Call, call.Args, call.ReceiverStyle, nullable: false));
+                writer.Line(StatementCall(call));
                 break;
             case IrVarSet set:
                 writer.Line($"{set.Name} = {Expression(set.Value)}");
@@ -203,7 +203,7 @@ public sealed class LuaEmitter : ScriptEmitter
         IrVariableGet variable => variable.Name,
         IrCall call => CallText(call.Receiver, call.Call, call.Args, call.ReceiverStyle, call.NullableReceiver),
         IrBinary binary => $"{Operand(binary.Left)} {binary.Op} {Operand(binary.Right)}",
-        IrUnary unary => $"not {Operand(unary.Operand)}",
+        IrUnary unary => unary.Op == "not" ? $"not {Operand(unary.Operand)}" : $"{unary.Op}{Operand(unary.Operand)}",
         IrIndex index => $"{Operand(index.Target)}[{Expression(index.Key)}]",
         _ => throw new NotSupportedException($"Unsupported IR expression {expression.GetType().Name}.")
     };
@@ -226,7 +226,20 @@ public sealed class LuaEmitter : ScriptEmitter
         string target = Expression(receiver);
         string separator = style == ScriptReceiverStyle.Dot ? "." : ":";
         string text = $"{target}{separator}{call}({arguments})";
-        return nullable ? $"{target} and {text} or nil" : text;
+        // `a and call or nil` turns a false result into nil; an immediate call keeps false.
+        return nullable ? $"(function() if {target} ~= nil then return {text} end end)()" : text;
+    }
+
+    static string StatementCall(IrCallStmt call)
+    {
+        if (!call.NullableReceiver || call.Receiver is null
+            || call.ReceiverStyle is ScriptReceiverStyle.None or ScriptReceiverStyle.Global)
+        {
+            return CallText(call.Receiver, call.Call, call.Args, call.ReceiverStyle, nullable: false);
+        }
+
+        string target = Expression(call.Receiver);
+        return $"if {target} ~= nil then {CallText(call.Receiver, call.Call, call.Args, call.ReceiverStyle, nullable: false)} end";
     }
 
     static HashSet<string> UsedNames(IReadOnlyList<IrStmt> statements)

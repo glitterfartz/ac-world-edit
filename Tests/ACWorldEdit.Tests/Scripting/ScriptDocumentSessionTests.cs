@@ -13,6 +13,12 @@ public class ScriptDocumentSessionTests
     }
 
     [Fact]
+    public void AFreshSessionIsClean()
+    {
+        Assert.False(new ScriptDocumentSession().Dirty);
+    }
+
+    [Fact]
     public void LoadedDocumentIsClean()
     {
         var session = new ScriptDocumentSession();

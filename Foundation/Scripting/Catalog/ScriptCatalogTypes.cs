@@ -209,8 +209,18 @@ public sealed class LowerEnumJsonConverter<T> : JsonConverter<T> where T : struc
 /// <summary>Maps <see cref="ScriptValueType"/> to and from its stable JSON spelling.</summary>
 public sealed class ScriptValueTypeJsonConverter : JsonConverter<ScriptValueType>
 {
-    public override ScriptValueType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        ScriptValueTypeNames.Parse(reader.GetString() ?? throw new JsonException("A script type must be a string."));
+    public override ScriptValueType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string text = reader.GetString() ?? throw new JsonException("A script type must be a string.");
+        try
+        {
+            return ScriptValueTypeNames.Parse(text);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new JsonException($"Unknown script value type '{text}'.");
+        }
+    }
 
     public override void Write(Utf8JsonWriter writer, ScriptValueType value, JsonSerializerOptions options) =>
         writer.WriteStringValue(ScriptValueTypeNames.ToJson(value));

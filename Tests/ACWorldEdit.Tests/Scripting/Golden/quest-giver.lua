@@ -8,7 +8,7 @@ local __vars = {}
 local __fns = {}
 
 local function __acw_n1(_, player, _, _)
-    player:SendBroadcastMessage("Thank you for helping us!")
+    if player ~= nil then player:SendBroadcastMessage("Thank you for helping us!") end
     return nil
 end
 

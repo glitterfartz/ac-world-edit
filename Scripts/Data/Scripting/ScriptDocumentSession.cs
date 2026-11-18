@@ -13,7 +13,10 @@ public sealed class ScriptDocumentSession
 
     readonly List<string> undo = [];
     readonly List<string> redo = [];
-    string savedHash = "";
+    string savedHash;
+
+    public ScriptDocumentSession() =>
+        savedHash = ScriptDocumentJson.CanonicalHash(Document);
 
     public ScriptDocument Document { get; private set; } = ScriptDocument.Create("Untitled");
     public string? Path { get; private set; }

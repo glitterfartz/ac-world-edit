@@ -130,6 +130,39 @@ public class ScriptWorkspaceTests
     }
 
     [Fact]
+    public void ScanReportsAMalformedFormatInsteadOfThrowing()
+    {
+        var workspace = NewWorkspace(out _);
+        Directory.CreateDirectory(workspace.Directory);
+        File.WriteAllText(Path.Combine(workspace.Directory, "bad.acwscript"), "{\"format\": \"1\", \"id\": \"x\"}");
+
+        var scan = workspace.Scan();
+
+        Assert.Single(scan.Issues);
+        Assert.Empty(scan.Files);
+    }
+
+    [Fact]
+    public void ScanReportsAnUnknownValueTypeInsteadOfThrowing()
+    {
+        var workspace = NewWorkspace(out _);
+        var document = ScriptDocument.Create("Types");
+        document.Variables.Add(new ScriptVariable
+        {
+            Id = "v1",
+            Name = "counter",
+            Type = ScriptValueType.Int,
+            Default = System.Text.Json.JsonSerializer.SerializeToElement(0)
+        });
+        string path = workspace.Save(document);
+        File.WriteAllText(path, File.ReadAllText(path).Replace("\"int\"", "\"banana\""));
+
+        var scan = workspace.Scan();
+
+        Assert.Single(scan.Issues);
+    }
+
+    [Fact]
     public void DeleteRemovesTheFile()
     {
         var workspace = NewWorkspace(out _);

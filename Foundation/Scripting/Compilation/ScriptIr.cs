@@ -40,7 +40,8 @@ public sealed record IrCallStmt(
     IrExpr? Receiver,
     string Call,
     IReadOnlyList<IrExpr> Args,
-    ScriptReceiverStyle ReceiverStyle = ScriptReceiverStyle.Colon) : IrStmt;
+    ScriptReceiverStyle ReceiverStyle = ScriptReceiverStyle.Colon,
+    bool NullableReceiver = false) : IrStmt;
 
 public sealed record IrVarSet(string Name, IrExpr Value) : IrStmt;
 

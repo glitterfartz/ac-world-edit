@@ -8,11 +8,11 @@ local __vars = {}
 local __fns = {}
 
 local function __acw_n1(_, creature, killer)
-    creature:SendUnitSay("The boss falls!", 0)
-    local player = killer and killer:ToPlayer() or nil
+    if creature ~= nil then creature:SendUnitSay("The boss falls!", 0) end
+    local player = (function() if killer ~= nil then return killer:ToPlayer() end end)()
     if player ~= nil then
-        player:SendBroadcastMessage("You defeated the boss!")
-        player:AddItem(12345, 1)
+        if player ~= nil then player:SendBroadcastMessage("You defeated the boss!") end
+        if player ~= nil then player:AddItem(12345, 1) end
     end
 end
 

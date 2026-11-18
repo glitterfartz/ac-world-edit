@@ -132,7 +132,8 @@ public sealed class TcContentSource(WorldDatabase database, IClientLookup? clien
             case SmartParamKind.Item:
                 return client?.SearchItems(term, DbLimits.MaxSearch).Select(i => (i.Id, i.Name)).ToList() ?? [];
             case SmartParamKind.Spell:
-                return client?.SearchSpells(term, DbLimits.MaxSearch) ?? [];
+                return client?.SearchSpells(term, DbLimits.MaxSearch)
+                    ?? throw new NotSupportedException("Spell ids need the retail client data to verify.");
         }
 
         (string table, string id, string name) = kind switch

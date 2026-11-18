@@ -19,10 +19,10 @@ public sealed partial class ScriptValidator
         var variables = ValidateVariables(document, diagnostics);
         var functions = ValidateFunctions(document, diagnostics);
 
-        ValidateGraph(document, document.Graph, null, variables, functions, diagnostics);
+        ValidateGraph(document, document.Graph, null, null, variables, functions, diagnostics);
         foreach (var function in document.Functions)
         {
-            ValidateGraph(document, function.Graph, function.Returns, variables, functions, diagnostics);
+            ValidateGraph(document, function.Graph, function.Returns, function.Parameters, variables, functions, diagnostics);
         }
 
         ValidateFunctionCycles(document, diagnostics);

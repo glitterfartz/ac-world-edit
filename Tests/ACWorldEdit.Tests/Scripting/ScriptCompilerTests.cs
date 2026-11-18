@@ -317,6 +317,167 @@ public class ScriptCompilerTests
     }
 
     [Fact]
+    public void ForwardFunctionCallsResolveTheirNames()
+    {
+        var document = Document();
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "first",
+            Graph = new ScriptGraph
+            {
+                Nodes = { new ScriptNode { Id = "n1", Kind = "flow.call_function", Properties = { ["function"] = Json("f2") } } }
+            }
+        });
+        document.Functions.Add(new ScriptFunction { Id = "f2", Name = "second" });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("__fns.second()", result.LuaText);
+    }
+
+    [Fact]
+    public void EventReturnSlotsUseTheirWiredValues()
+    {
+        var document = Document(new ScriptNode
+        {
+            Id = "n1",
+            Kind = "event.player.on_chat",
+            Literals = { ["suppress"] = Json(true), ["newMessage"] = Json("shown") }
+        });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("return true, \"shown\"", result.LuaText);
+    }
+
+    [Fact]
+    public void FunctionCallResultsCanFeedExpressions()
+    {
+        var document = Document(new ScriptNode
+        {
+            Id = "n1",
+            Kind = "event.creature.on_died",
+            Properties = { ["entry"] = Json(1234) }
+        }, new ScriptNode
+        {
+            Id = "n2",
+            Kind = "flow.call_function",
+            Properties = { ["function"] = Json("f1") }
+        }, new ScriptNode { Id = "n3", Kind = "flow.branch" });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n2", "result", "n3", "condition"));
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "zero",
+            Returns = [new ScriptReturn { Name = "result", Type = ScriptValueType.Bool }],
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode { Id = "n1", Kind = "flow.equal", Literals = { ["a"] = Json(1), ["b"] = Json(2) } },
+                    new ScriptNode
+                    {
+                        Id = "n2",
+                        Kind = "flow.return",
+                        Pins = [new ScriptPin { Id = "result", Direction = ScriptPinDirection.In, Type = ScriptValueType.Bool }]
+                    }
+                },
+                Edges = { Edge("e1", "n1", "result", "n2", "result") }
+            }
+        });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("if __fns.zero() then", result.LuaText);
+    }
+
+    [Fact]
+    public void StringLengthEmitsTheLengthOperator()
+    {
+        var document = Document();
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "length",
+            Returns = [new ScriptReturn { Name = "result", Type = ScriptValueType.Int }],
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode { Id = "n1", Kind = "string.length", Literals = { ["text"] = Json("abc") } },
+                    new ScriptNode
+                    {
+                        Id = "n2",
+                        Kind = "flow.return",
+                        Pins = [new ScriptPin { Id = "result", Direction = ScriptPinDirection.In, Type = ScriptValueType.Int }]
+                    }
+                },
+                Edges = { Edge("e1", "n1", "result", "n2", "result") }
+            }
+        });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("return #\"abc\"", result.LuaText);
+    }
+
+    [Fact]
+    public void NullableReceiverWritesAreGuarded()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "player.get_by_guid",
+            Literals = { ["guid"] = Json(42) }
+        }, new ScriptNode
+        {
+            Id = "n3",
+            Kind = "player.add_item",
+            Literals = { ["item"] = Json(123) }
+        });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n2", "player", "n3", "self"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("~= nil then", result.LuaText);
+        Assert.Contains(":AddItem(123", result.LuaText);
+    }
+
+    [Fact]
+    public void NullableReadsKeepFalseResults()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "unit.has_aura",
+            Literals = { ["spell"] = Json(1) }
+        }, new ScriptNode { Id = "n3", Kind = "flow.not_equal", Literals = { ["b"] = Json(false) } }, new ScriptNode
+        {
+            Id = "n4",
+            Kind = "flow.branch"
+        });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n4", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n1", "killer", "n2", "self"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "hasAura", "n3", "a"));
+        document.Graph.Edges.Add(Edge("e4", "n3", "result", "n4", "condition"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("return killer:HasAura(1)", result.LuaText);
+        Assert.Contains("~= false", result.LuaText);
+        Assert.DoesNotContain("and killer:HasAura", result.LuaText);
+    }
+
+    [Fact]
     public void OutputNameUsesTheSlugAndShortId()
     {
         var document = ScriptDocument.Create("Creature On Death");

@@ -69,10 +69,16 @@ public sealed class ScriptIrBuilder
 
         void BuildFunctions()
         {
+            // Names first: a function may call one declared later, and EmitFunctionCall needs its
+            // Lua name already resolved.
             foreach (var function in document.Functions)
             {
-                string name = UniqueName(LuaLiteral.Identifier(function.Name));
-                functionNames[function.Id] = name;
+                functionNames[function.Id] = UniqueName(LuaLiteral.Identifier(function.Name));
+            }
+
+            foreach (var function in document.Functions)
+            {
+                string name = functionNames[function.Id];
                 var index = new GraphIndex(document, host, function.Graph);
                 var usedParamNames = new HashSet<string>(StringComparer.Ordinal);
                 var parameters = function.Parameters
@@ -158,7 +164,9 @@ public sealed class ScriptIrBuilder
                     new IrReturnSlot(slot.Name, slot.Type)).ToList());
                 if (definition.Returns.Length > 0 && block.Statements.LastOrDefault() is not IrReturn)
                 {
-                    block.Statements.Add(new IrReturn(definition.Returns.Select(_ => (IrExpr?)null).ToList()));
+                    block.Statements.Add(new IrReturn(definition.Returns
+                        .Select(slot => (IrExpr?)ResolveInput(graph, node.Id, slot.Name, block))
+                        .ToList()));
                 }
 
                 irEvents.Add(new IrFunction(context.Name, parameters,
@@ -325,6 +333,17 @@ public sealed class ScriptIrBuilder
             }
         }
 
+        IrCall FunctionCall(GraphIndex index, ScriptNode node, BlockContext block)
+        {
+            string? functionId = ScriptPins.PropertyString(node, "function");
+            string name = functionId is not null ? functionNames.GetValueOrDefault(functionId, "") : "";
+            var function = functionId is not null ? functions.GetValueOrDefault(functionId) : null;
+            var args = function is null
+                ? []
+                : function.Parameters.Select(parameter => ResolveInput(index, node.Id, parameter.Name, block)).ToList();
+            return new IrCall(null, $"__fns.{name}", args, ScriptReceiverStyle.None);
+        }
+
         void EmitFunctionCall(GraphIndex index, ScriptNode node, BlockContext block)
         {
             string? functionId = ScriptPins.PropertyString(node, "function");
@@ -343,6 +362,7 @@ public sealed class ScriptIrBuilder
             var binding = host.CapabilityBinding(capability.Id)
                 ?? throw new InvalidOperationException($"Capability '{capability.Id}' has no host binding.");
             IrExpr? receiver = capability.Receivers.Length > 0 ? ResolveInput(index, node.Id, "self", block) : null;
+            bool nullableReceiver = capability.Receivers.Length > 0 && IsNullableSource(index, node.Id, "self");
             var args = ResolveArgs(index, node, capability, binding, block);
 
             var returnUses = capability.Returns
@@ -363,7 +383,7 @@ public sealed class ScriptIrBuilder
                 return;
             }
 
-            block.Statements.Add(new IrCallStmt(receiver, binding.Call, args, binding.Receiver));
+            block.Statements.Add(new IrCallStmt(receiver, binding.Call, args, binding.Receiver, nullableReceiver));
         }
 
         IReadOnlyList<IrExpr> ResolveArgs(
@@ -489,6 +509,7 @@ public sealed class ScriptIrBuilder
                     .Where(pin => index.DataTo.ContainsKey((nodeId, pin)) || node.Literals.ContainsKey(pin))
                     .Select(pin => ResolveInput(index, nodeId, pin, block))
                     .ToList()),
+                ScriptBuiltinCatalog.CallFunction => FunctionCall(index, node, block),
                 ScriptBuiltinCatalog.TimerEventId => new IrVariableGet(
                     timerScopes.Count > 0 ? timerScopes[^1][ScriptBuiltinCatalog.TimerEventId] : "nil"),
                 ScriptBuiltinCatalog.TimerObject => new IrVariableGet(

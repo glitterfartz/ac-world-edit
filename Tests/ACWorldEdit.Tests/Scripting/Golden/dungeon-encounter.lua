@@ -12,7 +12,7 @@ local function __acw_n1(_)
 end
 
 local function __acw_n2(_, player)
-    player:SendBroadcastMessage("Welcome to the instance!")
+    if player ~= nil then player:SendBroadcastMessage("Welcome to the instance!") end
 end
 
 RegisterInstanceEvent(1, 1, __acw_n1) -- INSTANCE_EVENT_ON_INITIALIZE

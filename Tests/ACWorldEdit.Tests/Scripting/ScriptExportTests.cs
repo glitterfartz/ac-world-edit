@@ -41,6 +41,46 @@ public class ScriptExportTests
     }
 
     [Fact]
+    public void ExportAllCompilesEachDocumentWithItsOwnHost()
+    {
+        string exportDirectory = TempRoot();
+        var aleDocument = ScriptTemplateLibrary.Create("creature-death");
+        var elunaDocument = ScriptTemplateLibrary.Create("creature-death");
+        elunaDocument.Name = "Eluna kill";
+        elunaDocument.Host = TcScriptHosts.Id;
+        var service = new ScriptExportService(Compiler);
+
+        var result = service.ExportAll([aleDocument, elunaDocument], exportDirectory,
+            document => ScriptHostRegistry.Profile(document.Host) ?? AcScriptHosts.Profile);
+
+        Assert.True(result.Success, result.Error);
+        var elunaCompilation = new ScriptCompiler(TcScriptHosts.Profile).Compile(elunaDocument);
+        var entry = ScriptManifest.Load(exportDirectory).Entries.Single(item => item.DocumentId == elunaDocument.Id);
+        Assert.Equal(TcScriptHosts.Id, entry.HostId);
+        Assert.Equal(elunaCompilation.CatalogHash, entry.CatalogHash);
+    }
+
+    [Fact]
+    public void RenamingADocumentReportsTheOldOutputAsOrphaned()
+    {
+        string exportDirectory = TempRoot();
+        var document = ScriptTemplateLibrary.Create("creature-death");
+        var service = new ScriptExportService(Compiler);
+        var first = service.Export(document, exportDirectory);
+        Assert.True(first.Success, first.Error);
+        string oldPath = Assert.Single(first.Files).Path;
+
+        document.Name = "Renamed kill";
+        var second = service.Export(document, exportDirectory);
+
+        Assert.True(second.Success, second.Error);
+        Assert.Contains(second.Diagnostics, item =>
+            item.Code == ScriptDiagnosticCodes.ExportOrphaned
+            && item.Message.Contains(Path.GetFileName(oldPath), StringComparison.Ordinal));
+        Assert.True(File.Exists(oldPath));
+    }
+
+    [Fact]
     public void ExportRefusesAFileItDoesNotOwn()
     {
         string exportDirectory = TempRoot();

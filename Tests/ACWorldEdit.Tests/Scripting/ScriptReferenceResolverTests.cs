@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ACWorldEdit.Data.Scripting;
+using ACWorldEdit.Foundation;
 using ACWorldEdit.Foundation.Scripting;
 using Xunit;
 
@@ -98,6 +99,19 @@ public class ScriptReferenceResolverTests
         await new ScriptReferenceResolver(source).CheckAsync(document, AcScriptHosts.Profile);
 
         Assert.Single(source.Calls);
+    }
+
+    [Fact]
+    public async Task ADatabaseThatCannotSearchSpellsLeavesThemUnchecked()
+    {
+        var source = new ScriptReferenceResolver.DbSource((kind, term, token) =>
+            kind == SmartParamKind.Spell
+                ? throw new NotSupportedException("Spells live in client data.")
+                : Task.FromResult<IReadOnlyList<(uint Id, string Name)>>([(42u, "exists")]));
+
+        var lookup = await source.LookupAsync(ScriptReferenceKind.Spell, 133);
+
+        Assert.Null(lookup.Exists);
     }
 
     [Fact]
