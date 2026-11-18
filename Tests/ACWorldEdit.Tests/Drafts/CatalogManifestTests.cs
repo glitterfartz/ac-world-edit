@@ -111,7 +111,11 @@ public class CatalogManifestTests
         ("game_event_creature", "6fe5375aa79c78bc"),
         ("game_event_gameobject", "2cc8201cdf684011"),
         ("game_event_model_equip", "1a4551ac8a1d9ca6"),
-        ("linked_respawn", "dafa4bc1e58ed732")
+        ("linked_respawn", "dafa4bc1e58ed732"),
+        ("playerchoice", "4ca04fbd12ed0569"),
+        ("playerchoice_response", "81a06631ec8bcb0d"),
+        ("playerchoice_response_reward", "ae6985fbb8d308c7"),
+        ("playerchoice_response_reward_item", "728bf26da02ef64a")
     ];
 
     /// <summary>Everything a table means to the editors: identity, keys, every column with its kind and text limit, the defaults and the nullable set.</summary>
