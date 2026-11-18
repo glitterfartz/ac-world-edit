@@ -311,11 +311,26 @@ public class ScriptEditorWindowTests
         await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
         await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
 
-        var minimum = window.GetCombinedMinimumSize();
+        var minimum = window.Body.GetCombinedMinimumSize();
         AssertThat(minimum.X < 1200).IsTrue();
         AssertThat(minimum.Y < 1000).IsTrue();
         AssertThat(window.HostLabel.Size.X > 80).IsTrue();
         AssertThat(window.HostLabel.Size.Y < 40).IsTrue();
+    }
+
+    [TestCase]
+    public async Task GrowingTheWindowExpandsTheCanvasAndKeepsThePreviewAtTheBottom()
+    {
+        var window = Spawn(out _, out _);
+        var tree = (SceneTree)Engine.GetMainLoop();
+        float canvasBefore = window.Canvas.Size.Y;
+
+        window.Size = new Vector2I(1400, 1000);
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+
+        AssertThat(window.Canvas.Size.Y > canvasBefore + 100).IsTrue();
+        AssertThat(window.Size.Y - window.Preview.GetGlobalRect().End.Y < 120).IsTrue();
     }
 
     [TestCase]
@@ -381,5 +396,15 @@ public class ScriptEditorWindowTests
 
         AssertThat(window.Visible).IsTrue();
         AssertThat(window.Session.Dirty).IsTrue();
+    }
+
+    [TestCase]
+    public void TheWindowCloseRequestHidesACleanEditor()
+    {
+        var window = Spawn(out _, out _);
+
+        window.EmitSignal(Window.SignalName.CloseRequested);
+
+        AssertThat(window.Visible).IsFalse();
     }
 }

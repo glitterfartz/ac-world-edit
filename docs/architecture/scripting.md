@@ -160,8 +160,8 @@ with `.reload ale` unless `ALE.AutoReload` is on.
 
 | File | Role |
 |---|---|
-| `ScriptWindowFrame.cs` | draggable/resizable client-styled frame, hidden on close; not `ContentEditorWindow` |
-| `ScriptEditorWindow.cs` | toolbar, document list, palette, canvas, inspector, variables/functions, problems, Lua preview, folder settings, shortcuts |
+| `ScriptEditorWindow.cs` | native tool `Window`: client-styled draggable/resizable title bar, scrollable body, toolbar, document list, palette, canvas, inspector, variables/functions, problems, Lua preview, folder settings, shortcuts |
+| `ScriptEditorShortcuts.cs` | routes the window viewport's unhandled key events back to the editor (a `Window` node does not receive its own window's keys) |
 | `ScriptGraphCanvas.cs` | GraphEdit signal handling, model mutations through the session, connection rules |
 | `ScriptPortMap.cs` | pin → GraphNode slot and separate input/output port indices, with reverse lookups |
 | `ScriptNodeView.cs` | one `GraphNode` per model node: title from the catalog, one slot row per pin, type colours |

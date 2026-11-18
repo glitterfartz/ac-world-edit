@@ -6,18 +6,89 @@ using ACWorldEdit.Foundation.Scripting;
 namespace ACWorldEdit;
 
 /// <summary>
-/// The scripting editor: toolbar, document list, searchable palette, graph canvas, node inspector,
-/// variables/functions, problems and the Lua preview. It owns the document session, workspace and
-/// export service; the canvas owns graph mutation so every change is one undo entry.
+/// The scripting editor as a native tool window: a client-styled title bar over the toolbar,
+/// document list, searchable palette, graph canvas, node inspector, variables/functions, problems
+/// and the Lua preview. It owns the document session, workspace and export service; the canvas owns
+/// graph mutation so every change is one undo entry.
 /// </summary>
-public partial class ScriptEditorWindow : ScriptWindowFrame
+public partial class ScriptEditorWindow : Window
 {
+    readonly VBoxContainer body;
     readonly List<string> paletteKinds = [];
     ScriptFileStamp? stamp;
+    bool placed;
 
-    public ScriptEditorWindow() : base("Script editor")
+    public ScriptEditorWindow()
     {
         Name = "ScriptEditorWindow";
+        Title = "Script editor";
+        Visible = false;
+        Theme = ClientStyle.Theme();
+        // A tool window over the viewer that keeps its own dialogs inside itself.
+        ForceNative = true;
+        Transient = true;
+        Borderless = true;
+        GuiEmbedSubwindows = true;
+        MinSize = new Vector2I(760, 480);
+        Size = new Vector2I(1120, 700);
+
+        var panel = new PanelContainer();
+        panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        panel.AddThemeStyleboxOverride("panel", ClientStyle.Panel());
+        AddChild(panel);
+
+        var root = new VBoxContainer();
+        panel.AddChild(root);
+
+        var header = new HBoxContainer();
+        header.GuiInput += input =>
+        {
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+            {
+                StartDrag();
+                header.AcceptEvent();
+            }
+        };
+        root.AddChild(header);
+        TitleLabel = ClientStyle.Text(Title, 19, ClientStyle.Header);
+        TitleLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
+        TitleLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        header.AddChild(TitleLabel);
+        CloseButton = new Button { Text = "✕", TooltipText = "Close (Escape)" };
+        CloseButton.Pressed += AttemptClose;
+        header.AddChild(CloseButton);
+        root.AddChild(new HSeparator());
+
+        // The body scrolls instead of raising the window's minimum: the editor is taller than a
+        // comfortable tool window, and a Window never grows to its content unless WrapControls is on.
+        // A ScrollContainer only stretches its child on an axis the child expands on, so the body
+        // needs ExpandFill vertically as well or it stays at its minimum when the window grows.
+        var scroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        root.AddChild(scroll);
+        body = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        scroll.AddChild(body);
+
+        var grip = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
+        var handle = new Label { Text = "◢", TooltipText = "Drag to resize", MouseFilter = Control.MouseFilterEnum.Stop };
+        handle.GuiInput += input =>
+        {
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+            {
+                StartResize(DisplayServer.WindowResizeEdge.BottomRight);
+                handle.AcceptEvent();
+            }
+        };
+        grip.AddChild(handle);
+        root.AddChild(grip);
+
+        // Key events are delivered to the window's viewport, not to the Window node itself.
+        AddChild(new ScriptEditorShortcuts { UnhandledKey = HandleShortcut });
+
+        CloseRequested += AttemptClose;
 
         var toolbar = new VBoxContainer();
         Body.AddChild(toolbar);
@@ -153,10 +224,31 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         Preview.AddThemeFontSizeOverride("font_size", 12);
         preview.AddChild(Preview);
 
-        CloseRequested += AttemptClose;
         NewDocument("blank");
         FillPalette("");
     }
+
+    public Label TitleLabel { get; }
+
+    public Button CloseButton { get; }
+
+    public VBoxContainer Body => body;
+
+    /// <summary>Center the window over the viewer the first time it opens, then show and focus it.</summary>
+    public void Open()
+    {
+        if (!placed)
+        {
+            placed = true;
+            var main = GetTree().Root;
+            Position = main.Position + (main.Size - Size) / 2;
+        }
+
+        Visible = true;
+        GrabFocus();
+    }
+
+    public void Close() => Visible = false;
 
     public ScriptHostProfile Host { get; set; } = AcScriptHosts.Profile;
 
@@ -1176,6 +1268,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     {
         string where = CurrentFunction is null ? "" : $" › {CurrentFunction.Name}";
         TitleLabel.Text = $"Script editor — {Session.Document.Name}{where}{(Session.Dirty ? " *" : "")}";
+        Title = TitleLabel.Text;
     }
 
     void AddVariable()
@@ -1329,11 +1422,11 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         return row;
     }
 
-    public override void _UnhandledKeyInput(InputEvent @event)
+    bool HandleShortcut(InputEvent @event)
     {
         if (!Visible || @event is not InputEventKey { Pressed: true } key)
         {
-            return;
+            return false;
         }
 
         bool ctrl = key.CtrlPressed;
@@ -1371,10 +1464,10 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
                 Canvas.Zoom = 1;
                 break;
             default:
-                return;
+                return false;
         }
 
-        GetViewport().SetInputAsHandled();
+        return true;
     }
 
     static string DisplayName(string kind, bool withCategory = false)

@@ -296,8 +296,8 @@ Scripts/Data/TrinityCore/                     (existing dialect folder)
   TcScriptReferences.cs            TrinityCore lookups (later; names/icons differ)
 
 Scripts/Ui/Scripting/                        (Godot)
-  ScriptWindowFrame.cs             draggable, resizable frame (not ContentEditorWindow)
-  ScriptEditorWindow.cs            document lifecycle, status, panel wiring
+  ScriptEditorWindow.cs            native tool Window, title bar, document lifecycle, panel wiring
+  ScriptEditorShortcuts.cs         forwards the window viewport's unhandled keys to the editor
   ScriptEditorWindow.Layout.cs     toolbar, split layout, panels
   ScriptEditorWindow.Documents.cs  new/open/save/close via ScriptWorkspace, dirty prompts
   ScriptEditorWindow.Compile.cs    debounce, compile, diagnostics, preview
@@ -679,8 +679,8 @@ and optional graph/node/pin location. Only errors block compilation/export.
   close rather than freed. No hidden control tree enters the startup UI dump; only the new menu item
   changes the golden, updated intentionally with
   `python Tools/state_golden.py --kind ui --profile wrath --update` (and `retail`).
-  `ScriptWindowFrame` is a small draggable/resizable frame reusing `ClientStyle`, **not**
-  `ContentEditorWindow` (which pins its `TargetSize` and is SQL-draft-specific).
+  `ScriptEditorWindow` is a native tool `Window` with a client-styled draggable/resizable title
+  bar, **not** `ContentEditorWindow` (which pins its `TargetSize` and is SQL-draft-specific).
 - Theme: `ClientStyle.Theme()`/`Panel()` for the frame and panels; GraphEdit theme overrides for the
   grid, wire colours and node styles, matching the existing dark editor look.
 - `ScriptGraphCanvas : GraphEdit` implements the signal contract: `ConnectionRequest`,
@@ -883,7 +883,7 @@ Order matters: schema before compiler.
 ### Milestone 2 — Editor MVP / world vertical slice
 
 - Lazy `ScriptingWiring` (`InitScripting(layer)` in `BuildEditors`, window built on first open),
-  `ScriptWindowFrame`, `ScriptEditorWindow` + layout; `ScriptGraphCanvas` + `ScriptPortMap` + node
+  `ScriptEditorWindow` as a `Window` + layout; `ScriptGraphCanvas` + `ScriptPortMap` + node
   views + typed connections; palette; inspector; problems; Lua preview; save/load/export via the
   Data services.
 - Settings for workspace/export dir; export current with manifest; reload hint status.
@@ -1049,8 +1049,8 @@ only if a scripting target dump is added.
 
 ## Implementation decisions and spike checks
 
-- `ScriptWindowFrame` is a small draggable/resizable frame reusing `ClientStyle`, **not**
-  `ContentEditorWindow`: the base pins `TargetSize` every frame and is SQL-draft-specific. The window
+- `ScriptEditorWindow` is a native tool `Window` with a client-styled draggable/resizable title bar,
+  **not** `ContentEditorWindow`: the latter pins `TargetSize` every frame and is SQL-draft-specific. The window
   is constructed lazily on first open (`ScriptingWiring`) and hidden on close, so no hidden control
   tree enters the startup UI golden; only the View menu item changes.
 - File I/O lives in `Scripts/Data/Scripting`, never in Foundation. Foundation serializes strings and
