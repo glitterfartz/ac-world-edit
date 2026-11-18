@@ -80,6 +80,8 @@ public class UsedBySectionTests
         public Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token) => throw new NotSupportedException();
         public Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw new NotSupportedException();
         public Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token) => throw new NotSupportedException();
+        public Task<SceneSnapshot> ReadSceneAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, CancellationToken token) => throw new NotSupportedException();
+        public Task<IReadOnlyList<(uint Id, string Name)>> SearchScenesAsync(string term, CancellationToken token) => throw new NotSupportedException();
     }
 
     static CreaturePropertiesWindow CreaturePage(WorldDialect dialect = WorldDialect.AzerothCore)

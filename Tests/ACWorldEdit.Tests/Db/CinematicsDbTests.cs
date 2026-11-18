@@ -145,4 +145,32 @@ public class CinematicsDbTests
 
         Assert.Equal(754u, found[0].Id);
     }
+
+    [TcDbFact]
+    public async Task SceneSnapshotReadsTheTemplateAndItsClientPackage()
+    {
+        var lookup = Retail();
+        var source = Open(lookup);
+        var snapshot = await source.ReadSceneAsync(35, [], rows => rows, CancellationToken.None);
+
+        var scene = Assert.IsType<Row>(snapshot.Rows.Get(TcTables.SceneTemplate, "35"));
+        Assert.Equal(25u, scene.U("Flags"));
+        Assert.Equal(186u, scene.U("ScriptPackageID"));
+        Assert.True(snapshot.MaxSceneId >= 35);
+        if (lookup != null)
+        {
+            Assert.NotNull(snapshot.Package);
+            Assert.Equal(186u, snapshot.Package!.Id);
+            Assert.True(snapshot.Package.Steps.Count > 0, "package 186 has no steps");
+        }
+    }
+
+    [TcDbFact]
+    public async Task SearchFindsASceneByItsId()
+    {
+        var source = Open();
+        var found = await source.SearchScenesAsync("35", CancellationToken.None);
+
+        Assert.Equal(35u, found[0].Id);
+    }
 }

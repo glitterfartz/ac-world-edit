@@ -20,18 +20,24 @@ public partial class TcCinematicsPanel : CinematicsPanel
     /// <summary>The conversation read; tests replace it with a fixed snapshot.</summary>
     public Func<uint, CancellationToken, Task<ConversationSnapshot>> ConversationReader { get; set; }
 
+    /// <summary>The scene read; tests replace it with a fixed snapshot.</summary>
+    public Func<uint, CancellationToken, Task<SceneSnapshot>> SceneReader { get; set; }
+
     /// <summary>The search of the current tab; tests can replace either.</summary>
     public Func<string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> Searcher { get; set; }
     public Func<string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> ConversationSearcher { get; set; }
+    public Func<string, CancellationToken, Task<IReadOnlyList<(uint Id, string Name)>>> SceneSearcher { get; set; }
 
     PlayerChoiceSnapshot? snapshot;
     ConversationSnapshot? conversation;
+    SceneSnapshot? scene;
     RowSet effective = new();
     IReadOnlyList<InteractionIssue> issues = [];
     string sourceKey = "";
     int generation;
     TcPlayerChoiceView? view;
     TcConversationView? conversationView;
+    TcSceneView? sceneView;
 
     public TcCinematicsPanel()
     {
@@ -39,6 +45,8 @@ public partial class TcCinematicsPanel : CinematicsPanel
         ConversationReader = (id, token) => DBSource.Open(Connection(), Lookup()).ReadConversationAsync(id, DraftKeys(), Apply(), catalog, token);
         Searcher = (term, token) => DBSource.Open(Connection(), Lookup()).SearchPlayerChoicesAsync(term, token);
         ConversationSearcher = (term, token) => DBSource.Open(Connection(), Lookup()).SearchConversationsAsync(term, token);
+        SceneReader = (id, token) => DBSource.Open(Connection(), Lookup()).ReadSceneAsync(id, DraftKeys(), Apply(), token);
+        SceneSearcher = (term, token) => DBSource.Open(Connection(), Lookup()).SearchScenesAsync(term, token);
     }
 
     public override WorldDialect Dialect => WorldDialect.TrinityCore;
@@ -47,6 +55,8 @@ public partial class TcCinematicsPanel : CinematicsPanel
     public TcPlayerChoiceView? PlayerChoice => view;
     /// <summary>The editor of the open conversation, or null before the tab is built.</summary>
     public TcConversationView? Conversation => conversationView;
+    /// <summary>The editor of the open scene, or null before the tab is built.</summary>
+    public TcSceneView? Scene => sceneView;
     /// <summary>The database source the open rows belong to, for the smoke's draft checks.</summary>
     public string SourceKey => sourceKey;
 
@@ -78,6 +88,12 @@ public partial class TcCinematicsPanel : CinematicsPanel
             FirstLinePick = PickFirstLine
         };
         page.AddChild(conversationView);
+        sceneView = new TcSceneView
+        {
+            Commit = Commit,
+            NewRequested = () => _ = NewItem(null)
+        };
+        page.AddChild(sceneView);
         ReloadOnForeignChange(() => CurrentId.HasValue, () => _ = Load(CurrentId!.Value));
         RenderTab();
     }
@@ -92,6 +108,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
         CurrentId = null;
         snapshot = null;
         conversation = null;
+        scene = null;
         effective = new RowSet();
         issues = [];
         base.ShowTab(tab);
@@ -99,13 +116,14 @@ public partial class TcCinematicsPanel : CinematicsPanel
 
     protected override void RenderTab()
     {
-        if (view == null || conversationView == null)
+        if (view == null || conversationView == null || sceneView == null)
         {
             return;
         }
 
         view.Visible = CurrentTab == Tab.PlayerChoices;
         conversationView.Visible = CurrentTab == Tab.Conversations;
+        sceneView.Visible = CurrentTab == Tab.Scenes;
         if (CurrentTab == Tab.PlayerChoices)
         {
             RenderPlayerChoice();
@@ -116,11 +134,33 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
         else
         {
-            title.Text = "Scenes";
-            subtitle.Text = "The scene editor arrives with the last stage.";
+            RenderScene();
+        }
+    }
+
+    void RenderScene()
+    {
+        if (sceneView == null)
+        {
+            return;
+        }
+
+        if (scene == null || CurrentId is not uint id)
+        {
+            title.Text = "Scene";
+            subtitle.Text = "Search for a scene on the left, or create one with + New scene.";
+            sceneView.Show(null);
             UpdateStatus();
             Updated();
+            return;
         }
+
+        var template = scene.Rows.Get(TcTables.SceneTemplate, id.ToString());
+        title.Text = template == null ? $"Scene {id} does not exist" : $"Scene {id}";
+        subtitle.Text = template == null ? "Create one with + New scene, or search for another." : $"Script package {template.U("ScriptPackageID")}";
+        sceneView.Show(scene with { Rows = effective });
+        UpdateStatus();
+        Updated();
     }
 
     void RenderPlayerChoice()
@@ -184,6 +224,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
             CurrentId = null;
             snapshot = null;
             conversation = null;
+            scene = null;
             Rebuild();
             return;
         }
@@ -195,7 +236,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
     public override Task Load(uint id) => CurrentTab switch
     {
         Tab.Conversations => LoadConversation(id),
-        Tab.Scenes => Task.CompletedTask,
+        Tab.Scenes => LoadScene(id),
         _ => LoadPlayerChoice(id)
     };
 
@@ -263,8 +304,54 @@ public partial class TcCinematicsPanel : CinematicsPanel
         }
     }
 
+    async Task LoadScene(uint id)
+    {
+        int current = ++generation;
+        try
+        {
+            await EnsureCatalog();
+            var result = await SceneReader(id, CancellationToken.None);
+            if (current != generation)
+            {
+                return;
+            }
+
+            sourceKey = result.SourceKey;
+            if (CurrentId != id)
+            {
+                status = "";
+            }
+
+            CurrentId = id;
+            scene = result;
+            Rebuild();
+        }
+        catch (Exception error)
+        {
+            if (current == generation)
+            {
+                status = DbErrors.Safe(error);
+                UpdateStatus();
+            }
+        }
+    }
+
     protected override void Rebuild()
     {
+        if (CurrentTab == Tab.Scenes)
+        {
+            if (scene == null)
+            {
+                RenderScene();
+                return;
+            }
+
+            effective = Drafts.Draft?.Effective(sourceKey, scene.Rows) ?? scene.Rows;
+            issues = CurrentId is uint id ? TcSceneRules.Check(id, effective, PackageExists()).ToArray() : [];
+            RenderScene();
+            return;
+        }
+
         if (CurrentTab == Tab.Conversations)
         {
             if (conversation == null)
@@ -292,6 +379,8 @@ public partial class TcCinematicsPanel : CinematicsPanel
 
     uint[]? ChainLines() => conversation is { ClientAvailable: true } ? conversation.Chain.Select(line => line.Id).ToArray() : null;
 
+    Func<uint, bool>? PackageExists() => Lookup() == null ? null : package => Lookup()?.SceneScriptPackage(package) != null;
+
     protected override void ReloadAfterHistory()
     {
         if (CurrentId is uint id)
@@ -305,7 +394,53 @@ public partial class TcCinematicsPanel : CinematicsPanel
     /// copy the open one with its children. A copied conversation keeps its actors, not its line
     /// overrides: an override belongs to the client line, which the copy shares.
     /// </summary>
-    public override Task NewItem(uint? copyFrom) => CurrentTab == Tab.Conversations ? NewConversation(copyFrom) : NewPlayerChoice(copyFrom);
+    public override Task NewItem(uint? copyFrom) => CurrentTab switch
+    {
+        Tab.Conversations => NewConversation(copyFrom),
+        Tab.Scenes => NewScene(),
+        _ => NewPlayerChoice(copyFrom)
+    };
+
+    async Task NewScene()
+    {
+        int current = ++generation;
+        try
+        {
+            var draft = Drafts.Draft;
+            if (draft == null)
+            {
+                status = Drafts.Error ?? "Editing is disabled.";
+                UpdateStatus();
+                return;
+            }
+
+            var probe = await SceneReader(0, CancellationToken.None);
+            if (current != generation)
+            {
+                return;
+            }
+
+            sourceKey = probe.SourceKey;
+            uint id = Math.Max(probe.MaxSceneId, draft.MaxReserved(sourceKey, TcTables.SceneTemplate, "SceneId")) + 1;
+            var probeView = draft.Effective(sourceKey, probe.Rows);
+            RowEdit[] edits = [new RowEdit(TcTables.SceneTemplate.Name, id.ToString(), null, TcSceneRules.NewScene(id))];
+            var (ok, message) = Drafts.Commit(this, sourceKey, probe.Rows, probeView, $"Create scene {id}", edits, _ => []);
+            status = ok ? $"Created scene {id}. Choose its script package." : message;
+            if (ok)
+            {
+                await LoadScene(id);
+            }
+            else
+            {
+                UpdateStatus();
+            }
+        }
+        catch (Exception error)
+        {
+            status = DbErrors.Safe(error);
+            UpdateStatus();
+        }
+    }
 
     async Task NewPlayerChoice(uint? copyFrom)
     {
@@ -454,8 +589,22 @@ public partial class TcCinematicsPanel : CinematicsPanel
     }
 
     /// <summary>Record one validated command against the open row; the check runs on the result.</summary>
-    bool Commit(string label, RowEdit[] edits) =>
-        CurrentTab == Tab.Conversations ? CommitConversation(label, edits) : CommitPlayerChoice(label, edits);
+    bool Commit(string label, RowEdit[] edits) => CurrentTab switch
+    {
+        Tab.Conversations => CommitConversation(label, edits),
+        Tab.Scenes => CommitScene(label, edits),
+        _ => CommitPlayerChoice(label, edits)
+    };
+
+    bool CommitScene(string label, RowEdit[] edits)
+    {
+        if (scene == null || CurrentId is not uint id)
+        {
+            return false;
+        }
+
+        return CommitEdits(sourceKey, scene.Rows, effective, label, edits, rows => TcSceneRules.Check(id, rows, PackageExists()), Rebuild, UpdateStatus);
+    }
 
     bool CommitPlayerChoice(string label, RowEdit[] edits)
     {
@@ -483,7 +632,7 @@ public partial class TcCinematicsPanel : CinematicsPanel
     public override Task<IReadOnlyList<(uint Id, string Name)>> Search(string term) => CurrentTab switch
     {
         Tab.Conversations => ConversationSearcher(term, CancellationToken.None),
-        Tab.Scenes => Task.FromResult<IReadOnlyList<(uint Id, string Name)>>([]),
+        Tab.Scenes => SceneSearcher(term, CancellationToken.None),
         _ => Searcher(term, CancellationToken.None)
     };
 }

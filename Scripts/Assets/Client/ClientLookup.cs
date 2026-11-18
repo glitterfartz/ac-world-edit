@@ -45,6 +45,12 @@ public sealed record ClientMailTemplate(uint Id, string Name);
 /// </summary>
 public sealed record ClientConversationLine(uint Id, uint NextLineId, uint BroadcastTextId, uint AnimKitId, int AdditionalDuration);
 
+/// <summary>One script step of a client scene package, in play order.</summary>
+public sealed record ClientSceneStep(uint ScriptId, string Name, string Script, int Order);
+
+/// <summary>A client SceneScriptPackage and its script steps, in the order the package lists them.</summary>
+public sealed record ClientScenePackage(uint Id, string Name, IReadOnlyList<ClientSceneStep> Steps);
+
 public interface IClientLookup : ITcStatData
 {
     IReadOnlyList<ClientAreaTrigger> AreaTriggers();
@@ -146,6 +152,9 @@ public interface IClientLookup : ITcStatData
 
     /// <summary>The client texture kit's prefix (UiTextureKit.KitPrefix), or null for an unknown kit.</summary>
     string? UiTextureKitPrefix(uint id) => null;
+
+    /// <summary>A scene's client script package with its ordered steps, or null for an unknown package.</summary>
+    ClientScenePackage? SceneScriptPackage(uint id) => null;
 }
 
 /// <summary>
@@ -387,6 +396,46 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
 
     public string? UiTextureKitPrefix(uint id) =>
         Table("UiTextureKit").TryGetValue((int)id, out var kit) && kit.Field<string>("KitPrefix") is { Length: > 0 } prefix ? prefix : null;
+
+    public ClientScenePackage? SceneScriptPackage(uint id)
+    {
+        if (!Table("SceneScriptPackage").TryGetValue((int)id, out var package))
+        {
+            return null;
+        }
+
+        var members = Table("SceneScriptPackageMember").Values
+            .Where(member => member.FieldAs<uint>("SceneScriptPackageID") == id)
+            .OrderBy(member => member.FieldAs<uint>("OrderIndex"))
+            .ToList();
+        List<ClientSceneStep> steps = [];
+        foreach (var member in members)
+        {
+            uint scriptId = member.FieldAs<uint>("SceneScriptID");
+            int order = (int)member.FieldAs<uint>("OrderIndex");
+            steps.Add(Table("SceneScript").TryGetValue((int)scriptId, out var script)
+                ? new(scriptId, OptionalString(script, "Name") ?? $"Script {scriptId}", OptionalString(script, "Script") ?? "", order)
+                : new(scriptId, $"Script {scriptId}", "", order));
+        }
+
+        return new((uint)package.ID, OptionalString(package, "Name") ?? $"Package {id}", steps);
+    }
+
+    /// <summary>
+    /// A string column that some builds of a table omit (SceneScriptPackage.Name is absent from the
+    /// newest layout). Null instead of an exception.
+    /// </summary>
+    static string? OptionalString(DBCDRow row, string field)
+    {
+        try
+        {
+            return row.Field<string>(field);
+        }
+        catch (KeyNotFoundException)
+        {
+            return null;
+        }
+    }
 
     public ClientItem? Item(uint id) =>
         Table("ItemSparse").TryGetValue((int)id, out var sparse) ? Describe(sparse) : null;

@@ -1,3 +1,4 @@
+using ACWorldEdit.Assets;
 using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit.Data;
@@ -21,5 +22,8 @@ public sealed record ConversationLineView(uint Id, uint NextLineId, uint Broadca
 /// highest conversation ID for allocating a new one. ClientAvailable is false when the retail
 /// client (or a hotfix line) could not supply the chain.
 /// </summary>
+/// <summary>One scene as the editor sees it: its template and the client script package it plays.</summary>
+public sealed record SceneSnapshot(RowSet Rows, string SourceKey, uint MaxSceneId, ClientScenePackage? Package);
+
 public sealed record ConversationSnapshot(RowSet Rows, ContentNames Names, string SourceKey, uint MaxConversationId,
     IReadOnlyList<ConversationLineView> Chain, IReadOnlyDictionary<uint, IReadOnlyList<Row>> Conditions, bool ClientAvailable);

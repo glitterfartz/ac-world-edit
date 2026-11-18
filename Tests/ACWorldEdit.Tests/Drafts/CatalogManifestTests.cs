@@ -118,7 +118,8 @@ public class CatalogManifestTests
         ("playerchoice_response_reward_item", "728bf26da02ef64a"),
         ("conversation_template", "ed0999f1de00c064"),
         ("conversation_actors", "cb90ab496403a7dd"),
-        ("conversation_line_template", "c008674935b384f5")
+        ("conversation_line_template", "c008674935b384f5"),
+        ("scene_template", "8c22c22ab47691bd")
     ];
 
     /// <summary>Everything a table means to the editors: identity, keys, every column with its kind and text limit, the defaults and the nullable set.</summary>

@@ -137,4 +137,17 @@ public sealed partial class TcTables
         ("ChatType", ColumnKind.UInt, 0),
         ("VerifiedBuild", ColumnKind.UInt, 0)
     ]);
+
+    /// <summary>
+    /// scene_template: which client SceneScriptPackage a scene plays, its flags, the encryption hint
+    /// and the server script. The script steps themselves are client data.
+    /// </summary>
+    public static readonly TableSchema SceneTemplate = new("scene_template", ["SceneId"],
+    [
+        ("SceneId", ColumnKind.UInt, 0),
+        ("Flags", ColumnKind.UInt, 0),
+        ("ScriptPackageID", ColumnKind.UInt, 0),
+        ("Encrypted", ColumnKind.UInt, 0),
+        ("ScriptName", ColumnKind.Text, 64)
+    ]);
 }

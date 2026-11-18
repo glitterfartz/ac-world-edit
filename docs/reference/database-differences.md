@@ -55,6 +55,9 @@ later stages.
   conversations that play the same chain share their overrides. The client `ConversationLine` row has
   no camera column: `UiCameraID` exists only in the server override, alongside `ActorIdx`, `Flags` and
   `ChatType`. `AdditionalDuration` (the pause after a line) is a client column.
+- `scene_template` is keyed by `SceneId` and names a client `SceneScriptPackage` in `ScriptPackageID`;
+  the script steps are client data (`SceneScriptPackageMember` ordered by `OrderIndex`, then `SceneScript`).
+  The package's `Name` column is absent from the newest client layout, so the reader treats it as optional.
 - Conversation flags: `ConversationDataStore.h` gives `AllowWithoutSpawnedActor` `0x04`, while the
   wiki lists `0x03`; the server header wins. The other bits are `MultipleConversationType` `0x01` and
   `IsTalkingHeadConversation` `0x02`.

@@ -1,4 +1,5 @@
 using ACWorldEdit;
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 using Godot;
@@ -63,6 +64,25 @@ public class CinematicsWindowTests
         return new(rows, new ContentNames(null), "test", 1100, chain, new Dictionary<uint, IReadOnlyList<Row>>(), true);
     }
 
+    static SceneSnapshot Scene()
+    {
+        var rows = new RowSet();
+        rows.Set(TcTables.SceneTemplate, TcSceneRules.NewScene(35).With("Flags", 25u).With("ScriptPackageID", 186u));
+        var package = new ClientScenePackage(186, "Test scene",
+            [new ClientSceneStep(1, "Open", "play open", 0), new ClientSceneStep(2, "Close", "play close", 1)]);
+        return new(rows, "test", 575, package);
+    }
+
+    static (CinematicsEditorWindow Window, TcCinematicsPanel Panel) SceneLoaded()
+    {
+        var window = Window();
+        window.Open(0);
+        var panel = (TcCinematicsPanel)window.Panel;
+        panel.SceneReader = (_, _) => Task.FromResult(Scene());
+        window.ShowTab(CinematicsPanel.Tab.Scenes);
+        return (window, panel);
+    }
+
     static (CinematicsEditorWindow Window, TcCinematicsPanel Panel) ConversationLoaded()
     {
         var window = Window();
@@ -84,6 +104,15 @@ public class CinematicsWindowTests
     }
 
     static Button Named(Node root, string name) => (Button)root.FindChild(name, true, false)!;
+
+    /// <summary>Run process frames until the condition holds or a bound is reached (an async command finishing).</summary>
+    static async Task WaitFor(Func<bool> condition)
+    {
+        for (int i = 0; i < 120 && !condition(); i++)
+        {
+            await Tree.ToSignal(Tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
 
     [TestCase]
     public void TabsSwitchAndTheAzerothCorePanelSaysNotApplicable()
@@ -267,6 +296,51 @@ public class CinematicsWindowTests
         Named(panel, "Play").EmitSignal(BaseButton.SignalName.Pressed);
         AssertThat(panel.Conversation.SelectedLineId!.Value).IsEqual(1791u);
         AssertString(panel.Conversation.PlayingText).Contains("2 of 4");
+    }
+
+    [TestCase]
+    public async Task SceneTabRendersTheTemplateAndItsScriptSteps()
+    {
+        var (_, panel) = SceneLoaded();
+        await panel.Load(35);
+
+        AssertThat(panel.CurrentTab).IsEqual(CinematicsPanel.Tab.Scenes);
+        AssertThat(panel.CurrentId!.Value).IsEqual(35u);
+        AssertThat(panel.Scene).IsNotNull();
+        AssertThat(panel.Scene!.StepCount).IsEqual(2);
+        AssertString(panel.Scene.PackageName).Contains("Test scene");
+        AssertString(panel.Scene.StepText(0)).Contains("open");
+    }
+
+    [TestCase]
+    public async Task EditingASceneFlagStagesOneUpdate()
+    {
+        var (window, panel) = SceneLoaded();
+        await panel.Load(35);
+
+        AssertThat(panel.CurrentTab).IsEqual(CinematicsPanel.Tab.Scenes);
+        AssertThat(panel.Scene).IsNotNull();
+        AssertThat(panel.Scene!.StepCount).IsEqual(2);
+        AssertThat(panel.FindChild("SceneFlag_8", true, false)).IsNotNull();
+        panel.Scene!.SetFlag(8, false);
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Count).IsEqual(1);
+        AssertThat(edits[0].Edit.Table).IsEqual("scene_template");
+        AssertThat(edits[0].Edit.After!.U("Flags")).IsEqual(17u);
+    }
+
+    [TestCase]
+    public async Task NewSceneStagesAnInsertAboveTheMaximum()
+    {
+        var (window, panel) = SceneLoaded();
+        await panel.Load(35);
+
+        Named(panel, "NewScene").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitFor(() => window.Drafts.Draft!.NetFor("test").Any(edit => edit.Edit.Table == "scene_template"));
+
+        var edits = window.Drafts.Draft!.NetFor("test");
+        AssertThat(edits.Any(edit => edit.Edit.Table == "scene_template" && edit.Edit.After!.U("SceneId") == 576u)).IsTrue();
     }
 
     [TestCase]

@@ -141,6 +141,15 @@ per line). Client tables: `ConversationLine`, `UiCamera`, `UiTextureKit` (plus t
 `CinematicsDbTests`, `CinematicsClientTests` (corpus), the conversation cases in
 `CinematicsWindowTests`.
 
+## Phase 22c: scenes
+
+The Scenes tab: the template fields (client script package, eight flag bits, encryption, script) and
+the client package's ordered script steps read-only, with "+ New scene" allocating the next SceneId.
+Table `scene_template`, rules `TcSceneRules`, reads `TcCinematicsSource.ReadSceneAsync` /
+`SearchScenesAsync`, client `SceneScriptPackage`/`SceneScriptPackageMember`/`SceneScript` through
+`IClientLookup.SceneScriptPackage`. Tests: `SceneRulesTests`, the scene cases in `CinematicsDbTests`,
+`CinematicsClientTests` and `CinematicsWindowTests`.
+
 ## Data, overlays and rendering
 
 | Item | What landed |

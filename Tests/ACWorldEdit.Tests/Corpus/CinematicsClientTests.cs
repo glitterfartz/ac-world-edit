@@ -47,6 +47,23 @@ public class CinematicsClientTests
     }
 
     [RetailClientFact]
+    public void ScenePackagesResolveTheirStepsInOrder()
+    {
+        var lookup = new RetailClientLookup(RetailData.Tables);
+        uint package = RetailData.Tables.Table("SceneScriptPackageMember").Values
+            .Select(row => row.FieldAs<uint>("SceneScriptPackageID"))
+            .Distinct()
+            .First(id => lookup.SceneScriptPackage(id) is { Steps.Count: > 0 });
+
+        var resolved = lookup.SceneScriptPackage(package)!;
+        Assert.False(string.IsNullOrWhiteSpace(resolved.Name));
+        Assert.True(resolved.Steps.Count > 0);
+        Assert.All(resolved.Steps, step => Assert.True(step.ScriptId != 0));
+        Assert.Equal(resolved.Steps.OrderBy(step => step.Order).Select(step => step.ScriptId), resolved.Steps.Select(step => step.ScriptId));
+        Assert.Null(lookup.SceneScriptPackage(uint.MaxValue));
+    }
+
+    [RetailClientFact]
     public void CameraAndTextureKitNamesResolve()
     {
         var lookup = new RetailClientLookup(RetailData.Tables);

@@ -12,8 +12,7 @@ for; what is left is below.
 - [ ] The empty reward child tables (`playerchoice_response_reward_currency`, `_faction`, `_item_choice`,
   `_maw_power`) once a database has rows to prove the reads.
 - [ ] Hotfix-backed conversation and scene rows; editing them is Phase 23.
-- [ ] Scene script packages against the retail client (22c). The conversation chain is covered by
-  `CinematicsClientTests`.
+- [x] Scene script packages against the retail client: `CinematicsClientTests.ScenePackagesResolveTheirStepsInOrder`.
 
 ## Known broken smokes
 

@@ -111,6 +111,43 @@ public sealed class TcCinematicsSource(WorldDatabase database, IClientLookup? cl
         return (chain, available);
     }
 
+    /// <summary>One scene: its template and the client script package it names.</summary>
+    public async Task<SceneSnapshot> ReadSceneAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("scene_template.ScriptPackageID");
+        var rows = new RowSet();
+        await AcInteractionSource.Load(session, rows, TcTables.SceneTemplate, "SceneId=@k0", [id], token);
+        foreach (var (table, key) in draftKeys.Where(k => k.Table == TcTables.SceneTemplate))
+        {
+            await AcInteractionSource.Load(session, rows, table, "SceneId=@k0", [key], token);
+        }
+
+        var view = effective(rows);
+        var package = view.Get(TcTables.SceneTemplate, id.ToString()) is { } scene ? client?.SceneScriptPackage(scene.U("ScriptPackageID")) : null;
+        uint max = Convert.ToUInt32(await AcInteractionSource.Scalar(session, "SELECT COALESCE(MAX(SceneId),0) FROM scene_template", [], token), CultureInfo.InvariantCulture);
+        return new SceneSnapshot(rows, database.SourceKey, max, package);
+    }
+
+    /// <summary>Scenes by ID or script name (bounded); the name is the script name, or "Scene N" when it has none.</summary>
+    public async Task<IReadOnlyList<(uint Id, string Name)>> SearchScenesAsync(string term, CancellationToken token)
+    {
+        await using var session = await database.OpenAsync(token).ConfigureAwait(false);
+        session.Require("scene_template.ScriptPackageID");
+        await using var command = session.Command($"SELECT SceneId,COALESCE(ScriptName,'') FROM scene_template WHERE SceneId=@id OR ScriptName LIKE @s ESCAPE '=' ORDER BY SceneId=@id DESC, SceneId LIMIT {DbLimits.MaxSearch}");
+        WorldReadSession.AddSearch(command, term, "@s", "@id");
+        List<(uint, string)> scenes = [];
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            uint id = reader.GetUInt32(0);
+            string name = reader.GetString(1);
+            scenes.Add((id, name.Length > 0 ? name : $"Scene {id}"));
+        }
+
+        return scenes;
+    }
+
     /// <summary>The conversation search: by ID, or by the text of the first line (hotfix text first, then the client).</summary>
     public async Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token)
     {
