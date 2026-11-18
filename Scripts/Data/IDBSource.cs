@@ -103,6 +103,13 @@ public interface IDBSource
     Task<bool> PoiExistsAsync(uint poiId, CancellationToken token);
     Task<IReadOnlyList<ItemDetails>> SearchItemDetailsAsync(string term, CancellationToken token);
     Task<IReadOnlyList<(uint Id, string Title, int Level)>> SearchQuestsAsync(string term, CancellationToken token);
+
+    // Cinematics (TrinityCore only)
+    Task<PlayerChoiceSnapshot> ReadPlayerChoiceAsync(uint choiceId, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token);
+
+    /// <summary>Condition rows on one source: 36 gates a player-choice response, 29 a conversation line.</summary>
+    Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token);
+    Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token);
 }
 
 /// <summary>Opens the <see cref="IDBSource"/> for a connection's dialect.</summary>
