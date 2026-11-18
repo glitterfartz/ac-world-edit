@@ -56,7 +56,7 @@ Known-bug records exist for three findings in `SmartCatalogTests`, `SmartBehavio
 
 ### `Tests/ACWorldEdit.GdTests` (gdUnit4)
 
-Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form (world and history fields), the change-history window and its full interaction flows (headless, no drafts or database), the picker popup, creature properties, user settings and the UI framework (`UiForm`, `MenuSheet`, dialogs, window headers and the inspector card parts). Every suite that touches Godot natives carries `[RequireGodotRuntime]`; without it the test host can crash instead of failing. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 180 s timeout. CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
+Runs inside Godot through the `ACWorldEdit.csproj` reference. Covers the client picker, the connection form (world and history fields), the change-history window and its full interaction flows (headless, no drafts or database), the picker popup, creature properties, user settings and the UI framework (`UiForm`, `MenuSheet`, dialogs, window headers and the inspector card parts). Every suite that touches Godot natives carries `[RequireGodotRuntime]`; without it the test host can crash instead of failing. `GODOT_BIN` must be set. Its `gdunit.runsettings` sets one CPU and a 420 s session timeout (the suite now includes the scripting editor interaction tests and takes about five minutes headless). CI runs it in its own `viewer-tests` job, because it needs Godot but no client data or database.
 
 ### Golden regression captures (`Tests/golden`)
 

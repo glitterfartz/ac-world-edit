@@ -41,6 +41,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         toolbar.AddChild(ToolbarButton("Export all", () => ExportAllDocument(), "Export every script in the workspace"));
         toolbar.AddChild(ToolbarButton("Folders…", OpenFolders, "Workspace and export folders"));
         toolbar.AddChild(ToolbarButton("Comment", AddComment, "Add a comment frame"));
+        toolbar.AddChild(ToolbarButton("Reveal", RevealExportFolder, "Open the export folder"));
         HostLabel = ClientStyle.Text("Host: " + Host.Label, 13, ClientStyle.Faded);
         toolbar.AddChild(HostLabel);
         HostPicker = new OptionButton { TooltipText = "Compile for another host" };
@@ -297,8 +298,34 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
 
         FillProblems(result.Diagnostics);
-        Status($"Exported {result.Files.Count} file. Reload with .reload ale.");
+        Status($"Exported {result.Files.Count} file. Reload with .reload ale.{OrphanNote()}");
         return true;
+    }
+
+    string OrphanNote()
+    {
+        try
+        {
+            int orphans = ScriptManifest.Load(ExportDirectory).Orphans(ExportDirectory).Count;
+            return orphans == 0 ? "" : $" {orphans} manifest entr{(orphans == 1 ? "y has" : "ies have")} no file.";
+        }
+        catch (ScriptManifestException)
+        {
+            return " The export manifest could not be read.";
+        }
+    }
+
+    void RevealExportFolder()
+    {
+        if (Directory.Exists(ExportDirectory))
+        {
+            OS.ShellOpen(ExportDirectory);
+            Status("Opened the export folder.");
+        }
+        else
+        {
+            Status("The export folder does not exist yet.");
+        }
     }
 
     public bool ExportAllDocument()

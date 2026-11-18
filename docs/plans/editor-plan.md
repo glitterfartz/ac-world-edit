@@ -427,10 +427,10 @@ does not have this problem because `hotfix_data` sends the new rows to the clien
 
 ## Phase 25: Visual scripting
 
-**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–6 are
-built — compiler, editor MVP, authoring depth, domain foundation, Eluna proof profile, and the
-advanced runtime slice (timers, list loops, map/instance data, debug print). Deployment polish is
-Milestone 7. The live `.reload ale` acceptance run is pending a server console reload.
+**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–7 are
+built. The remaining gaps are explicit: timer cancellation, instance-data indexing, async
+continuations, typed pickers wired to the editor, a live Eluna verification and the live
+`.reload ale` acceptance run (server console reload).
 
 **Why:** complex server-side behavior (encounters, quests, scripted objects) is written today either as
 SmartAI rows or as hand-maintained ALE Lua files outside the app. A graph editor keeps the behavior

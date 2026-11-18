@@ -204,6 +204,18 @@ with `.reload ale` unless `ALE.AutoReload` is on.
   position and size; dragging or resizing a frame updates the document on `EndNodeMove`.
 - **Templates.** `spell-cast` and `quest-giver` join the template picker and have golden Lua.
 
+## Deployment and verification
+
+- Export reports generated files, the `.reload ale` hint and any orphaned manifest entries (an entry
+  whose file disappeared); orphaned entries are reported and never deleted. **Reveal** opens the
+  export folder. Nothing in the editor runs a console command or SOAP call; reload is the user's
+  action. A SOAP-triggered reload was researched and is deliberately not implemented.
+- `ScriptLuaSyntax` scans every generated template/test output outside strings and comments and
+  rejects `goto`, `//`, bitwise operators, labels and Lua 5.2 library moves, so emitter regressions
+  cannot silently exceed the runtime's 5.1 compatibility.
+- Tests stay in `Tests/ACWorldEdit.Tests/Scripting` (xUnit) and the two scripting gdUnit suites; the
+  golden `.lua` files are the emitter contract.
+
 ## Confirmed canvas contract (Godot 4.7.2)
 
 Verified by the Milestone 0 gdUnit4 spike (`artifacts/graph-spike/`, git-ignored):
