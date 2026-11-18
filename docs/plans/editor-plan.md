@@ -425,6 +425,28 @@ does not have this problem because `hotfix_data` sends the new rows to the clien
 
 ---
 
+## Phase 25: Visual scripting
+
+**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestone 0 (GraphEdit
+and live-ALE research) and Milestone 1 (Foundation document model, catalog, validator, compiler,
+workspace/export services) are done; the Godot editor starts at Milestone 2.
+
+**Why:** complex server-side behavior (encounters, quests, scripted objects) is written today either as
+SmartAI rows or as hand-maintained ALE Lua files outside the app. A graph editor keeps the behavior
+reviewable, validates it against the real ALE API, and exports Lua into `lua_scripts` with a manifest.
+
+**Benefit:** author an event handler as a typed node graph — creature death, player login, command,
+instance update — see stable diagnostics before export, and compile to Lua 5.1 that the pinned mod-ale
+runs.
+
+Implementation is a semantic `.acwscript` document compiled through a host profile → IR → Lua
+([architecture/scripting.md](../architecture/scripting.md)); the capability catalog and ALE bindings are in
+[reference/scripting-capabilities.md](../reference/scripting-capabilities.md). Scripts deliberately bypass
+the row-draft/change-log path: workspace files and generated Lua are files, not database rows. The editor
+reports `.reload ale` and never runs the console command itself.
+
+---
+
 ## Foundation, data and overlays
 
 | Item | State | Open |

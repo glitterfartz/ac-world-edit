@@ -18,6 +18,7 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 - `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs:
   - AzerothCore world database: https://www.azerothcore.org/wiki/database-world
   - TrinityCore world database (master): https://trinitycore.info/database/master/world/home
+- `docs/reference/scripting-capabilities.md`: the scripting capability catalog, ALE bindings, event coverage, enums and host caveats.
 - `docs/reference/shader-inspection-locations.md`: a map/tile/XYZ for inspecting each implemented liquid shader.
 - `docs/status/completed-work.md`: what is built, per phase and area, with the tests and smokes that prove it.
 - `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.

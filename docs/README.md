@@ -15,6 +15,7 @@ introduction; this folder is for people changing the code.
 | [architecture/scripting.md](architecture/scripting.md) | Visual scripting: semantic graph → host profile → IR → Lua, and the confirmed GraphEdit/ALE runtime contracts | The scripting subsystem or a runtime contract changes |
 | [architecture/testing-and-tooling.md](architecture/testing-and-tooling.md) | Test projects and commands, environment variables, tooling, CI, commit rules | A test project, tool, setting or workflow changes |
 | [reference/database-differences.md](reference/database-differences.md) | AzerothCore vs TrinityCore schema differences that affect the editors | A table or column difference is found |
+| [reference/scripting-capabilities.md](reference/scripting-capabilities.md) | The scripting capability catalog, ALE bindings, event coverage, enums and host caveats | A capability, event, binding or enum changes |
 | [reference/shader-inspection-locations.md](reference/shader-inspection-locations.md) | Map/tile/XYZ locations for inspecting each implemented liquid shader | A material is ported or a better location is found |
 | [status/completed-work.md](status/completed-work.md) | What is built, per phase and area, with the tests and smokes that prove it | A feature or refinement lands |
 | [status/performance.md](status/performance.md) | How to measure, the current frame budget and open performance work | A measurement changes the baseline or a fix lands |
@@ -36,7 +37,8 @@ introduction; this folder is for people changing the code.
   `reference/shader-inspection-locations.md`.
 - **Add or change a database read, rule or export**: `architecture/editing-and-export.md`, plus
   `reference/database-differences.md` for the two dialects.
-- **Work on visual scripting**: `architecture/scripting.md`, then `plans/scripting-plan.md`.
+- **Work on visual scripting**: `architecture/scripting.md`, then
+  `reference/scripting-capabilities.md`, then `plans/scripting-plan.md`.
 - **Start the next editor phase**: `plans/editor-plan.md` (design, status and the detailed gaps).
 - **Commit**: `architecture/testing-and-tooling.md` has the commands, the environment variables and
   the commit message rules.

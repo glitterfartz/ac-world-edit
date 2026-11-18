@@ -1,0 +1,24 @@
+{
+  "PowerType": {
+    "name": "PowerType",
+    "values": [
+      { "name": "Mana", "value": 0 },
+      { "name": "Rage", "value": 1 },
+      { "name": "Focus", "value": 2 },
+      { "name": "Energy", "value": 3 },
+      { "name": "Happiness", "value": 4 },
+      { "name": "Runes", "value": 5 },
+      { "name": "RunicPower", "value": 6 }
+    ]
+  },
+  "QuestStatus": {
+    "name": "QuestStatus",
+    "values": [
+      { "name": "None", "value": 0 },
+      { "name": "Complete", "value": 1 },
+      { "name": "Incomplete", "value": 3 },
+      { "name": "Failed", "value": 5 },
+      { "name": "Rewarded", "value": 6 }
+    ]
+  }
+}

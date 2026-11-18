@@ -18,4 +18,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
     <ProjectReference Include="../../Foundation/ACWorldEdit.Foundation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Scripting/Golden/**/*.lua" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

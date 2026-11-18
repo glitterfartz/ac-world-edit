@@ -65,7 +65,7 @@ flowchart TB
         overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger,<br/>Waypoint, Navigation, Gizmo, PlacementTool"]
         ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers"]
         diag["Diagnostics<br/>smoke workflows, CLI flags"]
-        data["Data (Godot-free)<br/>WorldDatabase, AcworldStore, WorldApplier, IDBSource, per-dialect sources, read helpers"]
+        data["Data (Godot-free)<br/>WorldDatabase, AcworldStore, WorldApplier, IDBSource, per-dialect sources,<br/>read helpers, ScriptWorkspace/ScriptManifest/ScriptExportService"]
         assets["Assets (Godot-free)<br/>Archives, Formats, Models, World, Retail, Client, Navigation"]
     end
 
@@ -74,6 +74,7 @@ flowchart TB
         authoring["Authoring<br/>SpawnEdits, SpawnFields, SpawnRules,<br/>TemplateAddons, IdAllocator"]
         pages["Pages and rules<br/>EntityPage, Vendor/Gossip/Trainer/QuestLinks,<br/>SmartCatalog, AcQuestModel, ConditionCatalog"]
         export["Change history<br/>PendingChanges, ChangeRecord, SqlExport, WorldApplier"]
+        scripting["Scripting<br/>Model, Catalog, Validation, IR,<br/>Lua emission, Templates"]
         misc["Coordinates and views<br/>WorldCoordinates, SpawnPreview,<br/>Ac/TcCreatureView, tooltips"]
     end
 
@@ -111,6 +112,7 @@ flowchart TB
     assets --> sharpzip
     assets --> casc
     data --> mysql
+    data --> scripting
     tests -. links source .-> assets
     tests -. links source .-> data
     tests --> fdn
@@ -196,16 +198,16 @@ into one SQL file for sharing.
 | Path | Contents |
 |---|---|
 | `Scripts/Assets/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs and generated MMaps (`Navigation/`) |
-| `Scripts/Data/` | MySQL sessions (`WorldDatabase` reads, `AcworldStore` history, `WorldApplier` guarded writes), `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), and the `Db*` read helpers |
+| `Scripts/Data/` | MySQL sessions (`WorldDatabase` reads, `AcworldStore` history, `WorldApplier` guarded writes), `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), the `Db*` read helpers, and `Scripting/` (workspace, export manifest and export service) |
 | `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
 | `Scripts/Overlays/` | One folder per overlay family (`Region`, `Placement`, `Creature`, `GameObject`, `Graveyard`, `Waypoint`, `AreaTrigger`, `Navigation`); the creature collaborators and the waypoint path views live beside their layer |
 | `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
-| `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, coordinates |
+| `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, coordinates, and `Scripting/` (document model, catalog, validation, IR and Lua emission) |
 | `Shaders/` | Subfolders by pass: `terrain/`, `model/`, `sky/`, `liquid/` (water, magma and the specialized liquid materials) and `shared/` (`client_lighting`, `client_shadow` and `client_skinning` includes); each stage keeps its `.gdshader`/`.gdshaderinc` and `.uid` beside its siblings |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
-| `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py` |
+| `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py`, `generate_script_catalog.py` |
 | `ThirdParty/` | `CascLib` and `StormLib` git submodules, built by `Tools/setup.py` |
 | `Data/WoWDBDefs/` | WoWDBDefs git submodule (`.dbd` layouts), pinned by the submodule commit |
 | `launch_viewer.py` | Build and launch helper, `--smoke` and `--check-assets` modes |

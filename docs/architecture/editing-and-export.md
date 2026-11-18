@@ -9,6 +9,10 @@ into the `acworld` change log, and only reach the world when the user applies th
 History window; every apply runs the same guarded scripts the export writes, with a stale-row abort
 before anything is written.
 
+One exception: `Scripts/Data/Scripting/` (workspace files, export manifest and Lua export) does not
+use drafts or the change log. Script documents and generated Lua are files, not database rows; that
+path is described in [scripting.md](scripting.md#workspace-manifest-and-export).
+
 ## Read path: `Scripts/Data`
 
 ```mermaid

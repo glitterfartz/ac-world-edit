@@ -109,6 +109,21 @@ Node move/facing/delay, add/insert/delete/renumber, new paths, path-level proper
 link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
 polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
 
+## Visual scripting (Milestones 0–1)
+
+The scripting pipeline and persistence layer are built; the Godot editor starts at Milestone 2.
+
+| Area | What landed |
+| --- | --- |
+| Research (M0) | GraphEdit 4.7.2 canvas contract confirmed (slot rows, port indices, `ConnectionRequest` veto, zoom/scroll maths, frames, shortcut isolation, 200-node scale) and live ALE facts re-checked (Lua 5.2, compatibility mode, global `RemoveEventById`, timer callback shape, registration-abort semantics, `.reload ale`). Recorded in [architecture/scripting.md](../architecture/scripting.md). |
+| Document model | `ScriptDocument`/graph/node/pin/edge/comment/variable/function with camelCase JSON, canonical sorted-key SHA-256, unknown-field preservation at every level, and a format gate (`CurrentFormat = 1`). |
+| Catalog | 25 curated semantic capabilities, 230 generated ALE events with registrations/scope/argument order, `PowerType`/`QuestStatus` enums, strict loader integrity checks, and `Tools/generate_script_catalog.py`. Listed in [reference/scripting-capabilities.md](../reference/scripting-capabilities.md). |
+| Validation | Type registry (pin ids/colours/assignability) and the full `SC01xx`–`SC06xx` diagnostic set: missing/duplicate nodes and pins, wiring and cycles, scope, returns, variables/functions, reachability, locals and large integers. |
+| Compiler | `ScriptIrBuilder` → `IrModule` → `LuaEmitter`, deterministic Lua 5.1-compatible output with `__vars`/`__fns`, event handlers and registrations; omitted optional arguments use host defaults. `ScriptCompiler.OutputName` gives `acw_<slug>_<shortid>.lua`. |
+| Templates | Embedded `blank`, `creature-death` and `command` graphs; loading clones fresh ids without mutating the template. |
+| Persistence and export | `ScriptWorkspace` (scan/load/atomic save/delete, stamps, duplicate-id and malformed-file issues, path containment), `ScriptManifest` (`.acworld-scripts.json`, ownership, hashes, orphans) and `ScriptExportService` (compile-first, all-or-nothing, refuses foreign/edited files). No file I/O in Foundation. |
+| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests` (153 tests). Golden Lua for the creature-death and command templates. |
+
 ## Data, overlays and rendering
 
 | Item | What landed |

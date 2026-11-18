@@ -79,6 +79,24 @@ Deterministic parser coverage lives in `NavigationTests`; full-folder checks are
 X-ray and the reset/disable lifecycle. Manual landmark comparisons across every generated map and
 live-server obstacle parity are not automated.
 
+## Visual scripting
+
+Milestone 1 covers the document model, catalog, validator, compiler, workspace and export in xUnit.
+These wait for the features they exercise:
+
+- [ ] Generated Lua runs in a real ALE state: load each golden `.lua` into a live mod-ale, confirm the
+  registration succeeds and a scripted handler fires (a `DbFact`-style opt-in suite, one file, when the
+  Milestone 6 runtime work lands).
+- [ ] Catalog drift: regenerate `events.json`/`event-bindings.json` from a pinned mod-ale checkout in CI
+  and diff them, so an upstream hook rename fails a build instead of an editor session (Milestone 4
+  catalog tool).
+- [ ] `ScriptReferenceResolver` / `AcScriptReferences` live lookups for typed IDs (creature/item/quest/
+  spell/map names and existence) — deferred until the Milestone 2/4 pickers exist; their `DbFact` tests
+  come with the resolvers.
+- [ ] Editor persistence and export in Godot: save/load round-trip in a temp workspace, external-change
+  prompt, export to a temp directory, and the reload hint (gdUnit4 `ScriptEditorPersistenceTests`,
+  Milestone 2).
+
 ## Dynamic sun shadows
 
 The cascade frame, depth packing, caster policy and shader source have xUnit coverage
