@@ -303,6 +303,22 @@ public class ScriptEditorWindowTests
     }
 
     [TestCase]
+    public async Task TheToolbarWrapsWithoutStretchingTheWindow()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        var tree = (SceneTree)Engine.GetMainLoop();
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+
+        var minimum = window.GetCombinedMinimumSize();
+        AssertThat(minimum.X < 1200).IsTrue();
+        AssertThat(minimum.Y < 1000).IsTrue();
+        AssertThat(window.HostLabel.Size.X > 80).IsTrue();
+        AssertThat(window.HostLabel.Size.Y < 40).IsTrue();
+    }
+
+    [TestCase]
     public void TheSpellCastTemplateCompiles()
     {
         var window = Spawn(out _, out _);

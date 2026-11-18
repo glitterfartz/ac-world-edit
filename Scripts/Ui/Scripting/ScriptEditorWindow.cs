@@ -19,11 +19,15 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     {
         Name = "ScriptEditorWindow";
 
-        var toolbar = new HBoxContainer();
+        var toolbar = new VBoxContainer();
         Body.AddChild(toolbar);
+        // A flow container wraps the actions at the window width; a plain HBox demanded more
+        // width than the default window and starved the host caption into a one-character column.
+        var actions = new HFlowContainer();
+        toolbar.AddChild(actions);
         var newButton = new Button { Text = "New", TooltipText = "New blank script" };
         newButton.Pressed += () => NewDocument("blank");
-        toolbar.AddChild(newButton);
+        actions.AddChild(newButton);
         var templates = new OptionButton { TooltipText = "New from a template" };
         foreach (string name in ScriptTemplateLibrary.Names)
         {
@@ -31,19 +35,27 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
 
         templates.ItemSelected += index => NewDocument(ScriptTemplateLibrary.Names[(int)index]);
-        toolbar.AddChild(templates);
-        toolbar.AddChild(ToolbarButton("Save", () => SaveDocument(), "Save to the workspace (Ctrl+S)"));
-        toolbar.AddChild(ToolbarButton("Compile", () => Compile(), "Compile and show the Lua (Ctrl+Enter)"));
-        toolbar.AddChild(ToolbarButton("Undo", () => Undo(), "Undo (Ctrl+Z)"));
-        toolbar.AddChild(ToolbarButton("Redo", () => Redo(), "Redo (Ctrl+Y)"));
-        toolbar.AddChild(ToolbarButton("Frame", () => Canvas.FrameAll(), "Frame all nodes (Home)"));
-        toolbar.AddChild(ToolbarButton("Export", () => ExportCurrent(), "Export this script (Ctrl+Shift+E)"));
-        toolbar.AddChild(ToolbarButton("Export all", () => ExportAllDocument(), "Export every script in the workspace"));
-        toolbar.AddChild(ToolbarButton("Folders…", OpenFolders, "Workspace and export folders"));
-        toolbar.AddChild(ToolbarButton("Comment", AddComment, "Add a comment frame"));
-        toolbar.AddChild(ToolbarButton("Reveal", RevealExportFolder, "Open the export folder"));
-        HostLabel = ClientStyle.Text("Host: " + Host.Label, 13, ClientStyle.Faded);
-        toolbar.AddChild(HostLabel);
+        actions.AddChild(templates);
+        actions.AddChild(ToolbarButton("Save", () => SaveDocument(), "Save to the workspace (Ctrl+S)"));
+        actions.AddChild(ToolbarButton("Compile", () => Compile(), "Compile and show the Lua (Ctrl+Enter)"));
+        actions.AddChild(ToolbarButton("Undo", () => Undo(), "Undo (Ctrl+Z)"));
+        actions.AddChild(ToolbarButton("Redo", () => Redo(), "Redo (Ctrl+Y)"));
+        actions.AddChild(ToolbarButton("Frame", () => Canvas.FrameAll(), "Frame all nodes (Home)"));
+        actions.AddChild(ToolbarButton("Export", () => ExportCurrent(), "Export this script (Ctrl+Shift+E)"));
+        actions.AddChild(ToolbarButton("Export all", () => ExportAllDocument(), "Export every script in the workspace"));
+        actions.AddChild(ToolbarButton("Folders…", OpenFolders, "Workspace and export folders"));
+        actions.AddChild(ToolbarButton("Comment", AddComment, "Add a comment frame"));
+        actions.AddChild(ToolbarButton("Reveal", RevealExportFolder, "Open the export folder"));
+        HostLabel = new Label
+        {
+            Text = "Host: " + Host.Label,
+            AutowrapMode = TextServer.AutowrapMode.Off,
+            VerticalAlignment = VerticalAlignment.Center,
+            TooltipText = "The runtime profile this script compiles for"
+        };
+        HostLabel.AddThemeFontSizeOverride("font_size", 13);
+        HostLabel.AddThemeColorOverride("font_color", ClientStyle.Faded);
+        actions.AddChild(HostLabel);
         HostPicker = new OptionButton { TooltipText = "Compile for another host" };
         foreach (var info in ScriptHostRegistry.Hosts)
         {
@@ -57,9 +69,8 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
 
         HostPicker.ItemSelected += index => ChangeHost((string)HostPicker.GetItemMetadata((int)index));
-        toolbar.AddChild(HostPicker);
+        actions.AddChild(HostPicker);
         StatusLabel = ClientStyle.Text("", 13, ClientStyle.Faded);
-        StatusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         StatusLabel.HorizontalAlignment = HorizontalAlignment.Right;
         toolbar.AddChild(StatusLabel);
 
