@@ -94,9 +94,9 @@ wait for the features or environment they exercise:
 - [ ] Catalog drift: regenerate `events.json`/`event-bindings.json` from a pinned mod-ale checkout in CI
   and diff them, so an upstream hook rename fails a build instead of an editor session (Milestone 4
   catalog tool).
-- [ ] `ScriptReferenceResolver` / `AcScriptReferences` live lookups for typed IDs (creature/item/quest/
-  spell/map names and existence) — deferred until the Milestone 3/4 pickers exist; their `DbFact` tests
-  come with the resolvers.
+- [ ] `ScriptReferenceResolver.DbSource` against a real database (`DbFact`, one file per dialect):
+  the resolver is covered with a fake source; live search behavior and map-id lookups are not. The
+  editor does not yet call the resolver during export (the picker wiring is still pending).
 - [ ] Editor external-change prompt and discard/overwrite choice: save/load/export in temp folders and
   the dirty guard are covered, but the confirmation dialog's three answers are not driven headlessly
   (`Dialogs.Confirm` needs a real window in the current harness).

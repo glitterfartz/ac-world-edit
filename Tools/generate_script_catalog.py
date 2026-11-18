@@ -283,6 +283,18 @@ def generate(root: Path):
     return events, bindings
 
 
+def apply_overrides(events: list[dict], overrides: dict) -> list[dict]:
+    """Patch generated events with the curated override file (display/performance/availability)."""
+    by_id = {event["id"]: event for event in events}
+    for event_id, patch in overrides.get("events", {}).items():
+        if event_id not in by_id:
+            raise SystemExit(f"override names unknown event {event_id}")
+        for key in ("display", "performance", "availability"):
+            if key in patch:
+                by_id[event_id][key] = patch[key]
+    return events
+
+
 def write_or_check(path: Path, text: str, check: bool) -> bool:
     if check:
         current = path.read_text(encoding="utf-8") if path.exists() else ""
@@ -301,6 +313,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", default=os.environ.get("ACWORLD_ALE_SOURCE", ""))
     parser.add_argument("--out-dir", default="Foundation/Scripting/Catalog/Profiles")
+    parser.add_argument("--overrides", default="Foundation/Scripting/Catalog/script_catalog_overrides.json")
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     if not args.source:
@@ -308,6 +321,10 @@ def main():
 
     root = engine_root(args.source)
     events, bindings = generate(root)
+    overrides_path = Path(args.overrides)
+    if overrides_path.exists():
+        events = apply_overrides(events, json.loads(overrides_path.read_text(encoding="utf-8")))
+        events.sort(key=lambda item: item["id"])
     out = Path(args.out_dir)
     ok = write_or_check(out / "core" / "events.json", json.dumps(events, indent=2, ensure_ascii=False) + "\n", args.check)
     ok = write_or_check(out / "ale-azerothcore" / "event-bindings.json", json.dumps(bindings, indent=2, ensure_ascii=False) + "\n", args.check) and ok

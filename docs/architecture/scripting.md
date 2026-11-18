@@ -113,7 +113,8 @@ compiles byte-identically, including ordering and hashes. `ScriptCompiler.Output
 ### Templates
 
 `ScriptTemplateLibrary` loads embedded `.acwscript.json` files (`blank`, `command`,
-`creature-death`, `quest-giver`, `spell-cast`) and `Create` clones one with a fresh document id,
+`creature-death`, `dungeon-encounter`, `quest-giver`, `spell-cast`, `world-event`) and `Create`
+clones one with a fresh document id,
 node/edge/comment ids. A loaded template is never mutated.
 
 ### Workspace, manifest and export

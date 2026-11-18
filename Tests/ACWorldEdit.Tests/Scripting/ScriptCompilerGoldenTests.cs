@@ -9,8 +9,10 @@ public class ScriptCompilerGoldenTests
     [Theory]
     [InlineData("creature-death")]
     [InlineData("command")]
+    [InlineData("dungeon-encounter")]
     [InlineData("quest-giver")]
     [InlineData("spell-cast")]
+    [InlineData("world-event")]
     public void TemplateMatchesGoldenLua(string template)
     {
         var document = ScriptTemplateLibrary.Load(template);

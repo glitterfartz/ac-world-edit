@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "id": "66666666666666666666666666666666",
+  "name": "World Event",
+  "description": "Announces server startup and shutdown to the world.",
+  "host": "ale-azerothcore",
+  "runtimeMode": "compatibility",
+  "variables": [],
+  "functions": [],
+  "graph": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "event.server.on_startup",
+        "position": { "x": 0, "y": 0 }
+      },
+      {
+        "id": "n2",
+        "kind": "server.send_world_message",
+        "position": { "x": 360, "y": 0 },
+        "literals": { "message": "A world event has started." }
+      },
+      {
+        "id": "n3",
+        "kind": "event.server.on_shutdown",
+        "position": { "x": 0, "y": 200 }
+      },
+      {
+        "id": "n4",
+        "kind": "server.send_world_message",
+        "position": { "x": 360, "y": 200 },
+        "literals": { "message": "The world event has ended." }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "from": { "node": "n1", "pin": "exec" }, "to": { "node": "n2", "pin": "exec" } },
+      { "id": "e2", "from": { "node": "n3", "pin": "exec" }, "to": { "node": "n4", "pin": "exec" } }
+    ],
+    "comments": []
+  }
+}
