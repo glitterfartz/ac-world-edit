@@ -42,7 +42,7 @@ public sealed partial class ScriptValidator
 
         var roots = CollectRoots(infos, edges, diagnostics);
         ValidateReturns(infos, roots, returnContext, diagnostics);
-        ValidateInputs(infos, edges, diagnostics);
+        ValidateInputs(infos, edges, returnContext is not null, diagnostics);
         ValidateScope(infos, diagnostics);
         ValidateReferences(infos, edges, variables, functions, diagnostics);
         ValidateReachability(infos, edges, returnContext, diagnostics);
@@ -293,7 +293,11 @@ public sealed partial class ScriptValidator
         }
     }
 
-    static void ValidateInputs(Dictionary<string, NodeInfo> infos, List<EdgeInfo> edges, List<ScriptDiagnostic> diagnostics)
+    static void ValidateInputs(
+        Dictionary<string, NodeInfo> infos,
+        List<EdgeInfo> edges,
+        bool functionContext,
+        List<ScriptDiagnostic> diagnostics)
     {
         var incomingData = edges.Where(edge => edge.FromPin.Type != ScriptValueType.Exec)
             .GroupBy(edge => edge.To.Node.Id)
@@ -318,7 +322,10 @@ public sealed partial class ScriptValidator
 
                 if (pin.Type == ScriptValueType.Exec)
                 {
-                    if (!exec.Contains(pin.Id))
+                    // A function graph has no event edge to start it: an unconnected exec input is
+                    // an entry point (the compiler lowers roots and the legacy expression Return).
+                    bool functionRoot = functionContext;
+                    if (!exec.Contains(pin.Id) && !functionRoot)
                     {
                         diagnostics.Add(Error(ScriptDiagnosticCodes.MissingInput, $"Exec input '{pin.Id}' is not connected.", info.Node.Id, pin.Id));
                     }

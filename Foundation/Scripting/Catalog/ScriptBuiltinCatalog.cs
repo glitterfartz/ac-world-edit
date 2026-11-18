@@ -18,6 +18,8 @@ public static class ScriptBuiltinCatalog
     public const string VariableSet = "flow.variable_set";
     public const string CallFunction = "flow.call_function";
     public const string Return = "flow.return";
+    public const string ForRange = "flow.for_range";
+    public const string ParameterGet = "flow.parameter_get";
     public const string Equal = "flow.equal";
     public const string NotEqual = "flow.not_equal";
     public const string Less = "flow.less";
@@ -42,6 +44,18 @@ public static class ScriptBuiltinCatalog
             new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
             new("first", ScriptPinDirection.Out, ScriptValueType.Exec),
             new("second", ScriptPinDirection.Out, ScriptValueType.Exec)
+        ]),
+        new(ForRange, "For Range", "Flow",
+        [
+            new("exec", ScriptPinDirection.In, ScriptValueType.Exec),
+            new("from", ScriptPinDirection.In, ScriptValueType.Int),
+            new("to", ScriptPinDirection.In, ScriptValueType.Int),
+            new("exec_out", ScriptPinDirection.Out, ScriptValueType.Exec),
+            new("index", ScriptPinDirection.Out, ScriptValueType.Int)
+        ]),
+        new(ParameterGet, "Get Parameter", "Functions",
+        [
+            new("value", ScriptPinDirection.Out, ScriptValueType.Any)
         ]),
         new(VariableGet, "Get Variable", "Variables",
         [

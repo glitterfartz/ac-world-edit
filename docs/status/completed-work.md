@@ -109,10 +109,10 @@ Node move/facing/delay, add/insert/delete/renumber, new paths, path-level proper
 link/unlink, SmartAI path users, formations (membership, offsets, group AI, turn-around points, leader lines,
 polar drag, duplicate remap, leader picked by GUID or viewport click) and the preview animation.
 
-## Visual scripting (Milestones 0–2)
+## Visual scripting (Milestones 0–3)
 
-The scripting pipeline, persistence layer and the Godot editor MVP are built; authoring depth
-(typed pickers, function graphs, comments and copy/paste) starts at Milestone 3.
+The scripting pipeline, persistence layer, Godot editor MVP and authoring depth are built; typed
+entity pickers and domain packs start at Milestone 4.
 
 | Area | What landed |
 | --- | --- |
@@ -124,7 +124,8 @@ The scripting pipeline, persistence layer and the Godot editor MVP are built; au
 | Templates | Embedded `blank`, `creature-death` and `command` graphs; loading clones fresh ids without mutating the template. |
 | Persistence and export | `ScriptWorkspace` (scan/load/atomic save/delete, stamps, duplicate-id and malformed-file issues, path containment), `ScriptManifest` (`.acworld-scripts.json`, ownership, hashes, orphans) and `ScriptExportService` (compile-first, all-or-nothing, refuses foreign/edited files). No file I/O in Foundation. |
 | Editor (M2) | View → Script editor… opens a lazily built `ScriptEditorWindow` inside `ScriptWindowFrame`; `ScriptGraphCanvas`/`ScriptPortMap`/`ScriptNodeView` render typed nodes and enforce connection rules, while `ScriptDocumentSession` supplies a 100-entry undo/redo history and hash-based dirty state. Palette search, typed inspector fields, event scope fields, variables, problems with node centring, Lua preview, Ctrl+S/Z/Y/Enter/Shift+E/F/Home/0/Escape shortcuts, workspace save/load, export with the reload hint, and per-profile folder/auto-export settings. |
-| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests` (1670 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (8) and `ScriptEditorWindowTests` (10) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load and export; the View menu change is pinned by the updated UI goldens. |
+| Authoring depth (M3) | `flow.for_range` lowering (`for i = from, to`), user-function graphs (parameter get, exec roots, Return slots, function signature editing), copy/paste/duplicate with id remap and multi-select deletion, comment frames (position/size persisted), and `spell-cast`/`quest-giver` templates with golden Lua. |
+| Proof | xUnit `ScriptTypeSystemTests`, `ScriptDocumentTests`, `ScriptCatalogTests`, `ScriptValidatorTests`, `ScriptCompilerTests`, `ScriptCompilerGoldenTests`, `ScriptTemplateTests`, `ScriptWorkspaceTests`, `ScriptExportTests`, `ScriptingSettingsTests`, `ScriptDocumentSessionTests` (1677 tests in the suite). Golden Lua for the creature-death and command templates. gdUnit `ScriptCanvasTests` (11) and `ScriptEditorWindowTests` (13) cover port mapping, model-backed connections, undo/redo, palette, inspector, problems, save/load, export, copy/paste/duplicate, comments and function graphs; the View menu change is pinned by the updated UI goldens. |
 
 ## Data, overlays and rendering
 

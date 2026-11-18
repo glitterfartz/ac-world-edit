@@ -70,11 +70,11 @@ binding default is shown as `=value`.
 free function. Optional arguments use the binding default when the pin is left empty; a trailing
 argument with no default at all is omitted.
 
-Control flow, comparisons, numeric operators, variables and user functions are **language-level
-built-ins**, not host capabilities: `flow.branch`, `flow.sequence`, `flow.equal`/`not_equal`/
-`less`/`less_equal`/`greater`/`greater_equal`/`and`/`or`/`not`, `math.add`/`subtract`/`multiply`
-(and the rest of the arithmetic set), `flow.variable_get`/`variable_set`, `flow.call_function`
-and `flow.return`. They live in `ScriptBuiltinCatalog` and never appear in a host pack.
+Control flow, comparisons, numeric/string operators, variables and user functions are
+**language-level built-ins**, not host capabilities: `flow.branch`, `flow.sequence`,
+`flow.for_range`, `flow.equal`/`not_equal`/`less`/`less_equal`/`greater`/`greater_equal`/`and`/`or`/`not`,
+`math.add`/`subtract`/`multiply`/`divide`/`modulo`/`min`/`max`, `string.concat`/`length`,
+`flow.variable_get`/`variable_set`, `flow.parameter_get`, `flow.call_function` and `flow.return`. They live in `ScriptBuiltinCatalog` and never appear in a host pack.
 
 ## Events
 

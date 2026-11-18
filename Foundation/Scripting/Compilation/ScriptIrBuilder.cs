@@ -85,16 +85,43 @@ public sealed class ScriptIrBuilder
 
         IReadOnlyList<IrStmt> BuildFunctionBody(ScriptFunction function, GraphIndex index)
         {
-            var entry = function.Graph.Nodes.FirstOrDefault(node =>
-                node.Kind == ScriptBuiltinCatalog.Return && !index.HasExecInput(node.Id));
-            if (entry is null)
+            var block = new BlockContext(index);
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var parameter in function.Parameters)
             {
-                return [];
+                string name = UniqueFrom(parameter.Name, used);
+                usedNames.Add(name);
+                foreach (var node in function.Graph.Nodes.Where(node => node.Kind == ScriptBuiltinCatalog.ParameterGet
+                             && ScriptPins.PropertyString(node, "parameter") == parameter.Id))
+                {
+                    block.Bindings[(node.Id, "value")] = name;
+                }
             }
 
-            var block = new BlockContext(index);
-            var values = function.Returns.Select(slot => ResolveInput(index, entry.Id, slot.Name, block)).ToList();
-            block.Statements.Add(new IrReturn(values));
+            var returns = function.Returns.Select(slot => new IrReturnSlot(slot.Name, slot.Type)).ToList();
+            var roots = function.Graph.Nodes
+                .Where(node => !index.HasExecInput(node.Id)
+                    && host.Event(node.Kind) is null
+                    && node.Kind is not ScriptBuiltinCatalog.Return
+                    && index.Pins[node.Id].ContainsKey("exec"))
+                .ToList();
+            foreach (var root in roots)
+            {
+                BuildFromNode(index, root.Id, block, returns);
+            }
+
+            // Legacy shape: a Return node alone, with its slots fed by data expressions.
+            if (roots.Count == 0)
+            {
+                var entry = function.Graph.Nodes.FirstOrDefault(node =>
+                    node.Kind == ScriptBuiltinCatalog.Return && !index.HasExecInput(node.Id));
+                if (entry is not null)
+                {
+                    var values = function.Returns.Select(slot => ResolveInput(index, entry.Id, slot.Name, block)).ToList();
+                    block.Statements.Add(new IrReturn(values));
+                }
+            }
+
             return block.Statements;
         }
 
@@ -161,6 +188,17 @@ public sealed class ScriptIrBuilder
             GraphIndex index, string nodeId, string pinId, BlockContext block, IReadOnlyList<IrReturnSlot> returns)
         {
             string? current = index.ExecTarget.GetValueOrDefault((nodeId, pinId));
+            if (current is not null)
+            {
+                BuildFromNode(index, current, block, returns);
+            }
+        }
+
+        /// <summary>Lower one exec node and everything its exec outputs lead to.</summary>
+        void BuildFromNode(
+            GraphIndex index, string start, BlockContext block, IReadOnlyList<IrReturnSlot> returns)
+        {
+            string? current = start;
             while (current is not null)
             {
                 var node = index.Nodes[current];
@@ -185,6 +223,17 @@ public sealed class ScriptIrBuilder
                     {
                         BuildExecBlock(index, node.Id, "first", block, returns);
                         BuildExecBlock(index, node.Id, "second", block, returns);
+                        return;
+                    }
+                    case ScriptBuiltinCatalog.ForRange:
+                    {
+                        var from = ResolveInput(index, node.Id, "from", block);
+                        var to = ResolveInput(index, node.Id, "to", block);
+                        string name = UniqueName("i");
+                        var body = block.Fork();
+                        body.Bindings[(node.Id, "index")] = name;
+                        BuildExecBlock(index, node.Id, "exec_out", body, returns);
+                        block.Statements.Add(new IrForRange(name, from, to, body.Statements));
                         return;
                     }
                     case ScriptBuiltinCatalog.VariableSet:
@@ -325,6 +374,11 @@ public sealed class ScriptIrBuilder
 
         IrExpr ResolveOutput(GraphIndex index, string nodeId, string pinId, BlockContext block)
         {
+            if (block.Bindings.TryGetValue((nodeId, pinId), out var bound))
+            {
+                return new IrVariableGet(bound);
+            }
+
             // Event parameters are already function parameters; never hoist them into a redundant local.
             if (events.ContainsKey(nodeId))
             {
@@ -488,12 +542,20 @@ public sealed class ScriptIrBuilder
             public List<IrStmt> Statements { get; } = [];
             public Dictionary<(string Node, string Pin), string> Locals { get; } = new();
 
+            /// <summary>Loop indices and function parameters available as bare Lua names.</summary>
+            public Dictionary<(string Node, string Pin), string> Bindings { get; } = new();
+
             public BlockContext Fork()
             {
                 var fork = new BlockContext(Index);
                 foreach (var (key, value) in Locals)
                 {
                     fork.Locals[key] = value;
+                }
+
+                foreach (var (key, value) in Bindings)
+                {
+                    fork.Bindings[key] = value;
                 }
 
                 return fork;

@@ -14,6 +14,7 @@ namespace ACWorldEdit;
 public partial class ScriptGraphCanvas : GraphEdit
 {
     readonly List<ScriptNodeView> views = [];
+    ScriptGraph? clipboard;
     ScriptDocumentSession? session;
 
     public ScriptGraphCanvas()
@@ -23,6 +24,10 @@ public partial class ScriptGraphCanvas : GraphEdit
         ConnectionRequest += OnConnectionRequest;
         DisconnectionRequest += OnDisconnectionRequest;
         EndNodeMove += OnEndNodeMove;
+        CopyNodesRequest += CopySelection;
+        PasteNodesRequest += Paste;
+        DuplicateNodesRequest += DuplicateSelection;
+        DeleteNodesRequest += _ => RemoveSelection();
         NodeSelected += node =>
         {
             if (node is ScriptNodeView view)
@@ -36,6 +41,12 @@ public partial class ScriptGraphCanvas : GraphEdit
 
     public ScriptDocumentSession? Session => session;
 
+    /// <summary>The graph being edited: the document's event graph or one function graph.</summary>
+    public ScriptGraph Graph { get; private set; } = new();
+
+    /// <summary>The open function's id when <see cref="Graph"/> is a function body.</summary>
+    public string? GraphFunctionId { get; private set; }
+
     public IReadOnlyList<ScriptNodeView> NodeViews => views;
 
     public event Action? Changed;
@@ -46,7 +57,31 @@ public partial class ScriptGraphCanvas : GraphEdit
     public void Load(ScriptDocumentSession next)
     {
         session = next;
+        GraphFunctionId = null;
+        Graph = next.Document.Graph;
         Rebuild();
+    }
+
+    /// <summary>Show another graph of the same document (a function body).</summary>
+    public void ShowGraph(ScriptGraph graph, string? functionId = null)
+    {
+        GraphFunctionId = functionId;
+        Graph = graph;
+        Rebuild();
+    }
+
+    /// <summary>After undo/redo the session holds a fresh document; re-resolve the shown graph.</summary>
+    void RestoreGraph()
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        Graph = GraphFunctionId is null
+            ? session.Document.Graph
+            : session.Document.Functions.FirstOrDefault(function => function.Id == GraphFunctionId)?.Graph
+                ?? session.Document.Graph;
     }
 
     public ScriptNodeView? NodeView(string nodeId) =>
@@ -63,8 +98,8 @@ public partial class ScriptGraphCanvas : GraphEdit
             return null;
         }
 
-        string id = NextId("n", session.Document.Graph.Nodes.Select(node => node.Id));
-        session.Edit(document => document.Graph.Nodes.Add(new ScriptNode
+        string id = NextId("n", Graph.Nodes.Select(node => node.Id));
+        session.Edit(document => Graph.Nodes.Add(new ScriptNode
         {
             Id = id,
             Kind = kind,
@@ -76,15 +111,15 @@ public partial class ScriptGraphCanvas : GraphEdit
 
     public bool RemoveNode(string nodeId)
     {
-        if (session is null || session.Document.Graph.Nodes.All(node => node.Id != nodeId))
+        if (session is null || Graph.Nodes.All(node => node.Id != nodeId))
         {
             return false;
         }
 
         session.Edit(document =>
         {
-            document.Graph.Nodes.RemoveAll(node => node.Id == nodeId);
-            document.Graph.Edges.RemoveAll(edge => edge.From.Node == nodeId || edge.To.Node == nodeId);
+            Graph.Nodes.RemoveAll(node => node.Id == nodeId);
+            Graph.Edges.RemoveAll(edge => edge.From.Node == nodeId || edge.To.Node == nodeId);
         });
         Rebuild();
         return true;
@@ -97,8 +132,8 @@ public partial class ScriptGraphCanvas : GraphEdit
             return false;
         }
 
-        string id = NextId("e", session.Document.Graph.Edges.Select(edge => edge.Id));
-        session.Edit(document => document.Graph.Edges.Add(new ScriptEdge
+        string id = NextId("e", Graph.Edges.Select(edge => edge.Id));
+        session.Edit(document => Graph.Edges.Add(new ScriptEdge
         {
             Id = id,
             From = new ScriptPinRef { Node = fromNode, Pin = fromPin },
@@ -110,12 +145,12 @@ public partial class ScriptGraphCanvas : GraphEdit
 
     public bool DisconnectEdge(string edgeId)
     {
-        if (session is null || session.Document.Graph.Edges.All(edge => edge.Id != edgeId))
+        if (session is null || Graph.Edges.All(edge => edge.Id != edgeId))
         {
             return false;
         }
 
-        session.Edit(document => document.Graph.Edges.RemoveAll(edge => edge.Id == edgeId));
+        session.Edit(document => Graph.Edges.RemoveAll(edge => edge.Id == edgeId));
         Rebuild();
         return true;
     }
@@ -129,7 +164,7 @@ public partial class ScriptGraphCanvas : GraphEdit
 
         session.Edit(document =>
         {
-            var node = document.Graph.Nodes.First(item => item.Id == nodeId);
+            var node = Graph.Nodes.First(item => item.Id == nodeId);
             node.Literals[pinId] = value.Clone();
         });
         Rebuild();
@@ -144,14 +179,18 @@ public partial class ScriptGraphCanvas : GraphEdit
 
         session.Edit(document =>
         {
-            var node = document.Graph.Nodes.First(item => item.Id == nodeId);
+            var node = Graph.Nodes.First(item => item.Id == nodeId);
             node.Properties[name] = value.Clone();
         });
         Rebuild();
     }
 
     /// <summary>Rebuild the views after a change made directly through the session.</summary>
-    public void RebuildFromSession() => Rebuild();
+    public void RebuildFromSession()
+    {
+        RestoreGraph();
+        Rebuild();
+    }
 
     public void SelectNode(string nodeId)
     {
@@ -173,7 +212,7 @@ public partial class ScriptGraphCanvas : GraphEdit
 
         session.Edit(document =>
         {
-            var node = document.Graph.Nodes.First(item => item.Id == nodeId);
+            var node = Graph.Nodes.First(item => item.Id == nodeId);
             node.Literals.Remove(pinId);
         });
         Rebuild();
@@ -186,6 +225,7 @@ public partial class ScriptGraphCanvas : GraphEdit
             return false;
         }
 
+        RestoreGraph();
         Rebuild();
         return true;
     }
@@ -197,6 +237,7 @@ public partial class ScriptGraphCanvas : GraphEdit
             return false;
         }
 
+        RestoreGraph();
         Rebuild();
         return true;
     }
@@ -247,7 +288,7 @@ public partial class ScriptGraphCanvas : GraphEdit
 
     void OnDisconnectionRequest(StringName fromNode, long fromPort, StringName toNode, long toPort)
     {
-        string? edge = session?.Document.Graph.Edges.FirstOrDefault(item =>
+        string? edge = session is null ? null : Graph.Edges.FirstOrDefault(item =>
             item.From.Node == fromNode.ToString() && item.To.Node == toNode.ToString())?.Id;
         if (edge is not null)
         {
@@ -264,10 +305,19 @@ public partial class ScriptGraphCanvas : GraphEdit
 
         bool moved = views.Any(view =>
         {
-            var node = session.Document.Graph.Nodes.FirstOrDefault(item => item.Id == view.NodeId);
+            var node = Graph.Nodes.FirstOrDefault(item => item.Id == view.NodeId);
             return node is not null
                 && (node.Position.X != view.PositionOffset.X || node.Position.Y != view.PositionOffset.Y);
         });
+        foreach (var frame in GetChildren().OfType<GraphFrame>())
+        {
+            string id = frame.Name.ToString()["Frame_".Length..];
+            var comment = Graph.Comments.FirstOrDefault(item => item.Id == id);
+            moved |= comment is not null
+                && (comment.Position.X != frame.PositionOffset.X || comment.Position.Y != frame.PositionOffset.Y
+                    || comment.Size.X != frame.Size.X || comment.Size.Y != frame.Size.Y);
+        }
+
         if (!moved)
         {
             return;
@@ -277,11 +327,24 @@ public partial class ScriptGraphCanvas : GraphEdit
         {
             foreach (var view in views)
             {
-                var node = document.Graph.Nodes.FirstOrDefault(item => item.Id == view.NodeId);
+                var node = Graph.Nodes.FirstOrDefault(item => item.Id == view.NodeId);
                 if (node is not null)
                 {
                     node.Position.X = view.PositionOffset.X;
                     node.Position.Y = view.PositionOffset.Y;
+                }
+            }
+
+            foreach (var frame in GetChildren().OfType<GraphFrame>())
+            {
+                string id = frame.Name.ToString()["Frame_".Length..];
+                var comment = Graph.Comments.FirstOrDefault(item => item.Id == id);
+                if (comment is not null)
+                {
+                    comment.Position.X = frame.PositionOffset.X;
+                    comment.Position.Y = frame.PositionOffset.Y;
+                    comment.Size.X = frame.Size.X;
+                    comment.Size.Y = frame.Size.Y;
                 }
             }
         });
@@ -295,8 +358,8 @@ public partial class ScriptGraphCanvas : GraphEdit
             return false;
         }
 
-        var from = session.Document.Graph.Nodes.FirstOrDefault(node => node.Id == fromNode);
-        var to = session.Document.Graph.Nodes.FirstOrDefault(node => node.Id == toNode);
+        var from = Graph.Nodes.FirstOrDefault(node => node.Id == fromNode);
+        var to = Graph.Nodes.FirstOrDefault(node => node.Id == toNode);
         if (from is null || to is null)
         {
             return false;
@@ -319,7 +382,7 @@ public partial class ScriptGraphCanvas : GraphEdit
         }
 
         bool exec = fromPinDef.Type == ScriptValueType.Exec;
-        var edges = session.Document.Graph.Edges;
+        var edges = Graph.Edges;
         if (exec)
         {
             return edges.All(edge => !(edge.From.Node == fromNode && edge.From.Pin == fromPin));
@@ -327,6 +390,135 @@ public partial class ScriptGraphCanvas : GraphEdit
 
         return edges.All(edge => !(edge.To.Node == toNode && edge.To.Pin == toPin));
     }
+
+    public IReadOnlyList<ScriptNodeView> SelectedViews =>
+        views.Where(view => view.Selected).ToList();
+
+    /// <summary>Delete the selected nodes and every edge touching them.</summary>
+    public void RemoveSelection()
+    {
+        var ids = SelectedViews.Select(view => view.NodeId).ToHashSet(StringComparer.Ordinal);
+        if (session is null || ids.Count == 0)
+        {
+            return;
+        }
+
+        session.Edit(document =>
+        {
+            Graph.Nodes.RemoveAll(node => ids.Contains(node.Id));
+            Graph.Edges.RemoveAll(edge => ids.Contains(edge.From.Node) || ids.Contains(edge.To.Node));
+        });
+        Rebuild();
+    }
+
+    public void CopySelection()
+    {
+        var ids = SelectedViews.Select(view => view.NodeId).ToHashSet(StringComparer.Ordinal);
+        clipboard = Fragment(ids);
+    }
+
+    public void DuplicateSelection()
+    {
+        CopySelection();
+        PasteClipboard(new Vector2(30, 30));
+    }
+
+    public void Paste() => PasteClipboard(new Vector2(30, 30));
+
+    /// <summary>Add a titled comment frame at a graph position.</summary>
+    public string? AddComment(Vector2 position)
+    {
+        if (session is null)
+        {
+            return null;
+        }
+
+        string id = NextId("c", Graph.Comments.Select(comment => comment.Id));
+        session.Edit(document => Graph.Comments.Add(new ScriptComment
+        {
+            Id = id,
+            Text = "Comment",
+            Position = new ScriptPosition { X = position.X, Y = position.Y },
+            Size = new ScriptSize { X = 320, Y = 200 }
+        }));
+        Rebuild();
+        return id;
+    }
+
+    public bool RemoveComment(string id)
+    {
+        if (session is null || Graph.Comments.All(comment => comment.Id != id))
+        {
+            return false;
+        }
+
+        session.Edit(document => Graph.Comments.RemoveAll(comment => comment.Id == id));
+        Rebuild();
+        return true;
+    }
+
+    ScriptGraph? Fragment(HashSet<string> ids)
+    {
+        if (ids.Count == 0)
+        {
+            return null;
+        }
+
+        var fragment = new ScriptGraph();
+        foreach (var node in Graph.Nodes.Where(node => ids.Contains(node.Id)))
+        {
+            fragment.Nodes.Add(Clone(node)!);
+        }
+
+        foreach (var edge in Graph.Edges.Where(edge => ids.Contains(edge.From.Node) && ids.Contains(edge.To.Node)))
+        {
+            fragment.Edges.Add(Clone(edge)!);
+        }
+
+        return fragment;
+    }
+
+    void PasteClipboard(Vector2 offset)
+    {
+        if (session is null || clipboard is null || clipboard.Nodes.Count == 0)
+        {
+            return;
+        }
+
+        var remap = new Dictionary<string, string>(StringComparer.Ordinal);
+        session.Edit(document =>
+        {
+            foreach (var source in clipboard.Nodes)
+            {
+                var node = Clone(source)!;
+                node.Id = NextId("n", Graph.Nodes.Select(item => item.Id));
+                node.Position.X += offset.X;
+                node.Position.Y += offset.Y;
+                remap[source.Id] = node.Id;
+                Graph.Nodes.Add(node);
+            }
+
+            foreach (var source in clipboard.Edges)
+            {
+                var edge = Clone(source)!;
+                edge.Id = NextId("e", Graph.Edges.Select(item => item.Id));
+                edge.From.Node = remap.GetValueOrDefault(edge.From.Node, edge.From.Node);
+                edge.To.Node = remap.GetValueOrDefault(edge.To.Node, edge.To.Node);
+                Graph.Edges.Add(edge);
+            }
+        });
+        Rebuild();
+        foreach (string id in remap.Values)
+        {
+            if (NodeView(id) is { } view)
+            {
+                view.Selected = true;
+            }
+        }
+    }
+
+    static T? Clone<T>(T value) where T : class =>
+        JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, ScriptDocumentJson.Options), ScriptDocumentJson.Options);
 
     void Rebuild()
     {
@@ -337,6 +529,12 @@ public partial class ScriptGraphCanvas : GraphEdit
             view.QueueFree();
         }
 
+        foreach (var frame in GetChildren().OfType<GraphFrame>())
+        {
+            RemoveChild(frame);
+            frame.QueueFree();
+        }
+
         views.Clear();
         if (session is null)
         {
@@ -344,14 +542,26 @@ public partial class ScriptGraphCanvas : GraphEdit
             return;
         }
 
-        foreach (var node in session.Document.Graph.Nodes)
+        foreach (var comment in Graph.Comments)
+        {
+            var frame = new GraphFrame
+            {
+                Name = "Frame_" + comment.Id,
+                Title = comment.Text,
+                PositionOffset = new Vector2((float)comment.Position.X, (float)comment.Position.Y),
+                Size = new Vector2((float)comment.Size.X, (float)comment.Size.Y)
+            };
+            AddChild(frame);
+        }
+
+        foreach (var node in Graph.Nodes)
         {
             var view = new ScriptNodeView(session.Document, Host, node, new ScriptPortMap());
             AddChild(view);
             views.Add(view);
         }
 
-        foreach (var edge in session.Document.Graph.Edges)
+        foreach (var edge in Graph.Edges)
         {
             var from = NodeView(edge.From.Node);
             var to = NodeView(edge.To.Node);

@@ -6,7 +6,7 @@ namespace ACWorldEdit.Foundation.Scripting;
 /// </summary>
 public static class ScriptTemplateLibrary
 {
-    public static IReadOnlyList<string> Names { get; } = ["blank", "creature-death", "command"];
+    public static IReadOnlyList<string> Names { get; } = ["blank", "command", "creature-death", "quest-giver", "spell-cast"];
 
     public static ScriptDocument Load(string name)
     {

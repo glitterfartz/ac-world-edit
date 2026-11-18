@@ -40,6 +40,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         toolbar.AddChild(ToolbarButton("Export", () => ExportCurrent(), "Export this script (Ctrl+Shift+E)"));
         toolbar.AddChild(ToolbarButton("Export all", () => ExportAllDocument(), "Export every script in the workspace"));
         toolbar.AddChild(ToolbarButton("Folders…", OpenFolders, "Workspace and export folders"));
+        toolbar.AddChild(ToolbarButton("Comment", AddComment, "Add a comment frame"));
         HostLabel = ClientStyle.Text("Host: " + Host.Label, 13, ClientStyle.Faded);
         toolbar.AddChild(HostLabel);
         StatusLabel = ClientStyle.Text("", 13, ClientStyle.Faded);
@@ -88,8 +89,15 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         variableButtons.AddChild(ToolbarButton("Remove", RemoveVariable, "Remove the selected variable"));
         right.AddChild(variableButtons);
         right.AddChild(ClientStyle.Text("Functions", 15, ClientStyle.Header));
-        Functions = new ItemList { CustomMinimumSize = new Vector2(0, 60) };
+        Functions = new ItemList { CustomMinimumSize = new Vector2(0, 60), AllowReselect = true };
+        Functions.ItemActivated += index => OpenFunction((string)Functions.GetItemMetadata((int)index));
         right.AddChild(Functions);
+        var functionButtons = new HBoxContainer();
+        functionButtons.AddChild(ToolbarButton("New", AddFunction, "Add a user function"));
+        functionButtons.AddChild(ToolbarButton("Edit…", EditFunction, "Rename and edit parameters/returns"));
+        functionButtons.AddChild(ToolbarButton("Delete", RemoveFunction, "Delete the selected function"));
+        functionButtons.AddChild(ToolbarButton("Events", ShowEventGraph, "Return to the event graph"));
+        right.AddChild(functionButtons);
 
         var bottom = new HSplitContainer { CustomMinimumSize = new Vector2(0, 190) };
         Body.AddChild(bottom);
@@ -141,6 +149,9 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
     public Action<string, string, bool>? SaveFolders { get; set; }
 
     public ScriptDocumentSession Session { get; } = new();
+
+    /// <summary>The function graph currently on the canvas, or null for the document's event graph.</summary>
+    public ScriptFunction? CurrentFunction { get; private set; }
 
     public ScriptGraphCanvas Canvas { get; }
 
@@ -350,7 +361,10 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
 
         foreach (var definition in Host.Events.Values.Where(item => item.Availability == ScriptAvailability.Implemented))
         {
-            entries.Add(($"Event · {definition.Display}", definition.Id));
+            if (CurrentFunction is null)
+            {
+                entries.Add(($"Event · {definition.Display}", definition.Id));
+            }
         }
 
         foreach (var builtin in ScriptBuiltinCatalog.All)
@@ -414,6 +428,11 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         if (node.Kind is ScriptBuiltinCatalog.VariableGet or ScriptBuiltinCatalog.VariableSet)
         {
             AddVariableSelector(node);
+        }
+
+        if (node.Kind == ScriptBuiltinCatalog.ParameterGet)
+        {
+            AddParameterSelector(node);
         }
 
         foreach (var pin in ScriptPins.Build(Session.Document, Host, node).Where(pin => pin.Direction == ScriptPinDirection.In && pin.Type != ScriptValueType.Exec))
@@ -520,7 +539,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
                     : JsonSerializer.SerializeToElement(trimmed);
             Canvas.Session!.Edit(document =>
             {
-                var target = document.Graph.Nodes.First(item => item.Id == node.Id);
+                var target = Canvas.Graph.Nodes.First(item => item.Id == node.Id);
                 target.Properties[name] = value;
             });
             Canvas.RebuildFromSession();
@@ -548,6 +567,26 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
 
         picker.ItemSelected += index => Canvas.SetProperty(node.Id, "variable", JsonSerializer.SerializeToElement((string)picker.GetItemMetadata((int)index)));
+        Inspector.AddChild(picker);
+    }
+
+    void AddParameterSelector(ScriptNode node)
+    {
+        var picker = new OptionButton { Name = "Parameter" };
+        var parameters = CurrentFunction?.Parameters ?? [];
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            var parameter = parameters[i];
+            picker.AddItem(parameter.Name);
+            picker.SetItemMetadata(i, parameter.Id);
+            if (parameter.Id == ScriptPins.PropertyString(node, "parameter"))
+            {
+                picker.Selected = i;
+            }
+        }
+
+        picker.ItemSelected += index => Canvas.SetProperty(node.Id, "parameter",
+            JsonSerializer.SerializeToElement((string)picker.GetItemMetadata((int)index)));
         Inspector.AddChild(picker);
     }
 
@@ -651,6 +690,7 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
 
     void RefreshAll()
     {
+        CurrentFunction = null;
         Canvas.Load(Session);
         RefreshDocuments();
         RefreshVariables();
@@ -679,8 +719,231 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         }
     }
 
-    void RefreshVariables()
+    /// <summary>Create an empty function with its Return anchor and open its graph.</summary>
+    public void AddFunction()
     {
+        string id = "f" + (Session.Document.Functions.Count + 1);
+        Session.Edit(document => document.Functions.Add(new ScriptFunction
+        {
+            Id = id,
+            Name = "function" + (document.Functions.Count + 1),
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode
+                    {
+                        Id = "n1",
+                        Kind = ScriptBuiltinCatalog.Return,
+                        Pins = [new ScriptPin { Id = "exec", Direction = ScriptPinDirection.In, Type = ScriptValueType.Exec }]
+                    }
+                }
+            }
+        }));
+        RefreshFunctions();
+        OpenFunction(id);
+        Status("Added a function.");
+    }
+
+    /// <summary>Show one function's graph, or the event graph when <paramref name="functionId"/> is null.</summary>
+    public void OpenFunction(string? functionId)
+    {
+        var function = functionId is null ? null : Session.Document.Functions.FirstOrDefault(item => item.Id == functionId);
+        if (functionId is not null && function is null)
+        {
+            return;
+        }
+
+        CurrentFunction = function;
+        if (function is null)
+        {
+            Canvas.Load(Session);
+        }
+        else
+        {
+            Canvas.ShowGraph(function.Graph, function.Id);
+        }
+
+        FillPalette(PaletteSearchField.Text);
+        RefreshTitle();
+        Status(function is null ? "Event graph." : $"Function '{function.Name}'.");
+    }
+
+    public void ShowEventGraph() => OpenFunction(null);
+
+    public void RemoveFunction()
+    {
+        int[] selected = Functions.GetSelectedItems();
+        if (selected.Length == 0)
+        {
+            Status("Select a function first.");
+            return;
+        }
+
+        string id = (string)Functions.GetItemMetadata(selected[0]);
+        Session.Edit(document => document.Functions.RemoveAll(function => function.Id == id));
+        if (CurrentFunction?.Id == id)
+        {
+            OpenFunction(null);
+        }
+
+        RefreshFunctions();
+        Status("Removed a function.");
+    }
+
+    /// <summary>Replace a function's name, parameters and returns; Return nodes get the new slots.</summary>
+    public void SetFunctionSignature(
+        string functionId,
+        string name,
+        IReadOnlyList<(string Name, ScriptValueType Type)> parameters,
+        IReadOnlyList<(string Name, ScriptValueType Type)> returns)
+    {
+        Session.Edit(document =>
+        {
+            var function = document.Functions.First(item => item.Id == functionId);
+            function.Name = name;
+            function.Parameters = parameters.Select((parameter, index) => new ScriptParameter
+            {
+                Id = index < function.Parameters.Count ? function.Parameters[index].Id : $"p{index + 1}",
+                Name = parameter.Name,
+                Type = parameter.Type
+            }).ToList();
+            function.Returns = returns.Select(returnSlot => new ScriptReturn
+            {
+                Name = returnSlot.Name,
+                Type = returnSlot.Type
+            }).ToList();
+            foreach (var node in function.Graph.Nodes.Where(node => node.Kind == ScriptBuiltinCatalog.Return))
+            {
+                node.Pins =
+                [
+                    new ScriptPin { Id = "exec", Direction = ScriptPinDirection.In, Type = ScriptValueType.Exec },
+                    .. function.Returns.Select(slot => new ScriptPin
+                    {
+                        Id = slot.Name,
+                        Direction = ScriptPinDirection.In,
+                        Type = slot.Type
+                    })
+                ];
+            }
+        });
+        Canvas.RebuildFromSession();
+        RefreshFunctions();
+        RefreshTitle();
+        Compile();
+        Status($"Updated '{name}'.");
+    }
+
+    void EditFunction()
+    {
+        int[] selected = Functions.GetSelectedItems();
+        if (selected.Length == 0)
+        {
+            Status("Select a function first.");
+            return;
+        }
+
+        string id = (string)Functions.GetItemMetadata(selected[0]);
+        var function = Session.Document.Functions.First(item => item.Id == id);
+        var dialog = new AcceptDialog { Title = "Function", Size = new Vector2I(620, 520) };
+        var form = new VBoxContainer();
+        dialog.AddChild(form);
+        var nameField = new LineEdit { Text = function.Name };
+        form.AddChild(new Label { Text = "Name" });
+        form.AddChild(nameField);
+        var parameterRows = new VBoxContainer();
+        var returnRows = new VBoxContainer();
+        var parameterEditors = new List<(LineEdit Name, OptionButton Type)>();
+        var returnEditors = new List<(LineEdit Name, OptionButton Type)>();
+
+        void AddRow(VBoxContainer rows, List<(LineEdit, OptionButton)> editors, string name, ScriptValueType type)
+        {
+            var row = new HBoxContainer();
+            var field = new LineEdit { Text = name, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            var picker = TypePicker(type);
+            var remove = new Button { Text = "Remove" };
+            row.AddChild(field);
+            row.AddChild(picker);
+            row.AddChild(remove);
+            rows.AddChild(row);
+            var editor = (field, picker);
+            editors.Add(editor);
+            remove.Pressed += () =>
+            {
+                editors.Remove(editor);
+                rows.RemoveChild(row);
+                row.QueueFree();
+            };
+        }
+
+        form.AddChild(new Label { Text = "Parameters" });
+        form.AddChild(parameterRows);
+        form.AddChild(ToolbarButton("Add parameter", () =>
+            AddRow(parameterRows, parameterEditors, "argument", ScriptValueType.Any), "Add a parameter"));
+        form.AddChild(new Label { Text = "Returns" });
+        form.AddChild(returnRows);
+        form.AddChild(ToolbarButton("Add return", () =>
+            AddRow(returnRows, returnEditors, "result", ScriptValueType.Int), "Add a return slot"));
+        foreach (var parameter in function.Parameters)
+        {
+            AddRow(parameterRows, parameterEditors, parameter.Name, parameter.Type);
+        }
+
+        foreach (var returnSlot in function.Returns)
+        {
+            AddRow(returnRows, returnEditors, returnSlot.Name, returnSlot.Type);
+        }
+
+        dialog.Confirmed += () =>
+        {
+            SetFunctionSignature(id, nameField.Text.Trim(),
+                parameterEditors.Select(editor => (editor.Name.Text.Trim(), TypeOf(editor.Type))).ToList(),
+                returnEditors.Select(editor => (editor.Name.Text.Trim(), TypeOf(editor.Type))).ToList());
+            dialog.QueueFree();
+        };
+        dialog.Canceled += dialog.QueueFree;
+        AddChild(dialog);
+        dialog.PopupCentered();
+    }
+
+    static OptionButton TypePicker(ScriptValueType selected)
+    {
+        var picker = new OptionButton();
+        var types = new[]
+        {
+            ScriptValueType.Any, ScriptValueType.Bool, ScriptValueType.Int, ScriptValueType.Float,
+            ScriptValueType.String, ScriptValueType.Unit, ScriptValueType.Player,
+            ScriptValueType.Creature, ScriptValueType.GameObject, ScriptValueType.ObjectGuid,
+            ScriptValueType.SpellId, ScriptValueType.ItemEntry, ScriptValueType.QuestId, ScriptValueType.MapId
+        };
+        for (int i = 0; i < types.Length; i++)
+        {
+            picker.AddItem(ScriptValueTypeNames.ToJson(types[i]));
+            picker.SetItemMetadata(i, types[i].ToString());
+            if (types[i] == selected)
+            {
+                picker.Selected = i;
+            }
+        }
+
+        return picker;
+    }
+
+    static ScriptValueType TypeOf(OptionButton picker) =>
+        Enum.TryParse<ScriptValueType>((string)picker.GetItemMetadata(picker.Selected), out var type)
+            ? type
+            : ScriptValueType.Any;
+
+    public void AddComment()
+    {
+        Vector2 centre = Canvas.ScrollOffset + Canvas.Size * 0.5f / Canvas.Zoom;
+        if (Canvas.AddComment(centre) is not null)
+        {
+            Status("Added a comment frame.");
+        }
+    }
+
+    void RefreshVariables()    {
         Variables.Clear();
         foreach (var variable in Session.Document.Variables)
         {
@@ -694,13 +957,15 @@ public partial class ScriptEditorWindow : ScriptWindowFrame
         Functions.Clear();
         foreach (var function in Session.Document.Functions)
         {
-            Functions.AddItem(function.Name);
+            int index = Functions.AddItem(function.Name);
+            Functions.SetItemMetadata(index, function.Id);
         }
     }
 
     void RefreshTitle()
     {
-        TitleLabel.Text = $"Script editor — {Session.Document.Name}{(Session.Dirty ? " *" : "")}";
+        string where = CurrentFunction is null ? "" : $" › {CurrentFunction.Name}";
+        TitleLabel.Text = $"Script editor — {Session.Document.Name}{where}{(Session.Dirty ? " *" : "")}";
     }
 
     void AddVariable()

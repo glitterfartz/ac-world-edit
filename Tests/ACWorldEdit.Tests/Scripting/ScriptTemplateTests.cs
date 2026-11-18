@@ -10,6 +10,8 @@ public class ScriptTemplateTests
     [InlineData("blank")]
     [InlineData("creature-death")]
     [InlineData("command")]
+    [InlineData("quest-giver")]
+    [InlineData("spell-cast")]
     public void EveryTemplateCompiles(string template)
     {
         var document = ScriptTemplateLibrary.Load(template);
@@ -48,6 +50,6 @@ public class ScriptTemplateTests
     [Fact]
     public void TemplateNamesAreStable()
     {
-        Assert.Equal(["blank", "creature-death", "command"], ScriptTemplateLibrary.Names);
+        Assert.Equal(["blank", "command", "creature-death", "quest-giver", "spell-cast"], ScriptTemplateLibrary.Names);
     }
 }

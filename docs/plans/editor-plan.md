@@ -427,11 +427,11 @@ does not have this problem because `hotfix_data` sends the new rows to the clien
 
 ## Phase 25: Visual scripting
 
-**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–2 are
-built — the Foundation compiler and persistence services, and the Godot editor MVP (lazy window,
-canvas with typed connections and undo/redo, palette, inspector, problems, Lua preview, save/export).
-Authoring depth starts at Milestone 3. The live `.reload ale` acceptance run is pending a server
-console reload.
+**State:** planned here, tracked in [plans/scripting-plan.md](scripting-plan.md). Milestones 0–3 are
+built — the Foundation compiler and persistence services, the Godot editor MVP, and authoring depth
+(loops, user-function graphs, copy/paste/duplicate, comments, spell and quest templates). Domain
+packs, pickers and the catalog tool start at Milestone 4. The live `.reload ale` acceptance run is
+pending a server console reload.
 
 **Why:** complex server-side behavior (encounters, quests, scripted objects) is written today either as
 SmartAI rows or as hand-maintained ALE Lua files outside the app. A graph editor keeps the behavior

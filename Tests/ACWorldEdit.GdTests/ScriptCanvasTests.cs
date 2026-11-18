@@ -155,6 +155,62 @@ public class ScriptCanvasTests
     }
 
     [TestCase]
+    public void DuplicateAndPasteCloneNodesWithFreshIds()
+    {
+        var session = Session();
+        var canvas = Canvas(session);
+        canvas.AddNode("unit.send_unit_say", new Vector2(200, 0));
+        string say = session.Document.Graph.Nodes[1].Id;
+        canvas.SetLiteral(say, "message", JsonSerializer.SerializeToElement("Hi"));
+        canvas.NodeView(say)!.Selected = true;
+
+        canvas.CopySelection();
+        canvas.Paste();
+        AssertThat(session.Document.Graph.Nodes.Count).IsEqual(3);
+        AssertThat(session.Document.Graph.Nodes.Select(node => node.Id).Distinct().Count()).IsEqual(3);
+        AssertThat(session.Document.Graph.Nodes[2].Literals["message"].GetString()).IsEqual("Hi");
+
+        canvas.NodeView(say)!.Selected = false;
+        foreach (var view in canvas.NodeViews)
+        {
+            view.Selected = false;
+        }
+
+        canvas.NodeView(say)!.Selected = true;
+        canvas.DuplicateSelection();
+        AssertThat(session.Document.Graph.Nodes.Count).IsEqual(4);
+    }
+
+    [TestCase]
+    public void CommentFramesPersistAndCanBeRemoved()
+    {
+        var session = Session();
+        var canvas = Canvas(session);
+
+        string id = canvas.AddComment(new Vector2(10, 20))!;
+
+        AssertThat(session.Document.Graph.Comments.Count).IsEqual(1);
+        AssertThat(session.Document.Graph.Comments[0].Text).IsEqual("Comment");
+        canvas.RemoveComment(id);
+        AssertThat(session.Document.Graph.Comments.Count).IsEqual(0);
+    }
+
+    [TestCase]
+    public void SelectingASecondNodeAndDeletingRemovesBoth()
+    {
+        var session = Session();
+        var canvas = Canvas(session);
+        string say = canvas.AddNode("unit.send_unit_say", new Vector2(200, 0))!;
+        string level = canvas.AddNode("unit.get_level", new Vector2(400, 0))!;
+
+        canvas.NodeView(say)!.Selected = true;
+        canvas.NodeView(level)!.Selected = true;
+        canvas.RemoveSelection();
+
+        AssertThat(session.Document.Graph.Nodes.Count).IsEqual(1);
+    }
+
+    [TestCase]
     public void LiteralEditsAreUndoable()
     {
         var session = Session();

@@ -69,10 +69,11 @@ registration. `AcScriptHosts.Id` is `ale-azerothcore`; the profile is built lazi
 `ScriptCatalogHash` for exported provenance.
 
 Language-level nodes are not host operations and live in `ScriptBuiltinCatalog` instead:
-`flow.branch`, `flow.sequence`, variable get/set, user-function call/return, comparisons
-(`flow.equal`, `not_equal`, `less`, `less_equal`, `greater`, `greater_equal`, `and`, `or`, `not`)
-and the numeric operators (`math.add`, `subtract`, `multiply`, …). The validator, palette and IR
-builder share that one list, so a host pack cannot replace them.
+`flow.branch`, `flow.sequence`, `flow.for_range`, variable get/set, parameter get, user-function
+call/return, comparisons (`flow.equal`, `not_equal`, `less`, `less_equal`, `greater`,
+`greater_equal`, `and`, `or`, `not`) and the numeric/string operators (`math.add`, `subtract`,
+`multiply`, `divide`, `modulo`, `min`, `max`, `string.concat`, `string.length`). The validator,
+palette and IR builder share that one list, so a host pack cannot replace them.
 
 ### Validation
 
@@ -101,16 +102,19 @@ semantic `default`) and only trailing arguments with no default at all are dropp
 parameters become function parameters named after their semantic pins.
 
 `LuaEmitter` writes Lua 5.1-compatible text: a generated-file header, `local __vars` for module
-variables, `local __fns` for user functions, one `__acw_<node>` function per event, and the
-registrations (`RegisterCreatureEvent(entry, event, handler)` etc.). Output is deterministic: the
-same document compiles byte-identically, including ordering and hashes. `ScriptCompiler.OutputName`
-is `acw_<slug>_<shortid>.lua`.
+variables, `__fns` for user functions, one `__acw_<node>` function per event, and the
+registrations (`RegisterCreatureEvent(entry, event, handler)` etc.). `flow.for_range` lowers to an
+inclusive `for i = from, to do … end`; a function body is a set of roots (nodes with an unconnected
+exec input) plus a Return node, and `flow.parameter_get` resolves to the function parameter (the
+legacy expression-only Return shape still compiles). Output is deterministic: the same document
+compiles byte-identically, including ordering and hashes. `ScriptCompiler.OutputName` is
+`acw_<slug>_<shortid>.lua`.
 
 ### Templates
 
-`ScriptTemplateLibrary` loads embedded `.acwscript.json` files (`blank`, `creature-death`,
-`command`) and `Create` clones one with a fresh document id, node/edge/comment ids. A loaded
-template is never mutated.
+`ScriptTemplateLibrary` loads embedded `.acwscript.json` files (`blank`, `command`,
+`creature-death`, `quest-giver`, `spell-cast`) and `Create` clones one with a fresh document id,
+node/edge/comment ids. A loaded template is never mutated.
 
 ### Workspace, manifest and export
 
@@ -173,9 +177,26 @@ with `.reload ale` unless `ALE.AutoReload` is on.
 - **Shortcuts** are handled only while the window is visible: Ctrl+S save, Ctrl+Z/Y undo/redo,
   Ctrl+Enter compile, Ctrl+Shift+E export, Ctrl+F palette search, Home frame all, Ctrl+0 zoom
   reset, Escape close (a dirty document asks before discarding).
-- **Not yet in the MVP**: typed entity pickers (creature/item/spell lookups), function graph
-  authoring, comments/frames, copy/paste/duplicate and reroute nodes. These belong to the authoring
-  milestones.
+- **Not yet in the MVP**: typed entity pickers (creature/item/spell lookups), copy/paste across
+  documents, reroute nodes and timer/list nodes. These belong to the later milestones.
+
+## Authoring depth (Milestone 3)
+
+- **User functions.** The Functions panel creates, opens, edits and deletes functions; a function's
+  name, parameters and returns are edited in a dialog, and its Return node gains the declared slots.
+  Opening a function shows its graph on the same canvas (`ScriptGraphCanvas.Graph`), with
+  `flow.parameter_get` nodes bound by parameter id. Event nodes are hidden from the palette while a
+  function graph is open.
+- **Loops.** `flow.for_range` lowers to an inclusive Lua numeric loop; the index pin is a local name
+  inside the body. `flow.foreach` is deliberately absent until a list/table source exists (Milestone
+  6), so the palette never offers a node that cannot produce a body.
+- **Copy, paste, duplicate and multi-select.** GraphEdit's box selection drives the canvas; Ctrl+C/V
+  copy a fragment (nodes plus internal edges), Ctrl+V and Ctrl+D remap node and edge ids and offset
+  positions, and Delete removes the selection. The clipboard is per canvas (cross-document paste is
+  deferred).
+- **Comments.** Comment frames are `GraphFrame`s behind the nodes, stored as `ScriptComment` with
+  position and size; dragging or resizing a frame updates the document on `EndNodeMove`.
+- **Templates.** `spell-cast` and `quest-giver` join the template picker and have golden Lua.
 
 ## Confirmed canvas contract (Godot 4.7.2)
 

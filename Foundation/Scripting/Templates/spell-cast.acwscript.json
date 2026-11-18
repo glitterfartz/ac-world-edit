@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "id": "33333333333333333333333333333333",
+  "name": "Spell Cast",
+  "description": "Announces a spell cast to the world.",
+  "host": "ale-azerothcore",
+  "runtimeMode": "compatibility",
+  "variables": [],
+  "functions": [],
+  "graph": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "event.spell.on_cast",
+        "position": { "x": 0, "y": 0 },
+        "properties": { "entry": 133 }
+      },
+      {
+        "id": "n2",
+        "kind": "server.send_world_message",
+        "position": { "x": 360, "y": 0 },
+        "literals": { "message": "A spell was cast." }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "from": { "node": "n1", "pin": "exec" }, "to": { "node": "n2", "pin": "exec" } }
+    ],
+    "comments": []
+  }
+}

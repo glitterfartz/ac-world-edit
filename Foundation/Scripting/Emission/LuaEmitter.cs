@@ -78,8 +78,8 @@ public sealed class LuaEmitter : ScriptEmitter
 
     static void WriteFunction(LuaWriter writer, string name, IrFunction function)
     {
-        string prefix = function.IsEvent ? "local function" : "";
-        writer.Line($"{prefix} {name}({Parameters(function)})".TrimStart());
+        string header = function.IsEvent ? $"local function {name}" : $"function {name}";
+        writer.Line($"{header}({Parameters(function)})");
         writer.Indent();
         EmitStatements(writer, function.Body);
         if (function.Returns.Count > 0 && function.Body.LastOrDefault() is not IrReturn)
@@ -160,10 +160,27 @@ public sealed class LuaEmitter : ScriptEmitter
                 break;
             case IrLatent:
                 throw new NotSupportedException("Latent IR is reserved for the timer milestone.");
-            case IrWhile:
-            case IrForRange:
-            case IrForEach:
-                throw new NotSupportedException("Loop IR is reserved for the authoring-depth milestone.");
+            case IrWhile loop:
+                writer.Line($"while {Expression(loop.Condition)} do");
+                writer.Indent();
+                EmitStatements(writer, loop.Body);
+                writer.Outdent();
+                writer.Line("end");
+                break;
+            case IrForRange range:
+                writer.Line($"for {range.Name} = {Expression(range.From)}, {Expression(range.To)} do");
+                writer.Indent();
+                EmitStatements(writer, range.Body);
+                writer.Outdent();
+                writer.Line("end");
+                break;
+            case IrForEach each:
+                writer.Line($"for _, {each.Name} in ipairs({Expression(each.List)}) do");
+                writer.Indent();
+                EmitStatements(writer, each.Body);
+                writer.Outdent();
+                writer.Line("end");
+                break;
             default:
                 throw new NotSupportedException($"Unsupported IR statement {statement.GetType().Name}.");
         }

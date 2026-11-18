@@ -150,6 +150,53 @@ public class ScriptEditorWindowTests
     }
 
     [TestCase]
+    public void FunctionGraphsOpenAndSignatureChangesReachTheCompiler()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+        window.AddFunction();
+        var function = window.CurrentFunction!;
+        AssertThat(window.Canvas.Graph).IsSame(function.Graph);
+        window.Canvas.AddNode("flow.parameter_get", new Vector2(0, 0));
+        string parameterNode = window.Canvas.Graph.Nodes[^1].Id;
+        window.Canvas.SetProperty(parameterNode, "parameter", System.Text.Json.JsonSerializer.SerializeToElement("p1"));
+        string returnNodeId = window.Canvas.Graph.Nodes.First(node => node.Kind == "flow.return").Id;
+
+        window.SetFunctionSignature(function.Id, "twice",
+            [("value", ScriptValueType.Float)], [("result", ScriptValueType.Float)]);
+        window.Canvas.ConnectPins(parameterNode, "value", returnNodeId, "result");
+        window.Compile();
+
+        AssertThat(window.Session.Document.Functions[0].Parameters.Count).IsEqual(1);
+        var returnNode = window.Session.Document.Functions[0].Graph.Nodes.First(node => node.Kind == "flow.return");
+        AssertThat(returnNode.Pins.Any(pin => pin.Id == "result")).IsTrue();
+        AssertString(window.Preview.Text).Contains("function __fns.twice");
+    }
+
+    [TestCase]
+    public void TheSpellCastTemplateCompiles()
+    {
+        var window = Spawn(out _, out _);
+
+        window.NewDocument("spell-cast");
+
+        AssertString(window.Preview.Text).Contains("RegisterSpellEvent(133, 2");
+        AssertThat(window.Compile().Success).IsTrue();
+    }
+
+    [TestCase]
+    public void CommentFramesAppearInTheDocument()
+    {
+        var window = Spawn(out _, out _);
+        window.NewDocument("blank");
+
+        window.AddComment();
+
+        AssertThat(window.Session.Document.Graph.Comments.Count).IsEqual(1);
+        AssertThat(window.Session.Dirty).IsTrue();
+    }
+
+    [TestCase]
     public void UndoAndRedoFollowCanvasEditsAndMarkTheTitle()
     {
         var window = Spawn(out _, out _);

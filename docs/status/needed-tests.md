@@ -100,8 +100,10 @@ wait for the features or environment they exercise:
 - [ ] Editor external-change prompt and discard/overwrite choice: save/load/export in temp folders and
   the dirty guard are covered, but the confirmation dialog's three answers are not driven headlessly
   (`Dialogs.Confirm` needs a real window in the current harness).
-- [ ] Copy/paste/duplicate, function graph authoring, comments/frames and reroute nodes: gdUnit
-  coverage arrives with those Milestone 3 features.
+- [ ] `flow.foreach` and list/table sources: deferred to Milestone 6 (no list producer exists yet);
+  the palette deliberately omits ForEach until then.
+- [ ] The function signature and folder dialogs: the underlying APIs are covered, but the modal UI
+  paths are not driven headlessly in the current harness.
 
 ## Dynamic sun shadows
 

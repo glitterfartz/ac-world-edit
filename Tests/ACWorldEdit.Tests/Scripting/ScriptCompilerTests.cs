@@ -110,6 +110,113 @@ public class ScriptCompilerTests
     }
 
     [Fact]
+    public void ForRangeEmitsAnInclusiveLuaLoop()
+    {
+        var document = Document(Event(), new ScriptNode
+        {
+            Id = "n2",
+            Kind = "flow.for_range",
+            Literals = { ["from"] = Json(1), ["to"] = Json(3) }
+        }, new ScriptNode
+        {
+            Id = "n3",
+            Kind = "unit.set_health"
+        });
+        document.Graph.Edges.Add(Edge("e1", "n1", "exec", "n2", "exec"));
+        document.Graph.Edges.Add(Edge("e2", "n2", "exec_out", "n3", "exec"));
+        document.Graph.Edges.Add(Edge("e3", "n2", "index", "n3", "health"));
+        document.Graph.Edges.Add(Edge("e4", "n1", "creature", "n3", "self"));
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("for i = 1, 3 do", result.LuaText);
+        Assert.Contains("creature:SetHealth(i)", result.LuaText);
+        Assert.Contains("end", result.LuaText);
+    }
+
+    [Fact]
+    public void FunctionBodiesLowerParameterGetAndReturn()
+    {
+        var document = Document();
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "twice",
+            Parameters = [new ScriptParameter { Id = "p1", Name = "value", Type = ScriptValueType.Float }],
+            Returns = [new ScriptReturn { Name = "result", Type = ScriptValueType.Float }],
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode { Id = "n1", Kind = "flow.parameter_get", Properties = { ["parameter"] = Json("p1") } },
+                    new ScriptNode { Id = "n2", Kind = "math.multiply", Literals = { ["b"] = Json(2) } },
+                    new ScriptNode
+                    {
+                        Id = "n3",
+                        Kind = "flow.return",
+                        Pins = [new ScriptPin { Id = "result", Direction = ScriptPinDirection.In, Type = ScriptValueType.Float }]
+                    }
+                },
+                Edges =
+                {
+                    Edge("e1", "n1", "value", "n2", "a"),
+                    Edge("e2", "n2", "result", "n3", "result")
+                }
+            }
+        });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("function __fns.twice(value)", result.LuaText);
+        Assert.Contains("return value * 2", result.LuaText);
+    }
+
+    [Fact]
+    public void FunctionExecChainsAreLoweredInOrder()
+    {
+        var document = Document();
+        document.Functions.Add(new ScriptFunction
+        {
+            Id = "f1",
+            Name = "heal",
+            Parameters =
+            [
+                new ScriptParameter { Id = "p1", Name = "unit", Type = ScriptValueType.Unit },
+                new ScriptParameter { Id = "p2", Name = "amount", Type = ScriptValueType.Int }
+            ],
+            Graph = new ScriptGraph
+            {
+                Nodes =
+                {
+                    new ScriptNode { Id = "n1", Kind = "flow.parameter_get", Properties = { ["parameter"] = Json("p1") } },
+                    new ScriptNode { Id = "n2", Kind = "flow.parameter_get", Properties = { ["parameter"] = Json("p2") } },
+                    new ScriptNode { Id = "n3", Kind = "unit.set_health" },
+                    new ScriptNode
+                    {
+                        Id = "n4",
+                        Kind = "flow.return",
+                        Pins = [new ScriptPin { Id = "exec", Direction = ScriptPinDirection.In, Type = ScriptValueType.Exec }]
+                    }
+                },
+                Edges =
+                {
+                    Edge("e1", "n1", "value", "n3", "self"),
+                    Edge("e2", "n2", "value", "n3", "health"),
+                    Edge("e3", "n3", "exec_out", "n4", "exec")
+                }
+            }
+        });
+
+        var result = Compiler.Compile(document);
+
+        Assert.True(result.Success, string.Join("; ", result.Errors.Select(error => error.Message)));
+        Assert.Contains("unit:SetHealth(amount)", result.LuaText);
+        Assert.Contains("return", result.LuaText);
+    }
+
+    [Fact]
     public void OutputNameUsesTheSlugAndShortId()
     {
         var document = ScriptDocument.Create("Creature On Death");
