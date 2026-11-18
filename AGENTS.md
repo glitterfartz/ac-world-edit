@@ -13,6 +13,7 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 - `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
 - `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
 - `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, spawn authoring, SQL export).
+- `docs/architecture/scripting.md`: visual scripting (semantic `.acwscript` graph → host profile → IR → Lua), the confirmed GraphEdit canvas contract and the ALE runtime facts.
 - `docs/architecture/testing-and-tooling.md`: test projects, test commands and settings, environment variables, tooling, CI, commit message rules (read before committing).
 - `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs:
   - AzerothCore world database: https://www.azerothcore.org/wiki/database-world
@@ -22,6 +23,7 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 - `docs/status/performance.md` and `docs/status/performance-history.md`: the `--perf-smoke`/`--perf-breakdown` benchmarks, the current frame budget, open work and older runs.
 - `docs/status/needed-tests.md`: tests deferred until their feature works.
 - `docs/plans/editor-plan.md`: all pending work (phase refinements, the design of editor phases 10 onward, cross-cutting gaps).
+- `docs/plans/scripting-plan.md`: the visual scripting design, milestones, test matrix and ALE catalog coverage.
 - `docs/plans/sniff-import-proposal.md`: research only; do not implement it unless asked.
 
 ## Commands
