@@ -12,7 +12,7 @@ introduction; this folder is for people changing the code.
 | [architecture/viewer-runtime.md](architecture/viewer-runtime.md) | `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags | A runtime system, window or smoke workflow changes |
 | [architecture/rendering.md](architecture/rendering.md) | The retail shader port: progress, per-material notes, inferred inputs | A shader, material route or lighting pass changes |
 | [architecture/editing-and-export.md](architecture/editing-and-export.md) | `Scripts/Data` and `Foundation`: drafts, rules, SQL export | A table read, draft type, rule or export statement changes |
-| [architecture/scripting.md](architecture/scripting.md) | Visual scripting: semantic graph → host profile → IR → Lua, and the confirmed GraphEdit/ALE runtime contracts | The scripting subsystem or a runtime contract changes |
+| [architecture/scripting.md](architecture/scripting.md) | Visual scripting: semantic graph → host profile → IR → Lua, the Godot editor, and the confirmed GraphEdit/ALE runtime contracts | The scripting subsystem or a runtime contract changes |
 | [architecture/testing-and-tooling.md](architecture/testing-and-tooling.md) | Test projects and commands, environment variables, tooling, CI, commit rules | A test project, tool, setting or workflow changes |
 | [reference/database-differences.md](reference/database-differences.md) | AzerothCore vs TrinityCore schema differences that affect the editors | A table or column difference is found |
 | [reference/scripting-capabilities.md](reference/scripting-capabilities.md) | The scripting capability catalog, ALE bindings, event coverage, enums and host caveats | A capability, event, binding or enum changes |

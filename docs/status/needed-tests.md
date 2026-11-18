@@ -81,21 +81,27 @@ live-server obstacle parity are not automated.
 
 ## Visual scripting
 
-Milestone 1 covers the document model, catalog, validator, compiler, workspace and export in xUnit.
-These wait for the features they exercise:
+Milestone 1 covers the document model, catalog, validator, compiler, workspace and export in xUnit;
+Milestone 2 adds the gdUnit editor tests (`ScriptCanvasTests`, `ScriptEditorWindowTests`). These
+wait for the features or environment they exercise:
 
-- [ ] Generated Lua runs in a real ALE state: load each golden `.lua` into a live mod-ale, confirm the
-  registration succeeds and a scripted handler fires (a `DbFact`-style opt-in suite, one file, when the
-  Milestone 6 runtime work lands).
+- [ ] Live ALE load: the exported golden Lua was syntax-checked with the server's Lua 5.2 and sits
+  in the live `lua_scripts/acworld` folder, but `.reload ale` has not yet been run — the running
+  worldserver has no console input and restarting it needs the user. Confirm the reload prints no
+  AE/ALE errors and `RegisterCreatureEvent(1234, 4, …)` loads, then remove this entry.
+- [ ] Generated Lua runs in a real ALE state: scripted handler behavior (not just chunk load), a
+  `DbFact`-style opt-in suite, when the Milestone 6 runtime work lands.
 - [ ] Catalog drift: regenerate `events.json`/`event-bindings.json` from a pinned mod-ale checkout in CI
   and diff them, so an upstream hook rename fails a build instead of an editor session (Milestone 4
   catalog tool).
 - [ ] `ScriptReferenceResolver` / `AcScriptReferences` live lookups for typed IDs (creature/item/quest/
-  spell/map names and existence) — deferred until the Milestone 2/4 pickers exist; their `DbFact` tests
+  spell/map names and existence) — deferred until the Milestone 3/4 pickers exist; their `DbFact` tests
   come with the resolvers.
-- [ ] Editor persistence and export in Godot: save/load round-trip in a temp workspace, external-change
-  prompt, export to a temp directory, and the reload hint (gdUnit4 `ScriptEditorPersistenceTests`,
-  Milestone 2).
+- [ ] Editor external-change prompt and discard/overwrite choice: save/load/export in temp folders and
+  the dirty guard are covered, but the confirmation dialog's three answers are not driven headlessly
+  (`Dialogs.Confirm` needs a real window in the current harness).
+- [ ] Copy/paste/duplicate, function graph authoring, comments/frames and reroute nodes: gdUnit
+  coverage arrives with those Milestone 3 features.
 
 ## Dynamic sun shadows
 

@@ -13,7 +13,7 @@ Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the 
 - `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
 - `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
 - `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, spawn authoring, SQL export).
-- `docs/architecture/scripting.md`: visual scripting (semantic `.acwscript` graph → host profile → IR → Lua), the confirmed GraphEdit canvas contract and the ALE runtime facts.
+- `docs/architecture/scripting.md`: visual scripting (semantic `.acwscript` graph → host profile → IR → Lua), the Godot editor (Milestone 2), the confirmed GraphEdit canvas contract and the ALE runtime facts.
 - `docs/architecture/testing-and-tooling.md`: test projects, test commands and settings, environment variables, tooling, CI, commit message rules (read before committing).
 - `docs/reference/database-differences.md`: AzerothCore vs TrinityCore schema differences. Official schema docs:
   - AzerothCore world database: https://www.azerothcore.org/wiki/database-world

@@ -135,6 +135,48 @@ Lua is a file, and nothing reaches the world database. The export directory is t
 `lua_scripts` folder (or a subfolder such as `lua_scripts/acworld`); after export the user reloads
 with `.reload ale` unless `ALE.AutoReload` is on.
 
+## Editor (Milestone 2)
+
+`Scripts/Ui/Scripting` is the Godot editor, entered from **View → Script editor…**:
+
+| File | Role |
+|---|---|
+| `ScriptWindowFrame.cs` | draggable/resizable client-styled frame, hidden on close; not `ContentEditorWindow` |
+| `ScriptEditorWindow.cs` | toolbar, document list, palette, canvas, inspector, variables/functions, problems, Lua preview, folder settings, shortcuts |
+| `ScriptGraphCanvas.cs` | GraphEdit signal handling, model mutations through the session, connection rules |
+| `ScriptPortMap.cs` | pin → GraphNode slot and separate input/output port indices, with reverse lookups |
+| `ScriptNodeView.cs` | one `GraphNode` per model node: title from the catalog, one slot row per pin, type colours |
+| `Scripts/Viewer/Hud/ScriptingWiring.cs` | lazy window: built on first open, then hidden; per-profile folders |
+
+- **Lazy lifetime.** The window is created on the first menu open and only hidden afterwards, so
+  no scripting control tree enters the startup UI dump. Only the View menu item changes the golden
+  (`Tools/state_golden.py --kind ui --update`).
+- **Session edits.** `ScriptDocumentSession` keeps the document, its file path, a 100-entry
+  undo/redo stack of canonical snapshots and dirty state by hash. Canvas operations call
+  `Session.Edit`, so one user action is one undo entry; undo/redo rebuild the view tree.
+- **Connections** are enforced in `ConnectPins` after GraphEdit's hover hints: an edge runs output →
+  input, exec and data never mix, the target type must accept the source (object inheritance,
+  int→float, typed IDs), a data input takes one connection and an exec output cannot fan out.
+  `ConnectionRequest` calls the same method; `DisconnectionRequest` removes the matching edge.
+- **Palette** lists implemented events, capabilities and language builtins, filtered by display
+  name, kind or category; activating an entry adds it at the view centre and selects it.
+- **Inspector** builds typed editors from the node's input pins: checkboxes for bools, number
+  fields for ints/floats/typed IDs, text fields for strings, raw-JSON fields for lists/tables/other
+  objects, plus event scope fields and a variable picker for get/set nodes. A connected input says
+  so instead of offering a literal. Editing commits a new snapshot and recompiles.
+- **Problems** list diagnostics with severity colours; selecting one selects and centres its node.
+  The Lua preview keeps the last successful text when compilation fails, and the header shows the
+  error count.
+- **Folders…** edits the workspace and export directory and the auto-export flag; the viewer saves
+  them through `UserSettings` in `[scripting]` / `[scripting.<profile>]`. Export reports the file
+  count and the `.reload ale` hint; the editor never runs the console command itself.
+- **Shortcuts** are handled only while the window is visible: Ctrl+S save, Ctrl+Z/Y undo/redo,
+  Ctrl+Enter compile, Ctrl+Shift+E export, Ctrl+F palette search, Home frame all, Ctrl+0 zoom
+  reset, Escape close (a dirty document asks before discarding).
+- **Not yet in the MVP**: typed entity pickers (creature/item/spell lookups), function graph
+  authoring, comments/frames, copy/paste/duplicate and reroute nodes. These belong to the authoring
+  milestones.
+
 ## Confirmed canvas contract (Godot 4.7.2)
 
 Verified by the Milestone 0 gdUnit4 spike (`artifacts/graph-spike/`, git-ignored):

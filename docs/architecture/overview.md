@@ -63,7 +63,7 @@ flowchart TB
         viewer["Viewer<br/>ViewerShell partials, ClientServices, Sky, Minimap"]
         render["Rendering<br/>TerrainRenderer, ModelLibrary, WorldObjectScene,<br/>LiquidRendering, thumbnails"]
         overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger,<br/>Waypoint, Navigation, Gizmo, PlacementTool"]
-        ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers"]
+        ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers, script editor"]
         diag["Diagnostics<br/>smoke workflows, CLI flags"]
         data["Data (Godot-free)<br/>WorldDatabase, AcworldStore, WorldApplier, IDBSource, per-dialect sources,<br/>read helpers, ScriptWorkspace/ScriptManifest/ScriptExportService"]
         assets["Assets (Godot-free)<br/>Archives, Formats, Models, World, Retail, Client, Navigation"]
@@ -202,7 +202,7 @@ into one SQL file for sharing.
 | `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
 | `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
 | `Scripts/Overlays/` | One folder per overlay family (`Region`, `Placement`, `Creature`, `GameObject`, `Graveyard`, `Waypoint`, `AreaTrigger`, `Navigation`); the creature collaborators and the waypoint path views live beside their layer |
-| `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
+| `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, the visual scripting editor in `Scripting/`, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
 | `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, coordinates, and `Scripting/` (document model, catalog, validation, IR and Lua emission) |
 | `Shaders/` | Subfolders by pass: `terrain/`, `model/`, `sky/`, `liquid/` (water, magma and the specialized liquid materials) and `shared/` (`client_lighting`, `client_shadow` and `client_skinning` includes); each stage keeps its `.gdshader`/`.gdshaderinc` and `.uid` beside its siblings |

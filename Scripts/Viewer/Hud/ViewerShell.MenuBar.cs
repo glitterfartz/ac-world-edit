@@ -79,6 +79,7 @@ public partial class ViewerShell
             ("View", [
                 new MenuCommand("Fly to selection", FlyToSelection, () => HasSelection, Key.F),
                 new MenuCommand("Quest editor", () => questEditor.Open(0), () => databaseEnabled),
+                new MenuCommand("Script editor…", OpenScriptEditor),
                 new MenuCommand("Creature behavior (selected)", OpenBehaviorEditor, () => BehaviorEditors),
                 new MenuCommand("Inspector", () =>
                 {
