@@ -35,7 +35,7 @@ python Tools/setup.py --check             # report what is present, change nothi
 dotnet build ACWorldEdit.csproj -p:NuGetAudit=false       # ~10 s; ACW001/ACW002 mean native/ or Data/WoWDBDefs is missing
 python launch_viewer.py                   # build, then launch the viewer
 python launch_viewer.py --smoke           # build, then run Godot headless with --terrain-smoke
-dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite, ~7 s, ~1440 tests
+dotnet test Tests/ACWorldEdit.Tests -p:NuGetAudit=false   # default suite, ~10 s, ~1500 tests
 ```
 
 The test project needs a .NET 8 runtime: on a host that has only a newer runtime, prefix `DOTNET_ROLL_FORWARD=LatestMajor` or the run aborts with "You must install .NET 8". A command-line `--filter` is ANDed with `default.runsettings`, so `--filter "Category=Corpus"` matches nothing; pair it with `--settings corpus.runsettings` (or `all.runsettings`).
@@ -49,9 +49,9 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 - `artifacts/`, `native/`, `build/`, `.build-env/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
 - Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added. Never hand-edit a `.cs.uid` or anything under `.godot/`.
 - The launcher redirects `APPDATA`/`LOCALAPPDATA` into `.build-env/`; use `-p:NuGetAudit=false` for dotnet commands.
-- `--client-shot*` runs write PNGs into `artifacts/`. Read them back (the Read tool displays images) to inspect a rendering change; do not guess from logs alone. Prefer the same map, tile, hour and eye for before/after captures so they compare directly.
+- `--client-shot*` flags write PNGs into `artifacts/`. Read them back (the Read tool displays images) to inspect a rendering change; do not guess from logs alone. Prefer the same map, tile, hour and eye for before/after captures so they compare directly.
 - Aim the shot camera deliberately: `--client-shot-sky` takes `HOUR[,YAW[,LIFT[,PITCH]]]`, and a pitch near 0 or one that grew from repeated edits can end up pointing at the sky. For liquid or ground inspections use a downward pitch (e.g. `-8` for a level view, `-45` to `-89` for terrain), pass an eye above the surface only as far as needed, and check the saved PNG actually shows the surface before drawing conclusions from it. Never compare two shots taken with different pitch, yaw or eye.
-- Under Claude Code the `.claude/hooks` run `dotnet format whitespace` on each edited `.cs` and a build when a turn ends with uncommitted `.cs` changes. Agents without those hooks must do both themselves (`.editorconfig`: 4 spaces, LF, file-scoped namespaces).
+- Under Claude Code the `.claude/hooks` run `dotnet format whitespace` on each edited `.cs`, block edits to `.godot/` and `.cs.uid`, and build when a turn ends with uncommitted `.cs` changes. Agents without those hooks must format and build themselves (`.editorconfig`: 4 spaces, LF, file-scoped namespaces).
 - Do not run `Tools/refactor_gate.py` (or its structural/golden checks) unless the user explicitly asks; build and the relevant test project are enough for a normal change. The only time it is permissible to run the gate without the user asking is when running the `refactor-module` skill.
 
 ## Rules

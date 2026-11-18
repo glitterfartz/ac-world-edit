@@ -62,6 +62,7 @@ Links are relative and point at the new filenames; don't reintroduce the old `AR
 
 ## Agent tooling
 
-The only project skill is `run-ac-world-edit` (`.claude/skills/run-ac-world-edit/SKILL.md`): it
-builds and runs the viewer through `driver.py`, runs smoke workflows and takes screenshots. It is
-invoked automatically when a task matches, or by name.
+Two project skills live under `.claude/skills/`. `run-ac-world-edit` builds and runs the viewer
+through `driver.py`, runs smoke workflows and takes screenshots. `refactor-module` carries the
+behaviour-preserving refactor workflow (regression net, gated phases, budgets, commit protocol).
+Both are invoked automatically when a task matches, or by name.

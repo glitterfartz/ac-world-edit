@@ -8,33 +8,71 @@ A 3.3.5 client uses an AzerothCore world database. A retail (CASC) client uses a
 
 The game files are never modified. Edits stage in local drafts, sync to the `acworld` change log, and reach the world database only when you apply them from Change History; checked rows can also be exported as one SQL file per world for review or sharing, and finished history can be deleted by age. Reads stay in read-only transactions, and applying needs write access to the world database.
 
-## Screenshots
+## Showcase
 
-Explore the world, inspect server content, and preview edits in context. Click any screenshot to view it at full size.
+A viewer and an editor in one window: fly through the world, open any spawn, template or quest under the cursor, and edit it with the result drawn where it lands. Click any screenshot to view it at full size.
 
 <table>
   <tr>
-    <td width="50%" valign="top">
-      <p><strong>Creature placement</strong></p>
-      <a href="docs/img/npc-screen.png"><img src="docs/img/npc-screen.png" alt="A Stormwind Guard selected with the movement gizmo in Goldshire, alongside the creature inspector." width="640"></a>
-      <p>Find nearby creatures, inspect their spawn data, and adjust their placement in the world.</p>
-    </td>
-    <td width="50%" valign="top">
-      <p><strong>Creature templates &amp; gossip</strong></p>
-      <a href="docs/img/template-screen.png"><img src="docs/img/template-screen.png" alt="The Stormwind Guard creature template editor showing its gossip menu, greeting, and submenu options." width="640"></a>
-      <p>Browse creature templates and edit gossip menus, greetings, and linked options.</p>
+    <td colspan="2" valign="top">
+      <p><strong>Rendering the world</strong></p>
+      <a href="docs/img/rendering.png"><img src="docs/img/rendering.png" alt="A pandaren village on the Wandering Isle at 09:00, with streamed terrain, water and detailed building interiors, and the scene explorer and visibility preview panels on the right." width="100%"></a>
+      <p>Explore terrain, liquids and models straight from the client, toggle whole scene categories out of the way, and preview what a chosen phase, difficulty and event schedule would show a player.</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <p><strong>Navigation meshes</strong></p>
-      <a href="docs/img/mmap-screen.png"><img src="docs/img/mmap-screen.png" alt="Green ground and blue water navigation polygons overlaid on Pandaria terrain, with scene layer controls visible." width="640"></a>
-      <p>Overlay generated MMaps to inspect navigation surfaces across terrain and water.</p>
+      <p><strong>Spawns and templates</strong></p>
+      <a href="docs/img/creature-template.png"><img src="docs/img/creature-template.png" alt="The Kul Tiras Sailor creature template window (entry 3128, 29 spawns) with its section list and identity fields, over Tiragarde Keep in Durotar." width="640"></a>
+      <p>Edit a creature template once and every spawn that uses it inherits the change, or open a single spawn to tune its health, masks, equipment, stance, weapons, emotes and auras without touching the rest.</p>
     </td>
     <td width="50%" valign="top">
+      <p><strong>Vendor lists</strong></p>
+      <a href="docs/img/vendor-editing.png"><img src="docs/img/vendor-editing.png" alt="The vendor page of the Kul Tiras Sailor template, listing items for sale with prices, stock limits and a search for additional items." width="640"></a>
+      <p>Give a vendor its stock by searching for items by name and setting prices, stock and restock limits without hand-editing vendor tables.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <p><strong>Quests</strong></p>
+      <a href="docs/img/quest-editor.png"><img src="docs/img/quest-editor.png" alt="The quest editor on An Enemy in Arthas, showing the Overview tab with title, level requirements, faction and behavior flags." width="640"></a>
+      <p>Write an entire quest across its overview, story, objectives, rewards, chain and givers in one window, picking references by icon and name instead of typing IDs.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>GameObject templates</strong></p>
+      <a href="docs/img/gameobject-template.png"><img src="docs/img/gameobject-template.png" alt="The GameObject template window for Heartswood, a chest in Ashenvale, with its display, size, type, interaction flags, money limits and spawn and quest sections." width="640"></a>
+      <p>Edit a GameObject template's display, size, type, interaction flags, money limits, quests and spawns in one window, the same way as a creature.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <p><strong>Waypoint paths</strong></p>
+      <a href="docs/img/waypoint-editing.png"><img src="docs/img/waypoint-editing.png" alt="A 30-point Sen'jin Watcher waypoint path through Sen'jin Village, nodes drawn green through orange with numbered stops and a highlighted current node." width="640"></a>
+      <p>Lay out a patrol route by clicking the ground, insert or delete nodes, and set each stop's facing and delay while the finished path draws in the world.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>Formations</strong></p>
+      <a href="docs/img/formation-editing.png"><img src="docs/img/formation-editing.png" alt="Three Kul Tiras Sailors linked into a formation with leader lines and an offset ring, and the formation card showing 3.11 yards at 210.45 degrees." width="640"></a>
+      <p>Pick a leader, place members around it and drag the offset, and the group follows while the distance and angle update as you work.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <p><strong>Area triggers</strong></p>
-      <a href="docs/img/at-screen.png"><img src="docs/img/at-screen.png" alt="A selected spherical area trigger highlighted in a Kalimdor forest, with its quest link and dimensions in the inspector." width="640"></a>
-      <p>Visualize trigger volumes and inspect their dimensions, quests, and server links.</p>
+      <a href="docs/img/at-screen.png"><img src="docs/img/at-screen.png" alt="A spherical area trigger for quest 4811 The Red Crystal selected in Darkshore, drawn as a translucent sphere with its radius and quest link in the inspector." width="640"></a>
+      <p>See trigger volumes at their true size and open the behavior or server row each one runs, so you know what covers a spot without cross-checking coordinates.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p><strong>Change history</strong></p>
+      <a href="docs/img/db-change-history.png"><img src="docs/img/db-change-history.png" alt="The change history window listing one applied creature position change, with its revert button, and the select, apply, preview, export and discard controls." width="640"></a>
+      <p>Stage edits as you work, then apply, revert, export or discard them from one list, so the world database changes only when you choose.</p>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" valign="top">
+      <p><strong>Scripted changes</strong></p>
+      <a href="docs/img/db-revert-script.png"><img src="docs/img/db-revert-script.png" alt="The SQL preview of a revert script, showing the change-log header, the revert statement and a read-only preflight check." width="100%"></a>
+      <p>Review the exact SQL a change will run, with a preflight that flags rows that have moved on, before applying it or handing it to someone else.</p>
     </td>
   </tr>
 </table>
