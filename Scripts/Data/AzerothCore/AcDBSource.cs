@@ -73,6 +73,8 @@ public sealed class AcDBSource : IDBSource
     public Task<PlayerChoiceSnapshot> ReadPlayerChoiceAsync(uint choiceId, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw CinematicsUnsupported();
     public Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token) => throw CinematicsUnsupported();
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token) => throw CinematicsUnsupported();
+    public Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => throw CinematicsUnsupported();
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token) => throw CinematicsUnsupported();
 
     static DatabaseFeatureException CinematicsUnsupported() => new("Cinematics are a TrinityCore feature; the AzerothCore world database has no conversations, scenes or player choices.");
 }

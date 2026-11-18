@@ -33,7 +33,7 @@ public sealed class TcDBSource : IDBSource
         content = new(database, lookup);
         behavior = new(database, lookup, hotfixes);
         waypoints = new(database);
-        cinematics = new(database, lookup);
+        cinematics = new(database, lookup, hotfixes);
         // game_tele has the same schema in both servers.
         teleports = new(database);
     }
@@ -84,4 +84,6 @@ public sealed class TcDBSource : IDBSource
     public Task<PlayerChoiceSnapshot> ReadPlayerChoiceAsync(uint choiceId, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => cinematics.ReadPlayerChoiceAsync(choiceId, draftKeys, effective, catalog, token);
     public Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token) => cinematics.ReadCinematicConditionsAsync(sourceType, sourceGroup, sourceEntry, token);
     public Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token) => cinematics.SearchPlayerChoicesAsync(term, token);
+    public Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token) => cinematics.ReadConversationAsync(id, draftKeys, effective, catalog, token);
+    public Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token) => cinematics.SearchConversationsAsync(term, token);
 }

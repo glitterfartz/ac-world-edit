@@ -1,3 +1,4 @@
+using ACWorldEdit.Assets;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 using ACWorldEdit.Tests.Support;
@@ -13,7 +14,10 @@ namespace ACWorldEdit.Tests.Db;
 [Trait("Category", "Db")]
 public class CinematicsDbTests
 {
-    static IDBSource Open() => DBSource.Open(Environments.TrinityConnection()!);
+    static IDBSource Open(IClientLookup? lookup = null) => DBSource.Open(Environments.TrinityConnection()!, lookup);
+
+    /// <summary>The retail lookup when the machine has the client, so chain checks are skipped without it.</summary>
+    static IClientLookup? Retail() => RetailEnvironment.Directory() is null ? null : new RetailClientLookup(RetailData.Tables);
 
     [TcDbFact]
     public async Task SearchFindsAChoiceByItsQuestionOrItsId()
@@ -81,5 +85,64 @@ public class CinematicsDbTests
         }, null, CancellationToken.None);
 
         Assert.Equal("Staged header", edited.Rows.Get(TcTables.PlayerChoiceResponse, draftKey.Key)!.T("Header"));
+    }
+
+    [TcDbFact]
+    public async Task ConversationSnapshotReadsTheTemplateActorsAndTheirOverrides()
+    {
+        var lookup = Retail();
+        var source = Open(lookup);
+        var snapshot = await source.ReadConversationAsync(754, [], rows => rows, null, CancellationToken.None);
+
+        var template = Assert.IsType<Row>(snapshot.Rows.Get(TcTables.ConversationTemplate, "754"));
+        Assert.Equal(1790u, template.U("FirstLineId"));
+        Assert.Equal(3, snapshot.Rows.All(TcTables.ConversationActors).Count);
+        Assert.Equal(3, snapshot.Rows.All(TcTables.ConversationLineTemplate).Count);
+        Assert.Contains(snapshot.Rows.All(TcTables.ConversationActors), actor => actor.U("CreatureId") == 99426);
+        Assert.True(snapshot.MaxConversationId >= 754);
+
+        if (lookup != null)
+        {
+            Assert.True(snapshot.ClientAvailable);
+            Assert.True(snapshot.Chain.Count >= 3, $"chain has {snapshot.Chain.Count} lines");
+            Assert.Equal(1790u, snapshot.Chain[0].Id);
+            Assert.False(string.IsNullOrWhiteSpace(snapshot.Chain[0].Text));
+        }
+    }
+
+    [TcDbFact]
+    public async Task AStagedActorEditAppearsInTheEffectiveRows()
+    {
+        var source = Open();
+        var draftKey = (TableSchema: TcTables.ConversationActors, Key: "754|0");
+
+        var loaded = await source.ReadConversationAsync(754, [draftKey], rows => rows, null, CancellationToken.None);
+        var staged = loaded.Rows.Get(TcTables.ConversationActors, draftKey.Key)!.With("CreatureId", 99999u);
+        var edited = await source.ReadConversationAsync(754, [draftKey], rows =>
+        {
+            rows.Set(TcTables.ConversationActors, staged);
+            return rows;
+        }, null, CancellationToken.None);
+
+        Assert.Equal(99999u, edited.Rows.Get(TcTables.ConversationActors, draftKey.Key)!.U("CreatureId"));
+    }
+
+    [TcDbFact]
+    public async Task ConversationConditionsSourceTwentyNineGateOneLine()
+    {
+        var source = Open();
+        var conditions = await source.ReadCinematicConditionsAsync(29, 0, 33931, CancellationToken.None);
+
+        Assert.NotEmpty(conditions);
+        Assert.All(conditions, row => Assert.Equal(29, row.I("SourceTypeOrReferenceId")));
+    }
+
+    [TcDbFact]
+    public async Task SearchFindsAConversationByItsId()
+    {
+        var source = Open();
+        var found = await source.SearchConversationsAsync("754", CancellationToken.None);
+
+        Assert.Equal(754u, found[0].Id);
     }
 }

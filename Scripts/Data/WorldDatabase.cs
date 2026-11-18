@@ -148,7 +148,8 @@ public sealed class WorldReadSession(MySqlConnection connection, MySqlTransactio
         "creature_addon", "creature_template_addon", "waypoint_path", "waypoint_path_node",
         "linked_respawn", "spawn_group", "game_event_model_equip", "creature_formations", "gameobject_addon", "phase_name",
         "creature_loot_template", "pickpocketing_loot_template", "skinning_loot_template", "gameobject_loot_template",
-        "playerchoice", "playerchoice_response", "playerchoice_response_reward", "playerchoice_response_reward_item"
+        "playerchoice", "playerchoice_response", "playerchoice_response_reward", "playerchoice_response_reward_item",
+        "conversation_template", "conversation_actors", "conversation_line_template"
     ];
 
     /// <summary>

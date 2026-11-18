@@ -43,7 +43,7 @@ public sealed record ClientMailTemplate(uint Id, string Name);
 /// One client ConversationLine row: which broadcast text it speaks, the line that follows it, and its
 /// animation kit. The camera is a server override in conversation_line_template, not a client column.
 /// </summary>
-public sealed record ClientConversationLine(uint Id, uint NextLineId, uint BroadcastTextId, uint AnimKitId);
+public sealed record ClientConversationLine(uint Id, uint NextLineId, uint BroadcastTextId, uint AnimKitId, int AdditionalDuration);
 
 public interface IClientLookup : ITcStatData
 {
@@ -327,7 +327,7 @@ public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileE
 
     public ClientConversationLine? ConversationLine(uint id) =>
         Table("ConversationLine").TryGetValue((int)id, out var line)
-            ? new((uint)line.ID, line.FieldAs<uint>("NextConversationLineID"), line.FieldAs<uint>("BroadcastTextID"), line.FieldAs<uint>("AnimKitID"))
+            ? new((uint)line.ID, line.FieldAs<uint>("NextConversationLineID"), line.FieldAs<uint>("BroadcastTextID"), line.FieldAs<uint>("AnimKitID"), line.FieldAs<int>("AdditionalDuration"))
             : null;
 
     public IReadOnlyList<ClientConversationLine> ConversationLineChain(uint firstLineId)

@@ -92,6 +92,32 @@ public sealed class TcHotfixSource(DatabaseSettings? settings)
         return texts;
     }
 
+    /// <summary>
+    /// The server's ConversationLine overrides, keyed by line ID. The table is tiny (a few dozen
+    /// rows), so the whole set is read and the highest VerifiedBuild wins. Empty without a hotfixes
+    /// database.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<uint, ClientConversationLine>> ReadConversationLinesAsync(CancellationToken token)
+    {
+        var lines = new Dictionary<uint, ClientConversationLine>();
+        if (!Available)
+        {
+            return lines;
+        }
+
+        await using var connection = await OpenAsync(token).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, true, token).ConfigureAwait(false);
+        await using var command = new MySqlCommand("SELECT ID,BroadcastTextID,NextConversationLineID,AnimKitID,AdditionalDuration FROM conversation_line ORDER BY ID,VerifiedBuild", connection, transaction);
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            uint id = Convert.ToUInt32(reader.GetValue(0));
+            lines[id] = new(id, Convert.ToUInt32(reader.GetValue(2)), Convert.ToUInt32(reader.GetValue(1)), Convert.ToUInt32(reader.GetValue(3)), Convert.ToInt32(reader.GetValue(4)));
+        }
+
+        return lines;
+    }
+
     /// <summary>The highest broadcast_text ID and hotfix_data Id, for numbering new rows.</summary>
     public async Task<(uint BroadcastText, int HotfixData)> ReadMaxIdsAsync(CancellationToken token)
     {

@@ -110,6 +110,8 @@ public interface IDBSource
     /// <summary>Condition rows on one source: 36 gates a player-choice response, 29 a conversation line.</summary>
     Task<IReadOnlyList<Row>> ReadCinematicConditionsAsync(int sourceType, int sourceGroup, int? sourceEntry, CancellationToken token);
     Task<IReadOnlyList<(uint Id, string Name)>> SearchPlayerChoicesAsync(string term, CancellationToken token);
+    Task<ConversationSnapshot> ReadConversationAsync(uint id, IReadOnlyList<(TableSchema Table, string Key)> draftKeys, Func<RowSet, RowSet> effective, InteractionCatalog? catalog, CancellationToken token);
+    Task<IReadOnlyList<(uint Id, string Name)>> SearchConversationsAsync(string term, CancellationToken token);
 }
 
 /// <summary>Opens the <see cref="IDBSource"/> for a connection's dialect.</summary>

@@ -92,4 +92,49 @@ public sealed partial class TcTables
         ("Quantity", ColumnKind.Int, 0),
         ("VerifiedBuild", ColumnKind.Int, 0)
     ], Nullable: ["BonusListIDs"]);
+
+    /// <summary>
+    /// conversation_template: which client line chain to play (FirstLineId), its texture kit and the
+    /// server flags. The spoken words and timing live in the client ConversationLine table.
+    /// </summary>
+    public static readonly TableSchema ConversationTemplate = new("conversation_template", ["Id"],
+    [
+        ("Id", ColumnKind.UInt, 0),
+        ("FirstLineId", ColumnKind.UInt, 0),
+        ("TextureKitId", ColumnKind.UInt, 0),
+        ("Flags", ColumnKind.Int, 0),
+        ("ScriptName", ColumnKind.Text, 64),
+        ("VerifiedBuild", ColumnKind.UInt, 0)
+    ]);
+
+    /// <summary>
+    /// conversation_actors: who stands on screen at each index. NoActorObject and ActivePlayerObject
+    /// are NULL-able; a non-zero value names a talking head or the player instead of a creature or spawn.
+    /// </summary>
+    public static readonly TableSchema ConversationActors = new("conversation_actors", ["ConversationId", "Idx"],
+    [
+        ("ConversationId", ColumnKind.UInt, 0),
+        ("ConversationActorId", ColumnKind.UInt, 0),
+        ("ConversationActorGuid", ColumnKind.ULong, 0),
+        ("Idx", ColumnKind.UInt, 0),
+        ("CreatureId", ColumnKind.UInt, 0),
+        ("CreatureDisplayInfoId", ColumnKind.UInt, 0),
+        ("NoActorObject", ColumnKind.UInt, 0),
+        ("ActivePlayerObject", ColumnKind.UInt, 0),
+        ("VerifiedBuild", ColumnKind.UInt, 0)
+    ], Nullable: ["NoActorObject", "ActivePlayerObject"]);
+
+    /// <summary>
+    /// conversation_line_template: the per-line server overrides of one client line. The key is the
+    /// client line Id, not the conversation, so several conversations that share a chain share them.
+    /// </summary>
+    public static readonly TableSchema ConversationLineTemplate = new("conversation_line_template", ["Id"],
+    [
+        ("Id", ColumnKind.UInt, 0),
+        ("UiCameraID", ColumnKind.UInt, 0),
+        ("ActorIdx", ColumnKind.UInt, 0),
+        ("Flags", ColumnKind.UInt, 0),
+        ("ChatType", ColumnKind.UInt, 0),
+        ("VerifiedBuild", ColumnKind.UInt, 0)
+    ]);
 }
