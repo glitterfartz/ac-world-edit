@@ -1,0 +1,108 @@
+name: Feature request
+description: Suggest a new feature or an improvement to ACWorldEdit.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. ACWorldEdit is a viewer and editor for AzerothCore (3.3.5) and TrinityCore master (retail), so a feature is easiest to act on when it names the database table, client format or workflow it belongs to.
+
+        Please search the existing issues and `docs/plans/editor-plan.md` first; a matching entry there may already describe the intended design.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I checked `docs/plans/editor-plan.md` for an existing plan covering this.
+          required: true
+        - label: I read the relevant documentation under `docs/`.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the workflow that is currently difficult, missing or slow.
+      placeholder: Editing a creature's vendor list means opening each item by ID instead of searching by name.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should ACWorldEdit do? Sketches, mockups or example SQL are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other tools, manual SQL or workarounds you use today, and why they are not enough.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where would this feature live? Select all that apply.
+      multiple: true
+      options:
+        - Rendering (terrain, models, liquids, shaders, shadows)
+        - Client data loading (MPQ/CASC, listfiles, DB2)
+        - Creature spawns and templates
+        - GameObject spawns and templates
+        - SmartAI
+        - Quests
+        - Vendors
+        - Waypoints
+        - Formations
+        - Area triggers
+        - Change history, SQL export or applying changes
+        - Database connection
+        - UI, navigation or input
+        - Build, packaging or setup
+        - Documentation or tooling
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dialects
+    attributes:
+      label: Database dialects
+      description: Which server side should support it?
+      multiple: true
+      options:
+        - AzerothCore (`acore_world`, 3.3.5)
+        - TrinityCore master (`world` plus `hotfixes`, retail)
+        - Both
+        - Not database-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Scope and impact
+      description: Does this need client data, a database table or column, write access to apply changes, or separate AzerothCore and TrinityCore handling? Note what you already know.
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - "Yes, I can open a pull request"
+        - "Yes, with some guidance"
+        - "No, but I can test it"
+        - "No"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Links to schema docs, related issues, screenshots or prior art.

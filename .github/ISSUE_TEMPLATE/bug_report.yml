@@ -1,0 +1,176 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly in the viewer or editor.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. ACWorldEdit reads data from a real WoW client and edits a live world database, so the details below decide whether the bug can be reproduced.
+
+        **Do not paste database passwords, server addresses or account names.** Trim logs before posting if they contain them.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I reproduced this on the latest release, a recent CI build, or current `master`.
+          required: true
+        - label: I followed the setup and first-run steps in the README.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A short, clear description of the bug and what it stops you from doing.
+      placeholder: Opening a spawn under the cursor shows the previous creature's template instead of the selected one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that triggers the bug. Include the map, tile, coordinates and time of day when the problem is visible in the world.
+      placeholder: |
+        1. Load a Wrath client and connect to `acore_world`.
+        2. Go to map 1, tile 52,42 at coordinates 45.2 12.8.
+        3. Right-click the creature under the cursor.
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happened instead. Paste any error text or status-bar message exactly as it appeared.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which parts of ACWorldEdit are involved? Select all that apply.
+      multiple: true
+      options:
+        - Rendering (terrain, models, liquids, shaders, shadows)
+        - Client data loading (MPQ/CASC, listfiles, DB2)
+        - Creature spawns and templates
+        - GameObject spawns and templates
+        - SmartAI
+        - Quests
+        - Vendors
+        - Waypoints
+        - Formations
+        - Area triggers
+        - Change history, SQL export or applying changes
+        - Database connection
+        - UI, navigation or input
+        - Build, packaging or setup
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: Client profile
+      options:
+        - Wrath (3.3.5, MPQ)
+        - Retail (CASC)
+        - None; the problem happens before a client is loaded
+    validations:
+      required: true
+
+  - type: input
+    id: client-build
+    attributes:
+      label: Client build
+      description: The 3.3.5 build number or retail version, if you know it.
+      placeholder: "3.3.5a (12340) or retail 11.2.7"
+
+  - type: dropdown
+    id: database
+    attributes:
+      label: World database
+      options:
+        - AzerothCore (`acore_world`)
+        - TrinityCore master (`world`, plus `hotfixes` if used)
+        - None; the problem happens without a database connection
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: database-version
+    attributes:
+      label: Database version
+      description: The AzerothCore or TrinityCore commit, release or database version, if known.
+
+  - type: dropdown
+    id: run-method
+    attributes:
+      label: How are you running ACWorldEdit?
+      options:
+        - Release package from GitHub Releases
+        - CI build artifact from a workflow run
+        - Built from source with `python launch_viewer.py`
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Godot, .NET and OS versions
+      description: ACWorldEdit needs Godot 4.7.2 .NET and a .NET SDK matching `global.json`. Paste `godot --version`, `dotnet --version` and your OS.
+      placeholder: "Godot 4.7.2 .NET / .NET SDK 10.0.114 / Windows 11 x64"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reliability
+    attributes:
+      label: Reliability
+      options:
+        - Every time
+        - Sometimes
+        - Only once
+        - Not tried
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Did an earlier version work?
+      options:
+        - Yes, it worked in an earlier release or commit
+        - No, it has never worked for me
+        - Not tried
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, console output or screenshots
+      description: |
+        Paste the relevant console output, or attach screenshots and GIFs. For rendering problems, capture the same map, tile, time of day and eye position so before/after pictures compare directly; the `--client-shot*` flags write PNGs into `artifacts/` (see the flag table in `docs/architecture/viewer-runtime.md`).
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Related issues, workarounds, or anything about your client, data or database setup that seems relevant.
