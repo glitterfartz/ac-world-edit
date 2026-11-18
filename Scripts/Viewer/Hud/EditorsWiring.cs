@@ -109,6 +109,7 @@ public partial class ViewerShell
     /// </summary>
     ContentDrafts drafts = null!;
     QuestEditorWindow questEditor = null!;
+    CinematicsEditorWindow cinematicsEditor = null!;
     /// <summary>AreaTrigger rules have no creature, so they keep a window of their own.</summary>
     BehaviorEditorWindow areaBehavior = null!;
 
@@ -167,11 +168,19 @@ public partial class ViewerShell
             FlyToEntry = LocateCreature,
             BehaviorRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
+        cinematicsEditor = new CinematicsEditorWindow
+        {
+            Connection = () => DatabaseConnection(),
+            Store = () => store,
+            Lookup = () => clientLookup,
+            Drafts = drafts
+        };
         // Floating windows sit on the UI layer above the panels.
         layer.AddChild(creatureProps);
         layer.AddChild(gameObjectProps);
         layer.AddChild(bookmarkWindow);
         layer.AddChild(questEditor);
+        layer.AddChild(cinematicsEditor);
         layer.AddChild(areaBehavior);
         pendingWindow = new PendingChangesWindow();
         sqlPreview = new SqlPreviewWindow();
