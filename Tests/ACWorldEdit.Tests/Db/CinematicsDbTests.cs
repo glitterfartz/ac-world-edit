@@ -35,6 +35,9 @@ public class CinematicsDbTests
         var choice = Assert.IsType<Row>(snapshot.Rows.Get(TcTables.PlayerChoice, "240"));
         Assert.Equal("Which weapon should we pursue first?", choice.T("Question"));
         Assert.True(choice.IsNull("Duration"));
+        // tinyint(1) arrives from the provider as a bool; the row must still hold a number.
+        Assert.InRange(choice.U("RequiresSelection"), 0u, 1u);
+        Assert.InRange(choice.U("ShowChoicesAsGrid"), 0u, 1u);
         Assert.True(snapshot.MaxChoiceId >= 240);
 
         var responses = TcCinematicsRules.Responses(snapshot.Rows, 240).ToList();

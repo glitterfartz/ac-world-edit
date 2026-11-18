@@ -192,7 +192,10 @@ public sealed class AcInteractionSource(WorldDatabase database)
                     continue;
                 }
 
-                row.Values[table.Columns[i].Name] = table.Columns[i].Kind == ColumnKind.Float ? Convert.ToSingle(value, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture) : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
+                // The provider maps tinyint(1) to bool; rows store numbers, so True/False become 1/0.
+                row.Values[table.Columns[i].Name] = value is bool flag ? (flag ? "1" : "0")
+                    : table.Columns[i].Kind == ColumnKind.Float ? Convert.ToSingle(value, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture)
+                    : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
             }
 
             rows.Set(table, row);
