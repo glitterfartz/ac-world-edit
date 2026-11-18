@@ -45,7 +45,7 @@ public sealed class RetailCreatureCatalog : ICreatureCatalog
     // glow (17) is hidden unless a choice (a death knight's) names a variant.
     static readonly IReadOnlyDictionary<int, int> DefaultVariants = new Dictionary<int, int> { [7] = 2, [17] = 0, [32] = 2 };
 
-    // Loaded up front: the catalog is built on the open worker, and Db2Tables is not thread-safe.
+    // Loaded up front on the open worker so the catalog is ready before use.
     readonly IDBCDStorage displays, models, extras, geosets, materials;
     // Indexes built on the first humanoid lookup: TextureFileData MaterialResourcesID → FileDataID,
     // display extra → chosen customization choices, choice → elements, texture target → M2 texture type.

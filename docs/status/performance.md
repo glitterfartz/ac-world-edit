@@ -171,9 +171,9 @@ pass at these poses. The animated rate is a cap, not a guarantee: when the frame
 
 ## Open items
 
-- **Re-baseline `--perf-smoke` on Forward+.** The streaming tables in the history page were measured on
-  Compatibility; the settled-frame breakdown above is the only Forward+ measurement. New streaming
-  numbers need their own run before comparing changes.
+- **Re-run `--perf-smoke` after the shadow changes.** The main streaming tables in the history page were
+  measured on Compatibility; the model-memory and parallel-decode table is Forward+, but a fresh streaming
+  run is still needed before comparing changes.
 - **Upload budget.** With three decode workers the workers are idle about 40 % of arrival (34 s of
   decode work over 19 s of arrival), so the 8-surface, 1.5 ms per-frame upload cap or the decoded-queue
   limit (three entries, 256 MiB) now gates arrival. Not measured yet. Moving the numerics-to-Godot array

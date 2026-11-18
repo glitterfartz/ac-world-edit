@@ -125,8 +125,9 @@ public interface IClientLookup : ITcStatData
 }
 
 /// <summary>
-/// <see cref="IClientLookup"/> over <see cref="Db2Tables"/>. The tables object is not thread-safe, so
-/// every access to it is serialised here; the rows themselves are read-only once loaded.
+/// <see cref="IClientLookup"/> over <see cref="Db2Tables"/>. The tables object serialises its loads and
+/// the rows are read-only once loaded; this lookup still serialises its own access so lookups cannot
+/// interleave.
 /// </summary>
 public sealed class RetailClientLookup(Db2Tables tables, Func<uint, bool>? fileExists = null) : IClientLookup
 {

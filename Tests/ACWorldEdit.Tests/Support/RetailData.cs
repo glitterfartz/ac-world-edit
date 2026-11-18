@@ -86,8 +86,9 @@ public sealed class RetailListfileFactAttribute : FactAttribute
 }
 
 /// <summary>
-/// Opened once and shared by the retail tests. Db2Tables is not thread-safe, so every test class that
-/// reads it joins the <see cref="Collection"/> collection, whose classes run one at a time.
+/// Opened once and shared by the retail tests. Db2Tables serialises its loads, but retail and Forever
+/// share CascLib handles and the definitions, so every test class that reads them joins the
+/// <see cref="Collection"/> collection, whose classes run one at a time.
 /// </summary>
 public static class RetailData
 {

@@ -78,6 +78,7 @@ Target: TrinityCore `master` `world` (TDB 1210.26091) plus `hotfixes`; retail cl
 | `ConditionCatalog` | 56 AzerothCore and 61 TrinityCore condition types with sentences and parameter kinds, and 31 / 36 source types with key-column labels, generated from each server's `ConditionMgr.h` by `Tools/generate_condition_catalog.py`. Tests: `ConditionCatalogTests`. |
 | Entity page shell | `EntityPage` plus `PropertiesWindow` (frame, section picker, Undo/Redo, status), `EntitySection`, `IEntityContext` and `PageRenderer` in `Scripts/Ui/Properties`. Creature and GameObject windows are its first two clients, each one context, one section base and one window. |
 | Content browser | `ContentBrowser` (View → Content browser, Ctrl+B): bottom panel with Creatures and Game objects tabs, name/entry search and a type filter over `IDBSource.SearchTemplatesAsync`. Double-click opens the matching properties window; dragging a hit into the world places a spawn. Each hit shows a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Tests: `TemplateSearchDbTests`, `--content-browser-smoke`. |
+| 64-bit column kinds | `ColumnKind.Long` / `ULong` validate and export; TC uses them for spawn `guid`, `npcflag`, `MechanicsMask`, quest `TimeAllowed` / `AllowableRaces` and formation GUIDs. Tests: `SourceCatalogTests`, `TcCreatureViewTests`. |
 
 ## Phase 11: spawn authoring
 
@@ -93,7 +94,7 @@ Target: TrinityCore `master` `world` (TDB 1210.26091) plus `hotfixes`; retail cl
 | Multi-select | `SpawnGroupSelection` (a ring under each extra member), `SpawnPoses.EditMany` / `DeleteMany` / `DuplicateMany` / `NextGuids`; Ctrl-click, Shift-drag box, group copy, delete and move as one undoable command, one kind at a time. Ctrl-clicking the other kind switches the selection; a gizmo handle press wins over Ctrl and Shift. Tests: `StagedSpawnTests`, `--spawn-authoring-smoke`. |
 | Delete impact and cleanup | `IDBSource.CountSpawnReferencesAsync` / `ReadSpawnReferencesAsync` (`DbReferences`) count the rows that name a spawn (pools, spawn groups, events, equipment swaps, linked respawns, formations, per-GUID SmartAI), counting distinct rows so the dialog's numbers equal what cleanup deletes. The dialog offers **Remove these too**: those rows plus a waypoint path nothing else walks delete in the same undoable command. A read bounded at 500 rows offers no cleanup rather than a partial one. Tests: `SpawnImpactDbTests`, `ReferenceCleanupDbTests` (both dialects), `SpawnImpactTests`, `DeleteImpactDialogTests`, `--spawn-authoring-smoke`. |
 | Template "Used by" page | `UsedBySection` (creature) and `GameObjectUsedBySection` list what names a template through `TemplateReferences` and `DbTemplateReferences` (one `COUNT(*)` per reference table, missing tables skipped): spawns, per-template SmartAI, loot, pickpocketing and skinning loot, vendor lists and quest links. One `ReferenceCountCard` renders them and says so when the read failed. Tests: `TemplateReferencesTests`, `TemplateReferencesDbTests`, `UsedBySectionTests`. |
-| Retail graveyard duplicate links | Duplicate ghost-zone links are refused (unknown-area check still missing, see the plan). |
+| Retail graveyard links | Duplicate and unknown ghost-zone links are refused; `AreaLookup.FromRetail` reads the retail AreaTable. Test: `RetailCatalogTests`. |
 
 ## Phase 12: GameObjects (built parts)
 
@@ -101,7 +102,8 @@ Generated per-dialect `AcGameObjectTypes` / `TcGameObjectTypes` catalogues (`Too
 `gameobject_template`, `gameobject_template_addon`, `gameobject_queststarter` / `questender` / `questitem` in
 both table catalogs, `DbGameObjectTemplate` and `DbGameObjectSpawns`, and `GameObjectPropertiesWindow` with
 Template, Type properties, Quests and Spawns pages. The content browser, the inspector's Properties button
-and a short right-click open the window.
+and a short right-click open the window. The dedicated `--gameobject-smoke` runs the real move handle, a
+typed turn, undo/redo and the SQL export on a GameObject spawn.
 
 ## Phase 14: movement (built parts)
 
@@ -117,6 +119,7 @@ polar drag, duplicate remap, leader picked by GUID or viewport click) and the pr
 | Parallel model decode | Three decode workers (`ModelLibrary.DecodeWorkers`); Stormwind arrival (1416 models) 30.3 s → 19.1–19.3 s, flight frame times unchanged. |
 | Model memory | A published model keeps only its doodads, animation IDs and (WMOs) probe geometry; the 256 MiB limit applies to models no instance uses. Stormwind cache 1903 → 318 MiB after arrival; flight evictions about 390 → about 205. |
 | Terrain height blending | Layers weight by `height * scale + offset` from the `_h` alpha and MTXP with the client's suppression of layers far below the tallest; MTXP texture scale applies. Test: `SplitTerrainTests` (parameters read); the blend is checked by eye in Khaz Algar (`--tele-name=TheDawnbreaker --tele-tile=33,29`). |
+| Retail area names | `AreaLookup.FromRetail` reads `AreaTable.db2` (FileDataID 1353545) for names, parents and maps; the graveyard editor refuses unknown zones. Tests: `RetailCatalogTests`, `AreaLookupTests`. |
 | Generated navigation inspection | AzerothCore MMap 20 and TrinityCore MMap 16 readers, detail surfaces, polygon edges, tile bounds, off-mesh lines, opacity/X-ray, terrain filters and polygon picking. See [viewer-runtime.md](../architecture/viewer-runtime.md#navigation-overlay). |
 | WoW: Forever client data | The `wowf` product opens from the shared retail install (`_forever_` folder or `ACWORLD_CLIENT_PRODUCT=wowf`); map list, terrain, lighting, liquids, M2/WMO models, creature displays and GameObjects load through the retail readers. `--client-smoke` opens build 1.60.1.70790 with 69 maps and streams an Azeroth tile; `ForeverCorpusTests` checks every known table, the WDT/tile and a creature model. |
 | Shared install assets | `CascFiles` opens the live product beside a non-live one and reads shared BLP payloads by the same FileDataID; DB2 files, WDT/ADT structure and M2/WMO geometry stay product-local. `LiveProductFiles` records the IDs served by the shared storage. |

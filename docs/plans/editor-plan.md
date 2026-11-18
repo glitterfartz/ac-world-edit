@@ -19,24 +19,24 @@ differently from the design), **open gap**, **unverified**, **in progress**.
 | Phase 7 quests (refinements) | partial | Quest tables outside the editor, objective fields, reference checks, TC content smoke |
 | Phase 8 SmartAI and speech (refinements) | partial | AT rules for TC, other source types, loader rules, type curation, parameter names, difficulties, editing speech, TC smokes |
 | Phase 9 waypoints (refinements) | partial | Other path users, unused-paths list, TC waypoint smoke |
-| 10 Editor foundation | mostly | Reference index, cascade-delete specs, allocator adoption, a viewer check of spawn poses |
-| 11 Spawn authoring | mostly | Model ghost, multi-floor picking, cross-zone paste, group edit and rotation, preview-this-phase, transport rotation, addon defaults, `SpawnFacts`, new template, thumbnails |
-| 12 GameObject editor | mostly | Behavior page, dedicated edit/undo smoke |
+| 10 Editor foundation | mostly | Reference index, cascade-delete specs, allocator adoption, Pending Changes discard and profile-switch viewer checks |
+| 11 Spawn authoring | mostly | Model ghost, multi-floor picking, cross-zone paste, group edit and rotation, preview-this-phase, transport rotation, `SpawnFacts` wiring, new template, thumbnails |
+| 12 GameObject editor | mostly | Behavior page, template-row edit/undo smoke |
 | 13 Conditions builder | not started | Strip, builder, tester, `ReadConditionsAsync`, wiring |
-| 14 Movement authoring | mostly | Unused-paths list, convoys and transports, cascading formation deletes |
+| 14 Movement authoring | mostly | Unused-paths list, convoys and transports, formation deletes in the plain delete path |
 | 15 Loot editor | not started | Loot source, model, roller, rules, window |
 | 16 Population control | not started | Pool, spawn-group and linked-respawn editors |
 | 17 Events and phases | not started | Event timeline, phase authoring |
-| 18 Creature completion | partial | Models and equipment, combat, rewards, movement, interactions, summons, new template |
-| 19 Quest completion | partial | POI, GO/item givers, conditional text, greetings, pools, objective and reference gaps |
-| 20 Travel and instances | mostly not started | Destination editing, instances, access requirements, shared `game_tele` source |
+| 18 Creature completion | partial | Model/equipment authoring, combat, rewards, movement, interactions (TC spell-click), summons, new template |
+| 19 Quest completion | partial | POI, item starters, conditional text, greetings, pools, objective and reference gaps |
+| 20 Travel and instances | mostly not started | Destination editing, instances, access requirements, editable shared `game_tele` source |
 | 21 Areas and ambience | mostly not started | Weather, area auras, taverns, disables, spawned triggers |
 | 22 Cinematics | not started | Conversations, scenes, player choice |
 | 23 Text pipeline | partial | Hotfix script, speech and page text, editing existing text, AC path |
 | 24 Item editor | not started | Item source, editor, creation flow |
 | Foundation and overlays | partial | Reference lookups, hotfix overrides, preview filters, graveyard checks |
 | Performance | in progress | Forward+ baseline, upload budget, spawn table indexes, connection pooling |
-| Tests | partial | `Db2Tables` thread safety, stale corpus filters |
+| Tests | partial | Parallel retail corpus, stale corpus filters |
 | Retail rendering | partial | Equipment, skeletons, more shaders and layers, underwater medium |
 | WoW: Forever | open gap | No world database branch; WoWDBDefs build pin |
 
@@ -110,9 +110,9 @@ differently from the design), **open gap**, **unverified**, **in progress**.
 
 | Item | State | Open |
 | --- | --- | --- |
-| Quest tables outside the editor | not started | `quest_*_conditional`, `quest_objectives_completion_effect`, `quest_reward_choice_items`, `quest_reward_display_spell`, `quest_poi`, locale tables and the `conditions` rows of source types 19 and 20 are neither read nor edited. |
+| Quest tables outside the editor | not started | `quest_*_conditional`, `quest_objectives_completion_effect`, `quest_reward_choice_items`, `quest_reward_display_spell`, `quest_poi`, locale tables and the `conditions` rows of source type 19 are neither read nor edited. |
 | Objective fields | partial | `Flags2`, `Visible`, `ConditionalAmount`, `ProgressBarWeight` and `ParentObjectiveID` are whitelisted but have no control. Area triggers, criteria trees and pet battles are typed IDs rather than pickers. |
-| Reference checks | partial | Emote, area trigger, criteria tree, `ContentTuningID`, `QuestInfoID`, `QuestSortID` for retail and the title reward are not checked. |
+| Reference checks | partial | Emote, area trigger, criteria tree, `ContentTuningID`, `QuestInfoID` and the title reward are not checked; `QuestSortID` is checked against the loaded AreaTable. |
 | Content smoke for TrinityCore | not started | The TC quest editor is covered by the client smoke and unit tests, not by a copy of `--content-smoke`. |
 
 ### Phase 8: SmartAI and speech
@@ -121,9 +121,9 @@ differently from the design), **open gap**, **unverified**, **in progress**.
 | --- | --- | --- |
 | AreaTrigger rules for TrinityCore | partial | The create properties' `ScriptName` is shown, not edited; triggers created by spells (no spawn) cannot be opened; `areatrigger_template_actions` are not read. |
 | Other script source types | not started | TC also uses types 1 (object), 3, 5 and 10; only creature rules (0), AreaTrigger rules (2, 11, 12) and timed action lists (9) are read. |
-| Loader rules | partial | TC's per-type validation (`IsEventValid`, `CheckUnusedEventParams` / `ActionParams` / `TargetParams`: unused parameters must be 0, ranges, existing spells and creatures) is not reproduced, so the server may reject a row the editor accepts. |
+| Loader rules | partial | TC's per-type validation is partly reproduced: named spells, creatures, objects, quests and items, AT event masks and chance/phase/flag ranges are checked. The unused-parameter-must-be-0 rule and the per-type `ActionParams` / `TargetParams` ranges are not, so the server may still reject a row the editor accepts. |
 | Type curation | partial | Of the selectable TC types, 49 of 83 events, 57 of 139 actions and 19 of 31 targets have a written sentence; the rest show their name and server-comment parameter labels, and 5 actions and 1 target show raw numbered fields. |
-| Names for parameters | partial | Emotes, text emotes, faction templates, game events, sound kits and scene or conversation IDs show numbers (no TC catalog behind the pickers). |
+| Names for parameters | partial | TC emote, text-emote and faction-template pickers are empty and show numbers, game events get a creature picker, and sound kits and scene or conversation IDs remain numeric (no TC catalog behind them). |
 | `Difficulties` | partial | A free text field of difficulty IDs; values are not checked against `Difficulty.db2`. |
 | Speech | partial | The Speech page has no "New…" button (writing a broadcast text exists on the gossip page only), and changing an existing text with stale checks against the client's version is not built. |
 | Smokes | partial | `--behavior-smoke` and `--content-smoke` run against AzerothCore only; there is no TC copy of the action-list and Then-chain flows beyond unit tests. |
@@ -132,7 +132,7 @@ differently from the design), **open gap**, **unverified**, **in progress**.
 
 | Item | State | Open |
 | --- | --- | --- |
-| Waypoints from other users | partly done | Paths are found through `creature_addon` / `creature_template_addon` plus the SmartAI rules that start them; `script_waypoint`-style users are not followed. |
+| Waypoints from other users | partly done | Paths are found through `creature_addon` / `creature_template_addon`; SmartAI `WAYPOINT_START` rules count as users but do not discover a path, and `script_waypoint` (AC) / `script_spline_chain_*` (TC) users are not followed. |
 | Path links and orphans | mostly done | The "Unused paths" list (Phase 14) is not built. |
 | Smokes | partial | `--waypoint-smoke` has no TC run of its own; TC path points are covered by the client smoke only. |
 
@@ -157,8 +157,9 @@ differently from the design), **open gap**, **unverified**, **in progress**.
   own maxima (they came before `IdAllocator`); move them onto `IDBSource.MaxIdAsync(tables)`. The optional
   per-kind **user ID range** in Settings (so custom content does not collide with a future TDB import) is
   not built.
-- **Viewer check.** Spawn poses as row edits are green in code and tests; moving, undo, discard in Pending
-  Changes and the profile switch have still not been checked in the running viewer.
+- **Viewer check.** Spawn poses as row edits are green in code and tests; moving and undo are now checked by
+  `--spawn-authoring-smoke`, while discard in Pending Changes and the profile switch have still not been
+  checked in the running viewer.
 
 ## Phase 11: Spawn authoring (place, duplicate, delete, instance overrides)
 
@@ -170,11 +171,11 @@ and the template addon are built. Open:
 - **Multi-select.** Copy and paste across zones (keeping relative layout), rotating a group, and editing one
   field for the whole group.
 - **Spawn inspector.** A "preview this phase" button, the GameObject parent rotation for transport-attached
-  objects, removing an addon row that is back to all defaults, and checks that a mount, emote or aura ID
-  exists.
+  objects, and checks that a mount, emote or aura ID exists.
 - **Spawn rules.** The client/database lookups ride on optional `SpawnFacts` (template, map, equipment set,
-  difficulty per map, phase, spawn mask per map) and nothing fills them yet; the equipment set check waits
-  for a read of `creature_equip_template`, the rest for client map data.
+  difficulty per map, phase, spawn mask per map) and nothing fills them yet; `creature_equip_template` is
+  now read for the picker, but `EquipmentExists`, `TemplateExists` and the map facts still need wiring, and
+  the rest waits for client map data.
 - **New template from selection** ("Save as new creature…"): copies the template and its child rows through
   `IdAllocator`.
 - **Content browser.** Thumbnails for world-model (`.wmo`) GameObjects, a thumbnail for a creature's
@@ -192,7 +193,8 @@ Template, Type properties, Quests and Spawns pages and the content-browser and r
 built. Open:
 
 - **Behavior page** for SmartAI `source_type = 1`, reusing `BehaviorPanel`.
-- A dedicated edit/undo smoke; today the flows are covered by unit tests and the browser smoke only.
+- A dedicated template-row edit/undo smoke; `--gameobject-smoke` covers spawn move, turn, undo/redo and
+  export, and unit tests cover the template rows.
 
 ## Phase 13: Conditions builder (one visual editor for "when does this apply")
 
@@ -228,11 +230,12 @@ mirror `ConditionMgr::isConditionTypeValid` / `isSourceTypeValid` per dialect.
 spawn and template link/unlink, SmartAI path users, formations and the preview animation are in. Open:
 
 - **Unused paths list.** Lists the paths no creature, template or SmartAI `WAYPOINT_START` uses, so an
-  orphan can be re-linked or deleted, and warns before deleting a path other creatures still use.
+  orphan can be re-linked or deleted. The warning before deleting a path others use, and removing an
+  orphaned path with the last creature, already exist.
 - **Convoys and transports.** `script_spline_chain_*` / `script_waypoint`-style movement and transport
   paths are not authored.
-- **Cascading formation deletes.** Deleting a creature leaves its formation rows; the delete command does
-  not remove them with it.
+- **Formation deletes in the plain delete path.** The delete dialog's "Remove these too" cleanup removes
+  formation rows, but a plain delete still leaves them.
 
 ## Phase 15: Loot editor
 
@@ -314,21 +317,22 @@ controls become the entry point ("Edit" next to the event picker).
 **State:** partial. Template, Stats, Gossip, Vendor, Trainer, Quests, Behavior and Speech pages and the
 template appearance addon are built. Open:
 
-- **Appearance:** model list with weights and per-model scale (`creature_template_model`), live preview, and
-  equipment sets (`creature_equip_template`; TC adds appearance mod and visual). Retail equipment rendering
-  is still open (see [Retail rendering](#retail-rendering)), so show item icons until it lands.
-- **Combat:** spells (`creature_template_spell`, spell picker), resistances, immunities (TC), and the
-  template addon's default auras, emote and mount.
+- **Appearance:** authoring the model list with weights and per-model scale (`creature_template_model`), live
+  preview, and equipment-set rows (`creature_equip_template`; TC adds appearance mod and visual, which
+  `TcTables.Creature.cs` still needs). Selecting an existing equipment set is built. Retail equipment
+  rendering is still open (see [Retail rendering](#retail-rendering)), so show item icons until it lands.
+- **Combat:** spells (`creature_template_spell`, spell picker), resistances, and authoring immunity sets
+  (selecting a named set is built; the template addon's auras, emote and mount are already editable).
 - **Rewards:** on-kill reputation as faction pickers with standing caps.
 - **Movement:** ground, swim, flight, rooted (TC `creature_template_movement` and its overrides).
-- **Interactions:** spell-click editing (read today, not editable) with the condition strip (type 18), and
-  vehicle accessories with seats.
+- **Interactions:** TC spell-click editing (AC adds and removes clicks; TC reads them), the condition strip
+  (type 18), and vehicle accessories with seats.
 - **Summons:** `creature_summon_groups` positions as ghost markers, draggable in the viewport.
 - **New template** wizard, from blank or from copy, through `IdAllocator`.
 
-**Why:** equipment (42k rows), spells (9.6k), on-kill reputation (2k), resistances, immunities, movement
-capabilities, spell-click (841), vehicle accessories (528) and summon groups (1.1k) all need hand-written SQL
-today.
+**Why:** equipment authoring, spells (9.6k), on-kill reputation (2k), resistances, immunity sets, movement
+capabilities, TC spell-click (841), vehicle accessories (528) and summon groups (1.1k) still need
+hand-written SQL; selecting an existing equipment or immunity set, and AC spell-click, no longer do.
 
 ## Phase 19: Quest completion (world-placed quest data)
 
@@ -337,11 +341,12 @@ creature links are built. Open:
 
 - **POI:** `quest_poi` / `quest_poi_points` (136k / 307k) are neither read nor edited; there is no "POI
   edit" viewport mode. A **Map** page would draw each objective's polygon on the terrain with vertex handles.
-- **Givers:** GameObject starters/enders and item starters.
+- **Givers:** item starters (GameObject starters/enders are built).
 - **Text:** `quest_*_conditional` texts, `quest_greeting` (shown on the creature/GO pages) and quest pools
   (Phase 16).
-- **Tables:** `quest_objectives_completion_effect`, `quest_reward_choice_items`, `quest_reward_display_spell`,
-  locale tables and the `conditions` rows of source types 19 and 20.
+- **Standalone tables:** `quest_objectives_completion_effect`, `quest_reward_choice_items`,
+  `quest_reward_display_spell`, locale tables and the `conditions` rows of source type 19 (the inline
+  `quest_template.RewardDisplaySpell1-3` and `RewardChoiceItemID1-6` columns are already editable).
 - **Field and check gaps:** the Phase 7 refinements above (objective fields, reference checks).
 
 Implementation: add the tables to the catalogs; AC POI uses the same idea with fewer columns.
@@ -390,16 +395,17 @@ conversation or play a scene open these editors. AC shows the section as not app
 
 **State:** partial. TrinityCore can create a gossip broadcast text and its inline `hotfix_data` row. Open:
 
-- **Hotfix export path:** a second `ITableCatalog` for `hotfixes`, an `SqlExport` target writing a separate
-  `hotfixes-apply/revert.sql`, and an automatic `hotfix_data` row per changed record (TableHash from
-  WoWDBDefs; `RecordId`; `Status`; a new `Id` from `IdAllocator`). Stale checks run against both databases.
-  Pending changes show both scripts together.
+- **Hotfix export path:** the `hotfixes` tables are in the catalog and a new broadcast text already stages
+  its `hotfix_data` row; what remains is an `SqlExport` target writing a separate
+  `hotfixes-apply/revert.sql`, `hotfix_data` for edits as well as creations, a `TableHash` from WoWDBDefs
+  (currently hardcoded), and stale checks against both databases. Pending changes show both scripts
+  together.
 - **Writing text** from the speech page and GameObject page-text pickers, with a male/female variant and an
   emote/sound strip; **editing** an existing text with a stale check against the client's version.
 - **`page_text`:** a book editor with next-page chaining shown as pages.
 - **AzerothCore:** `broadcast_text` lives in `acore_world`, so it is a world write with no hotfix rows.
 
-**Why:** every retail NPC line, gossip and emote is a `broadcast_text` row in the `hotfixes` DB (238k), and
+**Why:** every retail NPC line, gossip and emote is a `broadcast_text` row in the `hotfixes` DB (237k), and
 the editor can only link existing text. Books and plaques use `page_text` (world).
 
 ## Phase 24: Item editor
@@ -430,17 +436,14 @@ does not have this problem because `hotfix_data` sends the new rows to the clien
 | Item | State | Open |
 | --- | --- | --- |
 | Guids widened to `ulong` | partial | Spawn search still binds the guid as `uint` (harmless, max ≈ 11.8M). |
-| `ColumnKind` 64-bit kinds | partial | Validated and exported; no table uses them yet. |
 | Hotfix rows with several `VerifiedBuild` versions | partial | Broadcast text takes the highest build; display and area-trigger reads take whichever row comes last. |
 | WoWDBDefs FileDataID corpus check | not started | Needs client data. |
 | Other hotfix overrides (`gameobject_display_info`, `spell_name`, `content_tuning`) | not started | `RetailGameObjectCatalog.Override` exists but is never called; vendor item names and quality already read `item_sparse`, gossip text `broadcast_text`. |
-| Retail item tooltips | partial | Bonus lists, scaling stat distributions, socket stat cost, sockets and race restrictions, and resistances are not computed; numbers are not verified against in-game tooltips. |
+| Retail item tooltips | partial | Bonus lists, scaling stat distributions, socket stat cost, sockets and resistances are not computed; race and class restrictions are printed. Numbers are not verified against in-game tooltips. |
 | `creature_display_info_extra` | not started | Not read (empty in TDB); one of four texture columns of `creature_display_info` unread. |
-| Retail area names (`AreaLookup`) | not started | Null for retail. |
-| Retail graveyard zone links | open gap | `ClientServices.OpenRetail` passes no `AreaLookup`, so the retail graveyard editor accepts any ghost-zone ID (duplicate links are still refused) and `--graveyard-smoke` skips its unknown-area check. Fix: build `AreaLookup` from the retail AreaTable DB2 (`Db2Tables` already maps it to FileDataID 1353545). |
-| `AreaTriggerActionSet`, `ContentTuning` tables | not started | Registered, not read. |
-| Difficulty / phase preview filter | partial | Phase groups ignored (a spawn with only a `PhaseGroup` is hidden); `phaseUseFlags` read, not used; difficulty list hardcoded. |
-| Area triggers from `AreaTrigger.db2` + `hotfixes.area_trigger` | partial | Trigger phases are not filtered by the previewed phase, and the `hotfixes` path tables are not read. |
+| `AreaTriggerActionSet` table | not started | Registered, not read. `ContentTuning` is read from the client DB2; its hotfix override is not. |
+| Difficulty / phase preview filter | partial | Phase groups ignored (a spawn with only a `PhaseGroup` is hidden); `phaseUseFlags` is validated on edits but not applied by the preview filter; difficulty list hardcoded. |
+| Area triggers from `AreaTrigger.db2` + `hotfixes.area_trigger` | partial | `hotfixes.area_trigger` overrides are applied; trigger phases are not filtered by the previewed phase, and the hotfix polygon path/location tables are not read. |
 | Server-spawned `areatrigger` overlay | partial | The create properties' roll, pitch and yaw, the spawn's phases and `SpawnDifficulties` are not applied; spawns are read-only (Phase 21). |
 | Graveyard: safe location is a teleport target | partial | Counts `areatrigger_teleport` only; battleground start points are not checked. |
 | Graveyard: locked-link controls and teleport line | unverified | Not inspected visually (e.g. Alterac Valley graveyard 169). |
@@ -454,8 +457,8 @@ Built differently from the design; each is a candidate for unification when its 
 | `Spatial` / `Restrictions` per dialect | TC has its own copies in `TcSpawnSource`; AC stays on the shared `WorldReadSession`. |
 | Teleports from `game_tele` | Reuses `AcTeleportSource` (same schema); no `TcTeleportSource`. Phase 20 drops this in favour of one editable shared source. |
 | Graveyard healer lookup | TC reuses `AcGraveyardSource.ReadHealers`. |
-| Unchosen geoset groups | Variant 1, except ears (7) and head (32) use variant 2; the rule comes from data, not a documented client rule. |
-| Retail swamp liquid (material 14) | Screen reflections replace the client reflection render, interaction buffers are absent and constant mapping is inferred. |
+| Unchosen geoset groups | Variant 1, except ears (7) and head (32) use variant 2 and eye glow (17) hides; the rule comes from data, not a documented client rule. |
+| Retail swamp liquid (material 14) | Screen reflections replace the client reflection render and the DB2-to-buffer mapping is inferred. |
 
 ## Performance
 
@@ -464,8 +467,8 @@ Measured with `--perf-smoke` on retail Stormwind; designs and numbers in
 
 | Item | State | Open |
 | --- | --- | --- |
-| Renderer | in progress | The project runs Forward+ (Godot's desktop default). The settled Stormwind frame is 8.5–13 ms and CPU-bound, mostly WMO shells, embedded doodads, ADT doodads and shadows (`--perf-breakdown`). Re-baseline `--perf-smoke` on Forward+; reducing building and shadow cost needs the user's decision. |
-| Dynamic sun shadows | partial | Cascade pass and per-fragment receiver are in (`--shadow-smoke`, `--shadow-caster-smoke`, `--shadow-creature-smoke`); default Low, with Medium/High in the View menu. Terrain, WMO shells, doodads, creatures and M2 GameObjects cast; detail casters are split into caster-material buckets, skin through the shared include and alpha-test hair/capes, and animated/moving casters refresh at a bounded rate. Static frames pay only receiver sampling (within noise); a forced caster redraw costs 0.8-1.6 ms (Low), 2-2.7 ms (Medium) and 2.7-3.7 ms (High) on the retail poses. Open: Compatibility verification of the detail casters and a golden. Measurements in [performance.md](../status/performance.md). |
+| Renderer | in progress | The project runs Forward+ (Godot's desktop default). The settled Stormwind frame is 8.5–13 ms and CPU-bound, mostly WMO shells, embedded doodads, ADT doodads and shadows (`--perf-breakdown`). Re-run `--perf-smoke` after the shadow changes (the history has a Forward+ arrival/flight run from the model-decode work, but the streaming baseline is Compatibility); reducing building and shadow cost needs the user's decision. |
+| Dynamic sun shadows | partial | Cascade pass and per-fragment receiver are in (`--shadow-smoke`, `--shadow-caster-smoke`, `--shadow-creature-smoke`); default Low, with Medium/High in the View menu. Terrain, WMO shells, doodads, creatures and M2 GameObjects cast; detail casters are split into caster-material buckets, skin through the shared include and alpha-test hair/capes, and animated/moving casters refresh at a bounded rate. Static frames pay only receiver sampling (within noise); a forced caster redraw costs 0.8-1.6 ms (Low), 2-2.7 ms (Medium) and 2.7-3.7 ms (High) on the retail poses. Open: Compatibility verification of the detail casters, a smoke golden, full flight alignment and an ordinary-flight measurement. Measurements in [performance.md](../status/performance.md). |
 | Upload budget | not started | Model uploads are capped at 8 surfaces and 1.5 ms per frame. With three decode workers about 40 % idle during arrival, the cap or the decoded-queue backpressure (three entries, 256 MiB) is the likely limit, unmeasured. First candidate: move the numerics-to-Godot array conversion onto the decode worker. |
 | Spawn table indexes | not started | `creature` (map index only) and `gameobject` (no map index) are scanned for every region query (150 ms of about 200 ms). Suggested `(map, position_x, position_y)` indexes are in [performance.md](../status/performance.md); the app cannot add them. |
 | Connection per query | not started | Pooling is off by design; each overlay query opens a connection (about 20 ms). |
@@ -475,7 +478,7 @@ Measured with `--perf-smoke` on retail Stormwind; designs and numbers in
 | Item | State | Open |
 | --- | --- | --- |
 | CI coverage | not started | Not covered: tests that need client data, a smoke against a real retail client in an exported build, and a full smoke suite in CI. |
-| `Db2Tables` thread safety | partial | Retail test classes still run one at a time (`[Collection(RetailData.Collection)]`); drop that once the retail corpus tests pass in parallel. |
+| `Db2Tables` thread safety | partial | Loads are serialised and a loaded table is read-only; retail test classes still run one at a time because the corpora share CascLib handles and definitions. Drop the collection once those pass in parallel. |
 | `RetailCorpusTests.EveryMapWdtParsesAndOneTilePerTerrainMapDecodes` accepted failures | not started | Stale "until the retail WMO milestone" comments; tighten or remove the filter. |
 
 Deferred tests are listed in [needed-tests.md](../status/needed-tests.md).
@@ -488,7 +491,7 @@ Deferred tests are listed in [needed-tests.md](../status/needed-tests.md).
 | Customization beyond geosets and hair/eye | not started | Bone sets, skinned models, particle colours. |
 | Humanoid whose extra has no bake material | partial | Drawn without customization (every geoset shows). |
 | Parent skeletons (`.skel` `SKPD`) | not started | Parent skeletons are not followed. |
-| Animation names (AnimationData DB2) | not started | The preview menu shows IDs only. |
+| Animation names | not started | The retail preview menu shows IDs only; names come from the AnimationNames DB2 (Wrath reads AnimationData.dbc). |
 | M2 multitexture batches and spline tracks | partial | Texture weights and per-layer UV animation are not applied (weighted layers draw at full weight, crossfades show their base texture); guild tabard shaders (26 to 28) and more than four units use the base texture with a warning; splines interpolate linearly. |
 | WMO material shaders | partial | The third UV set (third layers read the second) is not read; an unmapped shader still warns. A retail interior group (MOHD flag 0x2) lights itself as mix(interior, world, vertex alpha), taken from wowdev.wiki and checked by eye in one Khaz Algar cave (`fdid:5305801`) only: the `* 2` on the interior term and the lack of portal attenuation are unverified. |
 | Terrain layers 5–8 | not started | Only the first four are drawn. |
@@ -496,7 +499,7 @@ Deferred tests are listed in [needed-tests.md](../status/needed-tests.md).
 | Underwater lighting and fog | partial | Under a liquid the viewer keeps the region's ordinary light bands and fog (retail switches to the LightParams water colours and shorter fog), and there is no underwater post pass (tint, distortion, the water-line window). Only the default weather slot is read. |
 | Uncompressed alpha size | partial | Follows the WDT big-alpha flag; decide per layer if a map disagrees. |
 | Path-named placements | partial | Resolve only through the community listfile. |
-| Dynamic sun shadows | in progress | Retail cascade caster and mask math is ported as Godot-free assets (`ShadowCascades`, `ShadowDepthPacking`, `ShadowCasterPolicy`, `ShadowQuality`) and sampled per fragment in the world shaders. The cascade pass, receiver, presets, creature/GameObject detail casters and the shipped Low default are in. Remaining: animated-refresh measurement, a smoke golden and full flight alignment; see [rendering.md](../architecture/rendering.md#lighting-and-shadows). |
+| Dynamic sun shadows | partial | Retail cascade caster and mask math is ported as Godot-free assets (`ShadowCascades`, `ShadowDepthPacking`, `ShadowCasterPolicy`, `ShadowQuality`) and sampled per fragment in the world shaders. The cascade pass, receiver, presets, creature/GameObject detail casters and the shipped Low default are in. Remaining: Compatibility verification of the detail casters, a smoke golden, full flight alignment and an ordinary-flight measurement; see [rendering.md](../architecture/rendering.md#lighting-and-shadows). |
 
 ## WoW: Forever
 

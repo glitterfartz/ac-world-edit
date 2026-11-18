@@ -118,7 +118,7 @@ public partial class GraveyardOverlay
         AddLink(zone, GraveyardLink.Neutral);
         if (Areas() != null)
         {
-            // The retail profile has no client AreaTable yet, so an unknown area cannot be refused there.
+            // Both profiles now have a client AreaTable, so an unknown area must be refused there too.
             AddLink(9999999, GraveyardLink.Neutral);
         }
 
