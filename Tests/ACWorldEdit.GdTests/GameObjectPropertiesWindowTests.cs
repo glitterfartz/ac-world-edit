@@ -45,6 +45,26 @@ public class GameObjectPropertiesWindowTests
     }
 
     [TestCase]
+    public async Task GrowingTheWindowExpandsTheSectionPicker()
+    {
+        var window = Spawn();
+        window.Open(null);
+        var tree = (SceneTree)Engine.GetMainLoop();
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        var picker = (ItemList)window.FindChild("SectionPicker", true, false)!;
+        float before = picker.Size.Y;
+
+        window.Size = new Vector2I(1400, 1000);
+        for (int i = 0; i < 30 && picker.Size.Y <= before + 100; i++)
+        {
+            await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+
+        AssertThat(picker.Size.Y > before + 100).IsTrue();
+    }
+
+    [TestCase]
     public void ShowingASectionHidesTheOthers()
     {
         var window = Spawn();

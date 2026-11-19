@@ -39,6 +39,17 @@ public class ChangeHistoryWindowInteractionTests
         return window;
     }
 
+    [TestCase]
+    public void TheStatusLineIsTheWindowRow()
+    {
+        var window = Spawn();
+
+        window.SetStatus("Applied.");
+
+        AssertThat(window.StatusLabel.Text).IsEqual("Applied.");
+        AssertThat(window.StatusLabel.Visible).IsTrue();
+    }
+
     static List<T> All<T>(Node node) where T : Node
     {
         var found = new List<T>();
