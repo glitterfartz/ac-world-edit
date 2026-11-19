@@ -17,31 +17,26 @@ public partial class UiPartsTests
 
     sealed partial class TestWindow : ContentEditorWindow
     {
-        public TestWindow() : base("TestWindow")
+        public TestWindow() : base("TestWindow", "Test window")
         {
         }
-
-        public WindowHeader Header(VBoxContainer root, string title, string? subtitle = null) => AddHeader(root, title, subtitle);
     }
 
     [TestCase]
-    public void HeaderKeepsTheTitleAndOptionalSubtitleInTheDraggableRow()
+    public void HeaderKeepsTheTitleAndOptionalSubtitle()
     {
         var window = AutoFree(new TestWindow())!;
-        var root = new VBoxContainer();
-        window.AddChild(root);
+        Tree.Root.AddChild(window);
+        window.Open();
 
-        var plain = window.Header(root, "Quest Editor");
-        var stacked = window.Header(root, "", "");
+        window.SetHeading("Quest Editor");
+        AssertThat(window.TitleLabel.Text).IsEqual("Quest Editor");
+        AssertThat(window.SubtitleLabel.Visible).IsFalse();
+        AssertThat(window.Title).IsEqual("Quest Editor");
 
-        AssertThat(root.GetChildCount()).IsEqual(2);
-        AssertThat(plain.Row.GetParent()).IsEqual(root);
-        AssertThat(plain.Title.Text).IsEqual("Quest Editor");
-        AssertThat(plain.Subtitle == null).IsTrue();
-        AssertThat(plain.Title.SizeFlagsHorizontal).IsEqual(Control.SizeFlags.ExpandFill);
-        AssertThat(stacked.Row.GetChild(0)).IsInstanceOf<VBoxContainer>();
-        AssertThat(stacked.Title.Text).IsEqual("");
-        AssertThat(stacked.Subtitle!.Text).IsEqual("");
+        window.SetHeading("Quest Editor", "Quest 1");
+        AssertThat(window.SubtitleLabel.Text).IsEqual("Quest 1");
+        AssertThat(window.SubtitleLabel.Visible).IsTrue();
     }
 
     [TestCase]

@@ -13,47 +13,37 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
     public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
     /// <summary>Raised when a rule names a conversation or scene and its Open button is pressed.</summary>
     public Action<SmartParamKind, uint> CinematicsRequested { get; set; } = (_, _) => { };
-    Label title = null!;
     Button undo = null!, redo = null!;
 
-    public BehaviorEditorWindow() : base("BehaviorEditor")
+    public BehaviorEditorWindow() : base("BehaviorEditor", "Behavior")
     {
-        Size = TargetSize;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
         Panel.Connection = () => Connection();
         Panel.Store = () => Store();
         Panel.Drafts = Drafts;
         Panel.CinematicsRequested = (kind, id) => CinematicsRequested(kind, id);
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Behavior");
-        title = header.Title;
-        undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        undo = ButtonIn(Actions, "Undo", () => Panel.History(false));
         undo.TooltipText = "Undo the last behavior change.";
-        redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
+        redo = ButtonIn(Actions, "Redo", () => Panel.History(true));
         redo.TooltipText = "Redo the last undone behavior change.";
-        var close = ButtonIn(header.Row, "✕", () => Visible = false);
-        close.TooltipText = "Close the behavior window.";
-        root.AddChild(Panel);
+        Body.AddChild(Panel);
         Panel.Rendered += Sync;
         Sync();
     }
 
     void Sync()
     {
-        title.Text = Panel.Title;
+        SetHeading(Panel.Title);
         Panel.SyncHistoryButtons(undo, redo);
     }
 
     /// <summary>Show the SmartAI rules of one AreaTrigger or spawned trigger template.</summary>
     public void OpenAreaTrigger(AreaTriggerOwner trigger)
     {
-        Visible = true;
-        PlaceOnFirstOpen(40, 90);
+        Open();
         Panel.OpenAreaTrigger(trigger);
     }
 }

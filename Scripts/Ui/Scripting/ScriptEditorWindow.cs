@@ -86,7 +86,7 @@ public partial class ScriptEditorWindow : Window
         root.AddChild(grip);
 
         // Key events are delivered to the window's viewport, not to the Window node itself.
-        AddChild(new ScriptEditorShortcuts { UnhandledKey = HandleShortcut });
+        AddChild(new ToolWindowShortcuts { UnhandledKey = HandleShortcut });
 
         CloseRequested += AttemptClose;
 

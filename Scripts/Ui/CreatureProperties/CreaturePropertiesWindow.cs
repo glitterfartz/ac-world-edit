@@ -40,15 +40,13 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
     protected override string DefaultSection => DefaultSectionId;
     protected override IEntityContext Shell => Context;
     protected override Vector2 TargetSize => new(980, 700);
+    protected override Vector2I MinimumSize => new(760, 520);
 
-    public CreaturePropertiesWindow() : base("CreatureProperties")
+    public CreaturePropertiesWindow() : base("CreatureProperties", "Creature properties")
     {
-        CustomMinimumSize = new(760, 520);
-        Size = TargetSize;
-        MouseFilter = MouseFilterEnum.Stop;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
         Context = new CreatureContext(Drafts, () => Store())
         {

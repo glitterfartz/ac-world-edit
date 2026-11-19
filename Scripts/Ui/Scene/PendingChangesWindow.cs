@@ -26,7 +26,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
     VBoxContainer list = null!;
     ScrollContainer scroll = null!;
-    Label summary = null!, status = null!;
+    Label summary = null!;
     Button applySelected = null!, revertSelected = null!, previewSelected = null!, exportSelected = null!, discardAll = null!, refreshButton = null!, deleteHistory = null!;
     CheckButton showAll = null!;
     CheckBox selectAll = null!;
@@ -44,88 +44,66 @@ public partial class PendingChangesWindow : ContentEditorWindow
 
     protected override Vector2 TargetSize => new(860, 560);
 
-    public PendingChangesWindow() : base("PendingChanges")
+    public PendingChangesWindow() : base("PendingChanges", "Change History")
     {
-        Size = TargetSize;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Change History");
-        ButtonIn(header.Row, "✕", () => Visible = false);
         summary = ClientStyle.Text("", 12, ClientStyle.Faded);
-        root.AddChild(summary);
+        Body.AddChild(summary);
         var selectBar = new HBoxContainer();
-        root.AddChild(selectBar);
+        Body.AddChild(selectBar);
         selectAll = new CheckBox { Text = "Select all", Disabled = true };
         selectAll.TooltipText = "Check or clear every change in the list.";
         selectAll.Toggled += pressed => SetAllChecked(pressed);
         selectBar.AddChild(selectAll);
         scroll = new ScrollContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
         };
-        root.AddChild(scroll);
+        Body.AddChild(scroll);
         list = new VBoxContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         list.AddThemeConstantOverride("separation", 4);
         scroll.AddChild(list);
 
-        var options = new HBoxContainer();
-        options.AddThemeConstantOverride("separation", 8);
-        root.AddChild(options);
+        applySelected = ButtonIn(Actions, "Apply selected", () => ApplyRequested?.Invoke(Checked()));
+        applySelected.TooltipText = "Run the checked staged changes against the world database.";
+        revertSelected = ButtonIn(Actions, "Revert selected", () => RevertRequested?.Invoke(Checked()));
+        revertSelected.TooltipText = "Undo the checked applied changes by running their revert scripts.";
+        previewSelected = ButtonIn(Actions, "Preview…", () => PreviewRequested?.Invoke(Checked(), exportKind.Selected == 1));
+        previewSelected.TooltipText = "Show the combined script the export would write.";
+        exportSelected = ButtonIn(Actions, "Export selected…", () => ExportRequested?.Invoke(Checked(), exportKind.Selected == 1));
+        exportSelected.TooltipText = "Save the checked changes into one SQL file for sharing.";
+        discardAll = ButtonIn(Actions, "Discard staged…", () => DiscardAllStagedRequested?.Invoke());
+        discardAll.TooltipText = "Throw away every staged (not yet applied) change.";
+
         showAll = new CheckButton { Text = "Show all worlds" };
         showAll.TooltipText = "Show changes from every world database, not just the open one.";
         showAll.Toggled += pressed => ShowAllChanged?.Invoke(pressed);
-        options.AddChild(showAll);
+        Actions.AddChild(showAll);
         exportKind = new OptionButton();
         exportKind.AddItem("Export: apply script");
         exportKind.AddItem("Export: revert script");
         exportKind.TooltipText = "Whether Export selected writes the apply or the revert scripts.";
-        options.AddChild(exportKind);
+        Actions.AddChild(exportKind);
         refreshButton = new Button { Text = "Refresh" };
         refreshButton.TooltipText = "Re-read drafts and the change history.";
         refreshButton.Pressed += () => HistoryRefreshRequested?.Invoke();
-        options.AddChild(refreshButton);
+        Actions.AddChild(refreshButton);
         deleteHistory = new Button { Text = "Delete" };
         deleteHistory.TooltipText = "Delete applied, reverted and failed changes of the open world from the history. Staged edits stay.";
         deleteHistory.Pressed += OpenDeleteDialog;
-        options.AddChild(deleteHistory);
-
-        var footer = new HBoxContainer();
-        footer.AddThemeConstantOverride("separation", 6);
-        root.AddChild(footer);
-        applySelected = ButtonIn(footer, "Apply selected", () => ApplyRequested?.Invoke(Checked()));
-        applySelected.TooltipText = "Run the checked staged changes against the world database.";
-        revertSelected = ButtonIn(footer, "Revert selected", () => RevertRequested?.Invoke(Checked()));
-        revertSelected.TooltipText = "Undo the checked applied changes by running their revert scripts.";
-        previewSelected = ButtonIn(footer, "Preview…", () => PreviewRequested?.Invoke(Checked(), exportKind.Selected == 1));
-        previewSelected.TooltipText = "Show the combined script the export would write.";
-        exportSelected = ButtonIn(footer, "Export selected…", () => ExportRequested?.Invoke(Checked(), exportKind.Selected == 1));
-        exportSelected.TooltipText = "Save the checked changes into one SQL file for sharing.";
-        discardAll = ButtonIn(footer, "Discard staged…", () => DiscardAllStagedRequested?.Invoke());
-        discardAll.TooltipText = "Throw away every staged (not yet applied) change.";
-        status = ClientStyle.Text("", 12, ClientStyle.Faded);
-        footer.AddChild(status);
+        Actions.AddChild(deleteHistory);
     }
 
-    /// <summary>
-    /// Show the window, pinned near the top on first open.
-    /// </summary>
-    public void Open()
-    {
-        Visible = true;
-        PlaceOnFirstOpen(0, 70);
-        MoveToFront();
-    }
+    /// <summary>Show the window, centered over the viewer on first open.</summary>
+    public new void Open() => base.Open();
 
-    public void SetStatus(string text) => status.Text = text;
 
     public void SetShowAll(bool value)
     {
@@ -270,7 +248,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
             top.AddChild(time);
             var text = ClientStyle.Text(record.Label, 13);
             text.TooltipText = record.Label;
-            text.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             top.AddChild(text);
             if (record.Status == ChangeStatus.Staged)
             {
@@ -299,7 +277,7 @@ public partial class PendingChangesWindow : ContentEditorWindow
                 // background refresh never loses a keystroke.
                 Text = notesText.TryGetValue(fp, out var typed) ? typed : record.Notes ?? "",
                 PlaceholderText = "Optional note…",
-                SizeFlagsHorizontal = SizeFlags.ExpandFill
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
             notes.TooltipText = "Optional note saved with this change.";
             notes.TextSubmitted += text => NotesChanged?.Invoke(fp, text);

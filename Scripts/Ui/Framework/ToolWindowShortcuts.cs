@@ -3,16 +3,16 @@ using Godot;
 namespace ACWorldEdit;
 
 /// <summary>
-/// Routes unhandled key events from inside the script editor window back to the window script.
+/// Routes unhandled key events from inside a tool window back to the window script.
 /// A Window is a Viewport, so its own node is not part of the node tree that receives its keys;
 /// a control inside the window is.
 /// </summary>
-public partial class ScriptEditorShortcuts : Control
+public partial class ToolWindowShortcuts : Control
 {
     /// <summary>Handle one key event; return true when it was consumed.</summary>
     public Func<InputEvent, bool>? UnhandledKey { get; set; }
 
-    public ScriptEditorShortcuts()
+    public ToolWindowShortcuts()
     {
         SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         MouseFilter = Control.MouseFilterEnum.Ignore;

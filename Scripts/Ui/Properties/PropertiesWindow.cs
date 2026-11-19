@@ -17,12 +17,11 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
     WorldDialect? listedFor;
     readonly HashSet<EntitySection> stale = [];
     ItemList picker = null!;
-    Label title = null!, subtitle = null!, statusLabel = null!;
     Button undo = null!, redo = null!;
     ScrollContainer scroll = null!;
     VBoxContainer scrollHost = null!, directHost = null!;
 
-    protected PropertiesWindow(string name) : base(name)
+    protected PropertiesWindow(string name, string title) : base(name, title)
     {
     }
 
@@ -38,8 +37,8 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
     protected EntitySection? Active { get; private set; }
     public bool IsOpen => Visible;
     public string ActiveSection => Active?.Id ?? "";
-    public string SmokeTitle => title.Text;
-    public string SmokeSubtitle => subtitle.Text;
+    public string SmokeTitle => TitleLabel.Text;
+    public string SmokeSubtitle => SubtitleLabel.Text;
 
     /// <summary>Every section, in registry order.</summary>
     public IReadOnlyList<EntitySection> Sections => sections;
@@ -47,7 +46,7 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
     /// <summary>The open database's sections, in picker order.</summary>
     protected IReadOnlyList<EntitySection> Listed => listed;
 
-    /// <summary>Build the frame, add <paramref name="pages"/> and show the default section. Called once from the window's _Ready.</summary>
+    /// <summary>Build the frame, add <paramref name="pages"/> and show the default section. Called once from the window's BuildEditor.</summary>
     protected void BuildShell(IEnumerable<EntitySection> pages)
     {
         Shell.Changed += OnContextChanged;
@@ -70,28 +69,20 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
 
     void BuildFrame()
     {
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 8);
-        AddChild(root);
-        var header = AddHeader(root, "", "");
-        title = header.Title;
-        subtitle = header.Subtitle!;
-        undo = ButtonIn(header.Row, "Undo", () => History(false));
-        redo = ButtonIn(header.Row, "Redo", () => History(true));
-        ButtonIn(header.Row, "✕", CloseWindow).TooltipText = "Close (Esc)";
-        root.AddChild(new HSeparator());
+        undo = ButtonIn(Actions, "Undo", () => History(false));
+        redo = ButtonIn(Actions, "Redo", () => History(true));
         var split = new HBoxContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
         split.AddThemeConstantOverride("separation", 10);
-        root.AddChild(split);
+        Body.AddChild(split);
         picker = new ItemList
         {
             Name = "SectionPicker",
             CustomMinimumSize = new(210, 0),
             FixedIconSize = new(18, 18),
-            SizeFlagsVertical = SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             AllowReselect = true,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
         };
@@ -99,28 +90,26 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
         split.AddChild(picker);
         var content = new VBoxContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
         split.AddChild(content);
         scroll = new ScrollContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
         };
         content.AddChild(scroll);
         scrollHost = new VBoxContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         scroll.AddChild(scrollHost);
         directHost = new VBoxContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
         content.AddChild(directHost);
-        statusLabel = ClientStyle.Text("", 12, ClientStyle.Warning);
-        root.AddChild(statusLabel);
     }
 
     public override void _Process(double delta)
@@ -129,32 +118,13 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
         {
             Shell.Redraw();
         }
-
-        base._Process(delta);
-    }
-
-    public override void _UnhandledInput(InputEvent input)
-    {
-        if (Visible && input is InputEventKey { Keycode: Key.Escape, Pressed: true })
-        {
-            CloseWindow();
-            GetViewport().SetInputAsHandled();
-        }
     }
 
     /// <summary>Make the window visible on a section (the last one when null).</summary>
     protected void Show(string? section)
     {
-        Visible = true;
-        PlaceOnFirstOpen(0, 60);
-        Size = TargetSize;
+        Open();
         ShowSection(section ?? Active?.Id ?? DefaultSection, null);
-    }
-
-    public void CloseWindow()
-    {
-        Visible = false;
-        EndDrag();
     }
 
     /// <summary>
@@ -242,9 +212,9 @@ public abstract partial class PropertiesWindow : ContentEditorWindow
     void UpdateChrome()
     {
         SyncListed();
-        (title.Text, subtitle.Text) = Header();
-        statusLabel.Text = Shell.Status;
-        statusLabel.Visible = Shell.Status.Length > 0;
+        var (heading, under) = Header();
+        SetHeading(heading, under);
+        SetStatus(Shell.Status);
         for (int i = 0; i < listed.Count; i++)
         {
             var section = listed[i];

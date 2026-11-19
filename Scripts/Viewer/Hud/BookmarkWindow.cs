@@ -19,40 +19,31 @@ public partial class BookmarkWindow : ContentEditorWindow
     /// <summary>Teleport the camera to a bookmark; returns a status line.</summary>
     public Func<CameraBookmark, Task<string>> OpenBookmark { get; set; } = _ => Task.FromResult("");
 
-    Label statusLabel = null!;
     VBoxContainer body = null!;
     Button saveButton = null!;
 
-    public BookmarkWindow() : base("Bookmarks")
+    protected override Vector2 TargetSize => new(640, 420);
+
+    public BookmarkWindow() : base("Bookmarks", "Bookmarks")
     {
-        Size = new(640, 420);
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Bookmarks");
-        var save = ButtonIn(header.Row, "Save location", SaveCurrent);
+        var save = ButtonIn(Actions, "Save location", SaveCurrent);
         save.Name = "BookmarkSave";
         save.TooltipText = "Save the camera's current map and position.";
         saveButton = save;
-        var close = ButtonIn(header.Row, "✕", () => Visible = false);
-        close.TooltipText = "Close the bookmarks window.";
         body = new VBoxContainer();
         body.AddThemeConstantOverride("separation", 6);
-        root.AddChild(body);
-        statusLabel = ClientStyle.Text("", 12, ClientStyle.Faded);
-        root.AddChild(statusLabel);
+        Body.AddChild(body);
         Rebuild();
     }
 
     /// <summary>Show the window with a fresh read of the bookmarks file.</summary>
-    public void Open()
+    public new void Open()
     {
-        Visible = true;
-        PlaceOnFirstOpen(0, 80);
+        base.Open();
         Rebuild();
     }
 
@@ -141,7 +132,7 @@ public partial class BookmarkWindow : ContentEditorWindow
         SyncStatus();
     }
 
-    void SyncStatus() => statusLabel.Text = status;
+    void SyncStatus() => SetStatus(status);
 
     /// <summary>Row count, for tests.</summary>
     public int SmokeRows => BookmarkStore.Load(FilePath()).Count;

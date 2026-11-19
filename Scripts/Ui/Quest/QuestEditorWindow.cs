@@ -39,32 +39,25 @@ public partial class QuestEditorWindow : ContentEditorWindow
     public uint? QuestId => Panel.QuestId;
     public bool IsLoading => Panel.IsLoading;
 
-    public QuestEditorWindow() : base("QuestEditor")
+    public QuestEditorWindow() : base("QuestEditor", "Quest Editor")
     {
-        Size = TargetSize;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Quest Editor");
-        undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        undo = ButtonIn(Actions, "Undo", () => Panel.History(false));
         undo.TooltipText = "Undo the last quest change.";
-        redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
+        redo = ButtonIn(Actions, "Redo", () => Panel.History(true));
         redo.TooltipText = "Redo the last undone quest change.";
-        var create = ButtonIn(header.Row, "+ New quest", () => _ = Panel.NewQuest(null));
+        var create = ButtonIn(Actions, "+ New quest", () => _ = Panel.NewQuest(null));
         create.TooltipText = "Create an empty quest with a new ID.";
-        duplicate = ButtonIn(header.Row, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
+        duplicate = ButtonIn(Actions, "Duplicate", () => _ = Panel.NewQuest(Panel.QuestId));
         duplicate.TooltipText = "Copy this quest (texts, objectives, rewards, chain settings) under a new ID.";
-        var close = ButtonIn(header.Row, "✕", () => Visible = false);
-        close.TooltipText = "Close the quest window.";
         split = new HBoxContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        root.AddChild(split);
+        Body.AddChild(split);
         var left = new VBoxContainer
         {
             CustomMinimumSize = new(220, 0)
@@ -83,7 +76,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
         left.AddChild(search);
         results = new ItemList
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
         };
         results.ItemSelected += index => _ = Panel.Load((uint)results.GetItemMetadata((int)index).AsInt64());
@@ -136,8 +129,7 @@ public partial class QuestEditorWindow : ContentEditorWindow
     /// </summary>
     public void Open(uint quest)
     {
-        Visible = true;
-        PlaceOnFirstOpen(0, 80);
+        Open();
         MatchDialect();
         Panel.Open(quest);
     }

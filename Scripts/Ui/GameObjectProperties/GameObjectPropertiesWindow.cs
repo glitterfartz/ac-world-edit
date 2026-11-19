@@ -32,15 +32,13 @@ public partial class GameObjectPropertiesWindow : PropertiesWindow
     protected override string DefaultSection => DefaultSectionId;
     protected override IEntityContext Shell => Context;
     protected override Vector2 TargetSize => new(980, 700);
+    protected override Vector2I MinimumSize => new(760, 520);
 
-    public GameObjectPropertiesWindow() : base("GameObjectProperties")
+    public GameObjectPropertiesWindow() : base("GameObjectProperties", "GameObject properties")
     {
-        CustomMinimumSize = new(760, 520);
-        Size = TargetSize;
-        MouseFilter = MouseFilterEnum.Stop;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
         Context = new GameObjectContext(Drafts)
         {

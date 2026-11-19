@@ -26,29 +26,22 @@ public partial class CinematicsEditorWindow : ContentEditorWindow
     Button undo = null!, redo = null!;
     int searchGeneration;
 
-    public CinematicsEditorWindow() : base("CinematicsEditor")
+    public CinematicsEditorWindow() : base("CinematicsEditor", "Cinematics")
     {
-        Size = TargetSize;
     }
 
-    public override void _Ready()
+    protected override void BuildEditor()
     {
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 6);
-        AddChild(root);
-        var header = AddHeader(root, "Cinematics");
-        undo = ButtonIn(header.Row, "Undo", () => Panel.History(false));
+        undo = ButtonIn(Actions, "Undo", () => Panel.History(false));
         undo.TooltipText = "Undo the last cinematics change.";
-        redo = ButtonIn(header.Row, "Redo", () => Panel.History(true));
+        redo = ButtonIn(Actions, "Redo", () => Panel.History(true));
         redo.TooltipText = "Redo the last undone cinematics change.";
-        var close = ButtonIn(header.Row, "✕", () => Visible = false);
-        close.TooltipText = "Close the cinematics window.";
 
         split = new HBoxContainer
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        root.AddChild(split);
+        Body.AddChild(split);
         var left = new VBoxContainer
         {
             CustomMinimumSize = new(230, 0)
@@ -64,7 +57,7 @@ public partial class CinematicsEditorWindow : ContentEditorWindow
         left.AddChild(search);
         results = new ItemList
         {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
         };
         results.ItemSelected += index => Panel.Open((uint)results.GetItemMetadata((int)index).AsInt64());
@@ -123,8 +116,7 @@ public partial class CinematicsEditorWindow : ContentEditorWindow
     /// <summary>Show the editor; 0 opens it without a selection, otherwise opens that player choice.</summary>
     public void Open(uint id)
     {
-        Visible = true;
-        PlaceOnFirstOpen(0, 70);
+        Open();
         MatchDialect();
         Panel.Open(id);
     }
@@ -134,8 +126,7 @@ public partial class CinematicsEditorWindow : ContentEditorWindow
     /// <summary>Open a SmartAI parameter's conversation or scene on its tab.</summary>
     public void Open(SmartParamKind kind, uint id)
     {
-        Visible = true;
-        PlaceOnFirstOpen(0, 70);
+        Open();
         MatchDialect();
         Panel.ShowTab(kind == SmartParamKind.Scene ? CinematicsPanel.Tab.Scenes : CinematicsPanel.Tab.Conversations);
         Panel.Open(id);
