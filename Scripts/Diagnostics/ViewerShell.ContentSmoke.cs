@@ -89,7 +89,7 @@ public partial class ViewerShell
             smokeAiBefore = behaviorEditor.SmokeAiName;
             smokeRuleCount = behaviorEditor.SmokeRules(FarleyScope).Count;
             GD.Print($"CONTENT_SMOKE_BEHAVIOR ai='{smokeAiBefore}' script='{behaviorEditor.SmokeScriptName}' rules={smokeRuleCount} lines={behaviorEditor.SmokeLineCount} issues={behaviorEditor.Issues.Count}");
-            Screenshot("behavior-start");
+            Screenshot("behavior-start", creatureProps);
             return true;
         }),
         ("add-rule", () =>
@@ -114,7 +114,7 @@ public partial class ViewerShell
             behaviorEditor.SmokeAddLine(smokeGroup, "Welcome to the Lion's Pride, $n!");
             Require(behaviorEditor.SmokeLineCount == before + 1, "speech line not added: " + behaviorEditor.SmokeStatus);
             Require(behaviorEditor.SmokeUpdate(RuleById(smokeTalkRule), "Change text group", ("action_param1", smokeGroup)), "talk group not set: " + behaviorEditor.SmokeStatus);
-            Screenshot("behavior-speech");
+            Screenshot("behavior-speech", creatureProps);
             return true;
         }),
         ("talk-sentence", () =>
@@ -123,7 +123,7 @@ public partial class ViewerShell
             Require(sentence.StartsWith("When it enters combat", StringComparison.Ordinal) && sentence.Contains("Welcome to the Lion", StringComparison.Ordinal), "talk sentence: " + sentence);
             behaviorEditor.ShowScope(FarleyScope);
             behaviorEditor.SmokeExpand(smokeTalkRule);
-            Screenshot("behavior-rule-edit");
+            Screenshot("behavior-rule-edit", creatureProps);
             return true;
         }),
         ("then-step", () =>
@@ -150,7 +150,7 @@ public partial class ViewerShell
             Require(moved[0].Id == timer.Id && moved.Count == 2 && moved[1].Action == 11, "swap lost the Then chain");
             smokeTalkRule = moved[0].Id;
             behaviorEditor.SmokeExpand(null);
-            Screenshot("behavior-rules");
+            Screenshot("behavior-rules", creatureProps);
             return true;
         }),
         ("composer-open", () =>
@@ -176,7 +176,7 @@ public partial class ViewerShell
             Require(preview.Contains("When hit by", StringComparison.Ordinal) && preview.Contains("summon", StringComparison.Ordinal), "composer preview: " + preview);
             Require(behaviorEditor.SmokeRules(FarleyScope).Count == smokeRuleCount, "composer drafted a rule before Add");
             GD.Print($"CONTENT_SMOKE_COMPOSER {preview}");
-            Screenshot("behavior-composer");
+            Screenshot("behavior-composer", creatureProps);
             return true;
         }),
         ("composer-add", () =>
@@ -184,7 +184,7 @@ public partial class ViewerShell
             Require(behaviorEditor.SmokePress("PendingAdd"), "no composer Add button");
             var added = behaviorEditor.SmokeRules(FarleyScope).MaxBy(r => r.Id)!;
             Require(behaviorEditor.SmokeRules(FarleyScope).Count == smokeRuleCount + 1 && added.Event == 8 && added.Action == 12 && added.Target == 1, "composed rule not added: " + behaviorEditor.SmokeStatus);
-            Screenshot("behavior-composed");
+            Screenshot("behavior-composed", creatureProps);
             return true;
         }),
         ("action-list", () =>
@@ -204,7 +204,7 @@ public partial class ViewerShell
 
             Require(behaviorEditor.SmokeRules(list).Count == 1, "new action list has no first step");
             Require(behaviorEditor.SmokeRules(FarleyScope).Any(r => r.Action == SmartCatalog.RunActionList && r.ActionParam(1) == (uint)list.EntryOrGuid), "rule not pointed at the new list");
-            Screenshot("behavior-action-list");
+            Screenshot("behavior-action-list", creatureProps);
             return true;
         }),
         ("undo", () =>
@@ -247,7 +247,7 @@ public partial class ViewerShell
             Require(quest.T("LogTitle") == "New quest", "new quest title");
             smokeNewQuest = questEditor.QuestId!.Value;
             Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Rename quest", ("LogTitle", "A Warm Welcome")), "rename: " + questEditor.SmokeStatus);
-            Screenshot("quest-overview");
+            Screenshot("quest-overview", questEditor);
             return true;
         }),
         ("quest-objective-picker", () =>
@@ -282,7 +282,7 @@ public partial class ViewerShell
             Require(quest.I("RequiredNpcOrGo1") > 0 && quest.U("RequiredNpcOrGoCount1") == 1, "picker did not set the objective: " + questEditor.SmokeStatus);
             Require(questEditor.SmokeObjectiveName(1) == "Kobold Vermin", "picker chose the wrong creature: " + questEditor.SmokeObjectiveName(1));
             Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Change objective count", ("RequiredNpcOrGoCount1", 8u)), "count: " + questEditor.SmokeStatus);
-            Screenshot("quest-objectives");
+            Screenshot("quest-objectives", questEditor);
             return true;
         }),
         ("quest-story", () =>
@@ -290,7 +290,7 @@ public partial class ViewerShell
             questEditor.ShowTab(QuestPanel.Tab.Story);
             Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Edit quest text", ("QuestDescription", "Those kobolds keep scaring my guests, $n.$B$BThin them out, would you?"), ("LogDescription", "Kill 8 Kobold Vermin.")), "story: " + questEditor.SmokeStatus);
             Require(questEditor.SmokeSet(AcTables.QuestOfferReward, "Edit turn-in text", ("RewardText", "My guests can finally sleep. Thank you, $n.")), "turn-in: " + questEditor.SmokeStatus);
-            Screenshot("quest-story");
+            Screenshot("quest-story", questEditor);
             return true;
         }),
         ("quest-rewards", () =>
@@ -298,7 +298,7 @@ public partial class ViewerShell
             questEditor.ShowTab(QuestPanel.Tab.Rewards);
             Require(questEditor.SmokeSet(AcTables.QuestTemplate, "Change money reward", ("RewardMoney", 1500)), "money: " + questEditor.SmokeStatus);
             Require(!questEditor.SmokeSet(AcTables.QuestTemplate, "Change reward item", ("RewardItem1", 99999999u), ("RewardAmount1", 1u)) && questEditor.SmokeStatus.StartsWith("Not saved", StringComparison.Ordinal), "missing reward item was accepted");
-            Screenshot("quest-rewards");
+            Screenshot("quest-rewards", questEditor);
             return true;
         }),
         ("quest-givers", () =>
@@ -310,19 +310,19 @@ public partial class ViewerShell
             Require(questEditor.SmokePress("Givers also complete it"), "no 'Givers also complete it' shortcut");
             Require(questEditor.SmokeEffective.All(AcTables.QuestEnder).Any(r => r.U("quest") == smokeNewQuest && r.U("id") == SmokeInnkeeper), "ender not added");
             Require(!questEditor.SmokeIssues.Any(i => i.Error), "new quest has errors: " + string.Join("; ", questEditor.SmokeIssues.Select(i => i.Message)));
-            Screenshot("quest-givers");
+            Screenshot("quest-givers", questEditor);
             return true;
         }),
         ("quest-chain", () =>
         {
             questEditor.ShowTab(QuestPanel.Tab.Chain);
-            Screenshot("quest-chain");
+            Screenshot("quest-chain", questEditor);
             return true;
         }),
         ("quest-preview", () =>
         {
             questEditor.ShowTab(QuestPanel.Tab.Preview);
-            Screenshot("quest-preview");
+            Screenshot("quest-preview", questEditor);
             return true;
         }),
         ("quest-undo", () =>

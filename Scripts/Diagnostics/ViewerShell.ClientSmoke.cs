@@ -635,7 +635,7 @@ public partial class ViewerShell
                 return;
             case 82:
                 if (clientShotFrames++ < 15) return;
-                SaveWindowShot(creatureProps, "res://artifacts/client-shot-waypoint.png");
+                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-waypoint.png"));
                 GD.Print("CLIENT_SHOT_WAYPOINT_OK move/delay/undo/redo/revert export waypoint_path_node; path-level fields read-only");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();

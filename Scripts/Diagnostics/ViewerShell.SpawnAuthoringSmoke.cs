@@ -783,7 +783,7 @@ public partial class ViewerShell
             Require(creatureProps.SmokeTitle.StartsWith("Creature template: ", StringComparison.Ordinal), "the window title does not say it edits the template: " + creatureProps.SmokeTitle);
             Require(creatureProps.SmokeSubtitle.Contains("TEMPLATE · Entry ", StringComparison.Ordinal) && creatureProps.SmokeSubtitle.Contains("inspector on the right", StringComparison.Ordinal), "the subtitle does not point to the inspector: " + creatureProps.SmokeSubtitle);
             Require(section.SmokeUse.Contains("own", StringComparison.Ordinal) && section.SmokeFields.Field("emote") != null && section.SmokeFields.Field("auras") != null, "the Appearance page lacks its note or fields");
-            Screenshot("template-window");
+            Screenshot("template-window", creatureProps);
             section.SmokeFields.SmokeType("emote", "70");
             return true;
         }),

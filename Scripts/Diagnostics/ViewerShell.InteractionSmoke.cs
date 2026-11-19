@@ -43,7 +43,7 @@ public partial class ViewerShell
         }
     }
 
-    (string Name, int Frames)? shot;
+    (string Name, int Frames, Window? Target)? shot;
     /// <summary>
     /// Screenshot file prefix: artifacts/{prefix}-{name}.png.
     /// </summary>
@@ -52,8 +52,9 @@ public partial class ViewerShell
     /// <summary>
     /// Capture a few frames later: the viewport texture holds the previously drawn frame, so an
     /// immediate capture would miss UI built this frame. Steps pause while a capture is pending.
+    /// A tool window is captured from its own viewport; the root texture does not include it.
     /// </summary>
-    void Screenshot(string name) => shot = (name, 3);
+    void Screenshot(string name, Window? target = null) => shot = (name, 3, target);
 
     void TakeScreenshot()
     {
@@ -71,7 +72,8 @@ public partial class ViewerShell
         shot = null;
         if (DisplayServer.GetName() != "headless")
         {
-            GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://artifacts/{shotPrefix}-{pending.Name}.png"));
+            Window target = pending.Target is { Visible: true } window ? window : GetWindow();
+            target.GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://artifacts/{shotPrefix}-{pending.Name}.png"));
         }
     }
 
@@ -155,7 +157,7 @@ public partial class ViewerShell
             Require(v.Menus.Count > 0 && v.Menus[v.GossipMenuId].Options.Length > 0, "no gossip options");
             smokeRootMenu = v.GossipMenuId;
             GD.Print($"INTERACTION_SMOKE_VIEW '{v.Name}' menus={v.Menus.Count} options={v.Menus.Values.Sum(m => m.Options.Length)} vendor={v.Vendor.Length} starts={v.Starts.Length} ends={v.Ends.Length}");
-            Screenshot("gossip");
+            Screenshot("gossip", creatureProps);
             return true;
         }),
         ("vendor-page", () =>
@@ -171,7 +173,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            Screenshot("vendor");
+            Screenshot("vendor", creatureProps);
             return true;
         }),
         ("submenu-and-back", () =>
@@ -208,7 +210,7 @@ public partial class ViewerShell
                 return false;
             }
 
-            Screenshot("quest");
+            Screenshot("quest", creatureProps);
             return true;
         }),
         ("behavior-section", () =>
@@ -220,14 +222,14 @@ public partial class ViewerShell
                 return false;
             }
 
-            Screenshot("behavior");
+            Screenshot("behavior", creatureProps);
             return true;
         }),
         ("speech-section", () =>
         {
             creatureProps.SmokeShow("Speech");
             Require(creatureProps.Context.Behavior.Scope == null, "speech section did not show the speech page");
-            Screenshot("speech");
+            Screenshot("speech", creatureProps);
             creatureProps.ShowSection("quests", smokeQuest);
             return true;
         }),
@@ -254,7 +256,7 @@ public partial class ViewerShell
             }
 
             Require(questEditor.ResultCount <= Data.DbLimits.MaxSearch && !questEditor.SmokeEditingEnabled, "quest search unbounded or a quest opened unexpectedly");
-            Screenshot("quest-editor");
+            Screenshot("quest-editor", questEditor);
             return true;
         }),
         ("close-quest-editor", () =>
@@ -276,7 +278,7 @@ public partial class ViewerShell
             Require(creatureProps.SmokePress("+ Add option → new submenu"), "add submenu button missing");
             var menu = creatureProps.Context.AcView!.Menus[smokeRootMenu];
             Require(menu.Options.Length == before + 1 && menu.Options[^1].ActionMenu != 0 && creatureProps.Context.AcView.Menus.ContainsKey(menu.Options[^1].ActionMenu), "new option with submenu missing");
-            Screenshot("edit-gossip");
+            Screenshot("edit-gossip", creatureProps);
             return true;
         }),
         ("edit-greeting", () =>
@@ -301,7 +303,7 @@ public partial class ViewerShell
 
             Require(creatureProps.SmokePress("+ Linen Cloth (2589)"), "Linen Cloth result missing");
             Require(creatureProps.Context.AcView!.Vendor.Any(i => i.Item == 2589 && i.Edited), "vendor item not added");
-            Screenshot("edit-vendor");
+            Screenshot("edit-vendor", creatureProps);
             return true;
         }),
         ("edit-vendor-remove", () =>
@@ -324,7 +326,7 @@ public partial class ViewerShell
             creatureProps.SmokeReopenDraft();
             var menu = creatureProps.Context.AcView!.Menus[smokeRootMenu];
             Require(menu.Options[^1].ActionMenu != 0 && menu.Texts[0].Male == "Smoke greeting, $N.", "edits lost after reopening the draft");
-            Screenshot("edit-info");
+            Screenshot("edit-info", creatureProps);
             return true;
         }),
         ("settled-frame-rate", () =>
