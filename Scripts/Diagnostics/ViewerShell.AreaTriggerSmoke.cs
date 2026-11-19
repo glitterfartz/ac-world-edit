@@ -179,7 +179,7 @@ public partial class ViewerShell
                     // A few frames after the edit, so the capture shows the re-rendered window.
                     if (DisplayServer.GetName() != "headless")
                     {
-                        GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/areatrigger-behavior.png"));
+                        SaveWindowShot(areaBehavior, "res://artifacts/areatrigger-behavior.png");
                     }
 
                     areaBehavior.Panel.SmokeHistory(false);

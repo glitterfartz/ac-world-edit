@@ -60,6 +60,13 @@ public partial class ViewerShell
     const uint ShotCreature = 295;
 
     /// <summary>
+    /// Save a tool window's own viewport. The root capture does not include Window nodes, even
+    /// embedded ones, so editor pages are captured from the window itself.
+    /// </summary>
+    static void SaveWindowShot(Window window, string file) =>
+        window.GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(file));
+
+    /// <summary>
     /// The last --client-shot-overlays step: open the creature window on Innkeeper Farley, check that
     /// it lists the selected dialect's pages and loaded his read model, and save the gossip, template, vendor, trainer and quest
     /// pages (artifacts/client-shot-creature-*.png).
@@ -104,7 +111,7 @@ public partial class ViewerShell
                     return;
                 }
 
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-gossip.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-gossip.png");
                 if (creatureProps.Context.Editable)
                 {
                     var openMenu = creatureProps.Section("gossip")!.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text.StartsWith("Open menu "));
@@ -125,7 +132,7 @@ public partial class ViewerShell
                 var goBack = gossipSection.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.Text == "Back");
                 if (menuPicker == null || !menuPicker.GetItemText(menuPicker.Selected).Contains("submenu") || goBack == null || goBack.Disabled)
                 { SmokeFail("CLIENT_SHOT_GOSSIP_NAVIGATION"); return; }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-submenu.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-submenu.png");
                 goBack.EmitSignal(Button.SignalName.Pressed);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 19;
@@ -178,7 +185,7 @@ public partial class ViewerShell
                 return;
             case 22:
                 if (clientShotFrames++ < 60) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-greeting.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-greeting.png");
                 var gc = creatureProps.Context;
                 if (!gc.Effective.All(gc.Schema.GossipPage.TextTable).Any(r => r.F("Probability0") == .75f))
                 { SmokeFail("CLIENT_SHOT_GREETING_SAVE " + gc.Status); return; }
@@ -229,7 +236,7 @@ public partial class ViewerShell
                     return;
                 }
 
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-template.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-template.png");
                 if (creatureProps.Context.Editable)
                 {
                     var addDifficulty = creatureProps.Section("template")!.FindChild("AddDifficulty", true, false) as OptionButton;
@@ -270,7 +277,7 @@ public partial class ViewerShell
                 if (clientShotFrames++ < 20) return;
                 dc = creatureProps.Context;
                 difficulties = dc.Schema.TemplatePage.Difficulty!;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-difficulty-add.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-difficulty-add.png");
                 if (creatureProps.Section("template")!.FindChild("RemoveDifficulty", true, false) is not Button removeDifficulty)
                 { SmokeFail("CLIENT_SHOT_DIFFICULTY_REMOVE_MISSING"); return; }
                 removeDifficulty.EmitSignal(BaseButton.SignalName.Pressed);
@@ -295,7 +302,7 @@ public partial class ViewerShell
                     return;
                 }
 
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-vendor.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-vendor.png");
                 GD.Print($"CLIENT_SHOT_CREATURE entry={creatureProps.Entry} dialect={creatureProps.Context.Dialect} vendor={creatureProps.Context.Schema.VendorPage.Select(creatureProps.Context.Effective, ShotCreature).Count()}");
                 if (creatureProps.Context.Editable)
                 {
@@ -316,7 +323,7 @@ public partial class ViewerShell
                     if (clientShotFrames++ > 1800) SmokeFail("CLIENT_SHOT_VENDOR_SEARCH " + creatureProps.Context.Status);
                     return;
                 }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-vendor-search.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-vendor-search.png");
                 addItem.EmitSignal(Button.SignalName.Pressed);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 41;
@@ -380,7 +387,7 @@ public partial class ViewerShell
                 }
 
                 if (sharedVendorFrames < 15) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-vendor-shared.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-vendor-shared.png");
                 creatureProps.Context.Drafts.History(creatureProps.Context, false);
                 creatureProps.Context.Rebuild();
                 GD.Print("CLIENT_SHOT_VENDOR_EDIT_OK search/add/validation/stock/undo/redo/shared");
@@ -403,7 +410,7 @@ public partial class ViewerShell
                     { SmokeFail("CLIENT_SHOT_TRAINER_EDIT " + trainerCtx.Status); return; }
                     if (trainerCtx.Commit("Invalid trainer level", Foundation.ItemListSpec.Change(spells.Table, first, first.With("ReqLevel", 256u))))
                     { SmokeFail("CLIENT_SHOT_TRAINER_VALIDATION accepted level 256"); return; }
-                    GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-trainer-edit.png"));
+                    SaveWindowShot(creatureProps, "res://artifacts/client-shot-trainer-edit.png");
                     trainerCtx.Drafts.History(trainerCtx, false);
                     trainerCtx.Rebuild();
                     if (spells.Select(trainerCtx.Effective, tcTrainer.TrainerId).First(r => r.U("SpellId") == first.U("SpellId")).U("MoneyCost") != first.U("MoneyCost"))
@@ -416,12 +423,12 @@ public partial class ViewerShell
                     { SmokeFail("CLIENT_SHOT_TRAINER_BINDING accepted an unknown trainer"); return; }
                     GD.Print("CLIENT_SHOT_TRAINER_EDIT_OK edit/validation/undo");
                 }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-trainer.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-trainer.png");
                 OpenShotCreature(240, "stats", 7); // Marshal Dughan, a quest giver in Goldshire.
                 return;
             case 7:
                 if (!ShotCreatureReady(240)) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-stats.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-stats.png");
                 if (creatureProps.Context.Editable)
                 {
                     var sc = creatureProps.Context;
@@ -477,7 +484,7 @@ public partial class ViewerShell
                 return;
             case 51:
                 if (clientShotFrames++ < 60) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-quest-editor.png"));
+                SaveWindowShot(questEditor, "res://artifacts/client-shot-quest-editor.png");
                 foreach (var tab in Enum.GetValues<QuestPanel.Tab>())
                 {
                     questEditor.ShowTab(tab);
@@ -502,7 +509,7 @@ public partial class ViewerShell
                 if (clientShotFrames++ < 60) return;
                 if (questEditor.SmokeEffective.All(TcTables.QuestObjectives).All(o => o.U("QuestID") != 176))
                 { SmokeFail("CLIENT_SHOT_QUEST_EDITOR_OBJECTIVES the quest has no objective rows"); return; }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-quest-objectives.png"));
+                SaveWindowShot(questEditor, "res://artifacts/client-shot-quest-objectives.png");
                 GD.Print("CLIENT_SHOT_QUEST_OBJECTIVES_OK quest=176");
                 clientShotFrames = 0;
                 clientShotCreatureStage = 60;
@@ -577,7 +584,7 @@ public partial class ViewerShell
                 return;
             case 71:
                 if (clientShotFrames++ < 60) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-behavior.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-behavior.png");
                 // The expanded card of the first rule: the TrinityCore-only Difficulties field is on it.
                 creatureProps.Context.Behavior.SmokeExpand(creatureProps.Context.Behavior.SmokeRules(new SmartScope(448, SmartScope.Creature))[0].Id);
                 clientShotFrames = 0;
@@ -587,7 +594,7 @@ public partial class ViewerShell
                 if (clientShotFrames++ < 60) return;
                 if (creatureProps.Context.Behavior.SmokeControl("Difficulties") == null)
                 { SmokeFail("CLIENT_SHOT_BEHAVIOR_DIFFICULTIES_FIELD missing on the expanded rule"); return; }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-behavior-rule.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-behavior-rule.png");
                 creatureProps.ShowSection("speech", null);
                 clientShotFrames = 0;
                 clientShotCreatureStage = 72;
@@ -596,7 +603,7 @@ public partial class ViewerShell
                 if (clientShotFrames++ < 60) return;
                 if (creatureProps.Context.Behavior.SmokeLineCount < 2)
                 { SmokeFail("CLIENT_SHOT_SPEECH_LINES lines=" + creatureProps.Context.Behavior.SmokeLineCount); return; }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-speech.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-speech.png");
                 GD.Print($"CLIENT_SHOT_BEHAVIOR_OK entry=448 rules=4 lines={creatureProps.Context.Behavior.SmokeLineCount} add/validation/difficulties/undo");
                 // The waypoint layer next: select a path point near Goldshire and edit it.
                 creatureProps.Visible = false;
@@ -628,7 +635,7 @@ public partial class ViewerShell
                 return;
             case 82:
                 if (clientShotFrames++ < 15) return;
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-waypoint.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-waypoint.png");
                 GD.Print("CLIENT_SHOT_WAYPOINT_OK move/delay/undo/redo/revert export waypoint_path_node; path-level fields read-only");
                 GD.Print($"CLIENT_SMOKE_OK kind={store!.Kind} database={databaseEnabled} overlays=True graveyardsEditable=True creatureWindow=True");
                 GetTree().Quit();
@@ -642,7 +649,7 @@ public partial class ViewerShell
                     SmokeFail("CLIENT_SHOT_QUESTS_EMPTY Marshal Dughan has no quest links");
                     return;
                 }
-                GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("res://artifacts/client-shot-creature-quests.png"));
+                SaveWindowShot(creatureProps, "res://artifacts/client-shot-creature-quests.png");
                 if (creatureProps.Context.Editable && creatureProps.Context.TcView is { Starts.Length: > 0 } dughan)
                 {
                     // Unlink the first quest he starts, then undo: the link must come back unchanged.
