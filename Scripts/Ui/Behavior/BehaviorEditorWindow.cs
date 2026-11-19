@@ -9,7 +9,9 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class BehaviorEditorWindow : ContentEditorWindow
 {
-    protected override Vector2 TargetSize => new(980, 720);
+    // The pending rule card's widest row is about 1036 px; the window must open wide enough that
+    // the Add button is not clipped (a Window does not grow to its content).
+    protected override Vector2 TargetSize => new(1120, 720);
     public BehaviorPanel Panel { get; } = new() { SpeechInScopes = false };
     /// <summary>Raised when a rule names a conversation or scene and its Open button is pressed.</summary>
     public Action<SmartParamKind, uint> CinematicsRequested { get; set; } = (_, _) => { };
@@ -29,6 +31,8 @@ public partial class BehaviorEditorWindow : ContentEditorWindow
         undo.TooltipText = "Undo the last behavior change.";
         redo = ButtonIn(Actions, "Redo", () => Panel.History(true));
         redo.TooltipText = "Redo the last undone behavior change.";
+        // The panel carries its own scroll; expanding keeps its rows inside the window body.
+        Panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         Body.AddChild(Panel);
         Panel.Rendered += Sync;
         Sync();

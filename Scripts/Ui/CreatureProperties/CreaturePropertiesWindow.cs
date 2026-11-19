@@ -39,7 +39,9 @@ public partial class CreaturePropertiesWindow : PropertiesWindow
 
     protected override string DefaultSection => DefaultSectionId;
     protected override IEntityContext Shell => Context;
-    protected override Vector2 TargetSize => new(980, 700);
+    // The behavior page's pending rule card is about 1036 px wide; the window must open wide
+    // enough that its Add button is not clipped (a Window does not grow to its content).
+    protected override Vector2 TargetSize => new(1100, 700);
     protected override Vector2I MinimumSize => new(760, 520);
 
     public CreaturePropertiesWindow() : base("CreatureProperties", "Creature properties")
