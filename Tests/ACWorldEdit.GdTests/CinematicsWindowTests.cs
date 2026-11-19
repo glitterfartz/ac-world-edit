@@ -115,6 +115,23 @@ public class CinematicsWindowTests
     }
 
     [TestCase]
+    public async Task GrowingTheWindowExpandsTheSearchAndPanel()
+    {
+        var window = Window();
+        window.Open(0);
+        await Tree.ToSignal(Tree, SceneTree.SignalName.ProcessFrame);
+        await Tree.ToSignal(Tree, SceneTree.SignalName.ProcessFrame);
+        float before = window.Panel.Size.Y;
+
+        window.Size = new Vector2I(1400, 1000);
+        await Tree.ToSignal(Tree, SceneTree.SignalName.ProcessFrame);
+        await Tree.ToSignal(Tree, SceneTree.SignalName.ProcessFrame);
+
+        AssertThat(window.Panel.Size.Y > before + 100).IsTrue();
+        AssertThat(window.Body.Size.X > 0).IsTrue();
+    }
+
+    [TestCase]
     public void TabsSwitchAndTheAzerothCorePanelSaysNotApplicable()
     {
         var window = Window();

@@ -1,4 +1,6 @@
 using ACWorldEdit;
+using ACWorldEdit.Data;
+using ACWorldEdit.Foundation;
 using Godot;
 using GdUnit4;
 using static GdUnit4.Assertions;
@@ -147,5 +149,30 @@ public partial class ToolWindowTests
 
         AssertThat(dialog.GetParent()).IsEqual(window);
         AssertThat(window.GuiEmbedSubwindows).IsTrue();
+    }
+
+    [TestCase]
+    public async Task GrowingTheQuestWindowExpandsThePanel()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "acwe-gdtest-" + Guid.NewGuid().ToString("N") + ".json");
+        var window = AutoFree(new QuestEditorWindow
+        {
+            Drafts = new ContentDrafts(path),
+            Connection = () => WorldConnection.DefaultFor(WorldDialect.AzerothCore)
+        })!;
+        ((SceneTree)Engine.GetMainLoop()).Root.AddChild(window);
+        window.Open(0);
+        await Frames();
+        float before = window.Panel.Size.Y;
+
+        window.Size = new Vector2I(1400, 1000);
+        // Layout settles across frames; other suites in the same run can delay the second pass.
+        for (int i = 0; i < 30 && window.Panel.Size.Y <= before + 100; i++)
+        {
+            await Frames(1);
+        }
+
+        AssertThat(window.Panel.Size.Y > before + 100).IsTrue();
+        AssertThat(window.Body.Size.X > 0).IsTrue();
     }
 }
