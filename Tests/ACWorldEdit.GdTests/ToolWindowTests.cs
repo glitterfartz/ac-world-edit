@@ -136,8 +136,12 @@ public partial class ToolWindowTests
         AssertThat(window.StatusLabel.Visible).IsTrue();
         AssertThat(reported).IsEqual(1);
 
+        window.SetStatus("Saved.");
+        AssertThat(reported).IsEqual(1);
+
         window.SetStatus("");
         AssertThat(window.StatusLabel.Visible).IsFalse();
+        AssertThat(reported).IsEqual(1);
     }
 
     [TestCase]

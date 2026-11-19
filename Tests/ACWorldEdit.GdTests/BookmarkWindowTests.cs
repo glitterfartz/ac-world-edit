@@ -57,6 +57,25 @@ public class BookmarkWindowTests
     }
 
     [TestCase]
+    public void BuildingTheWindowDoesNotReportBeforeItOpens()
+    {
+        int reported = 0;
+        var window = new BookmarkWindow
+        {
+            Drafts = new Foundation.ContentDrafts(Path.Combine(Path.GetTempPath(), "acwe-gdtest-" + Guid.NewGuid().ToString("N") + ".json")),
+            FilePath = () => Path.Combine(Path.GetTempPath(), "acwe-gdtest-" + Guid.NewGuid().ToString("N") + ".json"),
+            Report = _ => reported++
+        };
+        ((SceneTree)Engine.GetMainLoop()).Root.AddChild(window);
+        AutoFree(window);
+
+        AssertThat(reported).IsEqual(0);
+
+        window.Open();
+        AssertThat(reported).IsEqual(1);
+    }
+
+    [TestCase]
     public async Task TheToolbarAndStatusRowsAreInsideTheWindow()
     {
         var (window, _, _) = Spawn();

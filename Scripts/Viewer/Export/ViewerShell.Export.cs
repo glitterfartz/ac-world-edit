@@ -430,7 +430,6 @@ public partial class ViewerShell
                 result += " " + failed;
             }
 
-            statusLog.Post(result);
             pendingWindow.SetStatus(result);
         });
     }
@@ -488,7 +487,6 @@ public partial class ViewerShell
                 result += " " + failed;
             }
 
-            statusLog.Post(result);
             pendingWindow.SetStatus(result);
         });
     }
@@ -543,7 +541,6 @@ public partial class ViewerShell
             LoadHistoryAsync();
             string result = failed == null ? $"Discarded {count} staged change(s)." : failed;
             pendingWindow.SetStatus(result);
-            statusLog.Post(failed == null ? $"Discarded {count} staged change(s)." : result);
         });
     }
 
@@ -587,7 +584,6 @@ public partial class ViewerShell
             LoadHistoryAsync();
             string result = outcome.Error ?? $"Deleted {outcome.Deleted} change(s).";
             pendingWindow.SetStatus(result);
-            statusLog.Post(result);
         });
     }
 
@@ -629,7 +625,6 @@ public partial class ViewerShell
             PostToMainThread(() =>
             {
                 pendingWindow.SetStatus(failure);
-                statusLog.Post(failure);
             });
             return;
         }
@@ -648,7 +643,6 @@ public partial class ViewerShell
             LoadHistoryAsync();
             string result = thumbsGone ? "Cache cleared." : "Cache cleared, but some thumbnails are still in use.";
             pendingWindow.SetStatus(result);
-            statusLog.Post(result);
         });
     }
 
@@ -693,7 +687,6 @@ public partial class ViewerShell
             string? historyError = await DeleteStagedHistoryForResetAsync();
             if (historyError != null)
             {
-                statusLog.Post(historyError);
                 pendingWindow.SetStatus(historyError);
                 return;
             }
@@ -828,7 +821,6 @@ public partial class ViewerShell
                     ? $"Exported {selected.Count} change(s) to {written[0]}."
                     : $"Exported {selected.Count} change(s) from {groups.Count} worlds into separate files.";
                 pendingWindow.SetStatus(message);
-                statusLog.Post(message);
             }
             catch (Exception)
             {

@@ -37,7 +37,6 @@ public partial class BookmarkWindow : ContentEditorWindow
         body = new VBoxContainer();
         body.AddThemeConstantOverride("separation", 6);
         Body.AddChild(body);
-        Rebuild();
     }
 
     /// <summary>Show the window with a fresh read of the bookmarks file.</summary>

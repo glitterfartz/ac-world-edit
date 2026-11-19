@@ -199,13 +199,21 @@ public partial class ContentEditorWindow : Window
         Title = title;
     }
 
-    /// <summary>Show a status message in the window row and pass it to the viewer's status bar.</summary>
+    /// <summary>
+    /// Show a status message in the window row, and report it to the viewer's status bar when it
+    /// changed. A redraw that repeats the same message (or clears it) is not an event.
+    /// </summary>
     public void SetStatus(string message)
     {
+        string previous = StatusLabel?.Text ?? "";
+        bool changed = !string.Equals(message, previous, StringComparison.Ordinal);
         status = message;
         StatusLabel.Text = message;
         StatusLabel.Visible = message.Length > 0;
-        Report?.Invoke(message);
+        if (changed && message.Length > 0)
+        {
+            Report?.Invoke(message);
+        }
     }
 
     bool HandleShortcut(InputEvent @event)

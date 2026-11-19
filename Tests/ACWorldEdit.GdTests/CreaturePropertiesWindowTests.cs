@@ -73,6 +73,22 @@ public class CreaturePropertiesWindowTests
     }
 
     [TestCase]
+    public void ASectionSwitchDoesNotReReportTheSameStatus()
+    {
+        var window = Spawn();
+        int reported = 0;
+        window.Report = _ => reported++;
+        window.Open(null);
+        window.SetStatus("Not saved.");
+        AssertThat(reported).IsEqual(1);
+
+        window.ShowSection("vendor", null);
+        window.ShowSection("stats", null);
+
+        AssertThat(reported).IsEqual(1);
+    }
+
+    [TestCase]
     public async Task GrowingTheWindowExpandsTheSectionPicker()
     {
         var window = Spawn();
