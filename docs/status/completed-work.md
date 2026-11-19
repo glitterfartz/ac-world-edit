@@ -76,7 +76,8 @@ Target: TrinityCore `master` `world` (TDB 1210.26091) plus `hotfixes`; retail cl
 | `SpawnPoses` and `IDBSource.ReadSpawnRowsAsync` | Spawn poses as `creature` / `gameobject` row edits on the shared content draft; the old `creature-positions.json` / `gameobject-positions.json` drafts are abandoned, not migrated. Tests: `SpawnPosesTests`, `SpawnRowDbTests` (live, both databases). |
 | Overlays on `SpawnPoses` | `CreatureOverlay` and `GameObjectOverlay` (`Attach(drafts)`, row loaded on select) move through `SpawnPoses`; `CreatureDraft`, `GameObjectDraft`, `CreatureMove`, `GameObjectMove` and the dialects' move statements are gone; `PendingChanges.Collect` and `SqlExport.Build` lost their move parameters. |
 | `ConditionCatalog` | 56 AzerothCore and 61 TrinityCore condition types with sentences and parameter kinds, and 31 / 36 source types with key-column labels, generated from each server's `ConditionMgr.h` by `Tools/generate_condition_catalog.py`. Tests: `ConditionCatalogTests`. |
-| Entity page shell | `EntityPage` plus `PropertiesWindow` (frame, section picker, Undo/Redo, status), `EntitySection`, `IEntityContext` and `PageRenderer` in `Scripts/Ui/Properties`. Creature and GameObject windows are its first two clients, each one context, one section base and one window. |
+| Entity page shell | `EntityPage` plus `PropertiesWindow` (native `Window` frame, section picker, Undo/Redo, status), `EntitySection`, `IEntityContext` and `PageRenderer` in `Scripts/Ui/Properties`. Creature and GameObject windows are its first two clients, each one context, one section base and one window. |
+| Tool-window base | `ContentEditorWindow` is a native tool `Window`: client title bar, scrolling body, `Actions` flow toolbar, status row, resize grip and the Escape shim. The behavior, quest, cinematics, change history, bookmark and properties windows build into it, and diagnostic runs keep it embedded so the click and capture smokes still reach it. Tests: `ToolWindowTests`, the editor suites and `--behavior-smoke`. |
 | Content browser | `ContentBrowser` (View → Content browser, Ctrl+B): bottom panel with Creatures and Game objects tabs, name/entry search and a type filter over `IDBSource.SearchTemplatesAsync`. Double-click opens the matching properties window; dragging a hit into the world places a spawn. Each hit shows a model thumbnail rendered off-screen through `ModelLibrary` and cached under `user://thumbs/<profile>/`. Tests: `TemplateSearchDbTests`, `--content-browser-smoke`. |
 | 64-bit column kinds | `ColumnKind.Long` / `ULong` validate and export; TC uses them for spawn `guid`, `npcflag`, `MechanicsMask`, quest `TimeAllowed` / `AllowableRaces` and formation GUIDs. Tests: `SourceCatalogTests`, `TcCreatureViewTests`. |
 
@@ -113,7 +114,7 @@ polar drag, duplicate remap, leader picked by GUID or viewport click) and the pr
 
 ## Phase 22a: player choices
 
-TrinityCore-only player-choice editing in `CinematicsEditorWindow`: a search list and the
+TrinityCore-only player-choice editing in the native tool `Window` `CinematicsEditorWindow`: a search list and the
 `TcPlayerChoiceView` question card (editable question and pending text, timing, layout flags) with one
 card per answer, each showing its header, answer and reward summary, an inline editor for the answer
 text, position, reward quest, answer art, gold, XP and one reward item, and the read-only source-36

@@ -157,7 +157,8 @@ Decisions taken with the user:
 - There is no graph/canvas/code-editor code today; SmartAI (`Foundation/Smart`, `Scripts/Ui/Behavior`)
   is the closest rule editor. Catalog generators (`Tools/generate_smart_catalog.py`,
   `generate_condition_catalog.py`) are the precedent for a generated ALE catalog.
-- UI is built in C#. Floating windows derive from `ContentEditorWindow` and are configured before
+- UI is built in C#. Floating editors are `Window` subclasses: the SQL-draft windows share
+  `ContentEditorWindow`, `ScriptEditorWindow` builds its own chrome, and both are configured before
   `AddChild` in `Scripts/Viewer/Hud/EditorsWiring.cs`; menus are in `ViewerShell.MenuBar.cs`.
   Status goes to `StatusLog`/`StatusBar`, never the Inspector.
 - No project/workspace file exists; settings are `user://settings.cfg` via `UserSettings`; Foundation
@@ -297,7 +298,7 @@ Scripts/Data/TrinityCore/                     (existing dialect folder)
 
 Scripts/Ui/Scripting/                        (Godot)
   ScriptEditorWindow.cs            native tool Window, title bar, document lifecycle, panel wiring
-  ScriptEditorShortcuts.cs         forwards the window viewport's unhandled keys to the editor
+  ToolWindowShortcuts.cs           forwards the window viewport's unhandled keys to the editor
   ScriptEditorWindow.Layout.cs     toolbar, split layout, panels
   ScriptEditorWindow.Documents.cs  new/open/save/close via ScriptWorkspace, dirty prompts
   ScriptEditorWindow.Compile.cs    debounce, compile, diagnostics, preview
@@ -680,7 +681,8 @@ and optional graph/node/pin location. Only errors block compilation/export.
   changes the golden, updated intentionally with
   `python Tools/state_golden.py --kind ui --profile wrath --update` (and `retail`).
   `ScriptEditorWindow` is a native tool `Window` with a client-styled draggable/resizable title
-  bar, **not** `ContentEditorWindow` (which pins its `TargetSize` and is SQL-draft-specific).
+  bar, built directly on `Window` rather than deriving from `ContentEditorWindow` (which carries
+  the SQL-draft hooks and the shared editor frame).
 - Theme: `ClientStyle.Theme()`/`Panel()` for the frame and panels; GraphEdit theme overrides for the
   grid, wire colours and node styles, matching the existing dark editor look.
 - `ScriptGraphCanvas : GraphEdit` implements the signal contract: `ConnectionRequest`,
@@ -1050,8 +1052,8 @@ only if a scripting target dump is added.
 ## Implementation decisions and spike checks
 
 - `ScriptEditorWindow` is a native tool `Window` with a client-styled draggable/resizable title bar,
-  **not** `ContentEditorWindow`: the latter pins `TargetSize` every frame and is SQL-draft-specific. The window
-  is constructed lazily on first open (`ScriptingWiring`) and hidden on close, so no hidden control
+  built directly on `Window`: `ContentEditorWindow` carries the SQL-draft hooks and the shared editor
+  frame. The window is constructed lazily on first open (`ScriptingWiring`) and hidden on close, so no hidden control
   tree enters the startup UI golden; only the View menu item changes.
 - File I/O lives in `Scripts/Data/Scripting`, never in Foundation. Foundation serializes strings and
   embeds the catalog/templates; the UI resolves `user://`/absolute paths and passes them down.

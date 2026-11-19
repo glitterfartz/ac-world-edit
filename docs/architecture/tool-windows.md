@@ -1,11 +1,11 @@
 # Tool windows
 
 An editor that should float as its own OS window over the viewer is built as a `Window` subclass,
-not as a panel on the UI `CanvasLayer`. [`ScriptEditorWindow`](../../Scripts/Ui/Scripting/ScriptEditorWindow.cs)
-is the reference implementation: copy its shape when building or refactoring another window.
-
-The older `ContentEditorWindow` is a `PanelContainer` pinned to a fixed target size inside the main
-viewport. Use the `Window` pattern for new editor windows and when refactoring one of those.
+not as a panel on the UI `CanvasLayer`. [`ContentEditorWindow`](../../Scripts/Ui/Framework/ContentEditorWindow.cs)
+is the shared base of the draft-backed editors (behavior, quest, cinematics, change history,
+bookmarks and the properties windows); it owns the chrome described below.
+[`ScriptEditorWindow`](../../Scripts/Ui/Scripting/ScriptEditorWindow.cs) is the largest client built
+directly on `Window` and the reference for a window that cannot use the base.
 
 ## The shape
 
@@ -87,7 +87,7 @@ public partial class MyEditorWindow : Window
         root.AddChild(grip);
 
         // Key events are delivered to the window's viewport, not to the Window node itself.
-        AddChild(new ScriptEditorShortcuts { UnhandledKey = HandleShortcut });
+        AddChild(new ToolWindowShortcuts { UnhandledKey = HandleShortcut });
 
         CloseRequested += AttemptClose;
     }
@@ -112,7 +112,9 @@ public partial class MyEditorWindow : Window
 ```
 
 The snippet abbreviates the class's own members (`TitleLabel`, `CloseButton`, `AttemptClose`,
-`HandleShortcut`, `placed`, `ScriptEditorShortcuts`); see `ScriptEditorWindow` for their definitions.
+`HandleShortcut`, `placed`, `ToolWindowShortcuts`); see `ScriptEditorWindow` for their definitions.
+`ContentEditorWindow` already builds this frame; a derived editor implements `BuildEditor()` and
+draws into `Body`, puts its actions in `Actions`, and calls `SetHeading`/`SetStatus`.
 
 The constructor's order matters: the body fills the `PanelContainer` only because the panel is
 `FullRect` and the `ScrollContainer` sits between the fixed header/grip rows.
@@ -154,7 +156,7 @@ The constructor's order matters: the body fills the `PanelContainer` only becaus
 - **Key events do not reach the `Window` node.** A `Window` is a `Viewport`, so its own node is not
   in the tree that receives its input. Add a full-rect `Control` child that overrides
   `_UnhandledKeyInput` and calls `GetViewport().SetInputAsHandled()` when it consumes the event;
-  `ScriptEditorShortcuts` is that shim. Overriding `_UnhandledKeyInput` on the window class itself
+  `ToolWindowShortcuts` is that shim. Overriding `_UnhandledKeyInput` on the window class itself
   silently never fires.
 - **Dialogs belong to the window.** `AddChild(dialog)` then `PopupCentered()`; with
   `GuiEmbedSubwindows = true` they stay inside the tool window and cannot fall behind it. Keep
@@ -171,6 +173,17 @@ The constructor's order matters: the body fills the `PanelContainer` only becaus
 same either way because everything is a `Viewport`. `Transient = true` keeps the window above
 the viewer, and `Borderless = true` means the client-drawn header is the only title bar, so dragging
 (`StartDrag`) and resizing (`StartResize`) must stay wired.
+
+Diagnostic runs (`*-smoke`, `--client-shot*`, `--ui-dump`, `--state-dump`, `--dump-target=*`, and
+headless) construct the windows embedded: `ContentEditorWindow.DiagnosticRun` turns `ForceNative`
+off, so the smokes' `Input.ParseInputEvent` clicks still reach the editor controls. Two consequences:
+
+- A root-viewport capture (`GetViewport().GetTexture()`) does **not** contain `Window` nodes, even
+  embedded ones. Capture an editor page from the window itself
+  (`window.GetTexture().GetImage()`), as `ViewerShell.ClientSmoke.SaveWindowShot` does.
+- A `Window` does not grow to its content, so a control wider than the default window is clipped
+  instead of widening it. Give the window a default width that fits its widest card (the creature
+  properties window needs 1100 px for the behavior page), or the control becomes unreachable.
 
 ## Testing
 
@@ -192,6 +205,10 @@ window.OpenEditor();
   `TheToolbarWrapsWithoutStretchingTheWindow` and
   `GrowingTheWindowExpandsTheCanvasAndKeepsThePreviewAtTheBottom` are the layout regressions to
   keep.
+- The base contract has its own suite, `Tests/ACWorldEdit.GdTests/ToolWindowTests.cs`: centered
+  first open, `close_requested` and Escape, per-window Escape isolation, body growth, the
+  `MinSize` floor, wrapping actions, the status row and dialogs parented to the window.
+  `UiPartsTests` covers the heading labels.
 
 ## Regressions to avoid
 
@@ -202,5 +219,5 @@ These are real failures this window has had; the rules above are the fixes.
 | The toolbar buttons eat almost the whole width, or the window refuses to be narrow | Action buttons in an `HBoxContainer`, plus an autowrapping caption label that reported a huge minimum width | `HFlowContainer` for the actions, `AutowrapMode.Off` on labels, status line on its own row |
 | After enlarging the window the canvas stops growing and the Lua preview floats mid-window, with empty panel below | Body added to the `ScrollContainer` with only `SizeFlagsHorizontal = ExpandFill`; the scroll container kept it at its minimum height | `SizeFlagsVertical = ExpandFill` on the body |
 | The window suddenly adopts a large size and never shrinks back | A `Control`-derived frame (`ScriptWindowFrame`) sized itself from its content and adopted a transient large minimum reported while children laid out | Make the editor a `Window` with an explicit `MinSize` and a scrolling body; never let content drive the window size |
-| Shortcuts stop working after the window becomes a `Window` | `_UnhandledKeyInput` overridden on the `Window` node, which never receives its own keys | The `ScriptEditorShortcuts` child control routes them |
+| Shortcuts stop working after the window becomes a `Window` | `_UnhandledKeyInput` overridden on the `Window` node, which never receives its own keys | The `ToolWindowShortcuts` child control routes them |
 | Tests hang or the suite stops responding | A confirmation dialog popped in a headless run | Refuse instead of prompting when `DisplayServer.GetName() == "headless"` |
