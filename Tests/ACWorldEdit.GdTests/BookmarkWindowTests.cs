@@ -57,6 +57,21 @@ public class BookmarkWindowTests
     }
 
     [TestCase]
+    public async Task TheToolbarAndStatusRowsAreInsideTheWindow()
+    {
+        var (window, _, _) = Spawn();
+        var tree = (SceneTree)Engine.GetMainLoop();
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+
+        AssertThat(window.Actions.GetCombinedMinimumSize().X > 0).IsTrue();
+        AssertThat(window.Actions.FindChild("BookmarkSave", true, false)).IsNotNull();
+        AssertThat(window.StatusLabel.Visible).IsTrue();
+        AssertThat(window.Size.X >= window.MinSize.X).IsTrue();
+        AssertThat(window.Size.Y >= window.MinSize.Y).IsTrue();
+    }
+
+    [TestCase]
     public void CorruptFileReadsAsEmpty()
     {
         var (window, _, file) = Spawn();

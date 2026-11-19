@@ -137,4 +137,15 @@ public partial class ToolWindowTests
         window.SetStatus("");
         AssertThat(window.StatusLabel.Visible).IsFalse();
     }
+
+    [TestCase]
+    public void DialogsAreChildrenOfTheirWindow()
+    {
+        var window = Spawn();
+
+        var dialog = Dialogs.Info(window, "T", "X");
+
+        AssertThat(dialog.GetParent()).IsEqual(window);
+        AssertThat(window.GuiEmbedSubwindows).IsTrue();
+    }
 }

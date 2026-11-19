@@ -79,9 +79,9 @@ public partial class BookmarkWindow : ContentEditorWindow
         }
 
         status = $"Opening {bookmarks[index].MapName}…";
-        SyncStatus();
+        SetStatus(status);
         status = await OpenBookmark(bookmarks[index]);
-        SyncStatus();
+        SetStatus(status);
     }
 
     void Rebuild()
@@ -129,10 +129,9 @@ public partial class BookmarkWindow : ContentEditorWindow
             grid.AddChild(remove);
         }
 
-        SyncStatus();
+        SetStatus(status);
     }
 
-    void SyncStatus() => SetStatus(status);
 
     /// <summary>Row count, for tests.</summary>
     public int SmokeRows => BookmarkStore.Load(FilePath()).Count;
