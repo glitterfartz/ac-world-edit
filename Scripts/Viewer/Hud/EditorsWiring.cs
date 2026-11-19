@@ -132,6 +132,7 @@ public partial class ViewerShell
             Lookup = () => clientLookup,
             Areas = () => areas,
             Drafts = drafts,
+            Report = statusLog.Post,
             FlyToEntry = LocateCreature,
             FlyToSpawn = (guid, map, x, y, z) => LocateSpawn(SpawnKind.Creature, guid, map, x, y, z),
             BehaviorForEntryRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
@@ -142,11 +143,13 @@ public partial class ViewerShell
             Store = () => store,
             Lookup = () => clientLookup,
             Drafts = drafts,
+            Report = statusLog.Post,
             FlyToSpawn = (guid, map, x, y, z) => LocateSpawn(SpawnKind.GameObject, guid, map, x, y, z)
         };
         bookmarkWindow = new BookmarkWindow
         {
             Drafts = drafts,
+            Report = statusLog.Post,
             FilePath = () => BookmarkStore.PathFor(profile.Kind),
             Capture = CaptureBookmark,
             CanCapture = () => world != null && currentMapId != null,
@@ -156,7 +159,8 @@ public partial class ViewerShell
         {
             Connection = () => DatabaseConnection(),
             Store = () => store,
-            Drafts = drafts
+            Drafts = drafts,
+            Report = statusLog.Post
         };
         areaBehavior.CinematicsRequested += (kind, id) => cinematicsEditor.Open(kind, id);
         questEditor = new QuestEditorWindow
@@ -166,6 +170,7 @@ public partial class ViewerShell
             Areas = () => areas,
             Lookup = () => clientLookup,
             Drafts = drafts,
+            Report = statusLog.Post,
             FlyToEntry = LocateCreature,
             BehaviorRequested = entry => creatureProps.OpenEntry(entry, $"Creature {entry}", "behavior")
         };
@@ -174,7 +179,8 @@ public partial class ViewerShell
             Connection = () => DatabaseConnection(),
             Store = () => store,
             Lookup = () => clientLookup,
-            Drafts = drafts
+            Drafts = drafts,
+            Report = statusLog.Post
         };
         // Floating windows sit on the UI layer above the panels.
         layer.AddChild(creatureProps);
@@ -183,7 +189,10 @@ public partial class ViewerShell
         layer.AddChild(questEditor);
         layer.AddChild(cinematicsEditor);
         layer.AddChild(areaBehavior);
-        pendingWindow = new PendingChangesWindow();
+        pendingWindow = new PendingChangesWindow
+        {
+            Report = statusLog.Post
+        };
         sqlPreview = new SqlPreviewWindow();
         layer.AddChild(sqlPreview);
         layer.AddChild(pendingWindow);
