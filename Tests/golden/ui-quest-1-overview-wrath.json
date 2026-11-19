@@ -910,7 +910,7 @@
         "IsEmpty": false
       },
       "text": "",
-      "visible": false,
+      "visible": true,
       "disabled": null,
       "tooltip": ""
     }
