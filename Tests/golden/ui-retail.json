@@ -140,7 +140,7 @@
       "name": "Redo",
       "text": "Redo",
       "visible": true,
-      "disabled": true,
+      "disabled": false,
       "tooltip": "268435545"
     },
     {
@@ -227,6 +227,15 @@
     {
       "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[2]",
       "type": "PopupItem",
+      "name": "Cinematics editor",
+      "text": "Cinematics editor",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "None"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[3]",
+      "type": "PopupItem",
       "name": "Script editor…",
       "text": "Script editor…",
       "visible": true,
@@ -234,7 +243,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[3]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[4]",
       "type": "PopupItem",
       "name": "Creature behavior (selected)",
       "text": "Creature behavior (selected)",
@@ -243,7 +252,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[4]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[5]",
       "type": "PopupItem",
       "name": "Inspector",
       "text": "Inspector",
@@ -252,7 +261,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[5]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[6]",
       "type": "PopupItem",
       "name": "",
       "text": "",
@@ -261,7 +270,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[6]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[7]",
       "type": "PopupItem",
       "name": "Terrain cell borders",
       "text": "Terrain cell borders",
@@ -270,7 +279,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[7]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[8]",
       "type": "PopupItem",
       "name": "Navigation panel",
       "text": "Navigation panel",
@@ -279,7 +288,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[8]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[9]",
       "type": "PopupItem",
       "name": "Inspector panel",
       "text": "Inspector panel",
@@ -288,7 +297,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[9]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[10]",
       "type": "PopupItem",
       "name": "Content browser",
       "text": "Content browser",
@@ -297,7 +306,7 @@
       "tooltip": "268435522"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[10]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[11]",
       "type": "PopupItem",
       "name": "Sun shadows",
       "text": "Sun shadows",
@@ -306,7 +315,7 @@
       "tooltip": "None"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[11]",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/MenuBar/View/item[12]",
       "type": "PopupItem",
       "name": "UI scale",
       "text": "UI scale",
@@ -452,7 +461,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1012",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1126",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -463,7 +472,7 @@
       "tooltip": "Pick only; hide handles"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1013",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1127",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -474,7 +483,7 @@
       "tooltip": "Drag colored axes to move"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1014",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1128",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -485,7 +494,7 @@
       "tooltip": "Drag the yellow ring to change heading (not for graveyards or waypoints)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1015",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1129",
       "type": "VSeparator",
       "Name": {
         "IsEmpty": false
@@ -496,7 +505,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1016",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1130",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -507,18 +516,18 @@
       "tooltip": "Undo the last local change for the selected kind (Ctrl+Z)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1017",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1131",
       "type": "Button",
       "Name": {
         "IsEmpty": false
       },
       "text": "Redo",
       "visible": true,
-      "disabled": true,
+      "disabled": false,
       "tooltip": "Redo (Ctrl+Y)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1018",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1132",
       "type": "VSeparator",
       "Name": {
         "IsEmpty": false
@@ -529,7 +538,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1019",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1133",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -540,7 +549,7 @@
       "tooltip": "Copy the selected spawn two yards ahead of it (Ctrl+D)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1020",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1134",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -551,7 +560,7 @@
       "tooltip": "Delete the selected spawn (Del)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1021",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1135",
       "type": "VSeparator",
       "Name": {
         "IsEmpty": false
@@ -562,7 +571,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1022",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1136",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -573,7 +582,7 @@
       "tooltip": "Snap the selection to terrain or a building floor below it (End)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@CheckButton@1023",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@CheckButton@1137",
       "type": "CheckButton",
       "Name": {
         "IsEmpty": false
@@ -584,7 +593,7 @@
       "tooltip": "Snap to the ground when you release a move drag"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Label@1024",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Label@1138",
       "type": "Label",
       "Name": {
         "IsEmpty": false
@@ -595,7 +604,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@OptionButton@1035",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@OptionButton@1149",
       "type": "OptionButton",
       "Name": {
         "IsEmpty": false
@@ -606,7 +615,7 @@
       "tooltip": "Fixed heading increments while rotating"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1036",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1150",
       "type": "VSeparator",
       "Name": {
         "IsEmpty": false
@@ -617,7 +626,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1037",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1151",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -628,7 +637,7 @@
       "tooltip": "Move the camera to the selection (F)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1038",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@VSeparator@1152",
       "type": "VSeparator",
       "Name": {
         "IsEmpty": false
@@ -639,7 +648,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1039",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1153",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -650,7 +659,18 @@
       "tooltip": "Open the quest editor"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1040",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1154",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Cinematics",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Open the conversations, scenes and player-choice editor"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1155",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -661,7 +681,7 @@
       "tooltip": "Edit the selected creature's SmartAI rules and speech"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1041",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1156",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -672,7 +692,7 @@
       "tooltip": "Search the database for a creature template by name or ID"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1042",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/CommandStrip/@VBoxContainer@119/Toolbar/@Button@1157",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -1172,7 +1192,7 @@
       "Name": {
         "IsEmpty": false
       },
-      "text": "",
+      "text": "No bookmarks saved yet.",
       "visible": true,
       "disabled": false,
       "tooltip": "Show message history"
@@ -2758,7 +2778,7 @@
       },
       "text": "Redo move",
       "visible": true,
-      "disabled": true,
+      "disabled": false,
       "tooltip": ""
     },
     {
@@ -3781,7 +3801,7 @@
       },
       "text": "Redo move",
       "visible": true,
-      "disabled": true,
+      "disabled": false,
       "tooltip": ""
     },
     {
@@ -5266,7 +5286,7 @@
       },
       "text": "Redo",
       "visible": true,
-      "disabled": true,
+      "disabled": false,
       "tooltip": ""
     },
     {
@@ -6007,7 +6027,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1059",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1174",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6018,7 +6038,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1059/@ColorRect@1060",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1174/@ColorRect@1175",
       "type": "ColorRect",
       "Name": {
         "IsEmpty": false
@@ -6029,7 +6049,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1059/@CheckBox@1061",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1174/@CheckBox@1176",
       "type": "CheckBox",
       "Name": {
         "IsEmpty": false
@@ -6040,7 +6060,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1062",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1177",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6051,7 +6071,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1062/@ColorRect@1063",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1177/@ColorRect@1178",
       "type": "ColorRect",
       "Name": {
         "IsEmpty": false
@@ -6062,7 +6082,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1062/@CheckBox@1064",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1177/@CheckBox@1179",
       "type": "CheckBox",
       "Name": {
         "IsEmpty": false
@@ -6073,7 +6093,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1065",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1180",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6084,7 +6104,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1065/@ColorRect@1066",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1180/@ColorRect@1181",
       "type": "ColorRect",
       "Name": {
         "IsEmpty": false
@@ -6095,7 +6115,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1065/@CheckBox@1067",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1180/@CheckBox@1182",
       "type": "CheckBox",
       "Name": {
         "IsEmpty": false
@@ -6106,7 +6126,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1068",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1183",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6117,7 +6137,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1068/@ColorRect@1069",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1183/@ColorRect@1184",
       "type": "ColorRect",
       "Name": {
         "IsEmpty": false
@@ -6128,7 +6148,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1068/@CheckBox@1070",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@HBoxContainer@1183/@CheckBox@1185",
       "type": "CheckBox",
       "Name": {
         "IsEmpty": false
@@ -6139,7 +6159,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@CheckBox@1071",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@CheckBox@1186",
       "type": "CheckBox",
       "Name": {
         "IsEmpty": false
@@ -6150,7 +6170,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@Label@1072",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/Inspector/@VBoxContainer@209/@TabContainer@215/MMaps/@VBoxContainer@698/@PanelContainer@718/@VBoxContainer@719/@VBoxContainer@721/@Label@1187",
       "type": "Label",
       "Name": {
         "IsEmpty": false
@@ -6194,7 +6214,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6205,7 +6225,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036",
       "type": "TabContainer",
       "Name": {
         "IsEmpty": false
@@ -6216,7 +6236,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6227,7 +6247,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/@HBoxContainer@923",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/@HBoxContainer@1037",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6238,7 +6258,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/@HBoxContainer@923/Search",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/@HBoxContainer@1037/Search",
       "type": "LineEdit",
       "Name": {
         "IsEmpty": false
@@ -6249,7 +6269,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/@HBoxContainer@923/TypeFilter",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/@HBoxContainer@1037/TypeFilter",
       "type": "OptionButton",
       "Name": {
         "IsEmpty": false
@@ -6260,7 +6280,7 @@
       "tooltip": "Only creatures of this type."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/@HBoxContainer@923/@Button@934",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/@HBoxContainer@1037/@Button@1048",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -6271,7 +6291,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/@HBoxContainer@923/@Label@935",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/@HBoxContainer@1037/@Label@1049",
       "type": "Label",
       "Name": {
         "IsEmpty": false
@@ -6282,7 +6302,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Creatures/Results",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Creatures/Results",
       "type": "TemplateList",
       "Name": {
         "IsEmpty": false
@@ -6293,7 +6313,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6304,7 +6324,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/@HBoxContainer@938",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/@HBoxContainer@1052",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6315,7 +6335,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/@HBoxContainer@938/Search",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/@HBoxContainer@1052/Search",
       "type": "LineEdit",
       "Name": {
         "IsEmpty": false
@@ -6326,7 +6346,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/@HBoxContainer@938/TypeFilter",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/@HBoxContainer@1052/TypeFilter",
       "type": "OptionButton",
       "Name": {
         "IsEmpty": false
@@ -6337,7 +6357,7 @@
       "tooltip": "Only game objects of this type."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/@HBoxContainer@938/@Button@949",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/@HBoxContainer@1052/@Button@1063",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -6348,7 +6368,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/@HBoxContainer@938/@Label@950",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/@HBoxContainer@1052/@Label@1064",
       "type": "Label",
       "Name": {
         "IsEmpty": false
@@ -6359,7 +6379,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@918/@TabContainer@922/Game objects/Results",
+      "path": "ViewerShell/@CanvasLayer@118/Frame/Interface/ContentBrowser/@VBoxContainer@1032/@TabContainer@1036/Game objects/Results",
       "type": "TemplateList",
       "Name": {
         "IsEmpty": false
@@ -6370,18 +6390,18 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties",
-      "type": "CreaturePropertiesWindow",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736",
+      "type": "PanelContainer",
       "Name": {
         "IsEmpty": false
       },
       "text": "",
-      "visible": false,
+      "visible": true,
       "disabled": null,
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6392,7 +6412,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@738",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6403,7 +6423,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@VBoxContainer@741",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@738/@VBoxContainer@739",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6414,7 +6434,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@VBoxContainer@741/@Label@742",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@738/@VBoxContainer@739/@Label@740",
       "type": "Label",
       "Name": {
         "IsEmpty": false
@@ -6425,40 +6445,18 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@VBoxContainer@741/@Label@743",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@738/@VBoxContainer@739/@Label@741",
       "type": "Label",
       "Name": {
         "IsEmpty": false
       },
       "text": "",
-      "visible": true,
+      "visible": false,
       "disabled": null,
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@Button@744",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Undo",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@Button@745",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Redo",
-      "visible": true,
-      "disabled": true,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@740/@Button@746",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@738/@Button@742",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -6466,10 +6464,10 @@
       "text": "✕",
       "visible": true,
       "disabled": false,
-      "tooltip": "Close (Esc)"
+      "tooltip": "Close (Escape)"
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HSeparator@747",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HSeparator@743",
       "type": "HSeparator",
       "Name": {
         "IsEmpty": false
@@ -6480,40 +6478,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/SectionPicker",
-      "type": "ItemList",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746",
       "type": "ScrollContainer",
       "Name": {
         "IsEmpty": false
@@ -6524,7 +6489,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -6535,1041 +6500,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@759",
-      "type": "AcStatsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@760",
-      "type": "AcGossipSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@769",
-      "type": "AcTemplateSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@770",
-      "type": "AcTrainerSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@771",
-      "type": "AcVendorSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@772",
-      "type": "TcStatsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@773",
-      "type": "TcGossipSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@773/@Label@1074",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@774",
-      "type": "TcTemplateSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@775",
-      "type": "TcTrainerSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@776",
-      "type": "TcVendorSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@777",
-      "type": "AppearanceSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@778",
-      "type": "SpawnsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@ScrollContainer@754/@VBoxContainer@755/@VBoxContainer@779",
-      "type": "UsedBySection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@758",
-      "type": "BehaviorSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761",
-      "type": "QuestsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@ScrollContainer@763",
-      "type": "ScrollContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@ScrollContainer@763/@VBoxContainer@762",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@VBoxContainer@767",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@VBoxContainer@767/@HBoxContainer@766",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@VBoxContainer@767/@HBoxContainer@766/@Button@764",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "◂ Back to quests",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Return to the list of quests linked to this NPC."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@761/@VBoxContainer@767/@HBoxContainer@766/@Button@765",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Open in Quest window",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Open this quest in its own editor window."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@HBoxContainer@748/@VBoxContainer@751/@VBoxContainer@756/@VBoxContainer@768",
-      "type": "SpeechSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@VBoxContainer@739/@Label@757",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties",
-      "type": "GameObjectPropertiesWindow",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@VBoxContainer@783",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@VBoxContainer@783/@Label@784",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@VBoxContainer@783/@Label@785",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@Button@786",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Undo",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@Button@787",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Redo",
-      "visible": true,
-      "disabled": true,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@782/@Button@788",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "✕",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Close (Esc)"
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HSeparator@789",
-      "type": "HSeparator",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/SectionPicker",
-      "type": "ItemList",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796",
-      "type": "ScrollContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@800",
-      "type": "GameObjectTemplateSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@800/@Label@1075",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@801",
-      "type": "GameObjectTypeSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@802",
-      "type": "GameObjectQuestsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@803",
-      "type": "GameObjectSpawnsSection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@ScrollContainer@796/@VBoxContainer@797/@VBoxContainer@804",
-      "type": "GameObjectUsedBySection",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@HBoxContainer@790/@VBoxContainer@793/@VBoxContainer@798",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@VBoxContainer@781/@Label@799",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks",
-      "type": "BookmarkWindow",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@HBoxContainer@807",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@HBoxContainer@807/@Label@808",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@HBoxContainer@807/BookmarkSave",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Save location",
-      "visible": true,
-      "disabled": true,
-      "tooltip": "Save the camera's current map and position."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@HBoxContainer@807/@Button@810",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "✕",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Close the bookmarks window."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable",
-      "type": "GridContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable/@Label@813",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable/@Label@814",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable/@Label@815",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable/@Label@816",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@VBoxContainer@811/BookmarkTable/@Label@817",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@VBoxContainer@806/@Label@812",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor",
-      "type": "QuestEditorWindow",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Label@820",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Button@821",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Undo",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Button@822",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Redo",
-      "visible": true,
-      "disabled": true,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Button@823",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "+ New quest",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Create an empty quest with a new ID."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Button@824",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Duplicate",
-      "visible": true,
-      "disabled": true,
-      "tooltip": "Copy this quest (texts, objectives, rewards, chain settings) under a new ID."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@819/@Button@825",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "✕",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Close the quest window."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/@VBoxContainer@827",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/@VBoxContainer@827/@LineEdit@828",
-      "type": "LineEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": "Find a quest by title or ID to open in the editor."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/@VBoxContainer@827/@ItemList@831",
-      "type": "ItemList",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/@VSeparator@832",
-      "type": "VSeparator",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel",
-      "type": "AcQuestPanel",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@Label@833",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@Label@834",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@HBoxContainer@835",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@ScrollContainer@838",
-      "type": "ScrollContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@ScrollContainer@838/@VBoxContainer@839",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@HSeparator@840",
-      "type": "HSeparator",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@VBoxContainer@841",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@VBoxContainer@818/@HBoxContainer@826/AcQuestPanel/@Label@842",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor",
-      "type": "BehaviorEditorWindow",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/@HBoxContainer@844",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/@HBoxContainer@844/@Label@845",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/@HBoxContainer@844/@Button@846",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Undo",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/@HBoxContainer@844/@Button@847",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Redo",
-      "visible": true,
-      "disabled": true,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/@HBoxContainer@844/@Button@848",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "✕",
-      "visible": true,
-      "disabled": false,
-      "tooltip": "Close the behavior window."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel",
-      "type": "BehaviorPanel",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@Label@849",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@HFlowContainer@850",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HFlowContainer@748",
       "type": "HFlowContainer",
       "Name": {
         "IsEmpty": false
@@ -7580,8 +6511,41 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@ScrollContainer@853",
-      "type": "ScrollContainer",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HFlowContainer@748/@Button@756",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HFlowContainer@748/@Button@757",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Redo \"Create scene 3921\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@Label@749",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758",
+      "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
       },
@@ -7591,7 +6555,18 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@ScrollContainer@853/@VBoxContainer@854",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/SectionPicker",
+      "type": "ItemList",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -7602,7 +6577,403 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@HSeparator@855",
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@768",
+      "type": "AcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@769",
+      "type": "AcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@778",
+      "type": "AcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@779",
+      "type": "AcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@780",
+      "type": "AcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@781",
+      "type": "TcStatsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@782",
+      "type": "TcGossipSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@782/@Label@1189",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@783",
+      "type": "TcTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@784",
+      "type": "TcTrainerSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@785",
+      "type": "TcVendorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@786",
+      "type": "AppearanceSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@787",
+      "type": "SpawnsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@ScrollContainer@764/@VBoxContainer@765/@VBoxContainer@788",
+      "type": "UsedBySection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@767",
+      "type": "BehaviorSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770",
+      "type": "QuestsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@ScrollContainer@772",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@ScrollContainer@772/@VBoxContainer@771",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@VBoxContainer@776",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@VBoxContainer@776/@HBoxContainer@775",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@VBoxContainer@776/@HBoxContainer@775/@Button@773",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "◂ Back to quests",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Return to the list of quests linked to this NPC."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@770/@VBoxContainer@776/@HBoxContainer@775/@Button@774",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Open in Quest window",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Open this quest in its own editor window."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@ScrollContainer@746/@VBoxContainer@747/@HBoxContainer@758/@VBoxContainer@761/@VBoxContainer@766/@VBoxContainer@777",
+      "type": "SpeechSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@751",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@PanelContainer@736/@VBoxContainer@737/@HBoxContainer@751/@Label@750",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CreatureProperties/@Control@752",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@792",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@792/@VBoxContainer@793",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@792/@VBoxContainer@793/@Label@794",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@792/@VBoxContainer@793/@Label@795",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@792/@Button@796",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HSeparator@797",
       "type": "HSeparator",
       "Name": {
         "IsEmpty": false
@@ -7613,172 +6984,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@VBoxContainer@856",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@VBoxContainer@843/BehaviorPanel/@Label@857",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@884/@VBoxContainer@879",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@884/@VBoxContainer@879/@HBoxContainer@880",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@884/@VBoxContainer@879/@HBoxContainer@880/@OptionButton@881",
-      "type": "OptionButton",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Apply script|Revert script",
-      "visible": true,
-      "disabled": false,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@884/@VBoxContainer@879/@HBoxContainer@880/@Button@882",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Copy",
-      "visible": true,
-      "disabled": false,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@884/@VBoxContainer@879/@TextEdit@883",
-      "type": "TextEdit",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges",
-      "type": "PendingChangesWindow",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": false,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885",
-      "type": "VBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@886",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@886/@Label@887",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@886/@Button@888",
-      "type": "Button",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "✕",
-      "visible": true,
-      "disabled": false,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@Label@889",
-      "type": "Label",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@890",
-      "type": "HBoxContainer",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "",
-      "visible": true,
-      "disabled": null,
-      "tooltip": ""
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@890/@CheckBox@891",
-      "type": "CheckBox",
-      "Name": {
-        "IsEmpty": false
-      },
-      "text": "Select all",
-      "visible": true,
-      "disabled": true,
-      "tooltip": "Check or clear every change in the list."
-    },
-    {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@ScrollContainer@894",
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800",
       "type": "ScrollContainer",
       "Name": {
         "IsEmpty": false
@@ -7789,7 +6995,7 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@ScrollContainer@894/@VBoxContainer@895",
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801",
       "type": "VBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -7800,7 +7006,51 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@896",
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HFlowContainer@802",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HFlowContainer@802/@Button@807",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HFlowContainer@802/@Button@808",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Redo \"Create scene 3921\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@Label@803",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -7811,51 +7061,1591 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@896/@CheckButton@897",
-      "type": "CheckButton",
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/SectionPicker",
+      "type": "ItemList",
       "Name": {
         "IsEmpty": false
       },
-      "text": "Show all worlds",
+      "text": "",
       "visible": true,
-      "disabled": false,
-      "tooltip": "Show changes from every world database, not just the open one."
+      "disabled": null,
+      "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@896/@OptionButton@908",
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@818",
+      "type": "GameObjectTemplateSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@818/@Label@1190",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@819",
+      "type": "GameObjectTypeSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@820",
+      "type": "GameObjectQuestsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@821",
+      "type": "GameObjectSpawnsSection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@ScrollContainer@815/@VBoxContainer@816/@VBoxContainer@822",
+      "type": "GameObjectUsedBySection",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@ScrollContainer@800/@VBoxContainer@801/@HBoxContainer@809/@VBoxContainer@812/@VBoxContainer@817",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@805",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@PanelContainer@790/@VBoxContainer@791/@HBoxContainer@805/@Label@804",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/GameObjectProperties/@Control@806",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@826",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@826/@VBoxContainer@827",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@826/@VBoxContainer@827/@Label@828",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@826/@VBoxContainer@827/@Label@829",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@826/@Button@830",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HSeparator@831",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@HFlowContainer@836",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@HFlowContainer@836/BookmarkSave",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Save location",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Save the camera's current map and position."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@Label@837",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable",
+      "type": "GridContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable/@Label@843",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable/@Label@844",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable/@Label@845",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable/@Label@846",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@ScrollContainer@834/@VBoxContainer@835/@VBoxContainer@842/BookmarkTable/@Label@847",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@839",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@PanelContainer@824/@VBoxContainer@825/@HBoxContainer@839/@Label@838",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/Bookmarks/@Control@840",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@850",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@850/@VBoxContainer@851",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@850/@VBoxContainer@851/@Label@852",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@850/@VBoxContainer@851/@Label@853",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@850/@Button@854",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HSeparator@855",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HFlowContainer@860",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HFlowContainer@860/@Button@865",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HFlowContainer@860/@Button@866",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Redo \"Create scene 3921\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HFlowContainer@860/@Button@867",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ New quest",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Create an empty quest with a new ID."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HFlowContainer@860/@Button@868",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Duplicate",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Copy this quest (texts, objectives, rewards, chain settings) under a new ID."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@Label@861",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/@VBoxContainer@870",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/@VBoxContainer@870/@LineEdit@871",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Find a quest by title or ID to open in the editor."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/@VBoxContainer@870/@ItemList@874",
+      "type": "ItemList",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/@VSeparator@875",
+      "type": "VSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel",
+      "type": "AcQuestPanel",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@Label@876",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@Label@877",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@HBoxContainer@878",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@ScrollContainer@881",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@ScrollContainer@881/@VBoxContainer@882",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@HSeparator@883",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@VBoxContainer@884",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@ScrollContainer@858/@VBoxContainer@859/@HBoxContainer@869/AcQuestPanel/@Label@885",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@863",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@PanelContainer@848/@VBoxContainer@849/@HBoxContainer@863/@Label@862",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/QuestEditor/@Control@864",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@888",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@888/@VBoxContainer@889",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@888/@VBoxContainer@889/@Label@890",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@888/@VBoxContainer@889/@Label@891",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@888/@Button@892",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HSeparator@893",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HFlowContainer@898",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HFlowContainer@898/@Button@903",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HFlowContainer@898/@Button@904",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Redo \"Create scene 3921\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@Label@899",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@906",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@906/@LineEdit@907",
+      "type": "LineEdit",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Find a player choice, conversation or scene by name, text or ID."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@906/@ItemList@910",
+      "type": "ItemList",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VSeparator@911",
+      "type": "VSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912",
+      "type": "TcCinematicsPanel",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@Label@913",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@Label@914",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@HBoxContainer@915",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@HBoxContainer@915/TabConversations",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Conversations",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Conversation templates, actors and line overrides."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@HBoxContainer@915/TabScenes",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Scenes",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Scene templates and their client script packages."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@HBoxContainer@915/TabPlayerChoices",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Player choices",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Player choices: the question card, its answers and rewards."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925",
+      "type": "TcPlayerChoiceView",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@HBoxContainer@928",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@HBoxContainer@928/NewChoice",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ New choice",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Create an empty player choice with a new ID."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@HBoxContainer@928/DuplicateChoice",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Duplicate",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Copy this choice, its answers and their rewards under a new ID."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@HBoxContainer@928/AddResponse",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "+ Response",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Add another answer card at the end."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@HBoxContainer@928/RemoveResponse",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Remove response",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Remove the selected answer and its reward."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@925/@Label@933",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@926",
+      "type": "TcConversationView",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@ScrollContainer@921/@VBoxContainer@922/@VBoxContainer@927",
+      "type": "TcSceneView",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@HSeparator@923",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@ScrollContainer@896/@VBoxContainer@897/@HBoxContainer@905/@VBoxContainer@912/@Label@924",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@901",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@PanelContainer@886/@VBoxContainer@887/@HBoxContainer@901/@Label@900",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/CinematicsEditor/@Control@902",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@936",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@936/@VBoxContainer@937",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@936/@VBoxContainer@937/@Label@938",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@936/@VBoxContainer@937/@Label@939",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@936/@Button@940",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HSeparator@941",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/@HFlowContainer@946",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/@HFlowContainer@946/@Button@951",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Undo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Undo \"Discard waypoint_path_node 720313124|5\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/@HFlowContainer@946/@Button@952",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Redo",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Redo \"Create scene 3921\""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/@Label@947",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel",
+      "type": "BehaviorPanel",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@Label@953",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@HFlowContainer@954",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@ScrollContainer@957",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@ScrollContainer@957/@VBoxContainer@958",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@HSeparator@959",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@VBoxContainer@960",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@ScrollContainer@944/@VBoxContainer@945/BehaviorPanel/@Label@961",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@949",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@PanelContainer@934/@VBoxContainer@935/@HBoxContainer@949/@Label@948",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/BehaviorEditor/@Control@950",
+      "type": "ToolWindowShortcuts",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@988/@VBoxContainer@983",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@988/@VBoxContainer@983/@HBoxContainer@984",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@988/@VBoxContainer@983/@HBoxContainer@984/@OptionButton@985",
       "type": "OptionButton",
       "Name": {
         "IsEmpty": false
       },
-      "text": "Export: apply script|Export: revert script",
+      "text": "Apply script|Revert script",
       "visible": true,
       "disabled": false,
-      "tooltip": "Whether Export selected writes the apply or the revert scripts."
+      "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@896/@Button@909",
+      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@988/@VBoxContainer@983/@HBoxContainer@984/@Button@986",
       "type": "Button",
       "Name": {
         "IsEmpty": false
       },
-      "text": "Refresh",
+      "text": "Copy",
       "visible": true,
       "disabled": false,
-      "tooltip": "Re-read drafts and the change history."
+      "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@896/@Button@910",
-      "type": "Button",
+      "path": "ViewerShell/@CanvasLayer@118/@AcceptDialog@988/@VBoxContainer@983/@TextEdit@987",
+      "type": "TextEdit",
       "Name": {
         "IsEmpty": false
       },
-      "text": "Delete",
+      "text": "",
       "visible": true,
-      "disabled": false,
-      "tooltip": "Delete applied, reverted and failed changes of the open world from the history. Staged edits stay."
+      "disabled": null,
+      "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989",
+      "type": "PanelContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@991",
       "type": "HBoxContainer",
       "Name": {
         "IsEmpty": false
@@ -7866,7 +8656,95 @@
       "tooltip": ""
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Button@912",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@991/@VBoxContainer@992",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@991/@VBoxContainer@992/@Label@993",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@991/@VBoxContainer@992/@Label@994",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@991/@Button@995",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "✕",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Close (Escape)"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HSeparator@996",
+      "type": "HSeparator",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001",
+      "type": "HFlowContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1013",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -7877,7 +8755,7 @@
       "tooltip": "Run the checked staged changes against the world database."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Button@913",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1014",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -7888,7 +8766,7 @@
       "tooltip": "Undo the checked applied changes by running their revert scripts."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Button@914",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1015",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -7899,7 +8777,7 @@
       "tooltip": "Show the combined script the export would write."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Button@915",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1016",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -7910,7 +8788,7 @@
       "tooltip": "Save the checked changes into one SQL file for sharing."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Button@916",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1017",
       "type": "Button",
       "Name": {
         "IsEmpty": false
@@ -7921,8 +8799,140 @@
       "tooltip": "Throw away every staged (not yet applied) change."
     },
     {
-      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@VBoxContainer@885/@HBoxContainer@911/@Label@917",
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@CheckButton@1018",
+      "type": "CheckButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Show all worlds",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Show changes from every world database, not just the open one."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@OptionButton@1029",
+      "type": "OptionButton",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Export: apply script|Export: revert script",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Whether Export selected writes the apply or the revert scripts."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1030",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Refresh",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Re-read drafts and the change history."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HFlowContainer@1001/@Button@1031",
+      "type": "Button",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Delete",
+      "visible": true,
+      "disabled": false,
+      "tooltip": "Delete applied, reverted and failed changes of the open world from the history. Staged edits stay."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@Label@1002",
       "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": false,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@Label@1006",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HBoxContainer@1007",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@HBoxContainer@1007/@CheckBox@1008",
+      "type": "CheckBox",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "Select all",
+      "visible": true,
+      "disabled": true,
+      "tooltip": "Check or clear every change in the list."
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@ScrollContainer@1011",
+      "type": "ScrollContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@ScrollContainer@999/@VBoxContainer@1000/@ScrollContainer@1011/@VBoxContainer@1012",
+      "type": "VBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@1004",
+      "type": "HBoxContainer",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": ""
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@PanelContainer@989/@VBoxContainer@990/@HBoxContainer@1004/@Label@1003",
+      "type": "Label",
+      "Name": {
+        "IsEmpty": false
+      },
+      "text": "",
+      "visible": true,
+      "disabled": null,
+      "tooltip": "Drag to resize"
+    },
+    {
+      "path": "ViewerShell/@CanvasLayer@118/PendingChanges/@Control@1005",
+      "type": "ToolWindowShortcuts",
       "Name": {
         "IsEmpty": false
       },
