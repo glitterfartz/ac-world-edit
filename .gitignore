@@ -26,3 +26,5 @@ tmp/
 
 # Agent worktrees
 .claude/worktrees/
+.vscode/settings.json
+*.code-workspace
