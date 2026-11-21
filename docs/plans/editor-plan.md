@@ -476,6 +476,7 @@ reports `.reload ale` and never runs the console command itself.
 | Server-spawned `areatrigger` overlay | partial | The create properties' roll, pitch and yaw, the spawn's phases and `SpawnDifficulties` are not applied; spawns are read-only (Phase 21). |
 | Graveyard: safe location is a teleport target | partial | Counts `areatrigger_teleport` only; battleground start points are not checked. |
 | Graveyard: locked-link controls and teleport line | unverified | Not inspected visually (e.g. Alterac Valley graveyard 169). |
+| Reusable client libraries | partial | Per-instance animation phase is not implemented (instances of one model batch animate in lockstep); no NuGet packaging (`buildTransitive` copy of `definitions/`, the native CascLib and `Shaders/`); `ClientRender` is built against `GodotSharp` 4.7.2, so a consumer on another 4.x version must set `GodotSharpVersion` and confirm the API surface compiles. See [client-libraries.md](../architecture/client-libraries.md). |
 
 ### Known deviations
 

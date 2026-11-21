@@ -97,7 +97,7 @@ Wrath 3.3.5:
 
 1. Resolve the folder and create `AssetStore`.
 2. Read `DBFilesClient/Map.dbc` through `store.Maps()`; keep maps that have a WDT.
-3. `ClientLighting.TryLoad` and `AreaLookup.TryLoad` read the DBC tables.
+3. `ClientLighting.TryLoad` and `AreaLookup.TryLoadWrath` read the DBC tables.
 4. The world database is enabled.
 
 Retail:
@@ -201,7 +201,7 @@ Callers choose the reader that matches their client. `ClientLighting` has both `
 | `RetailClientLookup` | `Client/ClientLookup.cs` | `IClientLookup` (and `ITcStatData`, the creature scaling tables): the TrinityCore stats page's `ContentTuning`, `ExpectedStat`, `ExpectedStatMod`, `ContentTuningXExpected`, `MythicPlusSeason` (`MilestoneSeason`), `MapDifficulty` (`MapDifficultyTuning`) and `AreaTable` (`AreaTuning`, walking `ParentAreaID`) lookups, `MaxBroadcastTextId()` for numbering new broadcast texts, and an optional `fileExists` callback (CASC `fdid:` existence, for `ClientRecord.FileData`); retail `ItemDetails(id)` (ItemSparse and Item rows filled into the tooltip record; item level, stat values, armor, weapon damage and durability computed by `RetailItemStats` from `RetailItemTables`, the DB2 adapter over ItemSquishEra, Curve, CurvePoint, RandPropPoints, ItemArmorQuality/Total/Shield, ArmorLocation and ItemDamage*), AreaTrigger rows (with `ShapeID`) and polygon corners (`Polygon(pathId)`: Path, PathNode, Location and PathProperty as `ObjectMgr::LoadAreaTriggerPolygons` builds them, first node dropped, VolumeHeight as the height), broadcast text, item and spell names, `Exists(ClientRecord, id)` (currency, extended cost, player condition, bonus list, skill line and difficulty rows, for the TC reference checks), and the ContentTuning, ExpectedStat, ExpectedStatMod and ContentTuningXExpected rows behind creature scaling (`ITcStatData`), for the TrinityCore sources | Retail |
 | `InteractionCatalog` | `Client/InteractionCatalog.cs` | Spell, taxi, item cost, emote, faction lookups for the NPC and content editors, plus the mount-spell displays (`MountDisplays`: aura-78 `EffectMiscValue`) behind the mount pickers | Wrath (DBC) |
 | `LiquidTextures` | `Client/LiquidTextures.cs` | Liquid texture atlases; uses `RetailLiquids` on retail | Both |
-| `ClientLighting`, `LightBand`, `LightFloatBand`, `FogCurve` | `Viewer/Lighting/ClientLighting.cs`, `World/LightBand.cs`, `World/FogCurve.cs` | Time-of-day colour and float keyframes, fog curves and light regions | Both |
+| `ClientLighting`, `LightBand`, `LightFloatBand`, `FogCurve` | `World/ClientLighting.cs`, `World/LightBand.cs`, `World/FogCurve.cs` | Time-of-day colour and float keyframes, fog curves and light regions | Both |
 | `SkyDome` | `World/SkyDome.cs` | The client's sky tables: highlight curve, sun and moon paths and widths, dome ring geometry and `InterpTable` | Both |
 | `AreaLookup` | `World/AreaLookup.cs` | Zone and parent names; retail reads `AreaTable.db2` (FileDataID 1353545) | Both |
 | `RetailLiquids` | `Retail/RetailLiquids.cs` | LiquidType (including each type's ripple normal map), LiquidObject and LiquidMaterial as plain dictionaries | Retail |

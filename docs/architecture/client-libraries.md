@@ -12,11 +12,12 @@ src/
                                             Rendering, Streaming, Lighting, WorldView facade
 ```
 
-Dependency direction: `ClientRender -> ClientData -> Core`; the app references all three; Foundation
-references Core; `Scripts/Data` uses ClientData types. `ClientRender` declares **no Godot script
-classes** (nothing derives from `Node`/`Resource`), so it builds as a normal class library against the
-`GodotSharp` package rather than the Godot project SDK. The coordinate and client-data projects are
-Godot-free and the xUnit project references them.
+Dependency direction: `ClientRender -> ClientData -> Core`, with `ClientData -> Foundation` for the
+editor's shared value types (Foundation is Godot- and MySQL-free); the app references all three;
+`Scripts/Data` uses ClientData types. `ClientRender` declares **no Godot script classes** (nothing
+derives from `Node`/`Resource`), so it builds as a normal class library against the `GodotSharp`
+package rather than the Godot project SDK. The coordinate and client-data projects are Godot-free; the
+xUnit project references ClientData (and Core transitively).
 
 `Shaders/` stays at the repository root: Godot shader `#include` directives are literal
 `res://Shaders/...` paths, so the folder is game content shared by the editor and any consumer, not
@@ -34,7 +35,8 @@ worldRoot.AddChild(camera);
 // Builds the renderer, model library, object scene, sky, shadows and tile streamer, then loads the
 // client's models on it.
 var view = await WorldView.CreateAsync(worldRoot, camera, client);
-view.OpenMap(new WorldMap("Azeroth", client.Files.Read("World/Maps/Azeroth/Azeroth.wdt")));
+// The map id selects the lighting table's regions; it is resolved from the client's map catalog when omitted.
+view.OpenMap(new WorldMap("Azeroth", client.Files.Read("World/Maps/Azeroth/Azeroth.wdt")), mapId: 0);
 
 // per frame
 view.Update(delta);   // stream -> models -> sky -> sun shadows
@@ -45,8 +47,8 @@ var handle = view.Models.Attach(creatureRoot, ModelKey.ForCreature(appearance, a
                                 transforms: null, ShadowCasterCategory.Creature);
 handle.SetPlacement(0, transform);
 
-// on shutdown
-view.Dispose();
+// on shutdown: waits for streaming and model workers, so close the client files afterwards
+await view.DisposeAsync();
 ```
 
 The editor keeps its own wiring order (`ViewerShell.Process`) and uses the same components through
@@ -70,5 +72,6 @@ The editor keeps its own wiring order (`ViewerShell.Process`) and uses the same 
 ## What the libraries do not provide
 
 Networking and game state, collision and movement (only terrain-height sampling and WMO render-triangle
-floor probes exist), animation blending/attach points/equipment composition, particles and weather,
-WMO portals and occlusion culling, and any UI or audio. Those belong to the client.
+floor probes exist), animation blending/attach points/equipment composition, per-instance animation
+phase (instances of one model batch animate in lockstep), particles and weather, WMO portals and
+occlusion culling, and any UI or audio. Those belong to the client.

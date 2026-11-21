@@ -6,7 +6,7 @@ namespace ACWorldEdit.Assets;
 /// One Light.dbc time-of-day band: up to 16 (time, color) keyframes cycling over a 2880-tick day
 /// (tick = in-game minute * 2; hour = tick/120). Packed values are 0x00RRGGBB. The cyclic
 /// interpolation is pinned by tests as the current behavior; it is not client-verified. The Godot
-/// Color view (At) is the viewer's partial in Scripts/Viewer/ClientLighting.cs.
+/// Color view (<c>LightVisuals.At</c>) lives in the render library.
 /// </summary>
 public sealed class LightBand
 {
