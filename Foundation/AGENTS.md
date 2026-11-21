@@ -1,6 +1,6 @@
 # Foundation
 
-Plain `net8.0` library (`ACWorldEdit.Foundation.csproj`), namespace `ACWorldEdit.Foundation`: drafts, spawn authoring, entity pages and rules, change history, SQL generation, tooltips, coordinates. The Godot app loads it as a plain DLL; `Tests/ACWorldEdit.Tests` references it directly.
+Plain `net8.0` library (`ACWorldEdit.Foundation.csproj`), namespace `ACWorldEdit.Foundation`: drafts, spawn authoring, entity pages and rules, change history, SQL generation, tooltips. The Godot app loads it as a plain DLL; `Tests/ACWorldEdit.Tests` references it directly. The server/view coordinate primitives (`WorldCoordinates`, `Point3`, `WorldPose`, `PoseText`) live in `src/ACWorldEdit.Core` (namespace `ACWorldEdit`) because the client-data library needs them too.
 
 ## Rules
 

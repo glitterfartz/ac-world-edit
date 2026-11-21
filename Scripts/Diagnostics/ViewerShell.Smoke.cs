@@ -543,7 +543,7 @@ public partial class ViewerShell
             }
 
             var centerTile = CameraTile();
-            var spawn = creatures.Records.Where(s => ACWorldEdit.Foundation.WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y)).OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
+            var spawn = creatures.Records.Where(s => WorldCoordinates.Tile(new(s.Pose.X, s.Pose.Y, s.Pose.Z)) == (centerTile.X, centerTile.Y)).OrderBy(s => creatures.PositionOf(s.Guid).DistanceSquaredTo(camera.Position)).First();
             var position = creatures.PositionOf(spawn.Guid);
             camera.Position = position + new Vector3(0, 8, 15);
             camera.LookAt(creatures.PickPointOf(spawn.Guid));

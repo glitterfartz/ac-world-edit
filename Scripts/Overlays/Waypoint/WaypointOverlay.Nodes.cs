@@ -217,7 +217,7 @@ public partial class WaypointOverlay
     }
 
     /// <summary>A seed at server coordinates, copying the neighbor's per-node travel columns on AzerothCore.</summary>
-    static WaypointSeed SeedFromNeighbor(WaypointPath path, Row neighbor, Foundation.Point3 server)
+    static WaypointSeed SeedFromNeighbor(WaypointPath path, Row neighbor, Point3 server)
     {
         bool tc = path.Dialect == WorldDialect.TrinityCore;
         return new(server.X, server.Y, server.Z, null, 0,

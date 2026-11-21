@@ -1,4 +1,4 @@
-namespace ACWorldEdit.Foundation;
+namespace ACWorldEdit;
 
 /// <summary>
 /// Engine-independent double-precision point/vector. Database positions stay precise until the

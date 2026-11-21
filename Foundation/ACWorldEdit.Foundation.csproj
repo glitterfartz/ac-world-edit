@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../src/ACWorldEdit.Core/ACWorldEdit.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Scripting/Catalog/Profiles/**/*.json" />
     <EmbeddedResource Include="Scripting/Templates/**/*.json" />
   </ItemGroup>

@@ -112,9 +112,9 @@ public partial class CreatureOverlay
     /// <summary>
     /// Show the effective pose in the entry fields; editing is enabled only with a writable draft.
     /// </summary>
-    void ShowPose(Foundation.WorldPose? pose)
+    void ShowPose(WorldPose? pose)
     {
-        double[] values = pose == null ? [] : [pose.X, pose.Y, pose.Z, Mathf.RadToDeg(Foundation.WorldCoordinates.NormalizeHeading(pose.Heading))];
+        double[] values = pose == null ? [] : [pose.X, pose.Y, pose.Z, Mathf.RadToDeg(WorldCoordinates.NormalizeHeading(pose.Heading))];
         for (int i = 0; i < 4; i++)
         {
             poseFields[i].Text = pose == null ? "" : values[i].ToString(i == 3 ? "F2" : "F4", System.Globalization.CultureInfo.InvariantCulture);

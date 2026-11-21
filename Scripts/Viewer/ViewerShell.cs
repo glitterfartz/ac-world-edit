@@ -338,7 +338,7 @@ public partial class ViewerShell : Node3D
     /// <summary>
     /// Move near a server pose and synchronize mouse-look angles before refreshing the region.
     /// </summary>
-    void FocusPose(ACWorldEdit.Foundation.WorldPose pose)
+    void FocusPose(WorldPose pose)
     {
         cameraFocused = true;
         var position = ViewSpace.ToView(pose);

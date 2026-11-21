@@ -365,7 +365,7 @@ public partial class CreatureOverlay
     /// Gizmo-commit interception for polar drag: when offset dragging is armed and the selected
     /// spawn follows a streamed leader, the drop moves its follow offset instead of its pose.
     /// </summary>
-    public bool TryFormationOffset(ulong guid, Foundation.WorldPose drop)
+    public bool TryFormationOffset(ulong guid, WorldPose drop)
     {
         if (!FormationDragArmed || poses == null)
         {

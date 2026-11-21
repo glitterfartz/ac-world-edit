@@ -8,6 +8,8 @@
     <RunSettingsFilePath>$(MSBuildProjectDirectory)/default.runsettings</RunSettingsFilePath>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Test classes live in the global namespace; the shared coordinate primitives are in ACWorldEdit. -->
+    <Using Include="ACWorldEdit" />
     <Compile Include="../../Scripts/Assets/**/*.cs" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Scripts/Data/**/*.cs" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
