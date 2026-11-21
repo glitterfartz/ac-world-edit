@@ -38,7 +38,8 @@ public sealed partial class SkyLighting
         fogBoxes = [.. volumes.Where(v => v.FogLevel <= 2 && v.ThicknessPerYard > 0 && v.Size.X > 0 && v.Size.Y > 0 && v.Size.Z > 0).Select(v =>
         {
             var rotation = new Basis(new Quaternion(v.Rotation.X, v.Rotation.Y, v.Rotation.Z, v.Rotation.W).Normalized());
-            return new FogBox(ViewSpace.ToView(v.Position.X, v.Position.Y, v.Position.Z), permutation * rotation * permutation.Transposed(),
+            var center = WorldCoordinates.ToView(new(v.Position.X, v.Position.Y, v.Position.Z));
+            return new FogBox(new Vector3((float)center.X, (float)center.Y, (float)center.Z), permutation * rotation * permutation.Transposed(),
                 new Vector3(v.Size.X, v.Size.Y, v.Size.Z) / 2f, v.ThicknessPerYard, new Color(v.Color.X, v.Color.Y, v.Color.Z), v.EdgePower,
                 v.IsEllipsoid, v.UsesNoise, v.NoiseSpeed(0), v.NoiseSpeed(1), v.HeightPower);
         })];

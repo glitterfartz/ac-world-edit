@@ -1,6 +1,7 @@
-using ACWorldEdit.Foundation;
-
 namespace ACWorldEdit;
+
+/// <summary>A tile rectangle a database layer should query, in viewer tile axes.</summary>
+public readonly record struct TileRegion(ushort MapId, int MinTileX, int MaxTileX, int MinTileY, int MaxTileY);
 
 /// <summary>
 /// Optional consumer of the streamer's sticky database query window. The render library knows nothing
@@ -16,5 +17,5 @@ public interface ITileRegionSink
     bool Enabled { get; }
 
     /// <summary>Publish the current query window; null clears the layers.</summary>
-    void SetRegion(CreatureRegion? region);
+    void SetRegion(TileRegion? region);
 }

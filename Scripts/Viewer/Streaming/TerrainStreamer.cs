@@ -1,6 +1,5 @@
 using Godot;
 using ACWorldEdit.Assets;
-using ACWorldEdit.Foundation;
 
 namespace ACWorldEdit;
 
@@ -147,7 +146,7 @@ public sealed partial class TerrainStreamer
             return;
         }
 
-        CreatureRegion? spawnRegion = null;
+        TileRegion? spawnRegion = null;
         if (wanted.Count > 0)
         {
             // Sticky with generous padding: recomputing this tightly around `center` every time the
@@ -166,12 +165,12 @@ public sealed partial class TerrainStreamer
 
             var regionCenter = spawnRegionCenter.Value;
             int r = Radius + pad;
-            spawnRegion = new(mapId, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
+            spawnRegion = new TileRegion(mapId, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
         }
         else if (CurrentWorld!.Tiles.Count == 0)
         {
             spawnRegionCenter = null;
-            spawnRegion = new(mapId, Math.Clamp(center.X - Radius, 0, 63), Math.Clamp(center.X + Radius, 0, 63), Math.Clamp(center.Y - Radius, 0, 63), Math.Clamp(center.Y + Radius, 0, 63));
+            spawnRegion = new TileRegion(mapId, Math.Clamp(center.X - Radius, 0, 63), Math.Clamp(center.X + Radius, 0, 63), Math.Clamp(center.Y - Radius, 0, 63), Math.Clamp(center.Y + Radius, 0, 63));
         }
         else
         {

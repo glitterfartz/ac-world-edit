@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ACWorldEdit.ClientRender</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GodotSharpVersion Condition="'$(GodotSharpVersion)' == ''">4.7.2</GodotSharpVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Scripts/Viewer/NodeExtensions.cs" Link="NodeExtensions.cs" />
+    <Compile Include="../../Scripts/Rendering/**/*.cs"
+             Exclude="../../Scripts/Rendering/ModelThumbnails.cs;../../Scripts/Rendering/IThumbnailSource.cs"
+             Link="Rendering/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Scripts/Viewer/Streaming/TerrainStreamer.cs" Link="Streaming/TerrainStreamer.cs" />
+    <Compile Include="../../Scripts/Viewer/Streaming/TerrainStreamer.Tiles.cs" Link="Streaming/TerrainStreamer.Tiles.cs" />
+    <Compile Include="../../Scripts/Viewer/Streaming/ITileRegionSink.cs" Link="Streaming/ITileRegionSink.cs" />
+    <Compile Include="../../Scripts/Viewer/Lighting/**/*.cs" Link="Lighting/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
+    <ProjectReference Include="../ACWorldEdit.Core/ACWorldEdit.Core.csproj" />
+    <ProjectReference Include="../ACWorldEdit.ClientData/ACWorldEdit.ClientData.csproj" />
+  </ItemGroup>
+</Project>

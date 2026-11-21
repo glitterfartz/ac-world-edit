@@ -9,11 +9,12 @@ public sealed class RegionOverlaySink(Func<bool> databaseEnabled, Func<ushort?> 
 
     public bool Enabled => databaseEnabled();
 
-    public void SetRegion(CreatureRegion? region)
+    public void SetRegion(TileRegion? region)
     {
+        var query = region is { } r ? new CreatureRegion(r.MapId, r.MinTileX, r.MaxTileX, r.MinTileY, r.MaxTileY) : null;
         foreach (var overlay in overlays())
         {
-            overlay.SetRegion(region);
+            overlay.SetRegion(query);
         }
     }
 }
