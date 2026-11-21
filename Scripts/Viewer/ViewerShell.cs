@@ -164,7 +164,8 @@ public partial class ViewerShell : Node3D
         BuildWorldNodes();
         BuildOverlays();
         input = new ViewerInput(this);
-        streamer = new TerrainStreamer(this, renderer, objects, camera, () => databaseEnabled, () => overlays, () => currentMapId,
+        streamer = new TerrainStreamer(this, renderer, objects, camera,
+            new RegionOverlaySink(() => databaseEnabled, () => currentMapId, () => overlays),
             () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
         viewerSession = new ViewerSession(this);
         BuildTools();

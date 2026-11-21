@@ -16,13 +16,11 @@ public sealed partial class TerrainStreamer
     readonly TerrainRenderer renderer;
     readonly WorldObjectScene objects;
     readonly Camera3D camera;
-    readonly Func<bool> databaseEnabled;
-    readonly Func<RegionOverlay[]> overlays;
-    readonly Func<ushort?> currentMapId;
-    readonly Func<bool> cameraFocused;
-    readonly Action<string> setMessage;
-    readonly Action<TileKey> tileScheduled;
-    readonly Action<TileKey> tilePublished;
+    readonly ITileRegionSink? regions;
+    readonly Func<bool>? cameraFocused;
+    readonly Action<string>? setMessage;
+    readonly Action<TileKey>? tileScheduled;
+    readonly Action<TileKey>? tilePublished;
 
     // Three distinct ownership states: wanted keys, one worker/building result, and fully uploaded
     // tile roots. Generation guards prevent map/reload races.
@@ -46,16 +44,14 @@ public sealed partial class TerrainStreamer
     int spawnRegionLoadRadius = -1;
 
     public TerrainStreamer(Node owner, TerrainRenderer renderer, WorldObjectScene objects, Camera3D camera,
-        Func<bool> databaseEnabled, Func<RegionOverlay[]> overlays, Func<ushort?> currentMapId,
-        Func<bool> cameraFocused, Action<string> setMessage, Action<TileKey> tileScheduled, Action<TileKey> tilePublished)
+        ITileRegionSink? regions = null, Func<bool>? cameraFocused = null, Action<string>? setMessage = null,
+        Action<TileKey>? tileScheduled = null, Action<TileKey>? tilePublished = null)
     {
         this.owner = owner;
         this.renderer = renderer;
         this.objects = objects;
         this.camera = camera;
-        this.databaseEnabled = databaseEnabled;
-        this.overlays = overlays;
-        this.currentMapId = currentMapId;
+        this.regions = regions;
         this.cameraFocused = cameraFocused;
         this.setMessage = setMessage;
         this.tileScheduled = tileScheduled;
@@ -144,8 +140,15 @@ public sealed partial class TerrainStreamer
     /// <summary>The sticky database query window, then one region fan-out to every overlay.</summary>
     void UpdateSpawnRegion(TileKey center)
     {
+        if (regions?.MapId is not { } mapId)
+        {
+            spawnRegionCenter = null;
+            regions?.SetRegion(null);
+            return;
+        }
+
         CreatureRegion? spawnRegion = null;
-        if (currentMapId().HasValue && wanted.Count > 0)
+        if (wanted.Count > 0)
         {
             // Sticky with generous padding: recomputing this tightly around `center` every time the
             // camera crosses a tile boundary forced CreatureOverlay/GameObjectOverlay to fully clear
@@ -163,12 +166,12 @@ public sealed partial class TerrainStreamer
 
             var regionCenter = spawnRegionCenter.Value;
             int r = Radius + pad;
-            spawnRegion = new(currentMapId()!.Value, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
+            spawnRegion = new(mapId, regionCenter.X - r, regionCenter.X + r, regionCenter.Y - r, regionCenter.Y + r);
         }
-        else if (currentMapId().HasValue && CurrentWorld!.Tiles.Count == 0)
+        else if (CurrentWorld!.Tiles.Count == 0)
         {
             spawnRegionCenter = null;
-            spawnRegion = new(currentMapId()!.Value, Math.Clamp(center.X - Radius, 0, 63), Math.Clamp(center.X + Radius, 0, 63), Math.Clamp(center.Y - Radius, 0, 63), Math.Clamp(center.Y + Radius, 0, 63));
+            spawnRegion = new(mapId, Math.Clamp(center.X - Radius, 0, 63), Math.Clamp(center.X + Radius, 0, 63), Math.Clamp(center.Y - Radius, 0, 63), Math.Clamp(center.Y + Radius, 0, 63));
         }
         else
         {
@@ -176,11 +179,7 @@ public sealed partial class TerrainStreamer
         }
 
         // Without a matching database no layer may query, whatever its toggle says.
-        var queryRegion = databaseEnabled() ? spawnRegion : null;
-        foreach (var overlay in overlays())
-        {
-            overlay.SetRegion(queryRegion);
-        }
+        regions.SetRegion(regions.Enabled ? spawnRegion : null);
     }
 
     /// <summary>Invalidate the generation, release every loaded/building node and clear the window.</summary>

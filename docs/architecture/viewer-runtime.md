@@ -96,6 +96,10 @@ State fields in `ViewerShell`:
 - `failed`: tiles that failed, so they are not retried every frame.
 - `generation` plus a `CancellationTokenSource`: guards against map and reload races.
 
+The streamer takes one optional `ITileRegionSink` (`MapId`, `Enabled`, `SetRegion(CreatureRegion?)`) instead of the
+overlay array; `RegionOverlaySink` in the viewer adapts the database layers, so the streaming code has no
+dependency on the editor or on a database.
+
 Model streaming (`Rendering/ModelLibrary.cs`) follows the same pattern, once per frame in `Update(camera)`:
 
 1. `ConsumeDecodedModel` (queues a finished worker batch)

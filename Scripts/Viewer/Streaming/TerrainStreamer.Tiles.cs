@@ -184,7 +184,7 @@ public sealed partial class TerrainStreamer
 				owner.AddChild(buildingNode);
 				if (result.Errors.Count > 0)
 				{
-					setMessage($"{result.Errors.Count} missing/unsupported textures. See log.");
+					setMessage?.Invoke($"{result.Errors.Count} missing/unsupported textures. See log.");
 					foreach (string e in result.Errors)
 					{
 						GD.PushWarning(e);
@@ -212,7 +212,7 @@ public sealed partial class TerrainStreamer
 			}
 
 			pendingKey = null;
-			setMessage("Tile error: " + e.Message);
+			setMessage?.Invoke("Tile error: " + e.Message);
 			GD.PushError("Tile error: " + e.Message);
 		}
 
@@ -276,7 +276,7 @@ public sealed partial class TerrainStreamer
 
 			building = null;
 			buildingNode = null;
-			setMessage("Render error: " + e.Message);
+			setMessage?.Invoke("Render error: " + e.Message);
 			GD.PushError("Render error: " + e.Message);
 		}
 	}
@@ -286,7 +286,7 @@ public sealed partial class TerrainStreamer
 	{
 		loaded[tile.Tile.Key] = node;
 		ApplyLod(CameraTile(), force: true);
-		tilePublished(tile.Tile.Key);
+		tilePublished?.Invoke(tile.Tile.Key);
 		var ids = new uint[256];
 		foreach (var c in tile.Tile.Chunks)
 		{
@@ -296,7 +296,7 @@ public sealed partial class TerrainStreamer
 		chunkAreas[tile.Tile.Key] = ids;
 		terrainHeights[tile.Tile.Key] = new TerrainHeights(tile.Tile);
 		objects.SetTile(tile.Tile.Key, tile.Tile.Objects);
-		if (CameraTile() == tile.Tile.Key && !cameraFocused())
+		if (CameraTile() == tile.Tile.Key && !(cameraFocused?.Invoke() ?? false))
 		{
 			RaiseAboveTerrain(node);
 		}
@@ -314,7 +314,7 @@ public sealed partial class TerrainStreamer
 			var token = cancellation.Token;
 			// Failed tiles are tracked separately; obsolete requests can be retried when revisited.
 			pendingKey = key;
-			tileScheduled(key);
+			tileScheduled?.Invoke(key);
 			pending = Task.Run(() => Prepare(assets, map, key, version, token));
 		}
 	}
