@@ -10,7 +10,6 @@
   <ItemGroup>
     <!-- Test classes live in the global namespace; the shared coordinate primitives are in ACWorldEdit. -->
     <Using Include="ACWorldEdit" />
-    <Compile Include="../../Scripts/Assets/**/*.cs" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Scripts/Data/**/*.cs" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
@@ -19,6 +18,7 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
     <ProjectReference Include="../../Foundation/ACWorldEdit.Foundation.csproj" />
+    <ProjectReference Include="../../src/ACWorldEdit.ClientData/ACWorldEdit.ClientData.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Scripting/Golden/**/*.lua" CopyToOutputDirectory="PreserveNewest" />

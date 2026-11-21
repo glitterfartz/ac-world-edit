@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ACWorldEdit.ClientData</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="../../Scripts/Assets/**/*.cs" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Scripts/Viewer/Session/ClientServices.cs" Link="Client/ClientServices.cs" />
+    <Compile Include="../../Scripts/Viewer/Session/ClientServices.Open.cs" Link="Client/ClientServices.Open.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <PackageReference Include="DBCD" Version="2.3.1" />
+    <ProjectReference Include="../ACWorldEdit.Core/ACWorldEdit.Core.csproj" />
+    <ProjectReference Include="../../Foundation/ACWorldEdit.Foundation.csproj" />
+  </ItemGroup>
+</Project>
