@@ -13,7 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
-    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <PackageReference Include="MySqlConnector" Version="3.0.0" />
     <PackageReference Include="DBCD" Version="2.3.1" />
     <Compile Remove="Tests/**/*.cs;Foundation/**/*.cs;src/**/*.cs;artifacts/**/*.cs;Data/WoWDBDefs/**/*.cs;ThirdParty/**;**/bin/**/*.cs;**/obj/**/*.cs" />
     <ProjectReference Include="Foundation/ACWorldEdit.Foundation.csproj" />
