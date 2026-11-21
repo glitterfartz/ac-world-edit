@@ -137,7 +137,57 @@ public static class ClientShaderGlobals
     static bool registered;
 
     /// <summary>
-    /// Initialize the runtime fog-volume texture once. Project settings supply the other defaults.
+    /// Every global uniform the shaders declare, with the neutral defaults the editor project
+    /// carries in <c>project.godot</c>. A consumer project does not have to declare them: the first
+    /// <see cref="Load"/> adds the missing ones at runtime. Sampler entries take a 1x1 placeholder
+    /// here and are replaced by the real textures as the systems publish them.
+    /// </summary>
+    static readonly (string Name, RenderingServer.GlobalShaderParameterType Type, Variant Value)[] Defaults =
+    [
+        (Fog, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0, 1, 1, 0)),
+        (FogColor, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.57f, 0.71f, 0.79f)),
+        (FogEnd, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogHeight, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogPoly, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogHeightColor, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogHeightEndColor, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogSun, RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero),
+        (FogVolumes, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (FogVolumeCount, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (FogVolumeTime, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (SunDisc, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0, 1, 0)),
+        (SunDirection, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.424f, -0.848f, 0.318f)),
+        (SunAmbient, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.25f, 0.25f, 0.25f)),
+        (SunDiffuse, RenderingServer.GlobalShaderParameterType.Vec3, Vector3.One),
+        (SunSpecular, RenderingServer.GlobalShaderParameterType.Vec3, Vector3.Zero),
+        (SkyTop, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.55f, 0.65f, 0.8f)),
+        (SkyGround, RenderingServer.GlobalShaderParameterType.Vec3, new Vector3(0.45f, 0.4f, 0.35f)),
+        (Glow, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (PointLights, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (PointLightCount, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (OceanShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.1f, 0.25f, 0.35f, 0.75f)),
+        (OceanDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.02f, 0.1f, 0.2f, 1f)),
+        (RiverShallow, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.15f, 0.35f, 0.4f, 0.5f)),
+        (RiverDeep, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(0.05f, 0.2f, 0.3f, 1f)),
+        (CreatureClock, RenderingServer.GlobalShaderParameterType.Float, -1f),
+        (ShadowMap0, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (ShadowMap1, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (ShadowMap2, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (ShadowMap3, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (ShadowCascades, RenderingServer.GlobalShaderParameterType.Sampler2D, default),
+        (ShadowCascadeCount, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (ShadowStrength, RenderingServer.GlobalShaderParameterType.Float, 0f),
+        (ShadowDepthRange, RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(-32768, 32768, 0, 0)),
+        (ShadowBias, RenderingServer.GlobalShaderParameterType.Float, 0.05f),
+        (ShadowNormalOffset, RenderingServer.GlobalShaderParameterType.Float, 0.5f),
+        (ShadowSlopeBias, RenderingServer.GlobalShaderParameterType.Float, 1f),
+        (ShadowTaps, RenderingServer.GlobalShaderParameterType.Float, 1f),
+    ];
+
+    /// <summary>
+    /// Register the global uniforms the shaders declare, then allocate the runtime fog-volume
+    /// texture. A host project may still declare them in <c>project.godot</c> (the editor needs
+    /// that to compile the shaders in its shader editor); existing names are left untouched.
     /// </summary>
     public static void Ensure()
     {
@@ -147,8 +197,24 @@ public static class ClientShaderGlobals
         }
 
         registered = true;
-        // project.godot declares every global, including its editor preview default.
-        // Only the fog-volume data texture needs a runtime allocation.
+        var existing = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var name in RenderingServer.GlobalShaderParameterGetList())
+        {
+            existing.Add(name.ToString());
+        }
+
+        var placeholder = ImageTexture.CreateFromImage(Image.CreateEmpty(1, 1, false, Image.Format.Rgba8));
+        foreach (var (name, type, value) in Defaults)
+        {
+            if (existing.Contains(name))
+            {
+                continue;
+            }
+
+            RenderingServer.GlobalShaderParameterAdd(name, type,
+                type == RenderingServer.GlobalShaderParameterType.Sampler2D ? placeholder : value);
+        }
+
         Set(FogVolumes, ImageTexture.CreateFromImage(Image.CreateEmpty(MaxFogVolumes * FogVolumeTexels, 1, false, Image.Format.Rgbaf)));
     }
 

@@ -9,8 +9,8 @@ namespace ACWorldEdit;
 /// </summary>
 public sealed class TerrainRenderer
 {
-    readonly Shader shader = ClientShaderGlobals.Load("res://Shaders/terrain/terrain.gdshader");
-    readonly Shader lowShader = ClientShaderGlobals.Load("res://Shaders/terrain/terrainlow.gdshader");
+    readonly Shader shader = ClientShaderGlobals.Load(ShaderPaths.Terrain);
+    readonly Shader lowShader = ClientShaderGlobals.Load(ShaderPaths.TerrainLow);
     readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly ImageTexture fallback;
     readonly HashSet<ShaderMaterial> materials = [];

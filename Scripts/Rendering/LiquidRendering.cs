@@ -10,15 +10,15 @@ namespace ACWorldEdit;
 /// </summary>
 public static class LiquidRendering
 {
-    public static Shader Shader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/liquid.gdshader");
-    static Shader ProceduralWaterShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/procwater.gdshader");
-    static Shader MagmaShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/procmagma.gdshader");
-    static Shader FogShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/liquidfog.gdshader");
-    static Shader MercuryShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/mercury.gdshader");
-    static Shader LeyShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/leyline.gdshader");
-    static Shader FelShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/fel.gdshader");
-    static Shader SwampShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/swamp.gdshader");
-    static Shader AzeriteShader { get; } = ClientShaderGlobals.Load("res://Shaders/liquid/azerite.gdshader");
+    public static Shader Shader { get; } = ClientShaderGlobals.Load(ShaderPaths.Liquid);
+    static Shader ProceduralWaterShader { get; } = ClientShaderGlobals.Load(ShaderPaths.ProceduralWater);
+    static Shader MagmaShader { get; } = ClientShaderGlobals.Load(ShaderPaths.ProceduralMagma);
+    static Shader FogShader { get; } = ClientShaderGlobals.Load(ShaderPaths.LiquidFog);
+    static Shader MercuryShader { get; } = ClientShaderGlobals.Load(ShaderPaths.Mercury);
+    static Shader LeyShader { get; } = ClientShaderGlobals.Load(ShaderPaths.Ley);
+    static Shader FelShader { get; } = ClientShaderGlobals.Load(ShaderPaths.Fel);
+    static Shader SwampShader { get; } = ClientShaderGlobals.Load(ShaderPaths.Swamp);
+    static Shader AzeriteShader { get; } = ClientShaderGlobals.Load(ShaderPaths.Azerite);
 
     /// <summary>
     /// Bind horizontal atlas/category and the type's style. Supported native frames are square, so

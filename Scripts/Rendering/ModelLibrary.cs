@@ -154,8 +154,8 @@ public sealed class ModelLibrary
 	readonly List<ModelHandle> unbuilt = [];
 	// Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
 	readonly Dictionary<ModelKey, int> liveKeys = [];
-	readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model/model.gdshader");
-	readonly Shader casterShader = ClientShaderGlobals.Load("res://Shaders/shadow/shadow_caster.gdshader");
+	readonly Shader baseShader = ClientShaderGlobals.Load(ShaderPaths.Model);
+	readonly Shader casterShader = ClientShaderGlobals.Load(ShaderPaths.ShadowCaster);
 	readonly Dictionary<(int Blend, bool TwoSided, bool Unlit, bool Skybox), Shader> shaders = [];
 	readonly ImageTexture fallback;
 	IClientFiles? store;

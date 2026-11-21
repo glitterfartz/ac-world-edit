@@ -313,7 +313,7 @@ Side effects of any flag ending in `-smoke`: startup database and client prompts
 
 ## Smoke workflows and retail testing
 
-Client shader globals and their neutral preview defaults are declared in `project.godot` under `shader_globals`, so shaders compile in Godot's shader editor before the viewer runs. `ClientShaderGlobals.Ensure` allocates the runtime fog-volume texture; `SkyLighting` updates the globals from client data.
+Client shader globals and their neutral preview defaults are declared in `project.godot` under `shader_globals`, so shaders compile in Godot's shader editor before the viewer runs. `ClientShaderGlobals.Ensure` also registers any global the host project has not declared (so a consuming project needs only the `Shaders/` folder) and allocates the runtime fog-volume texture; `SkyLighting` updates the globals from client data. `python Tools/shader_globals_check.py` fails when a shader names a global that `project.godot` does not declare.
 
 Smoke workflows are opt-in flags passed after `--` to Godot (`--terrain-smoke`, `--creature-smoke`, `--client-smoke`, ...). `--client-shot` / `--client-shot-tile=X,Y` (windowed) saves `artifacts/client-shot.png` framed on the largest nearby building with the UI hidden; `--client-shot-water` frames the largest liquid. `--shadow-caster-smoke`, `--shadow-smoke` and `--shadow-creature-smoke` cover the custom cascade pass (see the flag table).
 

@@ -121,7 +121,7 @@ public sealed class ShadowCasterScene
     {
         sharedMaterial = new ShaderMaterial
         {
-            Shader = ClientShaderGlobals.Load("res://Shaders/shadow/shadow_caster.gdshader")
+            Shader = ClientShaderGlobals.Load(ShaderPaths.ShadowCaster)
         };
     }
 
