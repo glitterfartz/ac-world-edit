@@ -10,8 +10,10 @@ namespace ACWorldEdit;
 /// an approximation of the client look, not a reconstruction of its exact sun trajectory or portal
 /// -based interior light isolation.
 /// </summary>
-public sealed partial class SkyLighting : Node3D
+public sealed partial class SkyLighting
 {
+    /// <summary>The node that carries the sky scene; add it to the world root.</summary>
+    public Node3D Root { get; }
     DirectionalLight3D sun = null!;
     WorldEnvironment environment = null!;
     ShaderMaterial skyMaterial = null!;
@@ -78,6 +80,7 @@ public sealed partial class SkyLighting : Node3D
 
     public SkyLighting(ModelLibrary models)
     {
+        Root = new Node3D { Name = "Sky" };
         this.models = models;
         BuildSun();
         skyMaterial = new ShaderMaterial
@@ -89,12 +92,12 @@ public sealed partial class SkyLighting : Node3D
         {
             Name = "Skybox"
         };
-        AddChild(skyboxAnchor);
+        Root.AddChild(skyboxAnchor);
         starsAnchor = new Node3D
         {
             Name = "Stars"
         };
-        AddChild(starsAnchor);
+        Root.AddChild(starsAnchor);
         BuildClouds();
         BuildGlares();
         BuildShafts();
@@ -114,7 +117,7 @@ public sealed partial class SkyLighting : Node3D
             DirectionalShadowMaxDistance = 400,
             DirectionalShadowBlendSplits = true
         };
-        AddChild(sun);
+        Root.AddChild(sun);
     }
 
     void BuildEnvironment()
@@ -131,7 +134,7 @@ public sealed partial class SkyLighting : Node3D
                 TonemapMode = Godot.Environment.ToneMapper.Linear
             }
         };
-        AddChild(environment);
+        Root.AddChild(environment);
     }
 
     void BuildClouds()
@@ -153,7 +156,7 @@ public sealed partial class SkyLighting : Node3D
             // The vertex shader moves the vertices, so the node's own bounds are meaningless to the culler.
             CustomAabb = new Aabb(new Vector3(-10000, -10000, -10000), new Vector3(20000, 20000, 20000))
         };
-        AddChild(cloudDome);
+        Root.AddChild(cloudDome);
     }
 
     void BuildGlares()
@@ -176,7 +179,7 @@ public sealed partial class SkyLighting : Node3D
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                 Visible = false
             };
-            AddChild(quad);
+            Root.AddChild(quad);
             glares[i] = (quad, material);
         }
     }
@@ -198,7 +201,7 @@ public sealed partial class SkyLighting : Node3D
             // The vertex shader covers the screen whatever the node's place, so the culler must never drop it.
             CustomAabb = new Aabb(new Vector3(-10000, -10000, -10000), new Vector3(20000, 20000, 20000))
         };
-        AddChild(shaftQuad);
+        Root.AddChild(shaftQuad);
     }
 
     /// <summary>

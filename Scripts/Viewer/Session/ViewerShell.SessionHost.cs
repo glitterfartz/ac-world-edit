@@ -66,5 +66,9 @@ public partial class ViewerShell : IViewerSessionHost
     void IViewerSessionHost.Teleport(TileKey key) => Teleport(key);
     string IViewerSessionHost.ThumbnailDirectory(ClientKind kind) => ThumbnailDirectory(kind);
 
-    public override void _ExitTree() => viewerSession?.ExitTree();
+    public override void _ExitTree()
+    {
+        shadows?.Dispose();
+        viewerSession?.ExitTree();
+    }
 }

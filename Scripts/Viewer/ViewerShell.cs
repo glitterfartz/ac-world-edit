@@ -190,13 +190,13 @@ public partial class ViewerShell : Node3D
         AddChild(camera);
         sky = new SkyLighting(models);
         sky.LightPlacements = () => objects.Placements();
-        AddChild(sky);
+        AddChild(sky.Root);
         // The cascade pass owns its own casters and viewports; both scenery owners register there.
         casters = new ShadowCasterScene();
         renderer.Shadows = casters;
         models.Shadows = casters;
         shadows = new SunShadows(casters, GetViewport().World3D);
-        AddChild(shadows);
+        AddChild(shadows.Root);
         shadows.SetQuality(shadowQuality);
         // Proxies live on their own layers; the normal view must never draw one.
         camera.CullMask = ShadowCasterScene.MainCameraMask;

@@ -15,8 +15,10 @@ namespace ACWorldEdit;
 /// <c>client_shadow_visibility</c> in <c>Shaders/shared/client_shadow.gdshaderinc</c>.
 /// </para>
 /// </summary>
-public sealed partial class SunShadows : Node3D
+public sealed partial class SunShadows
 {
+    /// <summary>The node that carries the cascade viewports; add it to the world root.</summary>
+    public Node3D Root { get; }
     /// <summary>Extra yards the orthographic box reaches toward the sun, so tall buildings in front cast.</summary>
     public const float CasterPadding = 250f;
 
@@ -78,7 +80,7 @@ public sealed partial class SunShadows : Node3D
 
     public SunShadows(ShadowCasterScene casters, World3D world)
     {
-        Name = "SunShadows";
+        Root = new Node3D { Name = "SunShadows" };
         this.casters = casters;
         this.world = world;
         cascadeTexture = ImageTexture.CreateFromImage(cascadeImage);
@@ -222,7 +224,8 @@ public sealed partial class SunShadows : Node3D
             ? RenderingServer.ViewportGetRenderInfo(viewport.GetViewportRid(), RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.DrawCallsInFrame)
             : 0;
 
-    public override void _ExitTree()
+    /// <summary>Release the globals and textures; the caller frees <see cref="Root"/>.</summary>
+    public void Dispose()
     {
         casters.SetEnabled(false);
         castersOn = false;
@@ -418,7 +421,7 @@ public sealed partial class SunShadows : Node3D
             Current = true,
         };
         viewport.AddChild(caster);
-        AddChild(viewport);
+        Root.AddChild(viewport);
         RenderingServer.ViewportSetMeasureRenderTime(viewport.GetViewportRid(), true);
         viewports[index] = viewport;
         cameras[index] = caster;

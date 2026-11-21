@@ -146,7 +146,7 @@ public partial class ViewerShell
             markers.AddRange(overlay.GetChildren().OfType<Node3D>().Where(n => !ModelHandle.IsModelNode(n)));
         }
 
-        var skyModels = Descendants(sky).OfType<Node3D>().Where(ModelHandle.IsModelNode).ToList();
+        var skyModels = Descendants(sky.Root).OfType<Node3D>().Where(ModelHandle.IsModelNode).ToList();
         return ([
             new("terrain", terrain), new("liquid", liquid), new("wmoShell", shell), new("wmoDoodads", embedded),
             new("adtDoodads", adt), new("creatureModels", creatureModels), new("gameObjectModels", objectModels),
@@ -177,7 +177,7 @@ public partial class ViewerShell
     async Task PerfBreakdownPose(string pose, Rid viewport)
     {
         var (categories, wmos) = CollectCategories();
-        var sun = FindSun(sky);
+        var sun = FindSun(sky.Root);
         var byName = categories.ToDictionary(c => c.Name);
         string Counts(Category c)
         {
