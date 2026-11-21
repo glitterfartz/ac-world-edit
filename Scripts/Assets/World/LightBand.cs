@@ -8,7 +8,7 @@ namespace ACWorldEdit.Assets;
 /// interpolation is pinned by tests as the current behavior; it is not client-verified. The Godot
 /// Color view (At) is the viewer's partial in Scripts/Viewer/ClientLighting.cs.
 /// </summary>
-public sealed partial class LightBand
+public sealed class LightBand
 {
     public const double CycleLength = 2880;
     readonly uint[] times;

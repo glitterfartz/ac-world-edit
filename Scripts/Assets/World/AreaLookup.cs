@@ -3,10 +3,9 @@ namespace ACWorldEdit.Assets;
 /// <summary>
 /// Client area names: AreaTable.dbc for Wrath and the retail AreaTable.db2 for TrinityCore. Resolves
 /// an area to its zone name and, for a subzone, its parent zone name (e.g. a city district's parent
-/// is the city). The archive-loading half (TryLoadWrath) lives in the viewer's partial because it
-/// logs through Godot.
+/// is the city).
 /// </summary>
-public sealed partial class AreaLookup
+public sealed class AreaLookup
 {
     readonly DbcTable? table;
     readonly Db2Tables? retail;
@@ -22,6 +21,23 @@ public sealed partial class AreaLookup
 
     /// <summary>Read area names from the retail client's AreaTable.db2.</summary>
     public static AreaLookup FromRetail(Db2Tables tables) => new(tables);
+
+    /// <summary>
+    /// Read area names from a Wrath client's AreaTable.dbc. A missing or malformed table disables
+    /// zone names rather than failing the caller.
+    /// </summary>
+    public static AreaLookup? TryLoadWrath(IClientFiles store, Action<string>? warn = null)
+    {
+        try
+        {
+            return new(new DbcTable(store.Read("DBFilesClient/AreaTable.dbc")));
+        }
+        catch (Exception e)
+        {
+            warn?.Invoke("AreaTable unavailable: " + e.Message);
+            return null;
+        }
+    }
 
     /// <summary>
     /// True when the ID is an AreaTable row; graveyard_zone.GhostZone must be one (the server

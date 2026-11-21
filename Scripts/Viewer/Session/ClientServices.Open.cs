@@ -17,7 +17,7 @@ public sealed partial record ClientServices
         try
         {
             var maps = store.Maps();
-            return new ClientServices(store, maps, ClientLighting.TryLoad(store, warn), AreaLookup.TryLoadWrath(store), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
+            return new ClientServices(store, maps, ClientLighting.TryLoad(store, warn), AreaLookup.TryLoadWrath(store, warn), true, $"WRATH {store.Build} · {store.ArchiveCount} archives · {maps.Count} maps", new CreatureCatalog(store), new GameObjectCatalog(store));
         }
         catch
         {

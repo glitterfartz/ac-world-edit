@@ -154,7 +154,7 @@ public partial class ViewerShell
             .GroupBy(pair => pair.Skybox!, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .Take(SkyboxTargetsPerMap)
-            .Select(pair => (new Vector3(pair.Region.ViewPosition.X, pair.Region.ViewPosition.Y, pair.Region.ViewPosition.Z), pair.Skybox!))
+            .Select(pair => (pair.Region.ViewPosition(), pair.Skybox!))
             .ToList();
         GD.Print($"SKYBOX_SMOKE_MAP map={SkyboxMaps[skyboxMap]} skyboxTargets={skyboxTargets.Count}");
         if (skyboxTargets.Count == 0)

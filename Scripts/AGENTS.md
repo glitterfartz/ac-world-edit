@@ -10,7 +10,7 @@
 | `Data/` | `ACWorldEdit.Data` | not allowed |
 | `Viewer/`, `Rendering/`, `Overlays/`, `Ui/`, `Diagnostics/` | `ACWorldEdit` (flat — subfolders add no segment) | allowed |
 
-Two files under `Viewer/` keep `namespace ACWorldEdit.Assets` on purpose: `Session/AreaTable.cs` (`AreaLookup`) and `Lighting/ClientLightingView.cs` (`ClientLighting`) are the Godot halves of partial classes whose engine-free halves sit in `Assets/World`.
+The Godot views of the pure lighting model are extension methods in `Viewer/Lighting/LightVisuals.cs` (`LightBand.At`, `LightRegion.ViewPosition`); the model itself stays in `Assets/World`.
 
 `Assets` must not reference `Data` or `Viewer`; `Data` must not reference `Viewer`. `Assets` and `Data` are the two Godot-free halves that the xUnit project compiles.
 

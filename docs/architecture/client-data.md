@@ -203,7 +203,7 @@ Callers choose the reader that matches their client. `ClientLighting` has both `
 | `LiquidTextures` | `Client/LiquidTextures.cs` | Liquid texture atlases; uses `RetailLiquids` on retail | Both |
 | `ClientLighting`, `LightBand`, `LightFloatBand`, `FogCurve` | `Viewer/Lighting/ClientLighting.cs`, `World/LightBand.cs`, `World/FogCurve.cs` | Time-of-day colour and float keyframes, fog curves and light regions | Both |
 | `SkyDome` | `World/SkyDome.cs` | The client's sky tables: highlight curve, sun and moon paths and widths, dome ring geometry and `InterpTable` | Both |
-| `AreaLookup` | `World/AreaLookup.cs`, `Viewer/Session/AreaTable.cs` | Zone and parent names; retail reads `AreaTable.db2` (FileDataID 1353545) | Both |
+| `AreaLookup` | `World/AreaLookup.cs` | Zone and parent names; retail reads `AreaTable.db2` (FileDataID 1353545) | Both |
 | `RetailLiquids` | `Retail/RetailLiquids.cs` | LiquidType (including each type's ripple normal map), LiquidObject and LiquidMaterial as plain dictionaries | Retail |
 | `ListfileStore` | `Retail/ListfileStore.cs` | Downloads and validates the wowdev community listfile on request; `ACWORLD_LISTFILE` overrides the path | Retail |
 

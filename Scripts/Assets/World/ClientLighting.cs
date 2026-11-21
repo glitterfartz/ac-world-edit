@@ -75,7 +75,7 @@ public sealed record LightProfile(uint SkyboxId, LightBand Diffuse, LightBand Am
 /// its falloff. The position is pre-converted to the viewer's Y-up basis and kept as plain floats;
 /// the Godot Vector3 view lives in the viewer's partial.
 /// </summary>
-public sealed partial record LightRegion(uint Id, uint ContinentId, float ViewX, float ViewY, float ViewZ, float FalloffStart, float FalloffEnd, uint ParamsId, bool IsDefault = false);
+public sealed record LightRegion(uint Id, uint ContinentId, float ViewX, float ViewY, float ViewZ, float FalloffStart, float FalloffEnd, uint ParamsId, bool IsDefault = false);
 
 /// <summary>
 /// Client Light.dbc/LightParams.dbc/LightSkybox.dbc/LightIntBand.dbc, resolved into per-map regions

@@ -144,10 +144,10 @@ Rules that follow from the layering:
   added to `IWorldSchema`.
 - **Parsers do not branch on client kind.** `ClientKind` (`Wrath335` or `Retail`) is passed to the
   source abstraction; parsers consume `IClientFiles` and ask it for bytes.
-- **Godot halves of mixed classes live in the viewer.** `AreaLookup` (`Scripts/Viewer/Session/AreaTable.cs`)
-  and `ClientLighting` (`Scripts/Viewer/Lighting/ClientLightingView.cs`) are partial classes whose Godot-facing
-  parts sit in `Scripts/Viewer`, while the engine-free parts sit in `Scripts/Assets/World`
-  (`ClientLighting.cs`, `LightBand.cs`).
+- **Godot views of pure data stay in the viewer.** The lighting model parses and decides in
+  `Scripts/Assets/World`; `Scripts/Viewer/Lighting/LightVisuals.cs` exposes its Godot-typed views as
+  extension methods (`LightBand.At`, `LightRegion.ViewPosition`), because a partial type cannot span
+  assemblies. `AreaLookup.TryLoadWrath` loads in the asset layer with a warning callback.
 - **Per-client side data is attached to the source, not passed around.** `RetailLiquids` and
   `LiquidTextures` are looked up through `ConditionalWeakTable` keyed on the `IClientFiles` instance.
 - **Edits stage in Foundation drafts.** Overlays and editors write row edits into local drafts, never

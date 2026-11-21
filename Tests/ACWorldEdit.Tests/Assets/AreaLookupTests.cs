@@ -77,4 +77,27 @@ public class AreaLookupTests
     {
         Assert.Equal(2, Lookup().Search("", null, limit: 2).Count);
     }
+
+    [Fact]
+    public void TryLoadWrathReportsAMissingTable()
+    {
+        var warnings = new List<string>();
+
+        var areas = AreaLookup.TryLoadWrath(new MissingFiles(), warnings.Add);
+
+        Assert.Null(areas);
+        Assert.Contains("AreaTable unavailable", Assert.Single(warnings));
+    }
+
+    sealed class MissingFiles : IClientFiles
+    {
+        public ClientKind Kind => ClientKind.Wrath335;
+        public string Build => "test";
+        public byte[] Read(string path) => throw new FileNotFoundException(path);
+        public bool Exists(string path) => false;
+        public string Source(string path) => "missing";
+        public void Dispose()
+        {
+        }
+    }
 }
