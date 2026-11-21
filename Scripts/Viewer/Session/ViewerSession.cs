@@ -131,7 +131,7 @@ public sealed class ViewerSession
 		var old = host.Store;
 		host.Store = null;
 		await host.Streamer.WaitForPendingAsync();
-		host.Sky.SetStarsModel(null);
+		// The facade releases the sky, star dome and model cache before the old store closes.
 		await host.WorldView.SetClientAsync(null);
 		old?.Dispose();
 	}
@@ -147,7 +147,6 @@ public sealed class ViewerSession
 		host.MapList = result.Maps;
 		host.Navigation.Configure(kind, result.NavigationParents);
 		host.Lighting = result.Lighting;
-		host.Sky.SetCelestialTextures(CelestialTextures.Load(host.Store, "Textures/sunCenter.blp"), CelestialTextures.Load(host.Store, "Textures/moon.blp"), CelestialTextures.Load(host.Store, "Textures/moon02.blp"), CelestialTextures.Load(host.Store, "Textures/sunGlare.blp"), CelestialTextures.Load(host.Store, "Textures/moonGlare.blp"));
 		host.Areas = result.Areas;
 		host.DatabaseEnabled = result.DatabaseEnabled;
 		host.Lookup = result.Lookup;
@@ -158,8 +157,8 @@ public sealed class ViewerSession
 		}
 
 		host.MapsSelect.Clear();
+		// The facade adopts the celestial textures, star dome and model cache from the client.
 		await host.WorldView.SetClientAsync(result);
-		host.Sky.SetStarsModel(host.Store.Exists(StarsModelPath) ? StarsModelPath : null);
 		host.Thumbnails?.Reset(host.ThumbnailDirectory(kind));
 		int selected = FillMapList();
 		host.MapsSelect.Select(selected);
@@ -323,7 +322,4 @@ public sealed class ViewerSession
 
 		host.Drafts?.Dispose();
 	}
-
-	// The client's star model, drawn like a skybox model; both clients have it under this name.
-    const string StarsModelPath = "Environments/Stars/stars.m2";
 }

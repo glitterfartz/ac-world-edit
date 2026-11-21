@@ -309,6 +309,8 @@ public sealed partial class SkyLighting
     /// True for a retail client: its fog is exponential, with a wider view distance.
     /// </summary>
     public bool Retail { get; set; }
+    /// <summary>The map whose light regions are active, or null with no lighting table or map.</summary>
+    public uint? ActiveMapId => mapId;
     /// <summary>
     /// The distance the fog is capped at, standing in for the client's view distance setting (the 3.3.5a
     /// "farclip" runs from 177 to 1277 yards; retail reaches several thousand). The camera here has no such
