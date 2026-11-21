@@ -17,12 +17,12 @@ public static class ScenePicking
     /// skipped; the GUIDs of the ready ones are added to <paramref name="readyGuids"/> so callers can
     /// skip their fallback markers for them. No terrain or triangle occlusion.
     /// </summary>
-    public static (ulong Guid, float Distance)? NearestInBatches(PickRay ray, IEnumerable<(ModelInstance Node, ulong[] Guids)> batches, ICollection<ulong>? readyGuids = null)
+    public static (ulong Guid, float Distance)? NearestInBatches(PickRay ray, IEnumerable<(ModelHandle Handle, ulong[] Guids)> batches, ICollection<ulong>? readyGuids = null)
     {
         (ulong Guid, float Distance)? best = null;
-        foreach (var (node, guids) in batches)
+        foreach (var (handle, guids) in batches)
         {
-            if (!node.ModelReady)
+            if (!handle.ModelReady)
             {
                 continue;
             }
@@ -30,8 +30,8 @@ public static class ScenePicking
             for (int i = 0; i < guids.Length; i++)
             {
                 readyGuids?.Add(guids[i]);
-                var inverse = node.Transforms![i].AffineInverse();
-                float? hit = BoxHit(node.Bounds, inverse * ray.Origin, inverse.Basis * ray.Direction);
+                var inverse = handle.Transforms![i].AffineInverse();
+                float? hit = BoxHit(handle.Bounds, inverse * ray.Origin, inverse.Basis * ray.Direction);
                 if (hit.HasValue && hit.Value < ray.Far && (best == null || hit.Value < best.Value.Distance))
                 {
                     best = (guids[i], hit.Value);

@@ -147,10 +147,11 @@ public sealed class ModelLibrary
 	long cachedBytes;
 	readonly Dictionary<string, TextureEntry> textures = new(StringComparer.OrdinalIgnoreCase);
 	readonly HashSet<ModelKey> failed = [];
-	readonly List<ModelInstance> instances = [];
+	readonly List<ModelHandle> instances = [];
+	readonly Dictionary<Node3D, ModelHandle> byNode = [];
 	// Instances not yet bound to a cache entry, so the per-frame scans skip the (usually far larger)
 	// built population. Attach adds to it; Update rebuilds it while pruning freed nodes.
-	readonly List<ModelInstance> unbuilt = [];
+	readonly List<ModelHandle> unbuilt = [];
 	// Live instance count per key, replacing a scan of every instance when asking "is this key wanted".
 	readonly Dictionary<ModelKey, int> liveKeys = [];
 	readonly Shader baseShader = ClientShaderGlobals.Load("res://Shaders/model/model.gdshader");
@@ -226,7 +227,7 @@ public sealed class ModelLibrary
 	public int ActiveFailedModels => unbuilt.Count(i => failed.Contains(i.Key));
 	public long CachedBytes => cachedBytes;
 	public double UploadMilliseconds { get; private set; }
-	public bool Busy => workers.Count > 0 || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i) && !i.Built && !failed.Contains(i.Key));
+	public bool Busy => workers.Count > 0 || building != null || decoded.Count > 0 || unbuilt.Any(i => GodotObject.IsInstanceValid(i.Node) && !i.Built && !failed.Contains(i.Key));
 	public ICreatureCatalog? Catalog { get; private set; }
 	/// <summary>Running counters for --perf-smoke (plain increments; decode time is summed on the main thread).</summary>
 	public record struct ModelStats(int Decodes, double DecodeMilliseconds, int Uploads, int Binds, int Evictions);
@@ -277,15 +278,16 @@ public sealed class ModelLibrary
 		cancellation = new();
 		foreach (var i in instances)
 		{
-			if (GodotObject.IsInstanceValid(i))
+			if (GodotObject.IsInstanceValid(i.Node))
 			{
 				// Proxies share these entries' meshes; free them before DisposeEntry below.
-				Shadows?.UnregisterTree(i);
-				i.QueueFree();
+				Shadows?.UnregisterTree(i.Node);
+				i.Node.QueueFree();
 			}
 		}
 
 		instances.Clear();
+		byNode.Clear();
 		unbuilt.Clear();
 		liveKeys.Clear();
 		foreach (var e in cache.Values)
@@ -307,20 +309,20 @@ public sealed class ModelLibrary
 	/// Register a scene binding immediately; Update resolves shared resources asynchronously. Null
 	/// transforms select a single mesh rather than a placement batch.
 	/// </summary>
-	public ModelInstance Attach(Node3D parent, ModelKey key, Transform3D[]? transforms = null, ShadowCasterCategory shadowCategory = ShadowCasterCategory.None)
+	public ModelHandle Attach(Node3D parent, ModelKey key, Transform3D[]? transforms = null, ShadowCasterCategory shadowCategory = ShadowCasterCategory.None)
 	{
-		var node = new ModelInstance
-		{
-			Key = key,
-			Transforms = transforms,
-			ShadowCategory = shadowCategory
-		};
+		var node = new Node3D { Name = "Model" };
+		var handle = new ModelHandle(node, key, transforms, shadowCategory) { Parent = HandleFor(parent) };
 		parent.AddChild(node);
-		instances.Add(node);
-		unbuilt.Add(node);
+		byNode[node] = handle;
+		instances.Add(handle);
+		unbuilt.Add(handle);
 		liveKeys[key] = liveKeys.GetValueOrDefault(key) + 1;
-		return node;
+		return handle;
 	}
+
+	/// <summary>The handle driving a scene node, when it is a model root.</summary>
+	public ModelHandle? HandleFor(Node3D node) => byNode.GetValueOrDefault(node);
 
 	/// <summary>
 	/// Compose Godot column-vector static rotations/scaling. Order and the extra half-turn match the
@@ -408,13 +410,15 @@ public sealed class ModelLibrary
 		for (int n = 0; n < instances.Count; n++)
 		{
 			var i = instances[n];
-			if (!GodotObject.IsInstanceValid(i) || i.IsQueuedForDeletion())
+			if (!GodotObject.IsInstanceValid(i.Node) || i.Node.IsQueuedForDeletion())
 			{
 				// Free its proxies before an eviction can dispose the shared meshes.
-				if (GodotObject.IsInstanceValid(i))
+				if (GodotObject.IsInstanceValid(i.Node))
 				{
-					Shadows?.UnregisterTree(i);
+					Shadows?.UnregisterTree(i.Node);
 				}
+
+				byNode.Remove(i.Node);
 
 				if (liveKeys.TryGetValue(i.Key, out int count))
 				{
@@ -453,13 +457,13 @@ public sealed class ModelLibrary
 	/// Bind shared meshes, publish selection bounds/clip IDs and batch embedded WMO doodads using
 	/// parent-composed transforms.
 	/// </summary>
-	void BuildInstance(ModelInstance node, Entry entry)
+	void BuildInstance(ModelHandle handle, Entry entry)
 	{
 		var min = entry.Bounds.Min;
 		var max = entry.Bounds.Max;
-		node.Bounds = new(new(min.X, min.Y, min.Z), new(max.X - min.X, max.Y - min.Y, max.Z - min.Z));
-		node.AvailableAnimations = entry.Data.AnimationIds ?? [];
-		bool casts = Shadows != null && ShadowCasterPolicy.Allows(node.ShadowCategory, entry.AnyOpaque, entry.AllOpaque, entry.AnyCasting);
+		handle.Bounds = new(new(min.X, min.Y, min.Z), new(max.X - min.X, max.Y - min.Y, max.Z - min.Z));
+		handle.AvailableAnimations = entry.Data.AnimationIds ?? [];
+		bool casts = Shadows != null && ShadowCasterPolicy.Allows(handle.ShadowCategory, entry.AnyOpaque, entry.AllOpaque, entry.AnyCasting);
 		bool registered = false;
 		for (int m = 0; m < entry.Meshes.Count; m++)
 		{
@@ -467,17 +471,17 @@ public sealed class ModelLibrary
 			// Detailed entries carry one mesh per caster-material bucket; static entries use the shared material.
 			var caster = entry.Detailed && m < entry.CasterMaterials.Count ? entry.CasterMaterials[m] : default;
 			GeometryInstance3D geometry;
-			if (node.Transforms != null)
+			if (handle.Transforms != null)
 			{
 				var multi = new MultiMesh
 				{
 					TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
 					Mesh = mesh,
-					InstanceCount = node.Transforms.Length
+					InstanceCount = handle.Transforms.Length
 				};
-				for (int n = 0; n < node.Transforms.Length; n++)
+				for (int n = 0; n < handle.Transforms.Length; n++)
 				{
-					multi.SetInstanceTransform(n, node.Transforms[n]);
+					multi.SetInstanceTransform(n, handle.Transforms[n]);
 				}
 
 				// A margin with the default (disabled) fade mode acts as hysteresis around the cutoff,
@@ -485,7 +489,7 @@ public sealed class ModelLibrary
 				// geometry in and out every frame while flying.
 				geometry = new MultiMeshInstance3D { Multimesh = multi, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 1600, VisibilityRangeEndMargin = 100 };
 			}
-			else if (node.Key.Skybox)
+			else if (handle.Key.Skybox)
 			{
 				// The sky shell is scaled far out around the camera: it must never be range-culled
 				// or cast a shadow over the whole scene.
@@ -496,22 +500,22 @@ public sealed class ModelLibrary
 				geometry = new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, VisibilityRangeEnd = 400, VisibilityRangeEndMargin = 30 };
 			}
 
-			node.AddChild(geometry);
+			handle.Node.AddChild(geometry);
 			if (casts && !caster.Suppressed)
 			{
-				Shadows!.Register(geometry, node.ShadowCategory, caster, entry.Animated);
+				Shadows!.Register(geometry, handle.ShadowCategory, caster, entry.Animated);
 				registered = true;
 			}
 		}
 
 		if (registered)
 		{
-			node.Shadows = Shadows;
+			handle.Shadows = Shadows;
 		}
 
-		AttachDoodads(node, entry);
-		node.Resolved = entry;
-		node.Built = true;
+		AttachDoodads(handle, entry);
+		handle.Resolved = entry;
+		handle.Built = true;
 	}
 
 	/// <summary>Scenery toggles remove embedded requests as well as hiding their geometry.</summary>
@@ -523,33 +527,33 @@ public sealed class ModelLibrary
 		}
 
 		embeddedDoodadsVisible = visible;
-		foreach (var node in instances.ToArray().Where(i => GodotObject.IsInstanceValid(i) && i.Built))
+		foreach (var handle in instances.ToArray().Where(i => GodotObject.IsInstanceValid(i.Node) && i.Built))
 		{
-			if (!cache.TryGetValue(node.Key, out var entry) || entry.Data.Doodads.Length == 0)
+			if (!cache.TryGetValue(handle.Key, out var entry) || entry.Data.Doodads.Length == 0)
 			{
 				continue;
 			}
 
 			if (visible)
 			{
-				AttachDoodads(node, entry);
+				AttachDoodads(handle, entry);
 			}
 			else
 			{
-				foreach (var child in node.GetChildren().OfType<ModelInstance>())
+				foreach (var child in handle.Node.GetChildren().Where(ModelHandle.IsModelNode).OfType<Node3D>())
 				{
 					child.Visible = false;
 					child.QueueFree();
 				}
 
-				node.DoodadsAttached = false;
+				handle.DoodadsAttached = false;
 			}
 		}
 	}
 
-	void AttachDoodads(ModelInstance node, Entry entry)
+	void AttachDoodads(ModelHandle handle, Entry entry)
 	{
-		if (!embeddedDoodadsVisible || node.DoodadsAttached)
+		if (!embeddedDoodadsVisible || handle.DoodadsAttached)
 		{
 			return;
 		}
@@ -557,11 +561,11 @@ public sealed class ModelLibrary
 		foreach (var group in entry.Data.Doodads.GroupBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
 		{
 			var local = group.Select(d => new Transform3D(new Basis(new Quaternion(d.Rotation.X, d.Rotation.Y, d.Rotation.Z, d.Rotation.W)).Scaled(Vector3.One * d.Scale), new(d.Position.X, d.Position.Y, d.Position.Z))).ToArray();
-			var transforms = node.Transforms == null ? local : node.Transforms.SelectMany(parent => local.Select(t => parent * t)).ToArray();
-			Attach(node, new(group.Key), transforms, ShadowCasterCategory.WmoDoodad);
+			var transforms = handle.Transforms == null ? local : handle.Transforms.SelectMany(parent => local.Select(t => parent * t)).ToArray();
+			Attach(handle.Node, new(group.Key), transforms, ShadowCasterCategory.WmoDoodad).IsDoodad = true;
 		}
 
-		node.DoodadsAttached = true;
+		handle.DoodadsAttached = true;
 	}
 
 	/// <summary>
@@ -1083,7 +1087,7 @@ public sealed class ModelLibrary
 		for (int n = 0, count = unbuilt.Count; n < count; n++)
 		{
 			var i = unbuilt[n];
-			if (!GodotObject.IsInstanceValid(i) || i.Built)
+			if (!GodotObject.IsInstanceValid(i.Node) || i.Built)
 			{
 				continue;
 			}
@@ -1129,12 +1133,12 @@ public sealed class ModelLibrary
 		Dictionary<ModelKey, float> nearest = [];
 		foreach (var i in unbuilt)
 		{
-			if (i.Built || !GodotObject.IsInstanceValid(i) || cache.ContainsKey(i.Key) || failed.Contains(i.Key) || queued.Contains(i.Key))
+			if (i.Built || !GodotObject.IsInstanceValid(i.Node) || cache.ContainsKey(i.Key) || failed.Contains(i.Key) || queued.Contains(i.Key))
 			{
 				continue;
 			}
 
-			float distance = i.GlobalPosition.DistanceSquaredTo(eye);
+			float distance = i.Node.GlobalPosition.DistanceSquaredTo(eye);
 			if (!nearest.TryGetValue(i.Key, out float known) || distance < known)
 			{
 				nearest[i.Key] = distance;

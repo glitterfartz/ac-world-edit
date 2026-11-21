@@ -11,7 +11,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     // Which tile owns each deduplicated object, and what each batch holds. A border-straddling object
     // can be referenced by several neighbouring tiles; see PlacementOwnership for the sticky rule.
     readonly PlacementOwnership ownership = new();
-    readonly Dictionary<(TileKey Tile, ModelKey Model), (ModelInstance Node, WorldObject[] Items)> batches = [];
+    readonly Dictionary<(TileKey Tile, ModelKey Model), (ModelHandle Handle, WorldObject[] Items)> batches = [];
     public int ObjectCount => ownership.ObjectCount;
     public int DoodadCount => ownership.DoodadCount;
     public int WmoCount => ownership.WmoCount;
@@ -96,7 +96,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     public readonly record struct Placed(WorldObject Item, ModelKey Model, Transform3D Transform, Aabb Bounds, bool Ready);
 
     public IEnumerable<Placed> Placements() => batches.SelectMany(pair => pair.Value.Items.Select((item, i) =>
-        new Placed(item, pair.Key.Model, pair.Value.Node.Transforms is { } t && i < t.Length ? t[i] : ModelLibrary.Placement(item), pair.Value.Node.Bounds, pair.Value.Node.ModelReady)));
+        new Placed(item, pair.Key.Model, pair.Value.Handle.Transforms is { } t && i < t.Length ? t[i] : ModelLibrary.Placement(item), pair.Value.Handle.Bounds, pair.Value.Handle.ModelReady)));
 
     /// <summary>
     /// Hide/free batches and clear ownership on map/client changes. ModelLibrary still owns the
@@ -104,7 +104,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
     /// </summary>
     public void Clear()
     {
-        batches.FreeAll(b => b.Node);
+        batches.FreeAll(b => b.Handle.Node);
         ownership.Clear();
     }
 
@@ -119,7 +119,7 @@ public sealed class WorldObjectScene(Node3D root, ModelLibrary library)
             var key = (batch.Tile, new ModelKey(batch.Path, DoodadSet: batch.DoodadSet));
             if (batches.ContainsKey(key))
             {
-                batches.Free(key, b => b.Node);
+                batches.Free(key, b => b.Handle.Node);
             }
 
             var items = ownership.Items(batch);

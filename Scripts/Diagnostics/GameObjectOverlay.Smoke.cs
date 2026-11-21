@@ -9,7 +9,7 @@ public partial class GameObjectOverlay
     /// <summary>The nearest spawn whose native model is ready, so its drawn transform can be checked.</summary>
     public GameObjectSpawn? SmokeTarget(Vector3 from)
     {
-        var ready = batches.Values.Where(b => b.Node.ModelReady).SelectMany(b => b.Guids).ToHashSet();
+        var ready = batches.Values.Where(b => b.Handle.ModelReady).SelectMany(b => b.Guids).ToHashSet();
         return records.Where(s => ready.Contains(s.Guid)).OrderBy(s => ViewPosition(Effective(s)).DistanceSquaredTo(from)).FirstOrDefault();
     }
 
@@ -28,7 +28,7 @@ public partial class GameObjectOverlay
             int index = Array.IndexOf(batch.Guids, guid);
             if (index >= 0)
             {
-                return batch.Node.Transforms![index].Origin;
+                return batch.Handle.Transforms![index].Origin;
             }
         }
 

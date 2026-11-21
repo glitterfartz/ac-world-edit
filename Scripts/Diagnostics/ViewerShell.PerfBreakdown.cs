@@ -108,7 +108,7 @@ public partial class ViewerShell
     static DirectionalLight3D? FindSun(Node root) => Descendants(root).OfType<DirectionalLight3D>().FirstOrDefault();
 
     /// <summary>Scene nodes grouped by what they draw. Each node is toggled with <c>Visible</c>.</summary>
-    (List<Category> Categories, List<ModelInstance> Wmos) CollectCategories()
+    (List<Category> Categories, List<Node3D> Wmos) CollectCategories()
     {
         var terrain = new List<Node3D>();
         var liquid = new List<Node3D>();
@@ -120,17 +120,17 @@ public partial class ViewerShell
             }
         }
 
-        var wmos = new List<ModelInstance>();
+        var wmos = new List<Node3D>();
         var shell = new List<Node3D>();
         var embedded = new List<Node3D>();
         var adt = new List<Node3D>();
-        foreach (var model in GetChildren().OfType<ModelInstance>())
+        foreach (var model in GetChildren().OfType<Node3D>().Where(ModelHandle.IsModelNode))
         {
-            if (AssetRef.IsWmo(model.Key.Path))
+            if (ModelHandle.IsWmoNode(model))
             {
                 wmos.Add(model);
                 shell.AddRange(model.GetChildren().OfType<GeometryInstance3D>());
-                embedded.AddRange(model.GetChildren().OfType<ModelInstance>());
+                embedded.AddRange(model.GetChildren().OfType<Node3D>().Where(ModelHandle.IsModelNode));
             }
             else
             {
@@ -139,14 +139,14 @@ public partial class ViewerShell
         }
 
         var markers = new List<Node3D>();
-        var creatureModels = creatures.GetChildren().OfType<ModelInstance>().Cast<Node3D>().ToList();
-        var objectModels = gameObjects.GetChildren().OfType<ModelInstance>().Cast<Node3D>().ToList();
+        var creatureModels = creatures.GetChildren().OfType<Node3D>().Where(ModelHandle.IsModelNode).ToList();
+        var objectModels = gameObjects.GetChildren().OfType<Node3D>().Where(ModelHandle.IsModelNode).ToList();
         foreach (var overlay in new Node[] { creatures, gameObjects })
         {
-            markers.AddRange(overlay.GetChildren().OfType<Node3D>().Where(n => n is not ModelInstance));
+            markers.AddRange(overlay.GetChildren().OfType<Node3D>().Where(n => !ModelHandle.IsModelNode(n)));
         }
 
-        var skyModels = Descendants(sky).OfType<ModelInstance>().Cast<Node3D>().ToList();
+        var skyModels = Descendants(sky).OfType<Node3D>().Where(ModelHandle.IsModelNode).ToList();
         return ([
             new("terrain", terrain), new("liquid", liquid), new("wmoShell", shell), new("wmoDoodads", embedded),
             new("adtDoodads", adt), new("creatureModels", creatureModels), new("gameObjectModels", objectModels),
@@ -217,7 +217,7 @@ public partial class ViewerShell
         {
             int surfaces = w.GetChildren().OfType<GeometryInstance3D>().Sum(g => g is MultiMeshInstance3D { Multimesh.Mesh: { } mesh } ? mesh.GetSurfaceCount() : 0);
             long doodads = Descendants(w).OfType<MultiMeshInstance3D>().Sum(mm => (long)(mm.Multimesh?.InstanceCount ?? 0));
-            return (w.Key.Path, Placements: w.Transforms?.Length ?? 1, Surfaces: surfaces, Doodads: doodads);
+            return (Path: ModelHandle.ModelPath(w), Placements: models.HandleFor(w)?.Transforms?.Length ?? 1, Surfaces: surfaces, Doodads: doodads);
         }).OrderByDescending(t => (long)t.Surfaces * t.Placements + t.Doodads).Take(8);
         foreach (var t in top)
         {

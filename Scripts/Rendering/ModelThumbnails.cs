@@ -39,7 +39,7 @@ public sealed partial class ModelThumbnails : Node, IThumbnailSource
         public readonly ModelKey Key = key;
         public readonly List<Action<Texture2D>> Ready = [];
         public Node3D? Holder;
-        public ModelInstance? Instance;
+        public ModelHandle? Instance;
         public double Age;
     }
 
@@ -208,7 +208,7 @@ public sealed partial class ModelThumbnails : Node, IThumbnailSource
         foreach (var job in active.ToArray())
         {
             job.Age += delta;
-            if (job.Instance == null || !IsInstanceValid(job.Instance) || models.HasFailed(job.Key))
+            if (job.Instance == null || !IsInstanceValid(job.Instance.Node) || models.HasFailed(job.Key))
             {
                 Finish(job, null);
             }

@@ -22,7 +22,7 @@ public partial class GameObjectOverlay : RegionOverlay
     public ulong? SelectedGuid => selected;
     /// <summary>The selected spawn, when it is loaded in the current region.</summary>
     public GameObjectSpawn? SelectedSpawn => selected.HasValue && lookup.TryGetValue(selected.Value, out var spawn) ? spawn : null;
-    public int ModelObjectCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
+    public int ModelObjectCount => batches.Values.Where(b => b.Handle.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedObjectCount { get; private set; }
     public bool IsLoading => query.IsLoading;
 
@@ -31,7 +31,7 @@ public partial class GameObjectOverlay : RegionOverlay
     IReadOnlyList<GameObjectSpawn> records = [];
     readonly Dictionary<ulong, GameObjectSpawn> lookup = [];
     readonly Dictionary<uint, string?> paths = [];
-    readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> batches = [];
+    readonly Dictionary<ModelKey, (ModelHandle Handle, ulong[] Guids)> batches = [];
     readonly Dictionary<ulong, MeshInstance3D> fallbacks = [];
     readonly Dictionary<ulong, Label3D> names = [];
     readonly BoxMesh fallbackMesh = new()
@@ -94,7 +94,7 @@ public partial class GameObjectOverlay : RegionOverlay
         if (hard)
         {
             AdmittedObjectCount = 0;
-            batches.FreeAll(b => b.Node);
+            batches.FreeAll(b => b.Handle.Node);
             fallbacks.FreeAll(n => n);
             names.FreeAll(n => n);
             paths.Clear();
@@ -243,7 +243,7 @@ public partial class GameObjectOverlay : RegionOverlay
                 continue;
             }
 
-            batches.Free(pair.Key, b => b.Node);
+            batches.Free(pair.Key, b => b.Handle.Node);
         }
 
         foreach (var pair in groups)
@@ -255,7 +255,7 @@ public partial class GameObjectOverlay : RegionOverlay
                 batches[pair.Key] = (Models.Attach(this, pair.Key, pair.Value.Select(guid => ModelTransform(Effective(lookup[guid]))).ToArray(), category), pair.Value.ToArray());
             }
 
-            if (!batches[pair.Key].Node.ModelReady)
+            if (!batches[pair.Key].Handle.ModelReady)
             {
                 foreach (ulong guid in pair.Value)
                 {

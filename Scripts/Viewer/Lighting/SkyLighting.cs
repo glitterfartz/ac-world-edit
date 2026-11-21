@@ -20,7 +20,7 @@ public sealed partial class SkyLighting : Node3D
     Node3D starsAnchor = null!;
     MeshInstance3D cloudDome = null!;
     ShaderMaterial cloudMaterial = null!;
-    ModelInstance? starsInstance;
+    ModelHandle? starsInstance;
     float appliedStarFade = -1;
     readonly (MeshInstance3D Quad, ShaderMaterial Material)[] glares = new (MeshInstance3D, ShaderMaterial)[2];
     bool hasSunGlare, hasMoonGlare;
@@ -32,7 +32,7 @@ public sealed partial class SkyLighting : Node3D
     ShaderMaterial shaftMaterial = null!;
     readonly ModelLibrary models;
     readonly Node3D skyboxAnchor;
-    ModelInstance? skyboxInstance;
+    ModelHandle? skyboxInstance;
     string? skyboxPath;
     ClientLighting? table;
     LightRegion[] mapRegions = [];
@@ -60,7 +60,7 @@ public sealed partial class SkyLighting : Node3D
     public float SunShadowStrength { get; private set; }
 
     public string? SkyboxPath => skyboxPath;
-    public bool SkyboxReady => skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance) && skyboxInstance.ModelReady;
+    public bool SkyboxReady => skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance.Node) && skyboxInstance.ModelReady;
     public Aabb? SkyboxBounds => SkyboxReady ? skyboxInstance!.Bounds : null;
 
     /// <summary>

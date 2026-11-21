@@ -14,14 +14,14 @@ internal sealed class CreatureModelView(Node3D owner)
 {
     readonly HashSet<ulong> admitted = [];
     readonly Dictionary<uint, CreatureAppearance?> appearances = [];
-    readonly Dictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> batches = [];
+    readonly Dictionary<ModelKey, (ModelHandle Handle, ulong[] Guids)> batches = [];
     /// <summary>Animation clips the client's models actually have, by display: seat and flight
     /// animations are only picked when the model lists them, never blind by name.</summary>
     readonly Dictionary<uint, ushort[]> displayAnims = [];
     long updated;
 
-    public IReadOnlyDictionary<ModelKey, (ModelInstance Node, ulong[] Guids)> Batches => batches;
-    public int ReadyCount => batches.Values.Where(b => b.Node.ModelReady).Sum(b => b.Guids.Length);
+    public IReadOnlyDictionary<ModelKey, (ModelHandle Handle, ulong[] Guids)> Batches => batches;
+    public int ReadyCount => batches.Values.Where(b => b.Handle.ModelReady).Sum(b => b.Guids.Length);
     public int AdmittedCount => admitted.Count;
 
     /// <summary>Whether this marker's model was a candidate in the last pass (it is inside the preview range).</summary>
@@ -43,7 +43,7 @@ internal sealed class CreatureModelView(Node3D owner)
     /// <summary>Free every batch and cached appearance; the markers themselves are owned elsewhere.</summary>
     public void Clear()
     {
-        batches.FreeAll(b => b.Node);
+        batches.FreeAll(b => b.Handle.Node);
         appearances.Clear();
         displayAnims.Clear();
         elevations.Clear();
@@ -76,7 +76,7 @@ internal sealed class CreatureModelView(Node3D owner)
     {
         foreach (var batch in batches)
         {
-            if (!batch.Value.Node.ModelReady)
+            if (!batch.Value.Handle.ModelReady)
             {
                 continue;
             }
@@ -93,7 +93,7 @@ internal sealed class CreatureModelView(Node3D owner)
                     : marker.Spawn.DisplayId;
                 if (display != 0)
                 {
-                    displayAnims[display] = batch.Value.Node.AvailableAnimations;
+                    displayAnims[display] = batch.Value.Handle.AvailableAnimations;
                 }
             }
         }
@@ -233,17 +233,17 @@ internal sealed class CreatureModelView(Node3D owner)
 
         // Identical value to the shader's creature_clock (float seconds): same frame, same phase.
         double now = ClientShaderGlobals.CreatureClockSeconds;
-        var riders = new Dictionary<ulong, (ModelInstance Node, int Index)>();
+        var riders = new Dictionary<ulong, (ModelHandle Handle, int Index)>();
         foreach (var batch in batches)
         {
-            if (batch.Key.Extra == "mount" || !batch.Value.Node.ModelReady)
+            if (batch.Key.Extra == "mount" || !batch.Value.Handle.ModelReady)
             {
                 continue;
             }
 
             for (int i = 0; i < batch.Value.Guids.Length; i++)
             {
-                riders[batch.Value.Guids[i]] = (batch.Value.Node, i);
+                riders[batch.Value.Guids[i]] = (batch.Value.Handle, i);
             }
         }
 
@@ -254,7 +254,7 @@ internal sealed class CreatureModelView(Node3D owner)
 
         foreach (var batch in batches)
         {
-            if (batch.Key.Extra != "mount" || !batch.Value.Node.ModelReady || batch.Value.Node.Transforms == null)
+            if (batch.Key.Extra != "mount" || !batch.Value.Handle.ModelReady || batch.Value.Handle.Transforms == null)
             {
                 continue;
             }
@@ -278,7 +278,7 @@ internal sealed class CreatureModelView(Node3D owner)
                     continue;
                 }
 
-                rider.Node.SetPlacement(rider.Index, FollowTransform(batch.Value.Node.Transforms[i], marker, follow, now));
+                rider.Handle.SetPlacement(rider.Index, FollowTransform(batch.Value.Handle.Transforms[i], marker, follow, now));
             }
         }
     }
@@ -379,7 +379,7 @@ internal sealed class CreatureModelView(Node3D owner)
                 }
             }
 
-            batches.Free(batch.Key, b => b.Node);
+            batches.Free(batch.Key, b => b.Handle.Node);
         }
 
         foreach (var group in groups)
@@ -401,7 +401,7 @@ internal sealed class CreatureModelView(Node3D owner)
             if (index >= 0)
             {
                 bool mount = batch.Key.Extra == "mount";
-                batch.Value.Node.SetPlacement(index, ModelTransform(marker, mount ? mountScales.GetValueOrDefault(guid, DisplayScale(marker.Spawn)) : DisplayScale(marker.Spawn), mount ? Vector3.Zero : elevations.GetValueOrDefault(guid)));
+                batch.Value.Handle.SetPlacement(index, ModelTransform(marker, mount ? mountScales.GetValueOrDefault(guid, DisplayScale(marker.Spawn)) : DisplayScale(marker.Spawn), mount ? Vector3.Zero : elevations.GetValueOrDefault(guid)));
             }
         }
     }

@@ -60,9 +60,9 @@ public sealed partial class SkyLighting
     /// </summary>
     public void SetStarsModel(string? path)
     {
-        if (starsInstance != null && GodotObject.IsInstanceValid(starsInstance))
+        if (starsInstance != null && GodotObject.IsInstanceValid(starsInstance.Node))
         {
-            starsInstance.QueueFree();
+            starsInstance.Node.QueueFree();
         }
 
         starsInstance = path == null ? null : models.Attach(starsAnchor, new ModelKey(path, Skybox: true));
@@ -73,7 +73,7 @@ public sealed partial class SkyLighting
     void ApplyStars(float fade, Camera3D camera)
     {
         starsAnchor.Position = camera.Position;
-        bool show = starsInstance != null && GodotObject.IsInstanceValid(starsInstance) && skyboxPath == null && fade > 0.01f;
+        bool show = starsInstance != null && GodotObject.IsInstanceValid(starsInstance.Node) && skyboxPath == null && fade > 0.01f;
         starsAnchor.Visible = show;
         if (!show || starsInstance!.ModelReady == false || Math.Abs(fade - appliedStarFade) < 0.004f)
         {
@@ -81,7 +81,7 @@ public sealed partial class SkyLighting
         }
 
         appliedStarFade = fade;
-        foreach (var child in starsInstance.FindChildren("*", "GeometryInstance3D", true, false))
+        foreach (var child in starsInstance.Node.FindChildren("*", "GeometryInstance3D", true, false))
         {
             ((GeometryInstance3D)child).Transparency = 1f - fade;
         }
@@ -195,9 +195,9 @@ public sealed partial class SkyLighting
         }
 
         skyboxPath = path;
-        if (skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance))
+        if (skyboxInstance != null && GodotObject.IsInstanceValid(skyboxInstance.Node))
         {
-            skyboxInstance.QueueFree();
+            skyboxInstance.Node.QueueFree();
         }
 
         skyboxInstance = path == null ? null : models.Attach(skyboxAnchor, new ModelKey(path, Skybox: true));

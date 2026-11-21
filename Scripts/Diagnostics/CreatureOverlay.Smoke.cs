@@ -10,7 +10,7 @@ namespace ACWorldEdit;
 /// </summary>
 public partial class CreatureOverlay
 {
-    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelView.Batches.Any(b => b.Key.Animation == previewAnimation && b.Value.Node.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
+    public bool PreviewAnimationReady => selectedGuid.HasValue && markers.TryGetValue(selectedGuid.Value, out var marker) && !marker.Body.Visible && modelView.Batches.Any(b => b.Key.Animation == previewAnimation && b.Value.Handle.ModelReady && b.Value.Guids.Contains(selectedGuid.Value));
 
     public ulong? SelectedListGuid
     {
@@ -121,7 +121,7 @@ public partial class CreatureOverlay
         foreach (var batch in modelView.Batches.Values)
         {
             int i = Array.IndexOf(batch.Guids, guid);
-            if (i >= 0 && batch.Node.Transforms![i].Origin.DistanceTo(moved) > 0.01f)
+            if (i >= 0 && batch.Handle.Transforms![i].Origin.DistanceTo(moved) > 0.01f)
             {
                 return false;
             }
@@ -174,7 +174,7 @@ public partial class CreatureOverlay
     {
         int count = 0;
         float tallest = 0;
-        foreach (var batch in modelView.Batches.Values.Where(b => b.Node.ModelReady))
+        foreach (var batch in modelView.Batches.Values.Where(b => b.Handle.ModelReady))
         {
             foreach (ulong guid in batch.Guids)
             {
@@ -184,7 +184,7 @@ public partial class CreatureOverlay
                 }
 
                 float scale = modelView.DisplayScale(marker.Spawn);
-                float top = batch.Node.Bounds.End.Y * scale;
+                float top = batch.Handle.Bounds.End.Y * scale;
                 if (marker.Label.Position.Y <= top)
                 {
                     GD.PushError($"LABEL_INSIDE_MODEL guid={guid} label={marker.Label.Position.Y} top={top}");

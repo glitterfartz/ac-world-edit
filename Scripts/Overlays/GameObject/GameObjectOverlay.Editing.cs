@@ -137,7 +137,7 @@ public partial class GameObjectOverlay : IPlacementEditor
             int index = Array.IndexOf(batch.Guids, spawn.Guid);
             if (index >= 0)
             {
-                batch.Node.SetPlacement(index, ModelTransform(spawn));
+                batch.Handle.SetPlacement(index, ModelTransform(spawn));
             }
         }
 

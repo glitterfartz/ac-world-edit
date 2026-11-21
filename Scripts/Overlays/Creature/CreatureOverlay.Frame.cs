@@ -149,7 +149,7 @@ public partial class CreatureOverlay
 
         foreach (var batch in modelView.Batches.Values)
         {
-            if (!batch.Node.ModelReady)
+            if (!batch.Handle.ModelReady)
             {
                 continue;
             }
@@ -159,7 +159,7 @@ public partial class CreatureOverlay
                 if (markers.TryGetValue(guid, out var marker))
                 {
                     marker.Body.Visible = false;
-                    marker.Label.Position = new(0, modelView.LabelHeight(marker, batch.Node.Bounds), 0);
+                    marker.Label.Position = new(0, modelView.LabelHeight(marker, batch.Handle.Bounds), 0);
                 }
             }
 
@@ -167,7 +167,7 @@ public partial class CreatureOverlay
             {
                 animation.Clear();
                 int selectedIndex = 0;
-                foreach (ushort id in batch.Node.AvailableAnimations)
+                foreach (ushort id in batch.Handle.AvailableAnimations)
                 {
                     animation.AddItem($"{Models?.Catalog?.AnimationNames.GetValueOrDefault(id) ?? "Animation"} ({id})", id);
                     if (id == previewAnimation)
@@ -182,7 +182,7 @@ public partial class CreatureOverlay
                 }
 
                 animation.Select(selectedIndex);
-                animation.Disabled = batch.Node.AvailableAnimations.Length <= 1;
+                animation.Disabled = batch.Handle.AvailableAnimations.Length <= 1;
                 animationListGuid = selectedGuid;
             }
         }
