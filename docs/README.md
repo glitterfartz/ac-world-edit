@@ -8,8 +8,9 @@ introduction; this folder is for people changing the code.
 | Page | Covers | Update it when |
 |---|---|---|
 | [architecture/overview.md](architecture/overview.md) | Layers, dependency rules, threading, repository layout, glossary | A layer, folder or thread model changes |
+| [architecture/client-libraries.md](architecture/client-libraries.md) | The reusable `src/` libraries (`Core`, `ClientData`, `ClientRender`), the `WorldView` API and the consumer checklist | A library boundary, public API or packaging step changes |
 | [architecture/client-data.md](architecture/client-data.md) | `src/ACWorldEdit.ClientData/Assets`: MPQ/CASC, formats, terrain, models, retail tables, navigation readers | A parser, format or client-side catalog changes |
-| [architecture/viewer-runtime.md](architecture/viewer-runtime.md) | `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags | A runtime system, window or smoke workflow changes |
+| [architecture/viewer-runtime.md](architecture/viewer-runtime.md) | `Scripts/Viewer`, `src/ACWorldEdit.ClientRender`, `Overlays`, `Ui`, `Diagnostics`, smoke flags | A runtime system, window or smoke workflow changes |
 | [architecture/rendering.md](architecture/rendering.md) | The retail shader port: progress, per-material notes, inferred inputs | A shader, material route or lighting pass changes |
 | [architecture/editing-and-export.md](architecture/editing-and-export.md) | `Scripts/Data` and `Foundation`: drafts, rules, SQL export | A table read, draft type, rule or export statement changes |
 | [architecture/tool-windows.md](architecture/tool-windows.md) | The `Window`-based tool window template (`ScriptEditorWindow`), layout and toolbar rules, key routing, dialogs, testing and the regressions to avoid | A window pattern, layout rule or UI regression changes |

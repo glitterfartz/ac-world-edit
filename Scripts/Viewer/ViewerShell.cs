@@ -27,6 +27,7 @@ public partial class ViewerShell : Node3D
     // Terrain ownership (wanted/loaded/failed/building) lives in the streamer; these forward for the
     // existing diagnostics and HUD readers without copying state.
     TerrainStreamer streamer = null!;
+    WorldView view = null!;
     Dictionary<TileKey, Node3D> loaded => streamer.Loaded;
     Dictionary<TileKey, uint[]> chunkAreas => streamer.ChunkAreas;
     Dictionary<TileKey, TerrainHeights> terrainHeights => streamer.TerrainHeights;
@@ -164,9 +165,6 @@ public partial class ViewerShell : Node3D
         BuildWorldNodes();
         BuildOverlays();
         input = new ViewerInput(this);
-        streamer = new TerrainStreamer(this, renderer, objects, camera,
-            new RegionOverlaySink(() => databaseEnabled, () => currentMapId, () => overlays),
-            () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
         viewerSession = new ViewerSession(this);
         BuildTools();
     }
@@ -174,12 +172,6 @@ public partial class ViewerShell : Node3D
     /// <summary>The renderer, the placement root, the camera and the sky.</summary>
     void BuildWorldNodes()
     {
-        renderer = new TerrainRenderer();
-        models = new ModelLibrary();
-        // Placements hang under their own node so the world scene is not the shell's direct child.
-        var objectRoot = new Node3D { Name = "Objects" };
-        AddChild(objectRoot);
-        objects = new WorldObjectScene(objectRoot, models);
         camera = new Camera3D
         {
             Name = "Camera",
@@ -189,18 +181,18 @@ public partial class ViewerShell : Node3D
             Current = true
         };
         AddChild(camera);
-        sky = new SkyLighting(models);
-        sky.LightPlacements = () => objects.Placements();
-        AddChild(sky.Root);
-        // The cascade pass owns its own casters and viewports; both scenery owners register there.
-        casters = new ShadowCasterScene();
-        renderer.Shadows = casters;
-        models.Shadows = casters;
-        shadows = new SunShadows(casters, GetViewport().World3D);
-        AddChild(shadows.Root);
-        shadows.SetQuality(shadowQuality);
-        // Proxies live on their own layers; the normal view must never draw one.
-        camera.CullMask = ShadowCasterScene.MainCameraMask;
+        // The library owns the scene graph and the streaming systems; the shell keeps direct
+        // references for input, HUD and diagnostics.
+        view = new WorldView(this, camera,
+            new RegionOverlaySink(() => databaseEnabled, () => currentMapId, () => overlays),
+            shadowQuality, () => cameraFocused, text => message = text, PerfTileScheduled, PerfTilePublished);
+        renderer = view.Renderer;
+        models = view.Models;
+        objects = view.Objects;
+        sky = view.Sky;
+        casters = view.Casters;
+        shadows = view.Shadows;
+        streamer = view.Streamer;
     }
 
     /// <summary>The five database-backed layers, in draw order.</summary>

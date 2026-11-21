@@ -42,6 +42,7 @@ public partial class ViewerShell : IViewerSessionHost
     Camera3D IViewerSessionHost.Camera => camera;
     SkyLighting IViewerSessionHost.Sky => sky;
     ModelLibrary IViewerSessionHost.Models => models;
+    WorldView IViewerSessionHost.WorldView => view;
     TerrainStreamer IViewerSessionHost.Streamer => streamer;
     NavigationOverlay IViewerSessionHost.Navigation => navigation;
     WorldObjectScene IViewerSessionHost.Objects => objects;

@@ -41,6 +41,7 @@ public interface IViewerSessionHost
     Camera3D Camera { get; }
     SkyLighting Sky { get; }
     ModelLibrary Models { get; }
+    WorldView WorldView { get; }
     TerrainStreamer Streamer { get; }
     NavigationOverlay Navigation { get; }
     WorldObjectScene Objects { get; }
@@ -131,7 +132,7 @@ public sealed class ViewerSession
 		host.Store = null;
 		await host.Streamer.WaitForPendingAsync();
 		host.Sky.SetStarsModel(null);
-		await host.Models.SetStore(null);
+		await host.WorldView.SetClientAsync(null);
 		old?.Dispose();
 	}
 
@@ -157,7 +158,7 @@ public sealed class ViewerSession
 		}
 
 		host.MapsSelect.Clear();
-		await host.Models.SetStore(host.Store, result.Creatures, result.GameObjects);
+		await host.WorldView.SetClientAsync(result);
 		host.Sky.SetStarsModel(host.Store.Exists(StarsModelPath) ? StarsModelPath : null);
 		host.Thumbnails?.Reset(host.ThumbnailDirectory(kind));
 		int selected = FillMapList();

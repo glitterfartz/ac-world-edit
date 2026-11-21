@@ -9,6 +9,7 @@ Nested instructions: `Foundation/AGENTS.md`, `Scripts/AGENTS.md` and `Tests/AGEN
 Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the relevant page before working in an area:
 
 - `docs/architecture/overview.md`: overview, layers and dependency rules, threading, repository layout, glossary.
+- `docs/architecture/client-libraries.md`: the reusable `src/` libraries (`Core`, `ClientData`, `ClientRender`), the `WorldView` API and what a consuming client must set up.
 - `docs/architecture/client-data.md`: `src/ACWorldEdit.ClientData/Assets` (MPQ/CASC, formats, terrain, models, retail, listfile, navigation readers).
 - `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `src/ACWorldEdit.ClientRender`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
 - `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
