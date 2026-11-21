@@ -8,7 +8,7 @@ introduction; this folder is for people changing the code.
 | Page | Covers | Update it when |
 |---|---|---|
 | [architecture/overview.md](architecture/overview.md) | Layers, dependency rules, threading, repository layout, glossary | A layer, folder or thread model changes |
-| [architecture/client-data.md](architecture/client-data.md) | `Scripts/Assets`: MPQ/CASC, formats, terrain, models, retail tables, navigation readers | A parser, format or client-side catalog changes |
+| [architecture/client-data.md](architecture/client-data.md) | `src/ACWorldEdit.ClientData/Assets`: MPQ/CASC, formats, terrain, models, retail tables, navigation readers | A parser, format or client-side catalog changes |
 | [architecture/viewer-runtime.md](architecture/viewer-runtime.md) | `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags | A runtime system, window or smoke workflow changes |
 | [architecture/rendering.md](architecture/rendering.md) | The retail shader port: progress, per-material notes, inferred inputs | A shader, material route or lighting pass changes |
 | [architecture/editing-and-export.md](architecture/editing-and-export.md) | `Scripts/Data` and `Foundation`: drafts, rules, SQL export | A table read, draft type, rule or export statement changes |

@@ -2,7 +2,7 @@
 
 Two projects. The xUnit suite is the fast default; the gdUnit4 suite runs inside Godot and covers UI flows.
 
-- `ACWorldEdit.Tests` — xUnit, `net8.0`. Compiles `Scripts/Assets/**` and `Scripts/Data/**` directly and references `Foundation`; folders mirror the layers (`Assets/`, `Data/`, `Drafts/`, `Sql/`, `Smart/`, `Db/`, `Corpus/`, `Support/`).
+- `ACWorldEdit.Tests` — xUnit, `net8.0`. References `src/ACWorldEdit.ClientData`, `src/ACWorldEdit.Core` and `Foundation`, and compiles `Scripts/Data/**` directly; folders mirror the layers (`Assets/`, `Data/`, `Drafts/`, `Sql/`, `Smart/`, `Db/`, `Corpus/`, `Support/`).
 - `ACWorldEdit.GdTests` — gdUnit4, references `ACWorldEdit.csproj`, needs `GODOT_BIN`. Every suite that touches Godot natives carries `[RequireGodotRuntime]`; without it the host can crash instead of failing the test.
 
 ## Runs

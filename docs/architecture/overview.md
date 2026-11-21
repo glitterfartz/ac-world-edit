@@ -15,8 +15,8 @@ one SQL file for sharing.
 
 Detail pages:
 
-- [Client data and asset pipeline](client-data.md): `Scripts/Assets`
-- [Viewer runtime](viewer-runtime.md): `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`
+- [Client data and asset pipeline](client-data.md): `src/ACWorldEdit.ClientData/Assets`
+- [Viewer runtime](viewer-runtime.md): `Scripts/Viewer`, `src/ACWorldEdit.ClientRender`, `Overlays`, `Ui`, `Diagnostics`
 - [Rendering and the retail shader port](rendering.md): `Shaders/`, materials, lighting passes
 - [Editing, data access and change history](editing-and-export.md): `Scripts/Data` and `Foundation`
 - [Testing and tooling](testing-and-tooling.md): `Tests`, `Tools`, `launch_viewer.py`, CI
@@ -60,13 +60,13 @@ flowchart TB
 
     subgraph Godot_app["Godot app (Scripts/)"]
         direction TB
-        viewer["Viewer<br/>ViewerShell partials, ClientServices, Sky, Minimap"]
-        render["Rendering<br/>TerrainRenderer, ModelLibrary, WorldObjectScene,<br/>LiquidRendering, thumbnails"]
+        viewer["Viewer<br/>ViewerShell partials, session/input, Minimap"]
+        render["ClientRender (library)<br/>TerrainRenderer, ModelLibrary,<br/>WorldObjectScene, LiquidRendering"]
         overlays["Overlays<br/>Creature, GameObject, Graveyard, AreaTrigger,<br/>Waypoint, Navigation, Gizmo, PlacementTool"]
         ui["Ui<br/>Properties shell, editors, sidebar, content browser,<br/>spawn inspector, visibility preview, pickers, script editor"]
         diag["Diagnostics<br/>smoke workflows, CLI flags"]
         data["Data (Godot-free)<br/>WorldDatabase, AcworldStore, WorldApplier, IDBSource, per-dialect sources,<br/>read helpers, ScriptWorkspace/ScriptManifest/ScriptExportService"]
-        assets["Assets (Godot-free)<br/>Archives, Formats, Models, World, Retail, Client, Navigation"]
+        assets["ClientData (library, Godot-free)<br/>Archives, Formats, Models, World, Retail, Client"]
     end
 
     subgraph Shared_logic["Foundation (Godot-free)"]
@@ -113,27 +113,30 @@ flowchart TB
     assets --> casc
     data --> mysql
     data --> scripting
-    tests -. links source .-> assets
+    tests --> assets
     tests -. links source .-> data
     tests --> fdn
     gd --> app
     app --> fdn
 ```
 
-Solid arrows are compile or runtime dependencies. Dotted arrows are source-linked compiles: the test
-projects include `Scripts/Assets/**` and `Scripts/Data/**` directly, so those two folders must stay free
-of Godot types. In the other direction, `ACWorldEdit.csproj` explicitly `Compile Remove`s `Tests/`,
-`Foundation/` and `artifacts/` so they are not built into the Godot assembly; Foundation reaches the app
-only as a project reference.
+Solid arrows are compile or runtime dependencies. The reusable stack is three projects: `src/ACWorldEdit.Core`
+(world coordinates), `src/ACWorldEdit.ClientData` (Godot-free archives/formats/models/terrain/lighting) and
+`src/ACWorldEdit.ClientRender` (the Godot renderer, streamer and sky, which declares no Godot script classes).
+The app references all three; the xUnit project references Core and ClientData and still source-links
+`Scripts/Data/**`, the one Godot-free folder left under `Scripts/`. In the other direction, `ACWorldEdit.csproj`
+explicitly `Compile Remove`s `Tests/`, `Foundation/`, `src/` and `artifacts/` so they are not built into the Godot assembly.
 
 ## Layers and dependency rules
 
 | Layer | Location | May depend on | Must not depend on |
 |---|---|---|---|
 | Foundation | `Foundation/` | base .NET only | Godot, MySQL, file formats, the app |
-| Assets | `Scripts/Assets/` | Foundation, DBCD, SharpZipLib, CascLib | Godot, `Scripts/Data`, `Scripts/Viewer` |
-| Data | `Scripts/Data/` | Foundation, MySqlConnector, Assets types | Godot, `Scripts/Viewer` |
-| Rendering, Overlays, Ui, Viewer, Diagnostics | `Scripts/` | everything above, plus Godot | (top of the stack) |
+| Core | `src/ACWorldEdit.Core/` | base .NET only | Godot, archives, the app |
+| ClientData | `src/ACWorldEdit.ClientData/` | Core, Foundation, DBCD, SharpZipLib, CascLib | Godot, `Scripts/Data`, the app |
+| ClientRender | `src/ACWorldEdit.ClientRender/` | Core, ClientData, Godot | the app; no Godot script classes |
+| Data | `Scripts/Data/` | Foundation, MySqlConnector, ClientData types | Godot, `Scripts/Viewer`, `Scripts/Ui` |
+| Overlays, Ui, Viewer, Diagnostics | `Scripts/` | everything above, plus Godot | (top of the stack) |
 
 Rules that follow from the layering:
 
@@ -145,7 +148,7 @@ Rules that follow from the layering:
 - **Parsers do not branch on client kind.** `ClientKind` (`Wrath335` or `Retail`) is passed to the
   source abstraction; parsers consume `IClientFiles` and ask it for bytes.
 - **Godot views of pure data stay in the viewer.** The lighting model parses and decides in
-  `Scripts/Assets/World`; `Scripts/Viewer/Lighting/LightVisuals.cs` exposes its Godot-typed views as
+  `src/ACWorldEdit.ClientData/Assets/World`; `src/ACWorldEdit.ClientRender/Lighting/LightVisuals.cs` exposes its Godot-typed views as
   extension methods (`LightBand.At`, `LightRegion.ViewPosition`), because a partial type cannot span
   assemblies. `AreaLookup.TryLoadWrath` loads in the asset layer with a warning callback.
 - **Per-client side data is attached to the source, not passed around.** `RetailLiquids` and
@@ -197,14 +200,15 @@ into one SQL file for sharing.
 
 | Path | Contents |
 |---|---|
-| `Scripts/Assets/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs and generated MMaps (`Navigation/`) |
+| `src/ACWorldEdit.Core/` | `WorldCoordinates`, `Point3`, `WorldPose`, `PoseText` — the server/view coordinate math both libraries need |
+| `src/ACWorldEdit.ClientData/` | Godot-free parsers for MPQ, CASC, BLP, DBC/DB2, M2, WMO, ADT, WDT, liquids, catalogs and generated MMaps (`Navigation/`), plus `ClientServices` (client open) |
+| `src/ACWorldEdit.ClientRender/` | Terrain/model/WMO construction, liquid routing, the tile streamer, sky and sun shadows, shader paths and self-registering shader globals |
 | `Scripts/Data/` | MySQL sessions (`WorldDatabase` reads, `AcworldStore` history, `WorldApplier` guarded writes), `IDBSource`, per-dialect sources in `AzerothCore/` (`Ac*Source`) and `TrinityCore/` (`Tc*Source`), the `Db*` read helpers, and `Scripting/` (workspace, export manifest and export service) |
-| `Scripts/Viewer/` | `ViewerShell` partial classes, `ClientServices`, sky and lighting, minimap, picking, teleports |
-| `Scripts/Rendering/` | Terrain, model, WMO and sky construction; liquid material routing; model thumbnails; shader globals |
+| `Scripts/Viewer/` | `ViewerShell` partial classes, session and input, minimap, picking, teleports |
 | `Scripts/Overlays/` | One folder per overlay family (`Region`, `Placement`, `Creature`, `GameObject`, `Graveyard`, `Waypoint`, `AreaTrigger`, `Navigation`); the creature collaborators and the waypoint path views live beside their layer |
 | `Scripts/Ui/` | Shared toolkit in `Framework/`, scene panels in `Scene/`, settings in `Settings/`, the creature/quest/behavior/properties editors in their feature folders, the visual scripting editor in `Scripting/`, and every `Ac*` / `Tc*` page in `AzerothCore/` / `TrinityCore/` |
 | `Scripts/Diagnostics/` | Smoke workflows, CLI flag parsing and the F12 diagnostic dump |
-| `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, coordinates, and `Scripting/` (document model, catalog, validation, IR and Lua emission) |
+| `Foundation/` | Drafts and spawn authoring, entity pages and rules, change history and SQL generation, tooltips, and `Scripting/` (document model, catalog, validation, IR and Lua emission) |
 | `Shaders/` | Subfolders by pass: `terrain/`, `model/`, `sky/`, `liquid/` (water, magma and the specialized liquid materials) and `shared/` (`client_lighting`, `client_shadow` and `client_skinning` includes); each stage keeps its `.gdshader`/`.gdshaderinc` and `.uid` beside its siblings |
 | `Tests/` | xUnit suite, gdUnit4 suite, `run_stormlib_checks.py` |
 | `Tools/` | `setup.py` (submodules and native builds), `package.py` (release export), `generate_smart_catalog.py`, `generate_condition_catalog.py`, `generate_script_catalog.py` |

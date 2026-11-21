@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     subgraph Sources["Shared source (Godot-free)"]
-        assets["Scripts/Assets/**"]
+        assets["src/ACWorldEdit.ClientData/Assets/**"]
         data["Scripts/Data/**"]
     end
     fdn["Foundation/ACWorldEdit.Foundation.csproj"]
@@ -23,7 +23,7 @@ flowchart LR
     app -->|ProjectReference| gd
 ```
 
-The dotted links show why `Scripts/Assets` and `Scripts/Data` must stay free of Godot types: the xUnit project compiles those files directly, and they have no Godot reference.
+The dotted links show why `src/ACWorldEdit.ClientData/Assets` and `Scripts/Data` must stay free of Godot types: the xUnit project compiles those files directly, and they have no Godot reference.
 
 ### `Tests/ACWorldEdit.Tests` (xUnit)
 

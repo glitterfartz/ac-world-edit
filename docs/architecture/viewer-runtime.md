@@ -1,6 +1,6 @@
 # Viewer runtime
 
-Covers `Scripts/Viewer/`, `Scripts/Rendering/`, `Scripts/Overlays/`, `Scripts/Ui/`, `Scripts/Diagnostics/` and `Shaders/`. This is the Godot layer. Everything here runs on the main thread except where noted.
+Covers `Scripts/Viewer/`, `src/ACWorldEdit.ClientRender/Rendering/`, `Scripts/Overlays/`, `Scripts/Ui/`, `Scripts/Diagnostics/` and `Shaders/`. This is the Godot layer. Everything here runs on the main thread except where noted.
 
 ## Scene and startup
 

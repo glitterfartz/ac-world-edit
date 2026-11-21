@@ -1,18 +1,20 @@
 # Scripts (the Godot app)
 
-`ACWorldEdit.csproj` builds this tree as one Godot assembly. `Scripts/Assets` and `Scripts/Data` are *also* compiled into the xUnit project, so they must stay free of Godot types; everything else may use Godot.
+`ACWorldEdit.csproj` builds this tree as the Godot app. The reusable halves live in `src/`: `ACWorldEdit.Core` and `ACWorldEdit.ClientData` are Godot-free (the xUnit project references them), and `ACWorldEdit.ClientRender` uses Godot but must not declare Godot script classes (`partial` types deriving from `Node`). `Scripts/Data` is Godot-free and source-linked into the xUnit project; everything else under `Scripts/` may use Godot.
 
 ## Layout and namespaces
 
 | Folder | Namespace | Godot types |
 |---|---|---|
-| `Assets/` | `ACWorldEdit.Assets` | not allowed |
 | `Data/` | `ACWorldEdit.Data` | not allowed |
-| `Viewer/`, `Rendering/`, `Overlays/`, `Ui/`, `Diagnostics/` | `ACWorldEdit` (flat — subfolders add no segment) | allowed |
+| `Viewer/`, `Rendering/` (thumbnails), `Overlays/`, `Ui/`, `Diagnostics/` | `ACWorldEdit` (flat — subfolders add no segment) | allowed |
+| `src/ACWorldEdit.Core/` | `ACWorldEdit` | not allowed |
+| `src/ACWorldEdit.ClientData/` | `ACWorldEdit.Assets`, `ACWorldEdit.ClientData` | not allowed |
+| `src/ACWorldEdit.ClientRender/` | `ACWorldEdit` (flat) | allowed, no script classes |
 
-The Godot views of the pure lighting model are extension methods in `Viewer/Lighting/LightVisuals.cs` (`LightBand.At`, `LightRegion.ViewPosition`); the model itself stays in `Assets/World`.
+The Godot views of the pure lighting model are extension methods in `src/ACWorldEdit.ClientRender/Lighting/LightVisuals.cs` (`LightBand.At`, `LightRegion.ViewPosition`); the model itself stays in `src/ACWorldEdit.ClientData/Assets/World`.
 
-`Assets` must not reference `Data` or `Viewer`; `Data` must not reference `Viewer`. `Assets` and `Data` are the two Godot-free halves that the xUnit project compiles.
+`Scripts/Data` must not reference `Scripts/Viewer` or `Scripts/Ui`; the libraries must never reference the app. `ClientData` and `Core` are the Godot-free halves the xUnit project references, and `Scripts/Data` is the Godot-free source it compiles.
 
 ## Data access
 

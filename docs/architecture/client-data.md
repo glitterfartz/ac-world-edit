@@ -1,6 +1,6 @@
 # Client data and asset pipeline
 
-Covers `Scripts/Assets/`. Everything here is engine-free: it produces plain CPU data (`byte[]`, records, arrays) that the viewer turns into Godot resources. The folder is compiled directly into the test projects, so it must not reference Godot.
+Covers `src/ACWorldEdit.ClientData/Assets/`. Everything here is engine-free: it produces plain CPU data (`byte[]`, records, arrays) that the viewer turns into Godot resources. The library is referenced by the app and the xUnit project, so it must not reference Godot.
 
 ## Source abstraction
 
@@ -42,7 +42,7 @@ classDiagram
 
 Key points:
 
-- `IClientFiles` (`Scripts/Assets/Archives/IClientFiles.cs`) is the only file-access interface. Reads are read-only, thread-safe, and return detached `byte[]`. A missing file throws `FileNotFoundException`; a reference the client cannot resolve throws `NotSupportedException`.
+- `IClientFiles` (`src/ACWorldEdit.ClientData/Assets/Archives/IClientFiles.cs`) is the only file-access interface. Reads are read-only, thread-safe, and return detached `byte[]`. A missing file throws `FileNotFoundException`; a reference the client cannot resolve throws `NotSupportedException`.
 - There are two implementations. `AssetStore` (`Archives/AssetStore.cs`) mounts a 3.3.5 archive set and searches archives newest first. `CascFiles` (`Retail/CascFiles.cs`) opens a retail install through `CascLib.dll`.
 - `MpqArchive` (`Archives/MpqArchive.cs`) is a managed MPQ v0/v1 reader with zlib and BZip2 (SharpZipLib). StormLib is not used.
 - `CascNative` is the P/Invoke surface for CascLib. The platform file (`CascLib.dll` on Windows, `libCascLib.so` on Linux; `CascNative.FileName`) is located through `ACWORLD_CASCLIB`, next to the assembly, or in `native/<platform>/` (`CascNative.NativeFolder`: `win-x64`, `linux-x64`). Only the Retail profile needs it. It is built from the pinned `ThirdParty/CascLib` submodule by `Tools/setup.py`. `DependencyCheck` (`Retail/DependencyCheck.cs`) reuses `CascNative.Candidates` and `Db2Tables.FindDefinitions` to report a missing library or `Data/WoWDBDefs` before a load fails; the viewer posts it to the status bar at startup and when the profile changes, and `ACWorldEdit.csproj` emits build warnings `ACW001`/`ACW002` for the same conditions.
@@ -91,7 +91,7 @@ flowchart TB
 
 ## Client opening
 
-`ClientServices.Open` (`Scripts/Viewer/Session/ClientServices.cs`) returns a `ClientServices` record: `Files`, `Maps`, `Lighting`, `Areas`, `DatabaseEnabled` and a description.
+`ClientServices.Open` (`src/ACWorldEdit.ClientData/ClientServices.cs`) returns a `ClientServices` record: `Files`, `Maps`, `Lighting`, `Areas`, `DatabaseEnabled` and a description.
 
 Wrath 3.3.5:
 
@@ -291,7 +291,7 @@ Per-client side data (`RetailLiquids`, `LiquidTextures`) is attached to an `ICli
 
 ## Generated navigation files
 
-`Scripts/Assets/Navigation` reads server-generated MMaps from an independently selected disk folder. It does not use client archives. `AcNavigationReader` accepts AzerothCore MMap 20 (56-byte wrapper); `TcNavigationReader` accepts TrinityCore MMap 16 (20-byte wrapper). Both consume little-endian Detour 7 with six polygon vertices and 64-bit references. Other versions and reference layouts are rejected. The shared `DetourReader` checks payload sizes, counts, indices, finite coordinates, bounds and detail-mesh ranges before returning plain navigation data. It retains static polygon neighbor codes, flags, areas, detail triangle flags, agent dimensions and off-mesh connections. Serialized runtime link slots do not describe live server connectivity.
+`src/ACWorldEdit.ClientData/Assets/Navigation` reads server-generated MMaps from an independently selected disk folder. It does not use client archives. `AcNavigationReader` accepts AzerothCore MMap 20 (56-byte wrapper); `TcNavigationReader` accepts TrinityCore MMap 16 (20-byte wrapper). Both consume little-endian Detour 7 with six polygon vertices and 64-bit references. Other versions and reference layouts are rejected. The shared `DetourReader` checks payload sizes, counts, indices, finite coordinates, bounds and detail-mesh ranges before returning plain navigation data. It retains static polygon neighbor codes, flags, areas, detail triangle flags, agent dimensions and off-mesh connections. Serialized runtime link slots do not describe live server connectivity.
 
 AC map parameters are 28 bytes, and tile headers include the generator's Recast settings. TC map files have a 40-byte header followed by 44-byte map-level off-mesh records. Both generators store a polygon capacity of `0x80000000` when built for 64-bit references; the reader preserves that bit pattern as an unsigned capacity.
 

@@ -9,8 +9,8 @@ Nested instructions: `Foundation/AGENTS.md`, `Scripts/AGENTS.md` and `Tests/AGEN
 Architecture lives in `docs/`, not here. Start at `docs/README.md`, or read the relevant page before working in an area:
 
 - `docs/architecture/overview.md`: overview, layers and dependency rules, threading, repository layout, glossary.
-- `docs/architecture/client-data.md`: `Scripts/Assets` (MPQ/CASC, formats, terrain, models, retail, listfile, navigation readers).
-- `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `Rendering`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
+- `docs/architecture/client-data.md`: `src/ACWorldEdit.ClientData/Assets` (MPQ/CASC, formats, terrain, models, retail, listfile, navigation readers).
+- `docs/architecture/viewer-runtime.md`: `Scripts/Viewer`, `src/ACWorldEdit.ClientRender`, `Overlays`, `Ui`, `Diagnostics`, smoke flags.
 - `docs/architecture/rendering.md`: the retail shader port, material routing, per-material fidelity, inferred inputs.
 - `docs/architecture/editing-and-export.md`: `Scripts/Data` and `Foundation` (drafts, spawn authoring, SQL export).
 - [`docs/architecture/tool-windows.md`](docs/architecture/tool-windows.md): how an editor is built as its own OS window — the `ScriptEditorWindow` template, the layout and toolbar rules, key routing, dialogs, testing, and the regressions to avoid.
@@ -51,6 +51,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 ## Notes
 
 - `ACWorldEdit.sln` exists for Godot's .NET export (without it the export produces no game assembly and only a warning); name `ACWorldEdit.csproj` explicitly in `dotnet` commands, as the scripts and CI do, so a build is not routed through the solution.
+- The reusable client stack lives in `src/`: `ACWorldEdit.Core` (world coordinates), `ACWorldEdit.ClientData` (MPQ/CASC archives, formats, M2/WMO, terrain, lighting data, catalogs) and `ACWorldEdit.ClientRender` (Godot renderer, streamer, sky and sun shadows, plus the `ShaderPaths` and self-registering shader globals). The app references all three; a game client consumes the same projects. `Shaders/` stays at the repo root because shader `#include` paths are literal `res://Shaders/...`.
 - Third-party code lives in pinned submodules (`ThirdParty/CascLib`, `ThirdParty/StormLib`, `Data/WoWDBDefs`); change a pin by checking out the new commit inside the submodule and `git add`-ing it, and keep `THIRD-PARTY.md` current. `Tools/package.py` makes a release build. CI and releases are in `.github/` (workflows and shared composite actions); a release is a pushed `vX.Y.Z` tag on `master`, which creates a draft GitHub Release; the steps are under "Continuous integration" in `docs/architecture/testing-and-tooling.md`.
 - `artifacts/`, `native/`, `build/`, `.build-env/` and `bin/obj` are git-ignored; `artifacts/` holds throwaway probes and project copies, so ignore it when searching.
 - Godot generates a `.cs.uid` beside every script; they show up untracked after new files are added. Never hand-edit a `.cs.uid` or anything under `.godot/`.
@@ -64,7 +65,7 @@ Corpus/KnownBug test settings, environment variables (`ACWORLD_*`) and smoke fla
 
 - This file holds only commands, workflow notes and rules. Architecture goes in `docs/architecture/overview.md` or the matching `docs/architecture/*.md` page.
 - Update the docs in the same change as the code: anything added, renamed, removed or replaced updates every doc page that describes it (including `docs/status/completed-work.md` and `docs/plans/editor-plan.md` when work lands or a gap is found, `docs/status/needed-tests.md` when a test is deferred). Fix wrong doc statements you come across; search the docs for names you touched before committing.
-- `Foundation/`, `Scripts/Assets/` and `Scripts/Data/` must stay Godot-free: the xUnit project compiles them without a Godot reference.
+- `Foundation/`, `src/ACWorldEdit.Core/`, `src/ACWorldEdit.ClientData/` and `Scripts/Data/` must stay Godot-free: the xUnit project references or compiles them without a Godot reference.
 - For world-database tables or columns, check the official schema docs, not only the live database or memory. Record AC/TC differences that affect the editors in `docs/reference/database-differences.md`.
   - AzerothCore: https://www.azerothcore.org/wiki/database-world (live database `acore_world`)
   - TrinityCore master: https://trinitycore.info/database/master/world/home (live database `world`)

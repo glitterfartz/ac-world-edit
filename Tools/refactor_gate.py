@@ -83,8 +83,8 @@ def check_godot_free() -> list[str]:
 
 
 def check_viewer_namespace() -> list[str]:
-    # Both are documented Godot halves of partials whose pure half is in Assets.
-    allowed = {"AreaTable.cs", "ClientLightingView.cs"}
+    # No viewer file may declare the Godot-free asset namespace any more.
+    allowed = set()
     problems = []
     for path in csharp_files(VIEWER):
         text = code_only(path.read_text(encoding="utf-8", errors="replace"))

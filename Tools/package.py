@@ -30,7 +30,8 @@ PRESET = 'Windows Desktop'
 OUT = ROOT / 'build' / 'win-x64'
 DATA = OUT / 'data_ACWorldEdit_windows_x86_64'
 # Files the exported game needs next to its assembly, as the csproj publishes them.
-REQUIRED = ['ACWorldEdit.dll', 'ACWorldEdit.Foundation.dll', 'GodotSharp.dll', 'CascLib.dll',
+REQUIRED = ['ACWorldEdit.dll', 'ACWorldEdit.Foundation.dll', 'ACWorldEdit.Core.dll',
+            'ACWorldEdit.ClientData.dll', 'ACWorldEdit.ClientRender.dll', 'GodotSharp.dll', 'CascLib.dll',
             'definitions/Map.dbd', 'LICENSE', 'THIRD-PARTY.md']
 
 
