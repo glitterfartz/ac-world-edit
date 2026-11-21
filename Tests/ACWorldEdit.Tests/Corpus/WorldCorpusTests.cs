@@ -41,7 +41,7 @@ public class WorldCorpusTests(ITestOutputHelper output) : IDisposable
     [ClientDataFact]
     public void MapsAndWdtCorpus()
     {
-        var store = ClientData.Store;
+        var store = SharedClientData.Store;
         Compare("DBFilesClient/Map.dbc", store.Read("DBFilesClient/Map.dbc"));
         var maps = store.Maps();
         Assert.True(maps.Any(m => m.Directory == "Azeroth"), "Azeroth map missing");
@@ -78,7 +78,7 @@ public class WorldCorpusTests(ITestOutputHelper output) : IDisposable
     [InlineData("Northrend")]
     public void ContinentTileAndTextures(string name)
     {
-        var store = ClientData.Store;
+        var store = SharedClientData.Store;
         var world = new WorldMap(name, store.Read($"World/Maps/{name}/{name}.wdt"));
         var key = name == "Azeroth" && world.Tiles.Contains(new(32, 48)) ? new TileKey(32, 48) : world.Tiles.OrderBy(t => Math.Abs(t.X - 32) + Math.Abs(t.Y - 32)).First();
         var bytes = store.Read(world.TilePath(key));
@@ -111,5 +111,5 @@ public class WorldCorpusTests(ITestOutputHelper output) : IDisposable
     }
 
     [ClientDataFact]
-    public void BackupArchivesNotMounted() => Assert.False(ClientData.Store.Source("DBFilesClient/Map.dbc").Contains("backup-", StringComparison.OrdinalIgnoreCase), "Backup mounted");
+    public void BackupArchivesNotMounted() => Assert.False(SharedClientData.Store.Source("DBFilesClient/Map.dbc").Contains("backup-", StringComparison.OrdinalIgnoreCase), "Backup mounted");
 }

@@ -1,5 +1,6 @@
 using Godot;
 using ACWorldEdit.Assets;
+using ACWorldEdit.ClientData;
 using ACWorldEdit.Data;
 using ACWorldEdit.Foundation;
 

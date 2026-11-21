@@ -10,7 +10,7 @@ public class InteractionCatalogTests
     [ClientDataFact]
     public void EmoteAnimMapsEmotesToTheirAnimationClips()
     {
-        var catalog = InteractionCatalog.Load(ClientData.Store);
+        var catalog = InteractionCatalog.Load(SharedClientData.Store);
         Assert.Equal(67u, catalog.EmoteAnim(3)); // ONESHOT_WAVE -> EmoteWave
         Assert.Equal(69u, catalog.EmoteAnim(10)); // STATE_DANCE -> EmoteDance
         Assert.Equal(0u, catalog.EmoteAnim(12)); // STATE_SLEEP names no clip
@@ -20,7 +20,7 @@ public class InteractionCatalogTests
     [ClientDataFact]
     public void MountSpellsNameTheirMountDisplays()
     {
-        var catalog = InteractionCatalog.Load(ClientData.Store);
+        var catalog = InteractionCatalog.Load(SharedClientData.Store);
         // Spell 458 (Brown Horse) and 5784 (Felsteed) carry aura 78 with the display in EffectMiscValue.
         Assert.Contains(284u, catalog.MountDisplays);
         Assert.Contains(304u, catalog.MountDisplays);

@@ -59,7 +59,7 @@ public class AssetRefTests
     [Trait("Category", "Corpus")]
     public void MpqStoreRefusesFileIds()
     {
-        var store = ClientData.Store;
+        var store = SharedClientData.Store;
         Assert.Equal(ClientKind.Wrath335, store.Kind);
         Assert.Equal("3.3.5.12340", store.Build);
         Assert.Throws<NotSupportedException>(() => store.Read(AssetRef.FromFileId(775971)));

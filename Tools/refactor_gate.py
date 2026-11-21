@@ -45,7 +45,7 @@ LAYERS = [
     Layer("Scripts/Overlays", goldens.ROOT / "Scripts" / "Overlays", TOOLS / "overlays-budget.json", TOOLS / "overlays-long-methods.json"),
 ]
 VIEWER = LAYERS[0].root
-GODOT_FREE = ["Foundation", "Scripts/Assets", "Scripts/Data"]
+GODOT_FREE = ["Foundation", "src/ACWorldEdit.Core", "src/ACWorldEdit.ClientData", "Scripts/Data"]
 MAX_METHOD = 60
 CONTROL = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "fixed", "when", "try", "else", "do"}
 NON_METHOD = re.compile(r"\b(class|record|struct|interface|enum|delegate)\b")

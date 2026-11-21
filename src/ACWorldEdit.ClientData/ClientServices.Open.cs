@@ -1,6 +1,6 @@
 using ACWorldEdit.Assets;
 
-namespace ACWorldEdit;
+namespace ACWorldEdit.ClientData;
 
 /// <summary>Client open: the Wrath MPQ and retail CASC halves.</summary>
 public sealed partial record ClientServices

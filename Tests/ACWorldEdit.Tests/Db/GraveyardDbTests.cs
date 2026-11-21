@@ -14,7 +14,7 @@ using static Test;
 public class GraveyardDbTests
 {
     [DbFact(NeedsClientData = true)]
-    public async Task Passes() => await Core(ClientData.Store);
+    public async Task Passes() => await Core(SharedClientData.Store);
 
     static async Task Core(AssetStore store)
     {

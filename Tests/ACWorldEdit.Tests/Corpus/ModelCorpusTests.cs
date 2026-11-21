@@ -12,7 +12,7 @@ using static Test;
 public class ModelCorpusTests
 {
     [ClientDataFact]
-    public void Passes() => Core(ClientData.Store);
+    public void Passes() => Core(SharedClientData.Store);
 
     /// <summary>
     /// Validate native clips, outdoor placements and every interior-only map, with texture/atlas

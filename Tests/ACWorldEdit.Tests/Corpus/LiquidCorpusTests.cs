@@ -12,7 +12,7 @@ using static Test;
 public class LiquidCorpusTests
 {
     [ClientDataFact]
-    public void Passes() => Core(ClientData.Store);
+    public void Passes() => Core(SharedClientData.Store);
 
     /// <summary>
     /// Validate categories, animated/shared atlases and representative grids. Report unsupported

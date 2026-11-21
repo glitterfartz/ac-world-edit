@@ -1,6 +1,6 @@
 using ACWorldEdit.Assets;
 
-namespace ACWorldEdit;
+namespace ACWorldEdit.ClientData;
 
 /// <summary>
 /// Everything the viewer needs from one opened client, chosen once at load time so no parser has to

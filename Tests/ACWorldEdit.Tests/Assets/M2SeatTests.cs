@@ -14,7 +14,7 @@ public class M2SeatTests
     [ClientDataFact]
     public void MountModelsCarryASeatOnABone()
     {
-        var store = ClientData.Store;
+        var store = SharedClientData.Store;
         var horse = M2Model.Read(store, "Creature/Horse/Horse.m2").Seat;
         Assert.NotNull(horse);
         Assert.Equal(56, horse.Bone);
@@ -29,7 +29,7 @@ public class M2SeatTests
     [ClientDataFact]
     public void NonMountModelsHaveNoSeat()
     {
-        var store = ClientData.Store;
+        var store = SharedClientData.Store;
         Assert.Null(M2Model.Read(store, "Creature/Basilisk/Basilisk.m2").Seat);
         Assert.Null(M2Model.Read(store, "Creature/KodoBeast/KodoBeastTame.m2").Seat);
     }

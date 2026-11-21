@@ -63,7 +63,7 @@ public static class Environments
 }
 
 /// <summary>Opened once and shared by all corpus tests.</summary>
-public static class ClientData
+public static class SharedClientData
 {
     static readonly Lazy<AssetStore> store = new(() => new AssetStore(Environments.DataDirectory() ?? throw new InvalidOperationException("client data missing")));
 
